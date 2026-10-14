@@ -52,6 +52,22 @@
     id: 'bloques', title: 'Bloques', emoji: '🟪', color: '#9775fa', origin: 'Tetris (Pajitnov, 1984)',
     help: 'Caen piezas desde arriba. <b>Arrastra</b> a los lados para moverlas, <b>toca</b> para girarlas, arrastra hacia abajo para que bajen más rápido y <b>desliza hacia abajo</b> de golpe para soltarlas al instante. Toca la caja de la derecha para <b>guardar</b> una pieza para luego. Completa filas enteras para que desaparezcan; 4 a la vez es un TETRA. Haz las líneas que pide cada nivel; en los niveles altos empiezas con filas de basura.',
     lives: 3, levels: 0, cap: 30,
+    demo(g) {
+      const s = g.s; if (!s.p || s.clearing || s.won) return { wait: 0.12 };
+      if (s.dplan && s.p.dtag === s.dplan.tag) { const pl = s.dplan;
+        if (s.p.rot !== pl.rot && pl.tries-- > 0) { return { tap: [s.ox + s.cs * 2, s.oy + s.cs * 6], after: 0.12 }; }
+        const dx = pl.x - s.p.x; if (dx) { const x0 = s.ox + s.cs * 2; return { drag: [[x0, s.oy + s.cs * 8], [x0 + dx * s.cs * 0.95 + Math.sign(dx) * 6, s.oy + s.cs * 8]], dur: 0.2 + Math.abs(dx) * 0.06, after: 0.08 }; }
+        s.dplan = null; return { swipe: [s.ox + s.cs * 2, s.oy + s.cs * 6, 'down'], len: 70, dur: 0.1, after: 0.3, say: Arcade.T('Completa filas enteras para borrarlas', 'Fill whole rows to clear them') }; }
+      let best = null;
+      for (let rot = 0; rot < 4; rot++) for (let x = -2; x < C; x++) { const q = { ...s.p, rot, x, y: -1 }; if (!fits(s, q)) continue; while (fits(s, { ...q, y: q.y + 1 })) q.y++;
+        const b = s.b.map((row) => row.slice()); let out = false; for (const [cx, cy] of cells(q)) { if (cy < 0) out = true; else b[cy][cx] = 'x'; } if (out) continue;
+        const full = b.filter((row) => row.every(Boolean)).length, hs = []; let holes = 0;
+        for (let c = 0; c < C; c++) { let r = 0; while (r < R && !b[r][c]) r++; hs.push(R - r); for (let y = r + 1; y < R; y++) if (!b[y][c]) holes++; }
+        let bump = 0; for (let c = 1; c < C; c++) bump += Math.abs(hs[c] - hs[c - 1]);
+        const v = full * 8 - holes * 3.5 - hs.reduce((a, h) => a + h, 0) * 0.5 - bump * 0.35; if (!best || v > best.v) best = { v, rot, x }; }
+      if (!best) return { wait: 0.2 };
+      const tag = Math.random(); s.p.dtag = tag; s.dplan = { tag, rot: best.rot, x: best.x, tries: 4 }; return { wait: 0.02 };
+    },
     setup(g) {
       g.s = { b: [...Array(R)].map(() => new Array(C).fill(null)), bag: [], next: [], hold: null, lines: 0, combo: 0, t: 0 };
       const s = g.s, L = g.lv; geo(g);

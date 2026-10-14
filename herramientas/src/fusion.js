@@ -54,6 +54,18 @@
     id: 'fusion', title: 'Fusión', emoji: '🐣', color: '#fab005', origin: '2048 (Gabriele Cirulli)',
     help: '<b>Desliza</b> para mover todos los animales. Dos <b>iguales</b> que chocan se fusionan en la siguiente etapa: 🥚→🐣→🐥→🐔→🦆→🦢→🦩→🦚→🦜→🦅→🐉→👑. Consigue el animal objetivo de cada nivel. Desde el nivel 3 hay 🪨 rocas que nunca se mueven. Si el tablero se llena sin movimientos, pierdes una vida.',
     lives: 3, levels: 0, cap: 20,
+    demo(g) {
+      const s = g.s; if (s.anim > 0) return { wait: 0.15 };
+      let best = null;
+      for (const dir of ['up', 'down', 'left', 'right']) { const D = { left: [0, -1], right: [0, 1], up: [-1, 0], down: [1, 0] }[dir];
+        const b = s.b.map((row) => row.map((t) => (t ? { t: t.t, rock: t.rock, m: false } : null))); let moved = false, sc = 0; const ord = [...Array(N).keys()], rs = D[0] > 0 ? ord.slice().reverse() : ord, cs = D[1] > 0 ? ord.slice().reverse() : ord;
+        for (const r of rs) for (const c of cs) { const t = b[r][c]; if (!t || t.rock) continue; let nr = r, nc = c;
+          for (;;) { const tr = nr + D[0], tc = nc + D[1]; if (tr < 0 || tr >= N || tc < 0 || tc >= N) break; const o = b[tr][tc]; if (!o) { b[tr][tc] = t; b[nr][nc] = null; nr = tr; nc = tc; moved = true; continue; }
+            if (!o.rock && o.t === t.t && !o.m && !t.m) { o.t++; o.m = true; b[nr][nc] = null; moved = true; sc += Math.pow(2, o.t); } break; } }
+        if (!moved) continue; sc += b.flat().filter((x) => !x).length * 2 + (dir === 'down' || dir === 'left' ? 3 : 0) + Math.random(); if (!best || sc > best.sc) best = { sc, dir }; }
+      if (!best) return { wait: 0.4 };
+      return { swipe: [s.ox + s.cs * N / 2, s.oy + s.cs * N / 2, best.dir], len: s.cs * 1.2, after: 0.35, say: Arcade.T('Desliza: dos animales iguales se fusionan', 'Swipe: two equal animals merge') };
+    },
     setup(g) {
       g.s = { b: [], maxT: 0, anim: 0 };
       const s = g.s;

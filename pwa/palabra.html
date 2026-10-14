@@ -71,6 +71,16 @@
     id: 'palabra', title: 'Palabra', emoji: '🔤', color: '#6aaa64', origin: 'Wordle (Josh Wardle) / Word Game',
     help: 'Adivina la <b>palabra oculta de 5 letras</b> en 6 intentos. Escribe con el teclado de la pantalla y pulsa ⏎. Tras cada intento, las letras cambian de color: 🟩 letra correcta en su sitio, 🟨 la letra está en la palabra pero en otro sitio, ⬛ no está. Cada nivel es una palabra nueva; si fallas una, pierdes una vida. Sin tildes.',
     lives: 3, levels: 0, cap: 99,
+    demo(g) {
+      const s = g.s; if (s.done || s.reveal || s.cur.length) return { wait: 0.3 };
+      const es = Arcade.lang !== 'en', list = (es ? ES : EN).filter((w) => w.length === LEN);
+      const ok = (w) => s.rows2.every((row) => score(row.w, w).join() === row.res.join());
+      const cands = list.filter(ok); const w = cands.length ? cands[Math.floor(Math.random() * cands.length)] : s.ans;
+      const K = (k) => { const q = s.keys.find((o) => o.k === k); return q ? [q.x + q.w / 2, q.y + q.h / 2] : null; };
+      const steps = w.split('').map((ch, i) => ({ tap: K(ch), after: 0.12, say: i === 0 ? (s.rows2.length ? Arcade.T('Verde: letra en su sitio · amarilla: está en otro sitio', 'Green: right place · yellow: somewhere else') : Arcade.T('Escribe una palabra de 5 letras', 'Type a five-letter word')) : null }));
+      steps.push({ tap: K('⏎'), after: 1.6 });
+      return steps.filter((st) => st.tap);
+    },
     setup(g) {
       const es = Arcade.lang !== 'en', list = (es ? ES : EN).filter((w) => w.length === LEN);
       let used = []; try { used = JSON.parse(localStorage.getItem('arc_palabra_used') || '[]'); } catch (e) {}

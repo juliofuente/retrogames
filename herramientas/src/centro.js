@@ -57,6 +57,15 @@
     id: 'centro', title: 'Centro', emoji: '🎯', color: '#4dabf7', origin: 'Zoop (Hookstone, 1995)',
     help: 'Las piezas avanzan hacia el centro desde los cuatro lados. <b>Toca una fila o columna</b> para disparar desde el centro: eliminas todas las piezas seguidas <b>de tu color</b>. Al chocar con otra de distinto color, <b>intercambiáis los colores</b>. Si una pieza entra en el cuadro central, se acaba. 💣 limpia toda la línea.',
     lives: 0, levels: null,
+    demo(g) {
+      const s = g.s; let best = null;
+      for (const sd of SIDES) for (let i = 0; i < 4; i++) { const line = s.lines[sd][i]; if (!line.length) continue; let n = 0;
+        for (let k = line.length - 1; k >= 0; k--) { if (line[k].bomb) { n += 10; break; } if (line[k].c !== s.pc) break; n++; }
+        const v = n * 10 + line.length * (n ? 1 : 0.6) + Math.random(); if (!best || v > best.v) best = { v, sd, i, n }; }
+      if (!best) return { wait: 0.3 };
+      const [x, y] = cellXY(s, best.sd, best.i, len(s, best.sd) - 1);
+      return { tap: [x + s.cs / 2, y + s.cs / 2], after: 0.35, say: best.n ? Arcade.T('Dispara al carril donde está tu color', 'Shoot at the lane with your colour') : Arcade.T('Sin coincidencias: dispara para cambiar de color', 'No match: shoot to swap colours') };
+    },
     setup(g) {
       g.s = { lines: {}, pc: 0, spawnT: 1, pieces: 0, cleared: 0, beam: null };
       const s = g.s; geo(g);

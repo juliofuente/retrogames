@@ -45,6 +45,12 @@
     id: 'grupos', title: 'Grupos', emoji: '🍓', color: '#ff8787', origin: 'SameGame',
     help: '<b>Toca</b> un grupo de 2 o más frutas iguales <b>pegadas</b> para quitarlo. Cuanto más grande el grupo, más puntos (¡crecen al cuadrado!). Las frutas caen y las columnas vacías se juntan a la izquierda. Cuando no quedan grupos se acaba el tablero: llega al objetivo de puntos del nivel. Si lo vacías del todo, bonus enorme.',
     lives: 3, levels: 0, cap: 20,
+    demo(g) {
+      const s = g.s; let best = null;
+      for (let c = 0; c < s.C; c++) for (let r = 0; r < s.R; r++) { if (!at(s, c, r)) continue; const n = group(s, c, r).length; if (n >= 2 && (!best || n > best.n)) best = { n, c, r }; }
+      if (!best) return { wait: 0.5 };
+      return { tap: [s.ox + (best.c + 0.5) * s.cs, s.oy + (s.R - best.r - 0.5) * s.cs], after: 0.6, say: best.n >= 6 ? Arcade.T('Cuanto más grande el grupo, muchos más puntos', 'The bigger the group, the more points') : Arcade.T('Toca un grupo de 2 o más frutas iguales', 'Tap a group of 2 or more matching fruits') };
+    },
     setup(g) {
       g.s = { b: [], hover: null };
       const s = g.s; s.C = g.W < g.H ? 8 : 12; s.R = g.W < g.H ? 11 : 8;

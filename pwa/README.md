@@ -43,6 +43,25 @@ Para añadir un juego Pro: crea su `.html` y añade una línea a `GAMES_PRO`.
 - **Enemigos comunes**: `Arcade.FOES` (calaveras, escorpiones, fantasmas, tiburones, zombis, vampiros, alienígenas…), `Arcade.FOES_SMALL`, `Arcade.FOES_BIG`; `Arcade.foe(n)` devuelve el enésimo y `Arcade.foeSet(k, semilla)` k distintos. Así los mismos enemigos se repiten entre juegos.
 - **Orientación**: `Arcade.FACING` dice hacia dónde mira cada emoji tal cual se dibuja (las caras miran abajo, los animales y vehículos de perfil a la izquierda, 🚀/✈️ arriba a la derecha…). `Arcade.emojiTo(ctx, e, x, y, tamaño, dx, dy, opciones)` lo dibuja girado hacia su movimiento: los de perfil se voltean al ir de lado y giran al subir o bajar; las caras giran hacia donde van. Con `{ mode: 'flip' }` solo se voltea (las caras se inclinan), útil en plataformas. Si añades un emoji nuevo que se mueva, añádelo a `FACING` en `common.js`.
 
+## Demo automática (v2.7)
+
+En el menú de cada juego hay un botón **👀 Ver demo**: juega una partida sola con un dedo virtual 👆 que se ve tocar, arrastrar, deslizar, mantener o pulsar la cruceta, con frases cortas que explican lo que hace. No guarda récords ni desbloquea niveles; termina al tocar la pantalla (o pulsar una tecla), al ganar o perder, o a los 45 s (`demoTime` para cambiarlo).
+
+Cada juego puede definir `demo(g)`, que devuelve el siguiente paso (o una lista de pasos, o `null` para esperar):
+
+| Paso | Qué hace |
+|---|---|
+| `{ tap: [x, y] }` | mueve el dedo y toca |
+| `{ drag: [[x, y], …], dur }` | arrastra por esos puntos en `dur` segundos |
+| `{ swipe: [x, y, 'left'\|'right'\|'up'\|'down'], len }` | deslizamiento rápido |
+| `{ hold: [x, y], dur }` | mantiene pulsado |
+| `{ key: 'ArrowLeft'\|' ', dur }` | pulsa la cruceta / OK del pad (se ilumina) |
+| `{ wait: s }` | espera |
+
+Todos aceptan `say: 'texto'` (frase que aparece abajo) y `after: s` (pausa después). Los toques simulados llegan a `down/move/up/tap/swipe` con `p.type === 'demo'`, igual que los de un dedo real. `g.demoOn` indica que la demo está activa (sirve, por ejemplo, para que Vías vaya más despacio). Si un juego no define `demo`, se usa una demo genérica: pulsa el pad si el juego usa la cruceta, o hace toques y gestos sobre sus casillas.
+
+Tienen demo propia (juega bien y suele ganar el nivel) todos los puzles, los de combinar y encajar y los de tablero.
+
 ## Pad virtual (táctil)
 
 En el HUD aparece el botón 🎮 en todos los juegos que se pueden jugar con mando (`tv` no es `false`). Muestra una cruceta y un botón OK abajo, sin quitar el control táctil normal. Sale activado por defecto; si el jugador lo oculta, se recuerda en el dispositivo. En juegos con `tv.targets` el pad mueve el cursor de casillas igual que el mando de la tele; en el resto envía flechas y espacio a `key()`. Para quitarlo de un juego: `pad: false`.

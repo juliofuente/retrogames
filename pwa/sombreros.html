@@ -74,6 +74,18 @@
     id: 'sombreros', title: 'Sombreros', emoji: '🎩', color: '#e8a87c', origin: 'Hatris (Bullet-Proof, 1990)',
     help: 'Caen sombreros de dos en dos sobre seis cabezas. <b>Arrastra</b> para elegir sobre qué dos cabezas caen, <b>toca</b> para intercambiarlos y <b>desliza hacia abajo</b> para dejarlos caer. Cuando una cabeza tiene <b>5 sombreros iguales seguidos</b> arriba del todo, desaparecen. Si alguna pila llega al techo, se acaba.',
     lives: 0, levels: null,
+    demo(g) {
+      const s = g.s; if (!s.pair || s.fast) return { wait: 0.15 };
+      if (s.dplan && s.dplan.pair === s.pair) { const pl = s.dplan;
+        if (pl.rev) { pl.rev = false; return { tap: [g.W / 2, s.topY + s.cw], after: 0.15 }; }
+        if (s.pc !== pl.c) return { drag: [[s.ox + (s.pc + 1) * s.cw, s.topY + s.cw], [s.ox + (pl.c + 1) * s.cw, s.topY + s.cw]], dur: 0.35, after: 0.1, say: Arcade.T('Arrastra para elegir las dos cabezas', 'Drag to choose the two heads') };
+        pl.pair = null; return { swipe: [s.ox + (s.pc + 1) * s.cw, s.topY + s.cw, 'down'], len: 100, after: 0.3, say: Arcade.T('Iguales encima: ¡desaparecen!', 'Equal hats on top: they vanish!') }; }
+      const topRun = (c, t) => { const st = s.st[c]; let n = 0; for (let i = st.length - 1; i >= 0 && st[i].t === t; i--) n++; return n; };
+      let best = null;
+      for (let c = 0; c < COLS - 1; c++) for (const rev of [false, true]) { const a = rev ? s.pair[1] : s.pair[0], b = rev ? s.pair[0] : s.pair[1];
+        const v = topRun(c, a) * 10 + topRun(c + 1, b) * 10 - (s.st[c].length + s.st[c + 1].length) * 1.5 + Math.random(); if (!best || v > best.v) best = { v, c, rev }; }
+      s.dplan = { pair: s.pair, c: best.c, rev: best.rev }; return { wait: 0.05 };
+    },
     setup(g) {
       g.s = { st: [], nt: 3, cleared: 0, combo: 0, pc: 2, wait: 0 };
       for (let c = 0; c < COLS; c++) g.s.st.push([]);

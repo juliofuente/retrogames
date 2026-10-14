@@ -1,6 +1,6 @@
 ARCADE PERDIDO + ARCADE PRO — LO QUE ESTÁ HECHO
 ================================================
-Fecha: 14-10-2026 · Versión de la PWA (games.js → ARCADE_VERSION): 2.6.1
+Fecha: 14-10-2026 · Versión de la PWA (games.js → ARCADE_VERSION): 2.7.0
 Total: 41 juegos en la colección principal + 90 en la colección Pro = 131 juegos.
 
 CONTENIDO DEL ZIP
@@ -53,6 +53,9 @@ CARACTERÍSTICAS COMUNES A TODOS LOS JUEGOS
   alienígenas…) y emojis orientados según su movimiento (Arcade.FACING + Arcade.emojiTo).
 · v2.6.0: pad virtual (botón 🎮 del HUD) en los 126 juegos jugables con mando; desde v2.6.1 sale activado por
   defecto (se puede ocultar con 🎮 y se recuerda). No quita el control táctil.
+· v2.7.0: botón «👀 Ver demo» en todos los juegos: partida automática con dedo virtual y frases que explican la
+  mecánica. Demo propia (un «bot» que juega bien) en 53 juegos: todos los puzles, combinar y encajar y tablero;
+  el resto usa una demo genérica según sus controles.
 · v2.6.1: buscador en las portadas (index.html raíz, pwa/index.html y pwa/indexpro.html): busca por nombre, lema,
   descripción, control o juego original, en español e inglés y sin tildes; también muestra coincidencias de la otra
   colección. La web PHP ya tenía su buscador (/buscar).

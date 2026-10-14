@@ -75,6 +75,17 @@
     id: 'treses', title: 'Treses', emoji: '3️⃣', color: '#ff6b6b', origin: 'Threes! (Sirvo)',
     help: '<b>Desliza</b> para mover todas las cartas un paso. Un <b>1</b> y un <b>2</b> se juntan en un 3; a partir de ahí, dos cartas <b>iguales</b> se juntan y se doblan (3+3=6, 6+6=12…). Tras cada movimiento entra una carta nueva por el borde; arriba ves cuál viene. Consigue la carta que pide cada nivel antes de que se atasque el tablero.',
     lives: 3, levels: 0, cap: 20,
+    demo(g) {
+      const s = g.s; if (s.done || s.anim > 0) return { wait: 0.2 };
+      const D4 = { left: [-1, 0], right: [1, 0], up: [0, -1], down: [0, 1] }; let best = null;
+      for (const [dir, [dc, dr]] of Object.entries(D4)) {
+        const b = s.b.map((t) => (t ? t.v : 0)), merged = new Set(); let moved = false, sc = 0;
+        for (let line = 0; line < N; line++) for (let k = 1; k < N; k++) { const c = dc === -1 ? k : dc === 1 ? N - 1 - k : line, r = dr === -1 ? k : dr === 1 ? N - 1 - k : line, v = b[idx(c, r)]; if (!v) continue;
+          const nc = c + dc, nr = r + dr, d = b[idx(nc, nr)]; if (!d) { b[idx(nc, nr)] = v; b[idx(c, r)] = 0; moved = true; } else if (!merged.has(idx(nc, nr)) && can(v, d)) { b[idx(nc, nr)] = v + d; b[idx(c, r)] = 0; merged.add(idx(nc, nr)); moved = true; sc += (v + d) * 2; } }
+        if (!moved) continue; sc += b.filter((v) => !v).length * 3 + Math.random() * 2; if (!best || sc > best.sc) best = { sc, dir }; }
+      if (!best) return { wait: 0.4 };
+      return { swipe: [s.ox + s.cs * N / 2, s.oy + s.ch * N / 2, best.dir], len: s.cs * 1.2, after: 0.4, say: Arcade.T('1+2 hacen 3; después, iguales se suman', '1+2 make 3; after that, equal cards add up') };
+    },
     setup(g) {
       g.s = { b: new Array(N * N).fill(null), bag: [], ghost: [], anim: 0, best: 0 };
       const s = g.s, L = g.lv;

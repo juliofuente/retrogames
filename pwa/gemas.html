@@ -136,6 +136,16 @@
     id: 'gemas', title: 'Gemas', emoji: '💎', color: '#b197fc', origin: 'Bejeweled (PopCap) / Diamond Digger · Farm Heroes',
     help: '<b>Desliza</b> una gema hacia una vecina (o toca dos gemas vecinas) para intercambiarlas. Si juntas <b>3 o más</b> iguales en línea, desaparecen y caen nuevas. Con <b>4</b> en línea creas una gema rayada que limpia toda su fila o columna; con <b>5</b>, un 🌈 que al moverlo borra todas las gemas de ese color. Llega a la puntuación objetivo antes de quedarte sin movimientos.',
     lives: 3, levels: 0, cap: 30,
+    demo(g) {
+      const s = g.s; if (s.busy || s.done || s.moves <= 0) return { wait: 0.25 };
+      let best = null;
+      for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) for (const [dc, dr] of [[1, 0], [0, 1]]) { const a = at(s, c, r), b = at(s, c + dc, r + dr); if (!a || !b) continue;
+        s.b[r][c] = b; s.b[r + dr][c + dc] = a; const runs = findRuns(s); s.b[r][c] = a; s.b[r + dr][c + dc] = b;
+        const n = runs.reduce((t, x) => t + (x.n || x.len || (x.cells ? x.cells.length : 3)), 0) + (a.sp || b.sp ? 3 : 0); if (!runs.length && !(a.sp === 'bomb' || b.sp === 'bomb')) continue;
+        const v = n + r * 0.1 + Math.random() * 0.5; if (!best || v > best.v) best = { v, c, r, dir: dc ? 'right' : 'down' }; }
+      if (!best) return { wait: 0.5 };
+      return { swipe: [s.ox + (best.c + 0.5) * s.cs, s.oy + (best.r + 0.5) * s.cs, best.dir], len: s.cs * 0.9, after: 0.6, say: Arcade.T('Desliza una gema para hacer línea de 3 iguales', 'Swipe a gem to line up 3 of a kind') };
+    },
     setup(g) {
       g.s = { b: [...Array(N)].map(() => new Array(N).fill(null)), busy: null, sel: null, score: 0, chain: 0 };
       const s = g.s, L = g.lv; s.nt = L < 6 ? 6 : 7;

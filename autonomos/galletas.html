@@ -758,6 +758,7 @@ function arcadeElegirIdioma(l) {
     /* --- vidas y fin --- */
     g.die = function () {
       if (g.state !== 'play') return false;
+      if (g.demoOn) { A.sfx.hit(); g.mood('hurt', 1.8); g.shake(0.35, 10); g.flash('#ff3b3b', 0.25); return true; } // en la demo no se pierden vidas
       g.lives--; g.hud(); A.sfx.hit(); g.mood('hurt', 1.8); A.buzz(180); g.shake(0.35, 10); g.flash('#ff3b3b', 0.25);
       if (g.lives <= 0) { g.state = 'dying'; M.stop(); setTimeout(g.over, 900); return false; }
       return true;
@@ -769,7 +770,7 @@ function arcadeElegirIdioma(l) {
     }
     const starsHtml = (stars) => '<div class="stars">' + [1, 2, 3].map((i) => `<span class="${i <= stars ? 'on' : ''}" style="animation-delay:${0.15 + i * 0.18}s">⭐</span>`).join('') + '</div>';
     g.over = function () {
-      if (g.state === 'over') return;
+      if (g.state === 'over' || g.state === 'menu') return;
       g.state = 'over'; M.stop(); A.sfx.lose(); g.fc.t = 0; g.mood('sad', 99);
       if (g.mp) return mpOver();
       if (g.demoOn) { setTimeout(() => endDemo(), 1600); return; }
@@ -937,12 +938,19 @@ function arcadeElegirIdioma(l) {
     const DM = { q: [], cur: null, fx: 0, fy: 0, press: 0, say: null, sayT: 0, t: 0, p: null };
     function startDemo() {
       g.mp = null; g.level = 1; g.score = 0; g.lives = def.lives ?? 3; g.t = 0; g.demoOn = true;
-      Object.assign(DM, { end: false, q: [], cur: null, fx: g.W / 2, fy: g.bot - 40, press: 0, say: null, sayT: 0, t: 0, p: null });
+      Object.assign(DM, { end: false, said: false, q: [], cur: null, fx: g.W / 2, fy: g.bot - 40, press: 0, say: null, sayT: 0, t: 0, p: null });
       begin(); if (def.onStart) def.onStart(g);
     }
     function endDemo() { if (!g.demoOn) return; g.demoOn = false; if (DM.p) { g.pointers.delete(DM.p.id); DM.p = null; } menu(); }
     g.demoSay = (txt, t = 2.6) => { DM.say = A.L(String(txt)); DM.sayT = t; };
     function genericDemo() {
+      const first = !DM.said; DM.said = true;
+      const plainHelp = String(def.help || '').replace(/<[^>]+>/g, '').split(/(?<=[.!?])\s/)[0];
+      if (padOn && def.key && !(rdef && rdef.targets)) {
+        const k = A.pick(['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', ' ', ' ']);
+        return { key: k, dur: A.pick([0.08, 0.15, 0.4, 0.7]), after: A.rand(0.05, 0.35), say: first ? (def.tvHelp || plainHelp) : null };
+      }
+      if (first) g.demoSay(plainHelp, 4);
       const ts = tvTargets() || (rdef && rdef.targets ? rdef.targets(g) : null);
       if (ts && ts.length) {
         const a = A.pick(ts), c = tc(a), mode = (rdef && rdef.mode) || 'tap';
@@ -981,7 +989,7 @@ function arcadeElegirIdioma(l) {
       DM.t += dt; if (!DM.end && DM.t > (def.demoTime || 45)) { DM.end = true; if (DM.p) dUp(false); g.message(T('Fin de la demo', 'End of demo'), 1.2); setTimeout(() => endDemo(), 1300); }
       if (DM.end) return;
       if (!DM.cur) { if (!DM.q.length) demoNext(); DM.cur = DM.q.shift(); if (!DM.cur) return; const c = DM.cur; c.ph = 'go'; c.t = 0; if (c.say) g.demoSay(c.say);
-        if (c.swipe) { const [x, y, dir] = c.swipe, L = c.len || 90, D = { left: [-1, 0], right: [1, 0], up: [0, -1], down: [0, 1] }[dir]; c.drag = [[x, y], [x + D[0] * L, y + D[1] * L]]; c.dur = 0.22; }
+        if (c.swipe) { const [x, y, dir] = c.swipe, L = c.len || 90, D = { left: [-1, 0], right: [1, 0], up: [0, -1], down: [0, 1] }[dir]; c.drag = [[x, y], [x + D[0] * L, y + D[1] * L]]; c.dur = c.dur || 0.16; }
         c.at = c.tap || c.hold || (c.drag && c.drag[0]) || null; }
       const c = DM.cur; c.t += dt;
       if (c.ph === 'go') {
@@ -1006,11 +1014,12 @@ function arcadeElegirIdioma(l) {
       const sz = 46, pr = DM.press;
       if (pr > 0) { ctx.globalAlpha = 0.5 * pr; ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(DM.fx, DM.fy, 14 + (1 - pr) * 18, 0, TAU); ctx.stroke(); ctx.globalAlpha = 1; }
       A.emoji(ctx, '👆', DM.fx + 4, DM.fy + sz * 0.42, sz * (1 - pr * 0.12), { rot: -0.15 });
-      const y = g.top + 4;
-      ctx.fillStyle = 'rgba(0,0,0,.55)'; A.rr(ctx, g.W / 2 - 120, y, 240, 26, 13); ctx.fill();
-      A.txt(ctx, T('👀 DEMO · toca para jugar tú', '👀 DEMO · tap to play yourself'), g.W / 2, y + 13, 13, '#ffd43b', 'center', 900);
-      if (DM.say && DM.sayT > 0) { const a = Math.min(1, DM.sayT * 3); ctx.globalAlpha = a; ctx.font = '800 15px ' + A.FONT; const w = Math.min(g.W - 24, ctx.measureText(DM.say).width + 30), yy = g.bot - 54;
-        ctx.fillStyle = 'rgba(0,0,0,.72)'; A.rr(ctx, g.W / 2 - w / 2, yy, w, 34, 17); ctx.fill(); A.txt(ctx, DM.say, g.W / 2, yy + 17, 15, '#fff', 'center', 800); ctx.globalAlpha = 1; }
+      const y = g.top + 4, bw = 86, blink = 0.75 + 0.25 * Math.sin(g.rt * 4);
+      ctx.globalAlpha = blink; ctx.fillStyle = 'rgba(0,0,0,.6)'; A.rr(ctx, g.W - bw - 8, y, bw, 24, 12); ctx.fill();
+      A.txt(ctx, '👀 DEMO', g.W - 8 - bw / 2, y + 12, 13, '#ffd43b', 'center', 900); ctx.globalAlpha = 1;
+      const say = DM.say && DM.sayT > 0 ? DM.say : T('Toca la pantalla para jugar tú', 'Tap the screen to play yourself'), a = DM.say && DM.sayT > 0 ? Math.min(1, DM.sayT * 3) : 0.75;
+      ctx.globalAlpha = a; ctx.font = '800 15px ' + A.FONT; const w = Math.min(g.W - 24, ctx.measureText(say).width + 30), yy = g.bot - 54;
+      ctx.fillStyle = 'rgba(0,0,0,.72)'; A.rr(ctx, g.W / 2 - w / 2, yy, w, 34, 17); ctx.fill(); A.txt(ctx, say, g.W / 2, yy + 17, 15, '#fff', 'center', 800); ctx.globalAlpha = 1;
     }
     function next() { g.level++; begin(); }
     g.restart = () => start(hasLevels ? g.level : 1);
@@ -1421,6 +1430,18 @@ function arcadeElegirIdioma(l) {
     id: 'galletas', title: 'Galletas', emoji: '🍪', color: '#e8a87c', origin: "Yoshi's Cookie (Nintendo, 1992)",
     help: '<b>Desliza</b> una fila hacia los lados o una columna arriba o abajo para moverla en círculo (cuanto más largo el gesto, más casillas). Cuando una fila o columna entera tenga <b>el mismo dulce</b>, desaparece y ganas tiempo. 🌟 vale por cualquiera. ¡Que no se acabe el reloj!',
     lives: 0, levels: null,
+    demo(g) {
+      const s = g.s; if (s.clear || s.anim) return { wait: 0.2 };
+      const moves = []; for (let i = 0; i < N; i++) for (let a = 1; a < N; a++) { moves.push(['row', i, a]); moves.push(['col', i, a]); }
+      const apply = (b, [k, i, a]) => { const B = b.map((r) => r.slice()); if (k === 'row') { const row = B[i]; for (let t = 0; t < a; t++) row.unshift(row.pop()); } else { const col = B.map((r) => r[i]); for (let t = 0; t < a; t++) col.unshift(col.pop()); col.forEach((v, r) => (B[r][i] = v)); } return B; };
+      const score = (b) => { let ln = 0, best = 0; for (let r = 0; r < N; r++) { if (lineOk(b[r])) ln++; } for (let c = 0; c < N; c++) { if (lineOk(b.map((r) => r[c]))) ln++; }
+        for (let r = 0; r < N; r++) { const cnt = {}; for (const v of b[r]) cnt[v] = (cnt[v] || 0) + 1; best = Math.max(best, ...Object.values(cnt)); } for (let c = 0; c < N; c++) { const cnt = {}; for (let r = 0; r < N; r++) cnt[b[r][c]] = (cnt[b[r][c]] || 0) + 1; best = Math.max(best, ...Object.values(cnt)); } return ln * 100 + best; };
+      let best = null;
+      for (const m of moves) { const b1 = apply(s.b, m), v1 = score(b1); if (!best || v1 > best.v) best = { v: v1, m };
+        if (v1 < 100) for (const m2 of moves) { const v2 = score(apply(b1, m2)) * 0.9; if (v2 >= 100 && v2 > best.v) best = { v: v2, m }; } }
+      const [k, i, a0] = best.m, a = a0 > N / 2 ? a0 - N : a0, P = [s.ox + ((k === 'row' ? 2 : i) + 0.5) * s.cs, s.oy + ((k === 'row' ? i : 2) + 0.5) * s.cs];
+      return { swipe: [P[0], P[1], k === 'row' ? (a > 0 ? 'right' : 'left') : (a > 0 ? 'down' : 'up')], len: Math.abs(a) * s.cs, after: 0.5, say: Arcade.T('Desliza una fila o columna: haz líneas de dulces iguales', 'Slide a row or column: make lines of the same sweet') };
+    },
     setup(g) {
       g.s = { nt: 3, b: [], anim: null, clear: null, combo: 0, lines: 0, time: 60, maxT: 60 };
       const s = g.s;

@@ -74,6 +74,18 @@
     id: 'cuadra', title: 'Cuadra', emoji: '🟦', color: '#4dabf7', origin: 'Quarth (Konami, 1989)',
     help: 'Las piezas bajan poco a poco. <b>Toca una columna</b> para disparar un bloque hacia arriba: se pega debajo de lo que haya. Cuando una figura forma un <b>rectángulo perfecto</b>, desaparece. Arrastra para mover la nave. Si un bloque llega abajo, se acaba.',
     lives: 0, levels: null,
+    demo(g) {
+      const s = g.s; if (s.cool > 0) return { wait: 0.1 };
+      let best = null;
+      for (let c = 0; c < COLS; c++) { let r = -1; for (let k = ROWS - 1; k >= 0; k--) if (s.grid[k][c]) { r = k; break; } if (r < 0 || r + 1 >= ROWS) continue;
+        const gr = s.grid.map((row) => row.slice()); gr[r + 1][c] = { col: 'x' };
+        const seen = new Set(), st = [[r + 1, c]], cells = []; while (st.length) { const [y, x] = st.pop(), k = y * 100 + x; if (seen.has(k) || y < 0 || y >= ROWS || x < 0 || x >= COLS || !gr[y][x]) continue; seen.add(k); cells.push([y, x]); st.push([y + 1, x], [y - 1, x], [y, x + 1], [y, x - 1]); }
+        let r1 = 99, r2 = -1, c1 = 99, c2 = -1; for (const [y, x] of cells) { r1 = Math.min(r1, y); r2 = Math.max(r2, y); c1 = Math.min(c1, x); c2 = Math.max(c2, x); }
+        const w = c2 - c1 + 1, h = r2 - r1 + 1, miss = w * h - cells.length, v = (w >= 2 && h >= 2 && !miss ? 100 : -miss * 3) + r + Math.random();
+        if (!best || v > best.v) best = { v, c }; }
+      if (!best) return { wait: 0.3 };
+      return { tap: [s.ox + (best.c + 0.5) * s.cs, s.oy + (ROWS - 1) * s.cs], after: 0.12, say: best.v >= 100 ? Arcade.T('¡Rectángulo completo: desaparece!', 'Rectangle complete: it vanishes!') : Arcade.T('Toca una columna para disparar un bloque', 'Tap a column to fire a block') };
+    },
     setup(g) {
       g.s = { grid: [], pid: 0, since: 0, gap: 3, sc: 3, cool: 0, done: 0, scT: 1.5 };
       const s = g.s;

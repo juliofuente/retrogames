@@ -75,6 +75,21 @@
     id: 'columnas', title: 'Columnas', emoji: '💎', color: '#da77f2', origin: 'Columns (Sega, 1990)',
     help: 'Caen columnas de tres joyas. <b>Arrastra</b> a los lados para moverlas, <b>toca</b> para rotar el orden de las tres y <b>desliza hacia abajo</b> para dejarlas caer rápido. Junta <b>3 o más iguales</b> en horizontal, vertical o diagonal para eliminarlas; las cadenas multiplican. Elimina las joyas que pide cada nivel. Si se apilan hasta arriba, pierdes una vida.',
     lives: 3, levels: 0, cap: 20,
+    demo(g) {
+      const s = g.s; if (!s.p || s.pending || s.clearT > 0) return { wait: 0.15 };
+      if (s.dplan && s.dplan.id === s.p) { const pl = s.dplan;
+        if (pl.rot > 0) { pl.rot--; return { tap: [s.ox + s.cs * C / 2, s.oy + s.cs * 3], after: 0.15 }; }
+        if (s.p.c !== pl.c) { const x0 = s.ox + s.cs * C / 2; return { drag: [[x0, s.oy + s.cs * 4], [x0 + (pl.c - s.p.c) * s.cs, s.oy + s.cs * 4]], dur: 0.3, after: 0.1 }; }
+        s.dplan = null; return { swipe: [s.ox + (s.p.c + 0.5) * s.cs, s.oy + s.cs * 3, 'down'], len: 80, after: 0.4, say: Arcade.T('Tres joyas iguales en línea (también en diagonal)', 'Three equal jewels in a line (diagonals too)') }; }
+      let best = null, gg = s.p.g.slice();
+      for (let rot = 0; rot < 3; rot++) { for (let c = 0; c < C; c++) { let r = 0; while (r < R && s.b[r][c] == null) r++; const top = r - 3; if (top < 0) continue;
+          const b = s.b.map((row) => row.slice()); for (let k = 0; k < 3; k++) b[top + k][c] = gg[k]; let kill = 0;
+          for (let y = 0; y < R; y++) for (let x = 0; x < C; x++) { const v = b[y][x]; if (v == null) continue; for (const [dy, dx] of [[0, 1], [1, 0], [1, 1], [1, -1]]) { let n = 1; while (y + dy * n < R && x + dx * n >= 0 && x + dx * n < C && b[y + dy * n][x + dx * n] === v) n++; if (n >= 3) kill += n; } }
+          const v = kill * 10 + top * 0.8 + Math.random(); if (!best || v > best.v) best = { v, c, rot }; }
+        gg.unshift(gg.pop()); }
+      if (!best) return { wait: 0.3 };
+      s.dplan = { id: s.p, c: best.c, rot: best.rot }; return { wait: 0.05 };
+    },
     setup(g) {
       g.s = { b: [], flash: [], pending: null, cleared: 0, chain: 0 };
       const s = g.s; for (let r = 0; r < R; r++) s.b.push(new Array(C).fill(null));

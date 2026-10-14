@@ -58,6 +58,20 @@
     id: 'poker', title: 'Póker', emoji: '🃏', color: '#e03131', origin: 'Video Poker / Card Game',
     help: 'Póker de máquina. Pulsa <b>Repartir</b> para recibir 5 cartas. <b>Toca</b> las que quieras <b>guardar</b> y pulsa <b>Cambiar</b>: las demás se sustituyen. La mano final paga según la tabla, desde una simple pareja hasta la escalera real. Llega a las fichas objetivo antes de quedarte sin manos.',
     lives: 3, levels: 0, cap: 30, evalHand,
+    demo(g) {
+      const s = g.s; if (s.done || s.flip > 0) return { wait: 0.3 };
+      const b = s.btn, BT = [b.x + b.w / 2, b.y + b.h / 2];
+      if (s.phase === 'bet') return { tap: BT, after: 0.6, say: Arcade.T('Reparte cinco cartas', 'Deal five cards') };
+      if (s.phase !== 'hold') return { wait: 0.3 };
+      const h = s.hand, want = [0, 0, 0, 0, 0], ev = evalHand(h);
+      if (ev >= 0 && ev <= 5) want.fill(1);
+      else { const cnt = {}; h.forEach((c) => (cnt[c.r] = (cnt[c.r] || 0) + 1)); h.forEach((c, i) => { if (cnt[c.r] >= 2) want[i] = 1; });
+        if (!want.some(Boolean)) { const suit = {}; h.forEach((c) => (suit[c.s] = (suit[c.s] || 0) + 1)); const fs = Object.keys(suit).find((k) => suit[k] >= 4); if (fs != null) h.forEach((c, i) => { if (c.s == fs) want[i] = 1; }); else h.forEach((c, i) => { if (c.r >= 9) want[i] = 1; }); } }
+      const steps = [];
+      for (let i = 0; i < 5; i++) if (!!s.hold[i] !== !!want[i]) { const R = cardRect(s, i); steps.push({ tap: [R.x + R.w / 2, R.y + R.h / 2], after: 0.2, say: steps.length ? null : Arcade.T('Toca las cartas que quieres guardar', 'Tap the cards you want to keep') }); }
+      steps.push({ tap: BT, after: 1.2, say: Arcade.T('Cambia el resto', 'Swap the rest') });
+      return steps;
+    },
     setup(g) {
       const L = g.lv; g.s = { credits: 100, bet: 5, phase: 'bet', hand: [], hold: [0, 0, 0, 0, 0], flip: 0, flipMask: [1, 1, 1, 1, 1], result: null, done: false };
       const s = g.s; s.hands = s.hands0 = clamp(26 - Math.floor(L / 3), 14, 26); s.target = 100 + Math.round(s.hands0 * 2.2 / 5) * 5 + Math.min(L, 30); geo(g);

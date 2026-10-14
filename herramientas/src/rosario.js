@@ -69,6 +69,16 @@
     id: 'rosario', title: 'Rosario', emoji: '🐸', color: '#94d82d', origin: 'Zuma (PopCap)',
     help: 'Una cadena de bolas avanza por la espiral hacia la 💀. <b>Toca</b> donde quieras disparar: la bola se mete en la cadena y si juntas <b>3 o más</b> del mismo color, explotan. Si el hueco que queda tiene el mismo color a los dos lados, se atraen y pueden encadenar explosiones. <b>Toca la rana</b> para cambiar la bola actual por la siguiente. Vacía la cadena antes de que llegue al agujero.',
     lives: 3, levels: 0, cap: 25,
+    demo(g) {
+      const s = g.s; if (s.shot || s.cool > 0 || s.done || s.cur == null || !s.chain.length) return { wait: 0.2 };
+      const A = s.chain; let best = null;
+      for (let i = 0; i < A.length; i++) { if (A[i].d < 0) continue; let n = 0; for (let j = i; j < A.length && A[j].c === s.cur; j++) n++; for (let j = i - 1; j >= 0 && A[j].c === s.cur; j--) n++;
+        const v = (A[i].c === s.cur ? 10 + n * 10 : 0) + A[i].d / s.len * 5; if (!best || v > best.v) best = { v, i }; }
+      const hasCur = A.some((b) => b.c === s.cur && b.d >= 0), hasNxt = A.some((b) => b.c === s.nxt && b.d >= 0);
+      if (!hasCur && hasNxt) return { tap: [s.cx, s.cy], after: 0.3, say: Arcade.T('Toca tu cara para cambiar de bola', 'Tap your face to swap balls') };
+      const [x, y] = pos(s, A[best.i].d);
+      return { tap: [x, y], after: 0.45, say: Arcade.T('Toca para disparar: 3 del mismo color revientan', 'Tap to shoot: 3 of a colour burst') };
+    },
     setup(g) {
       g.s = { chain: [], shot: null, cool: 0, aim: -Math.PI / 2, frog: FROGS[(g.level - 1) % FROGS.length], combo: 0 };
       const s = g.s, L = g.lv; s.r = clamp(Math.min(g.W, g.bot - g.top) / 42, 9, 18); s.D = s.r * 2;

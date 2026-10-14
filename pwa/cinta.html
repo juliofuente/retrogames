@@ -117,6 +117,19 @@
     id: 'cinta', title: 'Cinta', emoji: '🎛️', color: '#ffd43b', origin: 'Klax (Atari Games, 1990)',
     help: 'Las fichas bajan dando vueltas por una <b>cinta</b> de cinco carriles. Mueve la <b>paleta</b> (toca o arrastra hacia un carril) para atraparlas; caben 5. <b>Desliza hacia abajo</b> (o toca el carril donde está la paleta) para soltar la de arriba en la cubeta de abajo y <b>desliza hacia arriba</b> para devolverla a la cinta. Alinea <b>3 o más del mismo color</b> en horizontal, vertical o <b>diagonal</b> (la que más puntúa) para hacer un KLAX. Cada nivel tiene su objetivo. Si se te escapan 3 fichas o se llena la cubeta, pierdes una vida.',
     lives: 3, levels: 0, cap: 18,
+    demo(g) {
+      const s = g.s; const LX = (l) => s.bx0 + (l + 0.5) * s.cs, LY = s.binTop - s.cs * 0.6;
+      const lineIf = (c, v) => { const col = s.bin[c], r = col.indexOf(null); if (r < 0) return -1; const at = (x, y) => (x === c && y === r ? v : x >= 0 && x < NL && y >= 0 && y < BINR ? s.bin[x][y] : undefined);
+        let best = 0; for (const [dc, dr] of [[1, 0], [0, 1], [1, 1], [1, -1]]) { let n = 1; for (let k = 1; at(c + dc * k, r + dr * k) === v; k++) n++; for (let k = 1; at(c - dc * k, r - dr * k) === v; k++) n++; best = Math.max(best, n); } return best - r * 0.05; };
+      const moveOrDrop = (l, say) => (s.pl === l ? { tap: [LX(l), LY], after: 0.25, say } : { tap: [LX(l), LY], after: 0.15 });
+      const top = s.stack.length ? s.stack[s.stack.length - 1] : null;
+      if (top != null) { let best = null; for (let c = 0; c < NL; c++) { const n = lineIf(c, top); if (n >= 3 && (!best || n > best.n)) best = { n, c }; }
+        if (best) return moveOrDrop(best.c, Arcade.T('Suelta en la cubeta: ¡3 en línea es un KLAX!', 'Drop into the bin: 3 in a row is a KLAX!')); }
+      const coming = s.tiles.filter((t) => !t.back).sort((a, b) => (b.step + b.t) - (a.step + a.t))[0];
+      if (coming && s.stack.length < MAXSTACK && coming.step + coming.t > STEPS - 3.5) { if (s.pl !== coming.lane) return { tap: [LX(coming.lane), LY], after: 0.1, say: Arcade.T('Pon la paleta bajo la ficha que llega', 'Put the paddle under the incoming tile') }; return { wait: 0.1 }; }
+      if (top != null && (s.stack.length >= 3 || !coming)) { let best = null; for (let c = 0; c < NL; c++) { const n = lineIf(c, top); if (n > -1 && (!best || n > best.n)) best = { n, c }; } if (best) return moveOrDrop(best.c, null); }
+      return { wait: 0.15 };
+    },
     setup(g) {
       g.s = { tiles: [], stack: [], pl: 2, bin: [], spawnT: 1, miss: 0, plx: 2 };
       const s = g.s;

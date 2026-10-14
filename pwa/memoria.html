@@ -64,6 +64,20 @@
     id: 'memoria', title: 'Memoria', emoji: '🃏', color: '#3bc9db', origin: 'Concentration',
     help: '<b>Toca</b> dos cartas para darles la vuelta. Si son iguales se quedan; si no, se vuelven a tapar: ¡recuerda dónde estaban! Encuentra todas las parejas con los menos movimientos posibles. En cada nivel hay más cartas y un juego de dibujos nuevo. Ideal para jugar por turnos.',
     lives: 0, levels: 0, cap: 30,
+    demo(g) {
+      const s = g.s; if (s.peek > 0 || s.busy) return { wait: 0.25 };
+      s.dmem = s.dmem || {}; s.cards.forEach((c, i) => { if (c.up) s.dmem[i] = c.e; });
+      const T = (i) => ({ tap: [cx(s, i), cy(s, i)], after: 0.45 });
+      const hidden = (i) => !s.cards[i].up && !s.cards[i].done;
+      if (s.open.length === 1) { const a = s.open[0], e = s.cards[a].e; const known = Object.keys(s.dmem).map(Number).find((i) => i !== a && s.dmem[i] === e && hidden(i));
+        if (known != null) return { ...T(known), say: Arcade.T('¡Me acordaba de dónde estaba su pareja!', 'I remembered where its twin was!') };
+        const unk = s.cards.map((_, i) => i).filter((i) => hidden(i) && s.dmem[i] == null); return T(unk.length ? unk[0] : s.cards.findIndex((_, i) => hidden(i) && i !== a)); }
+      const ks = Object.keys(s.dmem).map(Number).filter(hidden);
+      for (const a of ks) for (const b of ks) if (a < b && s.dmem[a] === s.dmem[b]) return [T(a), T(b)];
+      const unk = s.cards.map((_, i) => i).filter((i) => hidden(i) && s.dmem[i] == null);
+      if (!unk.length) return { wait: 0.3 };
+      return { ...T(unk[0]), say: Arcade.T('Da la vuelta a dos cartas y recuerda dónde está cada una', 'Turn two cards over and remember where each one is') };
+    },
     setup(g) {
       g.s = { open: [], busy: 0, moves: 0, pairs: 0, combo: 0 };
       const s = g.s; geo(g);

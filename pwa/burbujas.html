@@ -94,6 +94,17 @@
     id: 'burbujas', title: 'Burbujas', emoji: '🫧', color: '#4dabf7', origin: 'Magical Drop (Data East, 1995)',
     help: 'Las burbujas cuelgan del techo y bajan. <b>Toca una columna</b> para <b>tirar</b> de las burbujas de abajo del mismo color y <b>toca otra</b> para <b>lanzarlas</b> hacia arriba. Si quedan <b>3 o más iguales en vertical</b>, explotan junto con todas las del mismo color que estén pegadas. ¡Encadena explosiones! Desliza ↓ para coger más del mismo color.',
     lives: 0, levels: null,
+    demo(g) {
+      const s = g.s; const X = (c) => s.ox + (c + 0.5) * s.cs, Y = s.oy + ROWS * s.cs * 0.7;
+      const vals = s.cols.map((col) => col.map((o) => o.v)), runEnd = (col, v) => { let n = 0; for (let i = col.length - 1; i >= 0 && col[i] === v; i--) n++; return n; };
+      if (s.hand) { let best = null; for (let c = 0; c < COLS; c++) { if (vals[c].length + s.hand.n > ROWS) continue; const n = runEnd(vals[c], s.hand.v) + s.hand.n, v = (n >= 3 ? 100 : n * 5) - vals[c].length + Math.random(); if (!best || v > best.v) best = { v, c }; }
+        if (!best) return { wait: 0.3 }; return { tap: [X(best.c), Y], after: 0.4, say: best.v >= 90 ? Arcade.T('Tres o más iguales en columna: ¡revientan!', 'Three or more in a column: they pop!') : Arcade.T('Toca otra columna para lanzarlas', 'Tap another column to throw them') }; }
+      let best = null;
+      for (let a = 0; a < COLS; a++) { if (!vals[a].length) continue; const v0 = vals[a][vals[a].length - 1], k = runEnd(vals[a], v0);
+        for (let b = 0; b < COLS; b++) { if (b === a) continue; const n = runEnd(vals[b], v0) + k, v = (n >= 3 ? 100 + n : n * 5) + vals[a].length * 0.3 + Math.random(); if (!best || v > best.v) best = { v, a }; } }
+      if (!best) return { wait: 0.4 };
+      return { tap: [X(best.a), Y], after: 0.3, say: Arcade.T('Toca una columna para tirar de las burbujas de abajo', 'Tap a column to pull its bottom bubbles') };
+    },
     setup(g) {
       g.s = { cols: [], hand: null, pc: 3, pushT: 6, cleared: 0, nextLv: 60 };
       for (let c = 0; c < COLS; c++) { const col = []; for (let r = 0; r < 5; r++) col.push({ v: rc(g), pop: 0 }); g.s.cols.push(col); }

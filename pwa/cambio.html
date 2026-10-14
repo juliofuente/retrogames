@@ -104,6 +104,24 @@
     id: 'cambio', title: 'Cambio', emoji: '🪙', color: '#ffd166', origin: 'Money Idol Exchanger (Face, 1997)',
     help: '<b>Toca una columna</b> para coger las monedas de abajo; toca otra para <b>lanzarlas</b>. Cuando juntas suficientes iguales se cambian por una mayor: <b>5×1 = 5</b>, <b>2×5 = 10</b>, <b>5×10 = 50</b>, <b>2×50 = 100</b>, <b>5×100 = 500</b>, y 2×500 desaparecen. Encadena cambios para hacer combos. Las monedas bajan solas: que no lleguen hasta ti. Desliza ↓ para coger más del mismo valor.',
     lives: 0, levels: null,
+    demo(g) {
+      const s = g.s; const X = (c) => s.ox + (c + 0.5) * s.cs, Y = s.oy + ROWS * s.cs * 0.6;
+      const groupAfter = (cols, c) => { // tamaño del grupo de la moneda de abajo de la columna c
+        const v = cols[c][cols[c].length - 1], seen = new Set(), st = [[c, cols[c].length - 1]]; let n = 0;
+        while (st.length) { const [x, y] = st.pop(), k = x + ',' + y; if (seen.has(k) || x < 0 || x >= COLS || y < 0 || cols[x][y] !== v) continue; seen.add(k); n++; st.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]); } return n; };
+      const vals = s.cols.map((col) => col.map((o) => o.v));
+      if (s.hand) { let best = null;
+        for (let c = 0; c < COLS; c++) { if (vals[c].length + s.hand.n > ROWS) continue; const cols = vals.map((x) => x.slice()); for (let i = 0; i < s.hand.n; i++) cols[c].push(s.hand.v);
+          const n = groupAfter(cols, c), v = (n >= NEED[s.hand.v] ? 100 : n * 5) - vals[c].length * 0.5 + Math.random(); if (!best || v > best.v) best = { v, c }; }
+        if (!best) return { wait: 0.4 };
+        return { tap: [X(best.c), Y], after: 0.5, say: best.v >= 90 ? Arcade.T('¡Suficientes iguales: se cambian por una mayor!', 'Enough of a kind: they change into a bigger coin!') : Arcade.T('Toca otra columna para lanzarlas', 'Tap another column to throw them') }; }
+      let best = null;
+      for (let a = 0; a < COLS; a++) { if (!vals[a].length) continue; const v0 = vals[a][vals[a].length - 1]; let k = 0; for (let i = vals[a].length - 1; i >= 0 && vals[a][i] === v0; i--) k++;
+        for (let b = 0; b < COLS; b++) { if (b === a || vals[b].length + k > ROWS) continue; const cols = vals.map((x) => x.slice()); cols[a].length -= k; for (let i = 0; i < k; i++) cols[b].push(v0);
+          const n = groupAfter(cols, b), v = (n >= NEED[v0] ? 100 + v0 : n * 5) + Math.random(); if (!best || v > best.v) best = { v, a }; } }
+      if (!best) return { wait: 0.5 };
+      return { tap: [X(best.a), Y], after: 0.35, say: Arcade.T('Toca una columna para coger las monedas de abajo', 'Tap a column to grab its bottom coins') };
+    },
     setup(g) {
       g.s = { cols: [], hand: null, pc: 2, pushT: 9, lvT: 0 };
       const s = g.s;

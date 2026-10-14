@@ -67,6 +67,14 @@
     id: 'sandia', title: 'Sandía', emoji: '🍉', color: '#51cf66', origin: 'Watermelon Game / Suika',
     help: '<b>Arrastra</b> para elegir dónde soltar la fruta y <b>suelta</b> para dejarla caer. Dos frutas <b>iguales</b> que se tocan se fusionan en la siguiente: 🍒→🍓→🍇→🍊→🍋→🍎→🍐→🍑→🍍→🍈→🍉. Consigue la fruta objetivo de cada nivel. Si el montón se queda por encima de la línea de puntos, pierdes una vida.',
     lives: 3, levels: 0, cap: 12,
+    demo(g) {
+      const s = g.s; if (s.cool > 0 || s.lose) return { wait: 0.15 };
+      let x = null, best = -1e9;
+      for (const b of s.balls) { if (b.dead || b.t !== s.cur) continue; const v = -b.y; if (v > best) { best = v; x = b.x; } }
+      if (x == null) { // el hueco más bajo
+        const cols = 8, w = (s.x1 - s.x0) / cols; let hi = -1; for (let k = 0; k < cols; k++) { const cx = s.x0 + (k + 0.5) * w; let top = s.y1; for (const b of s.balls) if (!b.dead && Math.abs(b.x - cx) < b.r + w / 2) top = Math.min(top, b.y - b.r); if (top > hi) { hi = top; x = cx; } } }
+      return { tap: [clamp(x + Arcade.rand(-4, 4), s.x0 + 10, s.x1 - 10), s.line - 40], after: 0.55, say: Arcade.T('Suelta la fruta encima de otra igual: se fusionan', 'Drop the fruit on a matching one: they merge') };
+    },
     setup(g) {
       g.s = { balls: [], cool: 0, over: 0, best: 0, won: false };
       const s = g.s; geo(g);

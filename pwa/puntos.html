@@ -66,6 +66,16 @@
     id: 'puntos', title: 'Puntos', emoji: '🔵', color: '#339af0', origin: 'Dots / Two Dots',
     help: '<b>Arrastra</b> para unir puntos del <b>mismo color</b> en horizontal o vertical (mínimo 2); suelta para quitarlos. Si vuelves atrás, la línea se acorta. Si cierras un <b>cuadrado o bucle</b>, ¡desaparecen todos los puntos de ese color! Recoge los puntos que pide cada nivel antes de quedarte sin <b>movimientos</b>.',
     lives: 3, levels: 0, cap: 25,
+    demo(g) {
+      const s = g.s; if (s.over || s.path.length) return { wait: 0.3 };
+      let best = null, nodes = 0;
+      const dfs = (p) => { if (++nodes > 20000) return; const loop = new Set(p.map(([c, r]) => c * 10 + r)).size < p.length; const v = p.length + (loop ? 50 : 0); if (p.length >= 2 && (!best || v > best.v)) best = { v, p: p.slice() }; if (loop || p.length > 9) return;
+        const [c, r] = p[p.length - 1], t = s.b[c][r].t; for (const [dc, dr] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const nc = c + dc, nr = r + dr; if (nc < 0 || nr < 0 || nc >= N || nr >= N || s.b[nc][nr].t !== t) continue;
+          const i = p.findIndex(([a, b]) => a === nc && b === nr); if (i >= 0 && !(i === 0 && p.length >= 4)) continue; p.push([nc, nr]); dfs(p); p.pop(); } };
+      for (let c = 0; c < N; c++) for (let r = 0; r < N; r++) { nodes = 0; dfs([[c, r]]); }
+      if (!best) return { wait: 0.5 };
+      return { drag: best.p.map(([c, r]) => [s.ox + (c + 0.5) * s.cs, s.oy + (r + 0.5) * s.cs]), dur: 0.25 * best.p.length, after: 0.7, say: best.v >= 50 ? Arcade.T('¡Un cuadrado borra todos los de ese color!', 'A square clears every dot of that colour!') : Arcade.T('Une puntos vecinos del mismo color', 'Join neighbouring dots of the same colour') };
+    },
     setup(g) {
       g.s = { path: [], b: [], over: false };
       const s = g.s, L = g.lv; s.nt = clamp(4 + Math.floor(L / 5), 4, 6);

@@ -758,6 +758,7 @@ function arcadeElegirIdioma(l) {
     /* --- vidas y fin --- */
     g.die = function () {
       if (g.state !== 'play') return false;
+      if (g.demoOn) { A.sfx.hit(); g.mood('hurt', 1.8); g.shake(0.35, 10); g.flash('#ff3b3b', 0.25); return true; } // en la demo no se pierden vidas
       g.lives--; g.hud(); A.sfx.hit(); g.mood('hurt', 1.8); A.buzz(180); g.shake(0.35, 10); g.flash('#ff3b3b', 0.25);
       if (g.lives <= 0) { g.state = 'dying'; M.stop(); setTimeout(g.over, 900); return false; }
       return true;
@@ -769,7 +770,7 @@ function arcadeElegirIdioma(l) {
     }
     const starsHtml = (stars) => '<div class="stars">' + [1, 2, 3].map((i) => `<span class="${i <= stars ? 'on' : ''}" style="animation-delay:${0.15 + i * 0.18}s">⭐</span>`).join('') + '</div>';
     g.over = function () {
-      if (g.state === 'over') return;
+      if (g.state === 'over' || g.state === 'menu') return;
       g.state = 'over'; M.stop(); A.sfx.lose(); g.fc.t = 0; g.mood('sad', 99);
       if (g.mp) return mpOver();
       if (g.demoOn) { setTimeout(() => endDemo(), 1600); return; }
@@ -937,12 +938,19 @@ function arcadeElegirIdioma(l) {
     const DM = { q: [], cur: null, fx: 0, fy: 0, press: 0, say: null, sayT: 0, t: 0, p: null };
     function startDemo() {
       g.mp = null; g.level = 1; g.score = 0; g.lives = def.lives ?? 3; g.t = 0; g.demoOn = true;
-      Object.assign(DM, { end: false, q: [], cur: null, fx: g.W / 2, fy: g.bot - 40, press: 0, say: null, sayT: 0, t: 0, p: null });
+      Object.assign(DM, { end: false, said: false, q: [], cur: null, fx: g.W / 2, fy: g.bot - 40, press: 0, say: null, sayT: 0, t: 0, p: null });
       begin(); if (def.onStart) def.onStart(g);
     }
     function endDemo() { if (!g.demoOn) return; g.demoOn = false; if (DM.p) { g.pointers.delete(DM.p.id); DM.p = null; } menu(); }
     g.demoSay = (txt, t = 2.6) => { DM.say = A.L(String(txt)); DM.sayT = t; };
     function genericDemo() {
+      const first = !DM.said; DM.said = true;
+      const plainHelp = String(def.help || '').replace(/<[^>]+>/g, '').split(/(?<=[.!?])\s/)[0];
+      if (padOn && def.key && !(rdef && rdef.targets)) {
+        const k = A.pick(['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', ' ', ' ']);
+        return { key: k, dur: A.pick([0.08, 0.15, 0.4, 0.7]), after: A.rand(0.05, 0.35), say: first ? (def.tvHelp || plainHelp) : null };
+      }
+      if (first) g.demoSay(plainHelp, 4);
       const ts = tvTargets() || (rdef && rdef.targets ? rdef.targets(g) : null);
       if (ts && ts.length) {
         const a = A.pick(ts), c = tc(a), mode = (rdef && rdef.mode) || 'tap';
@@ -981,7 +989,7 @@ function arcadeElegirIdioma(l) {
       DM.t += dt; if (!DM.end && DM.t > (def.demoTime || 45)) { DM.end = true; if (DM.p) dUp(false); g.message(T('Fin de la demo', 'End of demo'), 1.2); setTimeout(() => endDemo(), 1300); }
       if (DM.end) return;
       if (!DM.cur) { if (!DM.q.length) demoNext(); DM.cur = DM.q.shift(); if (!DM.cur) return; const c = DM.cur; c.ph = 'go'; c.t = 0; if (c.say) g.demoSay(c.say);
-        if (c.swipe) { const [x, y, dir] = c.swipe, L = c.len || 90, D = { left: [-1, 0], right: [1, 0], up: [0, -1], down: [0, 1] }[dir]; c.drag = [[x, y], [x + D[0] * L, y + D[1] * L]]; c.dur = 0.22; }
+        if (c.swipe) { const [x, y, dir] = c.swipe, L = c.len || 90, D = { left: [-1, 0], right: [1, 0], up: [0, -1], down: [0, 1] }[dir]; c.drag = [[x, y], [x + D[0] * L, y + D[1] * L]]; c.dur = c.dur || 0.16; }
         c.at = c.tap || c.hold || (c.drag && c.drag[0]) || null; }
       const c = DM.cur; c.t += dt;
       if (c.ph === 'go') {
@@ -1006,11 +1014,12 @@ function arcadeElegirIdioma(l) {
       const sz = 46, pr = DM.press;
       if (pr > 0) { ctx.globalAlpha = 0.5 * pr; ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(DM.fx, DM.fy, 14 + (1 - pr) * 18, 0, TAU); ctx.stroke(); ctx.globalAlpha = 1; }
       A.emoji(ctx, '👆', DM.fx + 4, DM.fy + sz * 0.42, sz * (1 - pr * 0.12), { rot: -0.15 });
-      const y = g.top + 4;
-      ctx.fillStyle = 'rgba(0,0,0,.55)'; A.rr(ctx, g.W / 2 - 120, y, 240, 26, 13); ctx.fill();
-      A.txt(ctx, T('👀 DEMO · toca para jugar tú', '👀 DEMO · tap to play yourself'), g.W / 2, y + 13, 13, '#ffd43b', 'center', 900);
-      if (DM.say && DM.sayT > 0) { const a = Math.min(1, DM.sayT * 3); ctx.globalAlpha = a; ctx.font = '800 15px ' + A.FONT; const w = Math.min(g.W - 24, ctx.measureText(DM.say).width + 30), yy = g.bot - 54;
-        ctx.fillStyle = 'rgba(0,0,0,.72)'; A.rr(ctx, g.W / 2 - w / 2, yy, w, 34, 17); ctx.fill(); A.txt(ctx, DM.say, g.W / 2, yy + 17, 15, '#fff', 'center', 800); ctx.globalAlpha = 1; }
+      const y = g.top + 4, bw = 86, blink = 0.75 + 0.25 * Math.sin(g.rt * 4);
+      ctx.globalAlpha = blink; ctx.fillStyle = 'rgba(0,0,0,.6)'; A.rr(ctx, g.W - bw - 8, y, bw, 24, 12); ctx.fill();
+      A.txt(ctx, '👀 DEMO', g.W - 8 - bw / 2, y + 12, 13, '#ffd43b', 'center', 900); ctx.globalAlpha = 1;
+      const say = DM.say && DM.sayT > 0 ? DM.say : T('Toca la pantalla para jugar tú', 'Tap the screen to play yourself'), a = DM.say && DM.sayT > 0 ? Math.min(1, DM.sayT * 3) : 0.75;
+      ctx.globalAlpha = a; ctx.font = '800 15px ' + A.FONT; const w = Math.min(g.W - 24, ctx.measureText(say).width + 30), yy = g.bot - 54;
+      ctx.fillStyle = 'rgba(0,0,0,.72)'; A.rr(ctx, g.W / 2 - w / 2, yy, w, 34, 17); ctx.fill(); A.txt(ctx, say, g.W / 2, yy + 17, 15, '#fff', 'center', 800); ctx.globalAlpha = 1;
     }
     function next() { g.level++; begin(); }
     g.restart = () => start(hasLevels ? g.level : 1);
@@ -1476,6 +1485,19 @@ function arcadeElegirIdioma(l) {
     id: 'cinta', title: 'Cinta', emoji: '🎛️', color: '#ffd43b', origin: 'Klax (Atari Games, 1990)',
     help: 'Las fichas bajan dando vueltas por una <b>cinta</b> de cinco carriles. Mueve la <b>paleta</b> (toca o arrastra hacia un carril) para atraparlas; caben 5. <b>Desliza hacia abajo</b> (o toca el carril donde está la paleta) para soltar la de arriba en la cubeta de abajo y <b>desliza hacia arriba</b> para devolverla a la cinta. Alinea <b>3 o más del mismo color</b> en horizontal, vertical o <b>diagonal</b> (la que más puntúa) para hacer un KLAX. Cada nivel tiene su objetivo. Si se te escapan 3 fichas o se llena la cubeta, pierdes una vida.',
     lives: 3, levels: 0, cap: 18,
+    demo(g) {
+      const s = g.s; const LX = (l) => s.bx0 + (l + 0.5) * s.cs, LY = s.binTop - s.cs * 0.6;
+      const lineIf = (c, v) => { const col = s.bin[c], r = col.indexOf(null); if (r < 0) return -1; const at = (x, y) => (x === c && y === r ? v : x >= 0 && x < NL && y >= 0 && y < BINR ? s.bin[x][y] : undefined);
+        let best = 0; for (const [dc, dr] of [[1, 0], [0, 1], [1, 1], [1, -1]]) { let n = 1; for (let k = 1; at(c + dc * k, r + dr * k) === v; k++) n++; for (let k = 1; at(c - dc * k, r - dr * k) === v; k++) n++; best = Math.max(best, n); } return best - r * 0.05; };
+      const moveOrDrop = (l, say) => (s.pl === l ? { tap: [LX(l), LY], after: 0.25, say } : { tap: [LX(l), LY], after: 0.15 });
+      const top = s.stack.length ? s.stack[s.stack.length - 1] : null;
+      if (top != null) { let best = null; for (let c = 0; c < NL; c++) { const n = lineIf(c, top); if (n >= 3 && (!best || n > best.n)) best = { n, c }; }
+        if (best) return moveOrDrop(best.c, Arcade.T('Suelta en la cubeta: ¡3 en línea es un KLAX!', 'Drop into the bin: 3 in a row is a KLAX!')); }
+      const coming = s.tiles.filter((t) => !t.back).sort((a, b) => (b.step + b.t) - (a.step + a.t))[0];
+      if (coming && s.stack.length < MAXSTACK && coming.step + coming.t > STEPS - 3.5) { if (s.pl !== coming.lane) return { tap: [LX(coming.lane), LY], after: 0.1, say: Arcade.T('Pon la paleta bajo la ficha que llega', 'Put the paddle under the incoming tile') }; return { wait: 0.1 }; }
+      if (top != null && (s.stack.length >= 3 || !coming)) { let best = null; for (let c = 0; c < NL; c++) { const n = lineIf(c, top); if (n > -1 && (!best || n > best.n)) best = { n, c }; } if (best) return moveOrDrop(best.c, null); }
+      return { wait: 0.15 };
+    },
     setup(g) {
       g.s = { tiles: [], stack: [], pl: 2, bin: [], spawnT: 1, miss: 0, plx: 2 };
       const s = g.s;

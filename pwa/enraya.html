@@ -96,6 +96,14 @@
     id: 'enraya', title: 'En raya', emoji: '❌', color: '#e8590c', origin: 'Tic Tac Toe / Renju',
     help: 'Juegas contra la máquina por turnos: <b>toca</b> una casilla vacía para poner tu ficha. Haz una línea (horizontal, vertical o diagonal) antes que ella. Empieza como el tres en raya (3×3), luego cuatro en raya y al final <b>gomoku</b>: 5 en raya en tableros cada vez más grandes contra una máquina más lista. El empate repite el nivel.',
     lives: 3, levels: 0, cap: 20,
+    demo(g) {
+      const s = g.s; if (s.done || s.turn !== 1) return { wait: 0.3 };
+      let best = -1;
+      if (s.n === 3) { let bs = 9; for (let i = 0; i < 9; i++) if (!s.b[i]) { s.b[i] = 1; const x = i % 3, y = (i / 3) | 0; const v = line(s, x, y, 1) ? -10 : s.b.every(Boolean) ? 0 : minimax(s, 2, 1)[0]; s.b[i] = 0; if (v < bs) { bs = v; best = i; } } }
+      else { let bs = -1; for (let i = 0; i < s.b.length; i++) if (!s.b[i]) { const x = i % s.n, y = (i / s.n) | 0; if (!near(s, x, y)) continue; const v = evalCell(s, x, y, 1) * 1.2 + evalCell(s, x, y, 2) + Math.random(); if (v > bs) { bs = v; best = i; } } }
+      if (best < 0) best = Math.floor(s.b.length / 2);
+      return { tap: [s.ox + (best % s.n + 0.5) * s.cs, s.oy + (Math.floor(best / s.n) + 0.5) * s.cs], after: 0.5, say: Arcade.T('Haz una línea antes que la máquina', 'Make a line before the machine does') };
+    },
     setup(g) {
       const [n, k, noise] = cfg(g.lv);
       g.s = { n, k, noise, b: new Array(n * n).fill(0), pop: new Array(n * n).fill(0), turn: 1, moves: 0, done: false, think: 0, pair: PAIRS[(g.level - 1) % PAIRS.length], winLine: null, last: -1 };

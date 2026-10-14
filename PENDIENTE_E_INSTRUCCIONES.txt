@@ -5,7 +5,9 @@ OBJETIVO
 --------
 Rehacer en JS + emojis (sin Phaser) todos los juegos de https://emanueleferonato.com/games-covered/ para la
 colección Pro (pwa/indexpro.html), con niveles infinitos, animaciones, es/en y soporte TV. Plan: ~14 lotes de 10.
-Hechos: lotes 1–7 (90 juegos Pro, ver HECHO.txt). Quedan unos 60 títulos (lotes 8–14).
+Hechos: lotes 1–7 (90 juegos Pro, ver HECHO.txt).
+Pendiente también: demos propias para los juegos de acción, plataformas, un toque, física, estrategia y deportes
+(hoy usan la demo genérica, que enseña el control pero no juega bien). Quedan unos 60 títulos (lotes 8–14).
 
 Criterios ya decididos:
 · Si varios títulos comparten mecánica se fusionan en un juego (el campo "origin" lista todos los títulos).
@@ -115,6 +117,9 @@ Requisitos: Python 3, Node.js, y para las pruebas: pip install playwright && pla
      Arcade.FOES / Arcade.foe(n). Lo que se mueva, dibújalo con Arcade.emojiTo(ctx, e, x, y, tam, dx, dy) y, si el emoji
      es nuevo, añade hacia dónde mira en Arcade.FACING (common.js). El pad virtual 🎮 sale solo si el juego tiene key()
      o tv.targets (pad: false para quitarlo).
+   · Demo: añade demo(g) que devuelva pasos ({ tap }, { drag }, { swipe }, { hold }, { key }, { wait }, con say/after);
+     ver pwa/README.md («Demo automática»). Pruébala con el botón 👀 Ver demo: debería jugar con sentido y explicar
+     la mecánica con 1–3 frases cortas.
    · Para reiniciar nivel tras perder vida: setTimeout(() => { if (g.state==='play' && g.die()) Arcade.current.def.setup(g); }, 1200).
 
 2) Registrar y construir
