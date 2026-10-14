@@ -1,0 +1,156 @@
+// Lumina|#0d0a1f
+(function () {
+  const { ri, clamp } = Arcade;
+  const PAL = [['#ff922b', '#f1f3f5'], ['#4dabf7', '#ffd43b'], ['#f06595', '#63e6be'], ['#845ef7', '#c0eb75'], ['#fa5252', '#74c0fc'], ['#fcc419', '#da77f2']];
+  const SKY = [['#2b1a4d', '#0d0a1f'], ['#0b3d5c', '#04121c'], ['#4d1a3a', '#1a0612'], ['#1a2e4d', '#060b14'], ['#3d1414', '#120404'], ['#33204d', '#0e0718']];
+
+  function geo(g) {
+    const s = g.s, Ha = g.bot - g.top - 70;
+    s.cs = Math.min((g.W - 16) / s.C, Ha / s.R); s.ox = (g.W - s.cs * s.C) / 2; s.oy = g.top + 62 + (Ha - s.cs * s.R) / 2;
+  }
+  const rnd = () => [[ri(0, 1), ri(0, 1)], [ri(0, 1), ri(0, 1)]];
+  function free(s, x, y) { return x >= 0 && x < s.C && y < s.R && (y < 0 || !s.b[y][x]); }
+  function fits(s, x, y) { return free(s, x, y) && free(s, x + 1, y) && free(s, x, y + 1) && free(s, x + 1, y + 1); }
+  function spawn(g) { const s = g.s; s.p = { x: Math.floor(s.C / 2) - 1, y: -2, k: s.next.shift() }; s.next.push(rnd()); s.ft = 0; s.lockT = 0; }
+  function move(g, dx) { const s = g.s; if (!s.p) return false; if (fits(s, s.p.x + dx, s.p.y)) { s.p.x += dx; return true; } return false; }
+  function rotate(g) { const s = g.s; if (!s.p) return; const [[a, b], [c, d]] = s.p.k; s.p.k = [[c, a], [d, b]]; Arcade.sfx.move(); }
+  function gravity(s) {
+    for (let x = 0; x < s.C; x++) { const col = []; for (let y = s.R - 1; y >= 0; y--) if (s.b[y][x]) col.push(s.b[y][x]); for (let y = s.R - 1, i = 0; y >= 0; y--, i++) s.b[y][x] = col[i] || null; }
+  }
+  function mark(s) {
+    for (const row of s.b) for (const v of row) if (v) v.m = false;
+    let n = 0;
+    for (let y = 0; y < s.R - 1; y++) for (let x = 0; x < s.C - 1; x++) {
+      const a = s.b[y][x], b = s.b[y][x + 1], c = s.b[y + 1][x], d = s.b[y + 1][x + 1];
+      if (a && b && c && d && a.k === b.k && a.k === c.k && a.k === d.k) { a.m = b.m = c.m = d.m = true; n++; }
+    }
+    return n;
+  }
+  function land(g) {
+    const s = g.s, p = s.p; s.p = null;
+    const over = p.y < 0;
+    for (let dy = 0; dy < 2; dy++) for (let dx = 0; dx < 2; dx++) { const y = p.y + dy; if (y >= 0) s.b[y][p.x + dx] = { k: p.k[dy][dx], m: false, del: false, pop: 1 }; }
+    Arcade.tone(160, 0.06, 'square', 0.06);
+    gravity(s);
+    if (over && (s.b[0][p.x] || s.b[0][p.x + 1])) {
+      g.message(Arcade.T('¡Desbordado!', 'Overflow!'), 1.2);
+      if (g.die()) { for (const row of s.b) row.fill(null); spawn(g); }
+      return;
+    }
+    if (mark(s)) Arcade.sfx.coin();
+    spawn(g);
+    if (!fits(s, s.p.x, 0)) { g.message(Arcade.T('¡Desbordado!', 'Overflow!'), 1.2); s.p = null; if (g.die()) { for (const row of s.b) row.fill(null); spawn(g); } }
+  }
+  function hard(g) { const s = g.s; if (!s.p) return; let n = 0; while (fits(s, s.p.x, s.p.y + 1)) { s.p.y++; n++; } g.addScore(n); land(g); g.shake(0.08, 3); }
+  function flush(g) {
+    const s = g.s; let sq = 0;
+    for (let y = 0; y < s.R - 1; y++) for (let x = 0; x < s.C - 1; x++) { const a = s.b[y][x], b = s.b[y][x + 1], c = s.b[y + 1][x], d = s.b[y + 1][x + 1]; if (a && b && c && d && a.del && b.del && c.del && d.del && a.k === b.k && a.k === c.k && a.k === d.k) sq++; }
+    let cells = 0;
+    for (let y = 0; y < s.R; y++) for (let x = 0; x < s.C; x++) { const v = s.b[y][x]; if (v && v.del) { g.burst(s.ox + (x + 0.5) * s.cs, s.oy + (y + 0.5) * s.cs, { n: 2, color: PAL[s.pal][v.k], speed: 120, size: 3 }); s.b[y][x] = null; cells++; } }
+    if (!cells) return;
+    gravity(s); mark(s);
+    s.squares += sq;
+    const bonus = sq >= 4 ? sq * 4 : 0;
+    g.addScore((sq * 40 + bonus * 10) * g.lv, g.W / 2, s.oy + s.R * s.cs * 0.4);
+    Arcade.sfx.combo(Math.min(12, sq)); if (sq >= 4) { g.flash(PAL[s.pal][0], 0.15); g.float(sq + ' ×⬛', g.W / 2, s.oy + s.R * s.cs * 0.3, '#fff', 26); }
+    if (s.squares >= s.need) { s.won = true; setTimeout(() => { if (g.state === 'play') g.win(); }, 500); }
+  }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Cuadrados de luz al ritmo', deco: ['🟧', '⬜', '🎵', '✨', '🟦', '🟨'], font: 'wide', bg: ['#2b1a4d', '#0d0a1f'],
+    music: { mode: 'minor', bpm: 128, wave: 'sawtooth', style: 'drive', root: 57 }, voice: { wave: 'sine', mul: 1.2, echo: 0.4 },
+    ambient: { e: ['✦'], n: 12, vy: 0, sway: 0, twinkle: 1, alpha: 0.25, size: [6, 12] },
+    en: { title: 'Lumina', tag: 'Squares of light to the beat', help: 'Blocks of 2×2 squares in two colours fall down. <b>Drag</b> sideways to move them, <b>tap</b> to rotate, <b>swipe down</b> to drop. Each square falls on its own when it lands. Make 2×2 <b>squares of one colour</b>: they light up and the <b>light bar</b> sweeping across the board wipes them out. Clear the squares each level asks for. If the blocks reach the top, you lose a life.', tvHelp: '◀ ▶ move · ▲ or OK rotate · ▼ drop faster.', dict: { 'Cuadrados: ': 'Squares: ', '¡Desbordado!': 'Overflow!', 'Siguiente': 'Next' } },
+    tvHelp: '◀ ▶ mover · ▲ u OK girar · ▼ bajar rápido.',
+    id: 'lumina', title: 'Lumina', emoji: '🟧', color: '#ff922b', origin: 'Lumines (Q Entertainment, 2004)',
+    help: 'Caen bloques de 2×2 cuadritos de dos colores. <b>Arrastra</b> a los lados para moverlos, <b>toca</b> para girarlos, <b>desliza hacia abajo</b> para soltarlos. Al caer, cada cuadrito baja por su cuenta. Forma <b>cuadrados de 2×2 de un color</b>: se iluminan y la <b>barra de luz</b> que barre el tablero los borra. Borra los cuadrados que pide cada nivel. Si los bloques llegan arriba, pierdes una vida.',
+    lives: 3, levels: 0, cap: 25,
+    setup(g) {
+      const wide = g.W > g.H;
+      g.s = { C: wide ? 16 : 10, R: wide ? 10 : 12, next: [rnd(), rnd()], squares: 0, tl: 0, pal: (g.level - 1) % PAL.length };
+      const s = g.s; s.b = [...Array(s.R)].map(() => new Array(s.C).fill(null));
+      s.need = 6 + Math.min(g.lv, 25) * 2;
+      s.fall = Math.max(0.12, 0.75 * Math.pow(0.92, g.lv - 1));
+      s.sweep = Math.max(2.6, 4.6 - g.lv * 0.06);
+      const junk = g.lv >= 4 ? Math.min(4, Math.floor(g.lv / 4)) : 0;
+      for (let y = s.R - junk; y < s.R; y++) for (let x = 0; x < s.C; x++) if (Math.random() < 0.6) s.b[y][x] = { k: ri(0, 1), m: false, del: false };
+      gravity(s); mark(s);
+      geo(g); spawn(g);
+    },
+    layout(g) { if (g.s.b) geo(g); },
+    down(g, p) { const s = g.s; s.dx0 = p.x; s.dy0 = p.y; s.moved = false; s.t0 = performance.now(); },
+    move(g, p) {
+      const s = g.s; if (s.dx0 == null || !s.p) return;
+      while (p.x - s.dx0 > s.cs * 0.9) { s.dx0 += s.cs * 0.9; if (move(g, 1)) Arcade.sfx.tick(); s.moved = true; }
+      while (s.dx0 - p.x > s.cs * 0.9) { s.dx0 -= s.cs * 0.9; if (move(g, -1)) Arcade.sfx.tick(); s.moved = true; }
+      while (p.y - s.dy0 > s.cs * 0.9 && performance.now() - s.t0 > 180) { s.dy0 += s.cs * 0.9; if (s.p && fits(s, s.p.x, s.p.y + 1)) { s.p.y++; g.addScore(1); } s.moved = true; }
+    },
+    up(g) { g.s.dx0 = null; },
+    tap(g) { rotate(g); },
+    swipe(g, d) { const s = g.s; if (d === 'down' && (!s.moved || performance.now() - s.t0 < 200)) hard(g); },
+    key(g, k, d) {
+      const s = g.s;
+      if (k === 'ArrowDown') { s.soft = d; return; }
+      if (!d) return;
+      if (k === 'ArrowLeft') move(g, -1); else if (k === 'ArrowRight') move(g, 1);
+      else if (k === 'ArrowUp' || k === ' ') rotate(g); else if (k === 'r') hard(g);
+    },
+    update(g, dt) {
+      const s = g.s;
+      for (const row of s.b) for (const v of row) if (v && v.pop) v.pop = Math.max(0, v.pop - dt * 4);
+      // barra de luz
+      const prev = Math.floor(s.tl); s.tl += dt * s.C / s.sweep;
+      const cur = Math.floor(s.tl);
+      for (let c = prev + 1; c <= cur; c++) {
+        if (c >= s.C) { flush(g); s.tl -= s.C; break; }
+        let any = false; for (let y = 0; y < s.R; y++) { const v = s.b[y][c]; if (v && v.m) { v.del = true; any = true; } }
+        if (!any) flush(g);
+        Arcade.tone(c % 4 === 0 ? 880 : 660, 0.02, 'sine', 0.015);
+      }
+      if (s.won || !s.p) return;
+      s.ft += dt; const iv = s.soft ? Math.min(0.04, s.fall) : s.fall;
+      while (s.ft >= iv) {
+        s.ft -= iv;
+        if (fits(s, s.p.x, s.p.y + 1)) { s.p.y++; if (s.soft) g.addScore(1); }
+        else { s.lockT += iv; if (s.lockT > 0.35) { land(g); return; } }
+      }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H, sky = SKY[s.pal || 0];
+      const bg = ctx.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, sky[0]); bg.addColorStop(1, sky[1]);
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      if (!s.b) return;
+      const cs = s.cs, P = PAL[s.pal];
+      const beat = Math.pow(1 - ((g.rt * 128 / 60) % 1), 3);
+      ctx.fillStyle = 'rgba(0,0,0,.45)'; ctx.fillRect(s.ox, s.oy, cs * s.C, cs * s.R);
+      ctx.strokeStyle = 'rgba(255,255,255,' + (0.05 + beat * 0.05) + ')'; ctx.lineWidth = 1;
+      for (let x = 1; x < s.C; x++) { ctx.beginPath(); ctx.moveTo(s.ox + x * cs, s.oy); ctx.lineTo(s.ox + x * cs, s.oy + s.R * cs); ctx.stroke(); }
+      for (let y = 1; y < s.R; y++) { ctx.beginPath(); ctx.moveTo(s.ox, s.oy + y * cs); ctx.lineTo(s.ox + s.C * cs, s.oy + y * cs); ctx.stroke(); }
+      const cell = (x, y, k, m, del, a, pop) => {
+        const px = s.ox + x * cs, py = s.oy + y * cs, z = (pop || 0) * 3;
+        ctx.globalAlpha = a ?? 1;
+        ctx.fillStyle = P[k]; Arcade.rr(ctx, px + 1.5 - z, py + 1.5 - z, cs - 3 + z * 2, cs - 3 + z * 2, 4); ctx.fill();
+        ctx.fillStyle = 'rgba(255,255,255,.28)'; Arcade.rr(ctx, px + 4, py + 4, cs - 8, cs * 0.25, 3); ctx.fill();
+        if (m) { ctx.strokeStyle = del ? '#fff' : 'rgba(255,255,255,' + (0.5 + beat * 0.5) + ')'; ctx.lineWidth = del ? 3 : 2; Arcade.rr(ctx, px + 2, py + 2, cs - 4, cs - 4, 4); ctx.stroke(); if (del) { ctx.fillStyle = 'rgba(255,255,255,.35)'; ctx.fill(); } }
+        ctx.globalAlpha = 1;
+      };
+      for (let y = 0; y < s.R; y++) for (let x = 0; x < s.C; x++) { const v = s.b[y][x]; if (v) cell(x, y, v.k, v.m, v.del, 1, v.pop); }
+      if (s.p) {
+        let gy = s.p.y; while (fits(s, s.p.x, gy + 1)) gy++;
+        for (let dy = 0; dy < 2; dy++) for (let dx = 0; dx < 2; dx++) if (gy + dy >= 0) cell(s.p.x + dx, gy + dy, s.p.k[dy][dx], false, false, 0.18);
+        for (let dy = 0; dy < 2; dy++) for (let dx = 0; dx < 2; dx++) if (s.p.y + dy >= 0) cell(s.p.x + dx, s.p.y + dy, s.p.k[dy][dx]);
+          else { ctx.save(); ctx.beginPath(); ctx.rect(0, s.oy - cs * 2, W, cs * 2); ctx.clip(); ctx.globalAlpha = 0.7; cell(s.p.x + dx, s.p.y + dy, s.p.k[dy][dx]); ctx.restore(); }
+      }
+      // barra de luz
+      const lx = s.ox + s.tl * cs;
+      const gr = ctx.createLinearGradient(lx - cs * 2, 0, lx, 0); gr.addColorStop(0, 'rgba(255,255,255,0)'); gr.addColorStop(1, 'rgba(255,255,255,.35)');
+      ctx.fillStyle = gr; ctx.fillRect(Math.max(s.ox, lx - cs * 2), s.oy, Math.min(cs * 2, lx - s.ox), s.R * cs);
+      ctx.fillStyle = '#fff'; ctx.fillRect(lx - 1.5, s.oy - 6, 3, s.R * cs + 12);
+      // siguiente
+      const mini = Math.min(14, cs * 0.5);
+      Arcade.txt(ctx, 'Siguiente', s.ox + 4, g.top + 24, 12, '#e5dbff', 'left', 800);
+      s.next.forEach((k, i) => { for (let dy = 0; dy < 2; dy++) for (let dx = 0; dx < 2; dx++) { ctx.fillStyle = P[k[dy][dx]]; ctx.globalAlpha = i ? 0.55 : 1; Arcade.rr(ctx, s.ox + 80 + i * mini * 3 + dx * mini, g.top + 10 + dy * mini, mini - 2, mini - 2, 2); ctx.fill(); } ctx.globalAlpha = 1; });
+      Arcade.txt(ctx, 'Cuadrados: ' + Math.min(s.squares, s.need) + ' / ' + s.need, s.ox + s.C * cs - 4, g.top + 24, 14, '#ffd43b', 'right', 900);
+    },
+  });
+})();

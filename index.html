@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Arcade Perdido · Retro Games</title>
+<meta name="description" content="Juegos HTML5 gratis para móvil y TV: mecánicas de arcade clásicas rehechas con emojis. Funcionan sin conexión.">
+<meta name="theme-color" content="#120f26">
+<link rel="icon" href="pwa/icons/icon-192.png">
+<link rel="apple-touch-icon" href="pwa/icons/icon-192.png">
+<style>
+  :root { --bg1: #2a2160; --bg2: #120f26; --card: rgba(255,255,255,.07); --line: rgba(255,255,255,.14); --text: #f1f0ff; --muted: #b9b4e0; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; }
+  body {
+    background: radial-gradient(120% 80% at 50% 0%, var(--bg1), var(--bg2)) fixed, var(--bg2);
+    color: var(--text); font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    padding: max(24px, env(safe-area-inset-top)) 16px 40px;
+  }
+  .wrap { max-width: 920px; margin: 0 auto; }
+  header { text-align: center; margin: 12px 0 28px; }
+  .logo { font-size: 64px; line-height: 1; animation: bob 2.6s ease-in-out infinite; }
+  @keyframes bob { 50% { transform: translateY(-8px) rotate(-4deg); } }
+  h1 { font-family: "Arial Rounded MT Bold", ui-rounded, "Nunito", system-ui, sans-serif; font-size: clamp(32px, 7vw, 52px); margin: 10px 0 6px; letter-spacing: .5px; }
+  .tag { color: var(--muted); font-size: 17px; margin: 0 auto; max-width: 560px; line-height: 1.45; }
+  .langs { margin-top: 14px; }
+  .langs button { background: var(--card); color: var(--text); border: 1px solid var(--line); border-radius: 999px; padding: 6px 14px; font-size: 14px; cursor: pointer; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; }
+  a.card {
+    display: flex; flex-direction: column; gap: 8px; text-decoration: none; color: inherit;
+    background: var(--card); border: 1px solid var(--line); border-radius: 22px; padding: 22px 20px;
+    transition: transform .15s ease, border-color .15s ease, background .15s ease; position: relative; overflow: hidden;
+  }
+  a.card::after { content: ""; position: absolute; inset: auto -40px -60px auto; width: 160px; height: 160px; border-radius: 50%; background: var(--glow); opacity: .18; filter: blur(10px); }
+  a.card:hover, a.card:focus-visible { transform: translateY(-4px); border-color: var(--glow); background: rgba(255,255,255,.11); outline: none; }
+  .em { font-size: 44px; }
+  .card h2 { margin: 0; font-size: 22px; }
+  .card p { margin: 0; color: var(--muted); line-height: 1.4; font-size: 15px; }
+  .count { margin-top: auto; padding-top: 8px; font-weight: 800; color: var(--glow); font-size: 14px; }
+  .small { margin-top: 28px; display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 12px; }
+  .small a { display: flex; gap: 12px; align-items: center; text-decoration: none; color: var(--text); background: rgba(0,0,0,.18); border: 1px solid var(--line); border-radius: 16px; padding: 14px 16px; font-size: 15px; }
+  .small a:hover { border-color: var(--muted); }
+  .small b { display: block; }
+  .small span.d { color: var(--muted); font-size: 13px; }
+  footer { margin-top: 36px; text-align: center; color: var(--muted); font-size: 13px; line-height: 1.6; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">🕹️</div>
+    <h1>Arcade Perdido</h1>
+    <p class="tag" data-es="Juegos HTML5 gratis para el móvil y la tele: mecánicas de arcade clásicas y éxitos de móvil, rehechos con emojis. Niveles infinitos y sin conexión." data-en="Free HTML5 games for your phone and TV: classic arcade mechanics and mobile hits, remade with emojis. Endless levels, works offline."></p>
+    <div class="langs"><button id="lang"></button></div>
+  </header>
+
+  <div class="grid">
+    <a class="card" href="pwa/index.html" style="--glow:#ffb703">
+      <div class="em">🕹️</div>
+      <h2 data-es="Arcade Perdido" data-en="Lost Arcade"></h2>
+      <p data-es="Mecánicas de arcade de los 80 y 90 que nadie volvió a usar, para jugar con el dedo." data-en="Arcade mechanics from the 80s and 90s nobody reused, made to play with your finger."></p>
+      <div class="count" id="c1"></div>
+    </a>
+    <a class="card" href="pwa/indexpro.html" style="--glow:#da77f2">
+      <div class="em">✨</div>
+      <h2>Arcade Pro</h2>
+      <p data-es="Los grandes éxitos de móvil (de los que recrea Emanuele Feronato) hechos con el mismo motor." data-en="The big mobile hits (the ones Emanuele Feronato recreates) built with the same engine."></p>
+      <div class="count" id="c2"></div>
+    </a>
+    <a class="card" href="pwa/indextv.html?tv=1" style="--glow:#4dabf7">
+      <div class="em">📺</div>
+      <h2 data-es="Modo TV" data-en="TV mode"></h2>
+      <p data-es="Para Android TV / Fire TV: se juega con el mando (cruceta y OK), hasta 4 jugadores por turnos." data-en="For Android TV / Fire TV: play with the remote (D-pad and OK), up to 4 players taking turns."></p>
+      <div class="count" id="c3"></div>
+    </a>
+  </div>
+
+  <div class="small">
+    <a href="autonomos/index.html"><span class="em" style="font-size:28px">📦</span><span><b data-es="Versiones autónomas" data-en="Standalone versions"></b><span class="d" data-es="Cada juego en un solo .html que se abre sin servidor." data-en="Every game in a single .html that opens without a server."></span></span></a>
+    <a href="autonomos/indexpro.html"><span class="em" style="font-size:28px">📦</span><span><b data-es="Arcade Pro autónomo" data-en="Standalone Arcade Pro"></b><span class="d" data-es="La colección Pro en archivos sueltos." data-en="The Pro collection as standalone files."></span></span></a>
+  </div>
+
+  <footer id="foot"></footer>
+</div>
+<script src="pwa/games.js"></script>
+<script>
+  (function () {
+    var q = /[?&]lang=(es|en)/.exec(location.search), saved = null;
+    try { saved = localStorage.getItem('arc_lang'); } catch (e) {}
+    var nav = (navigator.languages && navigator.languages[0]) || navigator.language || 'es';
+    var lang = q ? q[1] : saved === 'es' || saved === 'en' ? saved : /^(es|ca|gl|eu)\b/i.test(nav) ? 'es' : 'en';
+    function render() {
+      var EN = lang === 'en';
+      document.documentElement.lang = lang;
+      document.querySelectorAll('[data-es]').forEach(function (el) { el.textContent = el.getAttribute(EN ? 'data-en' : 'data-es'); });
+      var n1 = (window.GAMES || []).length, n2 = (window.GAMES_PRO || []).length;
+      var tv = (window.GAMES || []).concat(window.GAMES_PRO || []).filter(function (g) { return g.tv; }).length;
+      var j = EN ? ' games' : ' juegos';
+      document.getElementById('c1').textContent = n1 + j + ' ▶';
+      document.getElementById('c2').textContent = n2 + j + ' ▶';
+      document.getElementById('c3').textContent = tv + (EN ? ' games playable with a remote ▶' : ' juegos con mando ▶');
+      document.getElementById('lang').textContent = EN ? '🇪🇸 Español' : '🇬🇧 English';
+      document.getElementById('foot').innerHTML = (n1 + n2) + j + (window.ARCADE_VERSION ? ' · v' + ARCADE_VERSION : '') + '<br>' +
+        (EN ? 'Install it as an app from the browser menu once inside a collection.' : 'Dentro de cada colección puedes instalarlo como app desde el menú del navegador.');
+      document.querySelectorAll('a.card, .small a').forEach(function (a) { var u = a.getAttribute('href').split('?'), p = new URLSearchParams(u[1] || ''); p.set('lang', lang); a.setAttribute('href', u[0] + '?' + p.toString()); });
+    }
+    document.getElementById('lang').addEventListener('click', function () { lang = lang === 'en' ? 'es' : 'en'; try { localStorage.setItem('arc_lang', lang); } catch (e) {} render(); });
+    render();
+  })();
+</script>
+</body>
+</html>

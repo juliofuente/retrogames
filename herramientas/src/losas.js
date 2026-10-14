@@ -1,0 +1,116 @@
+// Losas|#3a2414
+(function () {
+  const { ri, clamp, pick, shuffle } = Arcade;
+  const D = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
+  const HEROES = ['🪲', '🐞', '🐢', '🦂', '🐌'];
+
+  // camino aleatorio: cada casilla se pisa 1 o 2 veces; la última es la salida
+  function generate(L) {
+    const w = clamp(4 + Math.floor(L / 3), 4, 8), h = clamp(5 + Math.floor(L / 3), 5, 9);
+    const len = clamp(8 + L * 2, 8, Math.floor(w * h * 1.15));
+    const dbl = L < 2 ? 0 : clamp(0.12 + L * 0.02, 0.12, 0.4);
+    for (let attempt = 0; attempt < 500; attempt++) {
+      const v = [...Array(h)].map(() => new Array(w).fill(0));
+      let x = ri(0, w - 1), y = ri(0, h - 1);
+      const sx = x, sy = y; v[y][x] = 1;
+      let steps = 0, ok = true, lastDir = null; const path = [];
+      while (true) {
+        const opts = Object.entries(D).filter(([, [dx, dy]]) => { const nx = x + dx, ny = y + dy; return nx >= 0 && ny >= 0 && nx < w && ny < h && v[ny][nx] < (dbl ? 2 : 1); });
+        const fresh = opts.filter(([, [dx, dy]]) => !v[y + dy][x + dx]);
+        if (steps >= len && fresh.length) { const [d0, [dx, dy]] = pick(fresh); x += dx; y += dy; v[y][x] = 1; path.push(d0); break; }
+        if (!opts.length) { ok = false; break; }
+        let pool = fresh.length && Math.random() > dbl ? fresh : opts;
+        const straight = pool.find(([d]) => d === lastDir);
+        const [d, [dx, dy]] = straight && Math.random() < 0.45 ? straight : pick(pool);
+        x += dx; y += dy; v[y][x]++; steps++; lastDir = d; path.push(d);
+      }
+      if (!ok) continue;
+      if (x === sx && y === sy) continue;
+      let cells = 0, twos = 0; for (const r of v) for (const c of r) { if (c) cells++; if (c === 2) twos++; }
+      if (cells < len * 0.7 || (dbl && twos < 1)) continue;
+      return { w, h, hp: v, start: [sx, sy], exit: [x, y], path };
+    }
+    return generate(Math.max(1, L - 1));
+  }
+  function geo(g) { const s = g.s, Ha = g.bot - g.top - 60; s.cs = Math.min((g.W - 20) / s.w, Ha / s.h, 74); s.ox = (g.W - s.cs * s.w) / 2; s.oy = g.top + 46 + (Ha - s.cs * s.h) / 2; }
+  function restart(g) { const s = g.s; s.hp = s.orig.map((r) => r.slice()); s.p = s.start.slice(); s.anim = null; s.falling = []; s.dead = false; s.moves = 0; s.deadT = 0; }
+  function left(s) { let n = 0; for (let y = 0; y < s.h; y++) for (let x = 0; x < s.w; x++) if (s.hp[y][x] && !(x === s.exit[0] && y === s.exit[1])) n++; return n; }
+  function step(g, dir) {
+    const s = g.s; if (s.dead || s.done || s.anim) return;
+    const [dx, dy] = D[dir], [x, y] = s.p, nx = x + dx, ny = y + dy;
+    // la losa que dejas se hunde un poco
+    s.hp[y][x]--; if (!s.hp[y][x]) s.falling.push({ x, y, t: 0 }); else Arcade.tone(220, 0.06, 'square', 0.05);
+    s.anim = { fx: x, fy: y, t: 0 }; s.p = [nx, ny]; s.moves++; s.face = dx || s.face;
+    const inside = nx >= 0 && ny >= 0 && nx < s.w && ny < s.h;
+    if (!inside || !s.hp[ny][nx]) {
+      s.dead = true; s.deadT = g.rt; Arcade.sfx.whoosh();
+      g.message(Arcade.T('¡Al vacío!', 'Into the void!'), 1);
+      setTimeout(() => { if (g.state === 'play' && g.die()) restart(g); }, 1000);
+      return;
+    }
+    Arcade.sfx.tick(); Arcade.tone(300 + s.moves * 4, 0.05, 'triangle', 0.05);
+    if (nx === s.exit[0] && ny === s.exit[1]) {
+      if (left(s) === 0) {
+        s.done = true; const px = s.ox + (nx + 0.5) * s.cs, py = s.oy + (ny + 0.5) * s.cs;
+        g.addScore(80 * g.lv + 5 * s.moves, px, py); g.burst(px, py, { n: 16, emoji: '✨', size: 16, speed: 200 }); g.ring(px, py, '#ffd43b', 70, 6);
+        setTimeout(() => { if (g.state === 'play') g.win(); }, 800);
+      } else {
+        s.dead = true; g.message(Arcade.T('Faltan losas', 'Tiles left'), 1.1, Arcade.T('Quedan ', 'Left: ') + left(s));
+        setTimeout(() => { if (g.state === 'play' && g.die()) restart(g); }, 1100);
+      }
+      return;
+    }
+    // ¿atrapado?
+    const any = Object.values(D).some(([a, b]) => { const qx = nx + a, qy = ny + b; return qx >= 0 && qy >= 0 && qx < s.w && qy < s.h && s.hp[qy][qx]; });
+    if (!any) { s.dead = true; g.message(Arcade.T('¡Atrapado!', 'Trapped!'), 1); setTimeout(() => { if (g.state === 'play' && g.die()) restart(g); }, 1000); }
+  }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Pisa cada losa una sola vez', deco: ['🔺', '🪲', '☀️', '🏺', '🐫', '🌴'], font: 'serif', bg: ['#6b4423', '#3a2414'],
+    music: { mode: 'phryg', bpm: 100, wave: 'triangle', style: 'march', root: 57 }, voice: { wave: 'triangle', mul: 1, echo: 0.3 },
+    ambient: { e: ['·'], n: 14, vx: 30, vy: 4, sway: 6, alpha: 0.25, size: [10, 18] },
+    en: { title: 'Flagstones', tag: 'Step on every tile just once', help: '<b>Swipe</b> to move one tile. Every tile you leave <b>crumbles</b> into the void (the cracked ones need two steps). Make every tile fall and finish on the 🚪 exit. If you step into the void, get trapped or reach the exit with tiles left, you lose a life. Every level is generated from a real path, so it always has a solution.', tvHelp: 'Arrows to move one tile.', dict: { '¡Al vacío!': 'Into the void!', 'Faltan losas': 'Tiles left', '¡Atrapado!': 'Trapped!', 'Losas: ': 'Tiles: ' } },
+    tvHelp: 'Flechas para avanzar una losa.',
+    id: 'losas', title: 'Losas', emoji: '🔺', color: '#e8a54b', origin: 'Pyramids of Ra (Game Boy, 1991)',
+    help: '<b>Desliza</b> para avanzar una losa. Cada losa que dejas atrás se <b>hunde</b> en el vacío (las agrietadas necesitan dos pasos). Haz caer todas las losas y termina en la salida 🚪. Si pisas el vacío, te quedas atrapado o llegas a la salida con losas de sobra, pierdes una vida. Cada nivel sale de un camino real, así que siempre tiene solución.',
+    lives: 3, levels: 0, cap: 30,
+    setup(g) {
+      const lv = generate(g.lv);
+      g.s = { ...lv, orig: lv.hp.map((r) => r.slice()), face: -1, hero: HEROES[(g.level - 1) % HEROES.length], done: false };
+      restart(g); geo(g);
+    },
+    layout(g) { if (g.s.hp) geo(g); },
+    swipe(g, d) { step(g, d); },
+    tap(g, p) { const s = g.s, x = Math.floor((p.x - s.ox) / s.cs), y = Math.floor((p.y - s.oy) / s.cs), dx = x - s.p[0], dy = y - s.p[1]; if (Math.abs(dx) + Math.abs(dy) === 1) step(g, dx === 1 ? 'right' : dx === -1 ? 'left' : dy === 1 ? 'down' : 'up'); },
+    key(g, k, d) { if (!d) return; const m = { ArrowLeft: 'left', ArrowRight: 'right', ArrowUp: 'up', ArrowDown: 'down' }[k]; if (m) step(g, m); },
+    update(g, dt) {
+      const s = g.s; if (s.anim) { s.anim.t += dt * 8; if (s.anim.t >= 1) s.anim = null; }
+      for (const f of s.falling) f.t += dt * 1.6; s.falling = s.falling.filter((f) => f.t < 1);
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      const bg = ctx.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, '#d9822b'); bg.addColorStop(0.35, '#7a3f1a'); bg.addColorStop(1, '#1c0f07');
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      Arcade.emoji(ctx, '☀️', W * 0.85, g.top + 30, 46, { alpha: 0.5 });
+      g.scenery(['🔺', '🌴', '🐫'], 5, { alpha: 0.12, size: [26, 48], y0: g.top + 10, y1: g.top + 80 });
+      if (!s.hp) return;
+      const cs = s.cs;
+      const tile = (x, y, hp, k) => {
+        const px = s.ox + x * cs, py = s.oy + y * cs, z = (cs - 4) * k, o = (cs - z) / 2;
+        ctx.fillStyle = '#5c3a1e'; ctx.fillRect(px + o, py + o + cs * 0.12 * k, z, z);
+        ctx.fillStyle = hp > 1 ? '#c49a5a' : '#e9c98f'; ctx.fillRect(px + o, py + o, z, z);
+        ctx.strokeStyle = 'rgba(92,58,30,.5)'; ctx.lineWidth = 1.5; ctx.strokeRect(px + o + 3, py + o + 3, z - 6, z - 6);
+        if (hp > 1) { ctx.strokeStyle = '#6b4423'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(px + o + z * 0.2, py + o + z * 0.25); ctx.lineTo(px + o + z * 0.45, py + o + z * 0.5); ctx.lineTo(px + o + z * 0.4, py + o + z * 0.75); ctx.moveTo(px + o + z * 0.45, py + o + z * 0.5); ctx.lineTo(px + o + z * 0.8, py + o + z * 0.45); ctx.stroke(); }
+      };
+      for (let y = 0; y < s.h; y++) for (let x = 0; x < s.w; x++) if (s.hp[y][x]) tile(x, y, s.hp[y][x], 1);
+      for (const f of s.falling) { ctx.globalAlpha = 1 - f.t; tile(f.x, f.y, 1, 1 - f.t * 0.7); ctx.globalAlpha = 1; }
+      const ex = s.ox + (s.exit[0] + 0.5) * cs, ey = s.oy + (s.exit[1] + 0.5) * cs;
+      Arcade.emoji(ctx, '🚪', ex, ey, cs * 0.66);
+      let hx = s.ox + (s.p[0] + 0.5) * cs, hy = s.oy + (s.p[1] + 0.5) * cs, sc = 1;
+      if (s.anim) { const k = s.anim.t; hx = s.ox + (s.anim.fx + (s.p[0] - s.anim.fx) * k + 0.5) * cs; hy = s.oy + (s.anim.fy + (s.p[1] - s.anim.fy) * k + 0.5) * cs - Math.sin(k * Math.PI) * cs * 0.2; }
+      else if (s.dead && s.deadT) sc = Math.max(0.1, 1 - (g.rt - s.deadT));
+      Arcade.emoji(ctx, s.hero, hx, hy, cs * 0.66 * sc, { flip: s.face > 0 });
+      Arcade.txt(ctx, 'Losas: ' + left(s), W / 2, s.oy - 18, 15, '#ffe8cc', 'center', 800, 'rgba(0,0,0,.4)');
+    },
+  });
+})();

@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Sumacamino · Arcade Perdido</title>
+<meta name="theme-color" content="#10243a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css">
+</head>
+<body class="game">
+<script src="config.js"></script>
+<script src="common.js"></script>
+<script>
+(function () {
+  const { ri, clamp, pick, shuffle } = Arcade;
+  const NB8 = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]];
+  const TINT = ['#ffc9c9', '#ffd8a8', '#ffec99', '#d8f5a2', '#b2f2bb', '#99e9f2', '#a5d8ff', '#d0bfff', '#fcc2d7'];
+
+  function geo(g) { const s = g.s, Ha = g.bot - g.top - 130; s.cs = Math.min((g.W - 20) / s.C, Ha / s.R, 78); s.ox = (g.W - s.cs * s.C) / 2; s.oy = g.top + 110 + (Ha - s.cs * s.R) / 2; }
+  const val = (g) => ri(1, clamp(4 + Math.floor(g.lv / 2), 4, 9));
+  const adj = (a, b) => a && b && Math.max(Math.abs(a[0] - b[0]), Math.abs(a[1] - b[1])) === 1;
+  function newTarget(g) {
+    const s = g.s, maxLen = clamp(2 + Math.floor(g.lv / 4), 2, 5);
+    for (let k = 0; k < 50; k++) {
+      const len = ri(2, maxLen); let c = [ri(0, s.C - 1), ri(0, s.R - 1)]; const seen = new Set([c.join()]); let sum = s.b[c[1]][c[0]].v;
+      for (let i = 1; i < len; i++) {
+        const opts = NB8.map(([dx, dy]) => [c[0] + dx, c[1] + dy]).filter(([x, y]) => x >= 0 && y >= 0 && x < s.C && y < s.R && !seen.has(x + ',' + y));
+        if (!opts.length) break; c = pick(opts); seen.add(c.join()); sum += s.b[c[1]][c[0]].v;
+      }
+      if (seen.size >= 2 && sum !== s.T) { s.T = sum; s.tpop = 1; return; }
+    }
+  }
+  const sumOf = (s) => s.path.reduce((a, [x, y]) => a + s.b[y][x].v, 0);
+  function cellAt(s, px, py, strict) {
+    const x = Math.floor((px - s.ox) / s.cs), y = Math.floor((py - s.oy) / s.cs);
+    if (x < 0 || y < 0 || x >= s.C || y >= s.R) return null;
+    if (strict) { const cx = s.ox + (x + 0.5) * s.cs, cy = s.oy + (y + 0.5) * s.cs; if (Math.hypot(px - cx, py - cy) > s.cs * 0.42) return null; }
+    return [x, y];
+  }
+  function extend(s, c) {
+    if (!c) return;
+    const i = s.path.findIndex((q) => q[0] === c[0] && q[1] === c[1]);
+    if (i >= 0) { if (i === s.path.length - 2) { s.path.pop(); Arcade.sfx.tick(); } return; }
+    if (!adj(s.path[s.path.length - 1], c)) return;
+    s.path.push(c); Arcade.tone(300 + sumOf(s) * 12, 0.05, 'triangle', 0.06);
+  }
+  function commit(g) {
+    const s = g.s, sum = sumOf(s), path = s.path; s.path = [];
+    if (path.length < 2) return;
+    if (sum !== s.T) { Arcade.sfx.bad(); s.wrong = 0.4; return; }
+    const len = path.length, pts = s.T * len * g.lv;
+    let mx = 0, my = 0;
+    for (const [x, y] of path) { const px = s.ox + (x + 0.5) * s.cs, py = s.oy + (y + 0.5) * s.cs; mx += px; my += py; g.burst(px, py, { n: 5, color: TINT[s.b[y][x].v - 1], speed: 160, size: 4 }); s.b[y][x] = null; }
+    g.addScore(pts, mx / len, my / len); Arcade.sfx.combo(len * 2); if (len >= 4) g.message(len >= 5 ? '¡Genial!' : '¡Bien!', 0.6);
+    s.done++; s.time = Math.min(s.tmax, s.time + 2 + len);
+    // gravedad y relleno
+    for (let x = 0; x < s.C; x++) { const col = []; for (let y = s.R - 1; y >= 0; y--) if (s.b[y][x]) col.push(s.b[y][x]); for (let y = s.R - 1, i = 0; y >= 0; y--, i++) { if (col[i]) { if (s.b[y][x] !== col[i]) col[i].fall = Math.max(col[i].fall, 0.6); s.b[y][x] = col[i]; } else s.b[y][x] = { v: val(g), fall: 1 }; } }
+    if (s.done >= s.need) { s.won = true; setTimeout(() => { if (g.state === 'play') g.win(); }, 500); return; }
+    newTarget(g);
+  }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Dibuja caminos que sumen justo', deco: ['➕', '1️⃣', '5️⃣', '9️⃣', '🟰', '✏️'], font: 'round', bg: ['#1f4466', '#10243a'],
+    music: { mode: 'major', bpm: 108, wave: 'triangle', style: 'chill', root: 62 }, voice: { wave: 'triangle', mul: 1.15, echo: 0.25 },
+    ambient: { e: ['➕', '✖️', '➗'], n: 8, vy: -12, sway: 14, spin: 1, alpha: 0.08, size: [14, 24] },
+    en: { title: 'Sum Path', tag: 'Draw paths that add up exactly', help: '<b>Drag</b> across neighbouring numbers (diagonals too) to draw a path. Let go when they add up <b>exactly</b> to the target: they vanish and new numbers drop in. Longer paths score more and give more time. Make the sums each level asks for before the bar runs out, or you lose a life.', tvHelp: 'D-pad to move · OK adds the number to the path · OK on the last number to finish it.', dict: { 'Objetivo': 'Target', 'Sumas: ': 'Sums: ', '¡Genial!': 'Great!', '¡Bien!': 'Nice!', '¡Se acabó el tiempo!': 'Time\'s up!' } },
+    tvHelp: 'Cruceta para moverte · OK añade el número al camino · OK sobre el último para cerrarlo.',
+    tv: { mode: 'tap', targets: (g) => { const s = g.s, o = []; if (!s.b) return o; for (let y = 0; y < s.R; y++) for (let x = 0; x < s.C; x++) o.push({ x: s.ox + x * s.cs, y: s.oy + y * s.cs, w: s.cs, h: s.cs }); return o; } },
+    id: 'sumacamino', title: 'Sumacamino', emoji: '➕', color: '#4dabf7', origin: 'Plus+Plus / zNumbers / Draw and Sum',
+    help: '<b>Arrastra</b> por números vecinos (también en diagonal) para dibujar un camino. Suelta cuando sumen <b>exactamente</b> el objetivo: desaparecen y caen números nuevos. Los caminos largos dan más puntos y más tiempo. Haz las sumas que pide cada nivel antes de que se acabe la barra o pierdes una vida.',
+    lives: 3, levels: 0, cap: 25,
+    setup(g) {
+      g.s = { C: 5, R: 6, path: [], done: 0, tpop: 0, wrong: 0, T: 0 };
+      const s = g.s; s.b = [...Array(s.R)].map(() => [...Array(s.C)].map(() => ({ v: val(g), fall: 0 })));
+      s.need = 6 + Math.floor(g.lv * 0.8); s.tmax = Math.max(25, 50 - g.lv); s.time = s.tmax;
+      newTarget(g); geo(g);
+    },
+    layout(g) { if (g.s.b) geo(g); },
+    down(g, p) { if (p.type === 'tv') return; const s = g.s, c = cellAt(s, p.x, p.y); if (c) { s.path = [c]; Arcade.sfx.tick(); } },
+    move(g, p) { if (p.type === 'tv') return; const s = g.s; if (s.path.length) extend(s, cellAt(s, p.x, p.y, true)); },
+    up(g, p) { if (p.type === 'tv') return; if (g.s.path.length) commit(g); },
+    tap(g, p) {
+      if (p.type !== 'tv') return;
+      const s = g.s, c = cellAt(s, p.x, p.y); if (!c) return;
+      const last = s.path[s.path.length - 1];
+      if (last && last[0] === c[0] && last[1] === c[1]) { if (s.path.length >= 2) commit(g); else s.path = []; return; }
+      const i = s.path.findIndex((q) => q[0] === c[0] && q[1] === c[1]);
+      if (i >= 0) { s.path = s.path.slice(0, i + 1); Arcade.sfx.tick(); return; }
+      if (adj(last, c)) extend(s, c); else { s.path = [c]; Arcade.sfx.tick(); }
+    },
+    update(g, dt) {
+      const s = g.s; if (s.won) return;
+      for (const row of s.b) for (const v of row) if (v && v.fall) v.fall = Math.max(0, v.fall - dt * 3);
+      s.tpop = Math.max(0, s.tpop - dt * 3); s.wrong = Math.max(0, s.wrong - dt);
+      s.time -= dt;
+      if (s.time <= 0) { s.time = s.tmax; s.path = []; g.message('¡Se acabó el tiempo!', 1.2); g.die(); }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      const bg = ctx.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, '#2b5c87'); bg.addColorStop(1, '#0b1a2a');
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      if (!s.b) return;
+      const cs = s.cs, sum = sumOf(s), over = sum > s.T, onp = new Set(s.path.map((q) => q.join()));
+      // objetivo y tiempo
+      const tz = 30 * (1 + s.tpop * 0.3);
+      Arcade.txt(ctx, 'Objetivo', W / 2, g.top + 16, 13, '#a5d8ff', 'center', 800);
+      Arcade.txt(ctx, s.T, W / 2, g.top + 46, tz, '#fff', 'center', 900, '#1c7ed6', Arcade.TFONT);
+      if (s.path.length) Arcade.txt(ctx, '= ' + sum, W / 2 + 70, g.top + 46, 20, over ? '#ff8787' : sum === s.T ? '#69db7c' : '#d0ebff', 'left', 900);
+      const bw = Math.min(W - 40, cs * s.C), fr = clamp(s.time / s.tmax, 0, 1);
+      ctx.fillStyle = 'rgba(0,0,0,.3)'; Arcade.rr(ctx, (W - bw) / 2, g.top + 74, bw, 9, 5); ctx.fill();
+      ctx.fillStyle = fr < 0.25 ? '#ff6b6b' : '#ffd43b'; Arcade.rr(ctx, (W - bw) / 2, g.top + 74, bw * fr, 9, 5); ctx.fill();
+      Arcade.txt(ctx, 'Sumas: ' + s.done + ' / ' + s.need, W / 2, g.top + 96, 13, '#d0ebff', 'center', 800);
+      // camino
+      if (s.path.length > 1) {
+        ctx.strokeStyle = over ? 'rgba(255,107,107,.8)' : 'rgba(255,255,255,.75)'; ctx.lineWidth = cs * 0.18; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+        ctx.beginPath(); s.path.forEach(([x, y], i) => { const px = s.ox + (x + 0.5) * cs, py = s.oy + (y + 0.5) * cs; i ? ctx.lineTo(px, py) : ctx.moveTo(px, py); }); ctx.stroke();
+      }
+      const sh = s.wrong ? Math.sin(s.wrong * 60) * 5 : 0;
+      for (let y = 0; y < s.R; y++) for (let x = 0; x < s.C; x++) {
+        const v = s.b[y][x]; if (!v) continue;
+        const px = s.ox + x * cs + sh, py = s.oy + y * cs - v.fall * cs * 0.8, on = onp.has(x + ',' + y), z = on ? 4 : 7;
+        ctx.globalAlpha = 1 - v.fall * 0.5;
+        ctx.fillStyle = on ? (over ? '#ff8787' : '#fff') : TINT[v.v - 1]; Arcade.rr(ctx, px + z, py + z, cs - z * 2, cs - z * 2, cs * 0.25); ctx.fill();
+        Arcade.txt(ctx, v.v, px + cs / 2, py + cs / 2 + 1, cs * 0.44, '#10243a', 'center', 900, null, Arcade.TFONT);
+        ctx.globalAlpha = 1;
+      }
+    },
+  });
+})();
+</script>
+</body>
+</html>

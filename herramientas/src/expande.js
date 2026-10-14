@@ -1,0 +1,166 @@
+// Expande|#1b2633
+(function () {
+  const { ri, clamp, pick, shuffle } = Arcade;
+  const D = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
+  const DIRS = ['up', 'down', 'left', 'right'];
+  const COL = ['#ff8787', '#ffa94d', '#ffd43b', '#69db7c', '#4dabf7', '#9775fa', '#f783ac', '#3bc9db'];
+  const GOALS = ['⭐', '🏁', '💎', '🌟', '🎯'];
+
+  // expande una ficha: salta lo que ya está ocupado y rellena n casillas libres
+  function expand(S, fill, x, y, dir, n) {
+    const [dx, dy] = D[dir], out = [];
+    let cx = x, cy = y;
+    while (n > 0) {
+      cx += dx; cy += dy;
+      if (cx < 0 || cy < 0 || cx >= S || cy >= S) break;
+      if (fill[cy * S + cx]) continue;
+      out.push(cy * S + cx); n--;
+    }
+    return out;
+  }
+  function blank(S, tiles) { const f = new Array(S * S).fill(0); for (const t of tiles) f[t.y * S + t.x] = 1; return f; }
+  // ¿se puede llegar a la meta usando como mucho k fichas?
+  function solvable(S, tiles, goal, k) {
+    let nodes = 0;
+    const rec = (fill, used, depth) => {
+      if (depth === 0 || ++nodes > 60000) return false;
+      for (let i = 0; i < tiles.length; i++) {
+        if (used & (1 << i)) continue;
+        for (const d of DIRS) {
+          const c = expand(S, fill, tiles[i].x, tiles[i].y, d, tiles[i].n);
+          if (!c.length) continue;
+          if (c.includes(goal)) return true;
+          if (depth > 1) { const f2 = fill.slice(); for (const q of c) f2[q] = 1; if (rec(f2, used | (1 << i), depth - 1)) return true; }
+        }
+      }
+      return false;
+    };
+    return rec(blank(S, tiles), 0, k);
+  }
+  function generate(L) {
+    const S = clamp(5 + Math.floor(L / 4), 5, 9), n = clamp(2 + Math.floor(L / 3), 2, 7);
+    const need = L <= 1 ? 1 : L <= 3 ? 2 : L <= 8 ? 3 : 4;
+    const vmax = L < 4 ? 2 : L < 10 ? 3 : 4;
+    for (let attempt = 0; attempt < 400; attempt++) {
+      const tiles = [], taken = new Set();
+      while (tiles.length < n) { const x = ri(0, S - 1), y = ri(0, S - 1); if (taken.has(y * S + x)) continue; taken.add(y * S + x); tiles.push({ x, y, n: ri(1, vmax) }); }
+      const fill = blank(S, tiles), order = shuffle(tiles.map((_, i) => i));
+      let goal = -1, chain = 0;
+      for (const i of order) {
+        const t = tiles[i], opts = shuffle(DIRS.slice()).map((d) => expand(S, fill, t.x, t.y, d, t.n)).filter((c) => c.length === t.n);
+        if (!opts.length) break;
+        const c = pick(opts); for (const q of c) fill[q] = 1; goal = c[c.length - 1]; chain++;
+      }
+      if (chain !== n) continue;
+      const gx = goal % S, gy = Math.floor(goal / S);
+      if (gx === 0 && gy === 0) continue;
+      if (need > 1 && solvable(S, tiles, goal, need - 1)) continue;
+      return { S, tiles: tiles.map((t, i) => ({ ...t, c: COL[i % COL.length] })), goal };
+    }
+    return generate(Math.max(1, L - 1));
+  }
+  function geo(g) {
+    const s = g.s, Ha = g.bot - g.top - 92;
+    s.cs = Math.min((g.W - 20) / s.S, Ha / s.S, 70); s.ox = (g.W - s.cs * s.S) / 2; s.oy = g.top + 80 + (Ha - s.cs * s.S) / 2;
+    s.btn = [{ k: 'undo', x: g.W / 2 - 110, y: g.top + 8, w: 100, h: 38, instant: true }, { k: 'reset', x: g.W / 2 + 10, y: g.top + 8, w: 100, h: 38, instant: true }];
+  }
+  const tileAt = (s, x, y) => { const c = Math.floor((x - s.ox) / s.cs), r = Math.floor((y - s.oy) / s.cs); return s.tiles.findIndex((t) => t.x === c && t.y === r); };
+  function play(g, i, dir) {
+    const s = g.s; if (s.done) return;
+    const t = s.tiles[i]; if (!t || s.used[i]) return;
+    const cells = expand(s.S, s.fill, t.x, t.y, dir, t.n);
+    if (!cells.length) { Arcade.sfx.bad(); return; }
+    s.hist.push({ fill: s.fill.slice(), used: s.used.slice(), own: s.own.slice() });
+    s.used[i] = true; s.sel = -1;
+    cells.forEach((q, k) => { s.fill[q] = 1; s.own[q] = i; s.born[q] = g.rt + k * 0.07; });
+    Arcade.sfx.whoosh(); cells.forEach((q, k) => Arcade.tone(400 + k * 90, 0.08, 'triangle', 0.06, 0, k * 0.07));
+    if (cells.includes(s.goal)) {
+      s.done = true;
+      const gx = s.ox + (s.goal % s.S + 0.5) * s.cs, gy = s.oy + (Math.floor(s.goal / s.S) + 0.5) * s.cs;
+      const left = s.used.filter((u) => !u).length;
+      setTimeout(() => {
+        if (g.state !== 'play') return;
+        g.burst(gx, gy, { n: 20, emoji: '✨', size: 18, speed: 220 }); g.ring(gx, gy, '#ffd43b', 80, 6);
+        g.addScore(100 * g.lv + left * 25, gx, gy);
+        setTimeout(() => { if (g.state === 'play') g.win(s.resets ? 1 : s.undos ? 2 : 3); }, 700);
+      }, cells.length * 70 + 100);
+      return;
+    }
+    if (s.used.every(Boolean)) {
+      g.message(Arcade.T('Sin fichas', 'No tiles left'), 1.1, Arcade.T('Otra vez', 'Try again'));
+      setTimeout(() => { if (g.state === 'play' && !s.done) reset(g); }, 1100);
+    }
+  }
+  function undo(g) { const s = g.s, h = s.hist.pop(); if (!h || s.done) return; s.fill = h.fill; s.used = h.used; s.own = h.own; s.undos++; s.sel = -1; Arcade.sfx.whoosh(); }
+  function reset(g) { const s = g.s; if (s.done || !s.hist.length) return; const h = s.hist[0]; s.fill = h.fill; s.used = h.used; s.own = h.own; s.hist = []; s.resets++; s.sel = -1; Arcade.sfx.whoosh(); }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Estira los números hasta la meta', deco: ['1️⃣', '2️⃣', '3️⃣', '⭐', '➡️', '⬆️'], font: 'wide', bg: ['#2c3e57', '#1b2633'],
+    music: { mode: 'lydian', bpm: 88, wave: 'triangle', style: 'chill', root: 60 }, voice: { wave: 'sine', mul: 1.1, echo: 0.35 },
+    ambient: { e: ['✦'], n: 10, vy: -6, sway: 8, twinkle: 1, alpha: 0.18, size: [8, 14] },
+    en: { title: 'Expand', tag: 'Stretch the numbers to the goal', help: 'Every tile has a number. <b>Swipe</b> from a tile (or tap it and then tap a square in its row or column) to <b>stretch</b> it that many squares in that direction. Squares that are already full are skipped and don\'t count. Each tile can only be used once. Reach the ⭐ goal with any stretch! Use ↩️ to undo and 🔄 to restart. Every level is generated and always has a solution.', tvHelp: 'D-pad to choose a tile · OK to pick it up · arrow to stretch it.', dict: { '↩️ Deshacer': '↩️ Undo', '🔄 Reiniciar': '🔄 Restart', 'Sin fichas': 'No tiles left', 'Otra vez': 'Try again', 'Fichas: ': 'Tiles: ' } },
+    tvHelp: 'Cruceta para elegir ficha · OK para cogerla · flecha para estirarla.',
+    tv: { mode: 'swipe', targets: (g) => { const s = g.s; if (!s.tiles) return []; const o = s.tiles.filter((t, i) => !s.used[i]).map((t) => ({ x: s.ox + t.x * s.cs, y: s.oy + t.y * s.cs, w: s.cs, h: s.cs })); return o.concat(s.btn); }, follow: false },
+    id: 'expande', title: 'Expande', emoji: '➡️', color: '#4dabf7', origin: 'Zhed (Ground Control)',
+    help: 'Cada ficha tiene un número. <b>Desliza</b> desde una ficha (o tócala y luego toca una casilla de su fila o columna) para <b>estirarla</b> tantas casillas como indica en esa dirección. Las casillas que ya están llenas se saltan y no cuentan. Cada ficha se usa una sola vez. ¡Llega a la meta ⭐ con cualquier estiramiento! Usa ↩️ para deshacer y 🔄 para empezar de nuevo. Cada nivel se genera y siempre tiene solución.',
+    lives: 0, levels: 0, cap: 30,
+    setup(g) {
+      const lv = generate(g.lv);
+      g.s = { ...lv, used: lv.tiles.map(() => false), hist: [], undos: 0, resets: 0, sel: -1, done: false, goalE: GOALS[(g.level - 1) % GOALS.length] };
+      const s = g.s; s.fill = blank(s.S, s.tiles); s.own = new Array(s.S * s.S).fill(-1); s.born = new Array(s.S * s.S).fill(0);
+      geo(g);
+    },
+    layout(g) { if (g.s.tiles) geo(g); },
+    swipe(g, d, p) { const s = g.s, i = tileAt(s, p.sx, p.sy); if (i >= 0) play(g, i, d); },
+    tap(g, p) {
+      const s = g.s;
+      for (const b of s.btn) if (p.x >= b.x && p.x <= b.x + b.w && p.y >= b.y && p.y <= b.y + b.h) return b.k === 'undo' ? undo(g) : reset(g);
+      const i = tileAt(s, p.x, p.y);
+      if (i >= 0 && !s.used[i]) { s.sel = s.sel === i ? -1 : i; Arcade.sfx.tick(); return; }
+      if (s.sel >= 0) {
+        const t = s.tiles[s.sel], c = Math.floor((p.x - s.ox) / s.cs), r = Math.floor((p.y - s.oy) / s.cs);
+        if (c === t.x && r !== t.y) return play(g, s.sel, r < t.y ? 'up' : 'down');
+        if (r === t.y && c !== t.x) return play(g, s.sel, c < t.x ? 'left' : 'right');
+        s.sel = -1;
+      }
+    },
+    key(g, k, d) { if (d && (k === 'z' || k === 'Backspace')) undo(g); else if (d && k === 'r') reset(g); },
+    update() {},
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      const bg = ctx.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, '#34507a'); bg.addColorStop(1, '#141c27');
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      if (!s.tiles) return;
+      const cs = s.cs, S = s.S;
+      ctx.fillStyle = 'rgba(0,0,0,.28)'; Arcade.rr(ctx, s.ox - 6, s.oy - 6, cs * S + 12, cs * S + 12, 12); ctx.fill();
+      for (let y = 0; y < S; y++) for (let x = 0; x < S; x++) { ctx.fillStyle = (x + y) % 2 ? 'rgba(255,255,255,.07)' : 'rgba(255,255,255,.04)'; Arcade.rr(ctx, s.ox + x * cs + 2, s.oy + y * cs + 2, cs - 4, cs - 4, 6); ctx.fill(); }
+      // vista previa de la ficha elegida
+      if (s.sel >= 0) {
+        const t = s.tiles[s.sel];
+        for (const d of DIRS) for (const q of expand(S, s.fill, t.x, t.y, d, t.n)) { ctx.fillStyle = t.c + '55'; Arcade.rr(ctx, s.ox + (q % S) * cs + 6, s.oy + Math.floor(q / S) * cs + 6, cs - 12, cs - 12, 6); ctx.fill(); }
+      }
+      // meta
+      const gx = s.ox + (s.goal % S + 0.5) * cs, gy = s.oy + (Math.floor(s.goal / S) + 0.5) * cs;
+      ctx.fillStyle = 'rgba(255,212,59,.25)'; ctx.beginPath(); ctx.arc(gx, gy, cs * (0.42 + Math.sin(g.rt * 3) * 0.04), 0, 6.3); ctx.fill();
+      // casillas rellenas
+      for (let q = 0; q < S * S; q++) {
+        const o = s.own[q]; if (o < 0 || !s.fill[q]) continue;
+        const k = clamp((g.rt - s.born[q]) * 6, 0, 1); if (k <= 0) continue;
+        const z = (cs - 8) * (0.4 + 0.6 * k), x = s.ox + (q % S + 0.5) * cs, y = s.oy + (Math.floor(q / S) + 0.5) * cs;
+        ctx.fillStyle = s.tiles[o].c; ctx.globalAlpha = 0.85; Arcade.rr(ctx, x - z / 2, y - z / 2, z, z, 8); ctx.fill(); ctx.globalAlpha = 1;
+      }
+      Arcade.emoji(ctx, s.goalE, gx, gy, cs * (0.62 + Math.sin(g.rt * 4) * 0.05), { rot: Math.sin(g.rt * 2) * 0.15 });
+      // fichas
+      s.tiles.forEach((t, i) => {
+        const x = s.ox + (t.x + 0.5) * cs, y = s.oy + (t.y + 0.5) * cs, u = s.used[i], z = cs - 6;
+        const lift = i === s.sel ? 1 + Math.sin(g.rt * 8) * 0.05 : 1;
+        ctx.fillStyle = 'rgba(0,0,0,.35)'; Arcade.rr(ctx, x - z / 2 + 2, y - z / 2 + 4, z, z, 10); ctx.fill();
+        ctx.fillStyle = u ? '#495057' : t.c; Arcade.rr(ctx, x - z * lift / 2, y - z * lift / 2, z * lift, z * lift, 10); ctx.fill();
+        if (i === s.sel) { ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; ctx.stroke(); }
+        Arcade.txt(ctx, u ? '·' : t.n, x, y + 1, cs * 0.48, u ? '#868e96' : '#1b2633', 'center', 900, null, Arcade.TFONT);
+      });
+      for (const b of s.btn) { ctx.fillStyle = 'rgba(255,255,255,.14)'; Arcade.rr(ctx, b.x, b.y, b.w, b.h, 10); ctx.fill(); Arcade.txt(ctx, b.k === 'undo' ? '↩️ Deshacer' : '🔄 Reiniciar', b.x + b.w / 2, b.y + b.h / 2 + 1, 14, '#fff', 'center', 800); }
+      Arcade.txt(ctx, 'Fichas: ' + s.used.filter((u) => !u).length + '/' + s.tiles.length, W / 2, s.oy - 18, 13, '#a5d8ff', 'center', 800);
+    },
+  });
+})();

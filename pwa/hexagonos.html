@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Hexágonos · Arcade Perdido</title>
+<meta name="theme-color" content="#1d1630">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css">
+</head>
+<body class="game">
+<script src="config.js"></script>
+<script src="common.js"></script>
+<script>
+(function () {
+  const { ri, clamp, pick } = Arcade;
+  const R = 4, SQ3 = Math.sqrt(3);
+  const NB = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, -1], [-1, 1]];
+  const BASE = [
+    [[0, 0]],
+    [[0, 0], [1, 0]],
+    [[0, 0], [1, 0], [2, 0]],
+    [[0, 0], [1, 0], [0, 1]],
+    [[0, 0], [1, 0], [1, 1]],
+    [[0, 0], [1, 0], [2, -1]],
+    [[0, 0], [1, 0], [2, 0], [3, 0]],
+    [[0, 0], [1, 0], [0, 1], [1, 1]],
+    [[0, 0], [1, 0], [2, 0], [1, 1]],
+    [[0, 0], [1, 0], [2, 0], [2, 1]],
+    [[0, 0], [1, 0], [1, 1], [2, 1]],
+  ];
+  const COLS = ['#ff6b6b', '#ffa94d', '#ffd43b', '#69db7c', '#38d9a9', '#4dabf7', '#9775fa', '#f783ac'];
+  const key = (q, r) => q + ',' + r;
+  const inside = (q, r) => Math.abs(q) <= R && Math.abs(r) <= R && Math.abs(q + r) <= R;
+
+  function rot(sh, n) { let o = sh; for (let i = 0; i < n; i++) o = o.map(([q, r]) => [-r, q + r]); const mq = o[0][0], mr = o[0][1]; return o.map(([q, r]) => [q - mq, r - mr]); }
+  function newPiece(g) {
+    const L = g.lv, big = clamp(0.2 + L * 0.03, 0.2, 0.55);
+    let pool = BASE.filter((b) => b.length <= 2 || Math.random() < big + (b.length === 3 ? 0.3 : 0));
+    const sh = rot(pick(pool), ri(0, 5));
+    return { sh, c: pick(COLS) };
+  }
+  function cells() { const o = []; for (let q = -R; q <= R; q++) for (let r = -R; r <= R; r++) if (inside(q, r)) o.push([q, r]); return o; }
+  const ALL = cells();
+  function lines() {
+    const o = [];
+    for (let k = -R; k <= R; k++) { o.push(ALL.filter(([q]) => q === k)); o.push(ALL.filter(([, r]) => r === k)); o.push(ALL.filter(([q, r]) => -q - r === k)); }
+    return o;
+  }
+  const LINES = lines();
+  function fits(s, sh, q, r) { return sh.every(([a, b]) => inside(q + a, r + b) && !s.b.has(key(q + a, r + b))); }
+  function canAny(s) { for (const p of s.tray) if (p) for (const [q, r] of ALL) if (fits(s, p.sh, q, r)) return true; return false; }
+  function geo(g) {
+    const s = g.s, avail = g.bot - g.top - 30, trayH = Math.min(140, avail * 0.24);
+    s.hs = Math.min((g.W - 24) / (SQ3 * (2 * R + 1)), (avail - trayH - 30) / (3 * R + 2), 40);
+    s.cx = g.W / 2; s.cy = g.top + 34 + (avail - trayH) / 2;
+    s.ty = g.bot - trayH / 2 - 6; s.tw = Math.min(g.W / 3, 160);
+  }
+  const pos = (s, q, r) => [s.cx + s.hs * SQ3 * (q + r / 2), s.cy + s.hs * 1.5 * r];
+  function nearest(s, x, y) {
+    const r = (y - s.cy) / (s.hs * 1.5), q = (x - s.cx) / (s.hs * SQ3) - r / 2;
+    let rq = Math.round(q), rr = Math.round(r); const rs = Math.round(-q - r);
+    const dq = Math.abs(rq - q), dr = Math.abs(rr - r), ds = Math.abs(rs + q + r);
+    if (dq > dr && dq > ds) rq = -rr - rs; else if (dr > ds) rr = -rq - rs;
+    return [rq, rr];
+  }
+  function hex(ctx, x, y, r, fill, stroke) {
+    ctx.beginPath(); for (let i = 0; i < 6; i++) { const a = Math.PI / 6 + i * Math.PI / 3; const px = x + Math.cos(a) * r, py = y + Math.sin(a) * r; i ? ctx.lineTo(px, py) : ctx.moveTo(px, py); } ctx.closePath();
+    if (fill) { ctx.fillStyle = fill; ctx.fill(); } if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = 2; ctx.stroke(); }
+  }
+  function gem(ctx, x, y, r, c, a) {
+    ctx.globalAlpha = a ?? 1; hex(ctx, x, y, r, c);
+    hex(ctx, x - r * 0.12, y - r * 0.15, r * 0.55, 'rgba(255,255,255,.25)'); ctx.globalAlpha = 1;
+  }
+  function slotX(s, i) { return g0.W / 2 + (i - 1) * s.tw; }
+  let g0 = null;
+  function place(g, i, q, r) {
+    const s = g.s, p = s.tray[i];
+    if (!p || !fits(s, p.sh, q, r)) { Arcade.sfx.bad(); return false; }
+    for (const [a, b] of p.sh) { s.b.set(key(q + a, r + b), { c: p.c, pop: 1 }); }
+    s.tray[i] = null; g.addScore(p.sh.length); Arcade.sfx.pop();
+    // líneas completas
+    const full = LINES.filter((ln) => ln.every(([a, b]) => s.b.has(key(a, b))));
+    if (full.length) {
+      const kill = new Set(); for (const ln of full) for (const [a, b] of ln) kill.add(key(a, b));
+      for (const k of kill) { const [a, b] = k.split(',').map(Number), [x, y] = pos(s, a, b), v = s.b.get(k); g.burst(x, y, { n: 4, color: v.rock ? '#868e96' : v.c, speed: 160, size: 4 }); s.b.delete(k); }
+      s.lines += full.length; s.combo++;
+      const [x, y] = pos(s, q, r), pts = kill.size * 5 * full.length * g.lv + (s.combo > 1 ? 30 * s.combo : 0);
+      g.addScore(pts, x, y); Arcade.sfx.combo(full.length * 3 + s.combo);
+      if (full.length > 1) { g.message(full.length === 2 ? '¡Doble!' : '¡Múltiple!', 0.8); g.flash('#fff', 0.15); }
+      if (s.combo > 1) g.float('Combo x' + s.combo, x, y - 30, '#ffd43b', 18);
+      g.shake(0.12, 3 + full.length * 2);
+      if (s.lines >= s.need) { s.done = true; setTimeout(() => { if (g.state === 'play') g.win(); }, 600); return true; }
+    } else s.combo = 0;
+    if (s.tray.every((t) => !t)) { s.tray = [newPiece(g), newPiece(g), newPiece(g)]; s.trayPop = 1; }
+    if (!canAny(s)) {
+      s.stuck = true; g.message(Arcade.T('No cabe ninguna pieza', 'No piece fits'), 1.3);
+      setTimeout(() => { if (g.state === 'play' && g.die()) { s.b.clear(); s.stuck = false; s.tray = [newPiece(g), newPiece(g), newPiece(g)]; } }, 1200);
+    }
+    return true;
+  }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Completa líneas en tres direcciones', deco: ['⬢', '🔶', '💠', '🟣', '⬡', '✨'], font: 'round', bg: ['#3a2c63', '#1d1630'],
+    music: { mode: 'dorian', bpm: 104, wave: 'triangle', style: 'chill', root: 59 }, voice: { wave: 'triangle', mul: 1.1, echo: 0.3 },
+    ambient: { e: ['⬡'], n: 10, vy: -10, sway: 10, spin: 1, alpha: 0.1, size: [14, 28] },
+    en: { title: 'Hexagons', tag: 'Fill lines in three directions', help: '<b>Drag</b> the pieces from the bottom onto the hexagonal board. When a line is full (in any of its <b>three directions</b>) it vanishes. Clearing several lines at once or in a row scores combos. Clear the lines each level asks for; later levels start with 🪨 rocks. If none of your pieces fits, you lose a life and the board is cleared.', tvHelp: 'D-pad to choose a piece · OK to select it · move over the board (you will see its shadow) · OK to place it.', dict: { 'Líneas: ': 'Lines: ', 'No cabe ninguna pieza': 'No piece fits', '¡Doble!': 'Double!', '¡Múltiple!': 'Multi!' } },
+    tvHelp: 'Cruceta para elegir pieza · OK para seleccionarla · muévete por el tablero (verás su sombra) · OK para colocarla.',
+    tv: { mode: 'tap', targets: (g) => { const s = g.s; if (!s.tray) return []; const o = []; s.tray.forEach((p, i) => { if (p) o.push({ x: slotX(s, i) - s.tw * 0.4, y: s.ty - s.tw * 0.4, w: s.tw * 0.8, h: s.tw * 0.8 }); }); for (const [q, r] of ALL) { const [x, y] = pos(s, q, r); o.push({ x: x - s.hs * 0.8, y: y - s.hs * 0.8, w: s.hs * 1.6, h: s.hs * 1.6 }); } return o; } },
+    id: 'hexagonos', title: 'Hexágonos', emoji: '⬢', color: '#9775fa', origin: 'Hex FRVR / Hexagonal Tiles',
+    help: '<b>Arrastra</b> las piezas de abajo al tablero hexagonal. Cuando una línea se llena (en cualquiera de sus <b>tres direcciones</b>) desaparece. Varias líneas a la vez o seguidas dan combos. Haz las líneas que pide cada nivel; en los niveles altos empiezas con 🪨 rocas. Si no cabe ninguna de tus piezas, pierdes una vida y se vacía el tablero.',
+    lives: 3, levels: 0, cap: 25,
+    setup(g) {
+      g0 = g;
+      g.s = { b: new Map(), lines: 0, combo: 0, drag: null, trayPop: 1, sel: -1, hov: null };
+      const s = g.s; geo(g);
+      s.need = 3 + Math.min(g.lv, 25);
+      const rocks = g.lv >= 3 ? Math.min(12, g.lv - 1) : 0;
+      for (let i = 0; i < rocks; i++) { const [q, r] = pick(ALL); s.b.set(key(q, r), { rock: true, c: '#868e96', pop: 0 }); }
+      // que no empiece con ninguna línea llena
+      for (const ln of LINES) if (ln.every(([a, b]) => s.b.has(key(a, b)))) s.b.delete(key(ln[0][0], ln[0][1]));
+      s.tray = [newPiece(g), newPiece(g), newPiece(g)];
+    },
+    layout(g) { g0 = g; if (g.s.tray) geo(g); },
+    down(g, p) {
+      const s = g.s; if (s.done || s.stuck || p.type === 'tv') return;
+      for (let i = 0; i < 3; i++) if (s.tray[i] && Math.abs(p.x - slotX(s, i)) < s.tw / 2 && Math.abs(p.y - s.ty) < s.tw / 2) { s.drag = { i, x: p.x, y: p.y, off: p.type === 'tv' ? 0 : s.hs * 2.6 }; Arcade.sfx.tick(); return; }
+    },
+    move(g, p) { const d = g.s.drag; if (d) { d.x = p.x; d.y = p.y; } },
+    tap(g, p) {
+      if (p.type !== 'tv') return;
+      const s = g.s; if (s.done || s.stuck) return;
+      for (let i = 0; i < 3; i++) if (s.tray[i] && Math.abs(p.x - slotX(s, i)) < s.tw / 2 && Math.abs(p.y - s.ty) < s.tw / 2) { s.sel = s.sel === i ? -1 : i; Arcade.sfx.tick(); return; }
+      if (s.sel >= 0 && s.tray[s.sel]) { const [q, r] = nearest(s, p.x, p.y); if (inside(q, r) && place(g, s.sel, q, r)) s.sel = -1; }
+      else Arcade.sfx.bad();
+    },
+    hover(g, x, y) { g.s.hov = [x, y]; },
+    up(g, p) {
+      const s = g.s, d = s.drag; if (!d || p.type === 'tv') return; s.drag = null;
+      const [q, r] = nearest(s, p.x, p.y - d.off);
+      if (!place(g, d.i, q, r)) {}
+    },
+    update(g, dt) { const s = g.s; for (const v of s.b.values()) if (v.pop) v.pop = Math.max(0, v.pop - dt * 4); s.trayPop = Math.max(0, s.trayPop - dt * 3); },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      const bg = ctx.createRadialGradient(W / 2, H * 0.4, 20, W / 2, H * 0.4, Math.max(W, H)); bg.addColorStop(0, '#4c3a80'); bg.addColorStop(1, '#130e22');
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      if (!s.tray) return;
+      const hs = s.hs;
+      let ghost = null;
+      if (s.drag) { const d = s.drag, p = s.tray[d.i], [q, r] = nearest(s, d.x, d.y - d.off); if (p && fits(s, p.sh, q, r)) ghost = { p, q, r }; }
+      else if (Arcade.tv && s.sel >= 0 && s.tray[s.sel] && s.hov) { const p = s.tray[s.sel], [q, r] = nearest(s, s.hov[0], s.hov[1]); if (fits(s, p.sh, q, r)) ghost = { p, q, r }; }
+      const gset = new Set(ghost ? ghost.p.sh.map(([a, b]) => key(ghost.q + a, ghost.r + b)) : []);
+      // líneas que se completarían
+      const glow = new Set();
+      if (ghost) for (const ln of LINES) if (ln.every(([a, b]) => s.b.has(key(a, b)) || gset.has(key(a, b)))) for (const [a, b] of ln) glow.add(key(a, b));
+      for (const [q, r] of ALL) {
+        const [x, y] = pos(s, q, r), k = key(q, r), v = s.b.get(k);
+        hex(ctx, x, y, hs * 0.94, glow.has(k) ? 'rgba(255,255,255,.28)' : 'rgba(255,255,255,.08)');
+        if (v) { if (v.rock) { hex(ctx, x, y, hs * 0.88, '#495057'); Arcade.emoji(ctx, '🪨', x, y, hs * 1.1); } else gem(ctx, x, y, hs * 0.88 * (1 + v.pop * 0.15), v.c); }
+        else if (gset.has(k)) gem(ctx, x, y, hs * 0.88, ghost.p.c, 0.45);
+      }
+      // bandeja
+      s.tray.forEach((p, i) => {
+        if (!p) return;
+        if (i === s.sel) { ctx.strokeStyle = '#ffd43b'; ctx.lineWidth = 3; Arcade.rr(ctx, slotX(s, i) - s.tw * 0.42, s.ty - s.tw * 0.42, s.tw * 0.84, s.tw * 0.84, 12); ctx.stroke(); }
+        const drag = s.drag && s.drag.i === i, mh = drag ? hs : hs * 0.7 * (1 - s.trayPop * 0.5);
+        const cxm = p.sh.reduce((a, [q, r]) => a + SQ3 * (q + r / 2), 0) / p.sh.length, cym = p.sh.reduce((a, [, r]) => a + 1.5 * r, 0) / p.sh.length;
+        const bx = drag ? s.drag.x : slotX(s, i), by = drag ? s.drag.y - s.drag.off : s.ty;
+        const ox = drag ? 0 : -cxm * mh, oy = drag ? 0 : -cym * mh;
+        for (const [q, r] of p.sh) gem(ctx, bx + ox + mh * SQ3 * (q + r / 2), by + oy + mh * 1.5 * r, mh * 0.88, p.c);
+      });
+      Arcade.txt(ctx, 'Líneas: ' + Math.min(s.lines, s.need) + ' / ' + s.need, W / 2, g.top + 14, 15, '#e5dbff', 'center', 900);
+    },
+  });
+})();
+</script>
+</body>
+</html>
