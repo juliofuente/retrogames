@@ -9,6 +9,12 @@ Hechos: lotes 1–7 (90 juegos Pro, ver HECHO.txt).
 Pendiente también: demos propias para los juegos de acción, plataformas, un toque, física, estrategia y deportes
 (hoy usan la demo genérica, que enseña el control pero no juega bien). Quedan unos 60 títulos (lotes 8–14).
 
+IMPORTANTE AL GENERAR O SUBIR CAMBIOS
+· Después de mk.py / mkgames.py / mkedu.py ejecuta SIEMPRE: python3 herramientas/stamp.py && python3 pwa/build.py
+  stamp.py pone ?v=<hash> en los .js/.css de todas las páginas; sin eso el navegador puede mezclar un HTML nuevo con un
+  common.js viejo de su caché (pasa: no salen los sprites, ni la demo, error «Arcade.foe is not a function»).
+· Sube SIEMPRE juntos pwa/common.js, pwa/common.css y los .html: si en el servidor queda un common.js viejo, falla igual.
+
 JUEGOS EDUCATIVOS (o cualquier juego hecho aparte) — CÓMO AÑADIR MÁS
 · Copia la carpeta del juego en educativos/<nombre>/ tal cual (no hace falta que use common.js).
 · Añade una entrada a EXTRA en herramientas/mkedu.py (id, app, subject: mates|lengua|logica|ingles, emoji,

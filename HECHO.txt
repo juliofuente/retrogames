@@ -50,6 +50,7 @@ herramientas/ Para seguir desarrollando:
               · mkgames.py     regenera el bloque GAMES_PRO de pwa/games.js (diccionario D + lista PRO)
               · mkedu.py       regenera educativos/juegos.js (asignaturas, tramos de edad, apps y juegos educativos)
               · mkdb.py        regenera data/arcade.sqlite (arcade + educativos)
+              · stamp.py       pone ?v=<hash> a los .js/.css de todas las páginas (evita mezclar versiones en caché)
               · mock.js        motor falso para simular juegos en Node (pruebas de balance/solubilidad)
               · tall.py / ttv.py / t8n.py  pruebas Playwright: táctil, TV (1 y 2 jugadores), textos en inglés
 

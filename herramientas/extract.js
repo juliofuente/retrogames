@@ -17,7 +17,7 @@ list.forEach(([col, g], i) => {
   new Function('Arcade', 'window', 'document', 'navigator', 'performance', src)(Arcade, any, any, any, ctx.performance);
   const tv = def.tv === false ? false : def.tv && def.tv.targets ? 'cursor' : 'keys';
   out.push({
-    collection: col, order: i, ...g, phys: /src="phys.js"/.test(html),
+    collection: col, order: i, ...g, phys: /src="phys\.js(\?v=[0-9a-f]*)?"/.test(html),
     help_es: def.help, help_en: def.en && def.en.help, tvhelp_es: def.tvHelp || null, tvhelp_en: (def.en && def.en.tvHelp) || null,
     lives: def.lives ?? 3, levels: def.levels === undefined ? null : def.levels, cap: def.cap || null, tvmode: tv,
     deco: def.deco || [], font: def.font || null, bg: def.bg || null, theme: ((/<meta name="theme-color" content="([^"]+)"/.exec(html) || [])[1] || g.color),
