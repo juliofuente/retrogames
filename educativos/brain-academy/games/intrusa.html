@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Odd Word Out</title></head>
+<body><script>
+const H=window.parent&&window.parent!==window?window.parent.Hub:null;
+if(!H){location.replace('../index.html');}
+else{
+const {ri,pick,shuf}=H.U;
+const TXT={en:"🙈 One word doesn't belong. Tap it!",es:'🙈 Hay una palabra que sobra. ¡Tócala!',fr:"🙈 Un mot n'a rien à faire là. Touche-le !"};
+const TXT2={en:"🙈 Two words don't belong. Tap both!",es:'🙈 Sobran dos palabras. ¡Toca las dos!',fr:"🙈 Deux mots n'ont rien à faire là. Touche-les !"};
+const css=`
+.sent{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;padding:16px 8px;background:#fff;border-radius:20px;box-shadow:0 5px 18px rgba(45,42,74,.08)}
+.w{font-family:'Fredoka One',ui-rounded,'Nunito',system-ui,sans-serif;font-size:clamp(1.25rem,5.6vw,1.75rem);background:#f6f2ff;border:2.5px solid transparent;border-radius:14px;padding:8px 12px;transition:transform .15s;animation:kpop .35s backwards}
+.w:hover{transform:translateY(-3px);border-color:var(--pink)}
+.w.out{animation:fly .5s forwards;pointer-events:none}
+@keyframes fly{to{transform:translateY(-60px) rotate(25deg) scale(.4);opacity:0;width:0;padding:0;margin:0}}
+.w.fixed{background:#ecfff3;border-color:var(--green)}
+.dot{font-family:'Fredoka One',ui-rounded,'Nunito',system-ui,sans-serif;font-size:1.6rem;align-self:flex-end}
+`;
+H.start(window,{id:'intrusa',mode:'rounds',css,
+  timer:D=>Math.max(12,Math.round(45*Math.pow(.9,D))),
+  async round(g){
+    const data=(await g.data('words'))[g.lang],r=g.r,D=g.D;
+    const maxW=D<4?5:D<6?7:99;
+    let pool=data.sentences.filter(s=>s.split(' ').length<=maxW);if(!pool.length)pool=data.sentences;
+    const s=pick(r,pool),words=s.split(' '),n=D<6?1:2;
+    const intr=shuf(r,data.intruders.filter(x=>!s.toLowerCase().split(' ').includes(x))).slice(0,n);
+    const arr=words.map(w=>({w,x:false}));
+    intr.forEach(x=>{const p=ri(r,1,arr.length);arr.splice(p,0,{w:x,x:true});});   // never before the first (capitalised) word
+    g.prompt(g.t(n>1?TXT2:TXT));
+    const box=g.el('div','sent',null,g.stage);let left=n;
+    arr.forEach((it,i)=>{const b=g.el('button','w',null,box);b.textContent=it.w;b.style.animationDelay=(i*.04)+'s';
+      b.onclick=()=>{if(g.solvedFlag||g.paused)return;
+        if(!it.x){g.bad(b);setTimeout(()=>{b.classList.remove('k-wrong');b.disabled=false;},450);return;}
+        b.classList.add('out');left--;
+        if(left<=0){box.querySelectorAll('.w:not(.out)').forEach(x=>x.classList.add('fixed'));g.speak(s);g.solved();}else g.good(b);};});
+    g.el('span','dot','.',box);
+  }
+});
+}
+</script></body></html>

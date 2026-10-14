@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>ABN Addition</title></head>
+<body><script>
+const H=window.parent&&window.parent!==window?window.parent.Hub:null;
+if(!H){location.replace('../index.html');}
+else{
+const {ri,intChoices}=H.U;
+const TX={es:{title:(a,b)=>`➕ Suma ${a} + ${b} pasando cantidades de un número al otro`,ten:(a)=>`¿Cuánto le pasamos al ${a} para que sea un número redondo (decena completa)?`,hun:(a)=>`¿Cuánto le pasamos al ${a} para llegar a la centena completa?`,
+           fin:(a,b)=>`Ya es fácil: ¿cuánto es ${a} + ${b}?`,step:'Paso',give:'Pasamos',h:['1.º','2.º']},
+          en:{title:(a,b)=>`➕ Add ${a} + ${b} by moving amounts from one number to the other`,ten:(a)=>`How much do we give ${a} so it becomes a round number (full ten)?`,hun:(a)=>`How much do we give ${a} to reach the full hundred?`,
+           fin:(a,b)=>`Now it's easy: what is ${a} + ${b}?`,step:'Step',give:'We move',h:['1st','2nd']},
+          fr:{title:(a,b)=>`➕ Additionne ${a} + ${b} en passant des quantités d'un nombre à l'autre`,ten:(a)=>`Combien donne-t-on à ${a} pour qu'il devienne un nombre rond (dizaine complète) ?`,hun:(a)=>`Combien donne-t-on à ${a} pour atteindre la centaine complète ?`,
+           fin:(a,b)=>`C'est facile maintenant : combien font ${a} + ${b} ?`,step:'Étape',give:'On passe',h:['1er','2e']}};
+// Guided ABN "trasvase": complete the ten of the first addend, then (3-digit) the hundred, then add.
+function gen(r,D){
+  for(let t=0;t<200;t++){
+    let a,b;
+    if(D<4){a=ri(r,11,89);b=ri(r,3,D<3?9:29);}else if(D<7){a=ri(r,21,89);b=ri(r,12,89);}else{a=ri(r,101,889);b=ri(r,120,689);}
+    if(a%10===0)continue;const steps=[];let A=a,B=b;
+    const g1=10-A%10;if(g1>B)continue;steps.push({k:'ten',A,B,give:g1});A+=g1;B-=g1;
+    if(D>=7&&A%100!==0){const g2=100-A%100;if(g2>B)continue;steps.push({k:'hun',A,B,give:g2});A+=g2;B-=g2;}
+    steps.push({k:'fin',A,B,ans:A+B});
+    return{a,b,steps,ans:a+b};
+  }
+}
+const css=`
+.abn{width:100%;max-width:440px;margin:0 auto;border-collapse:separate;border-spacing:0;font-family:'Fredoka One',ui-rounded,'Nunito',system-ui,sans-serif;font-size:clamp(1.05rem,4.6vmin,1.35rem);background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 4px 12px rgba(45,42,74,.08)}
+.abn th{background:#9B5CFF;color:#fff;font-size:.8rem;padding:6px;font-family:'Nunito',sans-serif;font-weight:900}
+.abn td{text-align:center;padding:6px;border-top:2px solid #eee}.abn td.q{color:var(--purple);background:#f3edff}
+.ask{text-align:center;font-weight:900;font-size:clamp(.98rem,4.2vmin,1.15rem)}
+.k-choice{font-size:clamp(1.3rem,5.5vmin,1.9rem)}
+`;
+H.start(window,{id:'sumaabn',mode:'rounds',css,
+  timer:D=>Math.max(25,Math.round(80*Math.pow(.92,D))),
+  round(g){
+    const P=gen(g.r,g.D),L=TX[g.lang]||TX.es;g.prompt(L.title(P.a,P.b));
+    const tb=g.el('table','abn',`<tr><th>${L.give}</th><th>${P.a}</th><th>${P.b}</th></tr>`,g.stage);
+    const ask=g.el('div','ask','',g.stage),box=g.el('div','k-ans',null,g.stage);let i=0;
+    const next=()=>{box.innerHTML='';const s=P.steps[i];
+      if(s.k==='fin'){ask.textContent=L.fin(s.A,s.B);const tr=g.el('tr','',`<td>=</td><td class="q" colspan="2">?</td>`,tb);
+        g.choices(intChoices(g.r,[s.ans],[s.ans+10,s.ans-10,s.ans+1,s.ans-1,s.ans+100],4,0),(n,b)=>{b.textContent=n;},(n,b)=>{
+          if(n!==s.ans){g.bad(b);return;}tr.lastChild.textContent=n;tr.lastChild.classList.remove('q');g.fx.stars(b);g.solved();},4,box);return;}
+      ask.textContent=s.k==='ten'?L.ten(s.A):L.hun(s.A);const tr=g.el('tr','',`<td class="q">?</td><td></td><td></td>`,tb);
+      g.choices(intChoices(g.r,[s.give],[s.give+1,s.give-1,s.give+10,10-s.give,s.give+2],4,1),(n,b)=>{b.textContent=n;},(n,b)=>{
+        if(n!==s.give){g.bad(b);return;}box.querySelectorAll('button').forEach(x=>x.disabled=true);const c=tr.children;c[0].textContent=n;c[0].classList.remove('q');c[1].textContent=s.A+n;c[2].textContent=s.B-n;i++;g.good(b);setTimeout(next,350);},4,box);};
+    next();
+  }
+});
+}
+</script></body></html>

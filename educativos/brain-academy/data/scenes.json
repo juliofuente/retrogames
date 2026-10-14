@@ -1,0 +1,222 @@
+{
+ "animals": [
+  "🐱",
+  "🐶",
+  "🦆",
+  "🐷",
+  "🐰",
+  "🐥"
+ ],
+ "objects": [
+  "📦",
+  "🪑",
+  "🌳",
+  "🏠",
+  "🚗",
+  "🛏️"
+ ],
+ "en": {
+  "animals": [
+   [
+    "cat",
+    "cats"
+   ],
+   [
+    "dog",
+    "dogs"
+   ],
+   [
+    "duck",
+    "ducks"
+   ],
+   [
+    "pig",
+    "pigs"
+   ],
+   [
+    "rabbit",
+    "rabbits"
+   ],
+   [
+    "chick",
+    "chicks"
+   ]
+  ],
+  "objects": [
+   "box",
+   "chair",
+   "tree",
+   "house",
+   "car",
+   "bed"
+  ],
+  "nums": [
+   "A",
+   "Two",
+   "Three",
+   "Four"
+  ],
+  "big": "big",
+  "small": "small",
+  "is": "is",
+  "are": "are",
+  "rel": {
+   "on": "on the {o}",
+   "under": "under the {o}",
+   "left": "to the left of the {o}",
+   "right": "to the right of the {o}"
+  }
+ },
+ "es": {
+  "animals": [
+   [
+    "gato",
+    "gatos"
+   ],
+   [
+    "perro",
+    "perros"
+   ],
+   [
+    "pato",
+    "patos"
+   ],
+   [
+    "cerdo",
+    "cerdos"
+   ],
+   [
+    "conejo",
+    "conejos"
+   ],
+   [
+    "pollito",
+    "pollitos"
+   ]
+  ],
+  "objects": [
+   [
+    "la caja",
+    "de la caja"
+   ],
+   [
+    "la silla",
+    "de la silla"
+   ],
+   [
+    "el árbol",
+    "del árbol"
+   ],
+   [
+    "la casa",
+    "de la casa"
+   ],
+   [
+    "el coche",
+    "del coche"
+   ],
+   [
+    "la cama",
+    "de la cama"
+   ]
+  ],
+  "nums": [
+   "Un",
+   "Dos",
+   "Tres",
+   "Cuatro"
+  ],
+  "big": [
+   "grande",
+   "grandes"
+  ],
+  "small": [
+   "pequeño",
+   "pequeños"
+  ],
+  "is": "está",
+  "are": "están",
+  "rel": {
+   "on": "encima {de}",
+   "under": "debajo {de}",
+   "left": "a la izquierda {de}",
+   "right": "a la derecha {de}"
+  }
+ },
+ "fr": {
+  "animals": [
+   [
+    "chat",
+    "chats"
+   ],
+   [
+    "chien",
+    "chiens"
+   ],
+   [
+    "canard",
+    "canards"
+   ],
+   [
+    "cochon",
+    "cochons"
+   ],
+   [
+    "lapin",
+    "lapins"
+   ],
+   [
+    "poussin",
+    "poussins"
+   ]
+  ],
+  "objects": [
+   [
+    "la boîte",
+    "de la boîte"
+   ],
+   [
+    "la chaise",
+    "de la chaise"
+   ],
+   [
+    "l'arbre",
+    "de l'arbre"
+   ],
+   [
+    "la maison",
+    "de la maison"
+   ],
+   [
+    "la voiture",
+    "de la voiture"
+   ],
+   [
+    "le lit",
+    "du lit"
+   ]
+  ],
+  "nums": [
+   "Un",
+   "Deux",
+   "Trois",
+   "Quatre"
+  ],
+  "big": [
+   "grand",
+   "grands"
+  ],
+  "small": [
+   "petit",
+   "petits"
+  ],
+  "is": "est",
+  "are": "sont",
+  "rel": {
+   "on": "sur {a}",
+   "under": "sous {a}",
+   "left": "à gauche {de}",
+   "right": "à droite {de}"
+  }
+ }
+}

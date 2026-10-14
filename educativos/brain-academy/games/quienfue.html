@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Who Did It?</title></head>
+<body><script>
+const H=window.parent&&window.parent!==window?window.parent.Hub:null;
+if(!H){location.replace('../index.html');}
+else{
+const {ri,pick,shuf}=H.U;
+const SUS=[
+  {e:'🦊',en:'the fox',es:'el zorro',fr:'le renard'},{e:'🐱',en:'the cat',es:'el gato',fr:'le chat'},{e:'🐻',en:'the bear',es:'el oso',fr:"l'ours"},
+  {e:'🐰',en:'the rabbit',es:'el conejo',fr:'le lapin'},{e:'🐵',en:'the monkey',es:'el mono',fr:'le singe'},{e:'🐷',en:'the pig',es:'el cerdo',fr:'le cochon'}];
+const MYS=[
+  {e:'🎂',en:'Someone ate the cake!',es:'¡Alguien se comió la tarta!',fr:'Quelqu\'un a mangé le gâteau !'},
+  {e:'🏺',en:'Someone broke the vase!',es:'¡Alguien rompió el jarrón!',fr:'Quelqu\'un a cassé le vase !'},
+  {e:'🍪',en:'Someone took the cookies!',es:'¡Alguien cogió las galletas!',fr:'Quelqu\'un a pris les biscuits !'},
+  {e:'🎈',en:'Someone popped the balloon!',es:'¡Alguien explotó el globo!',fr:'Quelqu\'un a éclaté le ballon !'},
+  {e:'🎨',en:'Someone painted the wall!',es:'¡Alguien pintó la pared!',fr:'Quelqu\'un a peint le mur !'}];
+const SAY={
+  en:{me:()=>'It was me.',notme:()=>"It wasn't me.",acc:x=>`It was ${x}.`,clr:x=>`It wasn't ${x}.`},
+  es:{me:()=>'Fui yo.',notme:()=>'Yo no fui.',acc:x=>`Fue ${x}.`,clr:x=>`No fue ${x}.`},
+  fr:{me:()=>"C'est moi.",notme:()=>"Ce n'est pas moi.",acc:x=>`C'est ${x}.`,clr:x=>`Ce n'est pas ${x}.`}};
+const RULE={oneLie:{en:'🤥 Only ONE of them is lying.',es:'🤥 Solo UNO miente.',fr:'🤥 Un SEUL ment.'},
+            oneTruth:{en:'😇 Only ONE of them tells the truth.',es:'😇 Solo UNO dice la verdad.',fr:'😇 Un SEUL dit la vérité.'}};
+const ASK={en:'🕵️ Who did it?',es:'🕵️ ¿Quién fue?',fr:'🕵️ Qui a fait ça ?'};
+// truth of a statement if culprit = c
+const isTrue=(s,i,c)=>s.t==='me'?c===i:s.t==='notme'?c!==i:s.t==='acc'?c===s.x:c!==s.x;
+function gen(r,D){
+  const n=D<6?3:D<8?4:5,mode=D<4?'oneLie':pick(r,['oneLie','oneTruth']);
+  for(let k=0;k<800;k++){
+    const sus=shuf(r,SUS).slice(0,n);
+    const st=sus.map((_,i)=>{const t=pick(r,['me','notme','acc','clr','acc','clr']);let x=i;if(t==='acc'||t==='clr'){do{x=ri(r,0,n-1);}while(x===i);}return{t,x};});
+    const valid=[];
+    for(let c=0;c<n;c++){const truths=st.filter((s,i)=>isTrue(s,i,c)).length;if(mode==='oneLie'?n-truths===1:truths===1)valid.push(c);}
+    if(valid.length===1)return{sus,st,mode,culprit:valid[0],mys:pick(r,MYS)};   // exactly one possible culprit
+  }
+  return null;
+}
+const css=`
+.case{overflow:hidden;text-align:center;font-family:'Fredoka One',ui-rounded,'Nunito',system-ui,sans-serif;font-size:clamp(1.05rem,4.4vw,1.3rem)}
+.case span{font-size:2.4rem;display:block;animation:kwob 2s infinite}
+.rule{text-align:center;font-weight:900;background:#fff6d8;border:2px solid #ffd93d;border-radius:14px;padding:8px;color:#8a6200}
+.sus{display:grid;gap:10px}
+.k-choices{--cols:1;max-width:520px}
+.k-choice{justify-content:flex-start;gap:12px;font-family:'Nunito';font-size:clamp(1rem,4.2vw,1.2rem);font-weight:800;min-height:70px;padding:8px 14px;text-align:left}
+.k-choice .av{font-size:2.4rem;flex-shrink:0}
+.k-choice .bub{background:#f3efff;border-radius:16px 16px 16px 4px;padding:8px 12px;position:relative}
+@media (orientation:landscape) and (max-height:540px){.case span{display:inline;font-size:1.5rem;animation:none;margin-right:6px}.k-choices{--cols:2!important;max-width:100%}.k-choice{min-height:50px;padding:5px 8px;font-size:.92rem}.k-choice .av{font-size:1.7rem}.rule{padding:4px}}
+@media (max-height:640px){.case span{font-size:1.6rem}.k-choice{min-height:54px}.k-choice .av{font-size:1.8rem}}
+.ask{text-align:center;font-family:'Fredoka One',ui-rounded,'Nunito',system-ui,sans-serif;color:var(--purple);font-size:1.15rem}
+`;
+H.start(window,{id:'quienfue',mode:'rounds',css,noSplit:true,
+  timer:D=>Math.max(25,Math.round(90*Math.pow(.9,D))),
+  round(g){
+    const P=gen(g.r,g.D);const L=g.lang,say=SAY[g.lang]||SAY.en;
+    g.el('div','case',`<span>${P.mys.e}</span>${P.mys[L]||P.mys.en}`,g.stage);
+    g.el('div','rule',g.t(RULE[P.mode]),g.stage);
+    g.el('div','ask',g.t(ASK),g.stage);
+    const idx=P.sus.map((_,i)=>i);
+    g.choices(idx,(i,b)=>{const s=P.st[i],x=s.x!==undefined?(P.sus[s.x][L]||P.sus[s.x].en):'';
+      b.innerHTML=`<span class="av">${P.sus[i].e}</span><span class="bub">${say[s.t](x)}</span>`;},
+      (i,b)=>{if(i===P.culprit){b.classList.add('k-right');g.fx.stars(b);g.solved();}else g.bad(b);},1);
+  }
+});
+}
+</script></body></html>

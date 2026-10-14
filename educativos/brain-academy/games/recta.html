@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Number Line</title></head>
+<body><script>
+const H=window.parent&&window.parent!==window?window.parent.Hub:null;
+if(!H){location.replace('../index.html');}
+else{
+const {ri,pick,intChoices}=H.U;
+const TX={es:{read:'📏 ¿Qué número señala la flecha?',place:n=>`📏 Toca en la recta dónde está el ${n}`},
+          en:{read:'📏 Which number is the arrow pointing to?',place:n=>`📏 Tap where ${n} goes on the line`},
+          fr:{read:'📏 Quel nombre la flèche montre-t-elle ?',place:n=>`📏 Touche l'endroit où se trouve ${n}`}};
+function gen(r,D){
+  let lo,hi,step,lab;
+  if(D<2.5){lo=0;hi=10;step=1;lab=D<2?[0,5,10]:[0,10];}
+  else if(D<4.5){lo=0;hi=20;step=1;lab=[0,10,20];}
+  else if(D<6.5){lo=0;hi=100;step=10;lab=[0,50,100];}
+  else if(D<8.5){lo=ri(r,1,8)*100;hi=lo+100;step=10;lab=[lo,hi];}
+  else{lo=0;hi=1000;step=100;lab=[0,500,1000];}
+  const ticks=[];for(let v=lo;v<=hi;v+=step)ticks.push(v);
+  const val=pick(r,ticks.filter(v=>!lab.includes(v)));
+  const mode=ticks.length<=11&&D>=4&&r()<.45?'place':'read';    // tapping needs wide enough ticks
+  return{lo,hi,step,lab,ticks,val,mode,choices:intChoices(r,[val],[val+step,val-step,val+2*step,val-2*step],4,lo,hi)};
+}
+const css=`
+.line{width:100%;max-width:640px;margin:0 auto;display:block;overflow:visible}
+.line text{font-family:'Fredoka One',ui-rounded,'Nunito',system-ui,sans-serif;font-size:34px;fill:#2d2a4a;text-anchor:middle}
+.hit{fill:transparent;cursor:pointer}.hit:hover{fill:rgba(155,92,255,.12)}
+.k-choice{font-size:clamp(1.3rem,5.5vmin,1.9rem)}
+`;
+H.start(window,{id:'recta',mode:'rounds',css,
+  timer:D=>Math.max(12,Math.round(45*Math.pow(.9,D))),
+  round(g){
+    const P=gen(g.r,g.D),L=TX[g.lang]||TX.es,doc=g.doc,NS='http://www.w3.org/2000/svg';
+    g.prompt(P.mode==='read'?L.read:L.place(P.val));
+    const svg=doc.createElementNS(NS,'svg');svg.setAttribute('viewBox','-40 0 1080 170');svg.setAttribute('class','line');g.stage.appendChild(svg);
+    const X=v=>(v-P.lo)/(P.hi-P.lo)*1000,mk=(t,a,p)=>{const e=doc.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);(p||svg).appendChild(e);return e;};
+    mk('line',{x1:-20,y1:90,x2:1020,y2:90,stroke:'#2d2a4a','stroke-width':6,'stroke-linecap':'round'});
+    P.ticks.forEach(v=>{const big=P.lab.includes(v);mk('line',{x1:X(v),y1:big?66:74,x2:X(v),y2:big?114:106,stroke:'#2d2a4a','stroke-width':big?6:4});
+      if(big){const t=mk('text',{x:X(v),y:152});t.textContent=v;}});
+    if(P.mode==='read'){const a=mk('text',{x:X(P.val),y:50});a.textContent='▼';a.setAttribute('fill','#e2345f');
+      const q=mk('text',{x:X(P.val),y:152});q.textContent='?';q.setAttribute('fill','#9B5CFF');
+      g.choices(P.choices,(n,b)=>{b.textContent=n;},(n,b)=>{if(n===P.val){q.textContent=n;b.classList.add('k-right');g.fx.stars(b);g.solved();}else g.bad(b);},4);}
+    else{const w=1000/(P.ticks.length-1);
+      P.ticks.forEach(v=>{if(P.lab.includes(v))return;const h=mk('rect',{x:X(v)-w/2,y:20,width:w,height:110,rx:12,class:'hit'});
+        h.addEventListener('click',()=>{if(g.solvedFlag||g.paused)return;const t=mk('text',{x:X(v),y:50});t.textContent='▼';
+          if(v===P.val){t.setAttribute('fill','#3CC36E');const q=mk('text',{x:X(v),y:152});q.textContent=v;g.solved();}else{t.setAttribute('fill','#e2345f');g.bad(null);setTimeout(()=>t.remove(),600);}});});}
+  }
+});
+}
+</script></body></html>

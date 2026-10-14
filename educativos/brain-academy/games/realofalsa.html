@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Real or Made-up?</title></head>
+<body><script>
+const H=window.parent&&window.parent!==window?window.parent.Hub:null;
+if(!H){location.replace('../index.html');}
+else{
+const {shuf}=H.U;
+const TXT={en:'🔍 Is it a real word or a made-up one? Read every letter!',es:'🔍 ¿Es una palabra real o inventada? ¡Lee cada letra!',fr:'🔍 Vrai mot ou mot inventé ? Lis chaque lettre !'};
+const BTN={en:['✅ Real','🚫 Made-up'],es:['✅ Real','🚫 Inventada'],fr:['✅ Vrai','🚫 Inventé']};
+const css=`
+.prog{display:flex;gap:6px;justify-content:center}
+.prog i{width:14px;height:14px;border-radius:50%;background:#e7e3f3}.prog i.ok{background:var(--green)}.prog i.no{background:var(--pink)}.prog i.now{background:var(--lilac);animation:kbeat 1.2s infinite}
+.card{min-height:min(170px,30vw,28vh);border-radius:22px;background:#fff;box-shadow:0 6px 20px rgba(45,42,74,.1);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:6px;padding:10px}
+.card b{font-family:'Fredoka One',ui-rounded,'Nunito',system-ui,sans-serif;font-weight:400;font-size:clamp(2.2rem,11vw,3.4rem);letter-spacing:1.5px;animation:kpop .35s}
+.card small{font-size:1.6rem;min-height:1.8rem}
+.k-choices{--cols:2}
+.k-choice{font-size:clamp(1.1rem,5vw,1.4rem);min-height:76px}
+`;
+H.start(window,{id:'realofalsa',mode:'rounds',css,
+  timer:D=>{const k=Math.min(8,4+Math.floor(D/2));return Math.round(k*(.7+Math.max(1.6,5*Math.pow(.9,D))));},  // time per word shrinks with difficulty
+  async round(g){
+    const data=(await g.data('words'))[g.lang],r=g.r,D=g.D;
+    const k=Math.min(8,4+Math.floor(D/2));
+    const real=shuf(r,data.words.filter(w=>D<5?w.w.length<=6:true)).map(w=>({w:w.w,e:w.e,real:true}));
+    const fakeList=D<3?data.pseudo.easy:D<5?data.pseudo.easy.concat(data.pseudo.hard):data.pseudo.hard;
+    const fake=shuf(r,fakeList).map(w=>({w,real:false}));
+    const seq=[];for(let i=0;i<k;i++)seq.push(r()<.5?real.pop():fake.pop());
+    g.prompt(g.t(TXT));
+    const prog=g.el('div','prog',seq.map((_,i)=>`<i class="${i?'':'now'}"></i>`).join(''),g.stage);
+    const card=g.el('div','card','<b></b><small></small>',g.stage);
+    let i=0,wrong=0;
+    const show=()=>{card.querySelector('b').textContent=seq[i].w;card.querySelector('b').style.animation='none';void card.offsetWidth;card.querySelector('b').style.animation='';card.querySelector('small').textContent='';};
+    show();
+    const box=g.choices([true,false],(v,b)=>{b.textContent=g.t(BTN)[v?0:1];},(v,b)=>{
+      const it=seq[i],dots=prog.children;
+      if(v===it.real){dots[i].className='ok';g.good(b);}
+      else{dots[i].className='no';wrong++;g.bad(b);if(g.hearts<=0)return;}
+      card.querySelector('small').textContent=it.real?it.e:'🚫';
+      box.querySelectorAll('button').forEach(x=>x.disabled=true);
+      i++;
+      setTimeout(()=>{if(g.paused&&g.hearts<=0)return;g.unlockChoices(box);if(i>=seq.length){g.solved();return;}dots[i].className='now';show();},650);
+    },2);
+  }
+});
+}
+</script></body></html>

@@ -1,7 +1,8 @@
 ARCADE PERDIDO + ARCADE PRO — LO QUE ESTÁ HECHO
 ================================================
-Fecha: 14-10-2026 · Versión de la PWA (games.js → ARCADE_VERSION): 2.7.0
-Total: 41 juegos en la colección principal + 90 en la colección Pro = 131 juegos.
+Fecha: 14-10-2026 · Versión de la PWA (games.js → ARCADE_VERSION): 2.8.0
+Total: 41 juegos en la colección principal + 90 en la colección Pro = 131 juegos arcade,
+más 49 juegos educativos (apps hechas aparte, ver EDUCATIVOS).
 
 CONTENIDO DEL ZIP
 -----------------
@@ -20,11 +21,23 @@ pwa/          Proyecto PWA completo (para subir a un servidor). Cada juego es un
               · build.py       genera ../autonomos/ (versiones de un solo archivo con todo incrustado)
               · README.md      documentación del motor/API
 autonomos/    Los mismos juegos y portadas pero AUTÓNOMOS (un .html que se abre solo, sin servidor).
+educativos/   Juegos educativos (v2.8.0). Apps hechas aparte que NO usan common.js; se integran solo de cara al usuario:
+              · index.html          portada con filtros por asignatura (Mates, Lengua, Lógica, Inglés) y edad
+                                    (3 a 6, 7 a 12, 13 a 16 años) y buscador. ?materia=mates&edad=3-6&q=… preselecciona.
+              · juegos.js           catálogo (window.EDU), generado por herramientas/mkedu.py
+              · brain-academy/      Emoji Brain Academy: 46 minijuegos (index.html = todos, indexinnovabn.html = solo ABN).
+                                    Se añadió un enlace directo: index.html?juego=<id>&edad=3|6|9&lang=es|en|fr abre el
+                                    minijuego sin pasar por la lista (si no hay perfil crea uno «Invitado» con esa edad).
+              · aventura-palabras/  Aventura de Palabras (juego_vocabulario_infinito.html) y Palabras por repetición
+                                    (juego_aprendizaje_repeticion.html). No se subió api_palabras.php ni juego_vocabulario.html.
+              · fabrica-frases/     Fábrica de Frases (inglés), con su propio manifest y service worker.
 herramientas/ Para seguir desarrollando:
               · src/<id>.js    código fuente de cada juego Pro (y de Cinta) — 1.ª línea: "// Título|#colortema"
                                y "// @phys" en la 2.ª si usa phys.js
               · mk.py          src/<id>.js → pwa/<id>.html   (python3 mk.py id1 id2 …)
               · mkgames.py     regenera el bloque GAMES_PRO de pwa/games.js (diccionario D + lista PRO)
+              · mkedu.py       regenera educativos/juegos.js (asignaturas, tramos de edad, apps y juegos educativos)
+              · mkdb.py        regenera data/arcade.sqlite (arcade + educativos)
               · mock.js        motor falso para simular juegos en Node (pruebas de balance/solubilidad)
               · tall.py / ttv.py / t8n.py  pruebas Playwright: táctil, TV (1 y 2 jugadores), textos en inglés
 
@@ -34,6 +47,10 @@ WEB SEO (raíz del repositorio, para un hosting con PHP 7.4+ y Apache)
                    Rutas en español sin prefijo y en inglés bajo /en/: /juego/{id} · /en/game/{slug}, /categoria/…,
                    /coleccion/…, /control/…, /tv, /juegos (A–Z), /buscar?q= (noindex), /jugar/{id} (redirige al juego),
                    /icono/{id}.svg, /sitemap.xml (con hreflang) y /robots.txt.
+                   Educativos (v2.8.0): /coleccion/educativos, /categoria/educativos, /asignatura/{mates|lengua|logica|ingles}
+                   (/en/subject/…), /edad/{3-a-6-anos|7-a-12-anos|13-a-16-anos} (/en/age/…) y ficha /juego/{id} propia
+                   (sin «cómo se juega»; con edad, asignatura, idiomas y JSON-LD VideoGame+MobileApplication+LearningResource
+                   con typicalAgeRange, audience PeopleAudience, educationalUse, teaches).
                    SEO: title/description únicos, canonical, hreflang es/en/x-default, Open Graph, Twitter, migas de pan,
                    FAQ visible y JSON-LD (@graph) con Organization, WebSite+SearchAction, MobileApplication+WebApplication,
                    CollectionPage/ItemPage, ItemList, BreadcrumbList, VideoGame+MobileApplication (isBasedOn, gamePlatform,
@@ -41,7 +58,9 @@ WEB SEO (raíz del repositorio, para un hosting con PHP 7.4+ y Apache)
 · .htaccess        URLs amigables (mod_rewrite), bloquea data/ y herramientas/, compresión y caché.
 · data/arcade.sqlite  131 juegos con toda su info (títulos, lemas, descripciones, cómo se juega y controles TV en
                    es/en, emoji, colores, control, vidas, niveles, colección, categoría y juegos en que se basa).
-                   Tablas: meta, collections, categories (9), controls (6), games, based_on.
+                   Tablas: meta, collections (3), categories (10), controls (6), games, based_on, subjects (4),
+                   age_groups (3), game_age_groups. Los educativos tienen collection_id 'edu', category_id 'educativos',
+                   subject_id, age_min/age_max, langs, app y url (dónde se juega); control_id y help a NULL.
                    Se regenera con: cd herramientas && python3 mkdb.py (lee los juegos reales con extract.js).
 · index.html       portada estática para GitHub Pages (https://juliofuente.github.io/retrogames/); en Apache manda index.php.
 

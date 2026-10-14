@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Symmetry</title></head>
+<body><script>
+const H=window.parent&&window.parent!==window?window.parent.Hub:null;
+if(!H){location.replace('../index.html');}
+else{
+const {ri,pick,shuf}=H.U;
+const TX={es:{v:'🪞 Completa el dibujo como si la línea fuera un espejo',h:'🪞 Completa el dibujo: ¡ahora el espejo está tumbado!',left:n=>`Faltan ${n}`},
+          en:{v:'🪞 Complete the picture as if the line were a mirror',h:'🪞 Complete the picture: now the mirror is lying down!',left:n=>`${n} to go`},
+          fr:{v:'🪞 Complète le dessin comme si la ligne était un miroir',h:'🪞 Complète le dessin : maintenant le miroir est couché !',left:n=>`Encore ${n}`}};
+const COLORS=['#ff6b9d','#4fb8ff','#3cc36e','#ff9f43','#9b5cff'];
+// The given half is fixed, so the mirrored half is completely determined (unique answer).
+function gen(r,D){
+  const half=D<1?2:D<3?3:D<6?4:5,other=D<1?2:D<3?3:D<6?4:5,axis=D>=5&&r()<.4?'h':'v';
+  const total=half*other,k=Math.max(2,Math.round(total*(D<3?.35:.42)));
+  const cells=shuf(r,[...Array(total).keys()]).slice(0,k); // indices inside the given half
+  return{half,other,axis,cells,color:pick(r,COLORS)};
+}
+const css=`
+.grid{display:grid;gap:3px;margin:0 auto;width:fit-content;padding:6px;background:#ede8fa;border-radius:14px}
+.cl{width:var(--s);height:var(--s);border-radius:6px;background:#fff}
+button.cl{cursor:pointer;border:2px solid #e2dcf3}button.cl:hover{border-color:var(--purple)}
+.cl.on{background:var(--col)!important;border-color:transparent;animation:kpop .3s}
+.cnt{text-align:center;font-weight:900;color:var(--mid)}
+`;
+H.start(window,{id:'simetria',mode:'rounds',css,
+  timer:D=>D<2?null:Math.max(15,Math.round(60*Math.pow(.9,D))),
+  round(g){
+    const P=gen(g.r,g.D),L=TX[g.lang]||TX.es;g.prompt(L[P.axis]);
+    const cols=P.axis==='v'?P.half*2:P.other,rows=P.axis==='v'?P.other:P.half*2;
+    const land=g.win.innerWidth>g.win.innerHeight,avH=(g.card.clientHeight||400)-(land?70:150),avW=(g.stage.clientWidth||320)*(land?.5:1)-40;
+    const s=Math.max(20,Math.min(54,Math.floor(Math.min(avW/cols,avH/rows))-3));
+    const grid=g.el('div','grid k-ans',null,g.stage);grid.style.gridTemplateColumns=`repeat(${cols},${s}px)`;grid.style.setProperty('--s',s+'px');grid.style.setProperty('--col',P.color);
+    // map: given-half index → (row,col) and its mirror
+    const given=new Set(),target=new Set();
+    P.cells.forEach(i=>{if(P.axis==='v'){const rr=Math.floor(i/P.half),c=i%P.half;given.add(rr*cols+c);target.add(rr*cols+(cols-1-c));}
+      else{const rr=Math.floor(i/P.other),c=i%P.other;given.add(rr*cols+c);target.add((rows-1-rr)*cols+c);}});
+    let left=target.size;const cnt=g.el('div','cnt',L.left(left),g.stage);
+    for(let rr=0;rr<rows;rr++)for(let c=0;c<cols;c++){const i=rr*cols+c,mine=P.axis==='v'?c<P.half:rr<P.half;
+      const el=g.el(mine?'div':'button','cl'+(given.has(i)?' on':''),null,grid);
+      if(P.axis==='v'&&c===P.half-1)el.style.marginRight='6px';
+      if(P.axis==='h'&&rr===P.half-1)el.style.marginBottom='6px';
+      if(!mine)el.onclick=()=>{if(g.solvedFlag||g.paused||el.classList.contains('on'))return;
+        if(target.has(i)){el.classList.add('on');H.SFX.pop();left--;cnt.textContent=L.left(left);if(!left){g.fx.stars(el);g.solved();}}
+        else{g.bad(el);setTimeout(()=>{el.classList.remove('k-wrong');el.disabled=false;},450);}};}
+  }
+});
+}
+</script></body></html>

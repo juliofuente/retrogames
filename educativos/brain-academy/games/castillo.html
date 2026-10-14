@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Castle Defense</title></head>
+<body><script>
+const H=window.parent&&window.parent!==window?window.parent.Hub:null;
+if(!H){location.replace('../index.html');}
+else{
+const {ri,pick}=H.U;
+const MON=['👾','👹','👻','🧟','🐲','🦇','🕷️','🤖'];
+const INTRO={en:'Type the answer and press 🔥 to stop the monsters before they reach the castle!',es:'¡Escribe el resultado y pulsa 🔥 para parar a los monstruos antes de que lleguen al castillo!',fr:'Tape le résultat et appuie sur 🔥 pour arrêter les monstres avant le château !'};
+const css=`
+.field{position:relative;flex:1;min-height:110px;border-radius:16px;overflow:hidden;background:linear-gradient(#bfe6ff 0 55%,#9ad67c 55% 100%)}
+.castle{position:absolute;left:4px;bottom:8%;font-size:clamp(3rem,13vw,4.4rem);z-index:2;transition:transform .2s}
+.castle.hit{animation:kshake .4s}
+.mon{position:absolute;display:flex;flex-direction:column;align-items:center;transform:translateX(-50%);z-index:3}
+.mon .e{font-size:clamp(2rem,8vw,2.7rem);animation:walk .5s ease-in-out infinite alternate}
+@keyframes walk{to{transform:translateY(-4px) rotate(4deg)}}
+.mon .l{font-family:'Fredoka One',ui-rounded,'Nunito',system-ui,sans-serif;background:#fff;border-radius:10px;padding:2px 8px;font-size:clamp(.9rem,3.8vw,1.15rem);box-shadow:0 3px 8px rgba(0,0,0,.15);white-space:nowrap;color:#2d2a4a}
+.mon .l.dots{letter-spacing:-1px;color:#e2457e}
+.pad{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-top:6px}
+.pad button{height:clamp(44px,11vw,54px);border-radius:12px;background:#fff;font-family:'Fredoka One',ui-rounded,'Nunito',system-ui,sans-serif;font-size:1.3rem;box-shadow:0 3px 8px rgba(45,42,74,.12)}
+.pad button:active{transform:scale(.92)}
+.pad .fire{background:linear-gradient(135deg,#ff9f43,#ff6b9d);color:#fff;grid-column:span 2}
+.disp{grid-column:span 2;display:flex;align-items:center;justify-content:center;font-family:'Fredoka One',ui-rounded,'Nunito',system-ui,sans-serif;font-size:1.6rem;background:#2d2a4a;color:#ffd93d;border-radius:12px;min-height:44px}
+@media (orientation:landscape) and (max-height:540px){.k-stage{flex-direction:row!important;gap:8px!important}.pad{width:36%;margin:0;grid-template-columns:repeat(4,1fr);align-content:center;gap:5px}.pad button{height:clamp(34px,13vh,48px);font-size:1.1rem}.disp{grid-column:span 4;min-height:36px}.pad .fire{grid-column:span 4}}
+`;
+H.start(window,{id:'castillo',mode:'arcade',css,intro:g=>g.t(INTRO),
+  wave(g){
+    const r=g.r,D=g.D,doc=g.doc,win=g.win;
+    g.stage.innerHTML='';
+    const field=g.el('div','field',null,g.stage),castle=g.el('div','castle','🏰',field);
+    const pad=g.el('div','pad',null,g.stage);
+    let typed='';const disp=g.el('div','disp','',pad);
+    ['1','2','3','4','5','6','7','8','9','0','⌫'].forEach(k=>{const b=g.el('button','',k,pad);b.onclick=()=>press(k);});
+    const fire=g.el('button','fire','🔥',pad);fire.onclick=()=>press('F');
+    const total=5+Math.min(10,Math.floor(g.level/2)),speed=.045+D*.006,gap=Math.max(1.3,4-D*.25);
+    let spawned=0,done=0,mons=[],t=0,nextAt=.6,last=null,raf=0;
+    function spawn(){const p=H.M.problem(r,D),el=g.el('div','mon',`<div class="l${p.dots?' dots':''}">${p.txt}</div><div class="e">${pick(r,MON)}</div>`,field);
+      const lane=spawned%3;el.style.top=(8+lane*16)+'%';mons.push({el,x:1.05,ans:p.ans,lane});spawned++;}
+    function press(k){if(!g.running)return;H.SFX.click();
+      if(k==='⌫')typed=typed.slice(0,-1);else if(k==='F')shoot();else if(typed.length<4)typed+=k;disp.textContent=typed;}
+    function shoot(){if(!typed)return;const v=+typed;typed='';disp.textContent='';
+      const target=mons.filter(m=>m.ans===v).sort((a,b)=>a.x-b.x)[0];
+      if(!target){H.SFX.bad();disp.textContent='✖';setTimeout(()=>{if(!typed)disp.textContent='';},400);return;}
+      const cr=castle.getBoundingClientRect(),mr=target.el.getBoundingClientRect();
+      g.fx.laser(cr.right-10,cr.top+cr.height*.3,mr.left+mr.width/2,mr.top+mr.height*.6);H.SFX.laser();
+      setTimeout(()=>{H.SFX.boom();g.fx.boom(mr.left+mr.width/2,mr.top+mr.height/2);},120);
+      kill(target);g.addScore(10+Math.floor(D*3));}
+    function kill(m){m.el.remove();mons=mons.filter(x=>x!==m);done++;g.setProg(done/total);}
+    function loop(ts){if(!g.running)return;if(g.paused){last=ts;raf=win.requestAnimationFrame(loop);return;}
+      const dt=last?Math.min(.05,(ts-last)/1000):0;last=ts;t+=dt;
+      if(spawned<total&&t>=nextAt){spawn();nextAt=t+gap*(.8+r()*.4);}
+      for(const m of mons.slice()){m.x-=speed*dt;m.el.style.left=(m.x*100)+'%';
+        if(m.x<.16){kill(m);castle.classList.remove('hit');void castle.offsetWidth;castle.classList.add('hit');g.loseHeart();if(!g.running)return;}}
+      if(spawned>=total&&!mons.length){g.waveDone();return;}
+      raf=win.requestAnimationFrame(loop);}
+    const key=e=>{if(/^[0-9]$/.test(e.key))press(e.key);else if(e.key==='Backspace')press('⌫');else if(e.key==='Enter'||e.key===' ')press('F');};
+    win.addEventListener('keydown',key);
+    raf=win.requestAnimationFrame(loop);
+    return()=>{win.cancelAnimationFrame(raf);win.removeEventListener('keydown',key);};
+  }
+});
+}
+</script></body></html>

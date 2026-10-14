@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Decompositions</title></head>
+<body><script>
+const H=window.parent&&window.parent!==window?window.parent.Hub:null;
+if(!H){location.replace('../index.html');}
+else{
+const {ri,pick,shuf,intChoices}=H.U;
+const W={es:{c:'centenas',d:'decenas',u:'unidades',ok:n=>`🧩 ¿Qué descomposición del ${n} es CORRECTA?`,num:'🧩 ¿Qué número es?'},
+         en:{c:'hundreds',d:'tens',u:'ones',ok:n=>`🧩 Which way of breaking up ${n} is CORRECT?`,num:'🧩 Which number is it?'},
+         fr:{c:'centaines',d:'dizaines',u:'unités',ok:n=>`🧩 Quelle décomposition de ${n} est CORRECTE ?`,num:'🧩 Quel nombre est-ce ?'}};
+// Options are built as lists of parts [value,unit] so their totals can be checked exactly: only one adds up to N.
+const val=o=>o.reduce((s,[v,u])=>s+v*u,0);
+function gen(r,D){
+  if(D>=3&&r()<.4){ // reverse with trades: 3 centenas + 12 decenas + 5 unidades
+    const c=ri(r,1,D<6?3:8),d=ri(r,D<5?0:10,D<5?9:19),u=ri(r,D<5?0:10,D<5?9:19),n=c*100+d*10+u;
+    return{mode:'num',parts:[[c,100],[d,10],[u,1]],ans:n,choices:intChoices(r,[n],[Number(`${c}${d}${u}`),c*100+(d%10)*10+(u%10),n+10,n-10,n+100],4,1)};}
+  const n=D<4?ri(r,21,99):D<7?ri(r,111,989):ri(r,1101,9899);const s=String(n),L=s.length;
+  const units=[1000,100,10,1].slice(4-L),dig=s.split('').map(Number);
+  const canon=dig.map((x,i)=>[x*units[i],1]).filter(p=>p[0]);
+  const good=[canon];
+  if(L>=2){const tens=Math.floor(n/10);good.push([[tens,10],[n%10,1]]);good.push([[n-n%10,1],[n%10,1]]);}
+  if(L>=3){const h=Math.floor(n/100);if(h>1)good.push([[(h-1)*100,1],[n-(h-1)*100,1]]);good.push([[h,100],[n%100,1]]);}
+  const right=pick(r,good.filter(o=>o.every(p=>p[0]>0)));
+  const bad=[];const swap=dig.slice();if(L>=2&&swap[L-1]!==swap[L-2]){[swap[L-1],swap[L-2]]=[swap[L-2],swap[L-1]];bad.push(swap.map((x,i)=>[x*units[i],1]).filter(p=>p[0]));}
+  bad.push(canon.map((p,i)=>i===canon.length-1?[p[0]+(p[0]%10===0?10:1),1]:p));
+  if(L>=3)bad.push([[dig[0]*units[0]/10,1]].concat(canon.slice(1)));
+  bad.push([[Math.floor(n/10),1],[n%10,1]]);   // forgets that "34 tens" means 340
+  bad.push([[Math.floor(n/10),10],[n%10+10,1]]);
+  const wrong=shuf(r,bad.filter(o=>val(o)!==n));const ch=[right];
+  for(const o of wrong){if(ch.length>=4)break;if(!ch.some(c=>JSON.stringify(c)===JSON.stringify(o)))ch.push(o);}
+  return{mode:'ok',n,right,choices:shuf(r,ch)};
+}
+const fmt=(o,w)=>o.map(([v,u])=>u===1?String(v):`${v} ${u===100?w.c:u===10?w.d:w.u}`).join(' + ');
+const css=`.big{text-align:center;font-family:'Fredoka One',ui-rounded,'Nunito',system-ui,sans-serif;font-size:clamp(1.6rem,8vmin,2.4rem)}
+.k-choices{--cols:1}.k-choice{font-family:'Fredoka One',ui-rounded,'Nunito',system-ui,sans-serif;font-size:clamp(1.05rem,4.6vmin,1.4rem);min-height:52px}`;
+H.start(window,{id:'descomp',mode:'rounds',css,
+  timer:D=>Math.max(15,Math.round(55*Math.pow(.92,D))),
+  round(g){
+    const P=gen(g.r,g.D),w=W[g.lang]||W.es;
+    if(P.mode==='num'){g.prompt(w.num);g.el('div','big',P.parts.map(([v,u])=>`${v} ${u===100?w.c:u===10?w.d:w.u}`).join(' + '),g.stage);
+      g.choices(P.choices,(n,b)=>{b.textContent=n;},(n,b)=>{if(n===P.ans){b.classList.add('k-right');g.fx.stars(b);g.solved();}else g.bad(b);},2);return;}
+    g.prompt(w.ok(P.n));g.el('div','big',String(P.n),g.stage);
+    g.choices(P.choices,(o,b)=>{b.textContent=fmt(o,w);},(o,b)=>{if(o===P.right){b.classList.add('k-right');g.fx.stars(b);g.solved();}else g.bad(b);},1);
+  }
+});
+}
+</script></body></html>

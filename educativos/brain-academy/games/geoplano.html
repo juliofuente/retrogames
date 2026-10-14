@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Geoboard</title></head>
+<body><script>
+const H=window.parent&&window.parent!==window?window.parent.Hub:null;
+if(!H){location.replace('../index.html');}
+else{
+const {ri,pick,intChoices}=H.U;
+const TX={es:{sides:'📐 ¿Cuántos lados tiene la figura de la goma?',verts:'📐 ¿Cuántos vértices (esquinas) tiene la figura?',area:'📐 ¿Cuántos cuadraditos caben dentro de la figura?',per:'📐 Mide el borde: ¿cuántos lados de cuadradito tiene alrededor?',tri:'📐 ¿Cuántos cuadraditos ocupa el triángulo? (Pista: es la mitad de un rectángulo)'},
+          en:{sides:'📐 How many sides does the rubber-band shape have?',verts:'📐 How many vertices (corners) does the shape have?',area:'📐 How many little squares fit inside the shape?',per:'📐 Measure the edge: how many square sides go all the way around?',tri:'📐 How many little squares does the triangle cover? (Hint: it is half a rectangle)'},
+          fr:{sides:"📐 Combien de côtés a la forme de l'élastique ?",verts:'📐 Combien de sommets (coins) a la forme ?',area:'📐 Combien de petits carrés tiennent dans la forme ?',per:'📐 Mesure le bord : combien de côtés de petits carrés tout autour ?',tri:"📐 Combien de petits carrés couvre le triangle ? (Indice : c'est la moitié d'un rectangle)"}};
+// Shapes on a peg grid. Areas/perimeters are computed exactly from the vertices (shoelace / segment counts).
+function shoelace(p){let s=0;for(let i=0;i<p.length;i++){const[a,b]=p[i],[c,d]=p[(i+1)%p.length];s+=a*d-b*c;}return Math.abs(s)/2;}
+function per(p){let s=0;for(let i=0;i<p.length;i++){const[a,b]=p[i],[c,d]=p[(i+1)%p.length];s+=Math.abs(c-a)+Math.abs(d-b);}return s;}
+function gen(r,D){
+  const n=D<3?5:D<6?6:7;   // pegs per side
+  const q=D<2?pick(r,['sides','verts']):D<4?pick(r,['sides','area','area']):D<6?pick(r,['area','per','verts']):pick(r,['area','per','tri']);
+  if(q==='sides'||q==='verts'){
+    const T=D<1?[[[0,2],[2,0],[4,2]],[[0,0],[3,0],[3,3],[0,3]],[[0,0],[4,0],[4,2],[0,2]]]:
+      [[[0,2],[2,0],[4,2]],[[0,0],[3,0],[3,3],[0,3]],[[1,0],[3,0],[4,2],[2,4],[0,2]],[[1,0],[3,0],[4,2],[3,4],[1,4],[0,2]],[[0,0],[2,0],[2,2],[4,2],[4,4],[0,4]],[[0,1],[2,0],[4,1],[4,3],[0,3]]];
+    const sh=pick(r,T),dx=ri(r,0,n-1-Math.max(...sh.map(p=>p[0]))),dy=ri(r,0,n-1-Math.max(...sh.map(p=>p[1])));
+    const pts=sh.map(([x,y])=>[x+dx,y+dy]);return{n,q,pts,ans:pts.length,choices:intChoices(r,[pts.length],[pts.length+1,pts.length-1,pts.length+2],D<1?3:4,3)};}
+  if(q==='tri'){let w,h;do{w=ri(r,2,n-1);h=ri(r,2,n-1);}while((w*h)%2);const x=ri(r,0,n-1-w),y=ri(r,0,n-1-h),pts=[[x,y],[x+w,y+h],[x,y+h]];const a=shoelace(pts);
+    return{n,q,pts,ans:a,choices:intChoices(r,[a],[w*h,a+1,a-1,w+h],4,1)};}
+  // rectangle or L-shape
+  const w=ri(r,2,n-1),h=ri(r,2,n-1),x=ri(r,0,n-1-w),y=ri(r,0,n-1-h);let pts=[[x,y],[x+w,y],[x+w,y+h],[x,y+h]];
+  if(D>=4&&w>=3&&h>=3&&r()<.6){const cw=ri(r,1,w-1),chh=ri(r,1,h-1);pts=[[x,y],[x+w-cw,y],[x+w-cw,y+chh],[x+w,y+chh],[x+w,y+h],[x,y+h]];}
+  const ans=q==='area'?shoelace(pts):per(pts);
+  return{n,q,pts,ans,choices:intChoices(r,[ans],q==='area'?[per(pts),ans+1,ans-1,ans+2]:[shoelace(pts),ans+2,ans-2,ans+1],4,1)};
+}
+const css=`.geo{display:block;margin:0 auto;width:min(100%,300px)}.k-choice{font-size:clamp(1.4rem,6vmin,2rem)}
+@media (orientation:landscape) and (max-height:540px){.geo{width:min(100%,46vh)}}`;
+H.start(window,{id:'geoplano',mode:'rounds',css,
+  timer:D=>D<2?null:Math.max(15,Math.round(55*Math.pow(.92,D))),
+  round(g){
+    const P=gen(g.r,g.D),L=TX[g.lang]||TX.es,doc=g.doc,NS='http://www.w3.org/2000/svg',S=40,pad=20,W=(P.n-1)*S+2*pad;g.prompt(L[P.q]);
+    const svg=doc.createElementNS(NS,'svg');svg.setAttribute('viewBox',`0 0 ${W} ${W}`);svg.setAttribute('class','geo');g.stage.appendChild(svg);
+    const mk=(t,a)=>{const e=doc.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);svg.appendChild(e);return e;};
+    mk('rect',{x:0,y:0,width:W,height:W,rx:18,fill:'#f7efe2'});
+    if(P.q==='area'||P.q==='per'||P.q==='tri')for(let i=0;i<P.n;i++){mk('line',{x1:pad,y1:pad+i*S,x2:W-pad,y2:pad+i*S,stroke:'#e8dcc6','stroke-width':1.5});mk('line',{x1:pad+i*S,y1:pad,x2:pad+i*S,y2:W-pad,stroke:'#e8dcc6','stroke-width':1.5});}
+    const pts=P.pts.map(([x,y])=>`${pad+x*S},${pad+y*S}`).join(' ');
+    mk('polygon',{points:pts,fill:'rgba(79,184,255,.25)',stroke:'#e2345f','stroke-width':5,'stroke-linejoin':'round'});
+    for(let i=0;i<P.n;i++)for(let j=0;j<P.n;j++)mk('circle',{cx:pad+i*S,cy:pad+j*S,r:5,fill:'#8d6e63'});
+    if(P.q==='verts')P.pts.forEach(([x,y])=>mk('circle',{cx:pad+x*S,cy:pad+y*S,r:8,fill:'#e2345f'}));
+    g.choices(P.choices,(n,b)=>{b.textContent=n;},(n,b)=>{if(n===P.ans){b.classList.add('k-right');g.fx.stars(b);g.solved();}else g.bad(b);},P.choices.length);
+  }
+});
+}
+</script></body></html>

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Domino Maths</title></head>
+<body><script>
+const H=window.parent&&window.parent!==window?window.parent.Hub:null;
+if(!H){location.replace('../index.html');}
+else{
+const {ri,pick,shuf,intChoices}=H.U;
+const TX={es:{one:'🁫 ¿Cuántos puntos hay?',sum:'🁫 ¿Cuántos puntos hay en total en la ficha?',find:n=>`🁫 ¿Qué ficha tiene ${n} puntos en total?`,diff:'🁫 ¿Cuántos puntos MÁS tiene un lado que el otro?'},
+          en:{one:'🁫 How many dots are there?',sum:'🁫 How many dots are on the domino altogether?',find:n=>`🁫 Which domino has ${n} dots altogether?`,diff:'🁫 How many MORE dots does one side have?'},
+          fr:{one:'🁫 Combien de points y a-t-il ?',sum:'🁫 Combien de points en tout sur le domino ?',find:n=>`🁫 Quel domino a ${n} points en tout ?`,diff:'🁫 Combien de points DE PLUS a un côté ?'}};
+const PIPS={0:[],1:[4],2:[0,8],3:[0,4,8],4:[0,2,6,8],5:[0,2,4,6,8],6:[0,2,3,5,6,8],7:[0,2,3,4,5,6,8],8:[0,1,2,3,5,6,7,8],9:[0,1,2,3,4,5,6,7,8]};
+function gen(r,D){
+  const mx=D<3?6:9;
+  if(D<1){const n=ri(r,1,6);return{q:'one',tiles:[[n,null]],ans:n,choices:intChoices(r,[n],[n+1,n-1,n+2],3,1)};}
+  if(D<2||(D<4&&r()<.5)){const a=ri(r,0,mx),b=ri(r,1,mx),s=a+b;return{q:'sum',tiles:[[a,b]],ans:s,choices:intChoices(r,[s],[s+1,s-1,s+2,a*b],4,0)};}
+  if(D<4||r()<.5){const s=ri(r,4,mx+3),a=ri(r,Math.max(0,s-mx),Math.min(mx,s)),right=[a,s-a],wrong=new Map();
+    for(let k=0;k<60&&wrong.size<3;k++){const x=ri(r,0,mx),y=ri(r,0,mx);if(x+y!==s)wrong.set(x+'|'+y,[x,y]);}
+    return{q:'find',s,tiles:[],ans:right,choices:shuf(r,[right,...wrong.values()])};}
+  const a=ri(r,0,mx),b=ri(r,0,mx);if(a===b)return gen(r,D-.01);const d=Math.abs(a-b);return{q:'diff',tiles:[[a,b]],ans:d,choices:intChoices(r,[d],[d+1,d-1,a+b,Math.max(a,b)],4,0)};
+}
+function tile(g,[a,b],small){
+  const t=g.el('div','tile'+(small?' sm':''));
+  [a,b].forEach((n,i)=>{if(n===null)return;if(i)g.el('div','mid',null,t);const h=g.el('div','half',null,t);for(let k=0;k<9;k++)g.el('span',PIPS[n].includes(k)?'p':'',null,h);});return t;
+}
+const css=`
+.tiles{display:flex;justify-content:center}
+.tile{display:flex;background:#fffdf6;border:3px solid #2d2a4a;border-radius:16px;padding:6px;gap:6px;box-shadow:0 5px 0 #2d2a4a}
+.half{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;width:clamp(84px,24vmin,120px);aspect-ratio:1;padding:6px}
+.half span{border-radius:50%}.half span.p{background:#2d2a4a}
+.mid{width:3px;background:#2d2a4a;border-radius:2px}
+.tile.sm{border-width:2px;padding:3px;gap:3px;box-shadow:none;border-radius:10px}.tile.sm .half{width:clamp(38px,11vmin,52px);gap:3px;padding:3px}.tile.sm .mid{width:2px}
+.k-choice{font-size:clamp(1.4rem,6vmin,2rem)}
+`;
+H.start(window,{id:'domino',mode:'rounds',css,
+  timer:D=>D<2?null:Math.max(10,Math.round(40*Math.pow(.9,D))),
+  round(g){
+    const P=gen(g.r,g.D),L=TX[g.lang]||TX.es;g.prompt(P.q==='find'?L.find(P.s):L[P.q]);
+    const box=g.el('div','tiles',null,g.stage);P.tiles.forEach(t=>box.appendChild(tile(g,t,false)));
+    if(P.q==='find')g.choices(P.choices,(t,b)=>b.appendChild(tile(g,t,true)),(t,b)=>{if(t===P.ans){b.classList.add('k-right');g.fx.stars(b);g.solved();}else g.bad(b);},2);
+    else g.choices(P.choices,(n,b)=>{b.textContent=n;},(n,b)=>{if(n===P.ans){b.classList.add('k-right');g.fx.stars(b);g.solved();}else g.bad(b);},P.choices.length);
+  }
+});
+}
+</script></body></html>

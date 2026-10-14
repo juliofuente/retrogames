@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Number Friends</title></head>
+<body><script>
+const H=window.parent&&window.parent!==window?window.parent.Hub:null;
+if(!H){location.replace('../index.html');}
+else{
+const {ri,pick,intChoices}=H.U;
+const TX={es:{q:(n,T)=>`🤝 ¿Quién es el amigo del ${T} de ${n}?`,sub:T=>`Juntos suman ${T}`},en:{q:(n,T)=>`🤝 Who is ${n}'s friend to make ${T}?`,sub:T=>`Together they make ${T}`},fr:{q:(n,T)=>`🤝 Qui est l'ami de ${n} pour faire ${T} ?`,sub:T=>`Ensemble ils font ${T}`}};
+// One item = {n, T}. A round is a quick burst of several items (fluency, as in ABN mental maths).
+function item(r,D){
+  if(D<1)return{T:5,n:ri(r,1,4)};
+  if(D<3)return{T:10,n:ri(r,1,9)};
+  if(D<4)return{T:100,n:ri(r,1,9)*10};
+  if(D<5.5)return{T:100,n:ri(r,11,89)};
+  if(D<7)return pick(r,[{T:100,n:ri(r,11,99)},{T:1000,n:ri(r,1,9)*100}]);
+  return pick(r,[{T:1000,n:ri(r,11,99)*10},{T:1000,n:ri(r,101,989)}]);
+}
+const css=`
+.big{display:flex;align-items:center;justify-content:center;gap:10px;font-family:'Fredoka One',ui-rounded,'Nunito',system-ui,sans-serif;font-size:clamp(2rem,10vmin,3rem)}
+.big b{background:#ffd93d;border-radius:16px;padding:2px 16px;font-weight:400}.big i{font-style:normal;color:var(--purple);background:#f3edff;border-radius:16px;padding:2px 16px;border:3px dashed var(--lilac)}
+.strip{display:grid;gap:3px;max-width:420px;width:100%;margin:0 auto}
+.strip span{aspect-ratio:1;border-radius:6px;background:#eee;border:2px solid #ddd}.strip span.f{background:#ff6b9d;border-color:#e2345f}.strip span.g{background:#4fb8ff;border-color:#1e88e5;animation:kpop .3s}
+.bar{height:26px;border-radius:13px;background:#eee;overflow:hidden;display:flex;max-width:420px;width:100%;margin:0 auto}.bar i{background:#ff6b9d}.bar u{background:#4fb8ff;text-decoration:none}
+.sub{text-align:center;font-weight:900;color:var(--mid)}.prog{text-align:center;font-weight:900;color:var(--mid)}
+.k-choice{font-size:clamp(1.4rem,6vmin,2rem)}
+`;
+H.start(window,{id:'amigos',mode:'rounds',css,
+  timer:D=>{const k=D<2?3:D<5?4:5;return Math.round(k*Math.max(3,9*Math.pow(.9,D)));},
+  round(g){
+    const L=TX[g.lang]||TX.es,k=g.D<2?3:g.D<5?4:5,items=Array.from({length:k},()=>item(g.r,g.D));let i=0;
+    const prog=g.el('div','prog','',g.stage),big=g.el('div','big',null,g.stage),vis=g.el('div',null,null,g.stage),sub=g.el('div','sub','',g.stage),box=g.el('div','k-ans',null,g.stage);
+    const show=()=>{const it=items[i],ans=it.T-it.n;g.prompt(L.q(it.n,it.T));prog.textContent=`${i+1} / ${k}`;sub.textContent=L.sub(it.T);
+      big.innerHTML=`<b>${it.n}</b>+<i>?</i>=<span>${it.T}</span>`;vis.innerHTML='';
+      if(it.T<=10){const s=g.el('div','strip',null,vis);s.style.gridTemplateColumns=`repeat(${it.T},1fr)`;for(let j=0;j<it.T;j++)g.el('span',j<it.n?'f':'',null,s);}
+      else{const b=g.el('div','bar',null,vis);g.el('i','',null,b).style.width=(it.n/it.T*100)+'%';}
+      const dig=it.T===100&&it.n%10?(10-it.n%10)*10+(10-Math.floor(it.n/10)):ans+10;     // typical digit-by-digit mistake
+      box.innerHTML='';
+      g.choices(intChoices(g.r,[ans],[ans+1,ans-1,ans+10,ans-10,dig,it.T===1000?ans+100:ans+2],4,0),(n,b)=>{b.textContent=n;},(n,b)=>{
+        if(n!==ans){g.bad(b);return;}box.querySelectorAll('button').forEach(x=>x.disabled=true);
+        big.querySelector('i').textContent=ans;vis.querySelectorAll('.strip span:not(.f)').forEach(x=>x.classList.add('g'));const bu=vis.querySelector('.bar');if(bu)g.el('u','',null,bu).style.width=(ans/it.T*100)+'%';
+        i++;if(i>=k){g.fx.stars(b);g.solved();}else{g.good(b);setTimeout(show,550);}},4,box);};
+    show();
+  }
+});
+}
+</script></body></html>

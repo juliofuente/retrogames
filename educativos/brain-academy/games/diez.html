@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Ten Frame</title></head>
+<body><script>
+const H=window.parent&&window.parent!==window?window.parent.Hub:null;
+if(!H){location.replace('../index.html');}
+else{
+const {ri,intChoices}=H.U;
+const TX={es:{count:'🔟 ¿Cuántos puntos hay?',miss:n=>`🔟 ¿Cuántos faltan para llegar a ${n}?`,sum:'🔟 Rojos y azules: ¿cuántos hay en total?'},
+          en:{count:'🔟 How many dots are there?',miss:n=>`🔟 How many more to make ${n}?`,sum:'🔟 Red and blue: how many altogether?'},
+          fr:{count:'🔟 Combien de points y a-t-il ?',miss:n=>`🔟 Combien en manque-t-il pour faire ${n} ?`,sum:'🔟 Rouges et bleus : combien en tout ?'}};
+// Ten frames: counters always fill left→right, top row first, so the "structure of 5 and 10" is visible.
+function gen(r,D){
+  if(D<1){const n=ri(r,1,5);return{frames:1,a:n,b:0,q:'count',goal:10,ans:n,nCh:3};}
+  if(D<2){const n=ri(r,3,10),q=D<1.5||r()<.4?'count':'miss';return{frames:1,a:n,b:0,q,goal:10,ans:q==='count'?n:10-n,nCh:3};}
+  if(D<3.5){const n=ri(r,8,19),q=r()<.5?'count':'miss';return{frames:2,a:n,b:0,q,goal:20,ans:q==='count'?n:20-n,nCh:4};}
+  const a=ri(r,D<5?5:6,9),b=ri(r,D<5?3:4,9);return{frames:2,a,b,q:'sum',goal:20,ans:a+b,nCh:4};   // e.g. 8+5 → fill to 10, 3 left
+}
+const css=`
+.frames{display:flex;flex-direction:column;gap:10px;align-items:center}
+.fr{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;background:#2d2a4a;padding:6px;border-radius:14px;width:min(100%,340px)}
+.cl{aspect-ratio:1;background:#fff;border-radius:8px;display:flex;align-items:center;justify-content:center}
+.dot{width:72%;height:72%;border-radius:50%;animation:kpop .35s backwards}
+.dot.a{background:radial-gradient(circle at 35% 30%,#ff9ab8,#e2345f)}.dot.b{background:radial-gradient(circle at 35% 30%,#9ad4ff,#1e88e5)}
+.k-choice{font-size:clamp(1.4rem,6vmin,2rem)}
+@media (orientation:landscape) and (max-height:540px){.frames{flex-direction:row;justify-content:center}.fr{width:min(48%,230px);gap:3px;padding:4px}}
+`;
+H.start(window,{id:'diez',mode:'rounds',css,
+  timer:D=>D<2?null:Math.max(12,Math.round(45*Math.pow(.9,D))),
+  round(g){
+    const P=gen(g.r,g.D),L=TX[g.lang]||TX.es;g.prompt(P.q==='miss'?L.miss(P.goal):P.q==='sum'?L.sum:L.count);
+    const box=g.el('div','frames',null,g.stage);let k=0;
+    for(let f=0;f<P.frames;f++){const fr=g.el('div','fr',null,box);for(let i=0;i<10;i++){const c=g.el('div','cl',null,fr);
+      if(k<P.a+P.b){const d=g.el('div','dot '+(k<P.a?'a':'b'),null,c);d.style.animationDelay=(k*.04)+'s';}k++;}}
+    g.choices(intChoices(g.r,[P.ans],[P.ans+1,P.ans-1,P.ans+2,P.ans-2,P.ans+10],P.nCh,0),(n,b)=>{b.textContent=n;},(n,b)=>{
+      if(n===P.ans){b.classList.add('k-right');g.fx.stars(b);g.solved();}else g.bad(b);},P.nCh);
+  }
+});
+}
+</script></body></html>

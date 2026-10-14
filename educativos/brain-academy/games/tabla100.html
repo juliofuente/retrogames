@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Hundred Chart</title></head>
+<body><script>
+const H=window.parent&&window.parent!==window?window.parent.Hub:null;
+if(!H){location.replace('../index.html');}
+else{
+const {ri,pick,intChoices}=H.U;
+const TX={es:{frag:'💯 Este trozo es de la tabla del 100. ¿Qué número va en la casilla ❓?',path:'💯 En la tabla del 100: ➡️ suma 1, ⬇️ suma 10, ⬅️ resta 1, ⬆️ resta 10. ¿Dónde llegas?',tip:'➡️ +1 · ⬇️ +10'},
+          en:{frag:'💯 This piece comes from the hundred chart. Which number goes in ❓?',path:'💯 On the hundred chart: ➡️ adds 1, ⬇️ adds 10, ⬅️ takes 1, ⬆️ takes 10. Where do you land?',tip:'➡️ +1 · ⬇️ +10'},
+          fr:{frag:'💯 Ce morceau vient du tableau de 100. Quel nombre va dans ❓ ?',path:'💯 Dans le tableau de 100 : ➡️ ajoute 1, ⬇️ ajoute 10, ⬅️ enlève 1, ⬆️ enlève 10. Où arrives-tu ?',tip:'➡️ +1 · ⬇️ +10'}};
+function gen(r,D){
+  const M=D<3?1:D<6?2:3;
+  for(let t=0;t<200;t++){
+    const b=ri(r,1,D<3?50:100),c=(b-1)%10,row=Math.floor((b-1)/10);
+    let dx=ri(r,-M,M),dy=ri(r,-M,M);if(!dx&&!dy)continue;if(D<3&&dx&&dy)continue;     // easy: only one direction
+    if(c+dx<0||c+dx>9||row+dy<0||row+dy>9)continue;
+    const ans=b+dx+10*dy,mode=D>=5&&r()<.45?'path':'frag';
+    const dis=[ans+1,ans-1,ans+10,ans-10,ans+9,ans-9,ans+11,ans-11,b+10*dx+dy];
+    return{b,dx,dy,ans,mode,choices:intChoices(r,[ans],dis,4,1,100)};
+  }
+}
+const css=`
+.frag{display:grid;gap:4px;margin:0 auto;width:fit-content}
+.c{width:clamp(44px,13vmin,58px);aspect-ratio:1;border-radius:9px;display:flex;align-items:center;justify-content:center;font-family:'Fredoka One',ui-rounded,'Nunito',system-ui,sans-serif;font-size:clamp(1.05rem,4.6vmin,1.4rem)}
+.c.e{background:#fff;border:2px solid #d8d1ef}.c.b{background:#ffd93d;border:2px solid #e0b100}.c.q{background:#f3edff;border:3px solid var(--purple);color:var(--purple)}
+.path{text-align:center;font-family:'Fredoka One',ui-rounded,'Nunito',system-ui,sans-serif;font-size:clamp(1.4rem,7vmin,2.2rem);display:flex;flex-wrap:wrap;gap:6px;justify-content:center;align-items:center}
+.path b{background:#ffd93d;border-radius:10px;padding:2px 10px;font-weight:400}
+.tip{text-align:center;font-weight:900;color:var(--mid);font-size:.85rem}
+.k-choice{font-size:clamp(1.3rem,5.5vmin,1.9rem)}
+`;
+H.start(window,{id:'tabla100',mode:'rounds',css,
+  timer:D=>Math.max(12,Math.round(50*Math.pow(.9,D))),
+  round(g){
+    const P=gen(g.r,g.D),L=TX[g.lang]||TX.es;let qEl;
+    if(P.mode==='frag'){
+      g.prompt(L.frag);
+      // L-shaped piece: walk horizontally, then vertically, from the known number to the target
+      const cells=[[0,0]];let x=0,y=0;while(x!==P.dx){x+=Math.sign(P.dx);cells.push([x,y]);}while(y!==P.dy){y+=Math.sign(P.dy);cells.push([x,y]);}
+      const mnx=Math.min(...cells.map(c=>c[0])),mny=Math.min(...cells.map(c=>c[1])),W=Math.max(...cells.map(c=>c[0]))-mnx+1;
+      const fr=g.el('div','frag',null,g.stage);fr.style.gridTemplateColumns=`repeat(${W},auto)`;
+      cells.forEach(([cx,cy],i)=>{const last=i===cells.length-1,el=g.el('div','c '+(i===0?'b':last?'q':'e'),i===0?String(P.b):last?'❓':'',fr);el.style.gridColumn=(cx-mnx+1);el.style.gridRow=(cy-mny+1);if(last)qEl=el;});
+      if(g.D<4)g.el('div','tip',L.tip,g.stage);
+    }else{
+      g.prompt(L.path);const p=g.el('div','path',`<b>${P.b}</b>`,g.stage);
+      const ar=(n,a,b)=>{for(let i=0;i<Math.abs(n);i++)g.el('span','',n>0?a:b,p);};ar(P.dx,'➡️','⬅️');ar(P.dy,'⬇️','⬆️');qEl=g.el('b','','❓',p);
+    }
+    g.choices(P.choices,(n,b)=>{b.textContent=n;},(n,b)=>{if(n===P.ans){qEl.textContent=n;b.classList.add('k-right');g.fx.stars(b);g.solved();}else g.bad(b);},4);
+  }
+});
+}
+</script></body></html>

@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Rounding</title></head>
+<body><script>
+const H=window.parent&&window.parent!==window?window.parent.Hub:null;
+if(!H){location.replace('../index.html');}
+else{
+const {ri,pick,intChoices}=H.U;
+const TX={es:{ten:n=>`🎯 ¿A qué DECENA está más cerca el ${n}?`,hun:n=>`🎯 ¿A qué CENTENA está más cerca el ${n}?`,est:'🎯 Estima sin calcular exacto: redondea cada número a la decena y opera.'},
+          en:{ten:n=>`🎯 Which TEN is ${n} closest to?`,hun:n=>`🎯 Which HUNDRED is ${n} closest to?`,est:'🎯 Estimate: round each number to the nearest ten, then work it out.'},
+          fr:{ten:n=>`🎯 De quelle DIZAINE ${n} est-il le plus proche ?`,hun:n=>`🎯 De quelle CENTAINE ${n} est-il le plus proche ?`,est:'🎯 Estime : arrondis chaque nombre à la dizaine, puis calcule.'}};
+const rnd=(n,u)=>Math.round(n/u)*u;
+// Ties (…5 / …50) are avoided so the nearest round number is always unique.
+function gen(r,D){
+  if(D<6||r()<.5){
+    const hun=D>=4&&r()<.5,u=hun?100:10;let n;
+    do{n=hun?ri(r,101,989):D<4?ri(r,11,99):ri(r,101,999);}while(n%u===0||n%u===u/2);
+    const lo=Math.floor(n/u)*u,hi=lo+u,ans=rnd(n,u);
+    const ch=D<3?[lo,hi]:intChoices(r,[ans],[lo,hi,lo-u,hi+u],4,0);
+    return{mode:hun?'hun':'ten',n,u,lo,hi,ans,choices:D<3?ch.sort(()=>r()-.5):ch};
+  }
+  let a,b;do{a=ri(r,12,98);b=ri(r,12,98);}while(a%10===5||b%10===5);const op=pick(r,['+','−']);if(op==='−'&&b>a)[a,b]=[b,a];
+  const ans=op==='+'?rnd(a,10)+rnd(b,10):rnd(a,10)-rnd(b,10),exact=op==='+'?a+b:a-b;
+  return{mode:'est',a,b,op,ans,choices:intChoices(r,[ans],[exact,ans+10,ans-10,ans+20],4,0)};
+}
+const css=`
+.line{width:100%;max-width:640px;margin:0 auto;display:block;overflow:visible}
+.line text{font-family:'Fredoka One',ui-rounded,'Nunito',system-ui,sans-serif;text-anchor:middle}
+.op{text-align:center;font-family:'Fredoka One',ui-rounded,'Nunito',system-ui,sans-serif;font-size:clamp(1.8rem,9vmin,2.6rem)}
+.k-choice{font-size:clamp(1.3rem,5.5vmin,1.9rem)}
+`;
+H.start(window,{id:'redondeo',mode:'rounds',css,
+  timer:D=>Math.max(12,Math.round(45*Math.pow(.9,D))),
+  round(g){
+    const P=gen(g.r,g.D),L=TX[g.lang]||TX.es,doc=g.doc,NS='http://www.w3.org/2000/svg';
+    if(P.mode==='est'){g.prompt(L.est);g.el('div','op',`${P.a} ${P.op} ${P.b} ≈ ?`,g.stage);}
+    else{g.prompt(L[P.mode](P.n));const svg=doc.createElementNS(NS,'svg');svg.setAttribute('viewBox','-40 0 1080 160');svg.setAttribute('class','line');g.stage.appendChild(svg);
+      const mk=(t,a)=>{const e=doc.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);svg.appendChild(e);return e;},X=v=>(v-P.lo)/P.u*1000;
+      mk('line',{x1:-20,y1:90,x2:1020,y2:90,stroke:'#2d2a4a','stroke-width':6,'stroke-linecap':'round'});
+      for(let k=0;k<=10;k++){const v=P.lo+k*P.u/10,big=k===0||k===10,mid=k===5;mk('line',{x1:X(v),y1:big?62:mid?70:78,x2:X(v),y2:big?118:mid?110:102,stroke:mid?'#bbb':'#2d2a4a','stroke-width':big?6:3});}
+      [P.lo,P.hi].forEach(v=>{const t=mk('text',{x:X(v),y:150,'font-size':36,fill:'#2d2a4a'});t.textContent=v;});
+      const a=mk('text',{x:X(P.n),y:46,'font-size':40,fill:'#e2345f'});a.textContent='▼';const t=mk('text',{x:X(P.n),y:18,'font-size':30,fill:'#e2345f'});t.textContent=P.n;}
+    g.choices(P.choices,(n,b)=>{b.textContent=n;},(n,b)=>{if(n===P.ans){b.classList.add('k-right');g.fx.stars(b);g.solved();}else g.bad(b);},P.choices.length);
+  }
+});
+}
+</script></body></html>

@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Sigue las instrucciones</title></head>
+<body><script>
+const H=window.parent&&window.parent!==window?window.parent.Hub:null;
+if(!H){location.replace('../index.html');}
+else{
+const {ri,pick,shuf}=H.U;
+// Todas las formas son masculinas (círculo, cuadrado, corazón) → los colores concuerdan siempre en masculino.
+const SH=['círculo','cuadrado','corazón'];
+const CO=['rojo','verde','azul','amarillo','morado'];
+const EM=[['🔴','🟢','🔵','🟡','🟣'],['🟥','🟩','🟦','🟨','🟪'],['❤️','💚','💙','💛','💜']];
+const ORD=['primer','segundo','tercer','cuarto','quinto'];
+// Cada descripción es una frase nominal ("el segundo cuadrado") + una función que dice qué casillas encajan.
+function descs(B,D){
+  const out=[],n=B.length;
+  const idxOf=(f)=>B.map((x,i)=>f(x)?i:-1).filter(i=>i>=0);
+  for(let s=0;s<3;s++)for(let c=0;c<5;c++){
+    const m=idxOf(x=>x.s===s&&x.c===c);if(m.length)out.push({min:0,t:`el ${SH[s]} ${CO[c]}`,hit:m.length===1?m:null});
+    if(D>=5.5&&m.length>=2)m.forEach((i,k)=>{if(k<5)out.push({min:5.5,t:`el ${ORD[k]} ${SH[s]} ${CO[c]}`,hit:[i]});});
+    if(D>=2.5&&m.length>=2)out.push({min:2.5,t:`el último ${SH[s]} ${CO[c]}`,hit:[m[m.length-1]]});
+  }
+  for(let s=0;s<3;s++){const m=idxOf(x=>x.s===s);
+    if(D>=2&&m.length>=2)m.forEach((i,k)=>{if(k<5)out.push({min:2,t:`el ${ORD[k]} ${SH[s]}`,hit:[i]});});
+    if(D>=2&&m.length>=2)out.push({min:2,t:`el último ${SH[s]}`,hit:[m[m.length-1]]});
+    if(D>=4.5)for(let c=0;c<5;c++){const nm=m.filter(i=>B[i].c!==c);if(m.length>=2&&nm.length===1)out.push({min:4.5,t:`el ${SH[s]} que no es ${CO[c]}`,hit:nm});}
+  }
+  // relaciones: "el X que está justo a la derecha/izquierda del Y", "el X que está entre el A y el B"
+  const uniq=out.filter(d=>d.hit&&d.min===0);
+  if(D>=3)uniq.forEach(ref=>{const j=ref.hit[0],refT=ref.t.replace(/^el /,'');
+    [[1,'derecha',3],[-1,'izquierda',3.5]].forEach(([dx,w,mn])=>{const i=j+dx;if(D<mn||i<0||i>=n)return;
+      out.push({min:mn,t:`el ${SH[B[i].s]} que está justo a la ${w} del ${refT}`,hit:[i]});});});
+  if(D>=7)for(let i=1;i<n-1;i++){const a=uniq.find(d=>d.hit[0]===i-1),b=uniq.find(d=>d.hit[0]===i+1);
+    if(a&&b)out.push({min:7,t:`el ${SH[B[i].s]} que está entre ${a.t} y ${b.t}`,hit:[i]});}
+  return out.filter(d=>d.hit&&d.hit.length===1);
+}
+function gen(r,D){
+  const n=D<3?5:D<5?6:D<7?7:8,steps=D<6?1:D<8.5?2:3;
+  for(let t=0;t<300;t++){
+    const B=Array.from({length:n},()=>({s:ri(r,0,2),c:ri(r,0,D<3?3:4)}));
+    const ds=descs(B,D);if(ds.length<steps)continue;
+    // preferimos las descripciones más difíciles que ya estén desbloqueadas
+    const top=ds.filter(d=>d.min>=Math.max(0,D-3)),pool=top.length>=steps?top:ds;
+    const chosen=[];for(const d of shuf(r,pool)){if(chosen.length>=steps)break;if(!chosen.some(c=>c.hit[0]===d.hit[0]))chosen.push(d);}
+    if(chosen.length<steps)continue;
+    const p=chosen.map(c=>c.t);
+    const text=steps===1?`Toca ${p[0]}.`:steps===2?`Primero toca ${p[0]} y después ${p[1]}.`:`Primero toca ${p[0]}, luego ${p[1]} y por último ${p[2]}.`;
+    return{B,text,targets:chosen.map(c=>c.hit[0])};
+  }
+  return null;
+}
+const css=`
+.ins{font-family:'Fredoka One',ui-rounded,'Nunito',system-ui,sans-serif;font-size:clamp(1.15rem,5vmin,1.5rem);text-align:center;background:#fff;border-radius:18px;padding:12px 14px;box-shadow:0 4px 14px rgba(45,42,74,.08);line-height:1.35}
+.board{display:flex;justify-content:center;gap:clamp(4px,1.6vmin,10px);flex-wrap:nowrap;padding:8px 0}
+.sq{flex:1;max-width:76px;aspect-ratio:1;border-radius:16px;background:#fff;box-shadow:0 4px 12px rgba(45,42,74,.1);font-size:clamp(1.6rem,7.5vmin,2.6rem);display:flex;align-items:center;justify-content:center;border:3px solid transparent;position:relative}
+.sq:hover{border-color:var(--pink)}
+.sq.ok{border-color:var(--green);background:#e9fff1}
+.sq.ok:after{content:attr(data-n);position:absolute;top:-8px;right:-6px;background:var(--green);color:#fff;border-radius:50%;width:22px;height:22px;font-size:.75rem;font-weight:900;display:flex;align-items:center;justify-content:center}
+`;
+H.start(window,{id:'instrucciones',mode:'rounds',css,
+  timer:D=>Math.max(15,Math.round(55*Math.pow(.92,D))),
+  round(g){
+    const P=gen(g.r,g.D);g.prompt('📋 Lee con atención y haz exactamente lo que dice');
+    const ins=g.el('div','ins','',g.stage);ins.textContent=P.text;g.sayBtn(P.text,ins);
+    const board=g.el('div','board k-ans',null,g.stage);let ptr=0;
+    P.B.forEach((x,i)=>{const b=g.el('button','sq',EM[x.s][x.c],board);
+      b.onclick=()=>{if(g.solvedFlag||g.paused||b.classList.contains('ok'))return;
+        if(i!==P.targets[ptr]){g.bad(b);setTimeout(()=>{b.classList.remove('k-wrong');b.disabled=false;},450);return;}
+        ptr++;b.dataset.n=ptr;b.classList.add('ok');
+        if(ptr>=P.targets.length){g.fx.stars(b);g.solved();}else g.good(b);};});
+  }
+});
+}
+</script></body></html>

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Number Houses</title></head>
+<body><script>
+const H=window.parent&&window.parent!==window?window.parent.Hub:null;
+if(!H){location.replace('../index.html');}
+else{
+const {ri,pick,shuf,intChoices}=H.U;
+const TX={es:N=>`🏠 En la casita del ${N} cada piso suma ${N}. ¿Qué número falta?`,en:N=>`🏠 In the house of ${N}, every floor adds up to ${N}. Which number is missing?`,fr:N=>`🏠 Dans la maison du ${N}, chaque étage fait ${N}. Quel nombre manque ?`};
+function gen(r,D){
+  let N,step=1,floors;
+  if(D<1){N=ri(r,3,5);floors=2;}else if(D<3){N=ri(r,6,10);floors=3;}else if(D<5){N=ri(r,11,20);floors=3;}
+  else if(D<7){N=ri(r,3,10)*10;step=pick(r,[5,10]);floors=4;}else{N=ri(r,25,99);floors=4;}
+  const vals=shuf(r,Array.from({length:Math.floor(N/step)+1},(_,i)=>i*step)).slice(0,floors);
+  // each floor: [left,right]; one side is hidden (on harder levels it can be either side)
+  return{N,rows:vals.map(a=>({a,b:N-a,hide:D>=3&&r()<.5?0:1}))};
+}
+const css=`
+.house{width:min(100%,300px);margin:0 auto;display:flex;flex-direction:column;align-items:stretch}
+.roof{height:0;border-left:150px solid transparent;border-right:150px solid transparent;border-bottom:70px solid #ff6b9d;position:relative;align-self:center;width:0}
+.roof b{position:absolute;left:50%;top:26px;transform:translateX(-50%);font-family:'Fredoka One',ui-rounded,'Nunito',system-ui,sans-serif;font-size:2rem;color:#fff;font-weight:400}
+.fl{display:grid;grid-template-columns:1fr 1fr;border:4px solid #c96a10;border-top:none;background:#fff3d6}
+.fl:first-of-type{border-top:4px solid #c96a10}
+.fl span{display:flex;align-items:center;justify-content:center;height:clamp(40px,9vh,54px);font-family:'Fredoka One',ui-rounded,'Nunito',system-ui,sans-serif;font-size:clamp(1.3rem,6vmin,1.8rem)}
+.fl span+span{border-left:4px solid #c96a10}
+.fl span.q{color:var(--lilac)}.fl span.now{background:#f3edff;color:var(--purple)}.fl span.ok{background:#e9fff1;color:#1e8a4a;animation:kpop .3s}
+.k-choice{font-size:clamp(1.4rem,6vmin,2rem)}
+@media (orientation:landscape) and (max-height:540px){.roof{border-left-width:110px;border-right-width:110px;border-bottom-width:46px}.roof b{top:14px;font-size:1.5rem}.house{width:220px}.fl span{height:38px}}
+`;
+H.start(window,{id:'casitas',mode:'rounds',css,
+  timer:D=>D<2?null:Math.max(15,Math.round(60*Math.pow(.9,D))),
+  round(g){
+    const P=gen(g.r,g.D);g.prompt(g.t({es:TX.es(P.N),en:TX.en(P.N),fr:TX.fr(P.N)}));
+    const h=g.el('div','house',null,g.stage);g.el('div','roof',`<b>${P.N}</b>`,h);
+    const gaps=P.rows.map(row=>{const f=g.el('div','fl',null,h),a=g.el('span','',String(row.a),f),b=g.el('span','',String(row.b),f),el=row.hide?b:a;el.textContent='?';el.classList.add('q');return{el,ans:row.hide?row.b:row.a};});
+    let p=0;const box=g.el('div','k-ans',null,g.stage);
+    const ask=()=>{box.innerHTML='';gaps[p].el.classList.add('now');const ans=gaps[p].ans;
+      g.choices(intChoices(g.r,[ans],[ans+1,ans-1,ans+2,ans+10,ans-10,P.N],4,0,P.N),(n,b)=>{b.textContent=n;},(n,b)=>{
+        if(n!==ans){g.bad(b);return;}const G=gaps[p];G.el.textContent=ans;G.el.classList.remove('q','now');G.el.classList.add('ok');p++;
+        if(p>=gaps.length){g.fx.stars(b);g.solved();}else{g.good(b);ask();}},4,box);};
+    ask();
+  }
+});
+}
+</script></body></html>

@@ -1,0 +1,1040 @@
+{
+ "categories": [
+  {
+   "id": "logic",
+   "emoji": "🧩",
+   "color": "#9B5CFF",
+   "name": {
+    "en": "Logic",
+    "es": "Lógica",
+    "fr": "Logique"
+   }
+  },
+  {
+   "id": "reading",
+   "emoji": "📖",
+   "color": "#3CC36E",
+   "name": {
+    "en": "Reading",
+    "es": "Lectura",
+    "fr": "Lecture"
+   }
+  },
+  {
+   "id": "math",
+   "emoji": "🔢",
+   "color": "#FF9F43",
+   "name": {
+    "en": "Maths",
+    "es": "Mates",
+    "fr": "Maths"
+   }
+  }
+ ],
+ "games": [
+  {
+   "id": "secuencias",
+   "file": "games/secuencias.html",
+   "emoji": "🔁",
+   "cat": "logic",
+   "ages": [
+    3,
+    6,
+    9
+   ],
+   "name": {
+    "en": "Logic Sequences",
+    "es": "Secuencias lógicas",
+    "fr": "Suites logiques"
+   },
+   "desc": {
+    "en": "Find the rule and fill the gap.",
+    "es": "Descubre la regla y completa el hueco.",
+    "fr": "Trouve la règle et complète le trou."
+   }
+  },
+  {
+   "id": "maquina",
+   "file": "games/maquina.html",
+   "emoji": "⚙️",
+   "cat": "logic",
+   "ages": [
+    3,
+    6
+   ],
+   "name": {
+    "en": "Magic Machine",
+    "es": "La máquina mágica",
+    "fr": "La machine magique"
+   },
+   "desc": {
+    "en": "What does the machine do?",
+    "es": "¿Qué hace la máquina?",
+    "fr": "Que fait la machine ?"
+   }
+  },
+  {
+   "id": "historia",
+   "file": "games/historia.html",
+   "emoji": "🎞️",
+   "cat": "logic",
+   "ages": [
+    3,
+    6
+   ],
+   "name": {
+    "en": "Story Order",
+    "es": "Ordena la historia",
+    "fr": "L'histoire en ordre"
+   },
+   "desc": {
+    "en": "What happens first, then next?",
+    "es": "¿Qué pasa primero y qué después?",
+    "fr": "Que se passe-t-il d'abord ?"
+   }
+  },
+  {
+   "id": "balanza",
+   "file": "games/balanza.html",
+   "emoji": "⚖️",
+   "cat": "logic",
+   "ages": [
+    6,
+    9
+   ],
+   "name": {
+    "en": "Emoji Balance",
+    "es": "Balanza de emojis",
+    "fr": "Balance d'emojis"
+   },
+   "desc": {
+    "en": "Visual algebra with scales.",
+    "es": "Álgebra visual con balanzas.",
+    "fr": "Algèbre visuelle avec des balances."
+   }
+  },
+  {
+   "id": "quienfue",
+   "file": "games/quienfue.html",
+   "emoji": "🕵️",
+   "cat": "logic",
+   "ages": [
+    6,
+    9
+   ],
+   "name": {
+    "en": "Who Did It?",
+    "es": "¿Quién fue?",
+    "fr": "Qui a fait ça ?"
+   },
+   "desc": {
+    "en": "Only one is lying. Find the culprit!",
+    "es": "Solo uno miente. ¡Encuentra al culpable!",
+    "fr": "Un seul ment. Trouve le coupable !"
+   }
+  },
+  {
+   "id": "alien",
+   "file": "games/alien.html",
+   "emoji": "👽",
+   "cat": "logic",
+   "ages": [
+    6,
+    9
+   ],
+   "name": {
+    "en": "Alien Language",
+    "es": "Idioma alienígena",
+    "fr": "Langue extraterrestre"
+   },
+   "desc": {
+    "en": "Crack the words from examples.",
+    "es": "Descifra las palabras con ejemplos.",
+    "fr": "Déchiffre les mots avec des exemples."
+   }
+  },
+  {
+   "id": "tesoro",
+   "file": "games/tesoro.html",
+   "emoji": "🗺️",
+   "cat": "logic",
+   "ages": [
+    6,
+    9
+   ],
+   "name": {
+    "en": "Treasure Map",
+    "es": "El tesoro por pistas",
+    "fr": "La carte au trésor"
+   },
+   "desc": {
+    "en": "Use the clues to find where to dig.",
+    "es": "Usa las pistas para saber dónde cavar.",
+    "fr": "Utilise les indices pour savoir où creuser."
+   }
+  },
+  {
+   "id": "reglas",
+   "file": "games/reglas.html",
+   "emoji": "🔎",
+   "cat": "logic",
+   "ages": [
+    3,
+    6,
+    9
+   ],
+   "name": {
+    "en": "Rule Detective",
+    "es": "Detective de reglas",
+    "fr": "Détective des règles"
+   },
+   "desc": {
+    "en": "Discover the secret rule.",
+    "es": "Descubre la regla secreta.",
+    "fr": "Découvre la règle secrète."
+   }
+  },
+  {
+   "id": "simetria",
+   "file": "games/simetria.html",
+   "emoji": "🪞",
+   "cat": "logic",
+   "ages": [
+    3,
+    6,
+    9
+   ],
+   "name": {
+    "en": "Mirror Drawing",
+    "es": "Simetrías",
+    "fr": "Symétries"
+   },
+   "desc": {
+    "en": "Complete the drawing in the mirror.",
+    "es": "Completa el dibujo en el espejo.",
+    "fr": "Complète le dessin dans le miroir."
+   },
+   "innovabn": "esp"
+  },
+  {
+   "id": "dobleentrada",
+   "file": "games/dobleentrada.html",
+   "emoji": "🧮",
+   "cat": "logic",
+   "ages": [
+    3,
+    6
+   ],
+   "name": {
+    "en": "Two-way Table",
+    "es": "Tabla de doble entrada",
+    "fr": "Tableau à double entrée"
+   },
+   "desc": {
+    "en": "Row colour + column shape.",
+    "es": "Color de la fila + forma de la columna.",
+    "fr": "Couleur de la ligne + forme de la colonne."
+   },
+   "innovabn": "esp"
+  },
+  {
+   "id": "robot",
+   "file": "games/robot.html",
+   "emoji": "🤖",
+   "cat": "logic",
+   "ages": [
+    3,
+    6,
+    9
+   ],
+   "name": {
+    "en": "Robot Paths",
+    "es": "Caminos del robot",
+    "fr": "Chemins du robot"
+   },
+   "desc": {
+    "en": "Follow and plan arrow programs.",
+    "es": "Sigue y planifica caminos con flechas.",
+    "fr": "Suis et planifie des chemins de flèches."
+   },
+   "innovabn": "esp"
+  },
+  {
+   "id": "silabas",
+   "file": "games/silabas.html",
+   "emoji": "🫧",
+   "cat": "reading",
+   "ages": [
+    3,
+    6
+   ],
+   "name": {
+    "en": "Syllable Catch",
+    "es": "Atrapa sílabas",
+    "fr": "Attrape les syllabes"
+   },
+   "desc": {
+    "en": "Build the word syllable by syllable.",
+    "es": "Forma la palabra sílaba a sílaba.",
+    "fr": "Construis le mot syllabe par syllabe."
+   }
+  },
+  {
+   "id": "escena",
+   "file": "games/escena.html",
+   "emoji": "🖼️",
+   "cat": "reading",
+   "ages": [
+    3,
+    6,
+    9
+   ],
+   "name": {
+    "en": "Which Picture?",
+    "es": "¿Qué escena es?",
+    "fr": "Quelle image ?"
+   },
+   "desc": {
+    "en": "Read the sentence, find the picture.",
+    "es": "Lee la frase y encuentra el dibujo.",
+    "fr": "Lis la phrase, trouve l'image."
+   }
+  },
+  {
+   "id": "relampago",
+   "file": "games/relampago.html",
+   "emoji": "⚡",
+   "cat": "reading",
+   "ages": [
+    6,
+    9
+   ],
+   "name": {
+    "en": "Flash Reading",
+    "es": "Lectura relámpago",
+    "fr": "Lecture éclair"
+   },
+   "desc": {
+    "en": "The word flashes — what was it?",
+    "es": "La palabra aparece un instante. ¿Cuál era?",
+    "fr": "Le mot apparaît un instant. Lequel ?"
+   }
+  },
+  {
+   "id": "realofalsa",
+   "file": "games/realofalsa.html",
+   "emoji": "🔍",
+   "cat": "reading",
+   "ages": [
+    6,
+    9
+   ],
+   "name": {
+    "en": "Real or Made-up?",
+    "es": "¿Real o inventada?",
+    "fr": "Vrai ou inventé ?"
+   },
+   "desc": {
+    "en": "Read every letter carefully.",
+    "es": "Lee bien cada letra.",
+    "fr": "Lis bien chaque lettre."
+   }
+  },
+  {
+   "id": "intrusa",
+   "file": "games/intrusa.html",
+   "emoji": "🙈",
+   "cat": "reading",
+   "ages": [
+    6,
+    9
+   ],
+   "name": {
+    "en": "Odd Word Out",
+    "es": "La palabra intrusa",
+    "fr": "Le mot intrus"
+   },
+   "desc": {
+    "en": "One word doesn't belong in the sentence.",
+    "es": "Una palabra sobra en la frase.",
+    "fr": "Un mot n'a rien à faire là."
+   }
+  },
+  {
+   "id": "instrucciones",
+   "file": "games/instrucciones.html",
+   "emoji": "📋",
+   "cat": "reading",
+   "ages": [
+    6,
+    9
+   ],
+   "langs": [
+    "es"
+   ],
+   "name": {
+    "en": "Follow the Instructions",
+    "es": "Sigue las instrucciones",
+    "fr": "Suis les consignes"
+   },
+   "desc": {
+    "en": "Read carefully and do exactly what it says.",
+    "es": "Lee con atención y haz exactamente lo que dice.",
+    "fr": "Lis bien et fais exactement ce qui est écrit."
+   }
+  },
+  {
+   "id": "cuento",
+   "file": "games/cuento.html",
+   "emoji": "📚",
+   "cat": "reading",
+   "ages": [
+    6,
+    9
+   ],
+   "langs": [
+    "es"
+   ],
+   "name": {
+    "en": "Story Gaps",
+    "es": "Cuento con huecos",
+    "fr": "Histoire à trous"
+   },
+   "desc": {
+    "en": "Choose the word that makes sense.",
+    "es": "Elige la palabra que tiene sentido.",
+    "fr": "Choisis le mot qui a du sens."
+   }
+  },
+  {
+   "id": "castillo",
+   "file": "games/castillo.html",
+   "emoji": "🏰",
+   "cat": "math",
+   "ages": [
+    3,
+    6,
+    9
+   ],
+   "name": {
+    "en": "Castle Defense",
+    "es": "Defiende el castillo",
+    "fr": "Défends le château"
+   },
+   "desc": {
+    "en": "Type the answer to stop the monsters!",
+    "es": "¡Escribe el resultado y para a los monstruos!",
+    "fr": "Tape le résultat pour arrêter les monstres !"
+   }
+  },
+  {
+   "id": "invasores",
+   "file": "games/invasores.html",
+   "emoji": "🛸",
+   "cat": "math",
+   "ages": [
+    3,
+    6,
+    9
+   ],
+   "name": {
+    "en": "Number Invaders",
+    "es": "Invasores numéricos",
+    "fr": "Envahisseurs de nombres"
+   },
+   "desc": {
+    "en": "Shoot the ship with the right answer.",
+    "es": "Dispara a la nave con el resultado.",
+    "fr": "Tire sur le vaisseau avec la bonne réponse."
+   }
+  },
+  {
+   "id": "meteoritos",
+   "file": "games/meteoritos.html",
+   "emoji": "☄️",
+   "cat": "math",
+   "ages": [
+    6,
+    9
+   ],
+   "name": {
+    "en": "Meteor Shower",
+    "es": "Lluvia de meteoritos",
+    "fr": "Pluie de météorites"
+   },
+   "desc": {
+    "en": "Destroy only the ones equal to the target.",
+    "es": "Destruye solo los que dan el número objetivo.",
+    "fr": "Détruis seulement ceux égaux à la cible."
+   }
+  },
+  {
+   "id": "ninja",
+   "file": "games/ninja.html",
+   "emoji": "🥷",
+   "cat": "math",
+   "ages": [
+    3,
+    6,
+    9
+   ],
+   "name": {
+    "en": "Number Ninja",
+    "es": "Ninja de números",
+    "fr": "Ninja des nombres"
+   },
+   "desc": {
+    "en": "Slice two fruits that make the target.",
+    "es": "Corta dos frutas que formen el objetivo.",
+    "fr": "Coupe deux fruits qui font la cible."
+   }
+  },
+  {
+   "id": "tienda",
+   "file": "games/tienda.html",
+   "emoji": "🛒",
+   "cat": "math",
+   "ages": [
+    3,
+    6,
+    9
+   ],
+   "name": {
+    "en": "The Shop",
+    "es": "La tienda",
+    "fr": "La boutique"
+   },
+   "desc": {
+    "en": "Pay, add up and work out the change.",
+    "es": "Paga, suma y calcula el cambio.",
+    "fr": "Paie, additionne et calcule la monnaie."
+   },
+   "innovabn": "num"
+  },
+  {
+   "id": "estimador",
+   "file": "games/estimador.html",
+   "emoji": "👀",
+   "cat": "math",
+   "ages": [
+    3,
+    6,
+    9
+   ],
+   "name": {
+    "en": "Quick Estimator",
+    "es": "El estimador",
+    "fr": "L'estimateur"
+   },
+   "desc": {
+    "en": "How many were there? Guess fast!",
+    "es": "¿Cuántos había? ¡Calcula a ojo!",
+    "fr": "Combien y en avait-il ? Estime vite !"
+   },
+   "innovabn": "num"
+  },
+  {
+   "id": "diez",
+   "file": "games/diez.html",
+   "emoji": "🔟",
+   "cat": "math",
+   "ages": [
+    3,
+    6
+   ],
+   "name": {
+    "en": "Ten Frame",
+    "es": "Marco del 10",
+    "fr": "Cadre de 10"
+   },
+   "desc": {
+    "en": "Count with the 5-and-10 structure.",
+    "es": "Cuenta con la estructura del 5 y del 10.",
+    "fr": "Compte avec la structure de 5 et de 10."
+   },
+   "innovabn": "num"
+  },
+  {
+   "id": "regletas",
+   "file": "games/regletas.html",
+   "emoji": "📏",
+   "cat": "math",
+   "ages": [
+    3,
+    6,
+    9
+   ],
+   "name": {
+    "en": "Number Rods",
+    "es": "Regletas",
+    "fr": "Réglettes"
+   },
+   "desc": {
+    "en": "Lengths, trains and missing parts.",
+    "es": "Longitudes, trenes y partes que faltan.",
+    "fr": "Longueurs, trains et parties manquantes."
+   },
+   "innovabn": "num"
+  },
+  {
+   "id": "recta",
+   "file": "games/recta.html",
+   "emoji": "↔️",
+   "cat": "math",
+   "ages": [
+    6,
+    9
+   ],
+   "name": {
+    "en": "Number Line",
+    "es": "Recta numérica",
+    "fr": "Droite numérique"
+   },
+   "desc": {
+    "en": "Where is the number on the line?",
+    "es": "¿Dónde está el número en la recta?",
+    "fr": "Où est le nombre sur la droite ?"
+   },
+   "innovabn": "num"
+  },
+  {
+   "id": "base10",
+   "file": "games/base10.html",
+   "emoji": "🧱",
+   "cat": "math",
+   "ages": [
+    6,
+    9
+   ],
+   "name": {
+    "en": "Base 10 Blocks",
+    "es": "Bloques de base 10",
+    "fr": "Blocs base 10"
+   },
+   "desc": {
+    "en": "Hundreds, tens, units and trades.",
+    "es": "Centenas, decenas, unidades e intercambios.",
+    "fr": "Centaines, dizaines, unités et échanges."
+   },
+   "innovabn": "num"
+  },
+  {
+   "id": "tabla100",
+   "file": "games/tabla100.html",
+   "emoji": "💯",
+   "cat": "math",
+   "ages": [
+    6,
+    9
+   ],
+   "name": {
+    "en": "Hundred Chart",
+    "es": "Tabla del 100",
+    "fr": "Tableau de 100"
+   },
+   "desc": {
+    "en": "Move around the chart: +1, +10.",
+    "es": "Muévete por la tabla: +1, +10.",
+    "fr": "Déplace-toi dans le tableau : +1, +10."
+   },
+   "innovabn": "num"
+  },
+  {
+   "id": "bolsa",
+   "file": "games/bolsa.html",
+   "emoji": "🎲",
+   "cat": "math",
+   "ages": [
+    6,
+    9
+   ],
+   "name": {
+    "en": "Lucky Bag",
+    "es": "La bolsa de bolas",
+    "fr": "Le sac à boules"
+   },
+   "desc": {
+    "en": "Certain, possible or impossible?",
+    "es": "¿Seguro, posible o imposible?",
+    "fr": "Certain, possible ou impossible ?"
+   },
+   "innovabn": "num"
+  },
+  {
+   "id": "amigos",
+   "file": "games/amigos.html",
+   "emoji": "🤝",
+   "cat": "math",
+   "ages": [
+    3,
+    6,
+    9
+   ],
+   "name": {
+    "en": "Number Friends",
+    "es": "Amigos del 10 y del 100",
+    "fr": "Amis de 10 et 100"
+   },
+   "desc": {
+    "en": "Quick pairs that make 10, 100, 1000.",
+    "es": "Parejas rápidas que suman 10, 100, 1000.",
+    "fr": "Paires rapides qui font 10, 100, 1000."
+   },
+   "innovabn": "abn"
+  },
+  {
+   "id": "casitas",
+   "file": "games/casitas.html",
+   "emoji": "🏠",
+   "cat": "math",
+   "ages": [
+    3,
+    6,
+    9
+   ],
+   "name": {
+    "en": "Number Houses",
+    "es": "Casitas de números",
+    "fr": "Maisons des nombres"
+   },
+   "desc": {
+    "en": "Every floor adds up to the roof.",
+    "es": "Cada piso suma el número del tejado.",
+    "fr": "Chaque étage fait le nombre du toit."
+   },
+   "innovabn": "abn"
+  },
+  {
+   "id": "conteo",
+   "file": "games/conteo.html",
+   "emoji": "🔢",
+   "cat": "math",
+   "ages": [
+    3,
+    6,
+    9
+   ],
+   "name": {
+    "en": "Counting Trail",
+    "es": "Conteos",
+    "fr": "Comptines"
+   },
+   "desc": {
+    "en": "Count forwards and backwards in steps.",
+    "es": "Cuenta hacia delante y hacia atrás de x en x.",
+    "fr": "Compte en avant et en arrière par pas."
+   },
+   "innovabn": "abn"
+  },
+  {
+   "id": "sumaabn",
+   "file": "games/sumaabn.html",
+   "emoji": "➕",
+   "cat": "math",
+   "ages": [
+    6,
+    9
+   ],
+   "name": {
+    "en": "ABN Addition",
+    "es": "Suma ABN",
+    "fr": "Addition ABN"
+   },
+   "desc": {
+    "en": "Move amounts to make round numbers.",
+    "es": "Pasa cantidades para hacer números redondos.",
+    "fr": "Déplace des quantités pour faire des nombres ronds."
+   },
+   "innovabn": "abn"
+  },
+  {
+   "id": "restaabn",
+   "file": "games/restaabn.html",
+   "emoji": "➖",
+   "cat": "math",
+   "ages": [
+    6,
+    9
+   ],
+   "name": {
+    "en": "ABN Subtraction",
+    "es": "Resta ABN (escalera)",
+    "fr": "Soustraction ABN"
+   },
+   "desc": {
+    "en": "Climb from the small number to the big one.",
+    "es": "Sube del número pequeño al grande.",
+    "fr": "Monte du petit nombre au grand."
+   },
+   "innovabn": "abn"
+  },
+  {
+   "id": "multiabn",
+   "file": "games/multiabn.html",
+   "emoji": "✖️",
+   "cat": "math",
+   "ages": [
+    6,
+    9
+   ],
+   "name": {
+    "en": "ABN Multiplication",
+    "es": "Multiplicación ABN",
+    "fr": "Multiplication ABN"
+   },
+   "desc": {
+    "en": "Break the number into parts and add up.",
+    "es": "Rompe el número en partes y ve sumando.",
+    "fr": "Casse le nombre en parties et additionne."
+   },
+   "innovabn": "abn"
+  },
+  {
+   "id": "relojes",
+   "file": "games/relojes.html",
+   "emoji": "🕐",
+   "cat": "math",
+   "ages": [
+    6,
+    9
+   ],
+   "name": {
+    "en": "Clocks",
+    "es": "Relojes",
+    "fr": "Horloges"
+   },
+   "desc": {
+    "en": "O'clock, half past, quarters, minutes.",
+    "es": "En punto, y media, cuartos y minutos.",
+    "fr": "Heures pile, demies, quarts, minutes."
+   },
+   "innovabn": "num"
+  },
+  {
+   "id": "domino",
+   "file": "games/domino.html",
+   "emoji": "🁫",
+   "cat": "math",
+   "ages": [
+    3,
+    6
+   ],
+   "name": {
+    "en": "Domino Maths",
+    "es": "Dominó de sumas",
+    "fr": "Dominos malins"
+   },
+   "desc": {
+    "en": "See the dots, add and compare.",
+    "es": "Mira los puntos, suma y compara.",
+    "fr": "Regarde les points, additionne et compare."
+   },
+   "innovabn": "num"
+  },
+  {
+   "id": "geoplano",
+   "file": "games/geoplano.html",
+   "emoji": "📐",
+   "cat": "math",
+   "ages": [
+    3,
+    6,
+    9
+   ],
+   "name": {
+    "en": "Geoboard",
+    "es": "Geoplano",
+    "fr": "Géoplan"
+   },
+   "desc": {
+    "en": "Sides, corners, area and perimeter.",
+    "es": "Lados, vértices, área y perímetro.",
+    "fr": "Côtés, sommets, aire et périmètre."
+   },
+   "innovabn": "esp"
+  },
+  {
+   "id": "divabn",
+   "file": "games/divabn.html",
+   "emoji": "➗",
+   "cat": "math",
+   "ages": [
+    6,
+    9
+   ],
+   "name": {
+    "en": "ABN Division",
+    "es": "División ABN",
+    "fr": "Division ABN"
+   },
+   "desc": {
+    "en": "Take away big round chunks.",
+    "es": "Quita trozos grandes y redondos.",
+    "fr": "Enlève de gros morceaux ronds."
+   },
+   "innovabn": "abn"
+  },
+  {
+   "id": "dobles",
+   "file": "games/dobles.html",
+   "emoji": "👯",
+   "cat": "math",
+   "ages": [
+    3,
+    6,
+    9
+   ],
+   "name": {
+    "en": "Doubles & Halves",
+    "es": "Dobles y mitades",
+    "fr": "Doubles et moitiés"
+   },
+   "desc": {
+    "en": "Quick mental maths with doubles.",
+    "es": "Cálculo mental rápido con dobles.",
+    "fr": "Calcul mental rapide avec les doubles."
+   },
+   "innovabn": "abn"
+  },
+  {
+   "id": "redondeo",
+   "file": "games/redondeo.html",
+   "emoji": "🎯",
+   "cat": "math",
+   "ages": [
+    6,
+    9
+   ],
+   "name": {
+    "en": "Rounding",
+    "es": "Redondeo",
+    "fr": "Arrondir"
+   },
+   "desc": {
+    "en": "Nearest ten or hundred, and estimating.",
+    "es": "Decena o centena más cercana y estimar.",
+    "fr": "Dizaine ou centaine la plus proche, estimer."
+   },
+   "innovabn": "num"
+  },
+  {
+   "id": "descomp",
+   "file": "games/descomp.html",
+   "emoji": "🧩",
+   "cat": "math",
+   "ages": [
+    6,
+    9
+   ],
+   "name": {
+    "en": "Place Value",
+    "es": "Descomposiciones",
+    "fr": "Décompositions"
+   },
+   "desc": {
+    "en": "Break numbers into hundreds, tens, units.",
+    "es": "Rompe números en centenas, decenas y unidades.",
+    "fr": "Décompose en centaines, dizaines, unités."
+   },
+   "innovabn": "num"
+  },
+  {
+   "id": "ordenar",
+   "file": "games/ordenar.html",
+   "emoji": "📶",
+   "cat": "math",
+   "ages": [
+    3,
+    6,
+    9
+   ],
+   "name": {
+    "en": "Order Numbers",
+    "es": "Ordenar números",
+    "fr": "Ranger les nombres"
+   },
+   "desc": {
+    "en": "Smallest to biggest and back.",
+    "es": "De menor a mayor y al revés.",
+    "fr": "Du plus petit au plus grand et inversement."
+   },
+   "innovabn": "num"
+  },
+  {
+   "id": "matrices",
+   "file": "games/matrices.html",
+   "emoji": "🔳",
+   "cat": "math",
+   "ages": [
+    3,
+    6,
+    9
+   ],
+   "name": {
+    "en": "Dot Arrays",
+    "es": "Matrices de puntos",
+    "fr": "Matrices de points"
+   },
+   "desc": {
+    "en": "Rows × columns: see the multiplication.",
+    "es": "Filas × columnas: mira la multiplicación.",
+    "fr": "Lignes × colonnes : vois la multiplication."
+   },
+   "innovabn": "num"
+  },
+  {
+   "id": "policubos",
+   "file": "games/policubos.html",
+   "emoji": "🧊",
+   "cat": "math",
+   "ages": [
+    3,
+    6,
+    9
+   ],
+   "name": {
+    "en": "Cube Towers",
+    "es": "Policubos",
+    "fr": "Tours de cubes"
+   },
+   "desc": {
+    "en": "Count cubes in 3D, even hidden ones.",
+    "es": "Cuenta cubos en 3D, también los escondidos.",
+    "fr": "Compte les cubes en 3D, même cachés."
+   },
+   "innovabn": "esp"
+  }
+ ],
+ "innovabnCategories": [
+  {
+   "id": "abn",
+   "emoji": "🧮",
+   "color": "#FF6B9D",
+   "name": {
+    "en": "ABN mental maths",
+    "es": "Cálculo ABN",
+    "fr": "Calcul ABN"
+   }
+  },
+  {
+   "id": "num",
+   "emoji": "🔢",
+   "color": "#FF9F43",
+   "name": {
+    "en": "Numbers & measure",
+    "es": "Número y medida",
+    "fr": "Nombres et mesure"
+   }
+  },
+  {
+   "id": "esp",
+   "emoji": "📐",
+   "color": "#9B5CFF",
+   "name": {
+    "en": "Space & logic",
+    "es": "Espacio y lógica",
+    "fr": "Espace et logique"
+   }
+  }
+ ]
+}

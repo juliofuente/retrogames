@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Which Picture?</title></head>
+<body><script>
+const H=window.parent&&window.parent!==window?window.parent.Hub:null;
+if(!H){location.replace('../index.html');}
+else{
+const {ri,pick,shuf}=H.U;
+const TXT={en:'🖼️ Read the sentence and tap the matching picture',es:'🖼️ Lee la frase y toca el dibujo correcto',fr:"🖼️ Lis la phrase et touche la bonne image"};
+// A scene = {a: animal index, n: count, rel, o: object index, sz: null|'big'|'small'}
+function sentence(V,lang,s){
+  const L=V[lang],an=L.animals[s.a][s.n>1?1:0],num=L.nums[s.n-1];
+  if(lang==='en'){const sz=s.sz?L[s.sz]+' ':'';return `${num} ${sz}${an} ${s.n>1?L.are:L.is} ${L.rel[s.rel].replace('{o}',L.objects[s.o])}.`;}
+  if(lang==='es'){const sz=s.sz?' '+L[s.sz][s.n>1?1:0]:'';return `${num} ${an}${sz} ${s.n>1?L.are:L.is} ${L.rel[s.rel].replace('{de}',L.objects[s.o][1])}.`;}
+  const sz=s.sz?L[s.sz][s.n>1?1:0]+' ':'';return `${num} ${sz}${an} ${s.n>1?L.are:L.is} ${L.rel[s.rel].replace('{a}',L.objects[s.o][0]).replace('{de}',L.objects[s.o][1])}.`;
+}
+const sk=s=>[s.a,s.n,s.rel,s.o,s.sz].join('|');
+function gen(r,D){
+  const feats=['a'];if(D>=.5)feats.push('n');if(D>=1)feats.push('rel');if(D>=2)feats.push('o');if(D>=3.5)feats.push('sz');
+  const maxN=D<.5?1:D<2?2:D<4?3:4,rels=D<1?['on']:D<2.5?['on','under']:['on','under','left','right'];
+  const vals={a:[0,1,2,3,4,5],n:Array.from({length:maxN},(_,i)=>i+1),rel:rels,o:[0,1,2,3,4,5],sz:D>=3.5?['big','small']:[null]};
+  const s={a:pick(r,vals.a),n:pick(r,vals.n),rel:pick(r,vals.rel),o:pick(r,vals.o),sz:pick(r,vals.sz)};
+  const nCh=D<1?3:4,out=new Map([[sk(s),s]]);
+  for(let k=0;k<200&&out.size<nCh;k++){const f=pick(r,feats),v=pick(r,vals[f]);if(v===s[f])continue;const d=Object.assign({},s,{[f]:v});out.set(sk(d),d);}
+  return{s,choices:shuf(r,[...out.values()])};
+}
+const css=`
+.sent{font-family:'Fredoka One',ui-rounded,'Nunito',system-ui,sans-serif;font-size:clamp(1.2rem,5.4vw,1.6rem);text-align:center;background:#fff;border-radius:18px;padding:12px 14px;box-shadow:0 4px 14px rgba(45,42,74,.08);line-height:1.35}
+.k-choices{--cols:2}
+.k-choice{aspect-ratio:auto;height:clamp(84px,19vh,150px);flex-direction:column;background:linear-gradient(#eaf7ff 0 62%,#e6f6dc 62%);font-family:'Nunito'}
+.sc{display:flex;align-items:center;justify-content:center;gap:2px}
+.sc.col{flex-direction:column}
+.grp{display:flex;gap:1px;justify-content:center}
+.grp span{font-size:12cqw;line-height:1}
+.grp.big span{font-size:16cqw}.grp.small span{font-size:8cqw}
+.obj{font-size:24cqw;line-height:1}
+@media (orientation:landscape) and (max-height:540px){.k-choice{aspect-ratio:auto;height:clamp(60px,31vh,130px)}.sent{padding:6px 10px;font-size:1.1rem}}
+`;
+H.start(window,{id:'escena',mode:'rounds',css,
+  timer:D=>D<2?null:Math.max(15,Math.round(60*Math.pow(.9,D))),
+  async round(g){
+    const V=await g.data('scenes'),P=gen(g.r,g.D),text=sentence(V,g.lang,P.s);
+    g.prompt(g.t(TXT));
+    const st=g.el('div','sent','',g.stage);st.textContent=text;g.sayBtn(text,st);
+    if(g.age===3)setTimeout(()=>g.speak(text),400);
+    g.choices(P.choices,(s,b)=>{
+      const sc=g.el('div','sc'+(s.rel==='on'||s.rel==='under'?' col':''),null,b);
+      const grp=g.el('div','grp'+(s.sz?' '+s.sz:''));for(let i=0;i<s.n;i++)g.el('span','',V.animals[s.a],grp);
+      const ob=g.el('div','obj',V.objects[s.o]);
+      if(s.rel==='on'||s.rel==='left'){sc.appendChild(grp);sc.appendChild(ob);}else{sc.appendChild(ob);sc.appendChild(grp);}
+    },(s,b)=>{if(sk(s)===sk(P.s)){b.classList.add('k-right');g.fx.stars(b);g.solved();}else g.bad(b);},2);
+  }
+});
+}
+</script></body></html>

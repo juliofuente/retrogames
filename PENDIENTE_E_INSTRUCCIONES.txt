@@ -9,6 +9,15 @@ Hechos: lotes 1–7 (90 juegos Pro, ver HECHO.txt).
 Pendiente también: demos propias para los juegos de acción, plataformas, un toque, física, estrategia y deportes
 (hoy usan la demo genérica, que enseña el control pero no juega bien). Quedan unos 60 títulos (lotes 8–14).
 
+JUEGOS EDUCATIVOS (o cualquier juego hecho aparte) — CÓMO AÑADIR MÁS
+· Copia la carpeta del juego en educativos/<nombre>/ tal cual (no hace falta que use common.js).
+· Añade una entrada a EXTRA en herramientas/mkedu.py (id, app, subject: mates|lengua|logica|ingles, emoji,
+  ages=(mín, máx), langs, url, title es/en, desc es/en) y, si es una app nueva, otra a APPS.
+  Asignaturas y tramos de edad nuevos: SUBJECTS y BANDS en el mismo archivo.
+· Regenera: cd herramientas && python3 mkedu.py && python3 mkdb.py
+· Si no es educativo (otra colección), habría que añadir una colección en mkdb.py (COLLECTIONS) siguiendo el mismo
+  esquema que 'edu' (games.url = dónde se juega).
+
 Criterios ya decididos:
 · Si varios títulos comparten mecánica se fusionan en un juego (el campo "origin" lista todos los títulos).
 · Nombres propios en español (y "title" en inglés), sin personajes ni marcas registradas.

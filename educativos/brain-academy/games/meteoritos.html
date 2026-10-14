@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Meteor Shower</title></head>
+<body><script>
+const H=window.parent&&window.parent!==window?window.parent.Hub:null;
+if(!H){location.replace('../index.html');}
+else{
+const {ri,pick}=H.U;
+const INTRO={en:n=>`Tap ONLY the meteors equal to ${n}. Leave the others — they bounce off the shield!`,es:n=>`Toca SOLO los meteoritos que dan ${n}. Deja pasar los demás: ¡rebotan en el escudo!`,fr:n=>`Touche SEULEMENT les météorites égales à ${n}. Laisse les autres : elles rebondissent sur le bouclier !`};
+const css=`
+.space{position:relative;flex:1;min-height:0;border-radius:16px;overflow:hidden;background:radial-gradient(ellipse at 50% 0%,#28215e,#0b0a24 75%)}
+.space:before{content:'';position:absolute;inset:0;background-image:radial-gradient(#fff 1px,transparent 1.5px);background-size:44px 44px;opacity:.3}
+.target{position:absolute;top:8px;left:50%;transform:translateX(-50%);z-index:4;font-family:'Fredoka One',ui-rounded,'Nunito',system-ui,sans-serif;font-size:clamp(1.4rem,6.5vw,2rem);color:#2d2a4a;background:#ffd93d;padding:3px 18px;border-radius:16px;box-shadow:0 0 18px rgba(255,217,61,.6);white-space:nowrap}
+.met{position:absolute;transform:translate(-50%,0);display:flex;flex-direction:column;align-items:center;cursor:pointer;z-index:3;padding:4px}
+.met .e{font-size:clamp(2rem,8vw,2.6rem);transform:rotate(200deg)}
+.met .x{font-family:'Fredoka One',ui-rounded,'Nunito',system-ui,sans-serif;font-size:clamp(.95rem,4.2vw,1.2rem);color:#fff;background:rgba(255,107,157,.92);border-radius:10px;padding:1px 9px;white-space:nowrap}
+.met.bye{animation:bye .5s forwards}@keyframes bye{to{transform:translate(-50%,-50px) scale(.4);opacity:0}}
+.shield{position:absolute;left:0;right:0;bottom:0;height:16%;background:linear-gradient(transparent,rgba(79,184,255,.35));border-top:3px solid rgba(79,184,255,.9);box-shadow:0 -6px 20px rgba(79,184,255,.5)}
+.earth{position:absolute;bottom:-26px;left:50%;transform:translateX(-50%);font-size:4.4rem}
+`;
+function target(r,D){return D<4?ri(r,5,15):D<6?ri(r,10,30):pick(r,[12,16,18,20,24,30,36,40,48,60]);}
+H.start(window,{id:'meteoritos',mode:'arcade',css,
+  setup(g){g._T=target(H.U.mkRand(H.U.hashSeed(g.level,g.age,5)),g.D);},
+  intro:g=>g.t(INTRO)(g._T),
+  wave(g){
+    const r=g.r,D=g.D,win=g.win,T=g._T;g.stage.innerHTML='';
+    const sp=g.el('div','space',null,g.stage);g.el('div','shield',null,sp);g.el('div','earth','🌍',sp);
+    g.el('div','target','🎯 = '+T,sp);
+    const total=8+Math.min(12,g.level),fallT=Math.max(3.5,9-D*.5),gap=Math.max(.8,2.2-D*.12);
+    let spawned=0,gone=0,mets=[],t=0,nextAt=.5,last=null,raf=0;
+    function spawn(){
+      const good=spawned<2?spawned===0:r()<.45,v=good?T:Math.max(0,T+pick(r,[-3,-2,-1,1,2,3]));
+      const el=g.el('div','met',`<div class="e">☄️</div><div class="x">${H.M.expr(r,v,D)}</div>`,sp);el.style.left=ri(r,12,88)+'%';
+      const m={el,good:v===T,y:0,sp:1/(fallT*(.85+r()*.3))};mets.push(m);spawned++;
+      el.onclick=()=>{if(!g.running||g.paused||m.dead)return;m.dead=true;const b=el.getBoundingClientRect();
+        if(m.good){H.SFX.boom();g.fx.boom(b.left+b.width/2,b.top+b.height/2);g.addScore(10+Math.floor(D*3));remove(m);}
+        else{el.querySelector('.x').textContent+=' ≠ '+T;g.loseHeart();setTimeout(()=>remove(m),500);}};
+    }
+    function remove(m){if(m.removed)return;m.removed=true;m.el.remove();mets=mets.filter(x=>x!==m);gone++;g.setProg(gone/total);}
+    function loop(ts){if(!g.running)return;if(g.paused){last=ts;raf=win.requestAnimationFrame(loop);return;}
+      const dt=last?Math.min(.05,(ts-last)/1000):0;last=ts;t+=dt;
+      if(spawned<total&&t>=nextAt){spawn();nextAt=t+gap*(.7+r()*.6);}
+      for(const m of mets.slice()){if(m.dead)continue;m.y+=m.sp*dt;m.el.style.top=(10+m.y*68)+'%';
+        if(m.y>=1){m.dead=true;if(m.good){H.SFX.boom();g.loseHeart();if(!g.running)return;remove(m);}else{H.SFX.pop();m.el.classList.add('bye');setTimeout(()=>remove(m),450);}}}
+      if(spawned>=total&&!mets.length){g.waveDone();return;}
+      raf=win.requestAnimationFrame(loop);}
+    raf=win.requestAnimationFrame(loop);
+    return()=>win.cancelAnimationFrame(raf);
+  }
+});
+}
+</script></body></html>

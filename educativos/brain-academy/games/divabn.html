@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>ABN Division</title></head>
+<body><script>
+const H=window.parent&&window.parent!==window?window.parent.Hub:null;
+if(!H){location.replace('../index.html');}
+else{
+const {ri,pick,intChoices}=H.U;
+const TX={es:{title:(n,d)=>`➗ Divide ${n} entre ${d} quitando trozos grandes`,step:(r,d)=>`Quedan ${r}. ¿Cuál es el MAYOR número redondo de veces que cabe el ${d}? (10, 20, 100…)`,
+           quo:'¿Cuántas veces cabe en total? Suma la columna de «veces».',rest:'¿Cuánto sobra (el resto)?',tab:d=>`Tabla del ${d}`,h:['Quedan','Quito','Veces']},
+          en:{title:(n,d)=>`➗ Divide ${n} by ${d} by taking away big chunks`,step:(r,d)=>`${r} left. What is the BIGGEST round number of times ${d} fits? (10, 20, 100…)`,
+           quo:'How many times does it fit altogether? Add the "times" column.',rest:'How much is left over (the remainder)?',tab:d=>`${d} times table`,h:['Left','Take','Times']},
+          fr:{title:(n,d)=>`➗ Divise ${n} par ${d} en enlevant de gros morceaux`,step:(r,d)=>`Il reste ${r}. Quel est le PLUS GRAND nombre rond de fois que ${d} y entre ? (10, 20, 100…)`,
+           quo:'Combien de fois en tout ? Additionne la colonne « fois ».',rest:'Combien reste-t-il ?',tab:d=>`Table de ${d}`,h:['Reste','J\'enlève','Fois']}};
+// ABN division: repeatedly take away the biggest "round" chunk k·10^p times the divisor (k = 1…9).
+const best=(rem,d)=>{let b=0;for(let p=0;p<4;p++)for(let k=1;k<=9;k++){const m=k*10**p;if(m*d<=rem&&m>b)b=m;}return b;};
+function gen(r,D){
+  let d,n;
+  if(D<4){d=ri(r,2,5);n=d*ri(r,3,Math.floor(60/d));}
+  else if(D<6){d=ri(r,3,9);n=ri(r,30,200);if(D<5)n-=n%d;}
+  else if(D<8){d=ri(r,4,9);n=ri(r,150,999);}else{d=pick(r,[6,7,8,9,12,15,25]);n=ri(r,300,999);}
+  const steps=[];let rem=n;while(rem>=d){const m=best(rem,d);steps.push({rem,m,take:m*d});rem-=m*d;}
+  return{n,d,steps,q:Math.floor(n/d),rest:n%d};
+}
+const css=`
+.wrap{display:flex;gap:10px;justify-content:center;align-items:flex-start;flex-wrap:wrap}
+.abn{border-collapse:separate;border-spacing:0;font-family:'Fredoka One',ui-rounded,'Nunito',system-ui,sans-serif;font-size:clamp(1rem,4.4vmin,1.25rem);background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 4px 12px rgba(45,42,74,.08);min-width:210px}
+.abn th{background:#3CC36E;color:#fff;font-size:.75rem;padding:5px 8px;font-family:'Nunito',sans-serif;font-weight:900}
+.abn td{text-align:center;padding:4px 8px;border-top:2px solid #eee}.abn td.q{color:var(--purple);background:#f3edff}
+.tab{background:#fff8e6;border:2px solid #ffd93d;border-radius:12px;padding:4px 8px;font-size:.85rem;font-weight:800;line-height:1.35}.tab b{display:block;text-align:center}
+.ask{text-align:center;font-weight:900;font-size:clamp(.95rem,4.1vmin,1.12rem)}
+.k-choice{font-size:clamp(1.2rem,5.2vmin,1.8rem)}
+`;
+H.start(window,{id:'divabn',mode:'rounds',css,
+  timer:D=>Math.max(35,Math.round(110*Math.pow(.93,D))),
+  round(g){
+    const P=gen(g.r,g.D),L=TX[g.lang]||TX.es;g.prompt(L.title(P.n,P.d));
+    const wrap=g.el('div','wrap',null,g.stage),tb=g.el('table','abn',`<tr><th>${L.h[0]}</th><th>${L.h[1]}</th><th>${L.h[2]}</th></tr>`,wrap);
+    g.el('div','tab',`<b>${L.tab(P.d)}</b>`+[1,2,3,4,5,6,7,8,9].map(k=>`${P.d}×${k}=${P.d*k}`).join('<br>'),wrap);
+    const ask=g.el('div','ask','',g.stage),box=g.el('div','k-ans',null,g.stage);let i=0;
+    const lock=()=>box.querySelectorAll('button').forEach(x=>x.disabled=true);
+    const finalQ=()=>{box.innerHTML='';ask.textContent=L.quo;const tr=g.el('tr','',`<td>${P.rest}</td><td></td><td class="q">?</td>`,tb);
+      g.choices(intChoices(g.r,[P.q],[P.q+1,P.q-1,P.q+10,P.q-10,P.n-P.d],4,1),(n,b)=>{b.textContent=n;},(n,b)=>{
+        if(n!==P.q){g.bad(b);return;}lock();tr.lastChild.textContent=n;tr.lastChild.classList.remove('q');
+        if(P.rest&&g.D>=5){box.innerHTML='';ask.textContent=L.rest;g.choices(intChoices(g.r,[P.rest],[P.rest+1,P.rest-1,P.d,P.rest+P.d],4,0),(x,c)=>{c.textContent=x;},(x,c)=>{
+          if(x!==P.rest){g.bad(c);return;}lock();g.fx.stars(c);g.solved();},4,box);}else{g.fx.stars(b);g.solved();}},4,box);};
+    const next=()=>{box.innerHTML='';if(i>=P.steps.length){finalQ();return;}const S=P.steps[i];ask.textContent=L.step(S.rem,P.d);
+      const tr=g.el('tr','',`<td>${S.rem}</td><td></td><td class="q">?</td>`,tb),p=10**Math.floor(Math.log10(S.m));
+      g.choices(intChoices(g.r,[S.m],[S.m*10,S.m/10,S.m+p,S.m-p,S.m+2*p],4,1),(n,b)=>{b.textContent=n;},(n,b)=>{
+        if(n!==S.m){g.bad(b);return;}lock();tr.children[1].textContent=S.take;tr.children[2].textContent=n;tr.children[2].classList.remove('q');i++;g.good(b);setTimeout(next,350);},4,box);};
+    next();
+  }
+});
+}
+</script></body></html>

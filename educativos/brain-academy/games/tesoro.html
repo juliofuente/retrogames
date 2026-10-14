@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Treasure Map</title></head>
+<body><script>
+const H=window.parent&&window.parent!==window?window.parent.Hub:null;
+if(!H){location.replace('../index.html');}
+else{
+const {ri,pick,shuf}=H.U;
+const F=[ // map features
+  {e:'🌳',es:['un árbol','el árbol','ningún árbol'],en:['a tree','the tree','any tree'],fr:["d'un arbre","l'arbre","d'aucun arbre"]},
+  {e:'🪨',es:['una roca','la roca','ninguna roca'],en:['a rock','the rock','any rock'],fr:["d'un rocher","le rocher","d'aucun rocher"]},
+  {e:'🏠',es:['una casa','la casa','ninguna casa'],en:['a house','the house','any house'],fr:["d'une maison","la maison","d'aucune maison"]},
+  {e:'🌸',es:['una flor','la flor','ninguna flor'],en:['a flower','the flower','any flower'],fr:["d'une fleur","la fleur","d'aucune fleur"]},
+  {e:'🍄',es:['una seta','la seta','ninguna seta'],en:['a mushroom','the mushroom','any mushroom'],fr:["d'un champignon","le champignon","d'aucun champignon"]},
+  {e:'🌵',es:['un cactus','el cactus','ningún cactus'],en:['a cactus','the cactus','any cactus'],fr:["d'un cactus","le cactus","d'aucun cactus"]}];
+const COLS='ABCDE';
+// Clue texts. n = grid size; rows/cols use words on 3×3 maps and coordinates on bigger maps.
+const TX={
+ es:{row:(v,n)=>n===3?`Está en la fila ${['de arriba','del medio','de abajo'][v]}.`:`Está en la fila ${v+1}.`,
+     nrow:(v,n)=>n===3?`No está en la fila ${['de arriba','del medio','de abajo'][v]}.`:`No está en la fila ${v+1}.`,
+     col:(v,n)=>n===3?`Está en la columna ${['de la izquierda','del centro','de la derecha'][v]}.`:`Está en la columna ${COLS[v]}.`,
+     ncol:(v,n)=>n===3?`No está en la columna ${['de la izquierda','del centro','de la derecha'][v]}.`:`No está en la columna ${COLS[v]}.`,
+     above:f=>`Está justo encima de ${f.es[0]}.`,below:f=>`Está justo debajo de ${f.es[0]}.`,left:f=>`Está justo a la izquierda de ${f.es[0]}.`,right:f=>`Está justo a la derecha de ${f.es[0]}.`,
+     srow:f=>`Está en la misma fila que ${f.es[1]}.`,scol:f=>`Está en la misma columna que ${f.es[1]}.`,
+     corner:()=>'Está en una esquina.',ncorner:()=>'No está en ninguna esquina.',edge:()=>'Está en el borde del mapa.',nedge:()=>'No está en el borde del mapa.',
+     intro:'🗺️ El tesoro está enterrado en una casilla vacía. Lee las pistas y ¡cava en el sitio correcto!'},
+ en:{row:(v,n)=>n===3?`It is in the ${['top','middle','bottom'][v]} row.`:`It is in row ${v+1}.`,
+     nrow:(v,n)=>n===3?`It is not in the ${['top','middle','bottom'][v]} row.`:`It is not in row ${v+1}.`,
+     col:(v,n)=>n===3?`It is in the ${['left','middle','right'][v]} column.`:`It is in column ${COLS[v]}.`,
+     ncol:(v,n)=>n===3?`It is not in the ${['left','middle','right'][v]} column.`:`It is not in column ${COLS[v]}.`,
+     above:f=>`It is right above ${f.en[0]}.`,below:f=>`It is right below ${f.en[0]}.`,left:f=>`It is right to the left of ${f.en[0]}.`,right:f=>`It is right to the right of ${f.en[0]}.`,
+     srow:f=>`It is in the same row as ${f.en[1]}.`,scol:f=>`It is in the same column as ${f.en[1]}.`,
+     corner:()=>'It is in a corner.',ncorner:()=>'It is not in a corner.',edge:()=>'It is on the edge of the map.',nedge:()=>'It is not on the edge of the map.',
+     intro:'🗺️ The treasure is buried in an empty square. Read the clues and dig in the right place!'},
+ fr:{row:(v,n)=>n===3?`Il est sur la ligne ${['du haut','du milieu','du bas'][v]}.`:`Il est sur la ligne ${v+1}.`,
+     nrow:(v,n)=>n===3?`Il n'est pas sur la ligne ${['du haut','du milieu','du bas'][v]}.`:`Il n'est pas sur la ligne ${v+1}.`,
+     col:(v,n)=>n===3?`Il est dans la colonne ${['de gauche','du centre','de droite'][v]}.`:`Il est dans la colonne ${COLS[v]}.`,
+     ncol:(v,n)=>n===3?`Il n'est pas dans la colonne ${['de gauche','du centre','de droite'][v]}.`:`Il n'est pas dans la colonne ${COLS[v]}.`,
+     above:f=>`Il est juste au-dessus ${f.fr[0]}.`,below:f=>`Il est juste en dessous ${f.fr[0]}.`,left:f=>`Il est juste à gauche ${f.fr[0]}.`,right:f=>`Il est juste à droite ${f.fr[0]}.`,
+     srow:f=>`Il est sur la même ligne que ${f.fr[1]}.`,scol:f=>`Il est dans la même colonne que ${f.fr[1]}.`,
+     corner:()=>'Il est dans un coin.',ncorner:()=>"Il n'est dans aucun coin.",edge:()=>'Il est sur le bord de la carte.',nedge:()=>"Il n'est pas sur le bord de la carte.",
+     intro:'🗺️ Le trésor est enterré dans une case vide. Lis les indices et creuse au bon endroit !'}};
+function gen(r,D){
+  const n=D<3?3:D<6?4:5,maxClues=D<3?3:D<6?4:5;
+  for(let tries=0;tries<400;tries++){
+    const feats=shuf(r,F).slice(0,D<3?3:4),grid=[];
+    const nFeat=Math.round(n*n*(n===3?.45:.4));
+    const cells=shuf(r,[...Array(n*n).keys()]);
+    for(let i=0;i<n*n;i++)grid.push(null);
+    cells.slice(0,nFeat).forEach(i=>grid[i]=pick(r,feats));
+    const empty=[...Array(n*n).keys()].filter(i=>!grid[i]);if(empty.length<3)continue;
+    const T=pick(r,empty),tr=Math.floor(T/n),tc=T%n;
+    const rc=i=>[Math.floor(i/n),i%n],at=(rr,cc)=>rr>=0&&cc>=0&&rr<n&&cc<n?grid[rr*n+cc]:undefined;
+    const isCorner=i=>{const[a,b]=rc(i);return(a===0||a===n-1)&&(b===0||b===n-1);};
+    const isEdge=i=>{const[a,b]=rc(i);return a===0||b===0||a===n-1||b===n-1;};
+    const count=f=>grid.filter(x=>x===f).length;
+    // every possible clue that is TRUE for the treasure square
+    const C=[];
+    C.push({k:'row',v:tr,f:i=>rc(i)[0]===tr});C.push({k:'col',v:tc,f:i=>rc(i)[1]===tc});
+    for(let v=0;v<n;v++){if(v!==tr&&D>=2.5)C.push({k:'nrow',v,f:i=>rc(i)[0]!==v});if(v!==tc&&D>=2.5)C.push({k:'ncol',v,f:i=>rc(i)[1]!==v});}
+    C.push(isCorner(T)?{k:'corner',f:isCorner}:{k:'ncorner',f:i=>!isCorner(i)});
+    C.push(isEdge(T)?{k:'edge',f:isEdge}:{k:'nedge',f:i=>!isEdge(i)});
+    const dirs=[['above',1,0],['below',-1,0],['left',0,1],['right',0,-1]];
+    dirs.forEach(([k,dr,dc])=>{const f=at(tr+dr,tc+dc);if(f)C.push({k,F:f,f:i=>{const[a,b]=rc(i);return at(a+dr,b+dc)===f;}});});
+    feats.forEach(f=>{if(count(f)!==1)return;const j=grid.indexOf(f),[fr,fc]=rc(j);
+      if(fr===tr)C.push({k:'srow',F:f,f:i=>rc(i)[0]===fr});if(fc===tc)C.push({k:'scol',F:f,f:i=>rc(i)[1]===fc});});
+    // greedy: keep adding clues that remove candidates until only the treasure square is left
+    let cand=empty.slice();const used=[];
+    for(const c of shuf(r,C)){if(cand.length===1)break;const nx=cand.filter(c.f);if(nx.length<cand.length&&nx.includes(T)){cand=nx;used.push(c);}}
+    if(cand.length!==1||used.length>maxClues||used.length<(D<3?2:3))continue;
+    return{n,grid,T,clues:shuf(r,used)};
+  }
+  return null;
+}
+const css=`
+.clues{list-style:none;display:grid;gap:6px;counter-reset:c}
+.clues li{counter-increment:c;background:#fff8e6;border:2px solid #ffd93d;border-radius:12px;padding:6px 10px 6px 34px;font-weight:800;position:relative;font-size:clamp(.92rem,3.8vmin,1.08rem);line-height:1.3}
+.clues li:before{content:counter(c);position:absolute;left:8px;top:50%;transform:translateY(-50%);width:20px;height:20px;border-radius:50%;background:#ff9f43;color:#fff;font-size:.75rem;display:flex;align-items:center;justify-content:center}
+.map{display:grid;gap:4px;margin:0 auto;width:min(100%,calc(var(--n)*64px + 28px));grid-template-columns:22px repeat(var(--n),1fr)}
+.map .lab{display:flex;align-items:center;justify-content:center;font-family:'Fredoka One',ui-rounded,'Nunito',system-ui,sans-serif;color:#a77c52;font-size:.85rem}
+.cell{aspect-ratio:1;border-radius:10px;background:#d9f0b8;display:flex;align-items:center;justify-content:center;font-size:clamp(1.3rem,6vmin,2rem);box-shadow:inset 0 -3px 0 rgba(0,0,0,.08);border:2px solid transparent}
+button.cell{background:#f3e3c0;cursor:pointer}
+@media (orientation:landscape) and (max-height:540px){.clues li{font-size:.85rem;padding:3px 8px 3px 30px}.cell{font-size:1.2rem;border-radius:7px}.map{gap:3px}}button.cell:hover{border-color:#ff9f43}
+.cell.dug{background:#d6c3a0}.cell.win{background:#ffe08a;animation:kpop .4s}
+`;
+H.start(window,{id:'tesoro',mode:'rounds',css,
+  timer:D=>Math.max(30,Math.round(110*Math.pow(.9,D))),
+  round(g){
+    const P=gen(g.r,g.D),L=TX[g.lang]||TX.es;g.prompt(L.intro);
+    const ul=g.el('ol','clues',null,g.stage);P.clues.forEach(c=>{const li=g.el('li','',null,ul);li.textContent=(c.F?L[c.k](c.F):L[c.k](c.v,P.n));});
+    const map=g.el('div','map k-ans',null,g.stage);map.style.setProperty('--n',P.n);
+    if(g.win.innerWidth>g.win.innerHeight){const ch=(g.card.clientHeight||300)-24;map.style.width=Math.min(P.n*64+28,Math.floor(ch/(P.n+1)*P.n+28))+'px';}
+    const labels=P.n>3;
+    g.el('div','lab','',map);for(let c=0;c<P.n;c++)g.el('div','lab',labels?COLS[c]:'',map);
+    for(let rr=0;rr<P.n;rr++){g.el('div','lab',labels?String(rr+1):'',map);
+      for(let c=0;c<P.n;c++){const i=rr*P.n+c,f=P.grid[i];
+        if(f){g.el('div','cell',f.e,map);continue;}
+        const b=g.el('button','cell','',map);
+        b.onclick=()=>{if(g.solvedFlag||g.paused||b.classList.contains('dug'))return;
+          if(i===P.T){b.textContent='💰';b.classList.add('win');g.fx.stars(b);g.solved();}
+          else{b.textContent='🕳️';b.classList.add('dug');g.bad(b);}};}}
+  }
+});
+}
+</script></body></html>

@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Syllable Catch</title></head>
+<body><script>
+const H=window.parent&&window.parent!==window?window.parent.Hub:null;
+if(!H){location.replace('../index.html');}
+else{
+const {ri,pick,shuf}=H.U;
+const TXT={en:'🫧 Pop the syllables in order to build the word',es:'🫧 Explota las sílabas en orden para formar la palabra',fr:'🫧 Éclate les syllabes dans l\'ordre pour former le mot'};
+const css=`
+.top{display:flex;align-items:center;justify-content:center;gap:10px}
+.pic{font-size:clamp(3.4rem,15vw,4.6rem);animation:kwob 2.4s ease-in-out infinite}
+.slots{display:flex;justify-content:center;gap:6px;flex-wrap:wrap}
+.slot{min-width:clamp(54px,15vw,74px);height:clamp(50px,13vw,62px);border-radius:14px;border:3px dashed var(--lilac);display:flex;align-items:center;justify-content:center;font-family:'Fredoka One',ui-rounded,'Nunito',system-ui,sans-serif;font-size:clamp(1.3rem,5.5vw,1.8rem);color:var(--purple);padding:0 8px;background:#faf6ff}
+.slot.now{border-style:solid;border-color:var(--purple);animation:kbeat 1.3s infinite}
+.slot.full{border:3px solid var(--green);background:#ecfff3;color:#1e8a4a;animation:kpop .3s}
+.pond{position:relative;height:clamp(170px,46vh,330px);border-radius:20px;background:radial-gradient(circle at 30% 20%,#e8f7ff,#cdeaff);overflow:hidden}
+.bub{position:absolute;width:clamp(64px,18vw,82px);height:clamp(64px,18vw,82px);border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-family:'Fredoka One',ui-rounded,'Nunito',system-ui,sans-serif;font-size:clamp(1.15rem,5vw,1.5rem);color:#2d2a4a;cursor:pointer;
+  background:radial-gradient(circle at 32% 28%,#fff 0 12%,rgba(255,255,255,.55) 13%,rgba(180,225,255,.75) 60%,rgba(140,200,255,.9));box-shadow:inset -4px -6px 12px rgba(79,184,255,.35),0 4px 12px rgba(45,42,74,.12);
+  animation:bob var(--t) ease-in-out infinite alternate;border:2px solid rgba(255,255,255,.9)}
+.bub.k-wrong{background:#ffd6dc!important}
+.bub.gone{animation:popb .3s forwards}
+@keyframes bob{from{transform:translate(0,0)}to{transform:translate(var(--dx),var(--dy))}}
+@keyframes popb{to{transform:scale(1.6);opacity:0}}
+`;
+H.start(window,{id:'silabas',mode:'rounds',css,
+  timer:D=>D<2?null:Math.max(15,Math.round(55*Math.pow(.9,D))),
+  async round(g){
+    const data=(await g.data('words'))[g.lang],r=g.r,D=g.D;
+    const want=D<1.5?[2]:D<3?[2,3]:D<5?[3,4]:[3,4,5];
+    let pool=data.words.filter(w=>want.includes(w.s.length));if(!pool.length)pool=data.words.filter(w=>w.s.length>=2);
+    const W=pick(r,pool),up=D<1.5;
+    const fmt=s=>up?s.toLocaleUpperCase(g.lang):s;
+    const need=W.s.map(fmt);
+    const nDis=Math.min(6,2+Math.floor(D));
+    const others=shuf(r,[...new Set(data.words.flatMap(w=>w.s).map(fmt))].filter(s=>!need.includes(s))).slice(0,nDis);
+    g.prompt(g.t(TXT));
+    const top=g.el('div','top',null,g.stage);g.el('div','pic',W.e,top);g.sayBtn(W.w,top);
+    const slots=g.el('div','slots',null,g.stage);const sl=need.map((_,i)=>g.el('div','slot'+(i?'':' now'),'',slots));
+    const pond=g.el('div','pond k-ans',null,g.stage);
+    const items=shuf(r,need.concat(others)),N=items.length,cols=N<=4?2:3,rows=Math.ceil(N/cols);
+    let ptr=0;
+    items.forEach((s,i)=>{
+      const b=g.el('button','bub',s,pond);const c=i%cols,rw=Math.floor(i/cols);
+      b.style.left=`calc(${(c+.5)*100/cols}% - clamp(32px,9vw,41px) + ${ri(r,-10,10)}px)`;b.style.top=`calc(${(rw+.5)*100/rows}% - clamp(32px,9vw,41px) + ${ri(r,-8,8)}px)`;
+      b.style.setProperty('--t',(1.6+r()*1.4)+'s');b.style.setProperty('--dx',ri(r,-14,14)+'px');b.style.setProperty('--dy',ri(r,-14,14)+'px');
+      b.onclick=()=>{if(g.solvedFlag||g.paused||b.classList.contains('gone'))return;
+        if(s!==need[ptr]){g.bad(b);setTimeout(()=>{b.classList.remove('k-wrong');b.disabled=false;},450);return;}
+        H.SFX.pop();b.classList.add('gone');b.disabled=true;sl[ptr].textContent=s;sl[ptr].classList.remove('now');sl[ptr].classList.add('full');ptr++;
+        if(ptr>=need.length){g.speak(W.w);g.fx.stars(sl[ptr-1]);g.solved();}else{g.good(null);sl[ptr].classList.add('now');}
+      };
+    });
+    if(D<1)setTimeout(()=>g.speak(W.w),400);
+  }
+});
+}
+</script></body></html>

@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>The Shop</title></head>
+<body><script>
+const H=window.parent&&window.parent!==window?window.parent.Hub:null;
+if(!H){location.replace('../index.html');}
+else{
+const {ri,pick,shuf,intChoices}=H.U;
+const ITEMS=['🍎','🍌','🧃','🍪','🧸','🎈','📕','✏️','🍦','🍕','⚽','🪀','🧁','🥤','🎨','🪁','🍭','🧢'];
+const TX={
+ es:{pay:p=>`🛒 Paga exactamente ${p} 🪙 con las monedas`,change:(p,m)=>`🛒 Cuesta ${p} 🪙 y pagas con ${m} 🪙. ¿Cuánto te devuelven?`,total:'🛒 ¿Cuánto cuesta todo junto?',
+     pair:m=>`🛒 Tienes ${m} 🪙. Elige DOS cosas que cuesten justo eso.`,reset:'↩️ Devolver',paid:'Has puesto',over:'¡Te has pasado!'},
+ en:{pay:p=>`🛒 Pay exactly ${p} 🪙 with the coins`,change:(p,m)=>`🛒 It costs ${p} 🪙 and you pay with ${m} 🪙. How much change do you get?`,total:'🛒 How much does it all cost?',
+     pair:m=>`🛒 You have ${m} 🪙. Pick TWO things that cost exactly that.`,reset:'↩️ Take back',paid:'You put',over:'Too much!'},
+ fr:{pay:p=>`🛒 Paie exactement ${p} 🪙 avec les pièces`,change:(p,m)=>`🛒 Ça coûte ${p} 🪙 et tu paies avec ${m} 🪙. Combien on te rend ?`,total:'🛒 Combien coûte le tout ?',
+     pair:m=>`🛒 Tu as ${m} 🪙. Choisis DEUX choses qui coûtent exactement ça.`,reset:'↩️ Reprendre',paid:'Tu as mis',over:'Trop !'}};
+function gen(r,D){
+  const items=shuf(r,ITEMS);
+  if(D<3){const coins=D<.5?[1]:D<1.5?[1,2]:[1,2,5],max=D<.5?5:D<1.5?10:20;return{mode:'pay',item:items[0],price:ri(r,D<.5?2:3,max),coins};}
+  const m=D<5?'change':D<7?pick(r,['total','pay','change']):pick(r,['pair','total','change']);
+  if(m==='pay')return{mode:'pay',item:items[0],price:ri(r,12,60),coins:[1,2,5,10,20]};
+  if(m==='change'){const money=D<4?pick(r,[10,20]):pick(r,[20,50,100]),price=ri(r,Math.ceil(money*.25),money-1),ans=money-price;
+    return{mode:'change',item:items[0],price,money,ans,choices:intChoices(r,[ans],[ans+1,ans-1,ans+10,ans-10,price,ans+5],4,0)};}
+  if(m==='total'){const k=D<6?2:3,prices=Array.from({length:k},()=>ri(r,2,D<6?15:30)),ans=prices.reduce((a,b)=>a+b,0);
+    return{mode:'total',items:items.slice(0,k),prices,ans,choices:intChoices(r,[ans],[ans+1,ans-1,ans+10,ans-10,ans+2],4,1)};}
+  // pair: exactly ONE pair of the 4 products adds up to the money
+  for(let t=0;t<300;t++){const prices=Array.from({length:4},()=>ri(r,3,40)),pairs=[];
+    for(let i=0;i<4;i++)for(let j=i+1;j<4;j++)pairs.push([i,j,prices[i]+prices[j]]);
+    const target=pick(r,pairs);if(pairs.filter(p=>p[2]===target[2]).length!==1)continue;
+    return{mode:'pair',items:items.slice(0,4),prices,money:target[2],ans:[target[0],target[1]]};}
+  return{mode:'pay',item:items[0],price:15,coins:[1,2,5,10]};
+}
+const css=`
+.shelf{display:flex;justify-content:center;gap:10px;flex-wrap:wrap}
+.prod{background:#fff;border-radius:16px;padding:8px 12px;display:flex;flex-direction:column;align-items:center;box-shadow:0 4px 12px rgba(45,42,74,.1);min-width:76px}
+.prod .e{font-size:clamp(2.2rem,9vmin,3rem)}
+.tag{font-family:'Fredoka One',ui-rounded,'Nunito',system-ui,sans-serif;background:#ffd93d;border-radius:8px;padding:1px 8px;font-size:1.05rem}
+button.prod{border:3px solid transparent;cursor:pointer}button.prod.sel{border-color:var(--purple);background:#f3edff}
+.counter{display:flex;align-items:center;justify-content:center;gap:10px;font-weight:900}
+.counter b{font-family:'Fredoka One',ui-rounded,'Nunito',system-ui,sans-serif;font-size:1.8rem;color:var(--purple);min-width:56px;text-align:center}
+.tray{min-height:46px;display:flex;flex-wrap:wrap;gap:4px;justify-content:center;background:#f4f1fb;border-radius:14px;padding:6px}
+.coins{display:flex;flex-wrap:wrap;gap:10px;justify-content:center}
+.coin{width:clamp(54px,15vmin,68px);aspect-ratio:1;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff3b0,#ffd93d 45%,#e0a800);border:3px solid #c98f00;
+  font-family:'Fredoka One',ui-rounded,'Nunito',system-ui,sans-serif;font-size:1.4rem;color:#6b4a00;box-shadow:0 4px 0 #b07d00;cursor:pointer}
+.coin.note{border-radius:10px;aspect-ratio:1.6;width:clamp(70px,20vmin,88px);background:linear-gradient(135deg,#bff0c8,#7fd68f);border-color:#3c9a50;color:#1d5a2a;box-shadow:0 4px 0 #2f7d40}
+.coin:active{transform:translateY(3px);box-shadow:none}
+.mini{width:30px;height:30px;font-size:.8rem;border-width:2px;box-shadow:none;cursor:default}
+.mini.note{width:40px;height:26px}
+.reset{background:#f1ebff;color:var(--purple);font-weight:900;border-radius:12px;padding:6px 12px}
+.plus{font-family:'Fredoka One',ui-rounded,'Nunito',system-ui,sans-serif;font-size:1.6rem;align-self:center;color:#bbb}
+`;
+H.start(window,{id:'tienda',mode:'rounds',css,
+  timer:D=>D<2?null:Math.max(18,Math.round(70*Math.pow(.9,D))),
+  round(g){
+    const P=gen(g.r,g.D),L=TX[g.lang]||TX.es;
+    const prod=(e,p,parent,tag='div')=>g.el(tag,'prod',`<span class="e">${e}</span><span class="tag">${p} 🪙</span>`,parent);
+    if(P.mode==='pay'){
+      g.prompt(L.pay(P.price));const sh=g.el('div','shelf',null,g.stage);prod(P.item,P.price,sh);
+      const ct=g.el('div','counter',`<span>${L.paid}</span><b>0</b><span>/ ${P.price} 🪙</span>`,g.stage),tray=g.el('div','tray',null,g.stage);
+      const rs=g.el('button','reset',L.reset,ct);let sum=0;
+      const clear=()=>{sum=0;tray.innerHTML='';ct.querySelector('b').textContent=0;};rs.onclick=clear;
+      const box=g.el('div','coins k-ans',null,g.stage);
+      P.coins.forEach(v=>{const b=g.el('button','coin'+(v>=20?' note':''),String(v),box);
+        b.onclick=()=>{if(g.solvedFlag||g.paused)return;H.SFX.pop();sum+=v;g.el('span','coin mini'+(v>=20?' note':''),String(v),tray);ct.querySelector('b').textContent=sum;
+          if(sum===P.price){g.fx.stars(ct);g.solved();}
+          else if(sum>P.price){g.bad(null);g.fb(L.over,'bad');setTimeout(()=>{if(!g.solvedFlag)clear();},500);}};});
+      return;
+    }
+    if(P.mode==='change'){g.prompt(L.change(P.price,P.money));const sh=g.el('div','shelf',null,g.stage);prod(P.item,P.price,sh);
+      g.choices(P.choices,(n,b)=>{b.textContent=n+' 🪙';},(n,b)=>{if(n===P.ans){b.classList.add('k-right');g.fx.stars(b);g.solved();}else g.bad(b);},4);return;}
+    if(P.mode==='total'){g.prompt(L.total);const sh=g.el('div','shelf',null,g.stage);
+      P.items.forEach((e,i)=>{if(i)g.el('span','plus','+',sh);prod(e,P.prices[i],sh);});
+      g.choices(P.choices,(n,b)=>{b.textContent=n+' 🪙';},(n,b)=>{if(n===P.ans){b.classList.add('k-right');g.fx.stars(b);g.solved();}else g.bad(b);},4);return;}
+    g.prompt(L.pair(P.money));const sh=g.el('div','shelf k-ans',null,g.stage);let sel=[];
+    P.items.forEach((e,i)=>{const b=prod(e,P.prices[i],sh,'button');b.onclick=()=>{if(g.solvedFlag||g.paused)return;H.SFX.click();
+      if(sel.includes(i)){sel=sel.filter(x=>x!==i);b.classList.remove('sel');return;}
+      sel.push(i);b.classList.add('sel');
+      if(sel.length===2){const ok=sel.slice().sort().join()===P.ans.join();
+        if(ok){g.fx.stars(b);g.solved();}else{const bs=[...sh.children];setTimeout(()=>{sel.forEach(j=>bs[j].classList.remove('sel'));sel=[];},400);g.bad(null);}}};});
+  }
+});
+}
+</script></body></html>

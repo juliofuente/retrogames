@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Rule Detective</title></head>
+<body><script>
+const H=window.parent&&window.parent!==window?window.parent.Hub:null;
+if(!H){location.replace('../index.html');}
+else{
+const {ri,pick,shuf}=H.U;
+const EM=[['🔴','🟠','🟡','🟢','🔵','🟣'],['🟥','🟧','🟨','🟩','🟦','🟪'],['❤️','🧡','💛','💚','💙','💜']]; // [shape][color]
+const W={es:{c:['rojo','naranja','amarillo','verde','azul','morado'],s:['círculos','cuadrados','corazones'],n:k=>k===1?'1 figura':k+' figuras',not:'no',and:'y',or:'o',cs:(s,c)=>`${s} de color ${c}`,
+            title:'🔎 Mira qué tarjetas cumplen la regla secreta y cuáles no.',ask:'¿Cuál cumple la regla?',yes:'✅ Cumplen',no:'❌ No cumplen',was:'La regla era:'},
+         en:{c:['red','orange','yellow','green','blue','purple'],s:['circles','squares','hearts'],n:k=>k===1?'1 shape':k+' shapes',not:'not',and:'and',or:'or',cs:(s,c)=>`${c} ${s}`,
+            title:'🔎 Look at which cards follow the secret rule and which do not.',ask:'Which one follows the rule?',yes:'✅ Follow it',no:"❌ Don't",was:'The rule was:'},
+         fr:{c:['rouge','orange','jaune','vert','bleu','violet'],s:['cercles','carrés','cœurs'],n:k=>k===1?'1 forme':k+' formes',not:'pas',and:'et',or:'ou',cs:(s,c)=>`${s} de couleur ${c}`,
+            title:'🔎 Regarde quelles cartes suivent la règle secrète et lesquelles non.',ask:'Laquelle suit la règle ?',yes:'✅ La suivent',no:'❌ Non',was:'La règle était :'}};
+// card = {c,s,n}. Rules are predicates; we brute-force the whole rule family to guarantee a single answer.
+function rules(D){
+  const R=[];
+  for(let c=0;c<6;c++)R.push({d:['c',c],f:x=>x.c===c});
+  if(D>=.7)for(let s=0;s<3;s++)R.push({d:['s',s],f:x=>x.s===s});
+  if(D>=1.5)for(let n=1;n<=3;n++)R.push({d:['n',n],f:x=>x.n===n});
+  if(D>=3){for(let c=0;c<6;c++)R.push({d:['!c',c],f:x=>x.c!==c});for(let s=0;s<3;s++)R.push({d:['!s',s],f:x=>x.s!==s});}
+  if(D>=5){for(let c=0;c<6;c++)for(let s=0;s<3;s++)R.push({d:['c&s',c,s],f:x=>x.c===c&&x.s===s});
+           for(let s=0;s<3;s++)for(let n=1;n<=3;n++)R.push({d:['s&n',s,n],f:x=>x.s===s&&x.n===n});
+           for(let a=0;a<6;a++)for(let b=a+1;b<6;b++)R.push({d:['c|c',a,b],f:x=>x.c===a||x.c===b});}
+  if(D>=7){for(let c=0;c<6;c++)for(let s=0;s<3;s++)R.push({d:['c|s',c,s],f:x=>x.c===c||x.s===s});
+           for(let s=0;s<3;s++)for(let n=1;n<=3;n++)R.push({d:['!s&n',s,n],f:x=>x.s!==s&&x.n===n});}
+  return R;
+}
+const ck=x=>x.c+'|'+x.s+'|'+x.n;
+function gen(r,D){
+  const R=rules(D),cols=D<1.5?3:D<4?4:6,maxN=D<1.5?1:3;
+  const rand=()=>({c:ri(r,0,cols-1),s:ri(r,0,2),n:ri(r,1,maxN)});   // shapes vary even when the rule is only about colour
+  const nYes=D<1.5?2:D<3?3:4,nNo=D<3?2:3,nCh=D<1.5?3:4;
+  const pool=D<3?R:R.filter(x=>x.d[0].length>1||D<5);  // harder rules once they are unlocked
+  for(let t=0;t<800;t++){
+    const rule=pick(r,pool),yes=[],no=[],seen=new Set();
+    for(let k=0;k<80&&(yes.length<nYes||no.length<nNo);k++){const x=rand(),kk=ck(x);if(seen.has(kk))continue;
+      if(rule.f(x)){if(yes.length<nYes){yes.push(x);seen.add(kk);}}else if(no.length<nNo){no.push(x);seen.add(kk);}}
+    if(yes.length<nYes||no.length<nNo)continue;
+    const cons=R.filter(q=>yes.every(q.f)&&!no.some(q.f));          // every rule a detective could still believe
+    let ans=null;for(let k=0;k<60&&!ans;k++){const x=rand();if(!seen.has(ck(x))&&cons.every(q=>q.f(x)))ans=x;}
+    if(!ans)continue;
+    const wrong=[];for(let k=0;k<200&&wrong.length<nCh-1;k++){const x=rand(),kk=ck(x);if(seen.has(kk)||kk===ck(ans)||wrong.some(w=>ck(w)===kk))continue;
+      if(cons.every(q=>!q.f(x)))wrong.push(x);}                       // false under EVERY consistent rule → unambiguous
+    if(wrong.length<nCh-1)continue;
+    return{rule,yes,no,choices:shuf(r,[ans,...wrong]),ans};
+  }
+  return null;
+}
+function ruleText(d,L){const k=d[0];const c=i=>L.c[i],s=i=>L.s[i];
+  return k==='c'?c(d[1]):k==='s'?s(d[1]):k==='n'?L.n(d[1]):k==='!c'?`${L.not} ${c(d[1])}`:k==='!s'?`${L.not} ${s(d[1])}`:
+    k==='c&s'?L.cs(s(d[2]),c(d[1])):k==='s&n'?`${s(d[1])} ${L.and} ${L.n(d[2])}`:k==='c|c'?`${c(d[1])} ${L.or} ${c(d[2])}`:k==='c|s'?`${c(d[1])} ${L.or} ${s(d[2])}`:`${L.not} ${s(d[1])} ${L.and} ${L.n(d[2])}`;}
+const css=`
+.panels{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.pan{border-radius:16px;padding:6px;display:flex;flex-direction:column;gap:5px}
+.pan.y{background:#e9fff1;border:2px solid #9be3b5}.pan.n{background:#ffeef1;border:2px solid #ffb3c3}
+.pan h4{font-size:.8rem;text-align:center;font-weight:900}
+.cards{display:flex;flex-wrap:wrap;gap:5px;justify-content:center}
+.cd{background:#fff;border-radius:10px;min-width:46px;height:44px;padding:0 5px;display:flex;align-items:center;justify-content:center;gap:1px;font-size:1.15rem;box-shadow:0 2px 6px rgba(0,0,0,.08)}
+.ask{text-align:center;font-family:'Fredoka One',ui-rounded,'Nunito',system-ui,sans-serif;color:var(--purple)}
+.k-choice{font-size:1.5rem;gap:2px;min-height:60px}
+.was{text-align:center;font-weight:900;color:var(--green)}
+`;
+H.start(window,{id:'reglas',mode:'rounds',css,
+  timer:D=>Math.max(20,Math.round(75*Math.pow(.9,D))),
+  round(g){
+    const P=gen(g.r,g.D),L=W[g.lang]||W.es;g.prompt(L.title);
+    const card=(x,parent)=>{const d=g.el('div','cd',EM[x.s][x.c].repeat(x.n),parent);return d;};
+    const pans=g.el('div','panels',null,g.stage);
+    const y=g.el('div','pan y',`<h4>${L.yes}</h4>`,pans),yc=g.el('div','cards',null,y);P.yes.forEach(x=>card(x,yc));
+    const n=g.el('div','pan n',`<h4>${L.no}</h4>`,pans),nc=g.el('div','cards',null,n);P.no.forEach(x=>card(x,nc));
+    g.el('div','ask',L.ask,g.stage);
+    g.choices(P.choices,(x,b)=>{b.textContent=EM[x.s][x.c].repeat(x.n);},(x,b)=>{
+      if(ck(x)===ck(P.ans)){b.classList.add('k-right');card(x,yc);g.el('div','was',`${L.was} ${ruleText(P.rule.d,L)}`,g.stage);g.fx.stars(b);g.solved();}else g.bad(b);
+    },P.choices.length);
+  }
+});
+}
+</script></body></html>

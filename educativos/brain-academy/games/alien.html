@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Alien Language</title></head>
+<body><script>
+const H=window.parent&&window.parent!==window?window.parent.Hub:null;
+if(!H){location.replace('../index.html');}
+else{
+const {ri,pick,shuf}=H.U;
+const NOUNS=['🐟','🐸','🍎','⭐','🚗','🌸','🐱','🍩','🎈','🦋','🐢','🍄'];
+const CONS='bdfgklmnprstvz',VOW='aeiou';
+function word(r){let w='';const s=ri(r,1,2);for(let i=0;i<s;i++)w+=CONS[ri(r,0,13)]+VOW[ri(r,0,4)];if(r()<.4)w+=CONS[ri(r,0,13)];return w;}
+// Meaning = {num, noun, size}. A phrase lists one alien word per concept, in a fixed (but hidden) order.
+function gen(r,D){
+  const types=D<6?['num','noun']:['size','num','noun'];
+  for(let tries=0;tries<500;tries++){
+    const nN=D<3?2:3,nums=shuf(r,[1,2,3]).slice(0,D<3?2:3).sort(),nouns=shuf(r,NOUNS).slice(0,nN),sizes=[0,1];
+    const vals={num:nums,noun:nouns,size:sizes};
+    const used=new Set(),lex={};
+    for(const t of types){lex[t]={};for(const v of vals[t]){let w;do{w=word(r);}while(used.has(w));used.add(w);lex[t][v]=w;}}
+    const order=D<4?types.slice():shuf(r,types);
+    const phrase=m=>order.map(t=>lex[t][m[t]]);
+    const all=[];nums.forEach(a=>nouns.forEach(b=>(types.includes('size')?sizes:[0]).forEach(c=>all.push({num:a,noun:b,size:c}))));
+    const mk=m=>m.num+'|'+m.noun+'|'+m.size;
+    const pool=shuf(r,all),nEx=types.length===3?5:D<3?3:4;
+    const ex=pool.slice(0,nEx),q=pool[nEx];if(!q)continue;
+    const exP=ex.map(phrase),qP=phrase(q);
+    // brute force: every assignment of concept types to positions that is consistent with the examples
+    const perms=types.length===2?[[0,1],[1,0]]:[[0,1,2],[0,2,1],[1,0,2],[1,2,0],[2,0,1],[2,1,0]];
+    const results=new Set();let bad=false;
+    for(const p of perms){
+      const pt=p.map(i=>order[i]); // pt[pos] = concept type assumed at position pos
+      const dict={},rev={};let ok=true;
+      ex.forEach((m,ei)=>exP[ei].forEach((w,pos)=>{const t=pt[pos],v=m[t];const k=t+':'+v;
+        if(dict[w]!==undefined&&dict[w]!==k)ok=false;if(rev[k]!==undefined&&rev[k]!==w)ok=false;dict[w]=k;rev[k]=w;}));
+      if(!ok)continue;
+      const parts=qP.map(w=>dict[w]);if(parts.some(x=>x===undefined)){bad=true;break;}
+      const mm={num:1,noun:'',size:0};parts.forEach(k=>{const [t,v]=k.split(':');mm[t]=t==='noun'?v:+v;});results.add(mk(mm));
+    }
+    if(bad||results.size!==1||!results.has(mk(q)))continue;
+    // distractor pictures: change one concept of the answer
+    const dis=new Map();
+    shuf(r,all).forEach(m=>{const diff=types.filter(t=>m[t]!==q[t]).length;if(diff===1)dis.set(mk(m),m);});
+    shuf(r,all).forEach(m=>{if(mk(m)!==mk(q))dis.set(mk(m),m);});
+    const choices=shuf(r,[q,...[...dis.values()].filter(m=>mk(m)!==mk(q)).slice(0,3)]);
+    return{ex,exP,q,qP,choices,mk,hasSize:types.includes('size')};
+  }
+  return null;
+}
+const TXT={en:'👽 Learn the alien words from the examples. What does the last one mean?',es:'👽 Aprende las palabras alienígenas con los ejemplos. ¿Qué significa la última?',fr:'👽 Apprends les mots extraterrestres avec les exemples. Que veut dire le dernier ?'};
+const css=`
+.exs{display:grid;gap:7px;grid-template-columns:repeat(auto-fill,minmax(135px,1fr))}
+.ex{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-width:0;background:#fff;border-radius:16px;padding:8px 12px;box-shadow:0 4px 12px rgba(45,42,74,.08);animation:kpop .4s backwards}
+.say{max-width:100%;overflow-wrap:anywhere;text-align:center;font-family:'Fredoka One',ui-rounded,'Nunito',system-ui,sans-serif;font-size:clamp(1rem,4.2vmin,1.3rem);color:#2aa36b;background:#e9fff2;border-radius:14px;padding:6px 12px;letter-spacing:.5px}
+.say:before{content:'👽 '}
+.pic{display:flex;gap:2px;align-items:flex-end;min-height:34px}
+.pic span{font-size:1.35rem;line-height:1}.pic.big span{font-size:2rem}.pic.small span{font-size:.95rem}
+@media (orientation:landscape) and (max-height:540px){.exs{grid-template-columns:repeat(auto-fill,minmax(110px,1fr))}.ex{padding:4px 6px}}
+@media (max-height:640px){.ex{padding:4px 6px;gap:2px}.say{font-size:.95rem;padding:3px 8px}}
+.ex.q{grid-column:1/-1;flex-direction:row;justify-content:space-around}.q{background:linear-gradient(140deg,#f5eeff,#ffeef6);border:2.5px solid var(--lilac)}
+.k-choice .pic{justify-content:center}
+`;
+H.start(window,{id:'alien',mode:'rounds',css,
+  timer:D=>Math.max(25,Math.round(100*Math.pow(.9,D))),
+  round(g){
+    let P=gen(g.r,g.D);if(!P)P=gen(H.U.mkRand(g.q+1),2);
+    g.prompt(g.t(TXT));
+    const pic=m=>{const d=g.el('div','pic'+(P.hasSize?(m.size?' big':' small'):''));for(let i=0;i<m.num;i++)g.el('span','',m.noun,d);return d;};
+    const exs=g.el('div','exs',null,g.stage);
+    P.ex.forEach((m,i)=>{const row=g.el('div','ex',null,exs);row.style.animationDelay=(i*.08)+'s';g.el('span','say',P.exP[i].join(' '),row);row.appendChild(pic(m));});
+    const qr=g.el('div','ex q',null,exs);g.el('span','say',P.qP.join(' '),qr);const qm=g.el('div','pic','<span>❓</span>',qr);
+    g.choices(P.choices,(m,b)=>b.appendChild(pic(m)),(m,b)=>{
+      if(P.mk(m)===P.mk(P.q)){qm.replaceWith(pic(m));g.fx.stars(b);g.solved();}else g.bad(b);
+    },2);
+  }
+});
+}
+</script></body></html>

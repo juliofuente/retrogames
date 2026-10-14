@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Two-way Table</title></head>
+<body><script>
+const H=window.parent&&window.parent!==window?window.parent.Hub:null;
+if(!H){location.replace('../index.html');}
+else{
+const {ri,shuf}=H.U;
+const EM=[['🔴','🟠','🟡','🟢','🔵','🟣'],['🟥','🟧','🟨','🟩','🟦','🟪'],['❤️','🧡','💛','💚','💙','💜']];
+const HEX=['#e53935','#fb8c00','#fdd835','#43a047','#1e88e5','#8e24aa'],SHAPE=['⚪','⬜','🤍'];
+const TX={es:'🧮 Cada fila tiene un color y cada columna una forma. ¿Qué pieza va en el hueco?',en:'🧮 Each row has a colour and each column a shape. Which piece goes in the gap?',fr:'🧮 Chaque ligne a une couleur et chaque colonne une forme. Quelle pièce va dans le trou ?'};
+function gen(r,D){
+  const R=D<1?2:D<3?3:4,Cn=D<1?2:3,miss=D<2?1:D<4?2:3;
+  const colors=shuf(r,[0,1,2,3,4,5]).slice(0,R),shapes=shuf(r,[0,1,2]).slice(0,Cn);
+  const holes=shuf(r,[...Array(R*Cn).keys()]).slice(0,miss);
+  return{colors,shapes,holes,nCh:D<1.5?3:4};
+}
+const css=`
+.tab{display:grid;gap:4px;margin:0 auto;width:fit-content}
+.hd,.cell{width:clamp(48px,14vmin,64px);aspect-ratio:1;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:clamp(1.6rem,7vmin,2.3rem)}
+.hd{background:#f1edfb}.hd.sw span{width:60%;height:60%;border-radius:8px;display:block}
+.cell{background:#fff;box-shadow:0 3px 8px rgba(45,42,74,.08)}
+.cell.q{border:3px dashed var(--lilac);color:var(--lilac);font-family:'Fredoka One',ui-rounded,'Nunito',system-ui,sans-serif;font-size:1.4rem;background:#faf6ff}
+.cell.q.now{border-style:solid;border-color:var(--purple);animation:kbeat 1.3s infinite}
+.cell.ok{border:3px solid var(--green);animation:kpop .3s}
+.k-choice{font-size:clamp(1.8rem,8vmin,2.4rem)}
+@media (orientation:landscape) and (max-height:540px){.hd,.cell{width:clamp(38px,11vmin,52px);font-size:1.5rem;border-radius:9px}.tab{gap:3px}}
+`;
+H.start(window,{id:'dobleentrada',mode:'rounds',css,
+  timer:D=>D<2?null:Math.max(12,Math.round(45*Math.pow(.9,D))),
+  round(g){
+    const P=gen(g.r,g.D),R=P.colors.length,Cn=P.shapes.length;g.prompt(g.t(TX));
+    const tab=g.el('div','tab',null,g.stage);tab.style.gridTemplateColumns=`repeat(${Cn+1},auto)`;
+    g.el('div','hd','',tab);P.shapes.forEach(s=>g.el('div','hd',SHAPE[s],tab));
+    const holeEls=[];
+    P.colors.forEach((c,ri_)=>{const h=g.el('div','hd sw','<span></span>',tab);h.firstChild.style.background=HEX[c];
+      P.shapes.forEach((s,ci)=>{const i=ri_*Cn+ci;if(P.holes.includes(i)){holeEls.push({el:g.el('div','cell q','?',tab),c,s});}else g.el('div','cell',EM[s][c],tab);});});
+    let ptr=0,box=g.el('div','k-ans',null,g.stage);
+    const ask=()=>{box.innerHTML='';const H_=holeEls[ptr];H_.el.classList.add('now');
+      // options: right piece, same colour other shape, same shape other colour, both different
+      const opts=new Map([[H_.s+'|'+H_.c,[H_.s,H_.c]]]);const others=[0,1,2,3,4,5].filter(x=>x!==H_.c);
+      shuf(g.r,[[ (H_.s+1)%3,H_.c],[H_.s,others[0]],[H_.s,others[1]],[(H_.s+2)%3,others[2]],[(H_.s+1)%3,others[3]]]).forEach(([s,c])=>{if(opts.size<P.nCh)opts.set(s+'|'+c,[s,c]);});
+      g.choices(shuf(g.r,[...opts.values()]),([s,c],b)=>{b.textContent=EM[s][c];},([s,c],b)=>{
+        if(s===H_.s&&c===H_.c){H_.el.textContent=EM[s][c];H_.el.classList.remove('q','now');H_.el.classList.add('ok');ptr++;
+          if(ptr>=holeEls.length){g.fx.stars(H_.el);g.solved();}else{g.good(b);ask();}}else g.bad(b);},P.nCh,box);};
+    ask();
+  }
+});
+}
+</script></body></html>

@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Cuento con huecos</title></head>
+<body><script>
+const H=window.parent&&window.parent!==window?window.parent.Hub:null;
+if(!H){location.replace('../index.html');}
+else{
+const {pick,shuf}=H.U;
+const css=`
+.story{background:#fffdf6;border:2px solid #f3e3c0;border-radius:18px;padding:12px 14px;font-size:clamp(1.05rem,4.6vmin,1.35rem);line-height:1.75;font-weight:700;box-shadow:0 4px 14px rgba(45,42,74,.06)}
+.story .pic{float:left;font-size:2.4rem;line-height:1;margin:2px 10px 0 0}
+.gap{display:inline-block;min-width:4.2em;border-bottom:3px dashed var(--lilac);text-align:center;color:var(--lilac);padding:0 4px;line-height:1.3}
+.gap.now{border-bottom:3px solid var(--purple);background:#f3edff;border-radius:8px 8px 0 0;animation:kbeat 1.4s infinite}
+.gap.ok{border-bottom:3px solid var(--green);color:#1e8a4a;background:#e9fff1;border-radius:8px 8px 0 0;animation:kpop .3s}
+.k-choice{font-family:'Nunito',system-ui,sans-serif;font-weight:900;font-size:clamp(1.05rem,4.6vmin,1.35rem);min-height:56px}
+`;
+H.start(window,{id:'cuento',mode:'rounds',css,
+  timer:D=>Math.max(25,Math.round(90*Math.pow(.92,D))),
+  async round(g){
+    const all=(await g.data('cuentos')).es,D=g.D,r=g.r;
+    const lvl=D<4?1:D<6.5?2:3;let pool=all.filter(c=>c.lvl===lvl);if(D>=8)pool=all.filter(c=>c.lvl>=2);
+    const C=pick(r,pool);
+    // "{correcta|mal1|mal2}" → huecos; la primera opción es la correcta
+    const parts=C.t.split(/(\{[^}]*\})/).filter(Boolean),gaps=[];
+    g.prompt('📖 Lee el cuento y elige la palabra que tiene sentido en cada hueco');
+    const st=g.el('div','story',`<span class="pic">${C.e}</span>`,g.stage);
+    parts.forEach(p=>{if(p[0]==='{'){const o=p.slice(1,-1).split('|');const s=g.el('span','gap','?',st);gaps.push({el:s,ok:o[0],opts:shuf(r,o)});}else st.appendChild(g.doc.createTextNode(p));});
+    const full=C.t.replace(/\{([^|}]*)[^}]*\}/g,'$1');
+    let ptr=0,box=g.el('div','k-ans',null,g.stage);
+    const ask=()=>{box.innerHTML='';gaps[ptr].el.classList.add('now');
+      g.choices(gaps[ptr].opts,(w,b)=>{b.textContent=w;},(w,b)=>{
+        const G=gaps[ptr];if(w!==G.ok){g.bad(b);return;}
+        G.el.textContent=w;G.el.classList.remove('now');G.el.classList.add('ok');ptr++;
+        if(ptr>=gaps.length){box.innerHTML='';g.sayBtn(full,box);g.speak(full);g.fx.stars(G.el);g.solved();}else{g.good(b);ask();}
+      },3,box);};
+    ask();
+  }
+});
+}
+</script></body></html>

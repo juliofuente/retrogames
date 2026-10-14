@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Number Rods</title></head>
+<body><script>
+const H=window.parent&&window.parent!==window?window.parent.Hub:null;
+if(!H){location.replace('../index.html');}
+else{
+const {ri,pick,shuf,intChoices}=H.U;
+// Classic number-rod colours: 1 white … 10 orange
+const C=['','#ffffff','#e53935','#8bc34a','#d81b60','#fdd835','#2e7d32','#3a3a3a','#8d6e63','#1e88e5','#fb8c00'];
+const TX={es:{match:'📏 ¿Qué regleta es igual de larga que la de arriba?',miss:'📏 ¿Qué regleta falta para que el tren mida lo mismo que la de arriba?',sum:'📏 ¿Qué regleta mide lo mismo que este tren?',div:(a,b)=>`📏 ¿Cuántas regletas como la pequeña caben en la grande?`},
+          en:{match:'📏 Which rod is as long as the top one?',miss:'📏 Which rod is missing so the train matches the top rod?',sum:'📏 Which rod is as long as this train?',div:()=>'📏 How many small rods fit in the big one?'},
+          fr:{match:'📏 Quelle réglette est aussi longue que celle du haut ?',miss:'📏 Quelle réglette manque pour que le train mesure comme celle du haut ?',sum:'📏 Quelle réglette mesure comme ce train ?',div:()=>'📏 Combien de petites réglettes tiennent dans la grande ?'}};
+function rodChoices(r,ans,n){const s=[ans];for(const d of shuf(r,[1,-1,2,-2,3,-3])){const v=ans+d;if(v>=1&&v<=10&&!s.includes(v))s.push(v);if(s.length>=n)break;}return shuf(r,s);}
+function gen(r,D){
+  if(D<1){const t=ri(r,2,7);return{q:'match',top:[t],bottom:[],ans:t,choices:rodChoices(r,t,3)};}
+  if(D<2.5){const B=ri(r,4,10),A=ri(r,1,B-1);return{q:'miss',top:[B],bottom:[A],ans:B-A,choices:rodChoices(r,B-A,D<1.6?3:4)};}
+  if(D<4.5){const A=ri(r,1,7),Bv=ri(r,1,10-A);return{q:'sum',top:[],bottom:[A,Bv],ans:A+Bv,choices:rodChoices(r,A+Bv,4)};}
+  if(r()<.5){const Cv=ri(r,6,10),A=ri(r,1,Cv-3),Bv=ri(r,1,Cv-A-1);return{q:'miss',top:[Cv],bottom:[A,Bv],ans:Cv-A-Bv,choices:rodChoices(r,Cv-A-Bv,4)};}
+  const a=pick(r,[2,2,3,4,5]),k=ri(r,2,Math.floor(10/a));return{q:'div',small:a,big:a*k,ans:k,choices:intChoices(r,[k],[k+1,k-1,a,k+2],4,1)};
+}
+const css=`
+.rows{display:flex;flex-direction:column;gap:8px;align-items:flex-start;width:fit-content;max-width:100%;margin:0 auto}
+.row{display:flex;gap:0;align-items:center}
+.rod{height:34px;border:2px solid rgba(0,0,0,.35);border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:'Fredoka One',ui-rounded,'Nunito',system-ui,sans-serif;font-size:.95rem;color:rgba(0,0,0,.55);box-shadow:inset 0 -4px 0 rgba(0,0,0,.12);flex-shrink:0;
+  background-image:linear-gradient(90deg,rgba(0,0,0,.08) 1px,transparent 1px);background-size:var(--u) 100%}
+.rod.dark{color:rgba(255,255,255,.75)}
+.gap{height:34px;border:3px dashed var(--purple);border-radius:6px;display:flex;align-items:center;justify-content:center;color:var(--purple);font-family:'Fredoka One',ui-rounded,'Nunito',system-ui,sans-serif;flex-shrink:0}
+.k-choices{--cols:1}.k-choice{justify-content:flex-start;padding:8px 12px;min-height:54px}
+`;
+H.start(window,{id:'regletas',mode:'rounds',css,
+  timer:D=>D<2?null:Math.max(12,Math.round(45*Math.pow(.9,D))),
+  round(g){
+    const P=gen(g.r,g.D),L=TX[g.lang]||TX.es,num=g.D>=3;
+    const u=Math.max(18,Math.min(36,Math.floor(((g.stage.clientWidth||320)-30)/10.5)));
+    const rod=(n,parent,showN)=>{const d=g.el('div','rod'+(n===7||n===9||n===6?' dark':''),showN&&num?String(n):'',parent);d.style.width=(n*u)+'px';d.style.background=C[n];d.style.setProperty('--u',u+'px');return d;};
+    g.prompt(P.q==='div'?L.div():L[P.q]);
+    const rows=g.el('div','rows',null,g.stage);
+    if(P.q==='div'){rod(P.big,g.el('div','row',null,rows),true);const r2=g.el('div','row',null,rows);rod(P.small,r2,true);
+      g.choices(P.choices,(n,b)=>{b.textContent=n;b.style.justifyContent='center';},(n,b)=>{if(n===P.ans){r2.innerHTML='';for(let i=0;i<n;i++)rod(P.small,r2,true);g.fx.stars(b);g.solved();}else g.bad(b);},4);return;}
+    if(P.top.length)rod(P.top[0],g.el('div','row',null,rows),true);
+    const r2=g.el('div','row',null,rows);P.bottom.forEach(n=>rod(n,r2,true));
+    let gap=null;if(P.q!=='sum'){gap=g.el('div','gap','?',r2);gap.style.width=(P.ans*u)+'px';}
+    else{const r3=g.el('div','row',null,rows);gap=g.el('div','gap','?',r3);gap.style.width=(P.ans*u)+'px';}
+    g.choices(P.choices,(n,b)=>rod(n,b,false),(n,b)=>{if(n===P.ans){const nr=rod(n,g.doc.createElement('div'),true);gap.replaceWith(nr);g.fx.stars(b);g.solved();}else g.bad(b);},1);
+  }
+});
+}
+</script></body></html>

@@ -1,0 +1,12 @@
+Fábrica de Frases
+=================
+Juego para niños para aprender a montar frases en inglés.
+
+- index.html: el juego completo (HTML, CSS y JS en un solo archivo).
+- manifest.webmanifest + icon-*.png: para instalarlo como app (PWA) en el móvil.
+- sw.js: funciona sin conexión una vez abierto (solo si se sirve por http/https).
+
+Para usarlo: sube la carpeta a tu servidor y abre index.html.
+También funciona abriendo index.html directamente, pero sin modo offline ni instalación.
+El progreso (niveles y estrellas) se guarda en el navegador (localStorage, clave "fabrica-frases-v2").
+La voz usa la síntesis de voz del navegador (inglés británico).

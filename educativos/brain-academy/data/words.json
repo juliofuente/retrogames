@@ -1,0 +1,2348 @@
+{
+ "es": {
+  "words": [
+   {
+    "w": "gato",
+    "s": [
+     "ga",
+     "to"
+    ],
+    "e": "🐱"
+   },
+   {
+    "w": "perro",
+    "s": [
+     "pe",
+     "rro"
+    ],
+    "e": "🐶"
+   },
+   {
+    "w": "rana",
+    "s": [
+     "ra",
+     "na"
+    ],
+    "e": "🐸"
+   },
+   {
+    "w": "pato",
+    "s": [
+     "pa",
+     "to"
+    ],
+    "e": "🦆"
+   },
+   {
+    "w": "silla",
+    "s": [
+     "si",
+     "lla"
+    ],
+    "e": "🪑"
+   },
+   {
+    "w": "luna",
+    "s": [
+     "lu",
+     "na"
+    ],
+    "e": "🌙"
+   },
+   {
+    "w": "casa",
+    "s": [
+     "ca",
+     "sa"
+    ],
+    "e": "🏠"
+   },
+   {
+    "w": "mano",
+    "s": [
+     "ma",
+     "no"
+    ],
+    "e": "✋"
+   },
+   {
+    "w": "foca",
+    "s": [
+     "fo",
+     "ca"
+    ],
+    "e": "🦭"
+   },
+   {
+    "w": "oso",
+    "s": [
+     "o",
+     "so"
+    ],
+    "e": "🐻"
+   },
+   {
+    "w": "vaca",
+    "s": [
+     "va",
+     "ca"
+    ],
+    "e": "🐮"
+   },
+   {
+    "w": "piña",
+    "s": [
+     "pi",
+     "ña"
+    ],
+    "e": "🍍"
+   },
+   {
+    "w": "uva",
+    "s": [
+     "u",
+     "va"
+    ],
+    "e": "🍇"
+   },
+   {
+    "w": "coche",
+    "s": [
+     "co",
+     "che"
+    ],
+    "e": "🚗"
+   },
+   {
+    "w": "nube",
+    "s": [
+     "nu",
+     "be"
+    ],
+    "e": "☁️"
+   },
+   {
+    "w": "rosa",
+    "s": [
+     "ro",
+     "sa"
+    ],
+    "e": "🌹"
+   },
+   {
+    "w": "lobo",
+    "s": [
+     "lo",
+     "bo"
+    ],
+    "e": "🐺"
+   },
+   {
+    "w": "mono",
+    "s": [
+     "mo",
+     "no"
+    ],
+    "e": "🐵"
+   },
+   {
+    "w": "pera",
+    "s": [
+     "pe",
+     "ra"
+    ],
+    "e": "🍐"
+   },
+   {
+    "w": "taza",
+    "s": [
+     "ta",
+     "za"
+    ],
+    "e": "☕"
+   },
+   {
+    "w": "bota",
+    "s": [
+     "bo",
+     "ta"
+    ],
+    "e": "👢"
+   },
+   {
+    "w": "cama",
+    "s": [
+     "ca",
+     "ma"
+    ],
+    "e": "🛏️"
+   },
+   {
+    "w": "sopa",
+    "s": [
+     "so",
+     "pa"
+    ],
+    "e": "🍲"
+   },
+   {
+    "w": "queso",
+    "s": [
+     "que",
+     "so"
+    ],
+    "e": "🧀"
+   },
+   {
+    "w": "leche",
+    "s": [
+     "le",
+     "che"
+    ],
+    "e": "🥛"
+   },
+   {
+    "w": "tomate",
+    "s": [
+     "to",
+     "ma",
+     "te"
+    ],
+    "e": "🍅"
+   },
+   {
+    "w": "pelota",
+    "s": [
+     "pe",
+     "lo",
+     "ta"
+    ],
+    "e": "⚽"
+   },
+   {
+    "w": "conejo",
+    "s": [
+     "co",
+     "ne",
+     "jo"
+    ],
+    "e": "🐰"
+   },
+   {
+    "w": "camello",
+    "s": [
+     "ca",
+     "me",
+     "llo"
+    ],
+    "e": "🐫"
+   },
+   {
+    "w": "gallina",
+    "s": [
+     "ga",
+     "lli",
+     "na"
+    ],
+    "e": "🐔"
+   },
+   {
+    "w": "manzana",
+    "s": [
+     "man",
+     "za",
+     "na"
+    ],
+    "e": "🍎"
+   },
+   {
+    "w": "plátano",
+    "s": [
+     "plá",
+     "ta",
+     "no"
+    ],
+    "e": "🍌"
+   },
+   {
+    "w": "cereza",
+    "s": [
+     "ce",
+     "re",
+     "za"
+    ],
+    "e": "🍒"
+   },
+   {
+    "w": "zapato",
+    "s": [
+     "za",
+     "pa",
+     "to"
+    ],
+    "e": "👞"
+   },
+   {
+    "w": "sombrero",
+    "s": [
+     "som",
+     "bre",
+     "ro"
+    ],
+    "e": "🎩"
+   },
+   {
+    "w": "cohete",
+    "s": [
+     "co",
+     "he",
+     "te"
+    ],
+    "e": "🚀"
+   },
+   {
+    "w": "globo",
+    "s": [
+     "glo",
+     "bo"
+    ],
+    "e": "🎈"
+   },
+   {
+    "w": "árbol",
+    "s": [
+     "ár",
+     "bol"
+    ],
+    "e": "🌳"
+   },
+   {
+    "w": "abeja",
+    "s": [
+     "a",
+     "be",
+     "ja"
+    ],
+    "e": "🐝"
+   },
+   {
+    "w": "tortuga",
+    "s": [
+     "tor",
+     "tu",
+     "ga"
+    ],
+    "e": "🐢"
+   },
+   {
+    "w": "ballena",
+    "s": [
+     "ba",
+     "lle",
+     "na"
+    ],
+    "e": "🐋"
+   },
+   {
+    "w": "caballo",
+    "s": [
+     "ca",
+     "ba",
+     "llo"
+    ],
+    "e": "🐴"
+   },
+   {
+    "w": "pingüino",
+    "s": [
+     "pin",
+     "güi",
+     "no"
+    ],
+    "e": "🐧"
+   },
+   {
+    "w": "elefante",
+    "s": [
+     "e",
+     "le",
+     "fan",
+     "te"
+    ],
+    "e": "🐘"
+   },
+   {
+    "w": "mariposa",
+    "s": [
+     "ma",
+     "ri",
+     "po",
+     "sa"
+    ],
+    "e": "🦋"
+   },
+   {
+    "w": "jirafa",
+    "s": [
+     "ji",
+     "ra",
+     "fa"
+    ],
+    "e": "🦒"
+   },
+   {
+    "w": "helado",
+    "s": [
+     "he",
+     "la",
+     "do"
+    ],
+    "e": "🍦"
+   },
+   {
+    "w": "galleta",
+    "s": [
+     "ga",
+     "lle",
+     "ta"
+    ],
+    "e": "🍪"
+   },
+   {
+    "w": "paraguas",
+    "s": [
+     "pa",
+     "ra",
+     "guas"
+    ],
+    "e": "☂️"
+   },
+   {
+    "w": "bicicleta",
+    "s": [
+     "bi",
+     "ci",
+     "cle",
+     "ta"
+    ],
+    "e": "🚲"
+   },
+   {
+    "w": "dinosaurio",
+    "s": [
+     "di",
+     "no",
+     "sau",
+     "rio"
+    ],
+    "e": "🦕"
+   },
+   {
+    "w": "sandía",
+    "s": [
+     "san",
+     "dí",
+     "a"
+    ],
+    "e": "🍉"
+   },
+   {
+    "w": "cocodrilo",
+    "s": [
+     "co",
+     "co",
+     "dri",
+     "lo"
+    ],
+    "e": "🐊"
+   },
+   {
+    "w": "caracol",
+    "s": [
+     "ca",
+     "ra",
+     "col"
+    ],
+    "e": "🐌"
+   },
+   {
+    "w": "estrella",
+    "s": [
+     "es",
+     "tre",
+     "lla"
+    ],
+    "e": "⭐"
+   },
+   {
+    "w": "avión",
+    "s": [
+     "a",
+     "vión"
+    ],
+    "e": "✈️"
+   },
+   {
+    "w": "barco",
+    "s": [
+     "bar",
+     "co"
+    ],
+    "e": "⛵"
+   },
+   {
+    "w": "llave",
+    "s": [
+     "lla",
+     "ve"
+    ],
+    "e": "🔑"
+   },
+   {
+    "w": "reloj",
+    "s": [
+     "re",
+     "loj"
+    ],
+    "e": "⌚"
+   },
+   {
+    "w": "libro",
+    "s": [
+     "li",
+     "bro"
+    ],
+    "e": "📕"
+   },
+   {
+    "w": "lápiz",
+    "s": [
+     "lá",
+     "piz"
+    ],
+    "e": "✏️"
+   },
+   {
+    "w": "corazón",
+    "s": [
+     "co",
+     "ra",
+     "zón"
+    ],
+    "e": "❤️"
+   },
+   {
+    "w": "ratón",
+    "s": [
+     "ra",
+     "tón"
+    ],
+    "e": "🐭"
+   },
+   {
+    "w": "león",
+    "s": [
+     "le",
+     "ón"
+    ],
+    "e": "🦁"
+   },
+   {
+    "w": "tigre",
+    "s": [
+     "ti",
+     "gre"
+    ],
+    "e": "🐯"
+   },
+   {
+    "w": "cerdo",
+    "s": [
+     "cer",
+     "do"
+    ],
+    "e": "🐷"
+   },
+   {
+    "w": "gorila",
+    "s": [
+     "go",
+     "ri",
+     "la"
+    ],
+    "e": "🦍"
+   },
+   {
+    "w": "pulpo",
+    "s": [
+     "pul",
+     "po"
+    ],
+    "e": "🐙"
+   },
+   {
+    "w": "camión",
+    "s": [
+     "ca",
+     "mión"
+    ],
+    "e": "🚚"
+   },
+   {
+    "w": "regalo",
+    "s": [
+     "re",
+     "ga",
+     "lo"
+    ],
+    "e": "🎁"
+   },
+   {
+    "w": "guitarra",
+    "s": [
+     "gui",
+     "ta",
+     "rra"
+    ],
+    "e": "🎸"
+   },
+   {
+    "w": "tambor",
+    "s": [
+     "tam",
+     "bor"
+    ],
+    "e": "🥁"
+   },
+   {
+    "w": "zanahoria",
+    "s": [
+     "za",
+     "na",
+     "ho",
+     "ria"
+    ],
+    "e": "🥕"
+   },
+   {
+    "w": "patata",
+    "s": [
+     "pa",
+     "ta",
+     "ta"
+    ],
+    "e": "🥔"
+   },
+   {
+    "w": "fresa",
+    "s": [
+     "fre",
+     "sa"
+    ],
+    "e": "🍓"
+   },
+   {
+    "w": "limón",
+    "s": [
+     "li",
+     "món"
+    ],
+    "e": "🍋"
+   },
+   {
+    "w": "pez",
+    "s": [
+     "pez"
+    ],
+    "e": "🐟"
+   },
+   {
+    "w": "sol",
+    "s": [
+     "sol"
+    ],
+    "e": "☀️"
+   },
+   {
+    "w": "flor",
+    "s": [
+     "flor"
+    ],
+    "e": "🌸"
+   },
+   {
+    "w": "tren",
+    "s": [
+     "tren"
+    ],
+    "e": "🚂"
+   }
+  ],
+  "pseudo": {
+   "easy": [
+    "bluta",
+    "drimo",
+    "flapo",
+    "gurte",
+    "jolpe",
+    "lisna",
+    "nofre",
+    "pesla",
+    "rinfo",
+    "sulpa",
+    "zalpo",
+    "frobe",
+    "glupo",
+    "dosla",
+    "vurpa",
+    "trelo",
+    "brenta",
+    "plusto",
+    "cliba",
+    "fendo",
+    "grolpe",
+    "mutra",
+    "snafo",
+    "tirpo"
+   ],
+   "hard": [
+    "zapeto",
+    "mepa",
+    "pelora",
+    "venrana",
+    "manzama",
+    "elefonte",
+    "tortuja",
+    "cabalo",
+    "bicicreta",
+    "cuchera",
+    "galleda",
+    "naronja",
+    "conijo",
+    "gusamo",
+    "sombrelo",
+    "tijetas",
+    "jirafo",
+    "ballema",
+    "tomafe",
+    "pinguimo",
+    "dinosairo",
+    "caracel",
+    "estrellu",
+    "helano"
+   ]
+  },
+  "sentences": [
+   "El gato duerme en el sofá",
+   "Mi perro come mucho",
+   "La niña lee un libro",
+   "El sol sale por la mañana",
+   "Mañana vamos al parque",
+   "El pájaro canta en el árbol",
+   "Me gusta comer helado",
+   "La vaca da leche",
+   "El tren llega a la estación",
+   "Papá cocina la cena",
+   "Los peces nadan en el río",
+   "Mi hermano juega al fútbol",
+   "La luna brilla de noche",
+   "Hoy hace mucho frío",
+   "La abuela riega las flores",
+   "El cohete vuela hacia la luna",
+   "Pinto un dibujo con colores",
+   "El mono come un plátano",
+   "Abro la puerta con la llave",
+   "En verano vamos a la playa",
+   "El conejo salta muy alto",
+   "La maestra explica la lección",
+   "Me lavo los dientes antes de dormir",
+   "El caracol camina muy despacio",
+   "Los niños juegan en el patio",
+   "La tortuga vive muchos años",
+   "El viento mueve las hojas",
+   "Mi mamá lee un cuento",
+   "El elefante tiene una trompa larga",
+   "Cantamos una canción alegre"
+  ],
+  "intruders": [
+   "tenedor",
+   "zapato",
+   "lámpara",
+   "tijeras",
+   "semáforo",
+   "calcetín",
+   "bañera",
+   "pingüino",
+   "tornillo",
+   "escoba",
+   "cebolla",
+   "volcán",
+   "almohada",
+   "trompeta",
+   "martillo",
+   "cuchara",
+   "bombilla",
+   "grifo",
+   "cactus",
+   "escalera"
+  ]
+ },
+ "en": {
+  "words": [
+   {
+    "w": "cat",
+    "s": [
+     "cat"
+    ],
+    "e": "🐱"
+   },
+   {
+    "w": "dog",
+    "s": [
+     "dog"
+    ],
+    "e": "🐶"
+   },
+   {
+    "w": "fish",
+    "s": [
+     "fish"
+    ],
+    "e": "🐟"
+   },
+   {
+    "w": "frog",
+    "s": [
+     "frog"
+    ],
+    "e": "🐸"
+   },
+   {
+    "w": "pig",
+    "s": [
+     "pig"
+    ],
+    "e": "🐷"
+   },
+   {
+    "w": "cow",
+    "s": [
+     "cow"
+    ],
+    "e": "🐮"
+   },
+   {
+    "w": "duck",
+    "s": [
+     "duck"
+    ],
+    "e": "🦆"
+   },
+   {
+    "w": "bee",
+    "s": [
+     "bee"
+    ],
+    "e": "🐝"
+   },
+   {
+    "w": "sun",
+    "s": [
+     "sun"
+    ],
+    "e": "☀️"
+   },
+   {
+    "w": "moon",
+    "s": [
+     "moon"
+    ],
+    "e": "🌙"
+   },
+   {
+    "w": "star",
+    "s": [
+     "star"
+    ],
+    "e": "⭐"
+   },
+   {
+    "w": "car",
+    "s": [
+     "car"
+    ],
+    "e": "🚗"
+   },
+   {
+    "w": "bus",
+    "s": [
+     "bus"
+    ],
+    "e": "🚌"
+   },
+   {
+    "w": "train",
+    "s": [
+     "train"
+    ],
+    "e": "🚂"
+   },
+   {
+    "w": "boat",
+    "s": [
+     "boat"
+    ],
+    "e": "⛵"
+   },
+   {
+    "w": "book",
+    "s": [
+     "book"
+    ],
+    "e": "📕"
+   },
+   {
+    "w": "key",
+    "s": [
+     "key"
+    ],
+    "e": "🔑"
+   },
+   {
+    "w": "cake",
+    "s": [
+     "cake"
+    ],
+    "e": "🎂"
+   },
+   {
+    "w": "milk",
+    "s": [
+     "milk"
+    ],
+    "e": "🥛"
+   },
+   {
+    "w": "egg",
+    "s": [
+     "egg"
+    ],
+    "e": "🥚"
+   },
+   {
+    "w": "hat",
+    "s": [
+     "hat"
+    ],
+    "e": "🎩"
+   },
+   {
+    "w": "shoe",
+    "s": [
+     "shoe"
+    ],
+    "e": "👟"
+   },
+   {
+    "w": "ball",
+    "s": [
+     "ball"
+    ],
+    "e": "⚽"
+   },
+   {
+    "w": "tree",
+    "s": [
+     "tree"
+    ],
+    "e": "🌳"
+   },
+   {
+    "w": "house",
+    "s": [
+     "house"
+    ],
+    "e": "🏠"
+   },
+   {
+    "w": "bed",
+    "s": [
+     "bed"
+    ],
+    "e": "🛏️"
+   },
+   {
+    "w": "chair",
+    "s": [
+     "chair"
+    ],
+    "e": "🪑"
+   },
+   {
+    "w": "cheese",
+    "s": [
+     "cheese"
+    ],
+    "e": "🧀"
+   },
+   {
+    "w": "pear",
+    "s": [
+     "pear"
+    ],
+    "e": "🍐"
+   },
+   {
+    "w": "grapes",
+    "s": [
+     "grapes"
+    ],
+    "e": "🍇"
+   },
+   {
+    "w": "owl",
+    "s": [
+     "owl"
+    ],
+    "e": "🦉"
+   },
+   {
+    "w": "bear",
+    "s": [
+     "bear"
+    ],
+    "e": "🐻"
+   },
+   {
+    "w": "fox",
+    "s": [
+     "fox"
+    ],
+    "e": "🦊"
+   },
+   {
+    "w": "wolf",
+    "s": [
+     "wolf"
+    ],
+    "e": "🐺"
+   },
+   {
+    "w": "snail",
+    "s": [
+     "snail"
+    ],
+    "e": "🐌"
+   },
+   {
+    "w": "whale",
+    "s": [
+     "whale"
+    ],
+    "e": "🐋"
+   },
+   {
+    "w": "horse",
+    "s": [
+     "horse"
+    ],
+    "e": "🐴"
+   },
+   {
+    "w": "mouse",
+    "s": [
+     "mouse"
+    ],
+    "e": "🐭"
+   },
+   {
+    "w": "plane",
+    "s": [
+     "plane"
+    ],
+    "e": "✈️"
+   },
+   {
+    "w": "truck",
+    "s": [
+     "truck"
+    ],
+    "e": "🚚"
+   },
+   {
+    "w": "heart",
+    "s": [
+     "heart"
+    ],
+    "e": "❤️"
+   },
+   {
+    "w": "cloud",
+    "s": [
+     "cloud"
+    ],
+    "e": "☁️"
+   },
+   {
+    "w": "rabbit",
+    "s": [
+     "rab",
+     "bit"
+    ],
+    "e": "🐰"
+   },
+   {
+    "w": "tiger",
+    "s": [
+     "ti",
+     "ger"
+    ],
+    "e": "🐯"
+   },
+   {
+    "w": "monkey",
+    "s": [
+     "mon",
+     "key"
+    ],
+    "e": "🐵"
+   },
+   {
+    "w": "panda",
+    "s": [
+     "pan",
+     "da"
+    ],
+    "e": "🐼"
+   },
+   {
+    "w": "apple",
+    "s": [
+     "ap",
+     "ple"
+    ],
+    "e": "🍎"
+   },
+   {
+    "w": "lemon",
+    "s": [
+     "lem",
+     "on"
+    ],
+    "e": "🍋"
+   },
+   {
+    "w": "watermelon",
+    "s": [
+     "wa",
+     "ter",
+     "mel",
+     "on"
+    ],
+    "e": "🍉"
+   },
+   {
+    "w": "banana",
+    "s": [
+     "ba",
+     "na",
+     "na"
+    ],
+    "e": "🍌"
+   },
+   {
+    "w": "tomato",
+    "s": [
+     "to",
+     "ma",
+     "to"
+    ],
+    "e": "🍅"
+   },
+   {
+    "w": "rocket",
+    "s": [
+     "rock",
+     "et"
+    ],
+    "e": "🚀"
+   },
+   {
+    "w": "pencil",
+    "s": [
+     "pen",
+     "cil"
+    ],
+    "e": "✏️"
+   },
+   {
+    "w": "robot",
+    "s": [
+     "ro",
+     "bot"
+    ],
+    "e": "🤖"
+   },
+   {
+    "w": "turtle",
+    "s": [
+     "tur",
+     "tle"
+    ],
+    "e": "🐢"
+   },
+   {
+    "w": "zebra",
+    "s": [
+     "ze",
+     "bra"
+    ],
+    "e": "🦓"
+   },
+   {
+    "w": "penguin",
+    "s": [
+     "pen",
+     "guin"
+    ],
+    "e": "🐧"
+   },
+   {
+    "w": "lion",
+    "s": [
+     "li",
+     "on"
+    ],
+    "e": "🦁"
+   },
+   {
+    "w": "camel",
+    "s": [
+     "cam",
+     "el"
+    ],
+    "e": "🐫"
+   },
+   {
+    "w": "spider",
+    "s": [
+     "spi",
+     "der"
+    ],
+    "e": "🕷️"
+   },
+   {
+    "w": "carrot",
+    "s": [
+     "car",
+     "rot"
+    ],
+    "e": "🥕"
+   },
+   {
+    "w": "cookie",
+    "s": [
+     "cook",
+     "ie"
+    ],
+    "e": "🍪"
+   },
+   {
+    "w": "pizza",
+    "s": [
+     "piz",
+     "za"
+    ],
+    "e": "🍕"
+   },
+   {
+    "w": "taco",
+    "s": [
+     "ta",
+     "co"
+    ],
+    "e": "🌮"
+   },
+   {
+    "w": "candy",
+    "s": [
+     "can",
+     "dy"
+    ],
+    "e": "🍬"
+   },
+   {
+    "w": "flower",
+    "s": [
+     "flow",
+     "er"
+    ],
+    "e": "🌸"
+   },
+   {
+    "w": "guitar",
+    "s": [
+     "gui",
+     "tar"
+    ],
+    "e": "🎸"
+   },
+   {
+    "w": "dragon",
+    "s": [
+     "drag",
+     "on"
+    ],
+    "e": "🐉"
+   },
+   {
+    "w": "chicken",
+    "s": [
+     "chick",
+     "en"
+    ],
+    "e": "🐔"
+   },
+   {
+    "w": "butterfly",
+    "s": [
+     "but",
+     "ter",
+     "fly"
+    ],
+    "e": "🦋"
+   },
+   {
+    "w": "elephant",
+    "s": [
+     "el",
+     "e",
+     "phant"
+    ],
+    "e": "🐘"
+   },
+   {
+    "w": "octopus",
+    "s": [
+     "oc",
+     "to",
+     "pus"
+    ],
+    "e": "🐙"
+   },
+   {
+    "w": "dinosaur",
+    "s": [
+     "di",
+     "no",
+     "saur"
+    ],
+    "e": "🦕"
+   },
+   {
+    "w": "kangaroo",
+    "s": [
+     "kan",
+     "ga",
+     "roo"
+    ],
+    "e": "🦘"
+   },
+   {
+    "w": "umbrella",
+    "s": [
+     "um",
+     "brel",
+     "la"
+    ],
+    "e": "☂️"
+   },
+   {
+    "w": "bicycle",
+    "s": [
+     "bi",
+     "cy",
+     "cle"
+    ],
+    "e": "🚲"
+   },
+   {
+    "w": "potato",
+    "s": [
+     "po",
+     "ta",
+     "to"
+    ],
+    "e": "🥔"
+   },
+   {
+    "w": "crocodile",
+    "s": [
+     "croc",
+     "o",
+     "dile"
+    ],
+    "e": "🐊"
+   },
+   {
+    "w": "ladybug",
+    "s": [
+     "la",
+     "dy",
+     "bug"
+    ],
+    "e": "🐞"
+   },
+   {
+    "w": "hamburger",
+    "s": [
+     "ham",
+     "bur",
+     "ger"
+    ],
+    "e": "🍔"
+   },
+   {
+    "w": "snowman",
+    "s": [
+     "snow",
+     "man"
+    ],
+    "e": "⛄"
+   },
+   {
+    "w": "rainbow",
+    "s": [
+     "rain",
+     "bow"
+    ],
+    "e": "🌈"
+   },
+   {
+    "w": "pumpkin",
+    "s": [
+     "pump",
+     "kin"
+    ],
+    "e": "🎃"
+   },
+   {
+    "w": "cherry",
+    "s": [
+     "cher",
+     "ry"
+    ],
+    "e": "🍒"
+   },
+   {
+    "w": "present",
+    "s": [
+     "pres",
+     "ent"
+    ],
+    "e": "🎁"
+   },
+   {
+    "w": "balloon",
+    "s": [
+     "bal",
+     "loon"
+    ],
+    "e": "🎈"
+   },
+   {
+    "w": "giraffe",
+    "s": [
+     "gi",
+     "raffe"
+    ],
+    "e": "🦒"
+   },
+   {
+    "w": "gorilla",
+    "s": [
+     "go",
+     "ril",
+     "la"
+    ],
+    "e": "🦍"
+   },
+   {
+    "w": "sandwich",
+    "s": [
+     "sand",
+     "wich"
+    ],
+    "e": "🥪"
+   },
+   {
+    "w": "popcorn",
+    "s": [
+     "pop",
+     "corn"
+    ],
+    "e": "🍿"
+   },
+   {
+    "w": "helicopter",
+    "s": [
+     "hel",
+     "i",
+     "cop",
+     "ter"
+    ],
+    "e": "🚁"
+   },
+   {
+    "w": "avocado",
+    "s": [
+     "av",
+     "o",
+     "ca",
+     "do"
+    ],
+    "e": "🥑"
+   },
+   {
+    "w": "koala",
+    "s": [
+     "ko",
+     "a",
+     "la"
+    ],
+    "e": "🐨"
+   },
+   {
+    "w": "mushroom",
+    "s": [
+     "mush",
+     "room"
+    ],
+    "e": "🍄"
+   },
+   {
+    "w": "cactus",
+    "s": [
+     "cac",
+     "tus"
+    ],
+    "e": "🌵"
+   }
+  ],
+  "pseudo": {
+   "easy": [
+    "glorp",
+    "drob",
+    "fesk",
+    "gwip",
+    "zunt",
+    "vosh",
+    "klep",
+    "morf",
+    "jopt",
+    "quenk",
+    "hulb",
+    "nirp",
+    "plim",
+    "sarp",
+    "dask",
+    "prell",
+    "wug",
+    "zib",
+    "flob",
+    "sprock",
+    "trunp",
+    "bliv",
+    "grosk",
+    "yemp"
+   ],
+   "hard": [
+    "elephunt",
+    "banama",
+    "monkoy",
+    "giraffo",
+    "pumpkun",
+    "rocet",
+    "pencel",
+    "doncey",
+    "chikken",
+    "flowor",
+    "turtel",
+    "rainbaw",
+    "teddi",
+    "kangaru",
+    "umbrela",
+    "biscit",
+    "tomatto",
+    "penguim",
+    "bycicle",
+    "sandwitch",
+    "hamburgor",
+    "octupus",
+    "ladybog",
+    "dinosor"
+   ]
+  },
+  "sentences": [
+   "The cat sleeps on the sofa",
+   "My dog eats a lot",
+   "The girl reads a book",
+   "The sun rises in the morning",
+   "Tomorrow we go to the park",
+   "The bird sings in the tree",
+   "I like to eat ice cream",
+   "The cow gives milk",
+   "The train arrives at the station",
+   "Dad cooks dinner",
+   "Fish swim in the river",
+   "My brother plays football",
+   "The moon shines at night",
+   "It is very cold today",
+   "Grandma waters the flowers",
+   "The rocket flies to the moon",
+   "I paint a picture with colors",
+   "The monkey eats a banana",
+   "I open the door with a key",
+   "In summer we go to the beach",
+   "The rabbit jumps very high",
+   "The teacher explains the lesson",
+   "I brush my teeth before bed",
+   "The snail walks very slowly",
+   "The children play in the yard",
+   "The turtle lives many years",
+   "The wind moves the leaves",
+   "My mom reads a story",
+   "The elephant has a long trunk",
+   "We sing a happy song"
+  ],
+  "intruders": [
+   "swam",
+   "flew",
+   "drank",
+   "sang",
+   "grew",
+   "threw",
+   "drove",
+   "froze",
+   "bit",
+   "wrote",
+   "forgot",
+   "shook",
+   "stole",
+   "woke",
+   "sank",
+   "wove"
+  ]
+ },
+ "fr": {
+  "words": [
+   {
+    "w": "chat",
+    "s": [
+     "chat"
+    ],
+    "e": "🐱"
+   },
+   {
+    "w": "chien",
+    "s": [
+     "chien"
+    ],
+    "e": "🐶"
+   },
+   {
+    "w": "lapin",
+    "s": [
+     "la",
+     "pin"
+    ],
+    "e": "🐰"
+   },
+   {
+    "w": "canard",
+    "s": [
+     "ca",
+     "nard"
+    ],
+    "e": "🦆"
+   },
+   {
+    "w": "cochon",
+    "s": [
+     "co",
+     "chon"
+    ],
+    "e": "🐷"
+   },
+   {
+    "w": "mouton",
+    "s": [
+     "mou",
+     "ton"
+    ],
+    "e": "🐑"
+   },
+   {
+    "w": "tortue",
+    "s": [
+     "tor",
+     "tue"
+    ],
+    "e": "🐢"
+   },
+   {
+    "w": "girafe",
+    "s": [
+     "gi",
+     "rafe"
+    ],
+    "e": "🦒"
+   },
+   {
+    "w": "zèbre",
+    "s": [
+     "zè",
+     "bre"
+    ],
+    "e": "🦓"
+   },
+   {
+    "w": "lion",
+    "s": [
+     "li",
+     "on"
+    ],
+    "e": "🦁"
+   },
+   {
+    "w": "tigre",
+    "s": [
+     "ti",
+     "gre"
+    ],
+    "e": "🐯"
+   },
+   {
+    "w": "singe",
+    "s": [
+     "singe"
+    ],
+    "e": "🐵"
+   },
+   {
+    "w": "panda",
+    "s": [
+     "pan",
+     "da"
+    ],
+    "e": "🐼"
+   },
+   {
+    "w": "koala",
+    "s": [
+     "ko",
+     "a",
+     "la"
+    ],
+    "e": "🐨"
+   },
+   {
+    "w": "poisson",
+    "s": [
+     "pois",
+     "son"
+    ],
+    "e": "🐟"
+   },
+   {
+    "w": "baleine",
+    "s": [
+     "ba",
+     "leine"
+    ],
+    "e": "🐋"
+   },
+   {
+    "w": "dauphin",
+    "s": [
+     "dau",
+     "phin"
+    ],
+    "e": "🐬"
+   },
+   {
+    "w": "escargot",
+    "s": [
+     "es",
+     "car",
+     "got"
+    ],
+    "e": "🐌"
+   },
+   {
+    "w": "papillon",
+    "s": [
+     "pa",
+     "pi",
+     "llon"
+    ],
+    "e": "🦋"
+   },
+   {
+    "w": "abeille",
+    "s": [
+     "a",
+     "beille"
+    ],
+    "e": "🐝"
+   },
+   {
+    "w": "coccinelle",
+    "s": [
+     "coc",
+     "ci",
+     "nelle"
+    ],
+    "e": "🐞"
+   },
+   {
+    "w": "éléphant",
+    "s": [
+     "é",
+     "lé",
+     "phant"
+    ],
+    "e": "🐘"
+   },
+   {
+    "w": "crocodile",
+    "s": [
+     "cro",
+     "co",
+     "dile"
+    ],
+    "e": "🐊"
+   },
+   {
+    "w": "kangourou",
+    "s": [
+     "kan",
+     "gou",
+     "rou"
+    ],
+    "e": "🦘"
+   },
+   {
+    "w": "dragon",
+    "s": [
+     "dra",
+     "gon"
+    ],
+    "e": "🐉"
+   },
+   {
+    "w": "pomme",
+    "s": [
+     "pomme"
+    ],
+    "e": "🍎"
+   },
+   {
+    "w": "banane",
+    "s": [
+     "ba",
+     "nane"
+    ],
+    "e": "🍌"
+   },
+   {
+    "w": "citron",
+    "s": [
+     "ci",
+     "tron"
+    ],
+    "e": "🍋"
+   },
+   {
+    "w": "cerise",
+    "s": [
+     "ce",
+     "rise"
+    ],
+    "e": "🍒"
+   },
+   {
+    "w": "fraise",
+    "s": [
+     "fraise"
+    ],
+    "e": "🍓"
+   },
+   {
+    "w": "raisin",
+    "s": [
+     "rai",
+     "sin"
+    ],
+    "e": "🍇"
+   },
+   {
+    "w": "ananas",
+    "s": [
+     "a",
+     "na",
+     "nas"
+    ],
+    "e": "🍍"
+   },
+   {
+    "w": "tomate",
+    "s": [
+     "to",
+     "mate"
+    ],
+    "e": "🍅"
+   },
+   {
+    "w": "carotte",
+    "s": [
+     "ca",
+     "rotte"
+    ],
+    "e": "🥕"
+   },
+   {
+    "w": "gâteau",
+    "s": [
+     "gâ",
+     "teau"
+    ],
+    "e": "🎂"
+   },
+   {
+    "w": "biscuit",
+    "s": [
+     "bis",
+     "cuit"
+    ],
+    "e": "🍪"
+   },
+   {
+    "w": "fromage",
+    "s": [
+     "fro",
+     "mage"
+    ],
+    "e": "🧀"
+   },
+   {
+    "w": "bonbon",
+    "s": [
+     "bon",
+     "bon"
+    ],
+    "e": "🍬"
+   },
+   {
+    "w": "maison",
+    "s": [
+     "mai",
+     "son"
+    ],
+    "e": "🏠"
+   },
+   {
+    "w": "voiture",
+    "s": [
+     "voi",
+     "ture"
+    ],
+    "e": "🚗"
+   },
+   {
+    "w": "vélo",
+    "s": [
+     "vé",
+     "lo"
+    ],
+    "e": "🚲"
+   },
+   {
+    "w": "avion",
+    "s": [
+     "a",
+     "vion"
+    ],
+    "e": "✈️"
+   },
+   {
+    "w": "bateau",
+    "s": [
+     "ba",
+     "teau"
+    ],
+    "e": "⛵"
+   },
+   {
+    "w": "fusée",
+    "s": [
+     "fu",
+     "sée"
+    ],
+    "e": "🚀"
+   },
+   {
+    "w": "robot",
+    "s": [
+     "ro",
+     "bot"
+    ],
+    "e": "🤖"
+   },
+   {
+    "w": "ballon",
+    "s": [
+     "bal",
+     "lon"
+    ],
+    "e": "🎈"
+   },
+   {
+    "w": "soleil",
+    "s": [
+     "so",
+     "leil"
+    ],
+    "e": "☀️"
+   },
+   {
+    "w": "nuage",
+    "s": [
+     "nua",
+     "ge"
+    ],
+    "e": "☁️"
+   },
+   {
+    "w": "étoile",
+    "s": [
+     "é",
+     "toile"
+    ],
+    "e": "⭐"
+   },
+   {
+    "w": "lune",
+    "s": [
+     "lune"
+    ],
+    "e": "🌙"
+   },
+   {
+    "w": "arbre",
+    "s": [
+     "ar",
+     "bre"
+    ],
+    "e": "🌳"
+   },
+   {
+    "w": "fleur",
+    "s": [
+     "fleur"
+    ],
+    "e": "🌸"
+   },
+   {
+    "w": "cadeau",
+    "s": [
+     "ca",
+     "deau"
+    ],
+    "e": "🎁"
+   },
+   {
+    "w": "livre",
+    "s": [
+     "li",
+     "vre"
+    ],
+    "e": "📕"
+   },
+   {
+    "w": "crayon",
+    "s": [
+     "cra",
+     "yon"
+    ],
+    "e": "✏️"
+   },
+   {
+    "w": "chapeau",
+    "s": [
+     "cha",
+     "peau"
+    ],
+    "e": "🎩"
+   },
+   {
+    "w": "parapluie",
+    "s": [
+     "pa",
+     "ra",
+     "pluie"
+    ],
+    "e": "☂️"
+   },
+   {
+    "w": "guitare",
+    "s": [
+     "gui",
+     "tare"
+    ],
+    "e": "🎸"
+   },
+   {
+    "w": "tambour",
+    "s": [
+     "tam",
+     "bour"
+    ],
+    "e": "🥁"
+   },
+   {
+    "w": "hibou",
+    "s": [
+     "hi",
+     "bou"
+    ],
+    "e": "🦉"
+   },
+   {
+    "w": "ours",
+    "s": [
+     "ours"
+    ],
+    "e": "🐻"
+   },
+   {
+    "w": "renard",
+    "s": [
+     "re",
+     "nard"
+    ],
+    "e": "🦊"
+   },
+   {
+    "w": "cheval",
+    "s": [
+     "che",
+     "val"
+    ],
+    "e": "🐴"
+   },
+   {
+    "w": "souris",
+    "s": [
+     "sou",
+     "ris"
+    ],
+    "e": "🐭"
+   },
+   {
+    "w": "vache",
+    "s": [
+     "vache"
+    ],
+    "e": "🐮"
+   },
+   {
+    "w": "grenouille",
+    "s": [
+     "gre",
+     "nouille"
+    ],
+    "e": "🐸"
+   },
+   {
+    "w": "pingouin",
+    "s": [
+     "pin",
+     "gouin"
+    ],
+    "e": "🐧"
+   },
+   {
+    "w": "champignon",
+    "s": [
+     "cham",
+     "pi",
+     "gnon"
+    ],
+    "e": "🍄"
+   },
+   {
+    "w": "citrouille",
+    "s": [
+     "ci",
+     "trouille"
+    ],
+    "e": "🎃"
+   },
+   {
+    "w": "pizza",
+    "s": [
+     "piz",
+     "za"
+    ],
+    "e": "🍕"
+   },
+   {
+    "w": "glace",
+    "s": [
+     "glace"
+    ],
+    "e": "🍦"
+   },
+   {
+    "w": "train",
+    "s": [
+     "train"
+    ],
+    "e": "🚂"
+   },
+   {
+    "w": "clé",
+    "s": [
+     "clé"
+    ],
+    "e": "🔑"
+   },
+   {
+    "w": "cœur",
+    "s": [
+     "cœur"
+    ],
+    "e": "❤️"
+   },
+   {
+    "w": "lit",
+    "s": [
+     "lit"
+    ],
+    "e": "🛏️"
+   },
+   {
+    "w": "chaise",
+    "s": [
+     "chaise"
+    ],
+    "e": "🪑"
+   }
+  ],
+  "pseudo": {
+   "easy": [
+    "glimon",
+    "brulf",
+    "zorpi",
+    "kalbe",
+    "vurte",
+    "plafou",
+    "nirbo",
+    "sulpi",
+    "tradoc",
+    "fleuch",
+    "gourpe",
+    "jilmo",
+    "boufra",
+    "pivrou",
+    "nalpe",
+    "rougla",
+    "blicha",
+    "truvon",
+    "daspel",
+    "moujir",
+    "quirlo",
+    "fenarp",
+    "golbu",
+    "sporni"
+   ],
+   "hard": [
+    "lapen",
+    "chaval",
+    "maisan",
+    "pomne",
+    "vouture",
+    "éléfant",
+    "bananne",
+    "fraize",
+    "souriz",
+    "papillin",
+    "chapean",
+    "soleul",
+    "girafon",
+    "tortie",
+    "crocodule",
+    "grenoulle",
+    "escarguit",
+    "parapluve",
+    "kangourin",
+    "champigon",
+    "citrouve",
+    "pingoin",
+    "fromache",
+    "bateux"
+   ]
+  },
+  "sentences": [
+   "Le chat dort sur le canapé",
+   "Mon chien mange beaucoup",
+   "La fille lit un livre",
+   "Le soleil se lève le matin",
+   "Demain nous allons au parc",
+   "L'oiseau chante dans l'arbre",
+   "J'aime manger de la glace",
+   "La vache donne du lait",
+   "Le train arrive à la gare",
+   "Papa prépare le dîner",
+   "Les poissons nagent dans la rivière",
+   "Mon frère joue au football",
+   "La lune brille la nuit",
+   "Il fait très froid aujourd'hui",
+   "Mamie arrose les fleurs",
+   "La fusée vole vers la lune",
+   "Je peins un dessin en couleurs",
+   "Le singe mange une banane",
+   "J'ouvre la porte avec la clé",
+   "En été nous allons à la plage",
+   "Le lapin saute très haut",
+   "La maîtresse explique la leçon",
+   "Je me brosse les dents le soir",
+   "L'escargot avance très lentement",
+   "Les enfants jouent dans la cour",
+   "La tortue vit très longtemps",
+   "Le vent fait bouger les feuilles",
+   "Maman lit une histoire",
+   "L'éléphant a une longue trompe",
+   "Nous chantons une chanson joyeuse"
+  ],
+  "intruders": [
+   "fourchette",
+   "chaussette",
+   "lampe",
+   "tournevis",
+   "volcan",
+   "oreiller",
+   "trompette",
+   "marteau",
+   "oignon",
+   "baignoire",
+   "balai",
+   "cuillère",
+   "ampoule",
+   "robinet",
+   "échelle",
+   "ciseaux"
+  ]
+ }
+}

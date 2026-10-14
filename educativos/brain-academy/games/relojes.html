@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Clocks</title></head>
+<body><script>
+const H=window.parent&&window.parent!==window?window.parent.Hub:null;
+if(!H){location.replace('../index.html');}
+else{
+const {ri,pick,shuf}=H.U;
+const TX={es:{read:'🕐 ¿Qué hora marca el reloj?',match:t=>`🕐 ¿Qué reloj marca las ${t}?`},en:{read:'🕐 What time does the clock show?',match:t=>`🕐 Which clock shows ${t}?`},fr:{read:"🕐 Quelle heure indique l'horloge ?",match:t=>`🕐 Quelle horloge indique ${t} ?`}};
+const fmt=t=>`${t.h}:${String(t.m).padStart(2,'0')}`,tk=t=>t.h*60+t.m;
+function rndTime(r,D){const h=ri(r,1,12);const m=D<3?0:D<4.5?pick(r,[0,30]):D<6?pick(r,[0,15,30,45]):D<8?ri(r,0,11)*5:ri(r,0,59);return{h,m};}
+function gen(r,D){
+  const t=rndTime(r,D),c=new Map([[tk(t),t]]);
+  const add=x=>{if(x.h>=1&&x.h<=12&&x.m>=0&&x.m<60)c.set(tk(x),x);};
+  const sw=Math.round(t.m/5)||12;                        // hands swapped: classic mistake
+  const cand=shuf(r,[{h:sw,m:(t.h%12)*5},{h:t.h%12+1,m:t.m},{h:(t.h+10)%12+1,m:t.m},{h:t.h,m:(t.m+30)%60},{h:t.h,m:(t.m+15)%60},{h:t.h,m:(t.m+45)%60},rndTime(r,D)]);
+  for(const x of cand){if(c.size>=4)break;add(x);}
+  while(c.size<4)add(rndTime(r,D));
+  return{t,mode:D>=4&&r()<.4?'match':'read',choices:shuf(r,[...c.values()])};
+}
+function clock(doc,t,size){
+  const NS='http://www.w3.org/2000/svg',s=doc.createElementNS(NS,'svg');s.setAttribute('viewBox','0 0 200 200');s.style.width=size;s.style.height=size;
+  const mk=(n,a)=>{const e=doc.createElementNS(NS,n);for(const k in a)e.setAttribute(k,a[k]);s.appendChild(e);return e;};
+  mk('circle',{cx:100,cy:100,r:94,fill:'#fff',stroke:'#2d2a4a','stroke-width':6});
+  for(let i=0;i<60;i++){const a=i*6*Math.PI/180,big=i%5===0;mk('line',{x1:100+Math.sin(a)*(big?78:84),y1:100-Math.cos(a)*(big?78:84),x2:100+Math.sin(a)*90,y2:100-Math.cos(a)*90,stroke:'#2d2a4a','stroke-width':big?4:1.5});}
+  for(let i=1;i<=12;i++){const a=i*30*Math.PI/180,tx=mk('text',{x:100+Math.sin(a)*64,y:100-Math.cos(a)*64+8,'text-anchor':'middle','font-size':22,'font-family':'Fredoka One, ui-rounded, sans-serif',fill:'#2d2a4a'});tx.textContent=i;}
+  const ha=((t.h%12)+t.m/60)*30*Math.PI/180,ma=t.m*6*Math.PI/180;
+  mk('line',{x1:100,y1:100,x2:100+Math.sin(ha)*44,y2:100-Math.cos(ha)*44,stroke:'#e2345f','stroke-width':9,'stroke-linecap':'round'});
+  mk('line',{x1:100,y1:100,x2:100+Math.sin(ma)*72,y2:100-Math.cos(ma)*72,stroke:'#1e88e5','stroke-width':6,'stroke-linecap':'round'});
+  mk('circle',{cx:100,cy:100,r:7,fill:'#2d2a4a'});return s;
+}
+const css=`.big{display:flex;justify-content:center}.k-choice{font-size:clamp(1.3rem,5.6vmin,1.9rem);padding:6px}
+.leg{text-align:center;font-weight:900;font-size:.8rem;color:var(--mid)}.leg b{color:#e2345f}.leg i{color:#1e88e5;font-style:normal}`;
+const LEG={es:'<b>■ aguja corta = horas</b> · <i>■ aguja larga = minutos</i>',en:'<b>■ short hand = hours</b> · <i>■ long hand = minutes</i>',fr:'<b>■ petite aiguille = heures</b> · <i>■ grande aiguille = minutes</i>'};
+H.start(window,{id:'relojes',mode:'rounds',css,
+  timer:D=>Math.max(15,Math.round(55*Math.pow(.92,D))),
+  round(g){
+    const P=gen(g.r,g.D),L=TX[g.lang]||TX.es,land=g.win.innerWidth>g.win.innerHeight;
+    if(P.mode==='read'){g.prompt(L.read);g.el('div','big',null,g.stage).appendChild(clock(g.doc,P.t,land?'min(42vh,200px)':'min(56vw,220px)'));g.el('div','leg',g.t(LEG),g.stage);
+      g.choices(P.choices,(t,b)=>{b.textContent=fmt(t);},(t,b)=>{if(tk(t)===tk(P.t)){b.classList.add('k-right');g.fx.stars(b);g.solved();}else g.bad(b);},4);}
+    else{g.prompt(L.match(fmt(P.t)));g.el('div','leg',g.t(LEG),g.stage);
+      g.choices(P.choices,(t,b)=>{b.appendChild(clock(g.doc,t,'100%'));b.style.aspectRatio='1';},(t,b)=>{if(tk(t)===tk(P.t)){b.classList.add('k-right');g.fx.stars(b);g.solved();}else g.bad(b);},land?4:2);}
+  }
+});
+}
+</script></body></html>

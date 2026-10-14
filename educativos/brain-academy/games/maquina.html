@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Magic Machine</title></head>
+<body><script>
+const H=window.parent&&window.parent!==window?window.parent.Hub:null;
+if(!H){location.replace('../index.html');}
+else{
+const {ri,pick,shuf}=H.U;
+const POOLS=[['🐶','🐱','🐭','🐰','🦊','🐻','🐼','🐸'],['🍎','🍌','🍇','🍓','🍊','🍉','🍒','🥝'],['🚗','🚀','🚲','✈️','🚂','🚁','⛵','🚌'],
+  ['🐟','🐙','🦀','🐳','🐢','🦈','🐬','🐚'],['⚽','🏀','🎾','🏈','⚾','🏐','🎱','🏓'],['🌸','🌻','🌵','🍄','🌲','🍁','🌷','🍀'],['🧸','🎈','🪁','🎁','🪀','🎲','🧩','🪅']];
+const MARKS=['⭐','❤️','💎','🔔','🍭','🎀'];
+// A token is {e:emoji, b:0|1} (b = big). Every transform is a pure function, so the answer is fully determined.
+const TR=[
+  {id:'dup',min:0,f:a=>a.flatMap(x=>[x,x])},
+  {id:'add',min:0,f:(a,X)=>a.concat([{e:X,b:0}])},
+  {id:'big',min:0,f:a=>a.map(x=>({e:x.e,b:1}))},
+  {id:'dellast',min:.5,f:a=>a.length>1?a.slice(0,-1):null},
+  {id:'rep',min:1,f:a=>a.concat(a)},
+  {id:'rev',min:1.5,f:a=>a.length>1?a.slice().reverse():null},
+  {id:'delfirst',min:2,f:a=>a.length>1?a.slice(1):null},
+  {id:'addfirst',min:2.5,f:(a,X)=>[{e:X,b:0}].concat(a)}
+];
+const key=a=>a?a.map(x=>x.e+(x.b?'^':'')).join(','):'∅';
+function machines(D){
+  const s=TR.filter(t=>t.min<=D).map(t=>({id:t.id,f:t.f}));
+  if(D<3)return s;
+  const c=[];s.forEach(a=>s.forEach(b=>{if(a.id!==b.id)c.push({id:a.id+'+'+b.id,f:(x,X)=>{const y=a.f(x,X);return y?b.f(y,X):null;}});}));
+  return s.concat(c);
+}
+function gen(r,D){
+  const all=machines(D),nEx=D<2?2:3,nCh=D<2?3:4;
+  for(let tries=0;tries<600;tries++){
+    const pool=shuf(r,pick(r,POOLS)),X=pick(r,MARKS);
+    const M=(D>=3&&r()<.6)?pick(r,all.filter(m=>m.id.includes('+'))):pick(r,all.filter(m=>!m.id.includes('+')));
+    const lenMin=D<1?1:D<3?1:2,lenMax=D<1?2:3;
+    const ins=[],seen=new Set();
+    for(let i=0;i<nEx+1;i++){const L=ri(r,lenMin,lenMax),a=pool.slice(i*2%5,i*2%5+L).map(e=>({e,b:0}));
+      const k=key(a);if(seen.has(k))break;seen.add(k);ins.push(a);}
+    if(ins.length<nEx+1)continue;
+    const outs=ins.map(a=>M.f(a,X));
+    if(outs.some(o=>!o||o.length===0||o.length>8))continue;
+    const ex=ins.slice(0,nEx),qin=ins[nEx],qout=outs[nEx];
+    if(ex.some((a,i)=>key(a)===key(outs[i])))continue;               // the machine must visibly change things
+    // every machine consistent with the examples must give the same answer → unique solution
+    const consistent=all.filter(m=>ex.every((a,i)=>key(m.f(a,X))===key(outs[i])));
+    const answers=new Set(consistent.map(m=>key(m.f(qin,X))));
+    if(answers.size!==1)continue;
+    const dis=new Map();shuf(r,all).forEach(m=>{const o=m.f(qin,X);if(o&&o.length&&o.length<=8){const k=key(o);if(k!==key(qout)&&k!==key(qin))dis.set(k,o);}});
+    if(dis.size<nCh-1)continue;
+    return{ex:ex.map((a,i)=>[a,outs[i]]),qin,qout,choices:shuf(r,[qout,...[...dis.values()].slice(0,nCh-1)])};
+  }
+  return null;
+}
+const TXT={en:'⚙️ What will the magic machine make?',es:'⚙️ ¿Qué hará la máquina mágica?',fr:'⚙️ Que va fabriquer la machine magique ?'};
+const css=`
+.row{display:flex;align-items:center;justify-content:center;gap:8px;background:#fff;border-radius:18px;padding:8px 10px;box-shadow:0 4px 14px rgba(45,42,74,.08);animation:kpop .4s backwards}
+.row.q{background:linear-gradient(140deg,#f5eeff,#ffeef6);border:2.5px solid var(--lilac)}
+.items{display:flex;gap:2px;align-items:flex-end;min-width:46px;justify-content:center;flex-wrap:wrap;max-width:42%}
+.it{font-size:clamp(1.25rem,5vw,1.7rem);line-height:1}.it.b{font-size:clamp(2rem,8vw,2.8rem)}
+.mach{flex-shrink:0;width:54px;height:48px;border-radius:12px;background:linear-gradient(145deg,#ffd93d,#ff9f43);display:flex;align-items:center;justify-content:center;font-size:1.6rem;box-shadow:inset 0 -4px 0 rgba(0,0,0,.12)}
+.mach span{display:inline-block;animation:spin 3s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
+.arr{color:#bbb;font-weight:900}
+.qm{font-family:'Fredoka One',ui-rounded,'Nunito',system-ui,sans-serif;font-size:1.8rem;color:var(--purple)}
+.k-choices{--cols:1}
+@media (max-height:640px){.row{padding:4px 8px;gap:5px}.it{font-size:1.2rem}.it.b{font-size:1.9rem}.mach{width:42px;height:38px;font-size:1.2rem}.k-choice{min-height:46px}}.k-choice{min-height:58px}
+`;
+function itemsEl(g,arr){const d=g.el('div','items');arr.forEach(x=>g.el('span','it'+(x.b?' b':''),x.e,d));return d;}
+H.start(window,{id:'maquina',mode:'rounds',css,
+  timer:D=>D<2?null:Math.max(20,Math.round(60*Math.pow(.9,D))),
+  round(g){
+    const P=gen(g.r,g.D)||gen(H.U.mkRand(g.q+7),0);g.prompt(g.t(TXT));
+    const mkRow=(a,b,q)=>{const r=g.el('div','row'+(q?' q':''),null,g.stage);r.appendChild(itemsEl(g,a));g.el('span','arr','➜',r);g.el('div','mach','<span>⚙️</span>',r);g.el('span','arr','➜',r);
+      if(b)r.appendChild(itemsEl(g,b));else g.el('div','items','<span class="qm">❓</span>',r);return r;};
+    P.ex.forEach(([a,b],i)=>{mkRow(a,b).style.animationDelay=(i*.1)+'s';});
+    const qrow=mkRow(P.qin,null,true);
+    const cols=g.win.innerWidth>520?2:1;
+    g.choices(P.choices,(o,b)=>b.appendChild(itemsEl(g,o)),(o,b)=>{
+      if(key(o)===key(P.qout)){const it=qrow.lastChild;it.replaceWith(itemsEl(g,o));g.fx.stars(b);g.solved();}else g.bad(b);
+    },cols);
+  }
+});
+}
+</script></body></html>

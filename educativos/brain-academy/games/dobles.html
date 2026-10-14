@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Doubles and Halves</title></head>
+<body><script>
+const H=window.parent&&window.parent!==window?window.parent.Hub:null;
+if(!H){location.replace('../index.html');}
+else{
+const {ri,pick,intChoices}=H.U;
+const TX={es:{dbl:n=>`👯 ¿Cuál es el DOBLE de ${n}?`,half:n=>`✂️ ¿Cuál es la MITAD de ${n}?`,quad:n=>`👯👯 ¿Cuál es el CUÁDRUPLE de ${n}? (el doble del doble)`,qtr:n=>`✂️✂️ ¿Cuál es la CUARTA PARTE de ${n}? (la mitad de la mitad)`},
+          en:{dbl:n=>`👯 What is DOUBLE ${n}?`,half:n=>`✂️ What is HALF of ${n}?`,quad:n=>`👯👯 What is 4 TIMES ${n}? (double the double)`,qtr:n=>`✂️✂️ What is a QUARTER of ${n}? (half of the half)`},
+          fr:{dbl:n=>`👯 Quel est le DOUBLE de ${n} ?`,half:n=>`✂️ Quelle est la MOITIÉ de ${n} ?`,quad:n=>`👯👯 Quel est le QUADRUPLE de ${n} ? (le double du double)`,qtr:n=>`✂️✂️ Quel est le QUART de ${n} ? (la moitié de la moitié)`}};
+function item(r,D){
+  const t=D<1?'dbl':D<2.5?pick(r,['dbl','half']):D<7?pick(r,['dbl','half']):pick(r,['dbl','half','quad','qtr']);
+  const mag=D<1?[1,5]:D<2.5?[1,10]:D<4?[2,10]:D<6?[11,99]:[100,499];
+  let x=ri(r,mag[0],mag[1]);if(D>=2.5&&D<4)x*=5;
+  if(t==='dbl')return{t,n:x,ans:2*x};if(t==='half')return{t,n:2*x,ans:x};if(t==='quad')return{t,n:x,ans:4*x};return{t,n:4*x,ans:x};
+}
+const css=`
+.big{text-align:center;font-family:'Fredoka One',ui-rounded,'Nunito',system-ui,sans-serif;font-size:clamp(2.2rem,11vmin,3.2rem)}
+.mir{display:flex;justify-content:center;gap:10px;align-items:center}.mir div{display:flex;flex-wrap:wrap;gap:3px;max-width:130px;justify-content:center;font-size:1.6rem}
+.mir i{width:4px;align-self:stretch;background:linear-gradient(var(--lilac),var(--sky));border-radius:3px}
+.prog{text-align:center;font-weight:900;color:var(--mid)}.k-choice{font-size:clamp(1.4rem,6vmin,2rem)}
+`;
+H.start(window,{id:'dobles',mode:'rounds',css,
+  timer:D=>{const k=D<2?3:D<5?4:5;return Math.round(k*Math.max(3,8*Math.pow(.9,D)));},
+  round(g){
+    const L=TX[g.lang]||TX.es,k=g.D<2?3:g.D<5?4:5,items=Array.from({length:k},()=>item(g.r,g.D));let i=0;
+    const prog=g.el('div','prog','',g.stage),big=g.el('div','big','',g.stage),vis=g.el('div','mir',null,g.stage),box=g.el('div','k-ans',null,g.stage);
+    const show=()=>{const it=items[i];g.prompt(L[it.t](it.n));prog.textContent=`${i+1} / ${k}`;big.textContent=it.n;vis.innerHTML='';
+      if(it.n<=10&&(it.t==='dbl'||it.t==='half')){const half=it.t==='dbl'?it.n:it.n/2;const a=g.el('div','',null,vis);for(let j=0;j<half;j++)g.el('span','','🍓',a);g.el('i','',null,vis);const b=g.el('div','',null,vis);
+        for(let j=0;j<half;j++)g.el('span','',it.t==='dbl'?'❔':'🍓',b);}
+      box.innerHTML='';
+      g.choices(intChoices(g.r,[it.ans],[it.ans+1,it.ans-1,it.ans+2,it.n+2,it.n,it.ans+10,it.ans-10],4,0),(n,b)=>{b.textContent=n;},(n,b)=>{
+        if(n!==it.ans){g.bad(b);return;}box.querySelectorAll('button').forEach(x=>x.disabled=true);big.textContent=`${it.n} → ${it.ans}`;
+        i++;if(i>=k){g.fx.stars(b);g.solved();}else{g.good(b);setTimeout(show,550);}},4,box);};
+    show();
+  }
+});
+}
+</script></body></html>

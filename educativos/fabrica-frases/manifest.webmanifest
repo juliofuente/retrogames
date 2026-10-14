@@ -1,0 +1,16 @@
+{
+  "name": "Fábrica de Frases",
+  "short_name": "Frases",
+  "description": "Monta frases en inglés pieza a pieza y desbloquea niveles.",
+  "lang": "es",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#FFE7A1",
+  "theme_color": "#FFE7A1",
+  "icons": [
+    {"src": "icon-192.png", "sizes": "192x192", "type": "image/png"},
+    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"}
+  ]
+}

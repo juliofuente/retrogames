@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Counting Trail</title></head>
+<body><script>
+const H=window.parent&&window.parent!==window?window.parent.Hub:null;
+if(!H){location.replace('../index.html');}
+else{
+const {ri,pick,shuf}=H.U;
+const TX={es:{up:(s,k)=>`🔢 Cuenta de ${k} en ${k} empezando en el ${s}. Toca los números en orden.`,down:(s,k)=>`🔢 Cuenta HACIA ATRÁS de ${k} en ${k} desde el ${s}. Toca los números en orden.`},
+          en:{up:(s,k)=>`🔢 Count in ${k}s starting at ${s}. Tap the numbers in order.`,down:(s,k)=>`🔢 Count BACKWARDS in ${k}s from ${s}. Tap the numbers in order.`},
+          fr:{up:(s,k)=>`🔢 Compte de ${k} en ${k} à partir de ${s}. Touche les nombres dans l'ordre.`,down:(s,k)=>`🔢 Compte À REBOURS de ${k} en ${k} depuis ${s}. Touche les nombres dans l'ordre.`}};
+function gen(r,D){
+  let k,dir=1,len,s;
+  if(D<1){k=1;len=4;s=1;}else if(D<2){k=1;len=5;s=ri(r,1,6);}
+  else if(D<3.5){k=pick(r,[2,10,1]);dir=k===1?-1:1;len=5;}
+  else if(D<5){k=pick(r,[2,5,10]);dir=pick(r,[1,-1]);len=6;}
+  else if(D<7){k=pick(r,[3,4,5,25]);dir=pick(r,[1,1,-1]);len=6;}
+  else{k=pick(r,[6,7,8,9,50,100,25]);dir=pick(r,[1,-1]);len=7;}
+  if(s===undefined){const base=k>=25?k*ri(r,0,6):ri(r,0,k<=2?20:k*4);s=dir>0?base+(k===1?1:0):base+k*(len-1)+ri(r,0,k>9?0:9)*(k>9?0:1);}
+  const seq=Array.from({length:len},(_,i)=>s+dir*k*i);
+  const inSeq=new Set(seq),nDis=Math.min(6,2+Math.floor(D));const dis=[];
+  for(const v of shuf(r,seq.flatMap(x=>[x+1,x-1,x+k+1,x+10,x-10,x+Math.ceil(k/2)]))){if(dis.length>=nDis)break;if(v>=0&&!inSeq.has(v)&&!dis.includes(v))dis.push(v);}
+  return{k,dir,s,seq,items:shuf(r,seq.concat(dis))};
+}
+const css=`
+.trail{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;min-height:52px}
+.st{min-width:52px;height:46px;border-radius:12px;border:3px dashed var(--lilac);display:flex;align-items:center;justify-content:center;font-family:'Fredoka One',ui-rounded,'Nunito',system-ui,sans-serif;font-size:1.3rem;color:var(--lilac);padding:0 6px}
+.st.ok{border:3px solid var(--green);background:#e9fff1;color:#1e8a4a;animation:kpop .3s}
+.cloud{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:8px}
+.nb{height:60px;border-radius:30px;background:linear-gradient(145deg,#fff,#fff0f7);box-shadow:0 4px 12px rgba(45,42,74,.12);font-family:'Fredoka One',ui-rounded,'Nunito',system-ui,sans-serif;font-size:clamp(1.15rem,5vmin,1.5rem);animation:kpop .35s backwards}
+.nb.gone{visibility:hidden}
+`;
+H.start(window,{id:'conteo',mode:'rounds',css,
+  timer:D=>D<2?null:Math.max(15,Math.round(55*Math.pow(.92,D))),
+  round(g){
+    const P=gen(g.r,g.D),L=TX[g.lang]||TX.es;g.prompt(P.dir>0?L.up(P.s,P.k):L.down(P.s,P.k));
+    const tr=g.el('div','trail',null,g.stage),st=P.seq.map(()=>g.el('div','st','?',tr));let p=0;
+    const cl=g.el('div','cloud k-ans',null,g.stage);
+    P.items.forEach((v,i)=>{const b=g.el('button','nb',String(v),cl);b.style.animationDelay=(i*.03)+'s';
+      b.onclick=()=>{if(g.solvedFlag||g.paused||b.classList.contains('gone'))return;
+        if(v!==P.seq[p]){g.bad(b);setTimeout(()=>{b.classList.remove('k-wrong');b.disabled=false;},450);return;}
+        H.SFX.pop();b.classList.add('gone');st[p].textContent=v;st[p].classList.add('ok');p++;if(p>=P.seq.length){g.fx.stars(st[p-1]);g.solved();}};});
+  }
+});
+}
+</script></body></html>

@@ -1,0 +1,1148 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aventura de Palabras - Aprende por Repetición</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Poppins:wght@400;600;700&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        .game-container {
+            background: white;
+            border-radius: 30px;
+            padding: 40px;
+            max-width: 900px;
+            margin: 0 auto;
+            box-shadow: 0 25px 70px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+
+        h1 {
+            font-family: 'Fredoka', sans-serif;
+            color: #667eea;
+            text-align: center;
+            margin-bottom: 15px;
+            font-size: 2.8em;
+            text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.1);
+            font-weight: 700;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 25px;
+            font-size: 1.15em;
+        }
+
+        /* Menu Screen */
+        .menu-screen {
+            text-align: center;
+        }
+
+        .age-selector {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 40px 0;
+        }
+
+        .age-card {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            padding: 30px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 4px solid transparent;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+            position: relative;
+        }
+
+        .age-card:hover {
+            transform: translateY(-10px) scale(1.05);
+            border-color: #fff;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.25);
+        }
+
+        .age-card.locked {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .age-card.locked::after {
+            content: '🔒';
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 2em;
+        }
+
+        .age-card.age-7-8 { background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%); }
+        .age-card.age-9-10 { background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); }
+        .age-card.age-11-12 { background: linear-gradient(135deg, #30cfd0 0%, #330867 100%); }
+        .age-card.age-13-14 { background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); }
+
+        .age-card h3 {
+            font-family: 'Fredoka', sans-serif;
+            color: white;
+            font-size: 2em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .age-card p {
+            color: rgba(255, 255, 255, 0.95);
+            font-size: 0.95em;
+            margin-bottom: 15px;
+        }
+
+        .progress-stars {
+            display: flex;
+            justify-content: center;
+            gap: 5px;
+            margin: 15px 0;
+            font-size: 1.5em;
+        }
+
+        .progress-info {
+            background: rgba(255, 255, 255, 0.3);
+            padding: 10px 15px;
+            border-radius: 15px;
+            color: white;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+
+        /* Score Board */
+        .score-board {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+            padding: 25px;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            border-radius: 20px;
+            box-shadow: 0 8px 20px rgba(240, 147, 251, 0.3);
+        }
+
+        .score-item {
+            text-align: center;
+        }
+
+        .score-label {
+            font-size: 0.85em;
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+
+        .score-value {
+            font-family: 'Fredoka', sans-serif;
+            font-size: 2em;
+            font-weight: 700;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Word Card */
+        .word-card {
+            background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+            padding: 40px;
+            border-radius: 25px;
+            margin-bottom: 30px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(252, 182, 159, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .word-title {
+            font-family: 'Fredoka', sans-serif;
+            font-size: 4em;
+            color: #d63031;
+            font-weight: 700;
+            margin-bottom: 30px;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            text-shadow: 4px 4px 0 rgba(0, 0, 0, 0.1);
+            animation: wordPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes wordPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .word-hint {
+            font-size: 1.2em;
+            color: #636e72;
+            font-style: italic;
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 12px;
+        }
+
+        .mastery-indicator {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 20px;
+            font-size: 1.5em;
+        }
+
+        .mastery-star {
+            transition: all 0.3s ease;
+        }
+
+        .mastery-star.earned {
+            animation: starEarn 0.5s ease;
+        }
+
+        @keyframes starEarn {
+            0% { transform: scale(0) rotate(0deg); }
+            50% { transform: scale(1.3) rotate(180deg); }
+            100% { transform: scale(1) rotate(360deg); }
+        }
+
+        /* Options */
+        .options-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 18px;
+            margin-bottom: 25px;
+        }
+
+        .option-btn {
+            padding: 30px 20px;
+            font-size: 1.1em;
+            border: 3px solid #667eea;
+            background: white;
+            border-radius: 18px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            color: #2d3436;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2);
+            position: relative;
+        }
+
+        .option-btn:hover {
+            background: #667eea;
+            color: white;
+            transform: translateY(-8px);
+            box-shadow: 0 12px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .option-btn.correct {
+            background: #00b894;
+            color: white;
+            border-color: #00b894;
+            animation: correctPulse 0.6s ease;
+        }
+
+        .option-btn.incorrect {
+            background: #d63031;
+            color: white;
+            border-color: #d63031;
+            animation: shake 0.6s ease;
+        }
+
+        .option-btn:disabled {
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        @keyframes correctPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-10px); }
+            20%, 40%, 60%, 80% { transform: translateX(10px); }
+        }
+
+        /* Feedback */
+        .feedback {
+            text-align: center;
+            font-family: 'Fredoka', sans-serif;
+            font-size: 1.5em;
+            font-weight: 700;
+            margin-bottom: 25px;
+            min-height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .feedback.correct {
+            color: #00b894;
+            animation: bounceIn 0.5s ease;
+        }
+
+        .feedback.incorrect {
+            color: #d63031;
+            animation: bounceIn 0.5s ease;
+        }
+
+        @keyframes bounceIn {
+            0% { transform: scale(0); opacity: 0; }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        /* Modal for Definition */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal-overlay.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 40px;
+            border-radius: 25px;
+            max-width: 600px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: modalSlideIn 0.4s ease;
+            position: relative;
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-header {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .modal-word {
+            font-family: 'Fredoka', sans-serif;
+            font-size: 3em;
+            color: #667eea;
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-bottom: 15px;
+        }
+
+        .modal-stars {
+            font-size: 2em;
+            margin: 15px 0;
+        }
+
+        .modal-definition {
+            font-size: 1.3em;
+            color: #2d3436;
+            line-height: 1.7;
+            margin: 20px 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+            border-radius: 15px;
+            font-weight: 500;
+        }
+
+        .modal-example {
+            font-size: 1.1em;
+            color: #636e72;
+            font-style: italic;
+            margin: 20px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            border-left: 4px solid #667eea;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 25px;
+        }
+
+        .modal-btn {
+            flex: 1;
+            padding: 18px;
+            font-size: 1.2em;
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            font-family: 'Fredoka', sans-serif;
+            font-weight: 700;
+            transition: all 0.3s ease;
+        }
+
+        .btn-next {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-next:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        /* Level Complete Modal */
+        .level-complete {
+            text-align: center;
+        }
+
+        .level-complete h2 {
+            font-family: 'Fredoka', sans-serif;
+            font-size: 2.5em;
+            color: #667eea;
+            margin-bottom: 20px;
+        }
+
+        .level-complete .celebration {
+            font-size: 5em;
+            margin: 20px 0;
+            animation: celebrate 1s ease infinite;
+        }
+
+        @keyframes celebrate {
+            0%, 100% { transform: rotate(-10deg) scale(1); }
+            50% { transform: rotate(10deg) scale(1.2); }
+        }
+
+        .level-stats {
+            background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%);
+            padding: 25px;
+            border-radius: 20px;
+            margin: 25px 0;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+            font-size: 1.2em;
+            font-weight: 600;
+        }
+
+        /* Buttons */
+        .next-btn, .menu-btn {
+            display: block;
+            width: 100%;
+            padding: 22px;
+            font-size: 1.3em;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 18px;
+            cursor: pointer;
+            font-family: 'Fredoka', sans-serif;
+            font-weight: 700;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+            margin-top: 15px;
+        }
+
+        .next-btn:hover, .menu-btn:hover {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 12px 30px rgba(102, 126, 234, 0.4);
+        }
+
+        .next-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .menu-btn {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        /* Progress Bar */
+        .level-progress {
+            margin: 25px 0;
+        }
+
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: #2d3436;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00b894 0%, #00cec9 100%);
+            transition: width 0.5s ease;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 0.9em;
+        }
+
+        /* Hidden */
+        .hidden {
+            display: none !important;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .game-container {
+                padding: 25px;
+            }
+
+            h1 {
+                font-size: 2em;
+            }
+
+            .word-title {
+                font-size: 2.5em;
+            }
+
+            .options-container {
+                grid-template-columns: 1fr;
+            }
+
+            .age-selector {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Confetti Animation */
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            background: #f0f;
+            position: absolute;
+            animation: confetti-fall 3s linear;
+        }
+
+        @keyframes confetti-fall {
+            to {
+                transform: translateY(100vh) rotate(360deg);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>🎓 Aventura de Palabras</h1>
+        <p class="subtitle">¡Aprende vocabulario por repetición!</p>
+
+        <!-- Menu Screen -->
+        <div id="menuScreen" class="menu-screen">
+            <h2 style="margin: 30px 0 20px; color: #2d3436; font-family: 'Fredoka', sans-serif;">Selecciona tu nivel</h2>
+            
+            <div class="age-selector" id="ageSelector">
+                <!-- Se llenará dinámicamente -->
+            </div>
+
+            <button class="next-btn" onclick="resetAllProgress()" style="background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%); margin-top: 30px;">
+                🔄 Reiniciar Todo el Progreso
+            </button>
+        </div>
+
+        <!-- Game Screen -->
+        <div id="gameScreen" class="hidden">
+            <button class="menu-btn" onclick="backToMenu()">← Volver al Menú</button>
+
+            <div class="level-progress">
+                <div class="progress-label">
+                    <span>Progreso del Nivel</span>
+                    <span id="progressText">0/0 palabras dominadas</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressBar">0%</div>
+                </div>
+            </div>
+
+            <div class="score-board">
+                <div class="score-item">
+                    <div class="score-label">Palabra</div>
+                    <div class="score-value"><span id="currentWord">1</span>/<span id="totalWords">10</span></div>
+                </div>
+                <div class="score-item">
+                    <div class="score-label">Racha</div>
+                    <div class="score-value" id="streak">0</div>
+                </div>
+                <div class="score-item">
+                    <div class="score-label">Intentos</div>
+                    <div class="score-value" id="attempts">0</div>
+                </div>
+            </div>
+
+            <div id="gameArea">
+                <div class="word-card">
+                    <div class="word-title" id="word"></div>
+                    <div class="word-hint">¿Qué ejemplo corresponde a esta palabra?</div>
+                    <div class="mastery-indicator" id="masteryStars"></div>
+                </div>
+
+                <div class="feedback" id="feedback"></div>
+
+                <div class="options-container" id="optionsContainer"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Definition Modal -->
+    <div class="modal-overlay" id="definitionModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-word" id="modalWord"></div>
+                <div class="modal-stars" id="modalStars"></div>
+            </div>
+            <div class="modal-definition" id="modalDefinition"></div>
+            <div class="modal-example" id="modalExample"></div>
+            <div class="modal-buttons">
+                <button class="modal-btn btn-next" onclick="closeModalAndNext()">
+                    Siguiente Palabra ➡️
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Level Complete Modal -->
+    <div class="modal-overlay" id="levelCompleteModal">
+        <div class="modal-content level-complete">
+            <div class="celebration">🎉</div>
+            <h2>¡Nivel Completado!</h2>
+            <div class="level-stats">
+                <div class="stat-row">
+                    <span>Palabras dominadas:</span>
+                    <span id="completeMastered">0</span>
+                </div>
+                <div class="stat-row">
+                    <span>Racha máxima:</span>
+                    <span id="completeStreak">0</span>
+                </div>
+                <div class="stat-row">
+                    <span>Precisión:</span>
+                    <span id="completeAccuracy">0%</span>
+                </div>
+            </div>
+            <div class="modal-buttons">
+                <button class="modal-btn btn-next" onclick="backToMenu()">
+                    Volver al Menú 🏠
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Word database organized by age
+        const wordDatabase = {
+            '7-8': [
+                { word: "VALIENTE", definition: "Persona que no tiene miedo y enfrenta situaciones difíciles con coraje", example: "El bombero valiente entró al edificio en llamas", situations: ["Ana ayuda a un compañero que está siendo molestado", "Pedro se esconde cuando ve algo difícil", "María llora cada vez que algo le asusta", "Luis huye cuando hay un problema"], correct: 0 },
+                { word: "GENEROSO", definition: "Persona que comparte con los demás sin esperar nada a cambio", example: "Mi amigo generoso compartió su almuerzo conmigo", situations: ["Carmen guarda todos sus juguetes para ella sola", "Diego comparte sus colores con toda la clase", "Rosa esconde sus dulces de los demás", "Pablo nunca presta nada a nadie"], correct: 1 },
+                { word: "CURIOSO", definition: "Persona que quiere aprender y descubrir cosas nuevas", example: "El niño curioso hace muchas preguntas sobre todo", situations: ["Julia no se interesa por nada nuevo", "Marcos ignora los experimentos en clase", "Sofía pregunta cómo funcionan las cosas", "Luis no quiere aprender cosas diferentes"], correct: 2 },
+                { word: "PACIENTE", definition: "Persona que sabe esperar sin enfadarse ni desesperarse", example: "Mi hermana paciente espera su turno sin quejarse", situations: ["Carlos espera tranquilo en la fila del parque", "Andrea grita y empuja para ser la primera", "Roberto se enfada si no es atendido inmediatamente", "Elena llora cuando tiene que esperar"], correct: 0 },
+                { word: "HONESTO", definition: "Persona que siempre dice la verdad y no engaña", example: "El niño honesto admitió que rompió el jarrón", situations: ["Marta miente sobre hacer su tarea", "David culpa a otros por sus errores", "Laura dice la verdad aunque le cueste", "Javier inventa historias falsas"], correct: 2 },
+                { word: "AMABLE", definition: "Persona que trata a los demás con cariño y bondad", example: "La niña amable ayudó al anciano a cruzar la calle", situations: ["Sandra es grosera con sus compañeros", "Miguel ayuda a llevar las bolsas a su vecina", "Patricia ignora cuando alguien necesita ayuda", "Raúl se burla de los demás niños"], correct: 1 },
+                { word: "RESPONSABLE", definition: "Persona que cumple con sus deberes y cuida sus cosas", example: "El niño responsable siempre hace su tarea a tiempo", situations: ["Lucía olvida sus cosas en cualquier lugar", "Antonio termina sus tareas antes de jugar", "Beatriz nunca cumple con lo prometido", "Fernando deja todo sin terminar"], correct: 1 },
+                { word: "ALEGRE", definition: "Persona que está contenta y llena de energía positiva", example: "Mi amiga alegre siempre está sonriendo", situations: ["Victoria está triste todo el día", "Sergio canta y baila con entusiasmo", "Natalia se queja constantemente", "Óscar nunca está contento con nada"], correct: 1 },
+                { word: "RESPETUOSO", definition: "Persona que trata a los demás con consideración y educación", example: "El niño respetuoso escucha cuando otros hablan", situations: ["Emma interrumpe a todos cuando hablan", "Daniel levanta la mano para hablar en clase", "Silvia grita en la biblioteca", "Ricardo se burla de las opiniones ajenas"], correct: 1 },
+                { word: "CREATIVO", definition: "Persona que tiene muchas ideas originales e imaginación", example: "La niña creativa inventó un juego nuevo", situations: ["Alicia solo copia lo que hacen los demás", "Bruno siempre juega de la misma manera", "Carla inventa historias mágicas diferentes", "Hugo no usa su imaginación nunca"], correct: 2 }
+            ],
+            '9-10': [
+                { word: "PRUDENTE", definition: "Persona que piensa antes de actuar y evita los riesgos innecesarios", example: "El conductor prudente respeta los límites de velocidad", situations: ["Juan mira a ambos lados antes de cruzar la calle", "María corre sin mirar cuando cruza la calle", "Pedro juega con fuego sin cuidado", "Ana toma decisiones sin pensar"], correct: 0 },
+                { word: "SENSATO", definition: "Persona con buen juicio que toma decisiones inteligentes", example: "Fue sensato ahorrar dinero para el futuro", situations: ["Luis gasta todo su dinero en cosas innecesarias", "Carmen estudia un poco cada día para el examen", "Diego hace las cosas sin pensar", "Elena ignora los consejos de los adultos"], correct: 1 },
+                { word: "NOSTÁLGICO", definition: "Sentimiento de tristeza dulce al recordar momentos felices del pasado", example: "Me siento nostálgico cuando veo fotos de mi infancia", situations: ["Pablo está emocionado por su cumpleaños mañana", "Sofía está enojada con su hermano", "Miguel siente tristeza al ver fotos de sus abuelos", "Laura está contenta jugando ahora mismo"], correct: 2 },
+                { word: "MELANCÓLICO", definition: "Estado de tristeza suave y tranquila, sin un motivo claro", example: "El día gris me pone melancólico", situations: ["Andrea está muy alegre cantando", "Roberto siente una tristeza tranquila mirando la lluvia", "Clara está furiosa por perder el juego", "Tomás está asustado de la oscuridad"], correct: 1 },
+                { word: "CORTÉS", definition: "Persona educada y amable que trata bien a los demás", example: "El joven cortés cedió su asiento en el autobús", situations: ["Jorge empuja a todos en la fila", "Isabel dice 'por favor' y 'gracias' siempre", "David grita órdenes a los demás", "Marta interrumpe constantemente"], correct: 1 },
+                { word: "INGENIOSO", definition: "Persona creativa que encuentra soluciones inteligentes y originales", example: "Su ingenioso invento resolvió el problema", situations: ["Ana usa una caja como escalera para alcanzar un libro alto", "Carlos se rinde sin intentar resolver el problema", "Lucía copia siempre las respuestas de otros", "Mario llora cuando algo es difícil"], correct: 0 },
+                { word: "DILIGENTE", definition: "Persona que trabaja con cuidado, rapidez y dedicación", example: "El estudiante diligente terminó todos sus proyectos a tiempo", situations: ["Sara hace su tarea rápido pero con muchos errores", "Hugo termina su trabajo con cuidado y puntualidad", "Emma deja todo para el último momento", "Óscar no termina nunca lo que empieza"], correct: 1 },
+                { word: "PERSPICAZ", definition: "Persona que nota detalles que otros no ven y entiende situaciones rápidamente", example: "La detective perspicaz resolvió el caso rápidamente", situations: ["Julia nunca se da cuenta de nada", "Raúl nota que su amigo está triste aunque sonríe", "Carla no presta atención a los detalles", "Sergio no entiende las pistas obvias"], correct: 1 },
+                { word: "TENAZ", definition: "Persona que no se rinde fácilmente y sigue intentando hasta lograrlo", example: "Con tenacidad, logró aprender a tocar el piano", situations: ["Alejandro se rinde después del primer intento", "Natalia practica el piano todos los días hasta tocar bien", "Fernando deja todo cuando se pone difícil", "Beatriz cambia de actividad cada cinco minutos"], correct: 1 },
+                { word: "ELOCUENTE", definition: "Persona que habla muy bien y expresa sus ideas con claridad y persuasión", example: "El orador elocuente convenció a toda la audiencia", situations: ["Victoria tartamudea y no encuentra las palabras", "Ricardo explica el proyecto de forma clara y convincente", "Patricia habla muy bajito y nadie entiende", "Alberto usa palabras incorrectas constantemente"], correct: 1 }
+            ],
+            '11-12': [
+                { word: "RESILIENTE", definition: "Persona que se recupera rápidamente de las dificultades y sigue adelante", example: "A pesar de perder el campeonato, mostró ser resiliente y siguió entrenando", situations: ["Martín se deprime y abandona después de un fracaso", "Elena aprende de sus errores y lo intenta nuevamente", "Roberto culpa a otros por sus problemas", "Silvia se rinde ante el primer obstáculo"], correct: 1 },
+                { word: "ESCÉPTICO", definition: "Persona que duda y cuestiona las cosas antes de creerlas", example: "El científico escéptico siempre pide pruebas antes de aceptar una teoría", situations: ["Andrés cree todo lo que lee en internet sin verificar", "Lucía investiga antes de aceptar información como verdad", "Pablo acepta rumores sin cuestionarlos", "Carmen comparte noticias falsas sin pensar"], correct: 1 },
+                { word: "METICULOSO", definition: "Persona extremadamente cuidadosa con los pequeños detalles", example: "El artista meticuloso revisó cada pincelada de su obra", situations: ["Diego hace las cosas rápido sin preocuparse por detalles", "Sofía revisa cuidadosamente cada respuesta de su examen", "Marcos entrega trabajos con muchos errores", "Julia no revisa su trabajo antes de entregarlo"], correct: 1 },
+                { word: "PRAGMÁTICO", definition: "Persona que se enfoca en lo práctico y en soluciones realistas", example: "Su enfoque pragmático resolvió el problema rápidamente", situations: ["Antonio busca la solución más efectiva y realista", "Carolina se pierde en teorías sin aplicación práctica", "Fernando ignora la realidad del problema", "Beatriz propone ideas imposibles de realizar"], correct: 0 },
+                { word: "ANALÍTICO", definition: "Persona que examina algo detalladamente para comprenderlo mejor", example: "Su mente analítica le permitió resolver el complejo problema matemático", situations: ["Gabriel acepta conclusiones sin examinar la evidencia", "Patricia estudia cada parte del problema cuidadosamente", "Ricardo hace suposiciones sin análisis", "Mónica decide por impulso sin razonar"], correct: 1 },
+                { word: "ÍNTEGRO", definition: "Persona con valores morales sólidos que actúa correctamente incluso cuando nadie mira", example: "Demostró ser íntegro al devolver la cartera que encontró", situations: ["Alejandra hace lo correcto aunque nadie la vea", "Sergio hace trampa cuando no lo supervisan", "Natalia actúa bien solo cuando la están mirando", "Tomás aprovecha situaciones para su beneficio"], correct: 0 },
+                { word: "VERSÁTIL", definition: "Persona que se adapta fácilmente a diferentes situaciones y tareas", example: "Su personalidad versátil le permite sobresalir en muchas áreas", situations: ["Eduardo solo puede hacer una cosa bien", "Cristina se destaca en deportes, arte y ciencias", "Irene se niega a probar cosas nuevas", "Alberto solo hace lo que ya conoce"], correct: 1 },
+                { word: "AUSTERO", definition: "Persona que vive con sencillez y sin lujos innecesarios", example: "A pesar de su riqueza, mantiene un estilo de vida austero", situations: ["Guillermo derrocha dinero en cosas innecesarias", "Verónica vive de manera simple y ahorra", "Simón siempre busca lo más caro y lujoso", "Clara gasta más de lo que tiene"], correct: 1 },
+                { word: "IMPARCIAL", definition: "Persona que juzga sin favoritismos, siendo justa con todos", example: "El juez fue imparcial en su decisión", situations: ["Raquel siempre favorece a sus amigos cercanos", "Iván evalúa a todos con los mismos criterios", "Marcos toma partido sin escuchar ambos lados", "Daniela juzga basándose en preferencias personales"], correct: 1 },
+                { word: "PROACTIVO", definition: "Persona que toma la iniciativa y actúa anticipándose a los problemas", example: "Su actitud proactiva evitó muchos problemas", situations: ["Hugo espera que otros resuelvan los problemas", "Mónica se anticipa y previene dificultades", "Sara reacciona solo cuando ya es tarde", "Óscar nunca toma la iniciativa"], correct: 1 }
+            ],
+            '13-14': [
+                { word: "ECUÁNIME", definition: "Persona que mantiene la calma y juzga con justicia en cualquier situación", example: "Su temperamento ecuánime lo hace un excelente mediador", situations: ["Laura reacciona exageradamente ante cualquier problema", "Miguel permanece tranquilo y justo incluso bajo presión", "Victoria se deja llevar por las emociones al decidir", "Ricardo toma decisiones basándose solo en sus sentimientos"], correct: 1 },
+                { word: "EFÍMERO", definition: "Algo que dura muy poco tiempo, pasajero o temporal", example: "La fama en internet suele ser efímera", situations: ["La popularidad de Andrés en redes duró solo una semana", "La amistad de Elena ha durado toda la vida", "El compromiso de Lucía es permanente y constante", "Pablo mantiene sus hábitos durante años"], correct: 0 },
+                { word: "PARADÓJICO", definition: "Algo que parece contradictorio pero que puede ser verdadero", example: "Es paradójico que cuanto más aprendo, más consciente soy de lo que no sé", situations: ["Es lógico que más estudio signifique más conocimiento", "Diego nota que mientras más corre, menos cansado se siente", "Lo que dice Sofía tiene perfecto sentido sin contradicciones", "La explicación de Marcos es simple y directa"], correct: 1 },
+                { word: "SUTIL", definition: "Algo delicado, que no es obvio y requiere atención para notarse", example: "Hizo una sutil referencia que pocos entendieron", situations: ["Antonio hace comentarios obvios que todos captan", "Carolina hace una insinuación que requiere atención para entender", "Fernando es directo y explícito en todo lo que dice", "Beatriz expresa todo de manera evidente"], correct: 1 },
+                { word: "ESTOICO", definition: "Persona que soporta el dolor o la adversidad sin quejarse ni mostrar emoción", example: "Mantuvo una actitud estoica ante la mala noticia", situations: ["Gabriel se queja constantemente de cualquier incomodidad", "Patricia enfrenta las dificultades sin dramatismo ni quejas", "Roberto exagera sus problemas para llamar la atención", "Mónica llora y se lamenta por todo"], correct: 1 },
+                { word: "BENEVOLENTE", definition: "Persona que desea el bien para otros y actúa con bondad", example: "El líder benevolente siempre busca el bienestar de su comunidad", situations: ["Alejandra actúa solo buscando su propio beneficio", "Sergio ayuda a otros sin esperar nada a cambio", "Natalia es indiferente al sufrimiento ajeno", "Tomás aprovecha las debilidades de los demás"], correct: 1 },
+                { word: "PERSPICACIA", definition: "Capacidad de entender rápidamente situaciones complejas y ver más allá de lo obvio", example: "Su perspicacia le permitió detectar el fraude", situations: ["Eduardo no capta señales ni situaciones complejas", "Cristina identifica patrones que otros no ven", "Irene acepta las apariencias sin cuestionarlas", "Alberto no nota detalles importantes"], correct: 1 },
+                { word: "IDIOSINCRASIA", definition: "Manera de ser característica de una persona o grupo", example: "Cada cultura tiene su propia idiosincrasia", situations: ["Guillermo actúa igual que todos sin personalidad propia", "Verónica tiene una forma única de ver las cosas", "Simón se comporta como la mayoría sin distinción", "Clara no tiene características que la distingan"], correct: 1 },
+                { word: "MAGNÁNIMO", definition: "Persona generosa y noble que perdona fácilmente", example: "Fue magnánimo al perdonar a quien le había traicionado", situations: ["Raquel guarda rencor y busca venganza", "Iván perdona generosamente y ayuda a quien lo ofendió", "Marcos es vengativo y no olvida los agravios", "Daniela es rencorosa y mezquina"], correct: 1 },
+                { word: "ERUDITO", definition: "Persona con conocimientos profundos y extensos en muchas áreas", example: "El profesor erudito dominaba historia, literatura y filosofía", situations: ["Hugo tiene conocimientos superficiales de todo", "Mónica posee conocimiento profundo en múltiples disciplinas", "Sara conoce poco más allá de lo básico", "Óscar no se interesa por ampliar sus conocimientos"], correct: 1 }
+            ]
+        };
+
+        // Game state
+        let selectedAge = null;
+        let currentWords = [];
+        let currentWordIndex = 0;
+        let streak = 0;
+        let bestStreak = 0;
+        let currentAttempts = 0;
+        let totalAttempts = 0;
+        let correctAttempts = 0;
+
+        // Progress tracking with localStorage
+        function getProgress(ageGroup) {
+            const key = `progress_${ageGroup}`;
+            const saved = localStorage.getItem(key);
+            if (saved) {
+                return JSON.parse(saved);
+            }
+            // Initialize progress for all words
+            const words = wordDatabase[ageGroup];
+            const progress = {};
+            words.forEach(w => {
+                progress[w.word] = {
+                    mastery: 0, // 0-3 stars
+                    timesCorrect: 0,
+                    timesSeen: 0,
+                    lastSeen: null
+                };
+            });
+            return progress;
+        }
+
+        function saveProgress(ageGroup, progress) {
+            const key = `progress_${ageGroup}`;
+            localStorage.setItem(key, JSON.stringify(progress));
+        }
+
+        function updateWordProgress(ageGroup, word, correct) {
+            const progress = getProgress(ageGroup);
+            if (!progress[word]) {
+                progress[word] = { mastery: 0, timesCorrect: 0, timesSeen: 0, lastSeen: null };
+            }
+            
+            progress[word].timesSeen++;
+            progress[word].lastSeen = Date.now();
+            
+            if (correct) {
+                progress[word].timesCorrect++;
+                // Gain mastery: need 3 correct in a row to get 3 stars
+                if (progress[word].mastery < 3) {
+                    progress[word].mastery++;
+                }
+            } else {
+                // Lose one mastery level on incorrect
+                if (progress[word].mastery > 0) {
+                    progress[word].mastery = Math.max(0, progress[word].mastery - 1);
+                }
+            }
+            
+            saveProgress(ageGroup, progress);
+            return progress[word].mastery;
+        }
+
+        function getLevelProgress(ageGroup) {
+            const progress = getProgress(ageGroup);
+            const words = wordDatabase[ageGroup];
+            let mastered = 0;
+            words.forEach(w => {
+                if (progress[w.word] && progress[w.word].mastery >= 3) {
+                    mastered++;
+                }
+            });
+            return { mastered, total: words.length };
+        }
+
+        function isLevelComplete(ageGroup) {
+            const { mastered, total } = getLevelProgress(ageGroup);
+            return mastered === total;
+        }
+
+        function getNextUnmasteredWords(ageGroup, count = 10) {
+            const progress = getProgress(ageGroup);
+            const words = wordDatabase[ageGroup];
+            
+            // Sort words by mastery (lowest first), then by last seen (least recent first)
+            const sorted = [...words].sort((a, b) => {
+                const progA = progress[a.word] || { mastery: 0, lastSeen: 0 };
+                const progB = progress[b.word] || { mastery: 0, lastSeen: 0 };
+                
+                // First priority: mastery level
+                if (progA.mastery !== progB.mastery) {
+                    return progA.mastery - progB.mastery;
+                }
+                
+                // Second priority: least recently seen
+                return (progA.lastSeen || 0) - (progB.lastSeen || 0);
+            });
+            
+            return sorted.slice(0, Math.min(count, sorted.length));
+        }
+
+        function resetAllProgress() {
+            if (confirm('¿Estás seguro de que quieres reiniciar TODO el progreso? Esta acción no se puede deshacer.')) {
+                ['7-8', '9-10', '11-12', '13-14'].forEach(age => {
+                    localStorage.removeItem(`progress_${age}`);
+                });
+                alert('¡Progreso reiniciado! Todos los niveles están disponibles de nuevo.');
+                renderMenu();
+            }
+        }
+
+        function renderMenu() {
+            const selector = document.getElementById('ageSelector');
+            selector.innerHTML = '';
+            
+            const ages = ['7-8', '9-10', '11-12', '13-14'];
+            const labels = {
+                '7-8': { title: '7-8 años', desc: 'Palabras básicas avanzadas' },
+                '9-10': { title: '9-10 años', desc: 'Vocabulario intermedio' },
+                '11-12': { title: '11-12 años', desc: 'Palabras complejas' },
+                '13-14': { title: '13-14 años', desc: 'Vocabulario avanzado' }
+            };
+            
+            ages.forEach((age, index) => {
+                const { mastered, total } = getLevelProgress(age);
+                const percentage = Math.round((mastered / total) * 100);
+                const completed = isLevelComplete(age);
+                
+                // Check if previous level is completed (for locking)
+                let locked = false;
+                if (index > 0) {
+                    const prevAge = ages[index - 1];
+                    locked = !isLevelComplete(prevAge);
+                }
+                
+                const card = document.createElement('div');
+                card.className = `age-card age-${age}${locked ? ' locked' : ''}`;
+                if (!locked) {
+                    card.onclick = () => selectAge(age);
+                }
+                
+                // Generate stars
+                const stars = '⭐'.repeat(Math.floor((mastered / total) * 5));
+                
+                card.innerHTML = `
+                    <h3>${labels[age].title}</h3>
+                    <p>${labels[age].desc}</p>
+                    <div class="progress-stars">${stars || '☆☆☆☆☆'}</div>
+                    <div class="progress-info">
+                        ${mastered}/${total} palabras dominadas
+                        ${completed ? '<br>✅ ¡Nivel Completo!' : ''}
+                        ${locked ? '<br>🔒 Completa el nivel anterior' : ''}
+                    </div>
+                `;
+                
+                selector.appendChild(card);
+            });
+        }
+
+        function selectAge(age) {
+            selectedAge = age;
+            
+            // Get words to practice (unmastered first)
+            currentWords = getNextUnmasteredWords(age, 10);
+            
+            if (currentWords.length === 0) {
+                // Level complete!
+                showLevelComplete();
+                return;
+            }
+            
+            // Shuffle the selected words
+            currentWords = shuffleArray(currentWords);
+            
+            // Reset counters
+            currentWordIndex = 0;
+            streak = 0;
+            bestStreak = 0;
+            totalAttempts = 0;
+            correctAttempts = 0;
+            
+            // Hide menu, show game
+            document.getElementById('menuScreen').classList.add('hidden');
+            document.getElementById('gameScreen').classList.remove('hidden');
+            
+            // Update progress bar
+            updateProgressDisplay();
+            
+            // Load first word
+            loadWord();
+        }
+
+        function shuffleArray(array) {
+            const newArray = [...array];
+            for (let i = newArray.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+            }
+            return newArray;
+        }
+
+        function updateProgressDisplay() {
+            const { mastered, total } = getLevelProgress(selectedAge);
+            const percentage = Math.round((mastered / total) * 100);
+            
+            document.getElementById('progressText').textContent = `${mastered}/${total} palabras dominadas`;
+            document.getElementById('progressBar').style.width = percentage + '%';
+            document.getElementById('progressBar').textContent = percentage + '%';
+        }
+
+        function loadWord() {
+            if (currentWordIndex >= currentWords.length) {
+                // Session complete, go back to menu
+                alert('¡Sesión completada! Sigue practicando para dominar más palabras.');
+                backToMenu();
+                return;
+            }
+            
+            const currentWord = currentWords[currentWordIndex];
+            currentAttempts = 0;
+            
+            // Update counters
+            document.getElementById('currentWord').textContent = currentWordIndex + 1;
+            document.getElementById('totalWords').textContent = currentWords.length;
+            document.getElementById('streak').textContent = streak;
+            document.getElementById('attempts').textContent = currentAttempts;
+            
+            // Display word
+            document.getElementById('word').textContent = currentWord.word;
+            document.getElementById('feedback').textContent = '';
+            document.getElementById('feedback').className = 'feedback';
+            
+            // Show mastery stars
+            const progress = getProgress(selectedAge);
+            const mastery = progress[currentWord.word]?.mastery || 0;
+            const masteryStars = document.getElementById('masteryStars');
+            masteryStars.innerHTML = '';
+            for (let i = 0; i < 3; i++) {
+                const star = document.createElement('span');
+                star.className = 'mastery-star';
+                star.textContent = i < mastery ? '⭐' : '☆';
+                masteryStars.appendChild(star);
+            }
+            
+            // Shuffle options
+            const shuffledSituations = currentWord.situations.map((sit, idx) => ({
+                text: sit,
+                isCorrect: idx === currentWord.correct
+            }));
+            
+            shuffleArray(shuffledSituations);
+            
+            // Display options
+            const container = document.getElementById('optionsContainer');
+            container.innerHTML = '';
+            
+            shuffledSituations.forEach(option => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.textContent = option.text;
+                btn.onclick = () => checkAnswer(btn, option.isCorrect, currentWord);
+                container.appendChild(btn);
+            });
+        }
+
+        function checkAnswer(button, isCorrect, word) {
+            currentAttempts++;
+            totalAttempts++;
+            document.getElementById('attempts').textContent = currentAttempts;
+            
+            const allButtons = document.querySelectorAll('.option-btn');
+            
+            if (isCorrect) {
+                // Correct answer!
+                button.classList.add('correct');
+                allButtons.forEach(btn => btn.disabled = true);
+                
+                const feedback = document.getElementById('feedback');
+                feedback.textContent = '🎉 ¡Correcto! ¡Excelente!';
+                feedback.className = 'feedback correct';
+                
+                // Update progress
+                const newMastery = updateWordProgress(selectedAge, word.word, true);
+                
+                // Update mastery stars with animation
+                const masteryStars = document.getElementById('masteryStars');
+                const stars = masteryStars.querySelectorAll('.mastery-star');
+                if (stars[newMastery - 1]) {
+                    stars[newMastery - 1].textContent = '⭐';
+                    stars[newMastery - 1].classList.add('earned');
+                }
+                
+                // Update streak
+                streak++;
+                correctAttempts++;
+                if (streak > bestStreak) bestStreak = streak;
+                document.getElementById('streak').textContent = streak;
+                
+                // Show confetti
+                createConfetti();
+                
+                // Show definition modal after delay
+                setTimeout(() => {
+                    showDefinitionModal(word, newMastery);
+                }, 1000);
+                
+            } else {
+                // Wrong answer - can try again
+                button.classList.add('incorrect');
+                button.disabled = true;
+                
+                const feedback = document.getElementById('feedback');
+                feedback.textContent = '❌ Intenta de nuevo...';
+                feedback.className = 'feedback incorrect';
+                
+                // Reset streak
+                streak = 0;
+                document.getElementById('streak').textContent = streak;
+                
+                // If all wrong answers tried, show correct and update progress as incorrect
+                const enabledButtons = Array.from(allButtons).filter(btn => !btn.disabled);
+                if (enabledButtons.length === 1) {
+                    // This was the last wrong answer, show correct
+                    updateWordProgress(selectedAge, word.word, false);
+                    
+                    setTimeout(() => {
+                        const correctBtn = Array.from(allButtons).find(btn => 
+                            word.situations[word.correct] === btn.textContent
+                        );
+                        if (correctBtn) {
+                            correctBtn.classList.add('correct');
+                        }
+                        
+                        feedback.textContent = '💡 Esta era la respuesta correcta';
+                        feedback.className = 'feedback';
+                        
+                        setTimeout(() => {
+                            showDefinitionModal(word, 0);
+                        }, 2000);
+                    }, 1000);
+                }
+            }
+        }
+
+        function showDefinitionModal(word, mastery) {
+            const modal = document.getElementById('definitionModal');
+            document.getElementById('modalWord').textContent = word.word;
+            document.getElementById('modalDefinition').textContent = word.definition;
+            document.getElementById('modalExample').textContent = `Ejemplo: "${word.example}"`;
+            
+            // Show mastery stars
+            const stars = '⭐'.repeat(mastery) + '☆'.repeat(3 - mastery);
+            document.getElementById('modalStars').textContent = stars;
+            
+            modal.classList.add('show');
+        }
+
+        function closeModalAndNext() {
+            document.getElementById('definitionModal').classList.remove('show');
+            
+            // Update progress display
+            updateProgressDisplay();
+            
+            // Check if level is complete
+            if (isLevelComplete(selectedAge)) {
+                setTimeout(() => {
+                    showLevelComplete();
+                }, 500);
+            } else {
+                // Move to next word
+                currentWordIndex++;
+                setTimeout(() => {
+                    loadWord();
+                }, 300);
+            }
+        }
+
+        function showLevelComplete() {
+            const modal = document.getElementById('levelCompleteModal');
+            const { mastered, total } = getLevelProgress(selectedAge);
+            const accuracy = totalAttempts > 0 ? Math.round((correctAttempts / totalAttempts) * 100) : 0;
+            
+            document.getElementById('completeMastered').textContent = `${mastered}/${total}`;
+            document.getElementById('completeStreak').textContent = bestStreak;
+            document.getElementById('completeAccuracy').textContent = accuracy + '%';
+            
+            modal.classList.add('show');
+            
+            // Big confetti
+            for (let i = 0; i < 50; i++) {
+                setTimeout(() => createConfetti(), i * 50);
+            }
+        }
+
+        function createConfetti() {
+            const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#f9ca24', '#6c5ce7', '#a29bfe'];
+            for (let i = 0; i < 10; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                confetti.style.left = Math.random() * window.innerWidth + 'px';
+                confetti.style.top = '-10px';
+                confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.animationDelay = Math.random() * 0.5 + 's';
+                document.body.appendChild(confetti);
+                
+                setTimeout(() => confetti.remove(), 3000);
+            }
+        }
+
+        function backToMenu() {
+            document.getElementById('gameScreen').classList.add('hidden');
+            document.getElementById('menuScreen').classList.remove('hidden');
+            document.getElementById('levelCompleteModal').classList.remove('show');
+            renderMenu();
+        }
+
+        // Initialize
+        renderMenu();
+    </script>
+</body>
+</html>

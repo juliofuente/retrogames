@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>ABN Subtraction</title></head>
+<body><script>
+const H=window.parent&&window.parent!==window?window.parent.Hub:null;
+if(!H){location.replace('../index.html');}
+else{
+const {ri,intChoices}=H.U;
+const TX={es:{title:(m,s)=>`➖ Resta ${m} − ${s} subiendo por la escalera: ¿cuánto hay del ${s} al ${m}?`,j1:(a,b)=>`Salto del ${a} al ${b}: ¿cuánto es?`,tot:'¿Cuánto has subido en total? Ese es el resultado.'},
+          en:{title:(m,s)=>`➖ Subtract ${m} − ${s} by climbing up: how far is it from ${s} to ${m}?`,j1:(a,b)=>`Jump from ${a} to ${b}: how much is it?`,tot:'How much did you climb in total? That is the answer.'},
+          fr:{title:(m,s)=>`➖ Soustrais ${m} − ${s} en montant : combien y a-t-il de ${s} à ${m} ?`,j1:(a,b)=>`Saut de ${a} à ${b} : combien ?`,tot:"Combien es-tu monté en tout ? C'est le résultat."}};
+// ABN "escalera ascendente": from the subtrahend jump to the next ten, then whole tens/hundreds, then the units.
+function gen(r,D){
+  for(let t=0;t<300;t++){
+    let m,s;if(D<4){m=ri(r,21,99);s=ri(r,11,m-11);}else if(D<7){m=ri(r,41,99);s=ri(r,12,m-15);}else{m=ri(r,301,999);s=ri(r,102,m-120);}
+    if(s%10===0||m%10===0)continue;
+    const p1=Math.ceil(s/10)*10,p2=Math.floor(m/10)*10;if(p1>p2)continue;
+    const pts=[s,p1];if(p2>p1)pts.push(p2);pts.push(m);
+    const jumps=[];for(let i=1;i<pts.length;i++)jumps.push({from:pts[i-1],to:pts[i],ans:pts[i]-pts[i-1]});
+    return{m,s,pts,jumps,ans:m-s};
+  }
+}
+const css=`
+.line{width:100%;max-width:640px;margin:0 auto;display:block;overflow:visible}
+.line text{font-family:'Fredoka One',ui-rounded,'Nunito',system-ui,sans-serif;text-anchor:middle}
+.ask{text-align:center;font-weight:900;font-size:clamp(1rem,4.3vmin,1.2rem)}
+.k-choice{font-size:clamp(1.3rem,5.5vmin,1.9rem)}
+`;
+H.start(window,{id:'restaabn',mode:'rounds',css,
+  timer:D=>Math.max(25,Math.round(80*Math.pow(.92,D))),
+  round(g){
+    const P=gen(g.r,g.D),L=TX[g.lang]||TX.es,doc=g.doc,NS='http://www.w3.org/2000/svg';g.prompt(L.title(P.m,P.s));
+    const svg=doc.createElementNS(NS,'svg');svg.setAttribute('viewBox','-30 0 1060 190');svg.setAttribute('class','line');g.stage.appendChild(svg);
+    const mk=(t,a)=>{const e=doc.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);svg.appendChild(e);return e;};
+    // positions: proportional but with a minimum gap so small jumps stay readable
+    const n=P.pts.length,X=[];{const span=P.m-P.s;let acc=0;const w=P.jumps.map(j=>Math.max(.18,j.ans/span));const tot=w.reduce((a,b)=>a+b,0);X.push(0);w.forEach(x=>{acc+=x/tot*1000;X.push(acc);});}
+    mk('line',{x1:-10,y1:140,x2:1010,y2:140,stroke:'#2d2a4a','stroke-width':5,'stroke-linecap':'round'});
+    P.pts.forEach((v,i)=>{mk('line',{x1:X[i],y1:126,x2:X[i],y2:154,stroke:'#2d2a4a','stroke-width':5});const t=mk('text',{x:X[i],y:184,'font-size':i===0||i===n-1?36:30,fill:i===0||i===n-1?'#e2345f':'#2d2a4a'});t.textContent=v;});
+    const ask=g.el('div','ask','',g.stage),box=g.el('div','k-ans',null,g.stage);let i=0;
+    const next=()=>{box.innerHTML='';
+      if(i>=P.jumps.length){ask.textContent=L.tot;const tt=mk('text',{x:500,y:30,'font-size':40,fill:'#9B5CFF'});tt.textContent=P.jumps.map(j=>j.ans).join(' + ')+' = ?';
+        g.choices(intChoices(g.r,[P.ans],[P.ans+10,P.ans-10,P.ans+1,P.ans-1,P.m+P.s>2000?P.ans+100:P.ans+2],4,1),(x,b)=>{b.textContent=x;},(x,b)=>{
+          if(x!==P.ans){g.bad(b);return;}tt.textContent=P.jumps.map(j=>j.ans).join(' + ')+' = '+P.ans;g.fx.stars(b);g.solved();},4,box);return;}
+      const J=P.jumps[i],x1=X[i],x2=X[i+1],mid=(x1+x2)/2;ask.textContent=L.j1(J.from,J.to);
+      const arc=mk('path',{d:`M${x1},124 Q${mid},${60} ${x2},124`,fill:'none',stroke:'#4fb8ff','stroke-width':5,'stroke-dasharray':'10 8'});
+      const lab=mk('text',{x:mid,y:84,'font-size':32,fill:'#9B5CFF'});lab.textContent='?';
+      g.choices(intChoices(g.r,[J.ans],[J.ans+1,J.ans-1,J.ans+10,J.ans-10,10-J.ans],4,1),(x,b)=>{b.textContent='+'+x;},(x,b)=>{
+        if(x!==J.ans){g.bad(b);return;}box.querySelectorAll('button').forEach(x=>x.disabled=true);lab.textContent='+'+x;arc.removeAttribute('stroke-dasharray');arc.setAttribute('stroke','#3cc36e');i++;g.good(b);setTimeout(next,350);},4,box);};
+    next();
+  }
+});
+}
+</script></body></html>

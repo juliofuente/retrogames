@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Base 10 Blocks</title></head>
+<body><script>
+const H=window.parent&&window.parent!==window?window.parent.Hub:null;
+if(!H){location.replace('../index.html');}
+else{
+const {ri,intChoices}=H.U;
+const TX={es:{read:'🧱 ¿Qué número forman los bloques?',trade:'🧱 ¡Ojo! Hay más de 9 de algún tipo: haz los cambios. ¿Qué número es?',build:n=>`🧱 Construye el número ${n}`,reset:'↩️ Vaciar',legend:'🟧 = 100 · ▮ = 10 · ▪ = 1'},
+          en:{read:'🧱 What number do the blocks make?',trade:'🧱 Careful! There are more than 9 of one kind: trade them. What number is it?',build:n=>`🧱 Build the number ${n}`,reset:'↩️ Clear',legend:'🟧 = 100 · ▮ = 10 · ▪ = 1'},
+          fr:{read:'🧱 Quel nombre forment les blocs ?',trade:"🧱 Attention ! Il y a plus de 9 d'une sorte : fais les échanges. Quel nombre est-ce ?",build:n=>`🧱 Construis le nombre ${n}`,reset:'↩️ Vider',legend:'🟧 = 100 · ▮ = 10 · ▪ = 1'}};
+function gen(r,D){
+  let h=0,t,u;
+  if(D<3){t=ri(r,1,5);u=ri(r,0,9);}
+  else if(D<5){h=ri(r,1,3);t=ri(r,0,9);u=ri(r,0,9);}
+  else{h=ri(r,1,3);t=ri(r,D<7?2:8,D<7?9:14);u=ri(r,D<7?10:4,D<7?16:15);}   // more than 9 of a kind → trades
+  const val=h*100+t*10+u,trade=t>9||u>9;
+  const mode=!trade&&D>=2.5&&r()<.35?'build':'read';
+  const dis=[val+1,val-1,val+10,val-10];
+  if(!trade){if(u<10)dis.push(h*100+u*10+t);if(h)dis.push(u*100+t*10+h,val+100,val-100);}
+  else dis.push(Number(`${h||''}${t}${u}`),h*100+(t%10)*10+(u%10),val-10*Math.floor(u/10));
+  return{h,t,u,val,trade,mode,choices:intChoices(r,[val],dis,4,1,99999)};
+}
+const css=`
+.blocks{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;justify-content:center;min-height:80px;padding:8px;background:#f4f1fb;border-radius:16px}
+.grp{display:flex;flex-wrap:wrap;gap:4px;align-items:flex-end;max-width:100%}
+.flat{width:var(--F);height:var(--F);background-color:#ff9f43;background-image:linear-gradient(rgba(0,0,0,.18) 1px,transparent 1px),linear-gradient(90deg,rgba(0,0,0,.18) 1px,transparent 1px);background-size:10% 10%;border:2px solid #c96a10;border-radius:3px}
+.rod{width:calc(var(--F)/10 + 2px);height:var(--F);background-color:#4fb8ff;background-image:linear-gradient(rgba(0,0,0,.2) 1px,transparent 1px);background-size:100% 10%;border:2px solid #1f7fc2;border-radius:3px}
+.unit{width:calc(var(--F)/10 + 2px);height:calc(var(--F)/10 + 2px);background:#3cc36e;border:2px solid #23944e;border-radius:2px}
+.leg{text-align:center;font-weight:900;color:var(--mid);font-size:.85rem}
+.bar{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.add{background:#fff;border-radius:14px;padding:8px 14px;font-family:'Fredoka One',ui-rounded,'Nunito',system-ui,sans-serif;font-size:1.2rem;box-shadow:0 4px 10px rgba(45,42,74,.12)}
+.tot{text-align:center;font-family:'Fredoka One',ui-rounded,'Nunito',system-ui,sans-serif;font-size:1.6rem;color:var(--purple)}
+.k-choice{font-size:clamp(1.3rem,5.5vmin,1.9rem)}
+`;
+H.start(window,{id:'base10',mode:'rounds',css,
+  timer:D=>Math.max(15,Math.round(55*Math.pow(.9,D))),
+  round(g){
+    const P=gen(g.r,g.D),L=TX[g.lang]||TX.es;
+    const F=Math.max(46,Math.min(80,Math.floor((g.stage.clientWidth||320)/5)));
+    const draw=(box,h,t,u)=>{box.innerHTML='';box.style.setProperty('--F',F+'px');
+      const gh=g.el('div','grp',null,box),gt=g.el('div','grp',null,box),gu=g.el('div','grp',null,box);
+      for(let i=0;i<h;i++)g.el('div','flat',null,gh);for(let i=0;i<t;i++)g.el('div','rod',null,gt);for(let i=0;i<u;i++)g.el('div','unit',null,gu);};
+    if(P.mode==='read'){
+      g.prompt(P.trade?L.trade:L.read);g.el('div','leg',L.legend,g.stage);draw(g.el('div','blocks',null,g.stage),P.h,P.t,P.u);
+      g.choices(P.choices,(n,b)=>{b.textContent=n;},(n,b)=>{if(n===P.val){b.classList.add('k-right');g.fx.stars(b);g.solved();}else g.bad(b);},4);return;}
+    g.prompt(L.build(P.val));const cur={h:0,t:0,u:0},ws=g.el('div','blocks',null,g.stage),tot=g.el('div','tot','0',g.stage);
+    const bar=g.el('div','bar k-ans',null,g.stage),upd=()=>{draw(ws,cur.h,cur.t,cur.u);tot.textContent=cur.h*100+cur.t*10+cur.u;};
+    [['h','+ 🟧 100',100],['t','+ ▮ 10',10],['u','+ ▪ 1',1]].forEach(([k,lab,v])=>{const b=g.el('button','add',lab,bar);b.onclick=()=>{if(g.solvedFlag||g.paused)return;H.SFX.pop();cur[k]++;upd();
+      const s=cur.h*100+cur.t*10+cur.u;if(s===P.val){g.fx.stars(tot);g.solved();}else if(s>P.val){g.bad(null);setTimeout(()=>{if(!g.solvedFlag){cur.h=cur.t=cur.u=0;upd();}},500);}};});
+    const rs=g.el('button','add',L.reset,bar);rs.onclick=()=>{cur.h=cur.t=cur.u=0;upd();};upd();
+  }
+});
+}
+</script></body></html>

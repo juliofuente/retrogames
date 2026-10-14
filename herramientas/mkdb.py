@@ -1,19 +1,26 @@
 # Genera ../data/arcade.sqlite con todos los juegos, colecciones y categorías.
 # Uso: python3 mkdb.py   (necesita Node.js: lee la definición real de cada juego con extract.js)
 # Al añadir un juego nuevo: créalo como siempre (src → mk.py → mkgames.py) y añade su id a CAT abajo.
-import json, os, re, sqlite3, subprocess, unicodedata, datetime
+# Los juegos educativos salen de mkedu.py (asignatura, edades y URL); no tienen «cómo se juega».
+import json, os, re, sqlite3, subprocess, sys, unicodedata, datetime
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import mkedu
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.join(HERE, '..')
 DB = os.path.join(ROOT, 'data', 'arcade.sqlite')
 
-COLLECTIONS = [
-    ('main', 'arcade-perdido', 'lost-arcade', 'Arcade Perdido', 'Lost Arcade', 'index.html',
+COLLECTIONS = [  # id, slug es, slug en, nombre es, nombre en, portada (desde la raíz), descripción es, descripción en, emoji
+    ('main', 'arcade-perdido', 'lost-arcade', 'Arcade Perdido', 'Lost Arcade', 'pwa/index.html',
      'Mecánicas de arcade de los 80 y 90 que fueron un éxito y nadie volvió a usar, rehechas para jugar con el dedo en el móvil o con el mando en la tele.',
-     'Arcade mechanics from the 80s and 90s that were hits and nobody reused, remade to play with your finger on a phone or with the remote on a TV.'),
-    ('pro', 'arcade-pro', 'arcade-pro', 'Arcade Pro', 'Arcade Pro', 'indexpro.html',
+     'Arcade mechanics from the 80s and 90s that were hits and nobody reused, remade to play with your finger on a phone or with the remote on a TV.', '🕹️'),
+    ('pro', 'arcade-pro', 'arcade-pro', 'Arcade Pro', 'Arcade Pro', 'pwa/indexpro.html',
      'Los grandes éxitos de los juegos de móvil (los que recrea Emanuele Feronato en su blog) hechos con emojis, niveles infinitos y sin anuncios.',
-     'The big mobile game hits (the ones Emanuele Feronato recreates on his blog) made with emojis, endless levels and no ads.'),
+     'The big mobile game hits (the ones Emanuele Feronato recreates on his blog) made with emojis, endless levels and no ads.', '✨'),
+    ('edu', 'educativos', 'educational', 'Educativos', 'Educational', 'educativos/index.html',
+     'Juegos para aprender jugando, de 3 a 16 años: mates (también con método ABN), lengua y vocabulario, lógica e inglés. Organizados por asignatura y por edad.',
+     'Games to learn through play, ages 3 to 16: maths (including the ABN method), language and vocabulary, logic and English. Organised by subject and age.', '🎓'),
 ]
 
 CATEGORIES = [
@@ -45,6 +52,9 @@ CATEGORIES = [
     ('deportes', 'deportes-y-carreras', 'sports-and-racing', 'Deportes y carreras', 'Sports and racing', '🏁', 'Sports',
      'Billar, minigolf, tiro con arco, esquí y circuitos de carreras.',
      'Pool, mini golf, archery, skiing and racing circuits.'),
+    ('educativos', 'educativos', 'educational', 'Educativos', 'Educational', '🎓', 'Educational',
+     'Juegos educativos para niños de 3 a 16 años: mates, lengua, lógica e inglés, con la dificultad adaptada a cada edad.',
+     'Educational games for kids aged 3 to 16: maths, language, logic and English, with difficulty adapted to each age.'),
 ]
 
 CAT = {
@@ -106,7 +116,9 @@ def main():
     db.executescript('''
     PRAGMA journal_mode = DELETE;
     CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT);
-    CREATE TABLE collections (id TEXT PRIMARY KEY, slug_es TEXT UNIQUE, slug_en TEXT UNIQUE, name_es TEXT, name_en TEXT, index_file TEXT, desc_es TEXT, desc_en TEXT, sort INTEGER);
+    CREATE TABLE collections (id TEXT PRIMARY KEY, slug_es TEXT UNIQUE, slug_en TEXT UNIQUE, name_es TEXT, name_en TEXT, index_file TEXT, desc_es TEXT, desc_en TEXT, emoji TEXT, sort INTEGER);
+    CREATE TABLE subjects (id TEXT PRIMARY KEY, slug_es TEXT UNIQUE, slug_en TEXT UNIQUE, name_es TEXT, name_en TEXT, emoji TEXT, color TEXT, desc_es TEXT, desc_en TEXT, sort INTEGER);
+    CREATE TABLE age_groups (id TEXT PRIMARY KEY, slug_es TEXT UNIQUE, slug_en TEXT UNIQUE, name_es TEXT, name_en TEXT, age_min INTEGER, age_max INTEGER, emoji TEXT, sort INTEGER);
     CREATE TABLE categories (id TEXT PRIMARY KEY, slug_es TEXT UNIQUE, slug_en TEXT UNIQUE, name_es TEXT, name_en TEXT, emoji TEXT, genre TEXT, desc_es TEXT, desc_en TEXT, sort INTEGER);
     CREATE TABLE controls (id TEXT PRIMARY KEY, slug_es TEXT UNIQUE, slug_en TEXT UNIQUE, name_es TEXT, name_en TEXT);
     CREATE TABLE games (
@@ -122,17 +134,31 @@ def main():
       tv TEXT,                             -- 'cruceta' | 'cursor' | NULL (no se puede jugar con mando)
       origin TEXT,                         -- juegos en los que se basa (texto tal cual)
       lives INTEGER, levels TEXT,          -- levels: 'infinite' | 'endless' | número
-      cap INTEGER, physics INTEGER, added_version TEXT, sort INTEGER
+      cap INTEGER, physics INTEGER, added_version TEXT, sort INTEGER,
+      -- solo juegos educativos (colección 'edu'):
+      subject_id TEXT REFERENCES subjects(id),
+      age_min INTEGER, age_max INTEGER,  -- edad recomendada
+      langs TEXT,                        -- idiomas de la interfaz, separados por comas
+      app TEXT,                          -- app a la que pertenece (Emoji Brain Academy, Fábrica de Frases…)
+      url TEXT                           -- dónde se juega, relativo a la raíz (para los demás: pwa/{file})
     );
+    CREATE TABLE game_age_groups (game_id TEXT REFERENCES games(id), age_group_id TEXT REFERENCES age_groups(id));
     CREATE TABLE based_on (game_id TEXT REFERENCES games(id), sort INTEGER, name TEXT, publisher TEXT, year INTEGER);
     CREATE INDEX games_cat ON games(category_id);
     CREATE INDEX games_col ON games(collection_id);
     CREATE INDEX games_ctrl ON games(control_id);
     CREATE INDEX based_game ON based_on(game_id);
+    CREATE INDEX games_subj ON games(subject_id);
+    CREATE INDEX gag_age ON game_age_groups(age_group_id);
     ''')
-    db.executemany('INSERT INTO meta VALUES (?,?)', [('version', version), ('generated', datetime.datetime.now().strftime('%Y-%m-%d')), ('total', str(len(games)))])
+    edu = mkedu.build()
+    db.executemany('INSERT INTO meta VALUES (?,?)', [('version', version), ('generated', datetime.datetime.now().strftime('%Y-%m-%d')), ('total', str(len(games) + len(edu)))])
     for i, c in enumerate(COLLECTIONS):
-        db.execute('INSERT INTO collections VALUES (?,?,?,?,?,?,?,?,?)', (c[0], c[1], c[2], c[3], c[4], c[5], c[6], c[7], i))
+        db.execute('INSERT INTO collections VALUES (?,?,?,?,?,?,?,?,?,?)', c + (i,))
+    for i, s in enumerate(mkedu.SUBJECTS):
+        db.execute('INSERT INTO subjects VALUES (?,?,?,?,?,?,?,?,?,?)', s + (i,))
+    for i, b in enumerate(mkedu.BANDS):
+        db.execute('INSERT INTO age_groups VALUES (?,?,?,?,?,?,?,?,?)', b + (i,))
     for i, c in enumerate(CATEGORIES):
         db.execute('INSERT INTO categories VALUES (?,?,?,?,?,?,?,?,?,?)', c + (i,))
     for es, (se, sn, en) in CTRL.items():
@@ -145,17 +171,36 @@ def main():
         used_en.add(se)
         lv = 'endless' if g['levels'] is None else 'infinite' if g['levels'] == 0 else str(g['levels'])
         bg = g.get('bg') or [None, None]
-        db.execute('INSERT INTO games VALUES (' + ','.join('?' * 31) + ')', (
+        db.execute('INSERT INTO games VALUES (' + ','.join('?' * 37) + ')', (
             g['id'], se, g['collection'], cat_of[g['id']], CTRL[g['ctrl']][0], g['file'], g['emoji'], g['color'], g['theme'], bg[0], bg[1], g.get('font'),
             json.dumps(g.get('deco') or [], ensure_ascii=False),
             g['title'], g['en']['title'], g['tag'], g['en']['tag'], g['desc'], g['en']['desc'], g['help_es'], g['help_en'], g.get('tvhelp_es'), g.get('tvhelp_en'),
-            g['tv'] or None, g['origin'], g['lives'], lv, g.get('cap'), int(g['phys']), ADDED.get(g['id']), g['order']))
+            g['tv'] or None, g['origin'], g['lives'], lv, g.get('cap'), int(g['phys']), ADDED.get(g['id']), g['order'],
+            None, None, None, 'es,en', None, 'pwa/' + g['file']))
         for k, (n, w, y) in enumerate(based_on(g['origin'])):
             db.execute('INSERT INTO based_on VALUES (?,?,?,?,?)', (g['id'], k, n, w, y))
+    subj = {s[0]: s for s in mkedu.SUBJECTS}
+    apps = {a[0]: a[1] for a in mkedu.APPS}
+    ids = set(cat_of)
+    for k, g in enumerate(edu):
+        gid = g['id'] if g['id'] not in ids else g['id'] + '-' + g['subject']   # p. ej. relojes (Arcade Pro) → relojes-mates
+        ids.add(gid)
+        se = mkedu.slugify(g['title']['en']) or gid
+        if se in used_en:
+            se = se + '-' + subj[g['subject']][2]   # clocks → clocks-maths
+        used_en.add(se)
+        col = subj[g['subject']][6]
+        db.execute('INSERT INTO games VALUES (' + ','.join('?' * 37) + ')', (
+            gid, se, 'edu', 'educativos', None, None, g['emoji'], col, col, col, '#101a2c', None, '[]',
+            g['title']['es'], g['title']['en'], g['desc']['es'], g['desc']['en'], g['desc']['es'], g['desc']['en'], None, None, None, None,
+            None, '', 0, 'infinite' if g['app'] == 'brain' else None, None, 0, '2.8.0', 10000 + k,
+            g['subject'], g['ages'][0], g['ages'][1], ','.join(g['langs']), apps[g['app']], g['url']))
+        for b in g['bands']:
+            db.execute('INSERT INTO game_age_groups VALUES (?,?)', (gid, b))
     db.commit()
     db.execute('VACUUM')
     db.close()
-    print('data/arcade.sqlite:', len(games), 'juegos · v' + version)
+    print('data/arcade.sqlite:', len(games), 'juegos +', len(edu), 'educativos · v' + version)
 
 
 if __name__ == '__main__':

@@ -1,0 +1,159 @@
+{
+ "es": [
+  {
+   "lvl": 1,
+   "e": "🐶",
+   "t": "El perro de Ana mueve la {cola|cuchara|nube} cuando está contento."
+  },
+  {
+   "lvl": 1,
+   "e": "🌧️",
+   "t": "Está lloviendo mucho. Marta abre su {paraguas|nevera|libro} para no mojarse."
+  },
+  {
+   "lvl": 1,
+   "e": "🍦",
+   "t": "En verano hace mucho {calor|frío|sueño} y nos apetece comer helados."
+  },
+  {
+   "lvl": 1,
+   "e": "🌙",
+   "t": "Por la {noche|mañana|playa} sale la luna y nos vamos a dormir."
+  },
+  {
+   "lvl": 1,
+   "e": "🐟",
+   "t": "Los peces viven en el {agua|desierto|armario}."
+  },
+  {
+   "lvl": 1,
+   "e": "🎂",
+   "t": "Hoy es el cumpleaños de Leo. Sopla las {velas|sillas|piedras} de la tarta."
+  },
+  {
+   "lvl": 1,
+   "e": "🧥",
+   "t": "Hace mucho frío y Pablo va a salir a la calle. Se pone el {abrigo|bañador|helado}."
+  },
+  {
+   "lvl": 1,
+   "e": "🐔",
+   "t": "La gallina pone {huevos|zapatos|lápices} en el corral."
+  },
+  {
+   "lvl": 1,
+   "e": "🪥",
+   "t": "Después de comer, me lavo los {dientes|zapatos|cuadernos} con el cepillo."
+  },
+  {
+   "lvl": 1,
+   "e": "📚",
+   "t": "En la biblioteca hay muchos {libros|peces|coches} para leer."
+  },
+  {
+   "lvl": 1,
+   "e": "🐸",
+   "t": "La rana vive cerca de la charca. Cuando ve una mosca, saca la {lengua|cola|oreja} y se la {come|pinta|lava}."
+  },
+  {
+   "lvl": 1,
+   "e": "✏️",
+   "t": "Para escribir en el cuaderno uso un {lápiz|tenedor|zapato}."
+  },
+  {
+   "lvl": 2,
+   "e": "🐢",
+   "t": "La tortuga es un animal muy lento. Tarda mucho en llegar a los sitios porque camina muy {despacio|deprisa|alto}."
+  },
+  {
+   "lvl": 2,
+   "e": "🧊",
+   "t": "Dejé un cubito de hielo al sol. Al rato, el hielo se había {derretido|congelado|dormido} y en su lugar había un charco de {agua|arena|leche}."
+  },
+  {
+   "lvl": 2,
+   "e": "🌱",
+   "t": "Planté una semilla y la regué todos los días. Pronto salió una pequeña {planta|pelota|piedra}. ¡Mi semilla había {crecido|nadado|cantado}!"
+  },
+  {
+   "lvl": 2,
+   "e": "🚒",
+   "t": "Hay un incendio en el bosque. Llegan los {bomberos|panaderos|astronautas} con mucha agua para apagar el {fuego|mar|cielo}."
+  },
+  {
+   "lvl": 2,
+   "e": "🛏️",
+   "t": "Lucas estaba muy cansado después de jugar toda la tarde. Bostezó, se puso el pijama y se fue a la {cama|piscina|escuela}."
+  },
+  {
+   "lvl": 2,
+   "e": "🍳",
+   "t": "Para hacer una tortilla, mamá rompe los {huevos|platos|vasos} y los bate en un {cuenco|zapato|bolsillo}."
+  },
+  {
+   "lvl": 2,
+   "e": "🐝",
+   "t": "Las abejas vuelan de flor en flor. Con lo que recogen de las flores fabrican la {miel|leche|lana}."
+  },
+  {
+   "lvl": 2,
+   "e": "🧤",
+   "t": "Está nevando mucho. Para que no se le congelen las manos, Sara se pone los {guantes|calcetines|gorros}."
+  },
+  {
+   "lvl": 2,
+   "e": "🏖️",
+   "t": "En la playa, Daniel construye un castillo de {arena|nieve|chocolate}. Después se baña en el {mar|horno|armario}."
+  },
+  {
+   "lvl": 2,
+   "e": "🎒",
+   "t": "Mañana hay excursión al campo. Hugo prepara la mochila: mete un bocadillo, una botella de {agua|tinta|arena} y una gorra para el {sol|frío|dinero}."
+  },
+  {
+   "lvl": 3,
+   "e": "🔦",
+   "t": "Una noche se fue la luz en casa y todo se quedó {oscuro|mojado|caliente}. Papá buscó una {linterna|toalla|cuchara} para poder ver. Al encenderla, por fin pudimos encontrar las {velas|sandías|bicicletas} del cajón."
+  },
+  {
+   "lvl": 3,
+   "e": "🚌",
+   "t": "El autobús del colegio sale a las ocho. Clara se levantó tarde y, cuando llegó a la parada, el autobús ya se había {ido|despertado|comido}. Tuvo que ir {andando|nadando|volando} y llegó {tarde|antes|ayer} a clase."
+  },
+  {
+   "lvl": 3,
+   "e": "🐕",
+   "t": "Toby, el perro de Iván, se escapó por la puerta abierta. Iván lo buscó por todo el barrio, muy {preocupado|aburrido|dormido}. Al final lo encontró en el parque, jugando con otros {perros|libros|semáforos}. Iván se puso tan {contento|triste|enfadado} que lo abrazó muy fuerte."
+  },
+  {
+   "lvl": 3,
+   "e": "🌈",
+   "t": "Por la mañana llovió muchísimo. Por la tarde salió el sol mientras todavía caían unas gotas, y en el cielo apareció un {arcoíris|submarino|tobogán} de muchos {colores|sabores|ruidos}."
+  },
+  {
+   "lvl": 3,
+   "e": "🪴",
+   "t": "En clase metimos una planta en un armario oscuro. Una semana después, sus hojas estaban amarillas y caídas. Así aprendimos que las plantas necesitan la {luz|oscuridad|música} para estar {sanas|mojadas|dormidas}."
+  },
+  {
+   "lvl": 3,
+   "e": "🦊",
+   "t": "El zorro tenía hambre y vio unas uvas en lo alto de una parra. Saltó y saltó, pero no las {alcanzaba|escuchaba|pintaba}. Al final se cansó y se marchó muy {enfadado|feliz|mojado}, con la tripa {vacía|llena|azul}."
+  },
+  {
+   "lvl": 3,
+   "e": "🧁",
+   "t": "Elena quería hacer magdalenas, pero en la despensa no quedaba {harina|arena|jabón}. Fue a la tienda, la compró y volvió a casa. Mezcló todo, lo metió en el {horno|frigorífico|cajón} y, al cabo de un rato, la cocina olía {genial|azul|redonda}."
+  },
+  {
+   "lvl": 3,
+   "e": "🧳",
+   "t": "La familia de Nora se iba de vacaciones en avión. En el aeropuerto, Nora se dio cuenta de que se había dejado el {billete|tobogán|cocodrilo} en casa. Su padre volvió corriendo a buscarlo y, por suerte, llegaron a tiempo antes de que el avión {despegara|nadara|ladrara}."
+  },
+  {
+   "lvl": 3,
+   "e": "🌡️",
+   "t": "Mateo se despertó con mucho calor y le dolía la cabeza. Su madre le puso el termómetro: tenía {fiebre|hambre|prisa}. Ese día no fue al colegio y se quedó en la {cama|piscina|azotea} descansando."
+  }
+ ]
+}

@@ -85,6 +85,12 @@
       <p data-es="Para Android TV / Fire TV: se juega con el mando (cruceta y OK), hasta 4 jugadores por turnos." data-en="For Android TV / Fire TV: play with the remote (D-pad and OK), up to 4 players taking turns."></p>
       <div class="count" id="c3"></div>
     </a>
+    <a class="card" href="educativos/index.html" style="--glow:#69db7c">
+      <div class="em">🎓</div>
+      <h2 data-es="Educativos" data-en="Educational"></h2>
+      <p data-es="Mates, lengua, lógica e inglés para niños de 3 a 16 años, por asignatura y edad." data-en="Maths, language, logic and English for kids aged 3 to 16, by subject and age."></p>
+      <div class="count" id="c4"></div>
+    </a>
   </div>
 
   <div class="small">
@@ -95,6 +101,7 @@
   <footer id="foot"></footer>
 </div>
 <script src="pwa/games.js"></script>
+<script src="educativos/juegos.js"></script>
 <script>
   (function () {
     var q = /[?&]lang=(es|en)/.exec(location.search), saved = null;
@@ -110,9 +117,11 @@
       var j = EN ? ' games' : ' juegos';
       document.getElementById('c1').textContent = n1 + j + ' ▶';
       document.getElementById('c2').textContent = n2 + j + ' ▶';
+      var n3 = window.EDU ? EDU.games.length : 0;
+      document.getElementById('c4').textContent = n3 + (EN ? ' educational games ▶' : ' juegos educativos ▶');
       document.getElementById('c3').textContent = tv + (EN ? ' games playable with a remote ▶' : ' juegos con mando ▶');
       document.getElementById('lang').textContent = EN ? '🇪🇸 Español' : '🇬🇧 English';
-      document.getElementById('foot').innerHTML = (n1 + n2) + j + (window.ARCADE_VERSION ? ' · v' + ARCADE_VERSION : '') + '<br>' +
+      document.getElementById('foot').innerHTML = (n1 + n2 + n3) + j + (window.ARCADE_VERSION ? ' · v' + ARCADE_VERSION : '') + '<br>' +
         (EN ? 'Install it as an app from the browser menu once inside a collection.' : 'Dentro de cada colección puedes instalarlo como app desde el menú del navegador.');
       document.querySelectorAll('a.card, .small a').forEach(function (a) { var u = a.getAttribute('href').split('?'), p = new URLSearchParams(u[1] || ''); p.set('lang', lang); a.setAttribute('href', u[0] + '?' + p.toString()); });
     }
@@ -125,9 +134,12 @@
       if (!words.length) { res.hidden = true; res.innerHTML = ''; return; }
       var all = (window.GAMES || []).map(function (g) { return [g, 'Arcade Perdido']; }).concat((window.GAMES_PRO || []).map(function (g) { return [g, 'Arcade Pro']; }));
       var hits = all.filter(function (x) { var g = x[0], h = norm([g.title, g.tag, g.desc, g.origin, g.ctrl, g.en && g.en.title, g.en && g.en.tag, g.en && g.en.desc].join(' ')); return words.every(function (w) { return h.indexOf(w) >= 0; }); });
+      var edu = window.EDU ? EDU.games.filter(function (g) { var h = norm([g.title.es, g.title.en, g.desc.es, g.desc.en, g.subject, 'educativo educational'].join(' ')); return words.every(function (w) { return h.indexOf(w) >= 0; }); }) : [];
       res.hidden = false;
-      res.innerHTML = hits.length ? hits.map(function (x) { var g = x[0], t = (EN && g.en && g.en.title) || g.title, d = (EN && g.en && g.en.tag) || g.tag;
+      res.innerHTML = hits.length || edu.length ? hits.map(function (x) { var g = x[0], t = (EN && g.en && g.en.title) || g.title, d = (EN && g.en && g.en.tag) || g.tag;
         return '<li><a href="pwa/' + esc(g.file) + '?lang=' + lang + '"><span class="e">' + g.emoji + '</span><span><b>' + esc(t) + '</b><small>' + esc(d) + ' · ' + x[1] + '</small></span></a></li>'; }).join('')
+        + edu.map(function (g) { var u = g.url + (g.app === 'brain' ? '&lang=' + lang : '');
+          return '<li><a href="' + esc(u) + '"><span class="e">' + g.emoji + '</span><span><b>' + esc(g.title[lang] || g.title.es) + '</b><small>' + esc(g.desc[lang] || g.desc.es) + ' · 🎓 ' + g.ages[0] + '–' + g.ages[1] + (EN ? ' yrs' : ' años') + '</small></span></a></li>'; }).join('')
         : '<li class="none">' + (EN ? 'No games found. Try e.g. Tetris, Zuma or 2048.' : 'No hay juegos con eso. Prueba por ejemplo Tetris, Zuma o 2048.') + '</li>';
     }
     qi.addEventListener('input', search);
