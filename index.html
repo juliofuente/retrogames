@@ -42,6 +42,15 @@
   .small a:hover { border-color: var(--muted); }
   .small b { display: block; }
   .small span.d { color: var(--muted); font-size: 13px; }
+  .search { margin: 0 0 18px; }
+  .search input { width: 100%; background: rgba(0,0,0,.25); border: 1.5px solid var(--line); color: var(--text); border-radius: 999px; padding: 14px 20px; font-size: 17px; outline: none; }
+  .search input:focus { border-color: #ffd43b; }
+  .results { list-style: none; padding: 0; margin: 0 0 24px; display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; }
+  .results a { display: flex; gap: 12px; align-items: center; text-decoration: none; color: var(--text); background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 10px 12px; }
+  .results a:hover, .results a:focus-visible { border-color: #ffd43b; outline: none; }
+  .results .e { font-size: 30px; width: 44px; text-align: center; flex: none; }
+  .results b { display: block; } .results small { color: var(--muted); font-size: 13px; }
+  .results .none { color: var(--muted); grid-column: 1 / -1; text-align: center; padding: 14px; }
   footer { margin-top: 36px; text-align: center; color: var(--muted); font-size: 13px; line-height: 1.6; }
 </style>
 </head>
@@ -54,7 +63,10 @@
     <div class="langs"><button id="lang"></button></div>
   </header>
 
-  <div class="grid">
+  <div class="search"><input type="search" id="q" autocomplete="off" enterkeyhint="search" data-ph-es="🔎 Buscar entre todos los juegos…" data-ph-en="🔎 Search all games…"></div>
+  <ul class="results" id="res" hidden></ul>
+
+  <div class="grid" id="cols">
     <a class="card" href="pwa/index.html" style="--glow:#ffb703">
       <div class="em">🕹️</div>
       <h2 data-es="Arcade Perdido" data-en="Lost Arcade"></h2>
@@ -104,8 +116,24 @@
         (EN ? 'Install it as an app from the browser menu once inside a collection.' : 'Dentro de cada colección puedes instalarlo como app desde el menú del navegador.');
       document.querySelectorAll('a.card, .small a').forEach(function (a) { var u = a.getAttribute('href').split('?'), p = new URLSearchParams(u[1] || ''); p.set('lang', lang); a.setAttribute('href', u[0] + '?' + p.toString()); });
     }
-    document.getElementById('lang').addEventListener('click', function () { lang = lang === 'en' ? 'es' : 'en'; try { localStorage.setItem('arc_lang', lang); } catch (e) {} render(); });
-    render();
+    var qi = document.getElementById('q'), res = document.getElementById('res');
+    function norm(t) { return String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''); }
+    function esc(t) { return String(t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+    function search() {
+      var EN = lang === 'en', words = norm(qi.value).split(/\s+/).filter(Boolean);
+      qi.placeholder = qi.getAttribute(EN ? 'data-ph-en' : 'data-ph-es'); qi.setAttribute('aria-label', EN ? 'Search' : 'Buscar');
+      if (!words.length) { res.hidden = true; res.innerHTML = ''; return; }
+      var all = (window.GAMES || []).map(function (g) { return [g, 'Arcade Perdido']; }).concat((window.GAMES_PRO || []).map(function (g) { return [g, 'Arcade Pro']; }));
+      var hits = all.filter(function (x) { var g = x[0], h = norm([g.title, g.tag, g.desc, g.origin, g.ctrl, g.en && g.en.title, g.en && g.en.tag, g.en && g.en.desc].join(' ')); return words.every(function (w) { return h.indexOf(w) >= 0; }); });
+      res.hidden = false;
+      res.innerHTML = hits.length ? hits.map(function (x) { var g = x[0], t = (EN && g.en && g.en.title) || g.title, d = (EN && g.en && g.en.tag) || g.tag;
+        return '<li><a href="pwa/' + esc(g.file) + '?lang=' + lang + '"><span class="e">' + g.emoji + '</span><span><b>' + esc(t) + '</b><small>' + esc(d) + ' · ' + x[1] + '</small></span></a></li>'; }).join('')
+        : '<li class="none">' + (EN ? 'No games found. Try e.g. Tetris, Zuma or 2048.' : 'No hay juegos con eso. Prueba por ejemplo Tetris, Zuma o 2048.') + '</li>';
+    }
+    qi.addEventListener('input', search);
+    qi.addEventListener('keydown', function (e) { if (e.key === 'Enter') { var a = res.querySelector('a'); if (a) location.href = a.href; } });
+    document.getElementById('lang').addEventListener('click', function () { lang = lang === 'en' ? 'es' : 'en'; try { localStorage.setItem('arc_lang', lang); } catch (e) {} render(); search(); });
+    render(); search();
   })();
 </script>
 </body>

@@ -212,3 +212,10 @@ html.tv .howto summary { font-size: 16px; }
 .vpad .up { left: 49px; top: 0; } .vpad .down { left: 49px; bottom: 0; } .vpad .left { left: 0; top: 49px; } .vpad .right { right: 0; top: 49px; }
 .vpad .ok { position: static; width: 84px; height: 84px; border-radius: 50%; font-size: 30px; background: color-mix(in srgb, var(--accent) 40%, rgba(255,255,255,.1)); }
 @media (max-height: 520px) { .vpad { background: none; pointer-events: none; } .vpad button { pointer-events: auto; } .vpad .dpad { width: 126px; height: 126px; } .vpad button { width: 44px; height: 44px; } .vpad .up, .vpad .down { left: 41px; } .vpad .left, .vpad .right { top: 41px; } .vpad .ok { width: 70px; height: 70px; } }
+
+/* ---------- buscador de las portadas ---------- */
+.search { margin: 0 0 12px; }
+.search input { width: 100%; box-sizing: border-box; background: rgba(255,255,255,.08); border: 1.5px solid rgba(255,255,255,.14); color: var(--ink); border-radius: 999px; padding: 12px 18px; font: 600 16px var(--font); outline: none; }
+.search input:focus { border-color: #ffd166; background: rgba(255,255,255,.12); }
+.search input::placeholder { color: rgba(255,255,255,.5); }
+.grid .empty { grid-column: 1 / -1; text-align: center; opacity: .75; padding: 30px 0; }

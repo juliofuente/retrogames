@@ -1,6 +1,6 @@
 ARCADE PERDIDO + ARCADE PRO — LO QUE ESTÁ HECHO
 ================================================
-Fecha: 14-10-2026 · Versión de la PWA (games.js → ARCADE_VERSION): 2.6.0
+Fecha: 14-10-2026 · Versión de la PWA (games.js → ARCADE_VERSION): 2.6.1
 Total: 41 juegos en la colección principal + 90 en la colección Pro = 131 juegos.
 
 CONTENIDO DEL ZIP
@@ -51,7 +51,11 @@ CARACTERÍSTICAS COMUNES A TODOS LOS JUEGOS
   recibir daño, celebra al ganar (repertorio en Arcade.FACES, forzable con g.mood()). Aplicado en ~60 juegos con héroe.
 · v2.6.0: enemigos comunes entre juegos (Arcade.FOES: calaveras, escorpiones, fantasmas, tiburones, zombis, vampiros,
   alienígenas…) y emojis orientados según su movimiento (Arcade.FACING + Arcade.emojiTo).
-· v2.6.0: pad virtual opcional (botón 🎮 del HUD) en los 126 juegos jugables con mando; no quita el control táctil.
+· v2.6.0: pad virtual (botón 🎮 del HUD) en los 126 juegos jugables con mando; desde v2.6.1 sale activado por
+  defecto (se puede ocultar con 🎮 y se recuerda). No quita el control táctil.
+· v2.6.1: buscador en las portadas (index.html raíz, pwa/index.html y pwa/indexpro.html): busca por nombre, lema,
+  descripción, control o juego original, en español e inglés y sin tildes; también muestra coincidencias de la otra
+  colección. La web PHP ya tenía su buscador (/buscar).
 · Táctil sin cruceta en pantalla, responsive (vertical y horizontal), emojis + efectos + música procedural.
 · Niveles infinitos (levels: 0) con dificultad creciente y tope (cap); estrellas al pasar nivel; récord guardado.
 · Español/inglés con detección automática (ES/CA/GL/EU → español) y botón para cambiar; ?lang=en fuerza idioma.

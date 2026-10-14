@@ -872,7 +872,7 @@
     /* --- pad virtual (táctil): cruceta + OK en pantalla, opcional ---
        En juegos con cursor (tv.targets) mueve el cursor como el mando de la tele; si no, envía flechas y espacio a key(). */
     const padOK = !TV && !!rdef && (!!rdef.targets || !!def.key) && def.pad !== false;
-    let padOn = padOK && A.get('pad', false);
+    let padOn = padOK && A.get('pad', true);   // por defecto visible si el juego puede usarla
     const pad = el('div', 'vpad', '<div class="dpad">' + ['up', 'left', 'right', 'down'].map((d) => `<button data-k="Arrow${d[0].toUpperCase() + d.slice(1)}" class="${d}" aria-label="${d}">${{ up: '▲', down: '▼', left: '◀', right: '▶' }[d]}</button>`).join('') + '</div><button class="ok" data-k="OK" aria-label="OK">●</button>');
     document.body.appendChild(pad);
     function padKey(k, down) {

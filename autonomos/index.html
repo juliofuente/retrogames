@@ -227,6 +227,13 @@ html.tv .howto summary { font-size: 16px; }
 .vpad .up { left: 49px; top: 0; } .vpad .down { left: 49px; bottom: 0; } .vpad .left { left: 0; top: 49px; } .vpad .right { right: 0; top: 49px; }
 .vpad .ok { position: static; width: 84px; height: 84px; border-radius: 50%; font-size: 30px; background: color-mix(in srgb, var(--accent) 40%, rgba(255,255,255,.1)); }
 @media (max-height: 520px) { .vpad { background: none; pointer-events: none; } .vpad button { pointer-events: auto; } .vpad .dpad { width: 126px; height: 126px; } .vpad button { width: 44px; height: 44px; } .vpad .up, .vpad .down { left: 41px; } .vpad .left, .vpad .right { top: 41px; } .vpad .ok { width: 70px; height: 70px; } }
+
+/* ---------- buscador de las portadas ---------- */
+.search { margin: 0 0 12px; }
+.search input { width: 100%; box-sizing: border-box; background: rgba(255,255,255,.08); border: 1.5px solid rgba(255,255,255,.14); color: var(--ink); border-radius: 999px; padding: 12px 18px; font: 600 16px var(--font); outline: none; }
+.search input:focus { border-color: #ffd166; background: rgba(255,255,255,.12); }
+.search input::placeholder { color: rgba(255,255,255,.5); }
+.grid .empty { grid-column: 1 / -1; text-align: center; opacity: .75; padding: 30px 0; }
 </style>
 <script>
 /* Arcade Perdido · configuración
@@ -296,6 +303,7 @@ function arcadeElegirIdioma(l) {
 <div class="wrap">
   <header class="brand" id="hdr"><div class="logo">🕹️</div><h1>Arcade Perdido</h1></header>
   <p class="tagline" data-i="tagline">Mecánicas de arcade que fueron un éxito y nadie volvió a usar, rehechas para jugar con el dedo.</p>
+  <div class="search"><input type="search" id="q" placeholder="🔎 Buscar juego…" aria-label="Buscar" autocomplete="off" enterkeyhint="search"></div>
   <div class="bar" id="filters">
     <button class="chip on" data-f="" data-i="all">Todos</button>
     <button class="chip" data-f="Tocar" data-i="tap">👆 Tocar</button>
@@ -314,7 +322,7 @@ function arcadeElegirIdioma(l) {
 /* Arcade Perdido · lista de juegos.
    Para añadir un juego: crea su archivo .html y añade aquí una línea.
    Sube VERSION cada vez que cambies archivos para que el móvil descargue la versión nueva. */
-var ARCADE_VERSION = '2.6.0';
+var ARCADE_VERSION = '2.6.1';
 var GAMES = [
   { file: 'lazo.html',      id: 'lazo',      title: 'Lazo',      emoji: '🪢', color: '#ffb703', origin: 'Libble Rabble (Namco, 1983)',   desc: 'Dos dedos, una cuerda. Rodea las setas y junta los extremos para atraparlas.', ctrl: 'Dos dedos', tv: false, tag: "Atrapa setas con una cuerda encantada", en: {"title": "Lasso", "desc": "Two fingers, one rope. Surround the mushrooms and join both ends to catch them.", "tag": "Catch mushrooms with an enchanted rope", "ctrl": "Two fingers"} },
   { file: 'pivote.html',    id: 'pivote',    title: 'Pivote',    emoji: '🐡', color: '#4cc9f0', origin: 'Clu Clu Land (Nintendo, 1984)', desc: 'Nunca te paras. Gira en los postes para descubrir el oro escondido… sin pasar dos veces.', ctrl: 'Deslizar', tv: 'cruceta', tag: "El pez globo que nunca se para", en: {"title": "Pivot", "desc": "You never stop. Swing around the posts to uncover hidden gold… without passing twice.", "tag": "The pufferfish that never stops", "ctrl": "Swipe"} },
@@ -468,20 +476,37 @@ var GAMES_PRO = [
   }
   { const o = document.getElementById('other'); o.href = 'indexpro.html?lang=' + (EN ? 'en' : 'es');
   }
-  function render(filter) {
-    grid.innerHTML = '';
-    GAMES.filter(g => !filter || g.ctrl.indexOf(filter) === 0).forEach(g => {
-      const best = get('best_' + g.id, 0), done = get('done_' + g.id, false);
-      const a = document.createElement('a');
-      a.className = 'gc'; a.href = g.file + '?lang=' + (EN ? 'en' : 'es'); a.style.setProperty('--c', g.color);
-      a.innerHTML = `${best ? '' : `<span class="new">${EN ? 'NEW' : 'NUEVO'}</span>`}
-        <div class="em">${g.emoji}</div><h3>${loc(g, 'title')}</h3><div class="or">${g.origin}</div>
-        <p>${loc(g, 'desc')}</p>
-        <div class="ft"><span>${loc(g, 'ctrl')}</span><span>${done ? '🏆 ' : '⭐ '}${best}</span></div>`;
-      grid.appendChild(a);
-    });
+  const norm = (t) => String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  const hay = (g) => norm([g.title, g.tag, g.desc, g.origin, g.ctrl, g.en && g.en.title, g.en && g.en.tag, g.en && g.en.desc].join(' '));
+  let curF = '', curQ = '';
+  function card(g, other) {
+    const best = get('best_' + g.id, 0), done = get('done_' + g.id, false);
+    const a = document.createElement('a');
+    a.className = 'gc'; a.href = g.file + '?lang=' + (EN ? 'en' : 'es'); a.style.setProperty('--c', g.color);
+    a.innerHTML = `${other ? `<span class="new" style="background:#9775fa">${other}</span>` : best ? '' : `<span class="new">${EN ? 'NEW' : 'NUEVO'}</span>`}
+      <div class="em">${g.emoji}</div><h3>${loc(g, 'title')}</h3><div class="or">${g.origin}</div>
+      <p>${loc(g, 'desc')}</p>
+      <div class="ft"><span>${loc(g, 'ctrl')}</span><span>${done ? '🏆 ' : '⭐ '}${best}</span></div>`;
+    return a;
   }
-  render('');
+  function render(filter) {
+    if (filter !== undefined) curF = filter;
+    const words = norm(curQ).split(/\s+/).filter(Boolean);
+    const ok = (g) => (!curF || g.ctrl.indexOf(curF) === 0) && words.every((w) => hay(g).indexOf(w) >= 0);
+    grid.innerHTML = '';
+    const mine = GAMES.filter(ok);
+    mine.forEach((g) => grid.appendChild(card(g)));
+    // con búsqueda, también enseña los de la otra colección
+    const others = words.length ? (window.GAMES_PRO || []).filter(ok) : [];
+    others.forEach((g) => grid.appendChild(card(g, '✨ Arcade Pro')));
+    if (!mine.length && !others.length) { const p = document.createElement('p'); p.className = 'empty'; p.textContent = EN ? 'No games found. Try another word (e.g. Tetris, Zuma, 2048).' : 'No hay juegos con eso. Prueba otra palabra (por ejemplo: Tetris, Zuma, 2048).'; grid.appendChild(p); }
+  }
+  const qi = document.getElementById('q');
+  if (EN) { qi.placeholder = '🔎 Search games…'; qi.setAttribute('aria-label', 'Search'); }
+  try { const u = new URLSearchParams(location.search).get('q'); if (u) { qi.value = u; curQ = u; } } catch (_) {}
+  qi.addEventListener('input', () => { curQ = qi.value; render(); });
+  qi.addEventListener('keydown', (e) => { if (e.key === 'Enter') { const f = grid.querySelector('a.gc'); if (f && qi.value.trim()) location.href = f.href; } });
+  render();
   document.getElementById('filters').addEventListener('click', e => {
     const b = e.target.closest('[data-f]'); if (!b) return;
     document.querySelectorAll('[data-f]').forEach(x => x.classList.toggle('on', x === b));

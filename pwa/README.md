@@ -45,7 +45,7 @@ Para añadir un juego Pro: crea su `.html` y añade una línea a `GAMES_PRO`.
 
 ## Pad virtual (táctil)
 
-En el HUD aparece el botón 🎮 en todos los juegos que se pueden jugar con mando (`tv` no es `false`). Muestra una cruceta y un botón OK abajo, sin quitar el control táctil normal; se recuerda en el dispositivo. En juegos con `tv.targets` el pad mueve el cursor de casillas igual que el mando de la tele; en el resto envía flechas y espacio a `key()`. Para quitarlo de un juego: `pad: false`.
+En el HUD aparece el botón 🎮 en todos los juegos que se pueden jugar con mando (`tv` no es `false`). Muestra una cruceta y un botón OK abajo, sin quitar el control táctil normal. Sale activado por defecto; si el jugador lo oculta, se recuerda en el dispositivo. En juegos con `tv.targets` el pad mueve el cursor de casillas igual que el mando de la tele; en el resto envía flechas y espacio a `key()`. Para quitarlo de un juego: `pad: false`.
 
 ## Modo TV (Fire TV, Android TV…)
 

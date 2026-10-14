@@ -21,6 +21,7 @@
 <div class="wrap">
   <header class="brand" id="hdr"><div class="logo">✨</div><h1>Arcade Pro</h1></header>
   <p class="tagline" data-i="tagline">Los éxitos de móvil que Emanuele Feronato recrea en Phaser, hechos aquí desde cero con JavaScript y emojis, con animaciones y niveles sin fin.</p>
+  <div class="search"><input type="search" id="q" placeholder="🔎 Buscar juego…" aria-label="Buscar" autocomplete="off" enterkeyhint="search"></div>
   <div class="bar" id="filters">
     <button class="chip on" data-f="" data-i="all">Todos</button>
     <button class="chip" data-f="Tocar" data-i="tap">👆 Tocar</button>
@@ -51,20 +52,37 @@
   }
   { const o = document.getElementById('other'); o.href = 'index.html?lang=' + (EN ? 'en' : 'es');
   }
-  function render(filter) {
-    grid.innerHTML = '';
-    GAMES_PRO.filter(g => !filter || g.ctrl.indexOf(filter) === 0).forEach(g => {
-      const best = get('best_' + g.id, 0), done = get('done_' + g.id, false);
-      const a = document.createElement('a');
-      a.className = 'gc'; a.href = g.file + '?lang=' + (EN ? 'en' : 'es'); a.style.setProperty('--c', g.color);
-      a.innerHTML = `${best ? '' : `<span class="new">${EN ? 'NEW' : 'NUEVO'}</span>`}
-        <div class="em">${g.emoji}</div><h3>${loc(g, 'title')}</h3><div class="or">${g.origin}</div>
-        <p>${loc(g, 'desc')}</p>
-        <div class="ft"><span>${loc(g, 'ctrl')}</span><span>${done ? '🏆 ' : '⭐ '}${best}</span></div>`;
-      grid.appendChild(a);
-    });
+  const norm = (t) => String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  const hay = (g) => norm([g.title, g.tag, g.desc, g.origin, g.ctrl, g.en && g.en.title, g.en && g.en.tag, g.en && g.en.desc].join(' '));
+  let curF = '', curQ = '';
+  function card(g, other) {
+    const best = get('best_' + g.id, 0), done = get('done_' + g.id, false);
+    const a = document.createElement('a');
+    a.className = 'gc'; a.href = g.file + '?lang=' + (EN ? 'en' : 'es'); a.style.setProperty('--c', g.color);
+    a.innerHTML = `${other ? `<span class="new" style="background:#9775fa">${other}</span>` : best ? '' : `<span class="new">${EN ? 'NEW' : 'NUEVO'}</span>`}
+      <div class="em">${g.emoji}</div><h3>${loc(g, 'title')}</h3><div class="or">${g.origin}</div>
+      <p>${loc(g, 'desc')}</p>
+      <div class="ft"><span>${loc(g, 'ctrl')}</span><span>${done ? '🏆 ' : '⭐ '}${best}</span></div>`;
+    return a;
   }
-  render('');
+  function render(filter) {
+    if (filter !== undefined) curF = filter;
+    const words = norm(curQ).split(/\s+/).filter(Boolean);
+    const ok = (g) => (!curF || g.ctrl.indexOf(curF) === 0) && words.every((w) => hay(g).indexOf(w) >= 0);
+    grid.innerHTML = '';
+    const mine = GAMES_PRO.filter(ok);
+    mine.forEach((g) => grid.appendChild(card(g)));
+    // con búsqueda, también enseña los de la otra colección
+    const others = words.length ? (window.GAMES || []).filter(ok) : [];
+    others.forEach((g) => grid.appendChild(card(g, '🕹️ Arcade Perdido')));
+    if (!mine.length && !others.length) { const p = document.createElement('p'); p.className = 'empty'; p.textContent = EN ? 'No games found. Try another word (e.g. Tetris, Zuma, 2048).' : 'No hay juegos con eso. Prueba otra palabra (por ejemplo: Tetris, Zuma, 2048).'; grid.appendChild(p); }
+  }
+  const qi = document.getElementById('q');
+  if (EN) { qi.placeholder = '🔎 Search games…'; qi.setAttribute('aria-label', 'Search'); }
+  try { const u = new URLSearchParams(location.search).get('q'); if (u) { qi.value = u; curQ = u; } } catch (_) {}
+  qi.addEventListener('input', () => { curQ = qi.value; render(); });
+  qi.addEventListener('keydown', (e) => { if (e.key === 'Enter') { const f = grid.querySelector('a.gc'); if (f && qi.value.trim()) location.href = f.href; } });
+  render();
   document.getElementById('filters').addEventListener('click', e => {
     const b = e.target.closest('[data-f]'); if (!b) return;
     document.querySelectorAll('[data-f]').forEach(x => x.classList.toggle('on', x === b));
