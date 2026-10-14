@@ -1091,9 +1091,9 @@
    "innovabn": "abn"
   },
   {
-   "id": "maceta",
-   "file": "games/maceta.html",
-   "emoji": "🪴",
+   "id": "comilon",
+   "file": "games/comilon.html",
+   "emoji": "😋",
    "cat": "math",
    "ages": [
     3,
@@ -1101,14 +1101,14 @@
     9
    ],
    "name": {
-    "en": "Water the Plant",
-    "es": "Riega la maceta",
-    "fr": "Arrose la plante"
+    "en": "Feed the Muncher",
+    "es": "Dale de comer",
+    "fr": "Nourris le glouton"
    },
    "desc": {
-    "en": "Where is the number on the line? Aim the water!",
-    "es": "¿Dónde está el número en la recta? ¡Apunta con el agua!",
-    "fr": "Où est le nombre sur la droite ? Vise avec l'eau !"
+    "en": "Where is the number on the line? Make the food drop into its mouth!",
+    "es": "¿Dónde está el número en la recta? ¡Que la comida le caiga en la boca!",
+    "fr": "Où est le nombre sur la droite ? Fais tomber la nourriture dans sa bouche !"
    },
    "innovabn": "num"
   },

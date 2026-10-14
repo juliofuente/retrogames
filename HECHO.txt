@@ -2,7 +2,7 @@ ARCADE PERDIDO + ARCADE PRO — LO QUE ESTÁ HECHO
 ================================================
 Fecha: 14-10-2026 · Versión de la PWA (games.js → ARCADE_VERSION): 2.9.0
 · v2.9.0: 23 minijuegos ABN nuevos en Emoji Brain Academy (ahora 69): doble recta para sumar y restar, saltos en la
-  recta hacia delante y hacia atrás, Riega la maceta (estimar posiciones en la recta con marcas ¼ ⅓ ½ ⅔ ¾ y maceta
+  recta hacia delante y hacia atrás, Dale de comer (estimar posiciones en la recta con marcas ¼ ⅓ ½ ⅔ ¾: cae comida y el comilón tiene una zona de boca
   cada vez más estrecha), resta por detracción, doble resta, suma de tres, truco del 9, tablas con trucos, haces y
   palillos, vecinos, hasta el redondo, número escondido, problemas de cambio/combinación y de comparación/igualación,
   por 10/100, reparto, formas de un número, fracciones de una cantidad, cuántas decenas tiene, cálculo relámpago y
