@@ -120,6 +120,8 @@ Requisitos: Python 3, Node.js, y para las pruebas: pip install playwright && pla
    · python3 mk.py id1 id2 …                    → crea pwa/<id>.html
    · Subir ARCADE_VERSION en pwa/games.js (p. ej. 2.5.0) para que la PWA se actualice en los móviles.
    · python3 ../pwa/build.py                     → regenera autonomos/ (todos los .html autónomos)
+   · Añade el id del juego a su categoría en CAT (herramientas/mkdb.py) y, si es nuevo, a ADDED con la versión.
+   · python3 mkdb.py                             → regenera data/arcade.sqlite (la web PHP lee de ahí)
    · node --check src/<id>.js para comprobar sintaxis.
 
 3) Probar
@@ -133,7 +135,11 @@ Requisitos: Python 3, Node.js, y para las pruebas: pip install playwright && pla
    · Revisar las capturas: que se vea bien en vertical (390×780) y en TV (960×540).
 
 4) Publicar
-   · Subir la carpeta pwa/ entera a un servidor HTTPS (o usar los de autonomos/ para abrirlos sueltos).
+   · Se trabaja directamente en la rama main (sin ramas).
+   · GitHub Pages: sirve index.html (estático) → https://juliofuente.github.io/retrogames/
+   · Hosting con PHP + Apache: sube todo el repositorio (index.php, .htaccess, data/, pwa/, autonomos/). Necesita
+     mod_rewrite y la extensión pdo_sqlite. Si va en una subcarpeta y las URLs fallan, activa RewriteBase en .htaccess.
+     Después, da de alta https://tudominio/sitemap.xml en Google Search Console.
 
 PROMPT SUGERIDO PARA CLAUDE CODE
 --------------------------------

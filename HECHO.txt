@@ -28,6 +28,23 @@ herramientas/ Para seguir desarrollando:
               · mock.js        motor falso para simular juegos en Node (pruebas de balance/solubilidad)
               · tall.py / ttv.py / t8n.py  pruebas Playwright: táctil, TV (1 y 2 jugadores), textos en inglés
 
+WEB SEO (raíz del repositorio, para un hosting con PHP 7.4+ y Apache)
+--------------------------------------------------------------------
+· index.php        router + páginas generadas desde la base de datos (sin dependencias externas: ni CDN ni fuentes).
+                   Rutas en español sin prefijo y en inglés bajo /en/: /juego/{id} · /en/game/{slug}, /categoria/…,
+                   /coleccion/…, /control/…, /tv, /juegos (A–Z), /buscar?q= (noindex), /jugar/{id} (redirige al juego),
+                   /icono/{id}.svg, /sitemap.xml (con hreflang) y /robots.txt.
+                   SEO: title/description únicos, canonical, hreflang es/en/x-default, Open Graph, Twitter, migas de pan,
+                   FAQ visible y JSON-LD (@graph) con Organization, WebSite+SearchAction, MobileApplication+WebApplication,
+                   CollectionPage/ItemPage, ItemList, BreadcrumbList, VideoGame+MobileApplication (isBasedOn, gamePlatform,
+                   playMode, numberOfPlayers, offers gratis, PlayAction, gameTip) y FAQPage.
+· .htaccess        URLs amigables (mod_rewrite), bloquea data/ y herramientas/, compresión y caché.
+· data/arcade.sqlite  131 juegos con toda su info (títulos, lemas, descripciones, cómo se juega y controles TV en
+                   es/en, emoji, colores, control, vidas, niveles, colección, categoría y juegos en que se basa).
+                   Tablas: meta, collections, categories (9), controls (6), games, based_on.
+                   Se regenera con: cd herramientas && python3 mkdb.py (lee los juegos reales con extract.js).
+· index.html       portada estática para GitHub Pages (https://juliofuente.github.io/retrogames/); en Apache manda index.php.
+
 CARACTERÍSTICAS COMUNES A TODOS LOS JUEGOS
 ------------------------------------------
 · Táctil sin cruceta en pantalla, responsive (vertical y horizontal), emojis + efectos + música procedural.
