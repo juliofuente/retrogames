@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Fair Share</title></head>
+<body><script>
+const H=window.parent&&window.parent!==window?window.parent.Hub:null;
+if(!H){location.replace('../index.html');}
+</script><script src="abnkit.js"></script><script>
+if(H){
+// Reparto justo: repartir N cosas entre k amigos a partes iguales; con los mayores, también lo que sobra.
+const {ri,pick}=ABN;
+const ITEMS=['🍪','🍓','🍬','🧁','🍇','🥕','⚽','🖍️'],KIDS=['🧒','👧','👦','🧒🏽','👧🏻','👦🏾'];
+const TX={es:{p:(n,k)=>`🍽️ Reparte ${n} entre ${k} amigos a partes iguales`,each:'¿Cuántos le tocan a cada uno?',left:'¿Y cuántos sobran?',done:(n,k,q,s)=>`✅ ${n} entre ${k} = ${q} cada uno`+(s?` y sobran ${s}`:'')},
+          en:{p:(n,k)=>`🍽️ Share ${n} equally between ${k} friends`,each:'How many does each friend get?',left:'And how many are left over?',done:(n,k,q,s)=>`✅ ${n} shared by ${k} = ${q} each`+(s?`, ${s} left over`:'')}};
+const css=ABN.CSS+`.plates{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;max-width:540px;margin:0 auto}.plates div{background:#fff;border-radius:14px;padding:4px 6px;text-align:center;min-width:52px;box-shadow:0 3px 8px rgba(45,42,74,.08)}
+.plates b{display:block;font-size:1.5rem}.plates span{font-size:.95rem;letter-spacing:-1px}`;
+H.start(window,{id:'reparto',mode:'rounds',css,
+  timer:D=>Math.max(20,Math.round(60*Math.pow(.93,D))),
+  round(g){
+    const L=ABN.L(g,TX),r=g.r,D=g.D,k=D<2?2:D<4?ri(r,2,4):D<6?ri(r,3,6):ri(r,3,9),q=D<2?ri(r,1,5):D<4?ri(r,2,6):D<6?ri(r,3,9):ri(r,6,25),s=D<3?0:ri(r,0,k-1),n=k*q+s,e=pick(r,ITEMS);
+    g.prompt(L.p(n,k));
+    const pile=n<=48?ABN.emojis(g,n,e,g.stage,n>24?'sm':''):null;
+    const pl=g.el('div','plates',null,g.stage),pls=[];for(let i=0;i<k;i++){const d=g.el('div',null,`<b>${KIDS[i%KIDS.length]}</b><span></span>`,pl);pls.push(d);}
+    const ask=g.el('div','ask',L.each,g.stage),box=g.el('div','k-ans',null,g.stage);
+    const fin=()=>{ask.innerHTML=L.done(n,k,q,s);g.solved();};
+    g.choices(ABN.opts(r,q,[q+1,q-1,n-k,k,q*2,q+s],4,1),(v,b)=>{b.textContent=v;},(v,b)=>{
+      if(v!==q){g.bad(b);return;}box.querySelectorAll('button').forEach(x=>x.disabled=true);
+      pls.forEach(d=>{d.querySelector('span').textContent=q<=12?e.repeat(q):e+'×'+q;});if(pile)pile.textContent=e.repeat(s);
+      if(!s){b.classList.add('k-right');g.fx.stars(b);fin();return;}
+      g.good(b);ask.textContent=L.left;box.innerHTML='';
+      g.choices(ABN.opts(r,s,[s+1,s-1,k,0,k-s],4,0),(v2,b2)=>{b2.textContent=v2;},(v2,b2)=>{if(v2!==s){g.bad(b2);return;}b2.classList.add('k-right');g.fx.stars(b2);fin();},4,box);
+      if(g.refit)g.refit();},4,box);
+  }
+});
+}
+</script></body></html>

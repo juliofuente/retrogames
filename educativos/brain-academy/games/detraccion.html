@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Take-away Subtraction</title></head>
+<body><script>
+const H=window.parent&&window.parent!==window?window.parent.Hub:null;
+if(!H){location.replace('../index.html');}
+</script><script src="abnkit.js"></script><script>
+if(H){
+// Resta ABN por detracción: se va quitando el sustraendo a trozos (centenas, decenas, lo que lleva a la decena y el resto).
+const {ri}=ABN;
+const TX={es:{p:(m,s)=>`➖ ${m} − ${s}: quita el ${s} a trozos`,h:['Quito','Queda','Falta por quitar'],ask:(x,c)=>`Quitamos <b>${x}</b> al <b>${c}</b>: ¿cuánto queda?`,done:(m,s,r)=>`✅ ${m} − ${s} = ${r}`},
+          en:{p:(m,s)=>`➖ ${m} − ${s}: take ${s} away in chunks`,h:['Take','Left','Still to take'],ask:(x,c)=>`Take <b>${x}</b> from <b>${c}</b>: how much is left?`,done:(m,s,r)=>`✅ ${m} − ${s} = ${r}`}};
+function gen(r,D){
+  for(let t=0;t<300;t++){let M,S;
+    if(D<3){M=ri(r,11,19);S=ri(r,3,9);}else if(D<5){M=ri(r,31,99);S=ri(r,12,M-8);}else if(D<7){M=ri(r,100,199);S=ri(r,25,M-10);}else{M=ri(r,300,999);S=ri(r,120,M-50);}
+    if(S>=M)continue;
+    const parts=[],h=Math.floor(S/100)*100,te=Math.floor(S%100/10)*10,u=S%10;if(h)parts.push(h);if(te)parts.push(te);
+    if(u){const c=(M-h-te)%10;if(u>c&&c>0)parts.push(c,u-c);else parts.push(u);}
+    if(parts.length<2)continue;
+    return{M,S,parts};}
+  return{M:15,S:7,parts:[5,2]};
+}
+H.start(window,{id:'detraccion',mode:'rounds',css:ABN.CSS,
+  timer:D=>Math.max(30,Math.round(100*Math.pow(.93,D))),
+  round(g){
+    const P=gen(g.r,g.D),L=ABN.L(g,TX);g.prompt(L.p(P.M,P.S));
+    let cur=P.M,left=P.S;
+    const steps=P.parts.map(x=>{const s={ask:L.ask(x,cur),ans:cur-x,dis:[cur-x+10,cur-x-10,cur-x+1,cur-x-1,cur+x],row:[x,cur-x,left-x],qi:1};cur-=x;left-=x;return s;});
+    steps[steps.length-1].done=L.done(P.M,P.S,P.M-P.S);
+    ABN.steps(g,L.h,steps,null,['',P.M,P.S]);
+  }
+});
+}
+</script></body></html>

@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Ways to Make a Number</title></head>
+<body><script>
+const H=window.parent&&window.parent!==window?window.parent.Hub:null;
+if(!H){location.replace('../index.html');}
+</script><script src="abnkit.js"></script><script>
+if(H){
+// Muchas formas de hacer un número (descomposiciones libres, como en ABN): 47 = 40+7 = 30+17 = 20+27…
+const {ri,pick,shuf}=ABN;
+const TX={es:{no:n=>`🧩 ¿Cuál <b>NO</b> es una forma de hacer el <b>${n}</b>?`,yes:n=>`🧩 ¿Cuál <b>SÍ</b> es una forma de hacer el <b>${n}</b>?`},
+          en:{no:n=>`🧩 Which one does <b>NOT</b> make <b>${n}</b>?`,yes:n=>`🧩 Which one <b>DOES</b> make <b>${n}</b>?`}};
+function split(r,n,parts){const out=[];let left=n;for(let i=parts-1;i>0;i--){const step=n>=100?10:1;const v=Math.max(step,Math.floor(ri(r,1,Math.max(1,Math.floor(left*.7)))/step)*step);out.push(v);left-=v;}out.push(left);return out.filter(x=>x>0);}
+H.start(window,{id:'formas',mode:'rounds',css:ABN.CSS,
+  timer:D=>Math.max(15,Math.round(45*Math.pow(.92,D))),
+  round(g){
+    const L=ABN.L(g,TX),r=g.r,D=g.D,n=D<2?ri(r,5,10):D<4?ri(r,12,40):D<6?ri(r,25,99):ri(r,120,999),parts=D<5?2:pick(r,[2,3]),neg=r()<.5;
+    const good=new Set(),bad=new Set();let t=0;
+    while(good.size<(neg?3:1)&&t++<200){const p=split(r,n,parts);if(p.length>=2)good.add(p.join(' + '));}
+    const errs=[1,-1,10,-10,2];t=0;
+    while(bad.size<(neg?1:3)&&t++<200){const p=split(r,n,parts),e=pick(r,errs),i=ri(r,0,p.length-1);p[i]+=e;if(p[i]>0)bad.add(p.join(' + '));}
+    const items=shuf(r,[...good].map(s=>({s,ok:true})).concat([...bad].map(s=>({s,ok:false}))));
+    g.prompt(neg?L.no(n):L.yes(n));g.el('div','big',`<b>${n}</b>`,g.stage);
+    g.choices(items,(o,b)=>{b.textContent=o.s;b.style.fontSize='1.25rem';},(o,b)=>{if(o.ok===neg){g.bad(b);return;}b.classList.add('k-right');g.fx.stars(b);g.solved();},2);
+  }
+});
+}
+</script></body></html>

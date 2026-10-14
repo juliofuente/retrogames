@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>The Hidden Number</title></head>
+<body><script>
+const H=window.parent&&window.parent!==window?window.parent.Hub:null;
+if(!H){location.replace('../index.html');}
+</script><script src="abnkit.js"></script><script>
+if(H){
+// El número escondido: a + ? = c, ? + b = c, c − ? = a, ? − b = a.
+const {ri,pick}=ABN;
+const TX={es:{q:'🙈 ¿Qué número se ha escondido?'},en:{q:'🙈 Which number is hiding?'}};
+function item(r,D){
+  const max=D<1?6:D<2?10:D<3?20:D<4?50:D<6?100:1000;
+  const a=ri(r,1,Math.max(2,Math.floor(max*.6))),b=ri(r,1,Math.max(1,max-a)),c=a+b,k=pick(r,D<1.5?[0,1]:[0,1,2,3]);
+  if(k===0)return{big:`<b>${a}</b>+<i>?</i>=<b>${c}</b>`,ans:b,dis:[c,b+1,b-1,a,b+10]};
+  if(k===1)return{big:`<i>?</i>+<b>${b}</b>=<b>${c}</b>`,ans:a,dis:[c,a+1,a-1,b,a+10]};
+  if(k===2)return{big:`<b>${c}</b>−<i>?</i>=<b>${a}</b>`,ans:b,dis:[c+a,b+1,b-1,a,b+10]};
+  return{big:`<i>?</i>−<b>${b}</b>=<b>${a}</b>`,ans:c,dis:[a-b>0?a-b:a+1,c+1,c-1,c+10,c-10]};
+}
+H.start(window,{id:'escondido',mode:'rounds',css:ABN.CSS,
+  timer:D=>Math.round(3*Math.max(6,15*Math.pow(.9,D))),
+  round(g){const L=ABN.L(g,TX);ABN.burst(g,[0,1,2].map(()=>Object.assign({q:L.q},item(g.r,g.D))));}
+});
+}
+</script></body></html>

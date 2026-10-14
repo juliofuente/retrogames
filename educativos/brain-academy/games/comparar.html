@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Problems: Compare and Equalise</title></head>
+<body><script>
+const H=window.parent&&window.parent!==window?window.parent.Hub:null;
+if(!H){location.replace('../index.html');}
+</script><script src="abnkit.js"></script><script>
+if(H){
+// Problemas ABN de COMPARACIÓN (¿cuántos más / menos?) y de IGUALACIÓN (¿cuántos le faltan para tener los mismos?).
+const {ri,pick,shuf}=ABN;
+const NAMES=['Ana','Leo','Sara','Hugo','Lucía','Pablo','Mía','Dani','Noa','Iker'];
+const ITEMS=[['🐟','peces','fish'],['🚗','cochecitos','toy cars'],['📚','libros','books'],['🃏','cromos','stickers'],['🍬','caramelos','sweets'],['🦖','dinosaurios','dinosaurs']];
+const TX={es:{type:{m:'Comparación · ¿cuántos más?',l:'Comparación · ¿cuántos menos?',f:'Igualación · ¿cuántos faltan?',bm:'Comparación · el que tiene más',bl:'Comparación · el que tiene menos',e:'Igualación · ¿cuántos tiene?'},
+            m:(x,y,a,b,it)=>`${x} tiene ${a} ${it} y ${y} tiene ${b}. ¿Cuántos ${it} tiene ${x} más que ${y}?`,
+            l:(x,y,a,b,it)=>`${x} tiene ${a} ${it} y ${y} tiene ${b}. ¿Cuántos ${it} tiene ${y} menos que ${x}?`,
+            f:(x,y,a,b,it)=>`${x} tiene ${a} ${it} y ${y} tiene ${b}. ¿Cuántos le faltan a ${y} para tener los mismos que ${x}?`,
+            bm:(x,y,a,b,it)=>`${y} tiene ${b} ${it}. ${x} tiene ${a-b} más que ${y}. ¿Cuántos ${it} tiene ${x}?`,
+            bl:(x,y,a,b,it)=>`${x} tiene ${a} ${it}. ${y} tiene ${a-b} menos que ${x}. ¿Cuántos ${it} tiene ${y}?`,
+            e:(x,y,a,b,it)=>`${x} tiene ${a} ${it}. Si a ${y} le dieran ${a-b}, tendría los mismos que ${x}. ¿Cuántos tiene ${y}?`,p:'⚖️ Compara e iguala'},
+          en:{type:{m:'Compare · how many more?',l:'Compare · how many fewer?',f:'Equalise · how many missing?',bm:'Compare · the bigger one',bl:'Compare · the smaller one',e:'Equalise · how many?'},
+            m:(x,y,a,b,it)=>`${x} has ${a} ${it} and ${y} has ${b}. How many more ${it} does ${x} have than ${y}?`,
+            l:(x,y,a,b,it)=>`${x} has ${a} ${it} and ${y} has ${b}. How many fewer ${it} does ${y} have than ${x}?`,
+            f:(x,y,a,b,it)=>`${x} has ${a} ${it} and ${y} has ${b}. How many more does ${y} need to have as many as ${x}?`,
+            bm:(x,y,a,b,it)=>`${y} has ${b} ${it}. ${x} has ${a-b} more than ${y}. How many ${it} does ${x} have?`,
+            bl:(x,y,a,b,it)=>`${x} has ${a} ${it}. ${y} has ${a-b} fewer than ${x}. How many ${it} does ${y} have?`,
+            e:(x,y,a,b,it)=>`${x} has ${a} ${it}. If ${y} got ${a-b} more, ${y} would have as many as ${x}. How many does ${y} have?`,p:'⚖️ Compare and equalise'}};
+const css=ABN.CSS+`.rows{display:grid;gap:4px;max-width:520px;margin:0 auto}.rows div{display:flex;align-items:center;gap:6px;font-weight:900}.rows span{font-size:clamp(.95rem,4.2vmin,1.25rem);letter-spacing:1px}`;
+H.start(window,{id:'comparar',mode:'rounds',css,
+  timer:D=>Math.max(25,Math.round(70*Math.pow(.94,D))),
+  round(g){
+    const L=ABN.L(g,TX),r=g.r,D=g.D,max=D<2?10:D<4?20:D<6?100:1000,lang=g.lang==='es'?1:2;
+    const k=pick(r,D<2.5?['m','l','f']:['m','l','f','bm','bl','e']),it=pick(r,ITEMS),[x,y]=shuf(r,NAMES).slice(0,2);
+    const a=ri(r,Math.max(3,Math.floor(max*.45)),max),b=ri(r,1,a-1),ans=k==='m'||k==='l'||k==='f'?a-b:k==='bm'?a:b;
+    g.prompt(L.p);g.el('div',null,`<span class="tag">${L.type[k]}</span>`,g.stage).style.textAlign='center';
+    g.el('div','story',L[k](x,y,a,b,it[lang]),g.stage);
+    if(max<=20&&(k==='m'||k==='l'||k==='f')){const w=g.el('div','rows',null,g.stage);[[x,a],[y,b]].forEach(([n,v])=>g.el('div',null,`${n}<span>${it[0].repeat(v)}</span>`,w));}
+    ABN.ask(g,ans,[a+b,a,b,ans+1,ans-1,ans+10,a-b].filter(v=>v!==ans));
+  }
+});
+}
+</script></body></html>

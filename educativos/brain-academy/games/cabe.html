@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>How Many Times Does It Fit?</title></head>
+<body><script>
+const H=window.parent&&window.parent!==window?window.parent.Hub:null;
+if(!H){location.replace('../index.html');}
+</script><script src="abnkit.js"></script><script>
+if(H){
+// ¿Cuántas veces cabe? La pregunta clave de la división ABN: cuántas veces cabe d en N y cuánto sobra.
+const {ri,pick}=ABN;
+const TX={es:{q:(d,n)=>`📦 ¿Cuántas veces cabe el <b>${d}</b> en el <b>${n}</b>?`,left:'¿Y cuánto sobra?',done:(n,d,q,s)=>`✅ ${n} = ${d} × ${q}`+(s?` + ${s}`:'')},
+          en:{q:(d,n)=>`📦 How many times does <b>${d}</b> fit in <b>${n}</b>?`,left:'And how much is left over?',done:(n,d,q,s)=>`✅ ${n} = ${d} × ${q}`+(s?` + ${s}`:'')}};
+const css=ABN.CSS+`.groups{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;max-width:540px;margin:0 auto}.groups span{background:#fff;border-radius:10px;padding:2px 5px;font-size:clamp(.9rem,3.8vmin,1.2rem);box-shadow:0 2px 6px rgba(45,42,74,.08)}.groups span.rest{background:#ffe3ec}`;
+H.start(window,{id:'cabe',mode:'rounds',css,
+  timer:D=>Math.max(20,Math.round(60*Math.pow(.93,D))),
+  round(g){
+    const L=ABN.L(g,TX),r=g.r,D=g.D,d=D<4?ri(r,2,5):D<6?ri(r,3,9):pick(r,[ri(r,6,12),ri(r,11,25),pick(r,[20,25,50])]),
+      q=D<4?ri(r,2,6):D<6?ri(r,3,10):ri(r,4,30),s=D<3?0:ri(r,0,d-1),n=d*q+s,e=pick(r,['🥚','🍪','🧦','🍓','⚽']);
+    g.prompt(L.q(d,n));const big=g.el('div','big',`<b>${n}</b> = ${d} × <i>?</i>${s?' + …':''}`,g.stage);
+    let gs=null;if(n<=40){gs=g.el('div','groups',null,g.stage);g.el('span',null,e.repeat(n),gs);}
+    const ask=g.el('div','ask','',g.stage),box=g.el('div','k-ans',null,g.stage);
+    const fin=(b)=>{ask.innerHTML=L.done(n,d,q,s);b.classList.add('k-right');g.fx.stars(b);g.solved();};
+    g.choices(ABN.opts(r,q,[q+1,q-1,q*2,d,Math.round(n/10),q+10],4,1),(v,b)=>{b.textContent=v;},(v,b)=>{
+      if(v!==q){g.bad(b);return;}big.querySelector('i').textContent=q;box.querySelectorAll('button').forEach(x=>x.disabled=true);
+      if(gs){gs.innerHTML='';for(let i=0;i<q;i++)g.el('span',null,e.repeat(d),gs);if(s)g.el('span','rest',e.repeat(s),gs);}
+      if(!s){fin(b);return;}g.good(b);ask.textContent=L.left;box.innerHTML='';
+      g.choices(ABN.opts(r,s,[s+1,s-1,d,0,d-s],4,0),(v2,b2)=>{b2.textContent=v2;},(v2,b2)=>{if(v2!==s){g.bad(b2);return;}fin(b2);},4,box);
+      if(g.refit)g.refit();},4,box);
+  }
+});
+}
+</script></body></html>

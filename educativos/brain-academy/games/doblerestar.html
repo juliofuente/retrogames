@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Double Line: Subtracting</title></head>
+<body><script>
+const H=window.parent&&window.parent!==window?window.parent.Hub:null;
+if(!H){location.replace('../index.html');}
+</script><script src="abnkit.js"></script><script>
+if(H){
+// Doble recta numérica para RESTAR: si los dos números avanzan lo mismo, la diferencia no cambia.
+const {ri}=ABN;
+const TX={es:{p:(a,b)=>`➖ ${a} − ${b} con la doble recta: si los dos avanzan lo mismo, la diferencia no cambia`,give:(B,R)=>`¿Cuánto avanzan los dos para que el <b>${B}</b> llegue a <b>${R}</b>?`,fin:(A,B)=>`Ahora es fácil: ¿cuánto es <b>${A} − ${B}</b>?`,done:(a,b,s)=>`✅ ${a} − ${b} = ${s}`},
+          en:{p:(a,b)=>`➖ ${a} − ${b} on the double number line: if both move the same, the difference stays`,give:(B,R)=>`How much do both move so <b>${B}</b> reaches <b>${R}</b>?`,fin:(A,B)=>`Now it's easy: what is <b>${A} − ${B}</b>?`,done:(a,b,s)=>`✅ ${a} − ${b} = ${s}`}};
+function gen(r,D){
+  for(let t=0;t<300;t++){let a,b;
+    if(D<3){a=ri(r,11,19);b=ri(r,3,9);}else if(D<5){a=ri(r,30,99);b=ri(r,11,a-6);}else if(D<7){a=ri(r,60,199);b=ri(r,21,a-12);}else{a=ri(r,250,999);b=ri(r,105,a-40);}
+    if(b%10===0||b>=a)continue;const st=[];let A=a,B=b;const k=10-B%10;st.push({A,B,k,R:B+k});A+=k;B+=k;
+    if(D>=7&&B%100){const k2=100-B%100;st.push({A,B,k:k2,R:B+k2});A+=k2;B+=k2;}
+    return{a,b,st,A,B};}
+  return{a:15,b:8,st:[{A:15,B:8,k:2,R:10}],A:17,B:10};
+}
+H.start(window,{id:'doblerestar',mode:'rounds',css:ABN.CSS,
+  timer:D=>Math.max(30,Math.round(90*Math.pow(.93,D))),
+  round(g){
+    const P=gen(g.r,g.D),L=ABN.L(g,TX);g.prompt(L.p(P.a,P.b));
+    const wrap=g.el('div',null,null,g.stage),ask=g.el('div','ask','',g.stage),box=g.el('div','k-ans',null,g.stage);
+    const hist=[];let i=0;
+    const draw=()=>{wrap.innerHTML='';
+      const T=ABN.line(g,Object.assign({h:140},ABN.scale(P.a,P.A)),wrap),B=ABN.line(g,Object.assign({h:140},ABN.scale(P.b,P.B)),wrap);
+      let cA=P.a,cB=P.b;hist.forEach(s=>{T.jump(cA,cA+s.k,'+'+s.k,'#3CC36E');B.jump(cB,cB+s.k,'+'+s.k,'#3CC36E');cA+=s.k;cB+=s.k;});
+      T.mark(cA,'#9B5CFF',cA);B.mark(cB,'#FF9F43',cB);};
+    const go=()=>{draw();box.innerHTML='';
+      if(i<P.st.length){const s=P.st[i];ask.innerHTML=L.give(s.B,s.R);
+        g.choices(ABN.opts(g.r,s.k,[s.k+1,s.k-1,s.k+10,10-s.k,s.k+2],4,1),(v,b)=>{b.textContent=v;},(v,b)=>{
+          if(v!==s.k){g.bad(b);return;}box.querySelectorAll('button').forEach(x=>x.disabled=true);hist.push(s);i++;g.good(b);setTimeout(go,420);},4,box);}
+      else{const s=P.A-P.B;ask.innerHTML=L.fin(P.A,P.B);
+        g.choices(ABN.opts(g.r,s,[s+10,s-10,s+1,s-1,s+2],4,0),(v,b)=>{b.textContent=v;},(v,b)=>{
+          if(v!==s){g.bad(b);return;}ask.innerHTML=L.done(P.a,P.b,s);b.classList.add('k-right');g.fx.stars(b);g.solved();},4,box);}
+      if(g.refit)g.refit();};
+    go();
+  }
+});
+}
+</script></body></html>

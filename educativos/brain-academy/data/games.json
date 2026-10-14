@@ -1003,6 +1003,500 @@
     "fr": "Compte les cubes en 3D, même cachés."
    },
    "innovabn": "esp"
+  },
+  {
+   "id": "doblerecta",
+   "file": "games/doblerecta.html",
+   "emoji": "➕",
+   "cat": "math",
+   "ages": [
+    6,
+    9
+   ],
+   "name": {
+    "en": "Double Line: Adding",
+    "es": "Doble recta: sumar",
+    "fr": "Double droite : additionner"
+   },
+   "desc": {
+    "en": "What one number gains, the other loses.",
+    "es": "Lo que gana un número lo pierde el otro.",
+    "fr": "Ce que gagne un nombre, l'autre le perd."
+   },
+   "innovabn": "abn"
+  },
+  {
+   "id": "doblerestar",
+   "file": "games/doblerestar.html",
+   "emoji": "➖",
+   "cat": "math",
+   "ages": [
+    6,
+    9
+   ],
+   "name": {
+    "en": "Double Line: Subtracting",
+    "es": "Doble recta: restar",
+    "fr": "Double droite : soustraire"
+   },
+   "desc": {
+    "en": "Move both the same: the difference stays.",
+    "es": "Si los dos avanzan igual, la diferencia no cambia.",
+    "fr": "Si les deux avancent pareil, l'écart reste."
+   },
+   "innovabn": "abn"
+  },
+  {
+   "id": "saltosmas",
+   "file": "games/saltosmas.html",
+   "emoji": "🦘",
+   "cat": "math",
+   "ages": [
+    3,
+    6,
+    9
+   ],
+   "name": {
+    "en": "Jump to Add",
+    "es": "Saltos para sumar",
+    "fr": "Sauts pour additionner"
+   },
+   "desc": {
+    "en": "Add by jumping forwards on the number line.",
+    "es": "Suma saltando hacia delante en la recta.",
+    "fr": "Additionne en sautant en avant sur la droite."
+   },
+   "innovabn": "abn"
+  },
+  {
+   "id": "saltosmenos",
+   "file": "games/saltosmenos.html",
+   "emoji": "🐸",
+   "cat": "math",
+   "ages": [
+    3,
+    6,
+    9
+   ],
+   "name": {
+    "en": "Jump to Subtract",
+    "es": "Saltos para restar",
+    "fr": "Sauts pour soustraire"
+   },
+   "desc": {
+    "en": "Subtract by jumping backwards on the number line.",
+    "es": "Resta saltando hacia atrás en la recta.",
+    "fr": "Soustrais en sautant en arrière sur la droite."
+   },
+   "innovabn": "abn"
+  },
+  {
+   "id": "maceta",
+   "file": "games/maceta.html",
+   "emoji": "🪴",
+   "cat": "math",
+   "ages": [
+    3,
+    6,
+    9
+   ],
+   "name": {
+    "en": "Water the Plant",
+    "es": "Riega la maceta",
+    "fr": "Arrose la plante"
+   },
+   "desc": {
+    "en": "Where is the number on the line? Aim the water!",
+    "es": "¿Dónde está el número en la recta? ¡Apunta con el agua!",
+    "fr": "Où est le nombre sur la droite ? Vise avec l'eau !"
+   },
+   "innovabn": "num"
+  },
+  {
+   "id": "detraccion",
+   "file": "games/detraccion.html",
+   "emoji": "✂️",
+   "cat": "math",
+   "ages": [
+    6,
+    9
+   ],
+   "name": {
+    "en": "Take-away Subtraction",
+    "es": "Resta quitando",
+    "fr": "Soustraction en retirant"
+   },
+   "desc": {
+    "en": "ABN take-away subtraction: remove it in chunks.",
+    "es": "Resta ABN por detracción: quita a trozos.",
+    "fr": "Soustraction ABN : retire par morceaux."
+   },
+   "innovabn": "abn"
+  },
+  {
+   "id": "dobleresta",
+   "file": "games/dobleresta.html",
+   "emoji": "🔻",
+   "cat": "math",
+   "ages": [
+    9
+   ],
+   "name": {
+    "en": "Double Subtraction",
+    "es": "Doble resta",
+    "fr": "Double soustraction"
+   },
+   "desc": {
+    "en": "Take away two numbers at once.",
+    "es": "Quita dos números a la vez.",
+    "fr": "Retire deux nombres à la fois."
+   },
+   "innovabn": "abn"
+  },
+  {
+   "id": "sumatres",
+   "file": "games/sumatres.html",
+   "emoji": "3️⃣",
+   "cat": "math",
+   "ages": [
+    6,
+    9
+   ],
+   "name": {
+    "en": "Add Three Numbers",
+    "es": "Suma de tres",
+    "fr": "Somme de trois"
+   },
+   "desc": {
+    "en": "Find the friends that make a round number.",
+    "es": "Busca los amigos que hacen un número redondo.",
+    "fr": "Trouve les amis qui font un nombre rond."
+   },
+   "innovabn": "abn"
+  },
+  {
+   "id": "truco9",
+   "file": "games/truco9.html",
+   "emoji": "🪄",
+   "cat": "math",
+   "ages": [
+    6,
+    9
+   ],
+   "name": {
+    "en": "The 9 Trick",
+    "es": "El truco del 9",
+    "fr": "L'astuce du 9"
+   },
+   "desc": {
+    "en": "Add and subtract 9, 19, 99… by rounding.",
+    "es": "Suma y resta 9, 19, 99… redondeando.",
+    "fr": "Ajoute et retire 9, 19, 99… en arrondissant."
+   },
+   "innovabn": "abn"
+  },
+  {
+   "id": "tablastruco",
+   "file": "games/tablastruco.html",
+   "emoji": "🎩",
+   "cat": "math",
+   "ages": [
+    6,
+    9
+   ],
+   "name": {
+    "en": "Times Table Tricks",
+    "es": "Tablas con trucos",
+    "fr": "Tables avec astuces"
+   },
+   "desc": {
+    "en": "Double, half and ×10 to multiply.",
+    "es": "Doble, mitad y por 10 para multiplicar.",
+    "fr": "Double, moitié et ×10 pour multiplier."
+   },
+   "innovabn": "abn"
+  },
+  {
+   "id": "palillos",
+   "file": "games/palillos.html",
+   "emoji": "🥢",
+   "cat": "math",
+   "ages": [
+    3,
+    6,
+    9
+   ],
+   "name": {
+    "en": "Bundles and Sticks",
+    "es": "Haces y palillos",
+    "fr": "Fagots et bâtonnets"
+   },
+   "desc": {
+    "en": "Count with bundles of 10 and boxes of 100.",
+    "es": "Cuenta con haces de 10 y cajas de 100.",
+    "fr": "Compte avec des fagots de 10 et des boîtes de 100."
+   },
+   "innovabn": "num"
+  },
+  {
+   "id": "vecinos",
+   "file": "games/vecinos.html",
+   "emoji": "🏘️",
+   "cat": "math",
+   "ages": [
+    3,
+    6,
+    9
+   ],
+   "name": {
+    "en": "Number Neighbours",
+    "es": "Números vecinos",
+    "fr": "Nombres voisins"
+   },
+   "desc": {
+    "en": "Who comes before and who comes after?",
+    "es": "¿Quién va antes y quién después?",
+    "fr": "Qui vient avant, qui vient après ?"
+   },
+   "innovabn": "num"
+  },
+  {
+   "id": "saltodecena",
+   "file": "games/saltodecena.html",
+   "emoji": "🪜",
+   "cat": "math",
+   "ages": [
+    3,
+    6,
+    9
+   ],
+   "name": {
+    "en": "Up to the Round Number",
+    "es": "Hasta el redondo",
+    "fr": "Jusqu'au nombre rond"
+   },
+   "desc": {
+    "en": "How much to the next ten or hundred?",
+    "es": "¿Cuánto falta para la decena o la centena?",
+    "fr": "Combien jusqu'à la dizaine ou la centaine ?"
+   },
+   "innovabn": "abn"
+  },
+  {
+   "id": "escondido",
+   "file": "games/escondido.html",
+   "emoji": "🫣",
+   "cat": "math",
+   "ages": [
+    3,
+    6,
+    9
+   ],
+   "name": {
+    "en": "The Hidden Number",
+    "es": "El número escondido",
+    "fr": "Le nombre caché"
+   },
+   "desc": {
+    "en": "Find the missing number in the sum.",
+    "es": "Descubre el número que falta en la operación.",
+    "fr": "Trouve le nombre qui manque."
+   },
+   "innovabn": "abn"
+  },
+  {
+   "id": "problemas",
+   "file": "games/problemas.html",
+   "emoji": "📝",
+   "cat": "math",
+   "ages": [
+    3,
+    6,
+    9
+   ],
+   "name": {
+    "en": "Problems: Change and Combine",
+    "es": "Problemas: cambio y combinación",
+    "fr": "Problèmes : changement et combinaison"
+   },
+   "desc": {
+    "en": "Read, think what happens and solve.",
+    "es": "Lee, piensa qué pasa y resuelve.",
+    "fr": "Lis, réfléchis et résous."
+   },
+   "innovabn": "abn"
+  },
+  {
+   "id": "comparar",
+   "file": "games/comparar.html",
+   "emoji": "🆚",
+   "cat": "math",
+   "ages": [
+    3,
+    6,
+    9
+   ],
+   "name": {
+    "en": "Problems: Compare and Equalise",
+    "es": "Problemas: comparar e igualar",
+    "fr": "Problèmes : comparer et égaliser"
+   },
+   "desc": {
+    "en": "How many more, fewer or missing?",
+    "es": "¿Cuántos más, cuántos menos, cuántos faltan?",
+    "fr": "Combien de plus, de moins, combien il en manque ?"
+   },
+   "innovabn": "abn"
+  },
+  {
+   "id": "por10",
+   "file": "games/por10.html",
+   "emoji": "0️⃣",
+   "cat": "math",
+   "ages": [
+    6,
+    9
+   ],
+   "name": {
+    "en": "Times 10, Times 100",
+    "es": "Por 10, por 100",
+    "fr": "Fois 10, fois 100"
+   },
+   "desc": {
+    "en": "Multiply and divide by moving the digits.",
+    "es": "Multiplica y divide moviendo las cifras.",
+    "fr": "Multiplie et divise en déplaçant les chiffres."
+   },
+   "innovabn": "num"
+  },
+  {
+   "id": "reparto",
+   "file": "games/reparto.html",
+   "emoji": "🍽️",
+   "cat": "math",
+   "ages": [
+    3,
+    6,
+    9
+   ],
+   "name": {
+    "en": "Fair Share",
+    "es": "Reparto justo",
+    "fr": "Partage équitable"
+   },
+   "desc": {
+    "en": "Share equally and see what's left.",
+    "es": "Reparte a partes iguales y mira lo que sobra.",
+    "fr": "Partage en parts égales et regarde le reste."
+   },
+   "innovabn": "abn"
+  },
+  {
+   "id": "formas",
+   "file": "games/formas.html",
+   "emoji": "🔀",
+   "cat": "math",
+   "ages": [
+    3,
+    6,
+    9
+   ],
+   "name": {
+    "en": "Ways to Make a Number",
+    "es": "Formas de un número",
+    "fr": "Façons de faire un nombre"
+   },
+   "desc": {
+    "en": "47 = 40+7 = 30+17… which one is wrong?",
+    "es": "47 = 40+7 = 30+17… ¿cuál no vale?",
+    "fr": "47 = 40+7 = 30+17… laquelle est fausse ?"
+   },
+   "innovabn": "num"
+  },
+  {
+   "id": "fraccion",
+   "file": "games/fraccion.html",
+   "emoji": "🍕",
+   "cat": "math",
+   "ages": [
+    6,
+    9
+   ],
+   "name": {
+    "en": "Part of an Amount",
+    "es": "La parte de una cantidad",
+    "fr": "Une part d'une quantité"
+   },
+   "desc": {
+    "en": "Half, a third, three quarters of…",
+    "es": "La mitad, un tercio, tres cuartos de…",
+    "fr": "La moitié, un tiers, trois quarts de…"
+   },
+   "innovabn": "num"
+  },
+  {
+   "id": "decenas",
+   "file": "games/decenas.html",
+   "emoji": "🧺",
+   "cat": "math",
+   "ages": [
+    6,
+    9
+   ],
+   "name": {
+    "en": "How Many Tens?",
+    "es": "¿Cuántas decenas tiene?",
+    "fr": "Combien de dizaines ?"
+   },
+   "desc": {
+    "en": "347 has 34 tens, not just 4!",
+    "es": "347 tiene 34 decenas, ¡no solo 4!",
+    "fr": "347 a 34 dizaines, pas seulement 4 !"
+   },
+   "innovabn": "num"
+  },
+  {
+   "id": "calculo",
+   "file": "games/calculo.html",
+   "emoji": "🏎️",
+   "cat": "math",
+   "ages": [
+    3,
+    6,
+    9
+   ],
+   "name": {
+    "en": "Lightning Maths",
+    "es": "Cálculo relámpago",
+    "fr": "Calcul éclair"
+   },
+   "desc": {
+    "en": "Bursts of mental maths against the clock.",
+    "es": "Ráfagas de cálculo mental contra el reloj.",
+    "fr": "Rafales de calcul mental contre la montre."
+   },
+   "innovabn": "abn"
+  },
+  {
+   "id": "cabe",
+   "file": "games/cabe.html",
+   "emoji": "📦",
+   "cat": "math",
+   "ages": [
+    6,
+    9
+   ],
+   "name": {
+    "en": "How Many Times Does It Fit?",
+    "es": "¿Cuántas veces cabe?",
+    "fr": "Combien de fois ça rentre ?"
+   },
+   "desc": {
+    "en": "The key question of ABN division.",
+    "es": "La pregunta clave de la división ABN.",
+    "fr": "La question clé de la division ABN."
+   },
+   "innovabn": "abn"
   }
  ],
  "innovabnCategories": [

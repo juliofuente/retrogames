@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Lightning Maths</title></head>
+<body><script>
+const H=window.parent&&window.parent!==window?window.parent.Hub:null;
+if(!H){location.replace('../index.html');}
+</script><script src="abnkit.js"></script><script>
+if(H){
+// Cálculo mental relámpago: ráfagas de 5 operaciones a contrarreloj (sumas, restas, tablas y divisiones según la edad).
+const TX={es:{q:'⚡ ¡Rápido! ¿Cuánto es?',dots:'⚡ ¿Cuántos puntos hay?'},en:{q:'⚡ Quick! What is it?',dots:'⚡ How many dots?'}};
+H.start(window,{id:'calculo',mode:'rounds',css:ABN.CSS,
+  timer:D=>Math.round(5*Math.max(4,10*Math.pow(.92,D))),
+  round(g){const L=ABN.L(g,TX);
+    ABN.burst(g,[0,1,2,3,4].map(()=>{const p=g.M.problem(g.r,g.D);
+      return{q:p.dots?L.dots:L.q,big:p.dots?`<b>${p.txt}</b>`:`<b>${p.txt}</b> = <i>?</i>`,ans:p.ans,dis:[p.ans+1,p.ans-1,p.ans+10,p.ans-10,p.ans+2]};}));}
+});
+}
+</script></body></html>

@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>The 9 Trick</title></head>
+<body><script>
+const H=window.parent&&window.parent!==window?window.parent.Hub:null;
+if(!H){location.replace('../index.html');}
+</script><script src="abnkit.js"></script><script>
+if(H){
+// Compensación: sumar o restar 9, 19, 99, 8… redondeando y corrigiendo (n + 9 = n + 10 − 1).
+const {ri,pick}=ABN;
+const TX={es:{p:(n,op,k)=>`🪄 ${n} ${op} ${k}: redondea el ${k} y luego corrige`,h:['Hago','Resultado'],ask:t=>`Calcula: <b>${t}</b>`,done:(n,op,k,r)=>`✅ ${n} ${op} ${k} = ${r}`},
+          en:{p:(n,op,k)=>`🪄 ${n} ${op} ${k}: round ${k} and then fix it`,h:['I do','Result'],ask:t=>`Work out: <b>${t}</b>`,done:(n,op,k,r)=>`✅ ${n} ${op} ${k} = ${r}`}};
+function gen(r,D){
+  const ks=D<3?[9]:D<5?[9,19,8,11]:D<7?[9,19,29,8,18,21,99]:[99,199,98,101,49,999];
+  const k=pick(r,ks),R=Math.round(k/10)*10||10,c=R-k;   // k = R − c
+  const sub=D>=3.5&&r()<.45;let n=D<3?ri(r,10,40):D<5?ri(r,20,89):D<7?ri(r,40,300):ri(r,250,2500);
+  if(sub&&n<=k)n=k+ri(r,5,60);
+  return{n,k,R,c,sub};
+}
+H.start(window,{id:'truco9',mode:'rounds',css:ABN.CSS,
+  timer:D=>Math.max(25,Math.round(70*Math.pow(.93,D))),
+  round(g){
+    const P=gen(g.r,g.D),L=ABN.L(g,TX),op=P.sub?'−':'+',s1=P.sub?P.n-P.R:P.n+P.R,fin=P.sub?P.n-P.k:P.n+P.k;
+    g.prompt(L.p(P.n,op,P.k));
+    const fix=P.c>0?(P.sub?'+':'−'):(P.sub?'−':'+'),c=Math.abs(P.c);
+    const steps=[{ask:L.ask(`${P.n} ${op} ${P.R}`),ans:s1,dis:[s1+10,s1-10,s1+1,s1-1,P.n+P.k*2],row:[`${P.n} ${op} ${P.R}`,s1],qi:1}];
+    if(c)steps.push({ask:L.ask(`${s1} ${fix} ${c}`),ans:fin,dis:[fin+2*c,fin+1,fin-1,fin+10,fin-10],row:[`${s1} ${fix} ${c}`,fin],qi:1});
+    steps[steps.length-1].done=L.done(P.n,op,P.k,fin);
+    ABN.steps(g,L.h,steps);
+  }
+});
+}
+</script></body></html>

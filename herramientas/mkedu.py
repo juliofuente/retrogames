@@ -34,11 +34,11 @@ BANDS = [  # id, slug es, slug en, nombre es, nombre en, edad mín, edad máx, e
 ]
 APPS = [  # id, nombre, emoji, url (desde la raíz), idiomas, descripción es, descripción en
     ('brain', 'Emoji Brain Academy', '🧠', 'educativos/brain-academy/index.html', ['es', 'en', 'fr'],
-     '46 minijuegos de mates, lectura y lógica para 3 a 12 años, con perfiles y niveles que suben poco a poco.',
-     '46 maths, reading and logic mini-games for ages 3 to 12, with profiles and gradually rising levels.'),
+     '69 minijuegos de mates, lectura y lógica para 3 a 12 años, con perfiles y niveles que suben poco a poco.',
+     '69 maths, reading and logic mini-games for ages 3 to 12, with profiles and gradually rising levels.'),
     ('abn', 'Emoji Brain Academy · ABN', '🧮', 'educativos/brain-academy/indexinnovabn.html', ['es', 'en', 'fr'],
-     'Solo los juegos de mates manipulativas y método ABN: regletas, base 10, recta numérica, sumas y restas ABN…',
-     'Only the hands-on maths and ABN-method games: number rods, base 10, number line, ABN sums…'),
+     'Solo los juegos de mates manipulativas y método ABN: doble recta, saltos en la recta, detracción, haces y palillos, problemas, regletas, base 10…',
+     'Only the hands-on maths and ABN-method games: double number line, number-line jumps, take-away, bundles and sticks, word problems, rods, base 10…'),
     ('aventura', 'Aventura de Palabras', '🎮', 'educativos/aventura-palabras/juego_vocabulario_infinito.html', ['es'],
      'Vocabulario en español para 7 a 14 años: más de 800 palabras con definición, ejemplo y situaciones.',
      'Spanish vocabulary for ages 7 to 14: 800+ words with definition, example and situations.'),

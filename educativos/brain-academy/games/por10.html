@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Times 10, Times 100</title></head>
+<body><script>
+const H=window.parent&&window.parent!==window?window.parent.Hub:null;
+if(!H){location.replace('../index.html');}
+</script><script src="abnkit.js"></script><script>
+if(H){
+// Multiplicar y dividir por 10, 100 y 1000: cada cifra sube (o baja) de puesto.
+const {ri,pick}=ABN;
+const TX={es:{q:'🔟 Por 10, por 100… ¡cada cifra cambia de puesto!',hint:{m:'Al multiplicar, las cifras suben de puesto',d:'Al dividir, las cifras bajan de puesto'}},
+          en:{q:'🔟 Times 10, times 100… every digit changes place!',hint:{m:'Multiplying moves the digits up a place',d:'Dividing moves the digits down a place'}}};
+function item(r,D){
+  const f=pick(r,D<5?[10,10,100]:[10,100,1000]),div=D>=4.5&&r()<.45;
+  if(div){const q=ri(r,2,D<6?99:999),n=q*f;return{big:`<b>${n}</b> ÷ ${f} = <i>?</i>`,ans:q,dis:[q*10,n/(f>10?10:100)||q+1,q+1,n,q*100],d:1};}
+  const n=D<5?ri(r,2,30):ri(r,3,450),a=n*f;return{big:`<b>${n}</b> × ${f} = <i>?</i>`,ans:a,dis:[a*10,a/10,n+f,a+1,n*f*100],d:0};
+}
+const css=ABN.CSS+`.hint{text-align:center;color:var(--mid);font-weight:800}`;
+H.start(window,{id:'por10',mode:'rounds',css,
+  timer:D=>Math.round(4*Math.max(5,12*Math.pow(.9,D))),
+  round(g){const L=ABN.L(g,TX);
+    ABN.burst(g,[0,1,2,3].map(()=>{const it=item(g.r,g.D);it.q=L.q;it.vis=p=>g.el('div','hint',it.d?L.hint.d:L.hint.m,p);it.dis=it.dis.filter(Number.isInteger);return it;}));}
+});
+}
+</script></body></html>

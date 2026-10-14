@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Jump to Subtract</title></head>
+<body><script>
+const H=window.parent&&window.parent!==window?window.parent.Hub:null;
+if(!H){location.replace('../index.html');}
+</script><script src="abnkit.js"></script><script>
+if(H){
+const SIGN=-1,GAME_ID='saltosmenos';
+// Saltos en la recta numérica (SIGN = +1 sumar, −1 restar). Primero se salta a la decena redonda, luego centenas, decenas y unidades.
+const {ri}=ABN;
+const TX={es:{p:(a,b,s)=>s>0?`🦘 ${a} + ${b} saltando hacia delante en la recta`:`🦘 ${a} − ${b} saltando hacia atrás en la recta`,
+            hop:(c,k,s)=>`Saltamos <b>${s>0?'+':'−'}${k}</b> desde el <b>${c}</b>: ¿dónde caemos?`,left:n=>`Faltan ${n} por saltar`,done:(a,b,s,x)=>`✅ ${a} ${s>0?'+':'−'} ${b} = ${x}`},
+          en:{p:(a,b,s)=>s>0?`🦘 ${a} + ${b} jumping forwards on the number line`:`🦘 ${a} − ${b} jumping backwards on the number line`,
+            hop:(c,k,s)=>`Jump <b>${s>0?'+':'−'}${k}</b> from <b>${c}</b>: where do we land?`,left:n=>`${n} still to jump`,done:(a,b,s,x)=>`✅ ${a} ${s>0?'+':'−'} ${b} = ${x}`}};
+function gen(r,D){
+  for(let t=0;t<300;t++){let a,b;
+    if(D<1.5){a=SIGN>0?ri(r,0,6):ri(r,4,10);b=ri(r,1,SIGN>0?4:Math.min(4,a));}
+    else if(D<3){a=SIGN>0?ri(r,3,15):ri(r,8,20);b=ri(r,3,9);}
+    else if(D<5){a=SIGN>0?ri(r,11,60):ri(r,30,99);b=ri(r,11,39);}
+    else if(D<7){a=SIGN>0?ri(r,20,99):ri(r,60,199);b=ri(r,15,79);}
+    else{a=SIGN>0?ri(r,105,700):ri(r,300,999);b=ri(r,120,299);}
+    if(SIGN<0&&b>=a)continue;
+    return{a,b,J:ABN.jumpPlan(a,b,SIGN,D)};}
+  return{a:5,b:3,J:[1,1,1]};
+}
+H.start(window,{id:GAME_ID,mode:'rounds',css:ABN.CSS,
+  timer:D=>Math.max(30,Math.round(90*Math.pow(.93,D))),
+  round(g){
+    const P=gen(g.r,g.D),L=ABN.L(g,TX),end=P.a+SIGN*P.b;g.prompt(L.p(P.a,P.b,SIGN));
+    const wrap=g.el('div',null,null,g.stage),ask=g.el('div','ask','',g.stage),box=g.el('div','k-ans',null,g.stage);
+    let i=0,cur=P.a;const done=[];
+    const draw=()=>{wrap.innerHTML='';const sc=ABN.scale(P.a,end);
+      const N=ABN.line(g,Object.assign({h:170},sc),wrap);let c=P.a;
+      done.forEach(k=>{N.jump(c,c+SIGN*k,(SIGN>0?'+':'−')+k,SIGN>0?'#3CC36E':'#FF6B9D');c+=SIGN*k;});
+      N.mark(P.a,'#FF9F43',done.length?null:P.a);if(done.length)N.mark(cur,'#9B5CFF',cur);};
+    const go=()=>{draw();box.innerHTML='';const k=P.J[i],ans=cur+SIGN*k,rest=P.J.slice(i).reduce((s,x)=>s+x,0);
+      ask.innerHTML=L.hop(cur,k,SIGN)+`<br><span class="tag">${L.left(rest)}</span>`;
+      g.choices(ABN.opts(g.r,ans,[ans+1,ans-1,cur-SIGN*k,ans+10,ans-10,cur+SIGN*(k+1)],4,0),(v,b)=>{b.textContent=v;},(v,b)=>{
+        if(v!==ans){g.bad(b);return;}box.querySelectorAll('button').forEach(x=>x.disabled=true);done.push(k);cur=ans;i++;
+        if(i>=P.J.length){draw();ask.innerHTML=L.done(P.a,P.b,SIGN,end);b.classList.add('k-right');g.fx.stars(b);g.solved();}
+        else{g.good(b);setTimeout(go,380);}},4,box);
+      if(g.refit)g.refit();};
+    go();
+  }
+});
+}
+</script></body></html>

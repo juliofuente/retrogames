@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Problems: Change and Combine</title></head>
+<body><script>
+const H=window.parent&&window.parent!==window?window.parent.Hub:null;
+if(!H){location.replace('../index.html');}
+</script><script src="abnkit.js"></script><script>
+if(H){
+// Problemas ABN de CAMBIO (aumentar, disminuir, cantidad inicial desconocida) y de COMBINACIÓN (todo o parte desconocida).
+const {ri,pick}=ABN;
+const NAMES=['Ana','Leo','Sara','Hugo','Lucía','Pablo','Mía','Dani','Noa','Iker'];
+const ITEMS=[['🍬','caramelos','sweets'],['⚽','balones','balls'],['🃏','cromos','stickers'],['✏️','lápices','pencils'],['🎈','globos','balloons'],['🐟','peces','fish'],['🔘','botones','buttons'],['🧸','peluches','teddies']];
+const TX={es:{type:{c1:'Cambio · aumenta',c2:'Cambio · disminuye',c3:'Cambio · ¿cuánto había?',k1:'Combinación · el total',k2:'Combinación · una parte'},
+            c1:(n,a,b,it)=>`${n} tiene ${a} ${it}. Le regalan ${b} más. ¿Cuántos ${it} tiene ahora?`,
+            c2:(n,a,b,it)=>`${n} tenía ${a} ${it}. Ha dado ${b} a sus amigos. ¿Cuántos ${it} le quedan?`,
+            c3:(n,a,b,it)=>`${n} tenía algunos ${it}. Le han dado ${b} y ahora tiene ${a+b}. ¿Cuántos tenía al principio?`,
+            k1:(n,a,b,it,e2)=>`En la mochila de ${n} hay ${a} ${it} y ${b} ${e2}. ¿Cuántas cosas hay en total?`,
+            k2:(n,a,b,it)=>`${n} tiene ${a+b} ${it}: ${a} son rojos y el resto azules. ¿Cuántos son azules?`,p:'📖 Lee el problema y elige la respuesta'},
+          en:{type:{c1:'Change · increase',c2:'Change · decrease',c3:'Change · how many before?',k1:'Combine · the total',k2:'Combine · one part'},
+            c1:(n,a,b,it)=>`${n} has ${a} ${it}. Someone gives ${n} ${b} more. How many ${it} now?`,
+            c2:(n,a,b,it)=>`${n} had ${a} ${it} and gave ${b} to friends. How many ${it} are left?`,
+            c3:(n,a,b,it)=>`${n} had some ${it}. After getting ${b} more, ${n} has ${a+b}. How many were there at first?`,
+            k1:(n,a,b,it,e2)=>`${n}'s backpack has ${a} ${it} and ${b} ${e2}. How many things altogether?`,
+            k2:(n,a,b,it)=>`${n} has ${a+b} ${it}: ${a} are red and the rest are blue. How many are blue?`,p:'📖 Read the problem and pick the answer'}};
+H.start(window,{id:'problemas',mode:'rounds',css:ABN.CSS,
+  timer:D=>Math.max(25,Math.round(70*Math.pow(.94,D))),
+  round(g){
+    const L=ABN.L(g,TX),r=g.r,D=g.D,max=D<2?10:D<4?20:D<6?100:1000,lang=g.lang==='es'?1:2;
+    const k=pick(r,D<1.5?['c1','c2','k1']:['c1','c2','c3','k1','k2']),it=pick(r,ITEMS),it2=pick(r,ITEMS.filter(x=>x!==it)),nm=pick(r,NAMES);
+    let a=ri(r,Math.max(2,Math.floor(max*.3)),Math.floor(max*.7)),b=ri(r,1,Math.max(1,max-a));if(k==='c2'&&b>=a)b=ri(r,1,a-1);
+    const ans=k==='c1'||k==='k1'?a+b:k==='c2'?a-b:k==='c3'?a:b;
+    g.prompt(L.p);
+    g.el('div',null,`<span class="tag">${L.type[k]}</span>`,g.stage).style.textAlign='center';
+    g.el('div','story',L[k](nm,a,b,it[lang],it2[lang]),g.stage);
+    if(max<=20){const e=k==='k1'?it[0].repeat(a)+' '+it2[0].repeat(b):it[0].repeat(k==='c3'||k==='k2'?a+b:a);ABN.emojis(g,0,'',g.stage,'sm').textContent=e;}
+    ABN.ask(g,ans,[a+b,Math.abs(a-b),ans+1,ans-1,ans+10,a,b].filter(x=>x!==ans));
+  }
+});
+}
+</script></body></html>

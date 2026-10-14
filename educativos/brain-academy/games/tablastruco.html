@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Times Table Tricks</title></head>
+<body><script>
+const H=window.parent&&window.parent!==window?window.parent.Hub:null;
+if(!H){location.replace('../index.html');}
+</script><script src="abnkit.js"></script><script>
+if(H){
+// Tablas con trucos (ABN): ×2 doble, ×4 doble del doble, ×5 mitad de ×10, ×9 = ×10 − n, ×3 = ×2 + n, ×6 = ×5 + n, ×8 doble de ×4, ×11 = ×10 + n.
+const {ri,pick}=ABN;
+const TX={es:{p:(n,m,t)=>`✖️ ${n} × ${m} con un truco: <b>${t}</b>`,h:['Hago','Resultado'],ask:t=>`Calcula: <b>${t}</b>`,dbl:x=>`doble de ${x}`,half:x=>`mitad de ${x}`,done:(n,m,r)=>`✅ ${n} × ${m} = ${r}`,
+            t:{2:'el doble',4:'el doble del doble',5:'la mitad de por 10',9:'por 10 y quito uno',3:'por 2 y sumo otro',6:'por 5 y sumo otro',8:'el doble de por 4',11:'por 10 y sumo otro'}},
+          en:{p:(n,m,t)=>`✖️ ${n} × ${m} with a trick: <b>${t}</b>`,h:['I do','Result'],ask:t=>`Work out: <b>${t}</b>`,dbl:x=>`double ${x}`,half:x=>`half of ${x}`,done:(n,m,r)=>`✅ ${n} × ${m} = ${r}`,
+            t:{2:'double it',4:'double the double',5:'half of times 10',9:'times 10 minus one',3:'times 2 plus one more',6:'times 5 plus one more',8:'double times 4',11:'times 10 plus one more'}}};
+H.start(window,{id:'tablastruco',mode:'rounds',css:ABN.CSS,
+  timer:D=>Math.max(20,Math.round(60*Math.pow(.93,D))),
+  round(g){
+    const L=ABN.L(g,TX),r=g.r,D=g.D,m=pick(r,D<3?[2,5,4]:D<5?[2,4,5,9,11]:[3,4,5,6,8,9,11]),n=D<3?ri(r,2,9):D<6?ri(r,3,12):ri(r,6,25);
+    g.prompt(L.p(n,m,L.t[m]));
+    const st=[],add=(t,v)=>st.push({ask:L.ask(t),ans:v,dis:[v+n,v-n,v+10,v-1,v+1,v*2],row:[t,v],qi:1});
+    if(m===2)add(L.dbl(n),2*n);
+    if(m===4){add(L.dbl(n),2*n);add(L.dbl(2*n),4*n);}
+    if(m===5){add(`${n} × 10`,10*n);add(L.half(10*n),5*n);}
+    if(m===9){add(`${n} × 10`,10*n);add(`${10*n} − ${n}`,9*n);}
+    if(m===11){add(`${n} × 10`,10*n);add(`${10*n} + ${n}`,11*n);}
+    if(m===3){add(`${n} × 2`,2*n);add(`${2*n} + ${n}`,3*n);}
+    if(m===6){add(`${n} × 5`,5*n);add(`${5*n} + ${n}`,6*n);}
+    if(m===8){add(`${n} × 4`,4*n);add(L.dbl(4*n),8*n);}
+    st[st.length-1].done=L.done(n,m,n*m);
+    ABN.steps(g,L.h,st);
+  }
+});
+}
+</script></body></html>

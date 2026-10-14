@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>How Many Tens?</title></head>
+<body><script>
+const H=window.parent&&window.parent!==window?window.parent.Hub:null;
+if(!H){location.replace('../index.html');}
+</script><script src="abnkit.js"></script><script>
+if(H){
+// ¿Cuántas decenas (o centenas) TIENE un número? En ABN no es la cifra: 347 tiene 34 decenas.
+const {ri,pick}=ABN;
+const TX={es:{dec:n=>`🧺 ¿Cuántas <b>decenas</b> tiene el <b>${n}</b>?`,cen:n=>`📦 ¿Cuántas <b>centenas</b> tiene el <b>${n}</b>?`,make:(d,u)=>`🔢 ¿Qué número tiene <b>${d} decenas</b> y <b>${u} unidades</b>?`,tip:'Ojo: no es solo la cifra, cuenta todas'},
+          en:{dec:n=>`🧺 How many <b>tens</b> are there in <b>${n}</b>?`,cen:n=>`📦 How many <b>hundreds</b> are there in <b>${n}</b>?`,make:(d,u)=>`🔢 Which number has <b>${d} tens</b> and <b>${u} ones</b>?`,tip:'Careful: not just the digit — count them all'}};
+const css=ABN.CSS+`.hint{text-align:center;color:var(--mid);font-weight:800}`;
+function item(r,D,L){
+  const k=pick(r,D<4?['dec','make']:D<6?['dec','dec','make']:['dec','cen','make']);
+  if(k==='make'){const d=D<4?ri(r,2,9):ri(r,11,45),u=ri(r,1,9),a=d*10+u;return{q:L.make(d,u),big:`<i>?</i>`,ans:a,dis:[d+u,d*100+u,a+10,u*10+d,a-10]};}
+  if(k==='cen'){const n=ri(r,1050,9899),a=Math.floor(n/100);return{q:L.cen(n),big:`<b>${n}</b>`,ans:a,dis:[Math.floor(n/100)%10,Math.floor(n/10),a+1,a-1,Math.floor(n/1000)]};}
+  const n=D<4?ri(r,21,99):D<6?ri(r,105,999):ri(r,1005,4999),a=Math.floor(n/10);
+  return{q:L.dec(n),big:`<b>${n}</b>`,ans:a,dis:[a%10,a+1,a-1,n%10,a*10]};
+}
+H.start(window,{id:'decenas',mode:'rounds',css,
+  timer:D=>Math.round(3*Math.max(6,15*Math.pow(.9,D))),
+  round(g){const L=ABN.L(g,TX);ABN.burst(g,[0,1,2].map(()=>{const it=item(g.r,g.D,L);it.vis=p=>g.el('div','hint',L.tip,p);return it;}));}
+});
+}
+</script></body></html>

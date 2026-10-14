@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Bundles and Sticks</title></head>
+<body><script>
+const H=window.parent&&window.parent!==window?window.parent.Hub:null;
+if(!H){location.replace('../index.html');}
+</script><script src="abnkit.js"></script><script>
+if(H){
+// Haces y palillos (material ABN): contar palillos agrupados en haces de 10 (y cajas de 100) y formar números.
+const {ri,pick,shuf}=ABN;
+const TX={es:{count:'🥢 ¿Cuántos palillos hay en total?',make:n=>`🥢 ¿Cómo formamos el <b>${n}</b> con haces y palillos sueltos?`,opt:(c,h,s)=>(c?`${c} caja${c>1?'s':''}, `:'')+`${h} ${h===1?'haz':'haces'} y ${s} suelto${s===1?'':'s'}`,tip:'Cada haz tiene 10 palillos · cada caja, 100'},
+          en:{count:'🥢 How many sticks are there altogether?',make:n=>`🥢 How do we make <b>${n}</b> with bundles and loose sticks?`,opt:(c,h,s)=>(c?`${c} box${c>1?'es':''}, `:'')+`${h} bundle${h===1?'':'s'} and ${s} loose`,tip:'Each bundle has 10 sticks · each box, 100'}};
+const css=ABN.CSS+`
+.sticks{display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-end;gap:8px;min-height:60px;max-width:520px;margin:0 auto}
+.haz{display:inline-flex;gap:1px;position:relative;padding:0 1px}.haz i,.st{display:inline-block;width:4px;height:48px;background:#d8a35d;border-radius:2px;box-shadow:inset -1px 0 #b07b38}
+.haz:after{content:'';position:absolute;left:-2px;right:-2px;top:44%;height:7px;background:#FF6B9D;border-radius:4px}
+.caja{display:inline-grid;grid-template-columns:repeat(10,4px);gap:1px;padding:4px;border:3px solid #9B5CFF;border-radius:6px;background:#f3edff;position:relative}
+.caja i{height:42px;background:#d8a35d;border-radius:1px}.loose{display:inline-flex;gap:4px}
+.hint{text-align:center;color:var(--mid);font-weight:800;font-size:.85rem}`;
+function draw(g,n,p){const w=g.el('div','sticks',null,p);const c=Math.floor(n/100),h=Math.floor(n%100/10),s=n%10;
+  for(let i=0;i<c;i++)g.el('span','caja','<i></i>'.repeat(10),w);
+  for(let i=0;i<h;i++)g.el('span','haz','<i></i>'.repeat(10),w);
+  const l=g.el('span','loose',null,w);for(let i=0;i<s;i++)g.el('span','st',null,l);}
+H.start(window,{id:'palillos',mode:'rounds',css,
+  timer:D=>Math.max(15,Math.round(45*Math.pow(.92,D))),
+  round(g){
+    const L=ABN.L(g,TX),r=g.r,D=g.D,n=D<1?ri(r,1,9):D<2?ri(r,10,19):D<3?ri(r,11,39):D<5?ri(r,21,99):ri(r,101,399);
+    const mode=D>=3.5&&r()<.5?'make':'count';
+    g.el('div','hint',L.tip,g.stage);
+    if(mode==='count'){g.prompt(L.count);draw(g,n,g.stage);ABN.ask(g,n,[n+1,n-1,n+10,n-10,Math.floor(n/10)+n%10,(n%10)*10+Math.floor(n/10)%10]);return;}
+    g.prompt(L.make(n));const c=Math.floor(n/100),h=Math.floor(n%100/10),s=n%10,key=(a,b,d)=>a+'|'+b+'|'+d;
+    const cand=[[c,h,s],[c,s,h],[c,h+1,s],[c,h,s+1],[c?c-1:c+1,h,s],[c,h?h-1:h+2,s+10>19?s:s]].filter((x,i,a)=>x[1]>=0&&x[2]>=0&&a.findIndex(y=>key(...y)===key(...x))===i).slice(0,4);
+    g.choices(shuf(r,cand),(o,b)=>{b.textContent=L.opt(...o);b.style.fontSize='1.05rem';},(o,b)=>{
+      if(key(...o)!==key(c,h,s)){g.bad(b);return;}draw(g,n,g.stage);b.classList.add('k-right');g.fx.stars(b);g.solved();},2);
+  }
+});
+}
+</script></body></html>

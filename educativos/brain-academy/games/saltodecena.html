@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Up to the Round Number</title></head>
+<body><script>
+const H=window.parent&&window.parent!==window?window.parent.Hub:null;
+if(!H){location.replace('../index.html');}
+</script><script src="abnkit.js"></script><script>
+if(H){
+// ¿Cuánto falta para el siguiente número redondo? (decena, centena, millar) — base de los algoritmos ABN.
+const {ri}=ABN;
+const TX={es:{q:(n,R)=>`🎯 ¿Cuánto le falta al <b>${n}</b> para llegar al <b>${R}</b>?`},en:{q:(n,R)=>`🎯 How much does <b>${n}</b> need to reach <b>${R}</b>?`}};
+const css=ABN.CSS+`.bar{height:24px;border-radius:12px;background:#eee;overflow:hidden;display:flex;max-width:420px;width:100%;margin:6px auto}.bar i{background:#FF6B9D}`;
+function item(r,D){
+  const B=D<4?10:D<7?100:1000,max=D<2?19:D<3?59:D<4?99:D<5?299:D<7?999:9999;
+  let n;do n=ri(r,1,max);while(n%B===0);const R=Math.ceil(n/B)*B;return{n,R,ans:R-n,B};
+}
+H.start(window,{id:'saltodecena',mode:'rounds',css,
+  timer:D=>Math.round(4*Math.max(5,12*Math.pow(.9,D))),
+  round(g){
+    const L=ABN.L(g,TX),items=[0,1,2,3].map(()=>{const it=item(g.r,g.D),a=it.ans,lo=it.R-it.B;
+      return{q:L.q(it.n,it.R),big:`<b>${it.n}</b>+<i>?</i>=<span>${it.R}</span>`,ans:a,dis:[a+1,a-1,it.B-a,a+10,it.n%it.B,a+it.B/10],min:1,
+        vis:p=>{const b=g.el('div','bar',null,p);g.el('i',null,null,b).style.width=((it.n-lo)/it.B*100)+'%';}};});
+    ABN.burst(g,items);
+  }
+});
+}
+</script></body></html>

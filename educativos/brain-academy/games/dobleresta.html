@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Double Subtraction</title></head>
+<body><script>
+const H=window.parent&&window.parent!==window?window.parent.Hub:null;
+if(!H){location.replace('../index.html');}
+</script><script src="abnkit.js"></script><script>
+if(H){
+// Doble resta ABN: M − b − c quitando a la vez trozos de los dos sustraendos.
+const {ri}=ABN;
+const TX={es:{p:(m,b,c)=>`➖➖ Doble resta: ${m} − ${b} − ${c}`,h:(b,c)=>[`Quito del ${b}`,`Quito del ${c}`,'Queda'],ask:(x,y,q)=>`Quitamos <b>${x}</b> y <b>${y}</b> a la vez del <b>${q}</b>: ¿cuánto queda?`,done:(m,b,c,r)=>`✅ ${m} − ${b} − ${c} = ${r}`},
+          en:{p:(m,b,c)=>`➖➖ Double subtraction: ${m} − ${b} − ${c}`,h:(b,c)=>[`From ${b}`,`From ${c}`,'Left'],ask:(x,y,q)=>`Take <b>${x}</b> and <b>${y}</b> at once from <b>${q}</b>: how much is left?`,done:(m,b,c,r)=>`✅ ${m} − ${b} − ${c} = ${r}`}};
+function gen(r,D){
+  for(let t=0;t<300;t++){let M,b,c;
+    if(D<5){M=ri(r,40,99);b=ri(r,11,35);c=ri(r,11,35);}else if(D<7){M=ri(r,120,299);b=ri(r,21,90);c=ri(r,21,90);}else{M=ri(r,400,999);b=ri(r,105,300);c=ri(r,25,250);}
+    if(b+c>M-5)continue;const P=[[Math.floor(b/10)*10,Math.floor(c/10)*10],[b%10,c%10]].filter(p=>p[0]+p[1]>0);
+    return{M,b,c,P};}
+  return{M:80,b:23,c:15,P:[[20,10],[3,5]]};
+}
+H.start(window,{id:'dobleresta',mode:'rounds',css:ABN.CSS,
+  timer:D=>Math.max(30,Math.round(100*Math.pow(.93,D))),
+  round(g){
+    const P=gen(g.r,g.D),L=ABN.L(g,TX);g.prompt(L.p(P.M,P.b,P.c));let q=P.M;
+    const steps=P.P.map(([x,y])=>{const a=q-x-y,s={ask:L.ask(x,y,q),ans:a,dis:[a+10,a-10,q-x,q-y,a+1,a-1],row:[x,y,a],qi:2};q=a;return s;});
+    steps[steps.length-1].done=L.done(P.M,P.b,P.c,q);
+    ABN.steps(g,L.h(P.b,P.c),steps,null,['','',P.M]);
+  }
+});
+}
+</script></body></html>

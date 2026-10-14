@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Add Three Numbers</title></head>
+<body><script>
+const H=window.parent&&window.parent!==window?window.parent.Hub:null;
+if(!H){location.replace('../index.html');}
+</script><script src="abnkit.js"></script><script>
+if(H){
+// Suma de tres números: busca primero los dos «amigos» que forman un número redondo y luego suma el tercero.
+const {ri,shuf}=ABN;
+const TX={es:{p:'🤝 Suma los tres números: busca primero los dos amigos que hacen un número redondo',a1:'¿Qué dos números juntos dan un número redondo?',a2:(R,z)=>`Ahora es fácil: <b>${R} + ${z}</b> = ?`,done:(t,s)=>`✅ ${t} = ${s}`},
+          en:{p:'🤝 Add the three numbers: first find the two friends that make a round number',a1:'Which two numbers make a round number together?',a2:(R,z)=>`Now it's easy: <b>${R} + ${z}</b> = ?`,done:(t,s)=>`✅ ${t} = ${s}`}};
+function gen(r,D){
+  for(let t=0;t<500;t++){let x,y,z;
+    if(D<3){x=ri(r,1,9);y=10-x;z=ri(r,1,9);}
+    else if(D<5){const R=ri(r,2,9)*10;x=ri(r,11,R-11);y=R-x;z=ri(r,3,39);}
+    else if(D<7){x=ri(r,11,89);y=100-x;z=ri(r,12,99);}
+    else{const R=ri(r,2,9)*100;x=ri(r,105,R-105);y=R-x;z=ri(r,25,450);}
+    if(x%10===0||(x+z)%10===0||(y+z)%10===0||x===y||z===x||z===y)continue;
+    return{x,y,z,R:x+y,nums:shuf(r,[x,y,z])};}
+  return{x:7,y:3,z:5,R:10,nums:[7,5,3]};
+}
+H.start(window,{id:'sumatres',mode:'rounds',css:ABN.CSS,
+  timer:D=>Math.max(25,Math.round(70*Math.pow(.93,D))),
+  round(g){
+    const P=gen(g.r,g.D),L=ABN.L(g,TX),s=P.R+P.z;g.prompt(L.p);
+    const big=g.el('div','big',P.nums.map(n=>`<b>${n}</b>`).join('+')+'=<i>?</i>',g.stage),ask=g.el('div','ask',L.a1,g.stage),box=g.el('div','k-ans',null,g.stage);
+    const [a,b,c]=P.nums,pairs=shuf(g.r,[[a,b],[a,c],[b,c]]);
+    g.choices(pairs,(p,bt)=>{bt.textContent=`${p[0]} + ${p[1]}`;bt.style.fontSize='1.35rem';},(p,bt)=>{
+      if(p[0]+p[1]!==P.R){g.bad(bt);return;}g.good(bt);box.innerHTML='';
+      big.innerHTML=`<b style="background:#c9f7d5">${P.R}</b>+<b>${P.z}</b>=<i>?</i>`;ask.innerHTML=L.a2(P.R,P.z);
+      g.choices(ABN.opts(g.r,s,[s+10,s-10,s+1,s-1,P.R+P.z*2],4,0),(v,b2)=>{b2.textContent=v;},(v,b2)=>{
+        if(v!==s){g.bad(b2);return;}big.querySelector('i').textContent=s;ask.innerHTML=L.done(P.nums.join(' + '),s);b2.classList.add('k-right');g.fx.stars(b2);g.solved();},4,box);
+      if(g.refit)g.refit();},3,box);
+  }
+});
+}
+</script></body></html>

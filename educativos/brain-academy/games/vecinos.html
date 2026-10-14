@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Number Neighbours</title></head>
+<body><script>
+const H=window.parent&&window.parent!==window?window.parent.Hub:null;
+if(!H){location.replace('../index.html');}
+</script><script src="abnkit.js"></script><script>
+if(H){
+// Números vecinos: anterior y posterior, de 1 en 1, de 10 en 10 y de 100 en 100.
+const {ri,pick}=ABN;
+const TX={es:{q:(st,d)=>st===1?(d<0?'🏠 ¿Qué número vive justo <b>antes</b>?':'🏠 ¿Qué número vive justo <b>después</b>?'):`🏠 ¿Qué número está <b>${st} ${d<0?'antes':'después'}</b>?`},
+          en:{q:(st,d)=>st===1?(d<0?'🏠 Which number lives just <b>before</b>?':'🏠 Which number lives just <b>after</b>?'):`🏠 Which number is <b>${st} ${d<0?'before':'after'}</b>?`}};
+const css=ABN.CSS+`.houses{display:flex;justify-content:center;gap:8px}.houses div{display:flex;flex-direction:column;align-items:center;font-family:'Fredoka One',ui-rounded,sans-serif;font-size:clamp(1.4rem,6.5vmin,2.1rem)}
+.houses span{font-size:clamp(2rem,9vmin,3rem);line-height:1}.houses b{background:#ffd93d;border-radius:12px;padding:0 10px;font-weight:400}.houses i{font-style:normal;color:var(--purple);background:#f3edff;border-radius:12px;padding:0 10px;border:3px dashed var(--lilac)}`;
+function item(r,D){
+  const st=D<2?1:D<4?pick(r,[1,10]):D<6?pick(r,[1,10,100]):pick(r,[10,100,1000]),d=r()<.5?-1:1;
+  const max=D<1?10:D<2?20:D<3?50:D<4?100:D<6?999:9999;const n=ri(r,st+1,max-st);return{n,st,d,ans:n+d*st};
+}
+H.start(window,{id:'vecinos',mode:'rounds',css,
+  timer:D=>Math.round(3*Math.max(5,14*Math.pow(.9,D))),
+  round(g){
+    const L=ABN.L(g,TX),items=[0,1,2].map(()=>{const it=item(g.r,g.D);
+      return{q:L.q(it.st,it.d),ans:it.ans,dis:[it.n-it.d*it.st,it.ans+1,it.ans-1,it.n+it.d*it.st*10,it.n,it.ans+it.d*10],
+        vis:p=>{const h=g.el('div','houses',null,p);[-1,0,1].forEach(k=>{const c=g.el('div',null,null,h);g.el('span',null,k?'🏡':'🏠',c);
+          if(k===0)g.el('b',null,it.n,c);else if(k===it.d)g.el('i',null,'?',c);else g.el('b',null,it.n+k*it.st,c).style.background='#eee';});}};});
+    ABN.burst(g,items);
+  }
+});
+}
+</script></body></html>

@@ -1,6 +1,12 @@
 ARCADE PERDIDO + ARCADE PRO — LO QUE ESTÁ HECHO
 ================================================
-Fecha: 14-10-2026 · Versión de la PWA (games.js → ARCADE_VERSION): 2.8.1
+Fecha: 14-10-2026 · Versión de la PWA (games.js → ARCADE_VERSION): 2.9.0
+· v2.9.0: 23 minijuegos ABN nuevos en Emoji Brain Academy (ahora 69): doble recta para sumar y restar, saltos en la
+  recta hacia delante y hacia atrás, Riega la maceta (estimar posiciones en la recta con marcas ¼ ⅓ ½ ⅔ ¾ y maceta
+  cada vez más estrecha), resta por detracción, doble resta, suma de tres, truco del 9, tablas con trucos, haces y
+  palillos, vecinos, hasta el redondo, número escondido, problemas de cambio/combinación y de comparación/igualación,
+  por 10/100, reparto, formas de un número, fracciones de una cantidad, cuántas decenas tiene, cálculo relámpago y
+  cuántas veces cabe. Comparten games/abnkit.js (rejilla de pasos, recta numérica SVG, ráfagas de preguntas).
 · v2.8.1: PWA DESACTIVADA de momento (mezclaba versiones viejas y nuevas de .js/.html en caché). sw.js ahora
   solo borra las cachés y se da de baja; ninguna página lo registra. Para reactivarla, ver el comentario de pwa/sw.js.
 Total: 41 juegos en la colección principal + 90 en la colección Pro = 131 juegos arcade,
@@ -27,7 +33,8 @@ educativos/   Juegos educativos (v2.8.0). Apps hechas aparte que NO usan common.
               · index.html          portada con filtros por asignatura (Mates, Lengua, Lógica, Inglés) y edad
                                     (3 a 6, 7 a 12, 13 a 16 años) y buscador. ?materia=mates&edad=3-6&q=… preselecciona.
               · juegos.js           catálogo (window.EDU), generado por herramientas/mkedu.py
-              · brain-academy/      Emoji Brain Academy: 46 minijuegos (index.html = todos, indexinnovabn.html = solo ABN).
+              · brain-academy/      Emoji Brain Academy: 69 minijuegos (index.html = todos, indexinnovabn.html = solo ABN).
+                                    Juego nuevo: games/<id>.html + entrada en data/games.json (cat, ages, innovabn).
                                     Se añadió un enlace directo: index.html?juego=<id>&edad=3|6|9&lang=es|en|fr abre el
                                     minijuego sin pasar por la lista (si no hay perfil crea uno «Invitado» con esa edad).
               · aventura-palabras/  Aventura de Palabras (juego_vocabulario_infinito.html) y Palabras por repetición
