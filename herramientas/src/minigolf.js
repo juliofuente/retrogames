@@ -1,0 +1,162 @@
+// Minigolf|#1c3d1c
+(function () {
+  const { rand, clamp, ri } = Arcade;
+
+  function rr2(a, b) { return !(a.x + a.w < b.x || b.x + b.w < a.x || a.y + a.h < b.y || b.y + b.h < a.y); }
+  function build(g) {
+    const s = g.s, L = g.lv, F = s.F;
+    s.ball = { x: F.x + F.w / 2 + rand(-F.w * 0.25, F.w * 0.25), y: F.y + F.h - 40 * s.u, vx: 0, vy: 0 };
+    s.hole = { x: F.x + F.w / 2 + rand(-F.w * 0.3, F.w * 0.3), y: F.y + 50 * s.u };
+    s.walls = []; s.water = []; s.sand = []; s.spin = null;
+    const keep = [{ x: s.ball.x - 40 * s.u, y: s.ball.y - 40 * s.u, w: 80 * s.u, h: 80 * s.u }, { x: s.hole.x - 40 * s.u, y: s.hole.y - 40 * s.u, w: 80 * s.u, h: 80 * s.u }];
+    const place = (arr, n, wmin, wmax, hmin, hmax) => {
+      for (let i = 0, tries = 0; i < n && tries < 200; tries++) {
+        const w = rand(wmin, wmax) * s.u, h = rand(hmin, hmax) * s.u;
+        const r = { x: rand(F.x + 10, F.x + F.w - w - 10), y: rand(F.y + 90 * s.u, F.y + F.h - h - 90 * s.u), w, h };
+        if (keep.some((k) => rr2(k, r))) continue;
+        arr.push(r); keep.push(r); i++;
+      }
+    };
+    // pared central típica
+    const nw = Math.min(1 + Math.floor(L / 2), 5);
+    place(s.walls, nw, 50, 150, 14, 22);
+    if (L >= 2) place(s.walls, Math.min(Math.floor(L / 4), 3), 14, 22, 50, 120);
+    if (L >= 3) place(s.sand, Math.min(1 + Math.floor(L / 5), 3), 50, 110, 40, 80);
+    if (L >= 4) place(s.water, Math.min(1 + Math.floor((L - 4) / 4), 3), 50, 110, 40, 80);
+    if (L >= 6 && L % 2 === 0) { const cy = (s.ball.y + s.hole.y) / 2; s.spin = { x: F.x + F.w / 2, y: cy, len: Math.min(F.w * 0.3, 90 * s.u), a: 0, sp: 1 + L * 0.05 }; }
+    s.hole.r = 13 * s.u; s.br = 8 * s.u;
+    const dist = Math.hypot(s.ball.x - s.hole.x, s.ball.y - s.hole.y) / s.u;
+    s.par = clamp(2 + Math.floor(dist / 300) + (s.walls.length > 2 ? 1 : 0) + (s.water.length ? 1 : 0), 2, 6);
+    s.strokes = 0; s.last = { x: s.ball.x, y: s.ball.y }; s.sunk = 0;
+  }
+  function geo(g) {
+    const s = g.s, M = 14, Wa = g.W - M * 2, Ha = g.bot - g.top - 70;
+    const w = Math.min(Wa, Ha * 0.62), h = Math.min(Ha, w / 0.62);
+    s.F = { x: (g.W - w) / 2, y: g.top + 56 + (Ha - h) / 2, w, h }; s.u = w / 380;
+  }
+  const moving = (s) => Math.hypot(s.ball.vx, s.ball.vy) > 4;
+  function shoot(g, pow, ang) {
+    const s = g.s; if (moving(s) || s.sunk) return;
+    const v = pow * 900 * s.u;
+    s.ball.vx = Math.cos(ang) * v; s.ball.vy = Math.sin(ang) * v;
+    s.last = { x: s.ball.x, y: s.ball.y }; s.strokes++;
+    Arcade.tone(300 + pow * 300, 0.06, 'square', 0.08); Arcade.sfx.whoosh();
+  }
+  function collideRect(b, r, rad) {
+    const cx = clamp(b.x, r.x, r.x + r.w), cy = clamp(b.y, r.y, r.y + r.h), dx = b.x - cx, dy = b.y - cy, d = Math.hypot(dx, dy);
+    if (d >= rad || d === 0) return false;
+    const nx = dx / d, ny = dy / d; b.x = cx + nx * rad; b.y = cy + ny * rad;
+    const dot = b.vx * nx + b.vy * ny; if (dot < 0) { b.vx -= 2 * dot * nx; b.vy -= 2 * dot * ny; b.vx *= 0.85; b.vy *= 0.85; }
+    return true;
+  }
+  const inR = (b, r) => b.x > r.x && b.x < r.x + r.w && b.y > r.y && b.y < r.y + r.h;
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Hoyo a hoyo, golpe a golpe', deco: ['⛳', '🏌️', '🌳', '💧', '🏖️', '🏆'], font: 'round', bg: ['#2f6b2f', '#1c3d1c'],
+    music: { mode: 'major', bpm: 100, wave: 'triangle', style: 'chill', root: 62 }, voice: { wave: 'sine', mul: 1, echo: 0.25 },
+    ambient: { e: ['🦋'], n: 4, vy: -8, sway: 40, alpha: 0.35, size: [12, 18] },
+    en: { title: 'Mini Golf', tag: 'Hole by hole, stroke by stroke', help: '<b>Drag backwards</b> from anywhere like a slingshot and <b>release</b> to hit the ball: the longer the pull, the harder the shot. Walls bounce, <b>sand</b> 🏖️ brakes and <b>water</b> 💧 sends you back with a penalty stroke. Each hole is a level with its own <b>par</b>; if you take par + 3 strokes you lose a life and repeat the hole.', tvHelp: '◀ ▶ aim · hold OK to charge and release to hit.', dict: { 'Hoyo ': 'Hole ', 'Par ': 'Par ', 'Golpes: ': 'Strokes: ', '¡Hoyo en uno!': 'Hole in one!', '¡Al agua!': 'Splash!', 'Birdie': 'Birdie', 'Eagle': 'Eagle', 'Par': 'Par', 'Bogey': 'Bogey', 'Demasiados golpes': 'Too many strokes' } },
+    tvHelp: '◀ ▶ apuntar · mantén OK para cargar y suelta para golpear.',
+    id: 'minigolf', title: 'Minigolf', emoji: '⛳', color: '#69db7c', origin: 'Golf Dash / Mini Golf',
+    help: '<b>Arrastra hacia atrás</b> desde cualquier sitio como un tirachinas y <b>suelta</b> para golpear la bola: cuanto más tiras, más fuerte. Las paredes rebotan, la <b>arena</b> 🏖️ frena y el <b>agua</b> 💧 te devuelve atrás con un golpe de castigo. Cada hoyo es un nivel con su <b>par</b>; si llegas a par + 3 golpes pierdes una vida y repites el hoyo.',
+    lives: 3, levels: 0, cap: 30,
+    setup(g) { g.s = { aim: -Math.PI / 2, pow: 0 }; geo(g); build(g); },
+    layout(g) { if (g.s.ball) { const s = g.s, F0 = s.F; geo(g); const k = s.F.w / F0.w, m = (o) => { o.x = s.F.x + (o.x - F0.x) * k; o.y = s.F.y + (o.y - F0.y) * k; if (o.w) { o.w *= k; o.h *= k; } }; [s.ball, s.hole, s.last, ...s.walls, ...s.water, ...s.sand].forEach(m); if (s.spin) { m(s.spin); s.spin.len *= k; } s.hole.r = 13 * s.u; s.br = 8 * s.u; } },
+    down(g, p) { const s = g.s; if (moving(s) || s.sunk) return; s.drag = { x: p.x, y: p.y }; },
+    move(g, p) { const s = g.s; if (!s.drag) return; const dx = s.drag.x - p.x, dy = s.drag.y - p.y, d = Math.hypot(dx, dy); if (d > 6) { s.aim = Math.atan2(dy, dx); s.pow = clamp(d / (200 * s.u), 0, 1); } },
+    up(g) { const s = g.s; if (!s.drag) return; s.drag = null; if (s.pow > 0.05) shoot(g, s.pow, s.aim); s.pow = 0; },
+    key(g, k, d) {
+      const s = g.s;
+      if (k === 'ArrowLeft' || k === 'ArrowRight') s.kaim = d ? (k === 'ArrowLeft' ? -1 : 1) : 0;
+      if (k === ' ') { if (d) { if (!moving(s)) s.charging = true; } else if (s.charging) { s.charging = false; if (s.pow > 0.05) shoot(g, s.pow, s.aim); s.pow = 0; } }
+    },
+    update(g, dt) {
+      const s = g.s, b = s.ball;
+      if (s.kaim) s.aim += s.kaim * dt * 1.8;
+      if (s.charging) s.pow = Math.min(1, s.pow + dt * 0.8);
+      if (s.spin) s.spin.a += dt * s.spin.sp;
+      if (s.sunk > 0) { s.sunk += dt; return; }
+      if (s.sunk < 0) return;
+      const N = 6;
+      for (let i = 0; i < N; i++) {
+        const h = dt / N; b.x += b.vx * h; b.y += b.vy * h;
+        const F = s.F, r = s.br;
+        if (b.x < F.x + r) { b.x = F.x + r; b.vx = Math.abs(b.vx) * 0.85; Arcade.sfx.tick(); }
+        if (b.x > F.x + F.w - r) { b.x = F.x + F.w - r; b.vx = -Math.abs(b.vx) * 0.85; Arcade.sfx.tick(); }
+        if (b.y < F.y + r) { b.y = F.y + r; b.vy = Math.abs(b.vy) * 0.85; Arcade.sfx.tick(); }
+        if (b.y > F.y + F.h - r) { b.y = F.y + F.h - r; b.vy = -Math.abs(b.vy) * 0.85; Arcade.sfx.tick(); }
+        for (const w of s.walls) if (collideRect(b, w, r)) Arcade.tone(240, 0.03, 'triangle', 0.05);
+        if (s.spin) {
+          const sp = s.spin, ex = Math.cos(sp.a) * sp.len, ey = Math.sin(sp.a) * sp.len;
+          // segmento -> distancia
+          const ax = sp.x - ex, ay = sp.y - ey, bx = sp.x + ex, by = sp.y + ey, vx = bx - ax, vy = by - ay;
+          const t = clamp(((b.x - ax) * vx + (b.y - ay) * vy) / (vx * vx + vy * vy), 0, 1), px = ax + vx * t, py = ay + vy * t;
+          const dx = b.x - px, dy = b.y - py, d = Math.hypot(dx, dy), rad = r + 5 * s.u;
+          if (d < rad && d > 0) { const nx = dx / d, ny = dy / d; b.x = px + nx * rad; b.y = py + ny * rad; const dot = b.vx * nx + b.vy * ny; if (dot < 0) { b.vx -= 2 * dot * nx; b.vy -= 2 * dot * ny; } const tv = (t - 0.5) * 2 * sp.len * sp.sp; b.vx += -Math.sin(sp.a) * tv * 0.5; b.vy += Math.cos(sp.a) * tv * 0.5; Arcade.sfx.tick(); }
+        }
+      }
+      const sand = s.sand.some((r) => inR(b, r));
+      const fr = Math.pow(sand ? 0.02 : 0.3, dt);
+      b.vx *= fr; b.vy *= fr;
+      const sp = Math.hypot(b.vx, b.vy);
+      if (sp < 10 * s.u) { b.vx = b.vy = 0; }
+      // agujero
+      const dh = Math.hypot(b.x - s.hole.x, b.y - s.hole.y);
+      if (dh < s.hole.r) {
+        if (sp < 420 * s.u) { b.x = s.hole.x; b.y = s.hole.y; b.vx = b.vy = 0; return sink(g); }
+      } else if (dh < s.hole.r * 2.2 && sp < 260 * s.u) { b.vx += (s.hole.x - b.x) * dt * 6; b.vy += (s.hole.y - b.y) * dt * 6; }
+      // agua
+      if (s.water.some((r) => inR(b, r))) {
+        g.burst(b.x, b.y, { n: 12, color: ['#4dabf7', '#a5d8ff'], speed: 120, size: 3 }); Arcade.tone(600, 0.3, 'sine', 0.08, -400);
+        g.message(Arcade.T('¡Al agua!', 'Splash!'), 0.9);
+        b.x = s.last.x; b.y = s.last.y; b.vx = b.vy = 0; s.strokes++;
+      }
+      if (!moving(s) && !s.sunk && s.strokes >= s.par + 3) {
+        g.message(Arcade.T('Demasiados golpes', 'Too many strokes'), 1.2); s.sunk = -1;
+        setTimeout(() => { if (g.state === 'play' && g.die()) { build(g); s.sunk = 0; } }, 900);
+      }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      ctx.fillStyle = '#1c3d1c'; ctx.fillRect(0, 0, W, H);
+      g.scenery(['🌳', '🌲', '🌼', '🌳'], 14, { alpha: 0.4, size: [26, 46] });
+      if (!s.ball) return;
+      const F = s.F, u = s.u;
+      ctx.fillStyle = 'rgba(0,0,0,.35)'; Arcade.rr(ctx, F.x - 4, F.y + 2, F.w + 12, F.h + 10, 18); ctx.fill();
+      ctx.fillStyle = '#8d5524'; Arcade.rr(ctx, F.x - 8, F.y - 8, F.w + 16, F.h + 16, 18); ctx.fill();
+      // césped a franjas
+      ctx.save(); Arcade.rr(ctx, F.x, F.y, F.w, F.h, 12); ctx.clip();
+      for (let i = 0; i * 28 * u < F.h; i++) { ctx.fillStyle = i % 2 ? '#51cf66' : '#40c057'; ctx.fillRect(F.x, F.y + i * 28 * u, F.w, 28 * u); }
+      for (const r of s.sand) { ctx.fillStyle = '#ffe8a3'; Arcade.rr(ctx, r.x, r.y, r.w, r.h, Math.min(r.w, r.h) * 0.45); ctx.fill(); ctx.fillStyle = 'rgba(200,160,80,.4)'; for (let k = 0; k < 6; k++) ctx.fillRect(r.x + ((k * 37) % r.w), r.y + ((k * 23) % r.h), 2, 2); }
+      for (const r of s.water) { const gr = ctx.createLinearGradient(r.x, r.y, r.x, r.y + r.h); gr.addColorStop(0, '#74c0fc'); gr.addColorStop(1, '#1c7ed6'); ctx.fillStyle = gr; Arcade.rr(ctx, r.x, r.y, r.w, r.h, Math.min(r.w, r.h) * 0.45); ctx.fill(); ctx.strokeStyle = 'rgba(255,255,255,.5)'; ctx.lineWidth = 2; ctx.beginPath(); const wy = r.y + r.h / 2 + Math.sin(g.rt * 2) * 4; ctx.moveTo(r.x + r.w * 0.25, wy); ctx.quadraticCurveTo(r.x + r.w / 2, wy - 5, r.x + r.w * 0.75, wy); ctx.stroke(); }
+      ctx.restore();
+      for (const w of s.walls) { ctx.fillStyle = '#6b4b2a'; Arcade.rr(ctx, w.x, w.y + 3, w.w, w.h, 5); ctx.fill(); ctx.fillStyle = '#a0703c'; Arcade.rr(ctx, w.x, w.y, w.w, w.h - 2, 5); ctx.fill(); }
+      if (s.spin) { const sp = s.spin, ex = Math.cos(sp.a) * sp.len, ey = Math.sin(sp.a) * sp.len; ctx.strokeStyle = '#e03131'; ctx.lineWidth = 10 * u; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(sp.x - ex, sp.y - ey); ctx.lineTo(sp.x + ex, sp.y + ey); ctx.stroke(); ctx.lineCap = 'butt'; Arcade.emoji(ctx, '⚙️', sp.x, sp.y, 26 * u, { rot: sp.a }); }
+      // hoyo y bandera
+      const h = s.hole; ctx.fillStyle = '#111'; ctx.beginPath(); ctx.ellipse(h.x, h.y, h.r, h.r * 0.85, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = '#eee'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(h.x, h.y); ctx.lineTo(h.x, h.y - 46 * u); ctx.stroke();
+      ctx.fillStyle = '#ff6b6b'; ctx.beginPath(); const fw = Math.sin(g.rt * 4) * 3; ctx.moveTo(h.x, h.y - 46 * u); ctx.lineTo(h.x + 22 * u, h.y - 40 * u + fw); ctx.lineTo(h.x, h.y - 32 * u); ctx.fill();
+      // bola
+      const b = s.ball;
+      if (s.sunk <= 0 || s.sunk < 0.01) {
+        if (!moving(s) && !s.sunk) {
+          const L = (s.pow || 0.25) * 120 * u + 20 * u;
+          ctx.setLineDash([6, 6]); ctx.strokeStyle = s.pow ? `hsl(${120 - s.pow * 120},90%,55%)` : 'rgba(255,255,255,.6)'; ctx.lineWidth = 3;
+          ctx.beginPath(); ctx.moveTo(b.x, b.y); ctx.lineTo(b.x + Math.cos(s.aim) * L, b.y + Math.sin(s.aim) * L); ctx.stroke(); ctx.setLineDash([]);
+        }
+        ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.beginPath(); ctx.ellipse(b.x + 2, b.y + 3, s.br, s.br * 0.7, 0, 0, Math.PI * 2); ctx.fill();
+        const gr = ctx.createRadialGradient(b.x - 3, b.y - 3, 1, b.x, b.y, s.br); gr.addColorStop(0, '#fff'); gr.addColorStop(1, '#ced4da');
+        ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(b.x, b.y, s.br, 0, Math.PI * 2); ctx.fill();
+      }
+      Arcade.txt(ctx, 'Hoyo ' + g.level + '  ·  ' + 'Par ' + s.par + '  ·  ' + 'Golpes: ' + s.strokes, W / 2, F.y - 26, 15, '#fff', 'center', 900);
+    },
+  });
+  function sink(g) {
+    const s = g.s; s.sunk = 0.01;
+    const d = s.strokes - s.par;
+    const name = s.strokes === 1 ? Arcade.T('¡Hoyo en uno!', 'Hole in one!') : d <= -2 ? 'Eagle' : d === -1 ? 'Birdie' : d === 0 ? 'Par' : 'Bogey';
+    g.message(name, 1.2); Arcade.sfx.win(); g.ring(s.hole.x, s.hole.y, '#ffd43b', 40); g.confetti(s.strokes === 1 ? 80 : 30);
+    g.addScore(Math.max(10, (s.par + 3 - s.strokes) * 40) * g.lv, s.hole.x, s.hole.y - 30);
+    setTimeout(() => { if (g.state === 'play') g.win(d <= -1 || s.strokes === 1 ? 3 : d === 0 ? 2 : 1); }, 900);
+  }
+})();

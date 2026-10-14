@@ -1,0 +1,186 @@
+// Hamburguesa|#0b0b16
+(function () {
+  const { ri, pick, shuffle } = Arcade;
+  const D = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
+  const OPP = { up: 'down', down: 'up', left: 'right', right: 'left' };
+  const TYPES = ['top', 'lettuce', 'meat', 'bottom'];
+  const ENEMY = ['🌭', '🥚', '🥒'];
+
+  function geo(g) {
+    const s = g.s, Wa = g.W - 16, Ha = g.bot - g.top - 30;
+    s.cs = Math.min(Wa / s.NC, Ha / (s.NR + 3.5));
+    s.ox = (g.W - s.cs * s.NC) / 2; s.oy = g.top + 26 + s.cs * 0.8 + (Ha - s.cs * (s.NR + 3.5)) / 2;
+  }
+  const floorY = (s, f) => s.oy + f * 3 * s.cs;
+  const plateY = (s) => s.oy + ((s.F - 1) * 3 + 3) * s.cs;
+  function canMove(s, m, d) {
+    const nc = m.c + D[d][0], nr = m.r + D[d][1];
+    if (nc < 0 || nc >= s.NC || nr < 0 || nr >= s.NR) return false;
+    if (d === 'left' || d === 'right') return m.r % 3 === 0;
+    if (d === 'up') return m.r % 3 === 0 ? s.lad.has(m.c + ',' + (m.r / 3 - 1)) : true;
+    return m.r % 3 === 0 ? s.lad.has(m.c + ',' + m.r / 3) : true;
+  }
+  const epos = (s, m) => ({ x: s.ox + (m.c + 0.5 + (m.moving ? D[m.dir][0] * m.p : 0)) * s.cs, y: s.oy + (m.r + (m.moving ? D[m.dir][1] * m.p : 0)) * s.cs });
+  function startFall(g, ing) {
+    const s = g.s;
+    ing.falling = true; ing.tf = ing.f + 1; ing.vy = 0;
+    ing.ty = ing.tf >= s.F ? plateY(s) - s.plates[ing.b] * s.cs * 0.42 : floorY(s, ing.tf);
+    g.addScore(50); Arcade.tone(300, 0.15, 'square', 0.07, -150);
+  }
+  function stepOn(g, m) {
+    const s = g.s; if (m.r % 3) return;
+    const f = m.r / 3, k = (m.c - 1) % 5, b = Math.floor((m.c - 1) / 5);
+    if (m.c < 1 || k > 3) return;
+    const ing = s.ings.find(i => i.b === b && i.f === f && !i.falling);
+    if (!ing || ing.steps[k]) return;
+    ing.steps[k] = 1; Arcade.sfx.tick();
+    if (ing.steps.every(Boolean)) startFall(g, ing);
+  }
+  function arriveP(g) {
+    const s = g.s, m = s.pl;
+    m.c += D[m.dir][0]; m.r += D[m.dir][1]; m.p = 0;
+    stepOn(g, m);
+    if (m.want && m.want !== m.dir && canMove(s, m, m.want)) m.dir = m.want;
+    if (!canMove(s, m, m.dir)) m.moving = false;
+  }
+  function arriveE(g, e) {
+    const s = g.s, pl = s.pl;
+    e.c += D[e.dir][0]; e.r += D[e.dir][1]; e.p = 0;
+    let opts = Object.keys(D).filter(d => canMove(s, e, d) && d !== OPP[e.dir]);
+    if (!opts.length) opts = [OPP[e.dir]];
+    if (Math.random() < 0.62) {
+      const score = (d) => { const nc = e.c + D[d][0], nr = e.r + D[d][1]; return Math.abs(nr - pl.r) * 2 + Math.abs(nc - pl.c); };
+      opts.sort((a, b) => score(a) - score(b));
+    } else shuffle(opts);
+    e.dir = opts[0]; e.moving = true;
+  }
+  function spawnEnemy(g, k) {
+    const s = g.s, left = k % 2 === 0;
+    const e = { c: left ? 0 : s.NC - 1, r: 0, dir: left ? 'right' : 'left', p: 0, moving: true, e: ENEMY[k % ENEMY.length], stun: 0, sp: 2.3 + g.level * 0.15 + Math.random() * 0.3, k };
+    s.en.push(e);
+  }
+  function die(g) {
+    const s = g.s, p = epos(s, s.pl);
+    g.burst(p.x, p.y - s.cs * 0.4, { n: 16, color: ['#fff', '#ff6b6b'], speed: 200 });
+    if (g.die()) { s.pl = { c: Math.floor(s.NC / 2), r: s.NR - 1, dir: 'left', p: 0, moving: false, want: null, face: 'left' }; s.en = []; s.spawnQ = s.nEn; s.spawnT = 1.5; s.inv = 2; }
+  }
+
+  Arcade.game({
+    id: 'hamburguesa', title: 'Hamburguesa', emoji: '🍔', color: '#ffa94d', origin: 'BurgerTime (Data East, 1982)',
+    help: '<b>Desliza</b> para moverte por los pisos y subir o bajar por las escaleras. Pisa los <b>cuatro trozos</b> de cada ingrediente para que caiga un piso; si cae sobre otro, lo empuja. Lleva todos los ingredientes a los platos para hacer las hamburguesas. Si un ingrediente cae sobre un enemigo, lo aplasta. <b>Toca</b> para echar pimienta 🌶️ y paralizar a los que tengas cerca.',
+    lives: 3, levels: 8,
+    setup(g) {
+      g.s = { en: [], inv: 1.5, pepper: 5, spray: 0 };
+      const s = g.s;
+      s.B = g.W < g.H ? 3 : 4; s.F = g.W < g.H ? 6 : 5;
+      s.NC = s.B * 5 + 1; s.NR = (s.F - 1) * 3 + 1;
+      s.lad = new Set();
+      for (let f = 0; f < s.F - 1; f++) {
+        const cols = shuffle([...Array(s.NC).keys()]), pickd = [];
+        for (const c of cols) { if (pickd.length >= ri(2, 3)) break; if (pickd.every(o => Math.abs(o - c) > 2)) pickd.push(c); }
+        for (const c of pickd) s.lad.add(c + ',' + f);
+      }
+      s.ings = []; s.plates = new Array(s.B).fill(0);
+      for (let b = 0; b < s.B; b++) {
+        const fl = shuffle([...Array(s.F).keys()]).slice(0, 4).sort((a, c) => a - c);
+        fl.forEach((f, i) => s.ings.push({ b, f, type: TYPES[i], steps: [0, 0, 0, 0], falling: false, y: 0 }));
+      }
+      geo(g);
+      for (const ing of s.ings) ing.y = floorY(s, ing.f);
+      s.pl = { c: Math.floor(s.NC / 2), r: s.NR - 1, dir: 'left', p: 0, moving: false, want: null, face: 'left' };
+      s.nEn = Math.min(5, 2 + Math.floor(g.level / 2)); s.spawnQ = s.nEn; s.spawnT = 2;
+    },
+    layout(g) {
+      const s = g.s; if (!s.ings) return;
+      geo(g);
+      for (const ing of s.ings) if (!ing.falling) ing.y = ing.f >= s.F ? plateY(s) - ing.stack * s.cs * 0.42 : floorY(s, ing.f);
+    },
+    swipe(g, d) {
+      const m = g.s.pl; m.want = d; if (d === 'left' || d === 'right') m.face = d;
+      if (m.moving && d === OPP[m.dir]) { m.c += D[m.dir][0]; m.r += D[m.dir][1]; m.dir = d; m.p = 1 - m.p; }
+    },
+    tap(g) {
+      const s = g.s; if (s.pepper <= 0) { Arcade.sfx.bad(); return; }
+      s.pepper--; s.spray = 0.4; Arcade.noise(0.25, 0.12);
+      const pp = epos(s, s.pl);
+      for (const e of s.en) { const ep = epos(s, e); if (Math.hypot(ep.x - pp.x, ep.y - pp.y) < s.cs * 3) e.stun = 3.2; }
+    },
+    key(g, k, d) { if (!d) return; const m = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right' }[k]; if (m) this.swipe(g, m); else if (k === ' ') this.tap(g); },
+    update(g, dt) {
+      const s = g.s, m = s.pl;
+      s.inv = Math.max(0, s.inv - dt); s.spray = Math.max(0, s.spray - dt);
+      if (m.moving) { m.p += 4.3 * dt; if (m.p >= 1) arriveP(g); }
+      else if (m.want && canMove(s, m, m.want)) { m.dir = m.want; m.moving = true; }
+      // ingredientes cayendo
+      for (const ing of s.ings) {
+        if (!ing.falling) continue;
+        const y0 = ing.y;
+        ing.vy += 2200 * dt; ing.y = Math.min(ing.ty, ing.y + ing.vy * dt);
+        for (const e of s.en) {
+          if (e.dead) continue;
+          const ep = epos(s, e), c0 = ing.b * 5 + 1;
+          if (ep.x > s.ox + c0 * s.cs - 4 && ep.x < s.ox + (c0 + 4) * s.cs + 4 && ep.y >= y0 - 4 && ep.y <= ing.y + 4) {
+            e.dead = true; g.addScore(500, ep.x, ep.y - 20); Arcade.sfx.pop(); g.burst(ep.x, ep.y, { n: 12, emoji: '💥', size: 14, speed: 150 });
+            s.spawnQ++; s.spawnT = 3;
+          }
+        }
+        if (ing.y >= ing.ty) {
+          ing.falling = false; ing.f = ing.tf; ing.steps = [0, 0, 0, 0];
+          Arcade.tone(150, 0.08, 'square', 0.08); g.shake(0.1, 4);
+          if (ing.f >= s.F) {
+            ing.stack = s.plates[ing.b]++; g.addScore(100, s.ox + (ing.b * 5 + 3) * s.cs, ing.y - 20); s.pepper = Math.min(9, s.pepper + 1);
+            if (s.ings.every(i => i.f >= s.F && !i.falling)) { g.addScore(2000 * g.level, g.W / 2, g.H / 2); g.win(); return; }
+          } else {
+            const below = s.ings.find(o => o !== ing && o.b === ing.b && o.f === ing.f && !o.falling);
+            if (below) startFall(g, below);
+          }
+        }
+      }
+      s.en = s.en.filter(e => !e.dead);
+      s.spawnT -= dt;
+      if (s.spawnQ > 0 && s.spawnT <= 0) { s.spawnQ--; s.spawnT = 2.5; spawnEnemy(g, s.en.length + s.spawnQ); }
+      const pp = epos(s, m);
+      for (const e of s.en) {
+        if (e.stun > 0) { e.stun -= dt; continue; }
+        e.p += e.sp * dt; if (e.p >= 1) arriveE(g, e);
+        const ep = epos(s, e);
+        if (s.inv <= 0 && Math.hypot(ep.x - pp.x, ep.y - pp.y) < s.cs * 0.7) { die(g); return; }
+      }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      ctx.fillStyle = '#0b0b16'; ctx.fillRect(0, 0, W, H);
+      if (!s.ings) return;
+      const cs = s.cs;
+      // escaleras
+      for (const k of s.lad) {
+        const [c, f] = k.split(',').map(Number), x = s.ox + (c + 0.5) * cs, y0 = floorY(s, f), y1 = floorY(s, f + 1);
+        ctx.strokeStyle = '#4dabf7'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(x - cs * 0.3, y0); ctx.lineTo(x - cs * 0.3, y1); ctx.moveTo(x + cs * 0.3, y0); ctx.lineTo(x + cs * 0.3, y1);
+        for (let y = y0 + cs * 0.5; y < y1; y += cs * 0.5) { ctx.moveTo(x - cs * 0.3, y); ctx.lineTo(x + cs * 0.3, y); }
+        ctx.stroke();
+      }
+      for (let f = 0; f < s.F; f++) { ctx.fillStyle = '#1c7ed6'; ctx.fillRect(s.ox, floorY(s, f), cs * s.NC, cs * 0.16); }
+      // platos
+      for (let b = 0; b < s.B; b++) { const x = s.ox + (b * 5 + 1) * cs; ctx.fillStyle = '#dee2e6'; Arcade.rr(ctx, x - 6, plateY(s), cs * 4 + 12, cs * 0.25, 4); ctx.fill(); }
+      // ingredientes
+      for (const ing of s.ings) {
+        const x = s.ox + (ing.b * 5 + 1) * cs, w = cs * 4, h = cs * 0.42, y = ing.y - h;
+        for (let k = 0; k < 4; k++) {
+          const sx = x + k * cs, sy = y + (ing.steps[k] ? cs * 0.15 : 0);
+          if (ing.type === 'top') { ctx.fillStyle = '#e8a33d'; ctx.beginPath(); ctx.moveTo(sx, sy + h); ctx.lineTo(sx, sy + h * 0.5); ctx.quadraticCurveTo(sx + cs / 2, k === 0 || k === 3 ? sy : sy - h * 0.3, sx + cs, sy + h * 0.5); ctx.lineTo(sx + cs, sy + h); ctx.fill(); ctx.fillStyle = '#fff3bf'; ctx.fillRect(sx + cs * 0.4, sy + h * 0.4, 3, 2); }
+          else if (ing.type === 'lettuce') { ctx.fillStyle = '#51cf66'; ctx.beginPath(); ctx.moveTo(sx, sy + h * 0.3); for (let t = 0; t <= 4; t++) ctx.lineTo(sx + t * cs / 4, sy + h * (t % 2 ? 0.9 : 0.4)); ctx.lineTo(sx + cs, sy + h * 0.3); ctx.fill(); }
+          else if (ing.type === 'meat') { ctx.fillStyle = '#7b3f1d'; Arcade.rr(ctx, sx, sy + h * 0.2, cs, h * 0.75, 3); ctx.fill(); }
+          else { ctx.fillStyle = '#d9822b'; Arcade.rr(ctx, sx, sy + h * 0.35, cs, h * 0.6, 3); ctx.fill(); }
+        }
+      }
+      for (const e of s.en) { const p = epos(s, e); Arcade.emoji(ctx, e.e, p.x, p.y - cs * 0.5, cs * 0.9, { rot: e.stun > 0 ? Math.sin(g.t * 20) * 0.3 : 0 }); if (e.stun > 0) Arcade.emoji(ctx, '💫', p.x, p.y - cs * 1.1, cs * 0.5); }
+      const p = epos(s, s.pl);
+      if (!(s.inv > 0 && Math.floor(g.t * 10) % 2)) Arcade.emoji(ctx, '👨‍🍳', p.x, p.y - cs * 0.55, cs * 1.0, { flip: s.pl.face === 'right' });
+      if (s.spray > 0) { ctx.fillStyle = 'rgba(255,255,255,' + s.spray + ')'; ctx.beginPath(); ctx.arc(p.x, p.y - cs * 0.5, cs * 3 * (1 - s.spray), 0, 6.28); ctx.fill(); }
+      Arcade.txt(ctx, '🌶️ ' + s.pepper, 16, s.oy - cs * 1.2, 15, '#ff8787', 'left', 900);
+      const done = s.ings.filter(i => i.f >= s.F).length;
+      Arcade.txt(ctx, '🍔 ' + done + '/' + s.ings.length, W - 16, s.oy - cs * 1.2, 15, '#ffd43b', 'right', 900);
+    },
+  });
+})();

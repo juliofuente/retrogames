@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="es" class="tv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Arcade Perdido · TV</title>
+<meta name="theme-color" content="#0d0a1f">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<script src="config.js"></script>
+<style>
+  :root { --bg: #0d0a1f; --ink: #f4f1ff; --muted: #a9a3c9; --font: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; --emoji: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font); }
+  body { min-height: 100vh; cursor: none; overflow-x: hidden;
+    background: radial-gradient(ellipse at 15% -10%, #3b2a7a 0, transparent 50%), radial-gradient(ellipse at 100% 10%, #6b1f5c 0, transparent 45%), radial-gradient(ellipse at 50% 120%, #0f3b5a 0, transparent 55%), var(--bg); background-attachment: fixed; }
+  .wrap { padding: 3.5vh 4vw 6vh; }
+  header { display: flex; align-items: center; gap: 22px; flex-wrap: wrap; margin-bottom: 2.5vh; }
+  .logo { font-size: 64px; font-family: var(--emoji); animation: bob 2.4s ease-in-out infinite; filter: drop-shadow(0 8px 18px rgba(255,80,180,.45)); }
+  @keyframes bob { 50% { transform: translateY(-8px) rotate(-6deg); } }
+  h1 { margin: 0; font-size: 48px; font-weight: 900; letter-spacing: -.02em; background: linear-gradient(90deg, #ffd166, #ff6b9d 55%, #9d7bff); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .sub { color: var(--muted); font-size: 18px; margin-top: 4px; }
+  .bar { margin-left: auto; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .bar .lbl { color: var(--muted); font-weight: 800; font-size: 16px; margin-right: 4px; }
+  .chip { border: 0; background: rgba(255,255,255,.1); color: var(--ink); padding: 12px 18px; border-radius: 999px; font: 800 18px var(--font); cursor: pointer; }
+  .chip.on { background: #ffd166; color: #1b1530; }
+  .secs { display: flex; gap: 6px; padding: 4px; border-radius: 999px; background: rgba(0,0,0,.3); margin-right: 8px; }
+  .chip.sec.on { background: linear-gradient(90deg, #4dd4ff, #b197fc); color: #10142b; }
+  .grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 2.2vw; }
+  @media (max-width: 1100px) { .grid { grid-template-columns: repeat(4, 1fr); } }
+  @media (max-width: 800px) { .grid { grid-template-columns: repeat(3, 1fr); } }
+  .gc { position: relative; display: flex; flex-direction: column; text-decoration: none; color: var(--ink); border-radius: 26px; padding: 18px 18px 14px; min-height: 230px;
+    background: linear-gradient(160deg, color-mix(in srgb, var(--c) 38%, #1d1840), #15112b 72%); border: 2px solid color-mix(in srgb, var(--c) 35%, transparent);
+    box-shadow: 0 12px 30px rgba(0,0,0,.4); transition: transform .14s, box-shadow .14s; }
+  .gc .em { font-size: 64px; font-family: var(--emoji); line-height: 1; filter: drop-shadow(0 6px 10px rgba(0,0,0,.4)); }
+  .gc h3 { margin: 12px 0 4px; font-size: 26px; font-weight: 900; color: color-mix(in srgb, var(--c) 70%, #fff); }
+  .gc .tg { font-size: 15px; color: #ddd8f5; line-height: 1.3; flex: 1; }
+  .gc .ft { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; font-size: 14px; font-weight: 800; color: var(--muted); }
+  .gc .ft span { background: rgba(0,0,0,.3); padding: 4px 10px; border-radius: 999px; }
+  .tvf { outline: 4px solid #fff; outline-offset: 4px; transform: scale(1.07); z-index: 2;
+    box-shadow: 0 0 0 10px color-mix(in srgb, var(--c, #ffd166) 45%, transparent), 0 0 40px var(--c, #ffd166) !important; }
+  .gc.tvf .em { animation: bob 1.2s ease-in-out infinite; }
+  .hint { margin-top: 4vh; text-align: center; color: var(--muted); font-size: 17px; }
+  .hint b { color: var(--ink); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">🕹️</div>
+    <div><h1>Arcade Perdido</h1><div class="sub" id="sub">Mecánicas de arcade olvidadas · para jugar con el mando</div></div>
+    <div class="bar" id="bar"><span class="lbl" id="plbl">Jugadores</span></div>
+  </header>
+  <main class="grid" id="grid"></main>
+  <p class="hint" id="hint">🎮 <b>Cruceta</b> para elegir · <b>OK</b> para jugar · En partida, <b>Atrás</b> pausa · Varios jugadores juegan <b>por turnos</b></p>
+</div>
+<script src="games.js"></script>
+<script>
+(function () {
+  const get = (k, d) => { try { const v = localStorage.getItem('arc_' + k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } };
+  const set = (k, v) => { try { localStorage.setItem('arc_' + k, JSON.stringify(v)); } catch (e) {} };
+  const EN = arcadeIdioma() === 'en';
+  document.documentElement.lang = EN ? 'en' : 'es';
+  if (EN) {
+    document.getElementById('sub').textContent = 'Forgotten arcade mechanics · played with the remote';
+    document.getElementById('plbl').textContent = 'Players';
+    document.getElementById('hint').innerHTML = '🎮 <b>D-pad</b> to choose · <b>OK</b> to play · In game, <b>Back</b> pauses · Several players play <b>taking turns</b>';
+  }
+  const loc = (g, k) => (EN && g.en && g.en[k]) || g[k];
+  const MAXP = Math.max(1, Math.min(4, ARCADE_CONFIG.jugadoresMax || 4));
+  const AV = ['🔴', '🔵', '🟢', '🟡'];
+  const bar = document.getElementById('bar'), grid = document.getElementById('grid');
+  let players = Math.min(MAXP, get('players', 1));
+  for (let n = 1; n <= MAXP; n++) {
+    const b = document.createElement('button'); b.className = 'chip pl' + (n === players ? ' on' : ''); b.dataset.n = n;
+    b.textContent = (n === 1 ? '👤' : AV.slice(0, n).join('')) + ' ' + n;
+    b.addEventListener('click', () => { players = n; set('players', n); bar.querySelectorAll('.pl').forEach((x) => x.classList.toggle('on', x === b)); });
+    bar.appendChild(b);
+  }
+  if (ARCADE_CONFIG.modo === 'seleccionable') {
+    const b = document.createElement('button'); b.className = 'chip'; b.textContent = EN ? '📱 Mobile mode' : '📱 Modo móvil';
+    b.addEventListener('click', () => { arcadeElegirTV(false); location.href = 'index.html?tv=0'; });
+    bar.appendChild(b);
+  }
+  if ((ARCADE_CONFIG.idioma || 'auto') === 'auto') {
+    const b = document.createElement('button'); b.className = 'chip'; b.textContent = EN ? '🇪🇸 Español' : '🇬🇧 English';
+    b.addEventListener('click', () => { const nl = EN ? 'es' : 'en'; arcadeElegirIdioma(nl); location.search = '?sec=' + sec + '&lang=' + nl; });
+    bar.appendChild(b);
+  }
+  const q = ARCADE_CONFIG.modo === 'modonormal' || ARCADE_CONFIG.modo === 'modotv' ? '' : '?tv=1';
+  let sec = new URLSearchParams(location.search).get('sec') === 'pro' ? 'pro' : 'main';
+  const secs = document.createElement('div'); secs.className = 'secs';
+  const SECS = { main: ['🕹️ Arcade Perdido', EN ? 'Forgotten arcade mechanics · played with the remote' : 'Mecánicas de arcade olvidadas · para jugar con el mando'],
+    pro: ['✨ Arcade Pro', EN ? 'Mobile hits remade with emojis · played with the remote' : 'Éxitos de móvil rehechos con emojis · para jugar con el mando'] };
+  for (const k of ['main', 'pro']) {
+    const b = document.createElement('button'); b.className = 'chip sec'; b.dataset.sec = k; b.textContent = SECS[k][0];
+    b.addEventListener('click', () => { if (sec === k) return; sec = k; render(); setFocus(grid.firstElementChild); history.replaceState(null, '', '?sec=' + k + '&lang=' + (EN ? 'en' : 'es')); });
+    secs.appendChild(b);
+  }
+  bar.prepend(secs);
+  function render() {
+    grid.innerHTML = '';
+    secs.querySelectorAll('.sec').forEach((x) => x.classList.toggle('on', x.dataset.sec === sec));
+    document.querySelector('h1').textContent = sec === 'pro' ? 'Arcade Pro' : 'Arcade Perdido';
+    document.querySelector('.logo').textContent = sec === 'pro' ? '✨' : '🕹️';
+    document.getElementById('sub').textContent = SECS[sec][1];
+    (sec === 'pro' ? GAMES_PRO : GAMES).filter((g) => g.tv).forEach((g) => {
+      const a = document.createElement('a');
+      a.className = 'gc'; a.href = g.file + q + (q ? '&' : '?') + 'lang=' + (EN ? 'en' : 'es'); a.dataset.id = g.id; a.style.setProperty('--c', g.color);
+      const best = get('best_' + g.id, 0), lv = get('lv_' + g.id, 1);
+      a.innerHTML = `<div class="em">${g.emoji}</div><h3>${loc(g, 'title')}</h3><div class="tg">${loc(g, 'tag') || loc(g, 'desc')}</div>
+        <div class="ft"><span>${g.tv === 'cursor' ? '🎯 Cursor' : (EN ? '🎮 D-pad' : '🎮 Cruceta')}</span><span>👥 1–${MAXP}</span>${best ? `<span>🏆 ${best}</span>` : ''}${lv > 1 ? `<span>🚩 ${lv}</span>` : ''}</div>`;
+      a.addEventListener('click', () => set('tvlast', g.id));
+      grid.appendChild(a);
+    });
+  }
+  render();
+
+  // navegación con la cruceta
+  let focus = null;
+  const items = () => [...document.querySelectorAll('.chip, .gc')];
+  function setFocus(e) {
+    if (focus) focus.classList.remove('tvf');
+    focus = e; if (!e) return;
+    e.classList.add('tvf');
+    const r = e.getBoundingClientRect();
+    if (r.top < 90 || r.bottom > innerHeight - 30) window.scrollBy({ top: r.top - innerHeight / 2 + r.height / 2, behavior: 'smooth' });
+  }
+  const ctr = (e) => { const r = e.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; };
+  const DV = { ArrowUp: [0, -1], ArrowDown: [0, 1], ArrowLeft: [-1, 0], ArrowRight: [1, 0] };
+  function move(k) {
+    const [dx, dy] = DV[k], c = ctr(focus); let best = null, bs = 1e18;
+    for (const e of items()) {
+      if (e === focus) continue; const p = ctr(e), tx = p.x - c.x, ty = p.y - c.y, al = tx * dx + ty * dy;
+      if (al < 8) continue; const sc = al + Math.abs(tx * dy - ty * dx) * 2.2;
+      if (sc < bs) { bs = sc; best = e; }
+    }
+    if (best) setFocus(best);
+  }
+  function keyName(e) {
+    const k = e.key, c = e.keyCode, raw = !k || k === 'Unidentified';
+    if (k === 'ArrowUp' || c === 38 || (raw && c === 19)) return 'ArrowUp';
+    if (k === 'ArrowDown' || c === 40 || (raw && c === 20)) return 'ArrowDown';
+    if (k === 'ArrowLeft' || c === 37 || (raw && c === 21)) return 'ArrowLeft';
+    if (k === 'ArrowRight' || c === 39 || (raw && c === 22)) return 'ArrowRight';
+    if (k === 'Enter' || k === ' ' || k === 'Select' || c === 13 || (raw && (c === 23 || c === 66))) return 'OK';
+    return k;
+  }
+  window.addEventListener('keydown', (e) => {
+    const k = keyName(e);
+    if (DV[k]) { e.preventDefault(); if (!focus) setFocus(grid.firstElementChild); else move(k); }
+    else if (k === 'OK') { e.preventDefault(); if (e.repeat) return; if (focus) focus.click(); }
+  });
+  const lastId = get('tvlast', null);
+  setFocus((lastId && grid.querySelector(`[data-id="${lastId}"]`)) || grid.firstElementChild);
+  if ('serviceWorker' in navigator && /^https?:/.test(location.protocol)) window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+})();
+</script>
+</body>
+</html>

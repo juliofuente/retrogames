@@ -1,0 +1,126 @@
+// Rebotes|#141428
+(function () {
+  const { ri, rand, clamp } = Arcade;
+  const C = 7, R = 9;
+  const FACE = ['😐', '😠', '😡', '🤬', '👹', '💀'];
+
+  function geo(g) {
+    const s = g.s, a = Math.min(g.W - 16, (g.bot - g.top - 70) * C / (R + 1.4));
+    s.cs = a / C; s.ox = (g.W - a) / 2; s.oy = g.top + 30; s.floor = s.oy + s.cs * (R + 1); s.br = s.cs * 0.14;
+    if (s.lx == null) s.lx = g.W / 2;
+  }
+  function newRow(g) {
+    const s = g.s, L = g.lv, turn = s.turn;
+    for (const b of s.bricks) b.r++;
+    for (const k of s.plus) k.r++;
+    const cols = Arcade.shuffle([...Array(C).keys()]), n = ri(2, Math.min(C - 1, 3 + Math.floor(L / 3)));
+    for (let i = 0; i < n; i++) s.bricks.push({ c: cols[i], r: 1, hp: Math.max(1, Math.round(turn * (1 + L * 0.12) * rand(0.8, 1.6))), hit: 0 });
+    s.plus.push({ c: cols[n], r: 1 });
+    if (Math.random() < 0.35 && cols[n + 1] != null) s.plus.push({ c: cols[n + 1], r: 1, star: true });
+  }
+  function startTurn(g) {
+    const s = g.s; s.turn++;
+    newRow(g);
+    if (s.bricks.some((b) => b.r >= R)) { g.message(Arcade.T('¡Te alcanzan!', 'They got you!'), 1.2); if (g.die()) { s.bricks = s.bricks.filter((b) => b.r < R - 2); } }
+    if (s.turn > s.need) { g.addScore(100 * g.lv, g.W / 2, g.H / 2); g.win(); return; }
+    s.phase = 'aim';
+  }
+  function shoot(g, ang) {
+    const s = g.s; if (s.phase !== 'aim') return;
+    s.phase = 'fly'; s.ang = ang; s.toLaunch = s.nb; s.launchT = 0; s.balls = []; s.firstX = null; s.fast = 0;
+    Arcade.sfx.whoosh();
+  }
+  const aimAng = (s, x, y) => { let a = Math.atan2(y - s.floor, x - s.lx); return clamp(a, -Math.PI + 0.12, -0.12); };
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Apunta, dispara y rompe', deco: ['⚪', '🧱', '💥', '➕', '⭐', '👹'], font: 'wide', bg: ['#25254a', '#141428'],
+    music: { mode: 'minor', bpm: 128, wave: 'square', style: 'arcade', root: 57 }, voice: { wave: 'square', mul: 1.1, echo: 0.15 },
+    ambient: { e: ['✨'], n: 8, vy: 0, sway: 0, twinkle: 1, alpha: 0.2, size: [6, 12] },
+    en: { title: 'Bounces', tag: 'Aim, shoot and smash', help: '<b>Drag</b> to aim and <b>release</b> to fire all your balls. They bounce off the walls and the monsters: each hit takes one point off the number. Grab ➕ for an extra ball and ⭐ for points. After each turn the monsters move down one row: if they reach the bottom, you lose a life. Survive the turns of each level.', tvHelp: '◀ ▶ aim · OK fire.', dict: { 'Turno ': 'Turn ', '¡Te alcanzan!': 'They got you!', 'Arrastra para apuntar': 'Drag to aim' } },
+    tvHelp: '◀ ▶ apuntar · OK disparar.',
+    id: 'rebotes', title: 'Rebotes', emoji: '⚪', color: '#74c0fc', origin: 'Ballz (Ketchapp)',
+    help: '<b>Arrastra</b> para apuntar y <b>suelta</b> para disparar todas tus bolas. Rebotan en las paredes y en los monstruos: cada golpe resta un punto a su número. Coge ➕ para tener una bola más y ⭐ para puntos. Tras cada turno los monstruos bajan una fila: si llegan abajo, pierdes una vida. Aguanta los turnos de cada nivel.',
+    lives: 3, levels: 0, cap: 20,
+    setup(g) {
+      g.s = { bricks: [], plus: [], balls: [], nb: 1 + Math.min(g.lv - 1, 10), turn: 0, phase: 'aim', aim: null, lx: null, tvAng: -Math.PI / 2 };
+      const s = g.s; geo(g); s.need = 12 + Math.min(g.lv, 10);
+      startTurn(g); startTurn(g);
+    },
+    layout(g) { if (g.s.bricks) geo(g); },
+    down(g, p) { const s = g.s; if (s.phase === 'aim') s.aim = aimAng(s, p.x, p.y); else if (s.phase === 'fly') s.fast = 1; },
+    move(g, p) { const s = g.s; if (s.phase === 'aim' && s.aim != null) s.aim = aimAng(s, p.x, p.y); },
+    up(g) { const s = g.s; if (s.phase === 'aim' && s.aim != null) { shoot(g, s.aim); s.aim = null; } },
+    key(g, k, d) {
+      const s = g.s;
+      if (k === 'ArrowLeft' || k === 'ArrowRight') s.tvTurn = d ? (k === 'ArrowLeft' ? -1 : 1) : 0;
+      if (d && k === ' ') { if (s.phase === 'aim') shoot(g, s.tvAng); else s.fast = 1; }
+    },
+    update(g, dt) {
+      const s = g.s;
+      if (s.tvTurn) { s.tvAng = clamp(s.tvAng + s.tvTurn * dt * 1.4, -Math.PI + 0.12, -0.12); }
+      if (s.phase !== 'fly') return;
+      const sp = s.cs * 16;
+      s.launchT -= dt;
+      if (s.toLaunch > 0 && s.launchT <= 0) { s.launchT = 0.07 / (s.fast ? 2 : 1); s.toLaunch--; s.balls.push({ x: s.lx, y: s.floor - s.br, vx: Math.cos(s.ang) * sp, vy: Math.sin(s.ang) * sp }); }
+      const steps = 4;
+      for (const b of s.balls) {
+        if (b.done) continue;
+        for (let st = 0; st < steps; st++) {
+          const h = dt / steps * (s.fast ? 2.2 : 1);
+          b.x += b.vx * h; b.y += b.vy * h;
+          if (b.x < s.ox + s.br) { b.x = s.ox + s.br; b.vx = Math.abs(b.vx); }
+          if (b.x > s.ox + C * s.cs - s.br) { b.x = s.ox + C * s.cs - s.br; b.vx = -Math.abs(b.vx); }
+          if (b.y < s.oy + s.br) { b.y = s.oy + s.br; b.vy = Math.abs(b.vy); }
+          if (b.y >= s.floor - s.br && b.vy > 0) { b.done = true; b.y = s.floor - s.br; if (s.firstX == null) s.firstX = b.x; break; }
+          for (const br of s.bricks) {
+            if (br.hp <= 0) continue;
+            const x0 = s.ox + br.c * s.cs + 2, y0 = s.oy + br.r * s.cs + 2, x1 = x0 + s.cs - 4, y1 = y0 + s.cs - 4;
+            const nx = clamp(b.x, x0, x1), ny = clamp(b.y, y0, y1), dx = b.x - nx, dy = b.y - ny;
+            if (dx * dx + dy * dy < s.br * s.br) {
+              if (Math.abs(dx) > Math.abs(dy)) { b.vx = Math.sign(dx || -b.vx) * Math.abs(b.vx); b.x = nx + Math.sign(dx || 1) * s.br; }
+              else { b.vy = Math.sign(dy || -b.vy) * Math.abs(b.vy); b.y = ny + Math.sign(dy || 1) * s.br; }
+              br.hp--; br.hit = 0.15; g.addScore(1);
+              Arcade.tone(300 + Math.min(br.hp, 40) * 15, 0.03, 'square', 0.04);
+              if (br.hp <= 0) { g.burst(x0 + s.cs / 2, y0 + s.cs / 2, { n: 10, color: ['#ff6b6b', '#ffd43b', '#fff'], speed: 180, size: 3 }); g.addScore(10, x0 + s.cs / 2, y0); Arcade.sfx.pop(); }
+              break;
+            }
+          }
+          for (const pk of s.plus) {
+            if (pk.got) continue;
+            const px = s.ox + (pk.c + 0.5) * s.cs, py = s.oy + (pk.r + 0.5) * s.cs;
+            if (Math.hypot(px - b.x, py - b.y) < s.cs * 0.32) { pk.got = true; if (pk.star) { g.addScore(25, px, py); Arcade.sfx.coin(); } else { s.nb++; g.float('+1 ⚪', px, py, '#74c0fc', 18); Arcade.sfx.up(); } }
+          }
+        }
+      }
+      s.bricks = s.bricks.filter((b) => b.hp > 0); s.plus = s.plus.filter((p) => !p.got);
+      for (const br of s.bricks) br.hit = Math.max(0, br.hit - dt);
+      if (s.toLaunch === 0 && s.balls.every((b) => b.done)) { s.lx = s.firstX ?? s.lx; s.balls = []; startTurn(g); }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      ctx.fillStyle = '#141428'; ctx.fillRect(0, 0, W, H);
+      if (!s.bricks) return;
+      ctx.fillStyle = '#1c1c3a'; ctx.fillRect(s.ox, s.oy, C * s.cs, s.floor - s.oy);
+      ctx.fillStyle = 'rgba(255,80,80,.35)'; ctx.fillRect(s.ox, s.oy + R * s.cs, C * s.cs, 2);
+      for (const br of s.bricks) {
+        const x = s.ox + br.c * s.cs + 2, y = s.oy + br.r * s.cs + 2, z = s.cs - 4;
+        const t = clamp(br.hp / (8 + s.turn * 1.5), 0, 1), hue = 200 - t * 200;
+        ctx.fillStyle = `hsl(${hue},75%,${55 + br.hit * 120}%)`; Arcade.rr(ctx, x, y, z, z, 8); ctx.fill();
+        Arcade.emoji(ctx, FACE[Math.min(FACE.length - 1, Math.floor(br.hp / 8))], x + z / 2, y + z * 0.4, z * 0.42);
+        Arcade.txt(ctx, br.hp, x + z / 2, y + z * 0.8, z * 0.28, '#fff', 'center', 900, 'rgba(0,0,0,.4)');
+      }
+      for (const pk of s.plus) { const px = s.ox + (pk.c + 0.5) * s.cs, py = s.oy + (pk.r + 0.5) * s.cs; Arcade.emoji(ctx, pk.star ? '⭐' : '➕', px, py, s.cs * (0.38 + Math.sin(g.rt * 6) * 0.04)); }
+      ctx.fillStyle = '#fff';
+      for (const b of s.balls) { ctx.beginPath(); ctx.arc(b.x, b.y, s.br, 0, 6.28); ctx.fill(); }
+      // lanzador y mira
+      const ang = s.aim != null ? s.aim : Arcade.tv ? s.tvAng : null;
+      if (s.phase === 'aim') {
+        if (ang != null) { ctx.setLineDash([4, 8]); ctx.strokeStyle = 'rgba(255,255,255,.6)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(s.lx, s.floor - s.br); ctx.lineTo(s.lx + Math.cos(ang) * s.cs * 6, s.floor - s.br + Math.sin(ang) * s.cs * 6); ctx.stroke(); ctx.setLineDash([]); }
+        ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(s.lx, s.floor - s.br, s.br, 0, 6.28); ctx.fill();
+        if (g.t < 3 && !Arcade.tv) Arcade.txt(ctx, 'Arrastra para apuntar', W / 2, s.floor + 26, 14, '#adb5bd', 'center', 800);
+      }
+      Arcade.txt(ctx, '×' + s.nb, s.lx, s.floor + 12, 13, '#74c0fc', 'center', 900);
+      Arcade.txt(ctx, 'Turno ' + Math.min(s.turn, s.need) + '/' + s.need, W / 2, g.top + 12, 14, '#dbe4ff', 'center', 900);
+    },
+  });
+})();

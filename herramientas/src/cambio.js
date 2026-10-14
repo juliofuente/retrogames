@@ -1,0 +1,160 @@
+// Cambio|#1e1240
+(function () {
+  const { rand, clamp } = Arcade;
+  const COLS = 6, ROWS = 11;
+  const NEED = { 1: 5, 5: 2, 10: 5, 50: 2, 100: 5, 500: 2 };
+  const NEXT = { 1: 5, 5: 10, 10: 50, 50: 100, 100: 500, 500: 0 };
+  const STY = { 1: ['#cd7f32', '#8a4f1d'], 5: ['#dee2e6', '#868e96'], 10: ['#ffd43b', '#e8a400'], 50: ['#69db7c', '#2b8a3e'], 100: ['#74c0fc', '#1864ab'], 500: ['#da77f2', '#862e9c'] };
+
+  function geo(g) {
+    const s = g.s, availW = g.W - 24, availH = g.bot - g.top - 30;
+    s.cs = Math.min(availW / COLS, availH / (ROWS + 1.6));
+    s.ox = (g.W - s.cs * COLS) / 2; s.oy = g.top + 18 + (availH - s.cs * (ROWS + 1.6)) / 2;
+  }
+  function randCoin(g) {
+    const L = g.level, w = [7, 5, 3, L >= 3 ? 2 : 0, L >= 5 ? 1 : 0], vals = [1, 5, 10, 50, 100];
+    let r = Math.random() * w.reduce((a, b) => a + b, 0);
+    for (let i = 0; i < 5; i++) { if (r < w[i]) return { v: vals[i], pop: 1 }; r -= w[i]; }
+    return { v: 1, pop: 1 };
+  }
+  function at(s, c, r) { return c >= 0 && c < COLS ? s.cols[c][r] : undefined; }
+  function flood(s, c, r) {
+    const v = at(s, c, r).v, seen = new Set(), st = [[c, r]], out = [];
+    while (st.length) {
+      const [x, y] = st.pop(), k = x + ',' + y;
+      if (seen.has(k)) continue; seen.add(k);
+      const o = at(s, x, y); if (!o || o.v !== v) continue;
+      out.push([x, y]); st.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]);
+    }
+    return out;
+  }
+  function find(s, coin) { for (let c = 0; c < COLS; c++) { const r = s.cols[c].indexOf(coin); if (r >= 0) return [c, r]; } return null; }
+  const cpx = (s, c) => s.ox + (c + 0.5) * s.cs, cpy = (s, r) => s.oy + (r + 0.5) * s.cs;
+  function resolve(g, fresh) {
+    const s = g.s; let combo = 0;
+    while (fresh.length) {
+      const next = [];
+      for (const coin of fresh) {
+        const p = find(s, coin); if (!p) continue;
+        const grp = flood(s, p[0], p[1]);
+        if (grp.length < NEED[coin.v]) continue;
+        combo++;
+        const nv = NEXT[coin.v];
+        for (const [x, y] of grp) {
+          g.burst(cpx(s, x), cpy(s, y), { n: 4, color: STY[coin.v][0], speed: 120, size: 3 });
+          s.cols[x][y] = null;
+        }
+        const pts = (nv || 1000) * combo * (grp.length > NEED[coin.v] ? 2 : 1);
+        g.addScore(pts, cpx(s, p[0]), cpy(s, p[1]));
+        if (combo > 1) g.float('Combo x' + combo, cpx(s, p[0]), cpy(s, p[1]) - 26, '#ff8fab', 20);
+        if (nv) { const nc = { v: nv, pop: 1.4 }; s.cols[p[0]][p[1]] = nc; next.push(nc); }
+        Arcade.sfx.combo(combo * 2); g.ring(cpx(s, p[0]), cpy(s, p[1]), { color: STY[nv || 500][0], r: s.cs * 1.4, w: 5 });
+        if (nv >= 100 || !nv) { g.flash(STY[nv || 500][0], 0.2); g.burst(cpx(s, p[0]), cpy(s, p[1]), { n: 10, emoji: ['💰', '✨', '💵'], size: 16, speed: 200 }); }
+      }
+      for (let c = 0; c < COLS; c++) s.cols[c] = s.cols[c].filter(Boolean);
+      fresh = next;
+    }
+  }
+  function grab(g, c, more) {
+    const s = g.s, col = s.cols[c];
+    if (!col.length) return;
+    const v = col[col.length - 1].v;
+    if (s.hand && s.hand.v !== v) return;
+    let n = 0; while (col.length && col[col.length - 1].v === v) { col.pop(); n++; }
+    s.hand = { v, n: (s.hand ? s.hand.n : 0) + n };
+    Arcade.tone(260, 0.06, 'square', 0.07, -80);
+  }
+  function toss(g, c) {
+    const s = g.s, col = s.cols[c];
+    if (!s.hand) return;
+    if (col.length + s.hand.n > ROWS) { Arcade.sfx.bad(); return; }
+    const fresh = [];
+    for (let i = 0; i < s.hand.n; i++) { const o = { v: s.hand.v, pop: 1 }; col.push(o); fresh.push(o); }
+    s.hand = null;
+    Arcade.tone(420, 0.06, 'square', 0.07, 200);
+    resolve(g, [fresh[0]]);
+  }
+  function pushRow(g) {
+    const s = g.s;
+    if (s.cols.some(c => c.length >= ROWS)) { g.burst(g.W / 2, g.H * 0.8, { n: 30, emoji: '🪙', size: 18, speed: 300 }); Arcade.sfx.boom(); g.lives = 0; g.hud(); g.state = 'dying'; setTimeout(g.over, 800); return; }
+    for (let c = 0; c < COLS; c++) s.cols[c].unshift(randCoin(g));
+    Arcade.tone(150, 0.12, 'sawtooth', 0.06); g.shake(0.12, 4);
+  }
+
+  Arcade.game({
+    id: 'cambio', title: 'Cambio', emoji: '🪙', color: '#ffd166', origin: 'Money Idol Exchanger (Face, 1997)',
+    help: '<b>Toca una columna</b> para coger las monedas de abajo; toca otra para <b>lanzarlas</b>. Cuando juntas suficientes iguales se cambian por una mayor: <b>5×1 = 5</b>, <b>2×5 = 10</b>, <b>5×10 = 50</b>, <b>2×50 = 100</b>, <b>5×100 = 500</b>, y 2×500 desaparecen. Encadena cambios para hacer combos. Las monedas bajan solas: que no lleguen hasta ti. Desliza ↓ para coger más del mismo valor.',
+    lives: 0, levels: null,
+    theme: { font: 'Titan One', ambient: 'sparkles', music: { tempo: 124, scale: 'penta', root: 330, wave: 'square', lead: 'triangle' }, sfx: { wave: 'square', pitch: 1.2 } },
+    setup(g) {
+      g.s = { cols: [], hand: null, pc: 2, pushT: 9, lvT: 0 };
+      const s = g.s;
+      for (let c = 0; c < COLS; c++) { s.cols.push([]); for (let r = 0; r < 4; r++) s.cols[c].push(randCoin(g)); }
+      geo(g);
+    },
+    layout(g) { if (g.s.cols) geo(g); },
+    tap(g, p) {
+      const s = g.s, c = clamp(Math.floor((p.x - s.ox) / s.cs), 0, COLS - 1);
+      s.pc = c;
+      if (s.hand) toss(g, c); else grab(g, c);
+    },
+    swipe(g, dir, p) {
+      const s = g.s, c = clamp(Math.floor((p.sx - s.ox) / s.cs), 0, COLS - 1);
+      s.pc = c;
+      if (dir === 'down') grab(g, c, true); else if (dir === 'up') toss(g, c); else this.tap(g, { x: p.sx });
+    },
+    key(g, k, d) {
+      if (!d) return; const s = g.s;
+      if (k === 'ArrowLeft') s.pc = Math.max(0, s.pc - 1); else if (k === 'ArrowRight') s.pc = Math.min(COLS - 1, s.pc + 1);
+      else if (k === 'ArrowDown') grab(g, s.pc, true); else if (k === 'ArrowUp' || k === ' ') { if (s.hand) toss(g, s.pc); else grab(g, s.pc); }
+    },
+    update(g, dt) {
+      const s = g.s;
+      s.lvT += dt;
+      if (s.lvT > 45) { s.lvT = 0; g.level++; g.hud(); g.message('Nivel ' + g.level, 1.2, 'Más rápido'); Arcade.sfx.level(); }
+      s.pushT -= dt;
+      if (s.pushT <= 0) { s.pushT = Math.max(3.2, 9.5 - g.level * 0.7); pushRow(g); }
+      for (const col of s.cols) for (const o of col) o.pop = Math.max(0, o.pop - dt * 4);
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      const bg = ctx.createLinearGradient(0, 0, 0, H);
+      bg.addColorStop(0, '#2a1760'); bg.addColorStop(1, '#120a2b');
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      ctx.save(); ctx.globalAlpha = 0.06; ctx.fillStyle = '#ffd166'; for (let i = -H; i < W; i += 40) { ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i + 18, 0); ctx.lineTo(i + 18 + H, H); ctx.lineTo(i + H, H); ctx.fill(); } ctx.restore();
+      Arcade.decor(ctx, g.t, [{ e: '💰', x: 22, y: H - 30, s: 34, a: 0.45 }, { e: '💵', x: W - 24, y: H - 34, s: 30, a: 0.45, sway: 0.2 }, { e: '🏦', x: W - 26, y: g.top + 20, s: 26, a: 0.35 }]);
+      Arcade.amb(g, ctx);
+      if (!s.cols.length) return;
+      const cs = s.cs;
+      for (let c = 0; c < COLS; c++) {
+        ctx.fillStyle = c === s.pc ? 'rgba(255,209,102,.1)' : c % 2 ? 'rgba(255,255,255,.04)' : 'rgba(255,255,255,.02)';
+        ctx.fillRect(s.ox + c * cs, s.oy, cs, cs * ROWS);
+      }
+      const maxH = Math.max(...s.cols.map(c => c.length));
+      ctx.fillStyle = maxH >= ROWS - 2 ? 'rgba(255,80,80,' + (0.4 + Math.sin(g.t * 10) * 0.3) + ')' : 'rgba(255,80,80,.35)';
+      ctx.fillRect(s.ox, s.oy + cs * ROWS, cs * COLS, 3);
+      // temporizador de empuje
+      const max = Math.max(3.2, 9.5 - g.level * 0.7), k = clamp(s.pushT / max, 0, 1);
+      ctx.fillStyle = 'rgba(255,255,255,.1)'; Arcade.rr(ctx, s.ox, s.oy - 12, cs * COLS, 6, 3); ctx.fill();
+      ctx.fillStyle = k < 0.25 ? '#ff6b6b' : '#ffd166'; Arcade.rr(ctx, s.ox, s.oy - 12, cs * COLS * k, 6, 3); ctx.fill();
+      for (let c = 0; c < COLS; c++) s.cols[c].forEach((o, r) => drawCoin(ctx, cpx(s, c), cpy(s, r), cs * 0.43 * (1 + o.pop * 0.25), o.v));
+      // jugador
+      const py = s.oy + cs * (ROWS + 0.85);
+      const px = cpx(s, s.pc);
+      Arcade.emoji(ctx, s.hand ? '🙌' : '🧑', px, py, cs * 0.85);
+      if (s.hand) {
+        drawCoin(ctx, px, py - cs * 0.85, cs * 0.32, s.hand.v);
+        Arcade.txt(ctx, '×' + s.hand.n, px + cs * 0.42, py - cs * 0.95, cs * 0.3, '#fff', 'left', 900, 'rgba(0,0,0,.6)');
+      }
+    },
+  });
+  function drawCoin(ctx, x, y, r, v) {
+    const [a, b] = STY[v];
+    ctx.fillStyle = b; ctx.beginPath(); ctx.arc(x, y + r * 0.1, r, 0, 6.28); ctx.fill();
+    const gr = ctx.createRadialGradient(x - r * 0.35, y - r * 0.4, r * 0.1, x, y, r);
+    gr.addColorStop(0, '#fff'); gr.addColorStop(0.35, a); gr.addColorStop(1, b);
+    ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(x, y, r, 0, 6.28); ctx.fill();
+    ctx.strokeStyle = 'rgba(0,0,0,.25)'; ctx.lineWidth = Math.max(1, r * 0.08); ctx.beginPath(); ctx.arc(x, y, r * 0.78, 0, 6.28); ctx.stroke();
+    Arcade.txt(ctx, v, x, y + 1, r * (v >= 100 ? 0.72 : 0.9), '#2b1a00', 'center', 900);
+  }
+})();

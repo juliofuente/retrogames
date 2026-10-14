@@ -1,0 +1,83 @@
+// Grupos|#13261f
+(function () {
+  const { ri, clamp } = Arcade;
+  const EM = ['🍓', '🍋', '🫐', '🍏', '🍇', '🍊'];
+  const BG = ['#ffc9c9', '#fff3bf', '#d0ebff', '#d3f9d8', '#e5dbff', '#ffe8cc'];
+
+  function geo(g) { const s = g.s, Wa = g.W - 16, Ha = g.bot - g.top - 70; s.cs = Math.min(Wa / s.C, Ha / s.R); s.ox = (g.W - s.cs * s.C) / 2; s.oy = g.top + 50 + (Ha - s.cs * s.R) / 2; }
+  const at = (s, c, r) => (c >= 0 && c < s.C && r >= 0 && r < s.R ? s.b[c][r] : null);
+  function group(s, c, r) {
+    const v = at(s, c, r); if (!v) return [];
+    const seen = new Set(), st = [[c, r]], out = [];
+    while (st.length) { const [x, y] = st.pop(), k = x * 99 + y; if (seen.has(k)) continue; seen.add(k); const o = at(s, x, y); if (!o || o.t !== v.t) continue; out.push([x, y]); st.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]); }
+    return out;
+  }
+  function anyMove(s) { for (let c = 0; c < s.C; c++) for (let r = 0; r < s.R; r++) { const v = at(s, c, r); if (v && ((at(s, c + 1, r) || {}).t === v.t || (at(s, c, r + 1) || {}).t === v.t)) return true; } return false; }
+  function remaining(s) { let n = 0; for (const col of s.b) for (const v of col) if (v) n++; return n; }
+  function pick(g, c, r) {
+    const s = g.s, grp = group(s, c, r);
+    if (grp.length < 2) { Arcade.sfx.bad(); return; }
+    const n = grp.length, pts = (n - 2) * (n - 2) + n * 2;
+    for (const [x, y] of grp) { const v = s.b[x][y]; g.burst(s.ox + (x + 0.5) * s.cs, s.oy + (s.R - y - 0.5) * s.cs, { n: 3, emoji: EM[v.t], size: s.cs * 0.4, speed: 160, up: 60, life: 0.6 }); s.b[x][y] = null; }
+    g.addScore(pts, s.ox + (c + 0.5) * s.cs, s.oy + (s.R - r - 0.5) * s.cs);
+    Arcade.sfx.combo(Math.min(12, n)); if (n >= 8) { g.shake(0.15, 4); g.flash('#fff', 0.1); }
+    // gravedad (índice 0 = abajo) y columnas vacías a la izquierda
+    for (let x = 0; x < s.C; x++) { const col = s.b[x].filter(Boolean); for (const v of col) v.fall = 0.6; s.b[x] = col.concat(new Array(s.R - col.length).fill(null)); }
+    const cols = s.b.filter((col) => col[0]); while (cols.length < s.C) cols.push(new Array(s.R).fill(null)); s.b = cols;
+    if (!anyMove(s)) setTimeout(() => endBoard(g), 500);
+  }
+  function endBoard(g) {
+    const s = g.s; if (g.state !== 'play') return;
+    const left = remaining(s);
+    if (left === 0) { g.addScore(1000, g.W / 2, g.H / 2); g.message(Arcade.T('¡Tablero limpio!', 'Board cleared!'), 1.2); }
+    else g.addScore(-left * 5);
+    if (g.score - s.scoreStart >= s.target || left === 0) g.win(left === 0 ? 3 : left < 6 ? 2 : 1);
+    else { g.message(Arcade.T('No llegas al objetivo', 'Target not reached'), 1.3); setTimeout(() => { if (g.state === 'play' && g.die()) { g.score = s.scoreStart; g.hud(); Arcade.current.def.setup(g); } }, 900); }
+  }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Toca grupos de frutas iguales', deco: ['🍓', '🍋', '🫐', '🍏', '🍇', '🍊'], font: 'comic', bg: ['#22443a', '#13261f'],
+    music: { mode: 'mixo', bpm: 110, wave: 'triangle', style: 'chill', root: 62 }, voice: { wave: 'triangle', mul: 1.15, echo: 0.25 },
+    ambient: { e: ['🍃'], n: 6, vy: 16, sway: 24, spin: 1, alpha: 0.14 },
+    en: { title: 'Clusters', tag: 'Tap groups of matching fruit', help: '<b>Tap</b> a group of 2 or more <b>touching</b> equal fruits to clear it. The bigger the group, the more points (they grow squared!). Fruit falls down and empty columns slide left. When no groups are left, the board ends: reach the level\'s point target. Clearing it completely gives a big bonus.', tvHelp: 'D-pad to move the cursor · OK to clear the group.', dict: { 'Objetivo: ': 'Target: ', '¡Tablero limpio!': 'Board cleared!', 'No llegas al objetivo': 'Target not reached', 'Grupo: ': 'Group: ' } },
+    tvHelp: 'Cruceta para mover el cursor · OK para quitar el grupo.',
+    tv: { mode: 'tap', targets: (g) => { const s = g.s, o = []; if (!s.b) return o; for (let c = 0; c < s.C; c++) for (let r = 0; r < s.R; r++) o.push({ x: s.ox + c * s.cs, y: s.oy + (s.R - r - 1) * s.cs, w: s.cs, h: s.cs }); return o; } },
+    id: 'grupos', title: 'Grupos', emoji: '🍓', color: '#ff8787', origin: 'SameGame',
+    help: '<b>Toca</b> un grupo de 2 o más frutas iguales <b>pegadas</b> para quitarlo. Cuanto más grande el grupo, más puntos (¡crecen al cuadrado!). Las frutas caen y las columnas vacías se juntan a la izquierda. Cuando no quedan grupos se acaba el tablero: llega al objetivo de puntos del nivel. Si lo vacías del todo, bonus enorme.',
+    lives: 3, levels: 0, cap: 20,
+    setup(g) {
+      g.s = { b: [], hover: null };
+      const s = g.s; s.C = g.W < g.H ? 8 : 12; s.R = g.W < g.H ? 11 : 8;
+      s.nt = clamp(3 + Math.floor((g.lv + 1) / 3), 3, 6);
+      for (let c = 0; c < s.C; c++) { const col = []; for (let r = 0; r < s.R; r++) col.push({ t: ri(0, s.nt - 1), fall: 0 }); s.b.push(col); }
+      s.scoreStart = g.score; s.target = Math.round((s.C * s.R) * (1.6 + Math.min(g.lv, 20) * 0.22) * (s.nt <= 3 ? 1.6 : 1));
+      geo(g);
+    },
+    layout(g) { if (g.s.b) geo(g); },
+    tap(g, p) { const s = g.s, c = Math.floor((p.x - s.ox) / s.cs), r = s.R - 1 - Math.floor((p.y - s.oy) / s.cs); if (at(s, c, r)) pick(g, c, r); },
+    hover(g, x, y) { const s = g.s; s.hover = [Math.floor((x - s.ox) / s.cs), s.R - 1 - Math.floor((y - s.oy) / s.cs)]; },
+    update(g, dt) { const s = g.s; for (const col of s.b) for (const v of col) if (v && v.fall) v.fall = Math.max(0, v.fall - dt * 3); },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      const bg = ctx.createLinearGradient(0, 0, 0, H);
+      bg.addColorStop(0, '#2b5a4a'); bg.addColorStop(1, '#13261f');
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      if (!s.b) return;
+      const cs = s.cs;
+      ctx.fillStyle = 'rgba(0,0,0,.25)'; Arcade.rr(ctx, s.ox - 6, s.oy - 6, cs * s.C + 12, cs * s.R + 12, 14); ctx.fill();
+      const hl = s.hover && at(s, s.hover[0], s.hover[1]) ? new Set(group(s, s.hover[0], s.hover[1]).map(([x, y]) => x * 99 + y)) : null;
+      for (let c = 0; c < s.C; c++) for (let r = 0; r < s.R; r++) {
+        const v = s.b[c][r]; if (!v) continue;
+        const x = s.ox + c * cs, y = s.oy + (s.R - r - 1) * cs - v.fall * cs * 0.6;
+        const on = hl && hl.size > 1 && hl.has(c * 99 + r);
+        ctx.fillStyle = BG[v.t]; Arcade.rr(ctx, x + 2, y + 2, cs - 4, cs - 4, cs * 0.25); ctx.fill();
+        if (on) { ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; ctx.stroke(); }
+        Arcade.emoji(ctx, EM[v.t], x + cs / 2, y + cs / 2 + 1, cs * (on ? 0.72 : 0.64));
+      }
+      const got = g.score - s.scoreStart;
+      Arcade.txt(ctx, 'Objetivo: ' + Math.max(0, got) + ' / ' + s.target, W / 2, s.oy - 28, 15, got >= s.target ? '#69db7c' : '#d3f9d8', 'center', 900);
+      const bw = cs * s.C; ctx.fillStyle = 'rgba(255,255,255,.12)'; Arcade.rr(ctx, s.ox, s.oy - 14, bw, 6, 3); ctx.fill();
+      ctx.fillStyle = '#69db7c'; Arcade.rr(ctx, s.ox, s.oy - 14, bw * clamp(got / s.target, 0, 1), 6, 3); ctx.fill();
+    },
+  });
+})();

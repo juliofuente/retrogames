@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Puente · Arcade Perdido</title>
+<meta name="theme-color" content="#1b1035">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css">
+</head>
+<body class="game">
+<script src="config.js"></script>
+<script src="common.js"></script>
+<script>
+(function () {
+  const { rand, clamp } = Arcade;
+  const HEROES = ['🥷', '🧙', '🦸', '🧝', '🤺', '🧚'];
+
+  function plat(s, x, w) { return { x, w }; }
+  function geo(g) { const s = g.s; s.ground = g.bot - Math.max(110, (g.bot - g.top) * 0.3); s.u = Math.min(g.W, 520) / 400; }
+  function newPlat(g) {
+    const s = g.s, L = g.lv, last = s.plats[s.plats.length - 1];
+    const gap = rand(40, 110 + L * 6) * s.u, w = Math.max(14, rand(26, 80) - L * 2.6) * s.u;
+    s.plats.push(plat(s, last.x + last.w + gap, w));
+  }
+  function reset(g) {
+    const s = g.s;
+    s.plats = [plat(s, 0, 70 * s.u)];
+    newPlat(g); newPlat(g);
+    s.cur = 0; s.hx = s.plats[0].w - 12 * s.u; s.cam = 0; s.state = 'idle'; s.stick = 0; s.ang = 0; s.fallY = 0;
+  }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Mide el puente… a ojo', deco: ['🌉', '🥷', '🍒', '⭐', '🌙', '🏯'], font: 'impact', bg: ['#3b1f6b', '#1b1035'],
+    music: { mode: 'dorian', bpm: 104, wave: 'triangle', style: 'chill', root: 57 }, voice: { wave: 'triangle', mul: 1, echo: 0.3 },
+    ambient: { e: ['✨'], n: 10, vy: 0, sway: 0, twinkle: 1, alpha: 0.3, size: [6, 12] },
+    en: { title: 'Bridge', tag: 'Measure the bridge… by eye', help: '<b>Hold</b> your finger to grow a stick and <b>release</b> it so it falls onto the next pillar. Too short or too long and the hero falls! Landing on the red centre is a <b>perfect</b> bridge worth double. Cross all the pillars of each level; pillars get narrower and further apart.', tvHelp: 'Hold OK to grow the stick and release it to drop it.', dict: { '¡Perfecto!': 'Perfect!', 'Pilares: ': 'Pillars: ' } },
+    tvHelp: 'Mantén OK para alargar el palo y suéltalo para tumbarlo.',
+    id: 'puente', title: 'Puente', emoji: '🌉', color: '#ff6b9d', origin: 'Stick Hero (Ketchapp)',
+    help: '<b>Mantén el dedo</b> para hacer crecer un palo y <b>suéltalo</b> para que caiga sobre el siguiente pilar. Si es corto o largo, ¡el héroe cae! Si aterriza en el centro rojo es un puente <b>perfecto</b> y vale el doble. Cruza todos los pilares de cada nivel; cada vez son más estrechos y están más lejos.',
+    lives: 3, levels: 0, cap: 16,
+    setup(g) { g.s = { hero: HEROES[(g.level - 1) % HEROES.length] }; const s = g.s; geo(g); s.need = 6 + Math.min(g.lv, 10); s.done = 0; reset(g); },
+    layout(g) { if (g.s.plats) geo(g); },
+    down(g) { const s = g.s; if (s.state === 'idle') { s.state = 'grow'; s.stick = 0; } },
+    up(g) { const s = g.s; if (s.state === 'grow') { s.state = 'rot'; s.ang = 0; Arcade.sfx.whoosh(); } },
+    key(g, k, d) { if (k === ' ') d ? this.down(g) : this.up(g); },
+    update(g, dt) {
+      const s = g.s, cur = s.plats[s.cur], nxt = s.plats[s.cur + 1], tip = cur.x + cur.w;
+      if (s.state === 'grow') { s.stick += dt * 300 * s.u; if (Math.floor(s.stick / 12) !== Math.floor((s.stick - dt * 300 * s.u) / 12)) Arcade.tone(200 + s.stick, 0.03, 'triangle', 0.04); }
+      else if (s.state === 'rot') {
+        s.ang = Math.min(Math.PI / 2, s.ang + dt * 7);
+        if (s.ang >= Math.PI / 2) {
+          const end = tip + s.stick, ok = end >= nxt.x && end <= nxt.x + nxt.w;
+          s.perfect = ok && Math.abs(end - (nxt.x + nxt.w / 2)) < 5 * s.u;
+          s.target = ok ? nxt.x + nxt.w - 12 * s.u : end; s.ok = ok; s.state = 'walk';
+          Arcade.tone(120, 0.08, 'square', 0.08);
+          if (s.perfect) { g.addScore(2, nxt.x + nxt.w / 2 - s.cam, s.ground - 30); g.float(Arcade.T('¡Perfecto!', 'Perfect!'), nxt.x + nxt.w / 2 - s.cam, s.ground - 60, '#ff6b9d', 24); g.ring(nxt.x + nxt.w / 2 - s.cam, s.ground, '#ff6b9d', 50); Arcade.sfx.coin(); }
+        }
+      } else if (s.state === 'walk') {
+        s.hx += dt * 260 * s.u;
+        if (s.hx >= s.target) {
+          s.hx = s.target;
+          if (s.ok) {
+            g.addScore(1, s.hx - s.cam, s.ground - 40); s.done++; s.cur++; newPlat(g); s.state = 'cam'; s.stick = 0;
+            if (s.done >= s.need) { g.addScore(10 * g.lv, g.W / 2, g.H / 2); g.win(); return; }
+          } else { s.state = 'fall'; s.fallY = 0; Arcade.tone(400, 0.6, 'sine', 0.1, -350); }
+        }
+      } else if (s.state === 'fall') {
+        s.fallY += dt * 700; s.ang = Math.min(Math.PI, s.ang + dt * 6);
+        if (s.fallY > g.H) { if (g.die()) { s.state = 'idle'; s.stick = 0; s.ang = 0; s.hx = cur.x + cur.w - 12 * s.u; } }
+      } else if (s.state === 'cam') {
+        const want = s.plats[s.cur].x - 30 * s.u;
+        s.cam += (want - s.cam) * Math.min(1, dt * 8);
+        if (Math.abs(want - s.cam) < 1) { s.cam = want; s.state = 'idle'; }
+      }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H, hue = (g.level * 37) % 360;
+      const bg = ctx.createLinearGradient(0, 0, 0, H);
+      bg.addColorStop(0, `hsl(${hue},55%,28%)`); bg.addColorStop(1, `hsl(${(hue + 40) % 360},60%,62%)`);
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      if (!s.plats) return;
+      // montañas en paralaje
+      for (let k = 0; k < 2; k++) {
+        ctx.fillStyle = k ? 'rgba(0,0,0,.18)' : 'rgba(0,0,0,.1)';
+        ctx.beginPath(); ctx.moveTo(0, H);
+        const par = s.cam * (0.15 + k * 0.2);
+        for (let x = 0; x <= W + 40; x += 40) { const wx = x + par; ctx.lineTo(x, s.ground - 60 - k * 30 - Math.abs(Math.sin(wx / (90 + k * 50))) * (90 - k * 30)); }
+        ctx.lineTo(W, H); ctx.fill();
+      }
+      Arcade.emoji(ctx, g.level % 2 ? '🌙' : '☀️', W * 0.82, g.top + 50, 48);
+      for (const p of s.plats) {
+        const x = p.x - s.cam;
+        if (x > W || x + p.w < 0) continue;
+        ctx.fillStyle = '#14101f'; ctx.fillRect(x, s.ground, p.w, H - s.ground);
+        ctx.fillStyle = '#2b2440'; ctx.fillRect(x, s.ground, p.w, 6);
+        ctx.fillStyle = '#ff3b5c'; ctx.fillRect(x + p.w / 2 - 4 * s.u, s.ground, 8 * s.u, 5);
+      }
+      // palo
+      const cur = s.plats[s.cur], tip = cur.x + cur.w - s.cam;
+      if (s.stick > 0) {
+        ctx.save(); ctx.translate(tip, s.ground); ctx.rotate(s.state === 'grow' ? 0 : s.ang);
+        ctx.fillStyle = '#7f5539'; ctx.fillRect(-3, -s.stick, 5, s.stick); ctx.fillStyle = '#b08968'; ctx.fillRect(-3, -s.stick, 2, s.stick);
+        ctx.restore();
+      }
+      const hy = s.ground - 20 * s.u + (s.state === 'fall' ? s.fallY : 0) - (s.state === 'walk' ? Math.abs(Math.sin(g.rt * 18)) * 4 : 0);
+      Arcade.emoji(ctx, s.hero, s.hx - s.cam, hy, 36 * s.u, { flip: true });
+      Arcade.txt(ctx, 'Pilares: ' + s.done + '/' + s.need, W / 2, g.top + 16, 15, '#fff', 'center', 900, 'rgba(0,0,0,.4)');
+      if (s.state === 'idle' && g.t < 4) Arcade.txt(ctx, Arcade.tv ? Arcade.T('Mantén OK 🎮', 'Hold OK 🎮') : Arcade.T('Mantén el dedo 👆', 'Hold your finger 👆'), W / 2, s.ground + 60, 18, '#fff', 'center', 900, 'rgba(0,0,0,.4)');
+    },
+  });
+})();
+</script>
+</body>
+</html>

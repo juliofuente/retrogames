@@ -1,0 +1,73 @@
+// Carretera|#5c940d
+(function () {
+  const { ri, rand, clamp, pick } = Arcade;
+
+  function geo(g) { const s = g.s; s.ry = (g.top + g.bot) / 2; s.u = clamp((g.bot - g.top) / 600, 0.7, 1.4); }
+  function build(g) {
+    const s = g.s, L = g.lv; s.cross = []; let x = 500;
+    const n = 4 + Math.min(L, 20);
+    for (let i = 0; i < n; i++) { const t = pick(L < 3 ? ['train', 'cars'] : ['train', 'cars', 'saw', 'cars']); s.cross.push({ x, t, ph: rand(0, 6), per: rand(2.2, 3.6) - Math.min(L, 20) * 0.04, dir: Math.random() < 0.5 ? 1 : -1, w: t === 'train' ? 60 : 44 }); x += rand(260, 420); }
+    s.len = x + 200;
+  }
+  // devuelve la posición vertical del peligro en un cruce (null si no hay)
+  function danger(s, c, t) {
+    const ph = ((t + c.ph) % c.per) / c.per; // 0..1
+    if (c.t === 'train') return ph < 0.45 ? { y: (ph / 0.45) * 2 - 1, len: 1.4 } : null; // un tren largo cruza
+    if (c.t === 'cars') return { y: (((ph * 2) % 1) * 2 - 1), len: 0.25, two: true };
+    return { y: Math.sin(ph * Math.PI * 2) * 0.9, len: 0.25 };
+  }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Acelera y frena en el momento justo', deco: ['🚗', '🚂', '🚦', '🚧', '🏁', '🛣️'], font: 'impact', bg: ['#74b816', '#5c940d'],
+    music: { mode: 'mixo', bpm: 128, wave: 'square', style: 'arcade', root: 60 }, voice: { wave: 'square', mul: 1, echo: 0.2 },
+    en: { title: 'Risky Road', tag: 'Speed up and brake at the right time', help: '<b>Hold</b> your finger to drive forward and <b>release</b> to brake. The road crosses railways, busy roads and saws that never stop: wait for the right gap and cross at full speed. A crash costs a life. Reach the 🏁 flag quickly for more stars.', tvHelp: 'Hold OK to drive.', dict: {} },
+    tvHelp: 'Mantén OK para avanzar.',
+    id: 'carretera', title: 'Carretera', emoji: '🚗', color: '#fab005', origin: 'Risky Road / Crossy Road',
+    help: '<b>Mantén el dedo</b> para avanzar y <b>suelta</b> para frenar. La carretera cruza vías de tren, carreteras con tráfico y sierras que no paran: espera el hueco y cruza a toda velocidad. Si chocas, pierdes una vida. Llega a la bandera 🏁 rápido para más estrellas.',
+    lives: 3, levels: 0, cap: 25,
+    setup(g) { g.s = { x: 60, v: 0, t: 0, hold: false, inv: 0, time: 0 }; geo(g); build(g); g.s.par = g.s.len / 160; },
+    layout(g) { if (g.s.cross) geo(g); },
+    down(g) { g.s.hold = true; }, up(g) { g.s.hold = false; },
+    key(g, k, d) { if (k === ' ' || k === 'ArrowRight' || k === 'ArrowUp') g.s.hold = d; },
+    update(g, dt) {
+      const s = g.s; if (s.done) return;
+      s.t += dt; s.time += dt; s.inv = Math.max(0, s.inv - dt);
+      const vmax = 260; s.v += (s.hold ? 400 : -900) * dt; s.v = clamp(s.v, 0, vmax); s.x += s.v * dt;
+      const H2 = (g.bot - g.top) / 2 - 20;
+      for (const c of s.cross) {
+        if (Math.abs(c.x - s.x) > c.w / 2 + 22) continue;
+        const d = danger(s, c, s.t); if (!d) continue;
+        const hits = [d.y]; if (d.two) hits.push(d.y > 0 ? d.y - 1 : d.y + 1);
+        for (const yy of hits) if (Math.abs(yy * H2) < (d.len * H2) / 2 + 16 && !s.inv) {
+          s.inv = 1.5; s.v = 0; s.x = c.x - c.w / 2 - 40; Arcade.sfx.hit(); g.shake(0.3, 8); g.burst(g.W * 0.3, s.ry, { n: 16, color: ['#ff922b', '#495057'], speed: 200, size: 4 }); if (!g.die()) return;
+        }
+      }
+      if (s.x >= s.len) { s.done = true; Arcade.sfx.win(); g.confetti(60); g.addScore(Math.max(20, Math.round((s.par * 2 - s.time) * 10)) * g.lv, g.W / 2, g.H / 2); setTimeout(() => { if (g.state === 'play') g.win(s.time <= s.par * 1.3 ? 3 : s.time <= s.par * 1.8 ? 2 : 1); }, 600); }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      ctx.fillStyle = '#5c940d'; ctx.fillRect(0, 0, W, H);
+      if (!s.cross) return;
+      const cam = s.x - W * 0.3, X = (x) => x - cam, ry = s.ry, H2 = (g.bot - g.top) / 2 - 20;
+      g.scenery(['🌳', '🌲', '🏡', '🌼'], 12, { alpha: 0.5, size: [24, 40] });
+      ctx.fillStyle = '#495057'; ctx.fillRect(0, ry - 26, W, 52); ctx.fillStyle = '#ffd43b'; for (let x = -(cam % 60); x < W; x += 60) ctx.fillRect(x, ry - 2, 30, 4);
+      for (const c of s.cross) {
+        const x = X(c.x); if (x < -100 || x > W + 100) continue;
+        if (c.t === 'train') { ctx.fillStyle = '#868e96'; ctx.fillRect(x - c.w / 2, g.top, c.w, g.bot - g.top); ctx.fillStyle = '#5c3d1e'; for (let y = g.top; y < g.bot; y += 14) ctx.fillRect(x - c.w / 2, y, c.w, 5); ctx.fillStyle = '#ced4da'; ctx.fillRect(x - c.w / 4, g.top, 3, g.bot - g.top); ctx.fillRect(x + c.w / 4, g.top, 3, g.bot - g.top); }
+        else if (c.t === 'cars') { ctx.fillStyle = '#343a40'; ctx.fillRect(x - c.w / 2, g.top, c.w, g.bot - g.top); }
+        else { ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.fillRect(x - 3, g.top, 6, g.bot - g.top); }
+        const d = danger(s, c, s.t);
+        const near = (() => { const ph = ((s.t + c.ph) % c.per) / c.per; return c.t === 'train' && ph > 0.85; })();
+        Arcade.emoji(ctx, near || (d && c.t === 'train') ? '🚨' : '🚦', x - c.w / 2 - 14, ry - 40, 20);
+        if (!d) continue;
+        if (c.t === 'train') { const len = d.len * H2, y = ry + d.y * H2; for (let k = -2; k <= 2; k++) Arcade.emoji(ctx, k === (c.dir > 0 ? 2 : -2) ? '🚂' : '🚃', x, y + k * len / 4, c.w * 1.1, { rot: Math.PI / 2 * (c.dir > 0 ? 1 : -1) }); }
+        else if (c.t === 'cars') for (const yy of [d.y, d.y > 0 ? d.y - 1 : d.y + 1]) Arcade.emoji(ctx, '🚙', x, ry + yy * H2, c.w * 0.9, { rot: -Math.PI / 2 });
+        else Arcade.emoji(ctx, '⚙️', x, ry + d.y * H2, 44, { rot: s.t * 10 });
+      }
+      Arcade.emoji(ctx, '🏁', X(s.len), ry - 30, 40);
+      Arcade.emoji(ctx, '🚗', W * 0.3, ry, 44, { flip: true, alpha: s.inv && Math.floor(g.rt * 12) % 2 ? 0.4 : 1 });
+      const pr = clamp(s.x / s.len, 0, 1), bw = Math.min(W - 60, 300); ctx.fillStyle = 'rgba(0,0,0,.25)'; Arcade.rr(ctx, (W - bw) / 2, g.top + 10, bw, 8, 4); ctx.fill(); ctx.fillStyle = '#ffd43b'; Arcade.rr(ctx, (W - bw) / 2, g.top + 10, bw * pr, 8, 4); ctx.fill();
+      Arcade.txt(ctx, '⏱️ ' + s.time.toFixed(1) + ' s', W / 2, g.top + 32, 14, '#fff', 'center', 900, 'rgba(0,0,0,.4)');
+    },
+  });
+})();

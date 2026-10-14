@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Leñador · Arcade Perdido</title>
+<meta name="theme-color" content="#1d3a24">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css">
+</head>
+<body class="game">
+<script src="config.js"></script>
+<script src="common.js"></script>
+<script>
+(function () {
+  const { ri, clamp } = Arcade;
+  const VIS = 9;
+
+  function geo(g) { const s = g.s; s.sh = clamp((g.bot - g.top - 120) / VIS, 40, 70); s.tw = s.sh * 1.15; s.cx = g.W / 2; s.base = g.bot - 70; }
+  function nextSeg(s) {
+    const last = s.segs[s.segs.length - 1];
+    let b = 0;
+    if (last.b === 0 && Math.random() < 0.7) b = Math.random() < 0.5 ? -1 : 1;
+    s.segs.push({ b, apple: b === 0 && Math.random() < 0.06 });
+  }
+  function chop(g, side) {
+    const s = g.s; if (s.dead) return;
+    s.side = side; s.swing = 1;
+    if (s.segs[0].b === side) { return squash(g); }
+    const seg = s.segs.shift(); nextSeg(s); s.drop = 1;
+    s.flying.push({ x: s.cx, y: s.base - s.sh / 2, vx: -side * 520, vy: -160, rot: 0, b: seg.b });
+    if (seg.apple) { g.addScore(5, s.cx, s.base - 60, '#ff6b6b'); s.time = Math.min(1, s.time + 0.15); Arcade.sfx.coin(); }
+    s.time = Math.min(1, s.time + 0.045 + Math.max(0, 0.02 - g.lv * 0.001));
+    s.cut++; g.addScore(1);
+    Arcade.noise(0.06, 0.1, 1400); Arcade.tone(140, 0.05, 'square', 0.06);
+    g.burst(s.cx - side * s.tw * 0.4, s.base - s.sh * 0.5, { n: 5, emoji: '🪵', size: 10, speed: 160, up: 80 });
+    if (s.segs[0].b === side) return squash(g);
+    if (s.cut >= s.need) { g.addScore(50 * g.lv, g.W / 2, g.H / 2); g.win(); }
+  }
+  function squash(g) {
+    const s = g.s; s.dead = true;
+    g.burst(s.cx + s.side * s.tw, s.base, { n: 16, emoji: '💫', size: 16, speed: 200 });
+    setTimeout(() => { if (g.state !== 'play') return; if (g.die()) { s.dead = false; s.time = 0.6; s.segs[0].b = 0; } }, 500);
+  }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Corta rápido, esquiva las ramas', deco: ['🪓', '🌲', '🍎', '🪵', '🐦', '🍂'], font: 'impact', bg: ['#2f6b3a', '#1d3a24'],
+    music: { mode: 'mixo', bpm: 140, wave: 'square', style: 'drive', root: 55 }, voice: { wave: 'square', mul: 0.95, echo: 0.15 },
+    ambient: { e: ['🍂', '🍃'], n: 10, vy: 30, sway: 30, spin: 1, alpha: 0.3 },
+    en: { title: 'Lumberjack', tag: 'Chop fast, dodge the branches', help: '<b>Tap the left or right half</b> of the screen: the lumberjack moves to that side and chops. Never stand under a <b>branch</b>! Every chop adds a little time; if the bar empties, you lose. 🍎 apples give extra time. Chop the logs each level asks for.', tvHelp: '◀ chop from the left · ▶ chop from the right.', dict: { 'Troncos: ': 'Logs: ', '¡Tiempo!': 'Time!' } },
+    tvHelp: '◀ talar desde la izquierda · ▶ talar desde la derecha.',
+    id: 'lenador', title: 'Leñador', emoji: '🪓', color: '#ff922b', origin: 'Timberman (Digital Melody)',
+    help: '<b>Toca la mitad izquierda o derecha</b> de la pantalla: el leñador se pone en ese lado y corta. ¡Nunca te quedes debajo de una <b>rama</b>! Cada hachazo suma un poco de tiempo; si la barra se vacía, pierdes. Las 🍎 manzanas dan tiempo extra. Corta los troncos que pide cada nivel.',
+    lives: 3, levels: 0, cap: 20,
+    setup(g) {
+      g.s = { segs: [{ b: 0 }, { b: 0 }], side: -1, time: 0.7, cut: 0, flying: [], swing: 0, drop: 0, dead: false };
+      const s = g.s; for (let i = 0; i < VIS + 3; i++) nextSeg(s);
+      s.need = 40 + Math.min(g.lv, 15) * 12; geo(g);
+    },
+    layout(g) { if (g.s.segs) geo(g); },
+    down(g, p) { chop(g, p.x < g.W / 2 ? -1 : 1); },
+    key(g, k, d) { if (d && k === 'ArrowLeft') chop(g, -1); else if (d && k === 'ArrowRight') chop(g, 1); },
+    update(g, dt) {
+      const s = g.s;
+      s.swing = Math.max(0, s.swing - dt * 8); s.drop = Math.max(0, s.drop - dt * 10);
+      for (const f of s.flying) { f.vy += 1400 * dt; f.x += f.vx * dt; f.y += f.vy * dt; f.rot += dt * 10 * Math.sign(f.vx); }
+      s.flying = s.flying.filter((f) => f.y < g.H + 80);
+      if (s.dead || g.t < 0.8) return;
+      s.time -= dt * (0.11 + Math.min(g.lv, 20) * 0.012 + s.cut * 0.0004);
+      if (s.time <= 0) { s.time = 0; g.message(Arcade.T('¡Tiempo!', 'Time!'), 1); squash(g); }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      const bg = ctx.createLinearGradient(0, 0, 0, H);
+      bg.addColorStop(0, '#87ceeb'); bg.addColorStop(0.7, '#cdeccf'); bg.addColorStop(1, '#2f6b3a');
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      g.scenery(['🌲', '🌳', '🌲'], 10, { y0: s.base - 40, y1: s.base + 10, alpha: 0.5, size: [40, 70] });
+      if (!s.segs) return;
+      ctx.fillStyle = '#3f7d3a'; ctx.fillRect(0, s.base + 8, W, H);
+      ctx.fillStyle = '#6b4226'; Arcade.rr(ctx, s.cx - s.tw * 0.7, s.base - 6, s.tw * 1.4, 20, 8); ctx.fill();
+      const dropOff = s.drop * s.sh;
+      for (let i = 0; i < VIS + 2; i++) {
+        const seg = s.segs[i]; if (!seg) break;
+        const y = s.base - (i + 1) * s.sh - dropOff;
+        ctx.fillStyle = i % 2 ? '#8b5a2b' : '#7a4e25'; ctx.fillRect(s.cx - s.tw / 2, y, s.tw, s.sh + 1);
+        ctx.fillStyle = 'rgba(0,0,0,.12)'; ctx.fillRect(s.cx - s.tw / 2, y, 6, s.sh);
+        if (seg.b) {
+          const bx = s.cx + seg.b * s.tw / 2, len = s.tw * 1.3;
+          ctx.fillStyle = '#6b4226'; ctx.fillRect(seg.b > 0 ? bx : bx - len, y + s.sh * 0.35, len, s.sh * 0.25);
+          Arcade.emoji(ctx, '🍃', bx + seg.b * len, y + s.sh * 0.4, s.sh * 0.7, { flip: seg.b < 0 });
+        }
+        if (seg.apple) Arcade.emoji(ctx, '🍎', s.cx, y + s.sh / 2, s.sh * 0.5);
+      }
+      for (const f of s.flying) { ctx.save(); ctx.translate(f.x, f.y); ctx.rotate(f.rot); ctx.fillStyle = '#8b5a2b'; ctx.fillRect(-s.tw / 2, -s.sh / 2, s.tw, s.sh); ctx.restore(); }
+      const px = s.cx + s.side * s.tw * 1.05, py = s.base - s.sh * 0.5;
+      Arcade.emoji(ctx, s.dead ? '😵' : '🧔', px, py - 6, s.sh * 0.95, { flip: s.side < 0 });
+      Arcade.emoji(ctx, '🪓', px - s.side * s.sh * 0.45, py - s.sh * 0.1, s.sh * 0.7, { rot: -s.side * (0.6 - s.swing * 1.6), flip: s.side > 0 });
+      // barra de tiempo
+      const bw = Math.min(W - 60, 320);
+      ctx.fillStyle = 'rgba(0,0,0,.35)'; Arcade.rr(ctx, W / 2 - bw / 2, g.top + 10, bw, 16, 8); ctx.fill();
+      ctx.fillStyle = s.time < 0.25 ? '#ff6b6b' : '#ffd43b'; Arcade.rr(ctx, W / 2 - bw / 2, g.top + 10, bw * s.time, 16, 8); ctx.fill();
+      Arcade.txt(ctx, 'Troncos: ' + s.cut + '/' + s.need, W / 2, g.top + 42, 15, '#1b4332', 'center', 900, 'rgba(255,255,255,.6)');
+    },
+  });
+})();
+</script>
+</body>
+</html>

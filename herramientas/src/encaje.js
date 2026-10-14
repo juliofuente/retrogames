@@ -1,0 +1,61 @@
+// Encaje|#f3d9fa
+(function () {
+  const { ri, rand, clamp } = Arcade;
+  const FACES = ['😐', '🙂', '😊', '😄', '😁'];
+
+  function geo(g) { const s = g.s; s.base = g.bot - 60; s.u = clamp(g.W / 420, 0.7, 1.5); s.depth = 160 * s.u; s.topY = s.base - s.depth; s.hy = g.top + 90; }
+  function newGap(g) { const s = g.s, L = g.lv; s.gap = rand(70, 180) * s.u; s.hole = Math.max(14, 50 - L * 1.6) * s.u; s.size = 0; s.phase = 'ready'; s.y = 0; }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Ni grande ni pequeño: perfecto', deco: ['🟪', '⬜', '🟦', '📏', '✨', '🎯'], font: 'wide', bg: ['#fae6fd', '#f3d9fa'],
+    music: { mode: 'lydian', bpm: 96, wave: 'sine', style: 'chill', root: 64 }, voice: { wave: 'sine', mul: 1.2, echo: 0.35 },
+    en: { title: 'Perfect Fit', tag: 'Not too big, not too small', help: '<b>Hold</b> to grow the square and <b>release</b> to drop it into the gap between the two walls. If it is bigger than the gap it gets stuck on top; if it is narrower than the grey pit at the bottom, it falls in. It has to fit just right on the little ledges! The ledges get narrower each level.', tvHelp: 'Hold OK to grow and release to drop.', dict: { 'Encajes: ': 'Fits: ', '¡Perfecto!': 'Perfect!', '¡Muy grande!': 'Too big!', '¡Muy pequeño!': 'Too small!' } },
+    tvHelp: 'Mantén OK para crecer y suelta para soltar.',
+    id: 'encaje', title: 'Encaje', emoji: '🟪', color: '#be4bdb', origin: 'Perfect Square! / Shrink it / Biggification',
+    help: '<b>Mantén</b> para que el cuadrado crezca y <b>suelta</b> para dejarlo caer en el hueco entre las dos paredes. Si es más grande que el hueco se queda encima; si es más estrecho que el foso gris del fondo, se cae dentro. ¡Tiene que encajar justo sobre las repisas! Las repisas se estrechan en cada nivel.',
+    lives: 3, levels: 0, cap: 25,
+    setup(g) { g.s = { ok: 0, need: 6 + Math.min(g.lv, 25), combo: 0 }; geo(g); newGap(g); },
+    layout(g) { if (g.s.gap) geo(g); },
+    down(g) { const s = g.s; if (s.phase === 'ready') { s.phase = 'grow'; s.size = 0; } },
+    up(g) {
+      const s = g.s; if (s.phase !== 'grow') return; s.phase = 'drop'; s.vy = 0;
+      const big = s.size > s.gap, small = s.size < s.gap - s.hole;
+      s.res = big ? 'big' : small ? 'small' : 'ok'; s.sy = s.hy;
+    },
+    key(g, k, d) { if (k === ' ') d ? this.down(g) : this.up(g); },
+    update(g, dt) {
+      const s = g.s;
+      if (s.phase === 'grow') { s.size += (50 + s.size * 0.9) * s.u * dt; if (s.size > s.gap * 1.8) s.size = s.gap * 1.8; if (Math.random() < dt * 14) Arcade.tone(200 + s.size, 0.02, 'sine', 0.03); }
+      else if (s.phase === 'drop') {
+        s.vy += 2000 * dt; s.sy += s.vy * dt;
+        const stop = s.res === 'big' ? s.topY - s.size : s.res === 'ok' ? s.base - s.size : Infinity;
+        if (s.sy >= stop) {
+          s.sy = stop; s.phase = 'end'; s.endT = 0.9;
+          if (s.res === 'ok') { s.ok++; s.combo++; const perfect = (s.gap - s.size) / s.hole < 0.35; g.addScore((perfect ? 3 : 1) * 10 * g.lv * Math.min(4, s.combo), g.W / 2, s.topY - 40); g.message(perfect ? Arcade.T('¡Perfecto!', 'Perfect!') : '👍', 0.6); Arcade.sfx.coin(); }
+          else { s.combo = 0; Arcade.sfx.bad(); g.message(Arcade.T('¡Muy grande!', 'Too big!'), 0.7); g.die(); }
+        } else if (s.res === 'small' && s.sy > g.H) { s.phase = 'end'; s.endT = 0.4; s.combo = 0; Arcade.sfx.bad(); g.message(Arcade.T('¡Muy pequeño!', 'Too small!'), 0.7); g.die(); }
+      } else if (s.phase === 'end') { s.endT -= dt; if (s.endT <= 0) { if (s.ok >= s.need) { s.phase = 'win'; g.confetti(60); g.win(); } else newGap(g); } }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      ctx.fillStyle = '#f3d9fa'; ctx.fillRect(0, 0, W, H);
+      if (!s.gap) return;
+      const cx = W / 2, topY = s.topY;
+      // paredes
+      ctx.fillStyle = '#9c36b5'; ctx.fillRect(0, topY, cx - s.gap / 2, H); ctx.fillRect(cx + s.gap / 2, topY, W, H);
+      ctx.fillStyle = '#be4bdb'; ctx.fillRect(0, topY, cx - s.gap / 2, 10); ctx.fillRect(cx + s.gap / 2, topY, W, 10);
+      // repisas del fondo con foso
+      const ledge = s.hole / 2;
+      ctx.fillStyle = '#9c36b5'; ctx.fillRect(cx - s.gap / 2, s.base, ledge, H); ctx.fillRect(cx + s.gap / 2 - ledge, s.base, ledge, H);
+      ctx.fillStyle = '#495057'; ctx.fillRect(cx - s.gap / 2 + ledge, s.base, s.gap - s.hole, H);
+      // guías de tamaño
+      ctx.setLineDash([4, 6]); ctx.strokeStyle = 'rgba(156,54,181,.5)'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(cx - s.gap / 2, topY - 200); ctx.lineTo(cx - s.gap / 2, topY); ctx.moveTo(cx + s.gap / 2, topY - 200); ctx.lineTo(cx + s.gap / 2, topY); ctx.stroke(); ctx.setLineDash([]);
+      // cuadrado
+      const sz = s.size, y = s.phase === 'drop' || s.phase === 'end' ? s.sy : s.hy;
+      if (sz > 2) { ctx.fillStyle = s.phase === 'end' && s.res !== 'ok' ? '#ff6b6b' : '#5f3dc4'; Arcade.rr(ctx, cx - sz / 2, y, sz, sz, Math.min(10, sz * 0.15)); ctx.fill(); Arcade.emoji(ctx, s.phase === 'end' ? (s.res === 'ok' ? '😎' : '😵') : FACES[clamp(Math.floor(sz / s.gap * 4), 0, 4)], cx, y + sz / 2, Math.max(10, sz * 0.55)); }
+      if (s.phase === 'ready') Arcade.txt(ctx, '👇 ' + Arcade.T('Mantén para crecer', 'Hold to grow'), cx, s.hy + 20, 18, '#862e9c', 'center', 900);
+      Arcade.txt(ctx, 'Encajes: ' + s.ok + '/' + s.need, W / 2, g.top + 20, 15, '#862e9c', 'center', 900);
+    },
+  });
+})();

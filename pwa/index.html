@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Arcade Perdido · Mecánicas clásicas olvidadas</title>
+<meta name="description" content="Juegos HTML5 para móvil inspirados en mecánicas de arcade clásicas que nadie volvió a usar.">
+<meta name="theme-color" content="#120f26">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Arcade Perdido">
+<link rel="stylesheet" href="common.css">
+<script src="config.js"></script>
+<script>if (arcadeEsTV()) location.replace('indextv.html' + location.search);</script>
+</head>
+<body class="home">
+<div class="wrap">
+  <header class="brand" id="hdr"><div class="logo">🕹️</div><h1>Arcade Perdido</h1></header>
+  <p class="tagline" data-i="tagline">Mecánicas de arcade que fueron un éxito y nadie volvió a usar, rehechas para jugar con el dedo.</p>
+  <div class="bar" id="filters">
+    <button class="chip on" data-f="" data-i="all">Todos</button>
+    <button class="chip" data-f="Tocar" data-i="tap">👆 Tocar</button>
+    <button class="chip" data-f="Arrastrar" data-i="drag">✋ Arrastrar</button>
+    <button class="chip" data-f="Deslizar" data-i="swipe">↔️ Deslizar</button>
+    <button class="chip" data-f="Dos" data-i="two">✌️ Dos dedos</button>
+    <a class="chip link" href="indexpro.html" id="other" data-i="other" style="text-decoration:none">✨ Arcade Pro</a>
+    <button class="chip" id="tvmode" style="display:none" data-i="tv">📺 Modo TV</button>
+    <button class="chip" id="lang" style="display:none"></button>
+    <button class="chip" id="install" data-i="install">📲 Instalar</button>
+  </div>
+  <main class="grid" id="grid"></main>
+  <p class="foot" id="foot"></p>
+</div>
+<script src="games.js"></script>
+<script>
+(function () {
+  const get = (k, d) => { try { const v = localStorage.getItem('arc_' + k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } };
+  const grid = document.getElementById('grid');
+  const EN = arcadeIdioma() === 'en';
+  document.documentElement.lang = EN ? 'en' : 'es';
+  const TX = { tagline: 'Arcade mechanics that were a hit and nobody used again, remade to play with your finger.', all: 'All', tap: '👆 Tap', drag: '✋ Drag', swipe: '↔️ Swipe', two: '✌️ Two fingers', other: '✨ Arcade Pro', tv: '📺 TV mode', install: '📲 Install' };
+  if (EN) { document.querySelectorAll('[data-i]').forEach(e => { if (TX[e.dataset.i]) e.textContent = TX[e.dataset.i]; }); document.title = 'Arcade Perdido · Forgotten classic mechanics'; }
+  const loc = (g, k) => (EN && g.en && g.en[k]) || g[k];
+  if ((ARCADE_CONFIG.idioma || 'auto') === 'auto') {
+    const lb = document.getElementById('lang'); lb.style.display = 'inline-flex'; lb.textContent = EN ? '🇪🇸 Español' : '🇬🇧 English';
+    lb.addEventListener('click', () => { const nl = EN ? 'es' : 'en'; arcadeElegirIdioma(nl); location.search = '?lang=' + nl; });
+  }
+  { const o = document.getElementById('other'); o.href = 'indexpro.html?lang=' + (EN ? 'en' : 'es');
+  }
+  function render(filter) {
+    grid.innerHTML = '';
+    GAMES.filter(g => !filter || g.ctrl.indexOf(filter) === 0).forEach(g => {
+      const best = get('best_' + g.id, 0), done = get('done_' + g.id, false);
+      const a = document.createElement('a');
+      a.className = 'gc'; a.href = g.file + '?lang=' + (EN ? 'en' : 'es'); a.style.setProperty('--c', g.color);
+      a.innerHTML = `${best ? '' : `<span class="new">${EN ? 'NEW' : 'NUEVO'}</span>`}
+        <div class="em">${g.emoji}</div><h3>${loc(g, 'title')}</h3><div class="or">${g.origin}</div>
+        <p>${loc(g, 'desc')}</p>
+        <div class="ft"><span>${loc(g, 'ctrl')}</span><span>${done ? '🏆 ' : '⭐ '}${best}</span></div>`;
+      grid.appendChild(a);
+    });
+  }
+  render('');
+  document.getElementById('filters').addEventListener('click', e => {
+    const b = e.target.closest('[data-f]'); if (!b) return;
+    document.querySelectorAll('[data-f]').forEach(x => x.classList.toggle('on', x === b));
+    render(b.dataset.f);
+  });
+  document.getElementById('foot').innerHTML = GAMES.length + (EN ? ' games · v' : ' juegos · v') + ARCADE_VERSION + (EN ? '<br>Works offline once loaded.' : '<br>Funciona sin conexión una vez cargado.');
+
+  // Cambio a modo TV (solo si la configuración lo permite)
+  if (ARCADE_CONFIG.modo === 'seleccionable') {
+    const tb = document.getElementById('tvmode'); tb.style.display = 'inline-flex';
+    tb.addEventListener('click', () => { arcadeElegirTV(true); location.href = 'indextv.html'; });
+  }
+  // Instalación como app
+  let deferred = null;
+  const ib = document.getElementById('install');
+  window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferred = e; ib.style.display = 'inline-flex'; });
+  ib.addEventListener('click', async () => {
+    if (deferred) { deferred.prompt(); await deferred.userChoice; deferred = null; ib.style.display = 'none'; }
+    else alert(EN ? 'On iPhone: tap Share and then “Add to Home Screen”.' : 'En iPhone: pulsa Compartir y luego «Añadir a pantalla de inicio».');
+  });
+  const ios = /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.navigator.standalone;
+  if (ios) ib.style.display = 'inline-flex';
+  window.addEventListener('pageshow', () => render(document.querySelector('[data-f].on').dataset.f));
+  if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+})();
+</script>
+</body>
+</html>

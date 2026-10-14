@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Laberinto · Arcade Perdido</title>
+<meta name="theme-color" content="#2b1d3f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css">
+</head>
+<body class="game">
+<script src="config.js"></script>
+<script src="common.js"></script>
+<script>
+(function () {
+  const { ri, rand, clamp, shuffle } = Arcade;
+  const HEROES = ['🐭', '🐹', '🐞', '🐌', '🐢', '🦔'];
+  const GOALS = ['🧀', '🌻', '🍓', '🥬', '🍄', '🍎'];
+
+  function gen(C, R) {
+    const right = [...Array(R)].map(() => new Array(C).fill(true)), down = [...Array(R)].map(() => new Array(C).fill(true));
+    const seen = [...Array(R)].map(() => new Array(C).fill(false)), st = [[0, 0]]; seen[0][0] = true;
+    while (st.length) {
+      const [x, y] = st[st.length - 1];
+      const nb = shuffle([[1, 0], [-1, 0], [0, 1], [0, -1]]).map(([dx, dy]) => [x + dx, y + dy, dx, dy]).filter(([a, b]) => a >= 0 && b >= 0 && a < C && b < R && !seen[b][a]);
+      if (!nb.length) { st.pop(); continue; }
+      const [a, b, dx, dy] = nb[0]; seen[b][a] = true;
+      if (dx === 1) right[y][x] = false; if (dx === -1) right[y][a] = false; if (dy === 1) down[y][x] = false; if (dy === -1) down[b][x] = false;
+      st.push([a, b]);
+    }
+    // algunos atajos para que no sea tan lineal
+    for (let k = 0; k < Math.floor(C * R * 0.06); k++) { const x = ri(0, C - 2), y = ri(0, R - 1); right[y][x] = false; }
+    return { right, down };
+  }
+  function geo(g) {
+    const s = g.s, land = g.W > g.H, C = land ? s.R : s.C, R = land ? s.C : s.R;
+    if (s.C0 == null) { s.C0 = C; s.R0 = R; }
+    const Ha = g.bot - g.top - 60; s.cs = Math.min((g.W - 16) / s.mc, Ha / s.mr); s.ox = (g.W - s.cs * s.mc) / 2; s.oy = g.top + 50 + (Ha - s.cs * s.mr) / 2;
+  }
+  function walls(s, cx, cy) {
+    // rectángulos de pared alrededor de la celda (cx,cy)
+    const o = [], t = s.cs * 0.12;
+    for (let y = cy - 1; y <= cy + 1; y++) for (let x = cx - 1; x <= cx + 1; x++) {
+      if (x < -1 || y < -1 || x > s.mc || y > s.mr) continue;
+      const px = s.ox + x * s.cs, py = s.oy + y * s.cs;
+      if (x >= 0 && y >= 0 && x < s.mc && y < s.mr) {
+        if (s.M.right[y][x]) o.push([px + s.cs - t / 2, py - t / 2, t, s.cs + t]);
+        if (s.M.down[y][x]) o.push([px - t / 2, py + s.cs - t / 2, s.cs + t, t]);
+      }
+      if (x === -1 && y >= 0 && y < s.mr) o.push([s.ox - t / 2, py - t / 2, t, s.cs + t]);
+      if (y === -1 && x >= 0 && x < s.mc) o.push([px - t / 2, s.oy - t / 2, s.cs + t, t]);
+    }
+    return o;
+  }
+  function collide(s, b, r) {
+    const cx = Math.floor((b.x - s.ox) / s.cs), cy = Math.floor((b.y - s.oy) / s.cs);
+    for (const [x, y, w, h] of walls(s, cx, cy)) {
+      const nx = clamp(b.x, x, x + w), ny = clamp(b.y, y, y + h), dx = b.x - nx, dy = b.y - ny, d = Math.hypot(dx, dy);
+      if (d < r && d > 0) { b.x = nx + dx / d * r; b.y = ny + dy / d * r; }
+      else if (d === 0) { b.x += r * 0.5; }
+    }
+  }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Encuentra la salida', deco: ['🐭', '🧀', '⭐', '🧱', '🗝️', '🌀'], font: 'round', bg: ['#45306b', '#2b1d3f'],
+    music: { mode: 'dorian', bpm: 100, wave: 'triangle', style: 'chill', root: 60 }, voice: { wave: 'triangle', mul: 1.1, echo: 0.35 },
+    en: { title: 'Maze', tag: 'Find the way out', help: '<b>Drag</b> your finger anywhere: the little animal walks in that direction and slides along the walls. Get to the treat at the other end of the maze. Pick up the ⭐ on the way for extra points and finish quickly for more stars. Every level is a new, bigger maze.', tvHelp: 'Hold the arrows to walk.', dict: { 'Tiempo: ': 'Time: ' } },
+    tvHelp: 'Mantén las flechas para andar.',
+    id: 'laberinto', title: 'Laberinto', emoji: '🐭', color: '#da77f2', origin: 'Maze / Run Around',
+    help: '<b>Arrastra</b> el dedo en cualquier sitio: el animalito anda en esa dirección y se desliza por las paredes. Llega hasta el premio al otro lado del laberinto. Recoge las ⭐ del camino para puntos extra y termina rápido para más estrellas. Cada nivel es un laberinto nuevo y más grande.',
+    lives: 0, levels: 0, cap: 30,
+    setup(g) {
+      const L = g.lv, land = g.W > g.H, a = clamp(5 + Math.floor(L / 2), 5, 16), b = clamp(7 + Math.floor(L * 0.7), 7, 24);
+      g.s = { mc: land ? b : a, mr: land ? a : b, t: 0, hero: HEROES[(g.level - 1) % HEROES.length], goal: GOALS[(g.level - 1) % GOALS.length], vx: 0, vy: 0 };
+      const s = g.s; s.M = gen(s.mc, s.mr); geo(g);
+      s.b = { x: s.ox + s.cs / 2, y: s.oy + s.cs / 2 }; s.end = [s.mc - 1, s.mr - 1];
+      s.stars = []; for (let i = 0; i < 3 + Math.floor(L / 3); i++) s.stars.push([ri(1, s.mc - 1), ri(1, s.mr - 1)]);
+      s.par = s.mc * s.mr * 0.22 + 5;
+    },
+    layout(g) { const s = g.s; if (!s.M) return; const ox = s.ox, oy = s.oy, cs = s.cs; geo(g); s.b.x = s.ox + (s.b.x - ox) / cs * s.cs; s.b.y = s.oy + (s.b.y - oy) / cs * s.cs; },
+    down(g, p) { g.s.drag = { x: p.x, y: p.y }; },
+    move(g, p) { const s = g.s; if (!s.drag) return; const dx = p.x - s.drag.x, dy = p.y - s.drag.y, d = Math.hypot(dx, dy); if (d > 6) { s.dir = [dx / d, dy / d]; s.mag = clamp(d / 50, 0, 1); } if (d > 60) { s.drag.x = p.x - dx / d * 60; s.drag.y = p.y - dy / d * 60; } },
+    up(g) { const s = g.s; s.drag = null; s.dir = null; },
+    key(g, k, d) { const s = g.s; s.keys = s.keys || {}; s.keys[k] = d; },
+    update(g, dt) {
+      const s = g.s; if (s.done) return;
+      s.t += dt;
+      let dx = 0, dy = 0;
+      if (s.dir) { dx = s.dir[0] * s.mag; dy = s.dir[1] * s.mag; }
+      if (s.keys) { if (s.keys.ArrowLeft) dx = -1; if (s.keys.ArrowRight) dx = 1; if (s.keys.ArrowUp) dy = -1; if (s.keys.ArrowDown) dy = 1; }
+      const sp = s.cs * 5.5, r = s.cs * 0.3, steps = 4;
+      for (let i = 0; i < steps; i++) { s.b.x += dx * sp * dt / steps; s.b.y += dy * sp * dt / steps; collide(s, s.b, r); }
+      s.b.x = clamp(s.b.x, s.ox + r, s.ox + s.mc * s.cs - r); s.b.y = clamp(s.b.y, s.oy + r, s.oy + s.mr * s.cs - r);
+      if (dx || dy) { s.face = dx > 0.1 ? 1 : dx < -0.1 ? -1 : s.face; s.walk = (s.walk || 0) + dt * 12; }
+      const cx = Math.floor((s.b.x - s.ox) / s.cs), cy = Math.floor((s.b.y - s.oy) / s.cs);
+      s.stars = s.stars.filter(([x, y]) => { if (x === cx && y === cy) { Arcade.sfx.coin(); g.addScore(20 * g.lv, s.b.x, s.b.y - 20); return false; } return true; });
+      if (cx === s.end[0] && cy === s.end[1]) {
+        s.done = true; Arcade.sfx.win(); g.confetti(60); g.addScore(Math.max(20, Math.round((s.par * 2 - s.t) * 5)) * g.lv, g.W / 2, g.H / 2);
+        setTimeout(() => { if (g.state === 'play') g.win(s.t <= s.par ? 3 : s.t <= s.par * 1.6 ? 2 : 1); }, 700);
+      }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      const bg = ctx.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, '#45306b'); bg.addColorStop(1, '#1e1430');
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      if (!s.M) return;
+      const cs = s.cs, hue = (g.level * 47) % 360;
+      ctx.fillStyle = `hsl(${hue},35%,88%)`; ctx.fillRect(s.ox, s.oy, cs * s.mc, cs * s.mr);
+      ctx.strokeStyle = `hsl(${hue},55%,32%)`; ctx.lineWidth = Math.max(2, cs * 0.12); ctx.lineCap = 'round';
+      ctx.beginPath();
+      for (let y = 0; y < s.mr; y++) for (let x = 0; x < s.mc; x++) {
+        const px = s.ox + x * cs, py = s.oy + y * cs;
+        if (s.M.right[y][x]) { ctx.moveTo(px + cs, py); ctx.lineTo(px + cs, py + cs); }
+        if (s.M.down[y][x]) { ctx.moveTo(px, py + cs); ctx.lineTo(px + cs, py + cs); }
+      }
+      ctx.moveTo(s.ox, s.oy); ctx.lineTo(s.ox + cs * s.mc, s.oy); ctx.moveTo(s.ox, s.oy); ctx.lineTo(s.ox, s.oy + cs * s.mr);
+      ctx.stroke(); ctx.lineCap = 'butt';
+      for (const [x, y] of s.stars) Arcade.emoji(ctx, '⭐', s.ox + (x + 0.5) * cs, s.oy + (y + 0.5) * cs, cs * 0.5, { rot: Math.sin(g.rt * 3 + x) * 0.3 });
+      Arcade.emoji(ctx, s.goal, s.ox + (s.end[0] + 0.5) * cs, s.oy + (s.end[1] + 0.5) * cs + Math.sin(g.rt * 4) * 2, cs * 0.7);
+      Arcade.emoji(ctx, s.hero, s.b.x, s.b.y - Math.abs(Math.sin(s.walk || 0)) * cs * 0.06, cs * 0.66, { flip: s.face > 0 });
+      if (s.drag && s.dir) { ctx.strokeStyle = 'rgba(255,255,255,.35)'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(s.drag.x, s.drag.y, 40, 0, 6.3); ctx.stroke(); ctx.fillStyle = 'rgba(255,255,255,.5)'; ctx.beginPath(); ctx.arc(s.drag.x + s.dir[0] * 40 * s.mag, s.drag.y + s.dir[1] * 40 * s.mag, 14, 0, 6.3); ctx.fill(); }
+      Arcade.txt(ctx, 'Tiempo: ' + s.t.toFixed(1) + ' s', W / 2, g.top + 26, 15, s.t <= s.par ? '#d0bfff' : '#ffa8a8', 'center', 900);
+    },
+  });
+})();
+</script>
+</body>
+</html>

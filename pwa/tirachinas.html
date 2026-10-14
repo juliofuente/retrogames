@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Tirachinas · Arcade Perdido</title>
+<meta name="theme-color" content="#7ec8f2">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css">
+</head>
+<body class="game">
+<script src="config.js"></script>
+<script src="common.js"></script>
+<script src="phys.js"></script>
+<script>
+// @phys
+(function () {
+  const { ri, rand, clamp, pick } = Arcade;
+  const MAT = { wood: { c: '#c68642', s: '#8d5524', hp: 70, d: 0.6, e: '' }, stone: { c: '#adb5bd', s: '#495057', hp: 220, d: 2, e: '' }, ice: { c: '#a5d8ff', s: '#4dabf7', hp: 30, d: 0.5, e: '' } };
+  const BIRDS = ['🐦', '🐤', '💣'];
+  const GY = 500, SX = 120, SY = 410;
+
+  function build(g) {
+    const s = g.s, L = g.lv, w = new Arcade.Phys.World({ gy: 600, iterations: 12, substeps: 3 });
+    s.w = w; s.pigs = []; s.blocks = [];
+    w.box(1000, GY + 60, 3000, 120, { static: true, friction: 0.8, data: { ground: true } });
+    const mats = L < 3 ? ['wood'] : L < 6 ? ['wood', 'ice'] : ['wood', 'ice', 'stone'];
+    const nt = clamp(1 + Math.floor((L + 1) / 3), 1, 4); let x = 520;
+    const block = (cx, cy, bw, bh, m) => { const b = w.box(cx, cy, bw, bh, { density: MAT[m].d, friction: 0.7, data: { mat: m, hp: MAT[m].hp } }); s.blocks.push(b); return b; };
+    const pig = (cx, cy, r) => { const p = w.circle(cx, cy, r, { density: 0.8, friction: 0.6, data: { pig: true, hp: 25 + r } }); s.pigs.push(p); return p; };
+    for (let t = 0; t < nt; t++) {
+      const floors = clamp(1 + ri(0, Math.floor(L / 3)), 1, 4), m = pick(mats), span = 84;
+      let y = GY;
+      for (let f = 0; f < floors; f++) {
+        const mm = Math.random() < 0.3 ? pick(mats) : m;
+        block(x - span / 2 + 7, y - 35, 14, 70, mm); block(x + span / 2 - 7, y - 35, 14, 70, mm);
+        if (f === 0 || Math.random() < 0.5) pig(x, y - 15, 14);
+        y -= 70; block(x, y - 7, span + 16, 14, mm); y -= 14;
+      }
+      pig(x, y - 18, Math.random() < 0.3 ? 18 : 15);
+      x += 130 + rand(0, 40);
+    }
+    s.worldW = Math.max(1000, x + 160);
+    w.box(-20, 200, 40, 800, { static: true }); w.box(s.worldW + 20, 200, 40, 800, { static: true });
+    const mf = (x) => (x.im ? clamp(x.m / 0.5, 0.4, 3) : 2);
+    w.onImpact = (a, b, v) => { if (v < 140) return; const dm = (v - 140) / 5; hurt(g, a, dm * mf(b)); hurt(g, b, dm * mf(a)); };
+    // dejar asentar
+    for (let i = 0; i < 90; i++) w.step(1 / 60);
+    for (const p of s.pigs) p.data.hp = 25 + p.r; for (const b of s.blocks) b.data.hp = MAT[b.data.mat].hp;
+    s.settled = true;
+  }
+  function hurt(g, b, dmg) {
+    const s = g.s; if (!s.settled || !b.data || b.removed) return;
+    if (b.data.pig || b.data.mat) {
+      b.data.hp -= dmg;
+      if (b.data.hp <= 0) {
+        s.w.remove(b);
+        if (b.data.pig) { s.pigs.splice(s.pigs.indexOf(b), 1); s.fx.push({ x: b.p.x, y: b.p.y, t: 0.6 }); g.addScore(500 * g.lv, ...toScreen(g, b.p.x, b.p.y - 20)); Arcade.sfx.pop(); }
+        else { s.blocks.splice(s.blocks.indexOf(b), 1); s.debris.push({ x: b.p.x, y: b.p.y, c: MAT[b.data.mat].c, t: 0.5 }); g.addScore(50 * g.lv); Arcade.tone(b.data.mat === 'ice' ? 1200 : b.data.mat === 'stone' ? 140 : 300, 0.08, 'square', 0.05); }
+      }
+    }
+  }
+  const toScreen = (g, x, y) => { const s = g.s; return [(x - s.cam) * s.sc, s.oy + y * s.sc]; };
+  function geo(g) { const s = g.s; s.sc = clamp((g.bot - g.top) / 560, 0.4, 2); s.oy = g.bot - 560 * s.sc + 20 * s.sc; s.vw = g.W / s.sc; }
+  function launch(g, vx, vy) {
+    const s = g.s, type = s.queue.shift();
+    const b = s.w.circle(SX, SY, 15, { density: 1.6, friction: 0.5, restitution: 0.2, data: { bird: true, type } });
+    b.v.x = vx; b.v.y = vy; s.bird = b; s.flyT = 0; s.used = false; s.trail = [];
+    Arcade.sfx.whoosh(); Arcade.tone(500, 0.2, 'triangle', 0.08, -200);
+  }
+  function ability(g) {
+    const s = g.s, b = s.bird; if (!b || s.used || b.removed) return; s.used = true;
+    const t = b.data.type;
+    if (t === 1) { b.v.x *= 2; b.v.y *= 2; Arcade.sfx.up(); g.ring(...toScreen(g, b.p.x, b.p.y), '#ffd43b', 30); }
+    else if (t === 2) {
+      Arcade.sfx.boom(); g.shake(0.35, 9); const [sx2, sy2] = toScreen(g, b.p.x, b.p.y); g.burst(sx2, sy2, { n: 30, color: ['#ff922b', '#ffd43b', '#495057'], speed: 300, size: 5 }); g.ring(sx2, sy2, '#ff922b', 120 * s.sc);
+      for (const o of s.w.bodies.slice()) { if (!o.im || o === b) continue; const dx = o.p.x - b.p.x, dy = o.p.y - b.p.y, d = Math.hypot(dx, dy); if (d < 140) { const k = (1 - d / 140); o.impulse(dx / (d || 1) * 900 * k * o.m, dy / (d || 1) * 900 * k * o.m - 200 * k * o.m); hurt(g, o, 80 * k); } }
+      s.w.remove(b);
+    }
+  }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Tensa, apunta, ¡derriba!', deco: ['🐦', '🐷', '🪵', '🧱', '💣', '🐤'], font: 'impact', bg: ['#a5d8ff', '#7ec8f2'],
+    music: { mode: 'major', bpm: 116, wave: 'triangle', style: 'arcade', root: 60 }, voice: { wave: 'triangle', mul: 1, echo: 0.25 },
+    en: { title: 'Slingshot', tag: 'Pull, aim, knock it down!', help: '<b>Drag backwards</b> from anywhere to stretch the slingshot and <b>release</b> to launch the bird. Knock down the towers and squash every 🐷. Wood breaks easily, ice even more and stone is hard. While a bird flies, <b>tap</b> to use its power: 🐤 speeds up and 💣 explodes. If you run out of birds with pigs standing, you lose a life.', tvHelp: '▲ ▼ angle · hold OK to stretch and release to fire · OK in flight for the power.', dict: { 'Cerdos: ': 'Pigs: ' } },
+    tvHelp: '▲ ▼ ángulo · mantén OK para tensar y suelta para lanzar · OK en vuelo para el poder.',
+    id: 'tirachinas', title: 'Tirachinas', emoji: '🐦', color: '#ff6b6b', origin: 'Angry Birds (Rovio) / Crush the Castle',
+    help: '<b>Arrastra hacia atrás</b> desde cualquier sitio para tensar el tirachinas y <b>suelta</b> para lanzar el pájaro. Derriba las torres y aplasta a todos los 🐷. La madera se rompe fácil, el hielo aún más y la piedra es dura. Mientras vuela, <b>toca</b> para usar su poder: 🐤 acelera y 💣 explota. Si te quedas sin pájaros con cerdos en pie, pierdes una vida.',
+    lives: 3, levels: 0, cap: 25,
+    setup(g) {
+      g.s = { fx: [], debris: [], cam: 0, intro: 2.2, ang: -0.6, pw: 0 };
+      const s = g.s, L = g.lv; geo(g); build(g);
+      const n = clamp(s.pigs.length + 2, 3, 8); s.queue = []; for (let i = 0; i < n; i++) s.queue.push(L < 2 ? 0 : L < 4 ? [0, 1][i % 2] : [0, 1, 2][i % 3]);
+      s.cam = Math.max(0, s.worldW - s.vw);
+    },
+    layout(g) { if (g.s.w) geo(g); },
+    down(g, p) { const s = g.s; if (s.bird && !s.bird.removed && !s.used && s.flyT > 0.05) { ability(g); return; } if (s.bird || !s.queue.length || s.intro > 0 || s.over) return; s.drag = { x: p.x, y: p.y }; s.pull = { x: 0, y: 0 }; },
+    move(g, p) { const s = g.s; if (!s.drag) return; let dx = (p.x - s.drag.x) / s.sc, dy = (p.y - s.drag.y) / s.sc; const d = Math.hypot(dx, dy); if (d > 90) { dx *= 90 / d; dy *= 90 / d; } s.pull = { x: dx, y: dy }; },
+    up(g) { const s = g.s; if (!s.drag) return; s.drag = null; const d = Math.hypot(s.pull.x, s.pull.y); if (d > 15) launch(g, -s.pull.x * 11, -s.pull.y * 11); s.pull = null; },
+    key(g, k, d) {
+      const s = g.s; if (k === 'ArrowUp' || k === 'ArrowDown') s.kang = d ? (k === 'ArrowUp' ? -1 : 1) : 0;
+      if (k === ' ') { if (d) { if (s.bird && !s.bird.removed && !s.used) return ability(g); if (!s.bird && s.queue.length && !s.intro && !s.over) s.charging = true; } else if (s.charging) { s.charging = false; const P = 20 + s.pw * 70; launch(g, Math.cos(s.ang) * P * 11, Math.sin(s.ang) * P * 11); s.pw = 0; } }
+    },
+    update(g, dt) {
+      const s = g.s;
+      if (s.kang) s.ang = clamp(s.ang + s.kang * dt * 1.2, -1.4, 0.4);
+      if (s.charging) s.pw = Math.min(1, s.pw + dt * 0.9);
+      s.w.step(dt);
+      for (const f of s.fx) f.t -= dt; s.fx = s.fx.filter((f) => f.t > 0);
+      for (const f of s.debris) f.t -= dt; s.debris = s.debris.filter((f) => f.t > 0);
+      // caídas fuera del mundo
+      for (const b of s.w.bodies.slice()) if (b.p.y > 900) { if (b.data && b.data.pig) hurt(g, b, 999); else s.w.remove(b); }
+      // cámara
+      let want = 0;
+      if (s.intro > 0) { s.intro -= dt; want = s.intro > 1.2 ? Math.max(0, s.worldW - s.vw) : 0; }
+      else if (s.bird && !s.bird.removed) want = s.bird.p.x - s.vw * 0.35;
+      else if (s.bird) want = s.lastX - s.vw * 0.5;
+      s.cam += (clamp(want, 0, Math.max(0, s.worldW - s.vw)) - s.cam) * Math.min(1, dt * (s.intro > 0 ? 2 : 4));
+      if (s.bird) {
+        const b = s.bird; s.flyT += dt;
+        if (!b.removed) { s.lastX = b.p.x; if (s.flyT < 3) { s.trail.push([b.p.x, b.p.y]); if (s.trail.length > 60) s.trail.shift(); } }
+        const still = b.removed || (Math.hypot(b.v.x, b.v.y) < 12 && s.flyT > 1) || s.flyT > 7;
+        const calm = s.w.bodies.every((o) => !o.im || Math.hypot(o.v.x, o.v.y) < 25);
+        if (still && (calm || s.flyT > 9)) {
+          if (!b.removed) { s.w.remove(b); g.burst(...toScreen(g, b.p.x, b.p.y), { n: 8, emoji: '🪶', size: 10, speed: 100 }); }
+          s.bird = null; s.oldTrail = s.trail;
+          if (!s.pigs.length) { s.over = true; g.addScore(s.queue.length * 1000 * g.lv, g.W / 2, g.H / 2); g.confetti(70); setTimeout(() => { if (g.state === 'play') g.win(s.queue.length >= 2 ? 3 : s.queue.length === 1 ? 2 : 1); }, 600); }
+          else if (!s.queue.length) { s.over = true; g.message(Arcade.T('¡Sin pájaros!', 'Out of birds!'), 1.2); setTimeout(() => { if (g.state === 'play' && g.die()) Arcade.current.def.setup(g); }, 1300); }
+        }
+      }
+      if (!s.pigs.length && !s.over && !s.bird) { s.over = true; g.confetti(70); setTimeout(() => { if (g.state === 'play') g.win(); }, 600); }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      const bg = ctx.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, '#74c0fc'); bg.addColorStop(1, '#e7f5ff');
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      if (!s.w) return;
+      const sc = s.sc;
+      for (let i = 0; i < 5; i++) Arcade.emoji(ctx, '☁️', ((i * 300 - s.cam * 0.3 * sc + g.rt * 8) % (W + 200) + W + 200) % (W + 200) - 100, g.top + 30 + (i % 3) * 40, 60);
+      ctx.fillStyle = 'rgba(105,219,124,.35)'; ctx.beginPath(); ctx.moveTo(0, H); for (let x = 0; x <= W; x += 20) ctx.lineTo(x, s.oy + (GY - 60 - Math.sin((x / sc + s.cam * 0.5) / 120) * 30) * sc); ctx.lineTo(W, H); ctx.fill();
+      ctx.save(); ctx.translate(-s.cam * sc, s.oy); ctx.scale(sc, sc);
+      ctx.fillStyle = '#69db7c'; ctx.fillRect(s.cam - 50, GY, s.vw + 100, 14); ctx.fillStyle = '#8d5524'; ctx.fillRect(s.cam - 50, GY + 14, s.vw + 100, 200);
+      // tirachinas
+      ctx.strokeStyle = '#6b3d14'; ctx.lineWidth = 10; ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(SX, GY); ctx.lineTo(SX, SY + 20); ctx.lineTo(SX - 14, SY - 6); ctx.moveTo(SX, SY + 20); ctx.lineTo(SX + 14, SY - 6); ctx.stroke();
+      const tr = s.trail && s.trail.length ? s.trail : s.oldTrail || [];
+      ctx.fillStyle = 'rgba(255,255,255,.8)'; tr.forEach(([x, y], i) => { if (i % 3 === 0) { ctx.beginPath(); ctx.arc(x, y, 3, 0, 6.3); ctx.fill(); } });
+      let px = SX, py = SY;
+      if (s.pull) { px = SX + s.pull.x; py = SY + s.pull.y; } else if (s.charging || (!s.bird && s.kang != null)) { const P = 20 + s.pw * 70; px = SX - Math.cos(s.ang) * P; py = SY - Math.sin(s.ang) * P; }
+      if (!s.bird && s.queue.length && s.intro <= 0) {
+        ctx.strokeStyle = '#3d2914'; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(SX - 14, SY - 6); ctx.lineTo(px, py); ctx.lineTo(SX + 14, SY - 6); ctx.stroke();
+        Arcade.emoji(ctx, BIRDS[s.queue[0]], px, py, 34, { flip: true });
+        if (s.pull || s.charging) { // guía de trayectoria
+          let vx = s.pull ? -s.pull.x * 11 : Math.cos(s.ang) * (20 + s.pw * 70) * 11, vy = s.pull ? -s.pull.y * 11 : Math.sin(s.ang) * (20 + s.pw * 70) * 11, x = SX, y = SY;
+          ctx.fillStyle = 'rgba(255,255,255,.7)'; for (let i = 0; i < 14; i++) { for (let k = 0; k < 4; k++) { vy += 600 / 60; x += vx / 60; y += vy / 60; } ctx.beginPath(); ctx.arc(x, y, 3, 0, 6.3); ctx.fill(); }
+        }
+      }
+      ctx.lineCap = 'butt';
+      for (let i = 1; i < s.queue.length; i++) Arcade.emoji(ctx, BIRDS[s.queue[i]], SX - 30 - i * 30, GY - 14, 26, { flip: true });
+      for (const b of s.blocks) {
+        const m = MAT[b.data.mat], dmg = 1 - b.data.hp / m.hp;
+        Arcade.Phys.drawBox(ctx, b, m.c, m.s);
+        if (dmg > 0.35) { ctx.save(); ctx.translate(b.p.x, b.p.y); ctx.rotate(b.a); ctx.strokeStyle = 'rgba(0,0,0,.45)'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(-b.hw * 0.6, -b.hh * 0.5); ctx.lineTo(0, 0); ctx.lineTo(b.hw * 0.4, b.hh * 0.7); ctx.stroke(); ctx.restore(); }
+      }
+      for (const p of s.pigs) Arcade.emoji(ctx, p.data.hp < 20 ? '🤕' : '🐷', p.p.x, p.p.y, p.r * 2.3, { rot: p.a });
+      if (s.bird && !s.bird.removed) Arcade.emoji(ctx, BIRDS[s.bird.data.type], s.bird.p.x, s.bird.p.y, 34, { rot: s.bird.a, flip: true });
+      for (const f of s.fx) Arcade.emoji(ctx, '💨', f.x, f.y, 50 * (1.4 - f.t), { alpha: f.t / 0.6 });
+      for (const f of s.debris) { ctx.fillStyle = f.c; ctx.globalAlpha = f.t * 2; for (let k = 0; k < 6; k++) ctx.fillRect(f.x + Math.cos(k) * (0.5 - f.t) * 80, f.y + Math.sin(k * 2) * (0.5 - f.t) * 60 + (0.5 - f.t) * 60, 6, 6); ctx.globalAlpha = 1; }
+      ctx.restore();
+      Arcade.txt(ctx, 'Cerdos: ' + s.pigs.length + '   ·   🐦 ' + (s.queue.length + (s.bird ? 1 : 0)), W / 2, g.top + 22, 16, '#1b4965', 'center', 900);
+    },
+  });
+})();
+</script>
+</body>
+</html>

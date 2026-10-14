@@ -1,0 +1,145 @@
+ARCADE PRO — LO QUE QUEDA POR HACER E INSTRUCCIONES PARA CONTINUAR (Claude Code)
+================================================================================
+
+OBJETIVO
+--------
+Rehacer en JS + emojis (sin Phaser) todos los juegos de https://emanueleferonato.com/games-covered/ para la
+colección Pro (pwa/indexpro.html), con niveles infinitos, animaciones, es/en y soporte TV. Plan: ~14 lotes de 10.
+Hechos: lotes 1–6 (80 juegos Pro, ver HECHO.txt). Quedan unos 70 títulos (lotes 7–14).
+
+Criterios ya decididos:
+· Si varios títulos comparten mecánica se fusionan en un juego (el campo "origin" lista todos los títulos).
+· Nombres propios en español (y "title" en inglés), sin personajes ni marcas registradas.
+· No se hacen: Boids (no es juego), Educational Game, Line Rider (sandbox), Legends of Runeterra (demasiado grande),
+  Knife Hit (ya existe aparte como "Knife Emohit"), Meowdoku (= Emojidoku).
+· Táctil SIN cruceta en pantalla; en TV, cruceta/cursor.
+
+PENDIENTE — PROPUESTA DE LOTES (título(s) Feronato → nombre propuesto: mecánica)
+--------------------------------------------------------------------------------
+Los marcados con (?) son títulos poco conocidos: antes de hacerlos, leer el artículo de Feronato
+(https://emanueleferonato.com/tag/<titulo>/ o buscar en su web) para copiar la MECÁNICA, no el arte.
+
+Lote 7 — puzles de tablero
+  · Zhed → "Expande": cada número se estira en una dirección tantas casillas como indica; llegar a la meta.
+  · Warp Shift (?) → "Portales": puzle de mover habitaciones/puertas para llevar al personaje a la salida.
+  · Hexagonal Tiles / Hex puzzles → "Hexágonos": encajar piezas hexagonales (tipo Hex FRVR) para completar líneas.
+  · Lumines → "Lumina": bloques 2×2 bicolor que caen, cuadrados de un color, barra de tiempo que barre.
+  · Hero Slide → "Deslizahéroes": 2048 de héroes/monstruos con combates por casilla.
+  · Plus+Plus / zNumbers / Draw and Sum → "Sumacamino": dibuja un camino por casillas numeradas sumando un objetivo.
+  · Drag and Match / 10000000 / Dungeon Raid / Hero Emblems → "Mazmorra": unir 3+ fichas iguales arrastrando
+    (espadas atacan, escudos defienden, pociones curan, monedas) contra monstruos por turnos.
+  · Fuse Ballz (?) / Ballz-like merge → "Fusiona bolas".
+  · Grindstone (?) → "Cadena roja": encadenar enemigos del mismo color arrastrando, con turnos.
+  · Pyramids of Ra (?) / Yanga (?) → revisar en la web.
+Lote 8 — físicas y lanzamiento
+  · Sling / Slingy → "Honda": columpiarse y lanzarse de ancla en ancla.
+  · HookPod / Mikey Hooks → "Gancho": engancharse a puntos y balancearse (péndulo) avanzando.
+  · Fling → "Empujón": bolas en cuadrícula, lanzar una contra otra para sacarlas, que quede una.
+  · Phyballs / SamePhysics (?) → SameGame con física (usar phys.js).
+  · Ball vs Ball / Ball Game / Ball: Revamped / Bouncing Ball 1-2 / Bouncy Light / Floaty Light → 2–3 juegos de
+    bola que bota: "Bote" (botar sobre plataformas al ritmo), "Luz flotante".
+  · Elasticity (?) → "Elástico": cuerda elástica para lanzar.
+  · Trailblazer (?), Tunnelball (?) → revisar.
+  · Spears N' Coins (?), Sproing (?) → revisar.
+Lote 9 — reflejos y un botón
+  · One Button Game / One Tap RPG → "Un botón": RPG de un toque (atacar en el momento justo).
+  · Quick Switch → "Interruptor": cambia el color/estado del personaje para pasar puertas del mismo color.
+  · Color Jump → "Salto de color": cambia de color para aterrizar en plataformas del mismo color.
+  · The Next Arrow → "Siguiente flecha": desliza en la dirección de la flecha antes de que acabe el tiempo.
+  · Input Delay (?) → los controles responden con retraso; adaptar.
+  · Whack a Creep → "Topos": golpea a los que asoman (sin tocar a los buenos).
+  · Turn / Turnellio (?) → "Giro": coche/serpiente que gira con un toque en curvas de 90°.
+  · TwinSpin (hecho en Torreta como origen) → revisar si conviene juego propio.
+  · The Impossible Line → "Línea imposible": arrastra una línea por un laberinto que se mueve sin tocar paredes.
+  · Stringy / String Avoider → "Cuerda": arrastra una cola/cuerda larga sin que toque las paredes.
+Lote 10 — palabras, cartas y lógica
+  · Wheel of Fortune → "Ruleta": adivinar frase letra a letra girando una ruleta (es/en).
+  · GuessNext → "Mayor o menor": carta siguiente mayor o menor, racha.
+  · Pocket Snap (?) → juego de cartas tipo Snap.
+  · Space Checkers → "Damas espaciales": damas contra la máquina.
+  · Renju ya hecho en "En raya". Tic Tac Toe ya hecho.
+  · A Life of Logic (?), Nodes (?), Iromeku (?) → puzles lógicos: revisar.
+  · Spellfall (?) → letras que caen formando palabras (match de letras).
+  · Back to Square One → "Oca": juego de dados con casillas trampa contra la máquina.
+Lote 11 — plataformas y acción
+  · Drop Wizard → "Mago caedizo": el mago camina solo, cae entre plataformas y aplasta enemigos al caer.
+  · Chronotron (?) → plataformas con viajes en el tiempo (clones que repiten tus pasos). Complejo.
+  · Meeblings / qomp / Yeah Bunny / Pudi / Poux (?) → revisar: varios son "guía a criaturas" o plataformas de un toque.
+  · Magick (?), Knightfall (?), Talesworth Adventure (?) → plataformas/aventura sencilla.
+  · Roguelike → "Mazmorra infinita": roguelike por turnos con deslizar (4 direcciones).
+  · Serious Scramblers (?) → bajar por plataformas que suben (tipo NS-Shaft).
+  · Wish Upon a Star (?), Way of an Idea (?), Pumpkin Story (?), Hurry it's Christmas (?) → revisar.
+Lote 12 — dibujo y caminos
+  · Draw Game → "Dibuja": dibuja líneas que se vuelven físicas (phys.js) para llevar una bola a la meta.
+  · Deflection → "Espejos": colocar espejos/rebotes para llevar un rayo/bola a la meta.
+  · BallPusher (?), Blockage (?), Block it (?), CubesOut (?), Be Brave Barb (?) → puzles de empujar/deslizar: revisar.
+  · Bombuzal → "Bombuzal": isla de casillas con bombas; detonarlas sin quedar atrapado.
+  · Splitter (?) → cortar objetos para dirigir piezas (tipo Splitter): revisar.
+Lote 13 — misceláneos
+  · Snowflakes (?), Radical (?), Pacco (?), Ononmin (?), o:anquan (?), PixelField (?), Perfectionism (?),
+    MagOrMin (?), Puppet Bird (?), Security (?), Rebuild Chile (?), Surfingers (?), The Moops (?), Toony (hecho en
+    Tambaleante como origen), Globe (hecho en Planetita como origen), Goat Rider (hecho en Esquí), GearTaker (?),
+    DROP'd (?), Bubble Chaos (?), Bubbles 2 (?), Racing, Platform/Platform game (hecho en Saltarín) → revisar uno a uno.
+Lote 14 — repaso final
+  · Revisar que cada título de la lista de Feronato está cubierto o descartado (añadirlo al "origin" del juego
+    correspondiente si se fusiona).
+  · Subir ARCADE_VERSION, regenerar todo, probar y empaquetar.
+
+INSTRUCCIONES PARA CONTINUAR
+----------------------------
+Requisitos: Python 3, Node.js, y para las pruebas: pip install playwright && playwright install chromium.
+
+1) Crear un juego nuevo
+   · Copiar un juego parecido de herramientas/src/ como plantilla (p. ej. torreta.js = toque simple,
+     esquiva.js = arrastrar, gemas.js = tablero, tirachinas.js = física con "// @phys").
+   · Estructura obligatoria de cada src/<id>.js:
+       // Título|#colorDeTema
+       // @phys          ← solo si usa Arcade.Phys (phys.js)
+       (function () {
+         const { ri, rand, clamp, pick, shuffle } = Arcade;
+         Arcade.game({
+           /*THEME*/ home: 'indexpro.html', tag: '…', deco: [6 emojis], font: 'round|serif|mono|impact|comic|wide|fancy',
+           bg: ['#claro', '#oscuro'], music: { mode: 'major|minor|dorian|lydian|mixo|harm|phryg', bpm, wave, style, root },
+           voice: {…}, ambient: {…opcional},
+           en: { title, tag, help, tvHelp, dict: { 'texto ES dibujado en canvas': 'EN' } },
+           tvHelp: '…', tv: false | { mode: 'tap'|'swipe'|'drag', targets: (g) => [{x,y,w,h}] }  (sin tv = teclas),
+           id, title, emoji, color, origin, help,
+           lives: 3 (0 = sin vidas), levels: 0 (infinito), cap: 20–30,
+           setup(g) {…g.s = estado…}, layout(g) {…recalcular geometría…},
+           down/move/up/tap/swipe(g, p|dir), key(g, k, down), hover(g,x,y), update(g, dt), draw(g, ctx)
+         });
+       })();
+   · API útil del motor: g.W g.H g.top g.bot g.lv (nivel con tope) g.level g.rt; g.addScore(n,x,y); g.win(estrellas?)
+     (sin argumento calcula estrellas por vidas perdidas); g.die() → false si se acabó la partida; g.message(txt,t,sub);
+     g.float, g.burst, g.ring, g.flash, g.shake, g.confetti, g.scenery; Arcade.emoji(ctx,e,x,y,size,{rot,alpha,flip,sx,sy});
+     Arcade.txt(ctx,txt,x,y,size,color,align,peso,trazo); Arcade.rr (rect redondeado); Arcade.sfx.{coin,pop,hit,boom,win,
+     lose,tick,move,up,bad,whoosh,combo(n)}; Arcade.tone(f,dur,onda,vol,slide); Arcade.T('es','en'); Arcade.lang.
+   · Todo texto que se dibuja con Arcade.txt en español debe tener su traducción en en.dict (se traduce por fragmentos).
+   · Para reiniciar nivel tras perder vida: setTimeout(() => { if (g.state==='play' && g.die()) Arcade.current.def.setup(g); }, 1200).
+
+2) Registrar y construir
+   · Añadir la descripción en herramientas/mkgames.py (diccionario D: id → (desc ES, control ES, desc EN, control EN,
+     tv: 'cruceta'|'cursor'|False)) y el id al principio de la lista PRO.
+   · cd herramientas && python3 mkgames.py      → reescribe GAMES_PRO en pwa/games.js
+   · python3 mk.py id1 id2 …                    → crea pwa/<id>.html
+   · Subir ARCADE_VERSION en pwa/games.js (p. ej. 2.5.0) para que la PWA se actualice en los móviles.
+   · python3 ../pwa/build.py                     → regenera autonomos/ (todos los .html autónomos)
+   · node --check src/<id>.js para comprobar sintaxis.
+
+3) Probar
+   · python3 tall.py <carpeta_para_capturas> file://$(pwd)/../autonomos id1,id2   (táctil; crea shots/ antes)
+   · python3 ttv.py id1,id2 <carpeta>                                              (TV, 1 y 2 jugadores)
+   · python3 t8n.py <carpeta>   (editar NEWG con los ids) → avisa de textos en español en la versión inglesa
+   · Para balance/solubilidad: require('./mock.js')(ruta_src) y simular con mkG(nivel) + DEF.update(g, 1/60).
+   · Revisar las capturas: que se vea bien en vertical (390×780) y en TV (960×540).
+
+4) Publicar
+   · Subir la carpeta pwa/ entera a un servidor HTTPS (o usar los de autonomos/ para abrirlos sueltos).
+
+PROMPT SUGERIDO PARA CLAUDE CODE
+--------------------------------
+"Lee HECHO.txt, PENDIENTE_E_INSTRUCCIONES.txt y pwa/README.md. Continúa la colección Arcade Pro con el lote 7:
+crea cada juego en herramientas/src siguiendo la estructura de los existentes (es/en, niveles infinitos, tvHelp/tv,
+home:'indexpro.html'), regístralos en mkgames.py, constrúyelos con mk.py, sube ARCADE_VERSION, ejecuta build.py y
+las pruebas (tall.py, ttv.py, t8n.py) y corrige errores. Para los títulos marcados con (?) consulta primero el
+artículo de emanueleferonato.com para entender la mecánica."

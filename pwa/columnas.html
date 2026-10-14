@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Columnas · Arcade Perdido</title>
+<meta name="theme-color" content="#1a1033">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css">
+</head>
+<body class="game">
+<script src="config.js"></script>
+<script src="common.js"></script>
+<script>
+(function () {
+  const { ri, clamp } = Arcade;
+  const C = 6, R = 13;
+  const GEM = [['#ff6b6b', '❤️'], ['#ffd43b', '⭐'], ['#69db7c', '🍀'], ['#4dabf7', '💧'], ['#da77f2', '🔮'], ['#ff922b', '🔶']];
+
+  function geo(g) { const s = g.s, Ha = g.bot - g.top - 30; s.cs = Math.min((g.W - 110) / C, Ha / R); s.ox = (g.W - s.cs * C) / 2 - 30; s.oy = g.top + 14 + (Ha - s.cs * R) / 2; }
+  const rnd = (s) => ri(0, s.nt - 1);
+  function spawn(g) {
+    const s = g.s;
+    s.p = { c: 2, y: -3, g: s.next }; s.next = [rnd(s), rnd(s), rnd(s)];
+    if (s.b[0][2] != null || s.b[0][3] != null) { g.message(Arcade.T('¡Columna llena!', 'Column full!'), 1.2); if (g.die()) { for (const row of s.b) row.fill(null); } }
+  }
+  const free = (s, c, r) => c >= 0 && c < C && r < R && (r < 0 || s.b[r][c] == null);
+  function land(g) {
+    const s = g.s, p = s.p, top = Math.floor(p.y);
+    for (let k = 0; k < 3; k++) { const r = top + k; if (r >= 0) s.b[r][p.c] = p.g[k]; }
+    s.p = null; Arcade.tone(160, 0.06, 'square', 0.07);
+    if (top < 0) { g.message(Arcade.T('¡Columna llena!', 'Column full!'), 1.2); if (g.die()) for (const row of s.b) row.fill(null); }
+    s.chain = 0; resolve(g);
+  }
+  function resolve(g) {
+    const s = g.s, kill = new Set();
+    for (let r = 0; r < R; r++) for (let c = 0; c < C; c++) {
+      const v = s.b[r][c]; if (v == null) continue;
+      for (const [dr, dc] of [[0, 1], [1, 0], [1, 1], [1, -1]]) {
+        let n = 1; while (r + dr * n < R && c + dc * n >= 0 && c + dc * n < C && s.b[r + dr * n][c + dc * n] === v) n++;
+        if (n >= 3) for (let k = 0; k < n; k++) kill.add((r + dr * k) * C + c + dc * k);
+      }
+    }
+    if (!kill.size) { if (g.state === 'play') spawn(g); return; }
+    s.chain++;
+    for (const k of kill) { const r = Math.floor(k / C), c = k % C; s.flash.push({ r, c, v: s.b[r][c], t: 0.35 }); }
+    s.pending = kill;
+    s.clearT = 0.35;
+    Arcade.sfx.combo(s.chain + kill.size / 3);
+    if (s.chain > 1) g.float('x' + s.chain + ' CHAIN', g.W / 2, s.oy + 40, '#ffd43b', 24);
+  }
+  function applyClear(g) {
+    const s = g.s, n = s.pending.size;
+    for (const k of s.pending) { const r = Math.floor(k / C), c = k % C; g.burst(s.ox + (c + 0.5) * s.cs, s.oy + (r + 0.5) * s.cs, { n: 5, color: GEM[s.b[r][c]][0], speed: 180, size: 3 }); s.b[r][c] = null; }
+    s.pending = null; s.flash = [];
+    g.addScore(n * 10 * s.chain * g.lv, s.ox + C * s.cs / 2, s.oy + R * s.cs / 2);
+    s.cleared += n;
+    for (let c = 0; c < C; c++) { const col = []; for (let r = R - 1; r >= 0; r--) if (s.b[r][c] != null) col.push(s.b[r][c]); for (let r = R - 1, i = 0; r >= 0; r--, i++) s.b[r][c] = i < col.length ? col[i] : null; }
+    if (s.cleared >= s.need) { g.addScore(300 * g.lv, g.W / 2, g.H / 2); g.win(); return; }
+    resolve(g);
+  }
+  function shift(g, d) { const s = g.s, p = s.p; if (!p) return; const top = Math.floor(p.y), n = p.y > top ? 4 : 3; for (let k = 0; k < n; k++) if (!free(s, p.c + d, Math.min(top + k, R - 1))) return; p.c += d; Arcade.sfx.tick(); }
+  function rotate(g) { const s = g.s; if (!s.p) return; s.p.g.unshift(s.p.g.pop()); Arcade.sfx.move(); }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Tres joyas, ocho direcciones', deco: ['❤️', '⭐', '🍀', '💧', '🔮', '💎'], font: 'serif', bg: ['#2e1b5c', '#1a1033'],
+    music: { mode: 'harm', bpm: 118, wave: 'triangle', style: 'arcade', root: 57 }, voice: { wave: 'triangle', mul: 1.1, echo: 0.3 },
+    ambient: { e: ['✨'], n: 10, vy: 0, sway: 0, twinkle: 1, alpha: 0.25, size: [6, 12] },
+    en: { title: 'Columns', tag: 'Three jewels, eight directions', help: 'Columns of three jewels fall. <b>Drag</b> sideways to move them, <b>tap</b> to cycle the order of the three and <b>swipe down</b> to drop them fast. Line up <b>3 or more equal</b> jewels horizontally, vertically or diagonally to clear them; chains multiply. Clear the jewels each level asks for. If they pile up to the top, you lose a life.', tvHelp: '◀ ▶ move · ▲ or OK rotate · ▼ drop fast.', dict: { 'Joyas: ': 'Jewels: ', 'Siguiente': 'Next', '¡Columna llena!': 'Column full!' } },
+    tvHelp: '◀ ▶ mover · ▲ u OK girar · ▼ bajar rápido.',
+    id: 'columnas', title: 'Columnas', emoji: '💎', color: '#da77f2', origin: 'Columns (Sega, 1990)',
+    help: 'Caen columnas de tres joyas. <b>Arrastra</b> a los lados para moverlas, <b>toca</b> para rotar el orden de las tres y <b>desliza hacia abajo</b> para dejarlas caer rápido. Junta <b>3 o más iguales</b> en horizontal, vertical o diagonal para eliminarlas; las cadenas multiplican. Elimina las joyas que pide cada nivel. Si se apilan hasta arriba, pierdes una vida.',
+    lives: 3, levels: 0, cap: 20,
+    setup(g) {
+      g.s = { b: [], flash: [], pending: null, cleared: 0, chain: 0 };
+      const s = g.s; for (let r = 0; r < R; r++) s.b.push(new Array(C).fill(null));
+      s.nt = clamp(4 + Math.floor(g.lv / 4), 4, 6); s.need = 24 + Math.min(g.lv, 20) * 5;
+      s.next = [rnd(s), rnd(s), rnd(s)]; geo(g); spawn(g);
+    },
+    layout(g) { if (g.s.b) geo(g); },
+    down(g, p) { const s = g.s; s.dc = s.p ? s.p.c : 0; s.dx0 = p.x; },
+    move(g, p) { const s = g.s; if (!s.p) return; const want = clamp(s.dc + Math.round((p.x - s.dx0) / s.cs), 0, C - 1); while (s.p && s.p.c < want) { const c0 = s.p.c; shift(g, 1); if (s.p.c === c0) break; } while (s.p && s.p.c > want) { const c0 = s.p.c; shift(g, -1); if (s.p.c === c0) break; } },
+    tap(g) { rotate(g); },
+    swipe(g, d) { if (d === 'down' && g.s.p) g.s.fast = 0.6; if (d === 'up') rotate(g); },
+    key(g, k, d) {
+      const s = g.s;
+      if (k === 'ArrowDown') { s.fastKey = d; return; }
+      if (!d) return;
+      if (k === 'ArrowLeft') shift(g, -1); else if (k === 'ArrowRight') shift(g, 1); else if (k === 'ArrowUp' || k === ' ') rotate(g);
+    },
+    update(g, dt) {
+      const s = g.s;
+      for (const f of s.flash) f.t -= dt;
+      if (s.pending) { s.clearT -= dt; if (s.clearT <= 0) applyClear(g); return; }
+      const p = s.p; if (!p) return;
+      if (s.fast) s.fast -= dt;
+      const v = s.fast > 0 || s.fastKey ? 22 : 1.2 + Math.min(g.lv, 20) * 0.22;
+      const ny = p.y + v * dt, bottom = Math.floor(ny) + 3;
+      if (bottom >= R || (bottom >= 0 && s.b[bottom][p.c] != null)) { p.y = bottom - 3; s.fast = 0; land(g); }
+      else p.y = ny;
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      const bg = ctx.createLinearGradient(0, 0, 0, H);
+      bg.addColorStop(0, '#3d2373'); bg.addColorStop(1, '#120a24');
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      g.scenery(['🏛️', '💎', '👑'], 5, { alpha: 0.08, size: [40, 70] });
+      if (!s.b) return;
+      const cs = s.cs;
+      ctx.fillStyle = 'rgba(0,0,0,.4)'; Arcade.rr(ctx, s.ox - 6, s.oy - 6, cs * C + 12, cs * R + 12, 12); ctx.fill();
+      ctx.strokeStyle = '#c9a227'; ctx.lineWidth = 3; Arcade.rr(ctx, s.ox - 6, s.oy - 6, cs * C + 12, cs * R + 12, 12); ctx.stroke();
+      const gem = (x, y, v, a) => {
+        ctx.globalAlpha = a ?? 1;
+        const gr = ctx.createRadialGradient(x - cs * 0.15, y - cs * 0.18, 2, x, y, cs * 0.48);
+        gr.addColorStop(0, '#fff'); gr.addColorStop(0.35, GEM[v][0]); gr.addColorStop(1, GEM[v][0]);
+        ctx.fillStyle = gr; ctx.beginPath(); ctx.moveTo(x, y - cs * 0.44); ctx.lineTo(x + cs * 0.44, y); ctx.lineTo(x, y + cs * 0.44); ctx.lineTo(x - cs * 0.44, y); ctx.closePath(); ctx.fill();
+        Arcade.emoji(ctx, GEM[v][1], x, y, cs * 0.38, { alpha: a ?? 1 });
+        ctx.globalAlpha = 1;
+      };
+      for (let r = 0; r < R; r++) for (let c = 0; c < C; c++) {
+        const v = s.b[r][c]; if (v == null) continue;
+        const fl = s.pending && s.pending.has(r * C + c);
+        gem(s.ox + (c + 0.5) * cs, s.oy + (r + 0.5) * cs, v, fl ? (Math.floor(g.rt * 20) % 2 ? 1 : 0.3) : 1);
+      }
+      if (s.p) {
+        // sombra de caída
+        let gy = Math.floor(s.p.y); while (gy + 3 < R && s.b[gy + 3][s.p.c] == null) gy++;
+        ctx.fillStyle = 'rgba(255,255,255,.07)'; ctx.fillRect(s.ox + s.p.c * cs, s.oy + Math.max(0, gy) * cs, cs, 3 * cs);
+        for (let k = 0; k < 3; k++) { const y = s.oy + (s.p.y + k + 0.5) * cs; if (y > s.oy) gem(s.ox + (s.p.c + 0.5) * cs, y, s.p.g[k]); }
+      }
+      const nx = s.ox + C * cs + 46;
+      Arcade.txt(ctx, 'Siguiente', nx, s.oy + 10, 12, '#e5dbff', 'center', 800);
+      s.next.forEach((v, k) => gem(nx, s.oy + 40 + k * cs, v));
+      Arcade.txt(ctx, 'Joyas: ', nx, s.oy + 60 + 3 * cs, 12, '#e5dbff', 'center', 800);
+      Arcade.txt(ctx, Math.min(s.cleared, s.need) + '/' + s.need, nx, s.oy + 80 + 3 * cs, 16, '#ffd43b', 'center', 900);
+    },
+  });
+})();
+</script>
+</body>
+</html>

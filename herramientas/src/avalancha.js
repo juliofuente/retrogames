@@ -1,0 +1,110 @@
+// Avalancha|#10141f
+(function () {
+  const { ri, rand, clamp } = Arcade;
+  // tipos: 1 normal, 2 prohibido, 3 ventaja
+  const LOOK = { 1: ['#ced4da', '#868e96'], 2: ['#343a40', '#000'], 3: ['#69db7c', '#2b8a3e'] };
+
+  function geo(g) {
+    const s = g.s, Wa = g.W - 30, Ha = g.bot - g.top - 70;
+    s.cs = Math.min(Wa / s.C, Ha / s.maxL);
+    s.ox = (g.W - s.cs * s.C) / 2; s.oy = g.top + 50 + (Ha - s.cs * s.maxL) / 2;
+  }
+  function newWave(g) {
+    const s = g.s; s.wave++;
+    const rows = Math.min(s.L - 3, 2 + Math.floor(s.wave / 2));
+    s.cubes = [];
+    for (let r = 0; r < rows; r++) for (let c = 0; c < s.C; c++) {
+      const x = Math.random(), t = x < 0.12 + Math.min(0.12, s.wave * 0.01) ? 2 : x < 0.22 ? 3 : 1;
+      s.cubes.push({ c, r: -rows + r, t, roll: 0 });
+    }
+    s.lostWave = 0; s.stepT = 1.5;
+    g.level = s.wave; g.hud(); g.message('Oleada ' + s.wave, 1.1);
+  }
+  function capture(g, c, r, area) {
+    const s = g.s; let n = 0;
+    s.cubes = s.cubes.filter(q => {
+      const hit = area ? Math.abs(q.c - c) <= 1 && Math.abs(Math.round(q.r) - r) <= 1 : q.c === c && Math.round(q.r) === r;
+      if (!hit) return true;
+      const x = s.ox + (q.c + 0.5) * s.cs, y = s.oy + (q.r + 0.5) * s.cs;
+      if (q.t === 2) { g.float('¡Prohibido!', x, y, '#ff6b6b', 18); shrink(g); Arcade.sfx.hit(); }
+      else {
+        n++; g.burst(x, y, { n: 8, color: LOOK[q.t][0], speed: 150, size: 3 });
+        if (q.t === 3) s.green.push({ c: q.c, r: Math.round(q.r) });
+      }
+      return false;
+    });
+    if (n) { g.addScore(n * 100 * (n >= 3 ? 2 : 1), s.ox + (c + 0.5) * s.cs, s.oy + (r + 0.5) * s.cs); Arcade.sfx.coin(); }
+  }
+  function shrink(g) {
+    const s = g.s; s.L--; g.shake(0.3, 8); Arcade.sfx.boom();
+    s.green = s.green.filter(m => m.r < s.L);
+    if (s.mark && s.mark.r >= s.L) s.mark = null;
+    if (s.L < 4) { s.L = 3; g.state = 'dying'; setTimeout(g.over, 900); }
+  }
+
+  Arcade.game({
+    id: 'avalancha', title: 'Avalancha', emoji: '🧊', color: '#91a7ff', origin: 'Intelligent Qube (Sony, 1997)',
+    help: 'Filas de cubos ruedan hacia el borde. <b>Toca una casilla</b> para poner una trampa 🟥 y <b>vuelve a tocarla</b> cuando un cubo esté encima para atraparlo. <b>No atrapes los negros</b> ☠️: déjalos caer. Los verdes dejan una marca 🟩 que, al tocarla, atrapa un área de 3×3. Cada cubo gris que se cae por el borde <b>acorta la plataforma</b>.',
+    lives: 0, levels: null, levelLabel: 'Oleada',
+    setup(g) {
+      g.s = { wave: 0, green: [], mark: null };
+      const s = g.s;
+      s.C = g.W < g.H ? 5 : 7; s.maxL = g.W < g.H ? 14 : 9; s.L = s.maxL;
+      geo(g); newWave(g);
+    },
+    layout(g) { if (g.s.C) geo(g); },
+    tap(g, p) {
+      const s = g.s, c = Math.floor((p.x - s.ox) / s.cs), r = Math.floor((p.y - s.oy) / s.cs);
+      if (c < 0 || c >= s.C || r < 0 || r >= s.L) return;
+      const gi = s.green.findIndex(m => m.c === c && m.r === r);
+      if (gi >= 0) { s.green.splice(gi, 1); capture(g, c, r, true); g.burst(s.ox + (c + 0.5) * s.cs, s.oy + (r + 0.5) * s.cs, { n: 16, color: '#69db7c', speed: 200, size: 3 }); return; }
+      if (s.mark && s.mark.c === c && s.mark.r === r) { capture(g, c, r, false); s.mark = null; Arcade.tone(200, 0.08, 'square', 0.08); return; }
+      s.mark = { c, r }; Arcade.sfx.tick();
+    },
+    update(g, dt) {
+      const s = g.s;
+      for (const q of s.cubes) if (q.roll > 0) { q.roll = Math.max(0, q.roll - dt * 4); q.r = q.tr - q.roll; }
+      s.stepT -= dt;
+      if (s.stepT <= 0) {
+        s.stepT = Math.max(0.55, 1.5 - s.wave * 0.07);
+        for (const q of s.cubes) { q.tr = Math.round(q.r) + 1; q.roll = 1; }
+        Arcade.tone(90, 0.06, 'square', 0.04);
+      }
+      s.cubes = s.cubes.filter(q => {
+        if (q.r < s.L) return true;
+        if (q.t !== 2) { s.lostWave++; shrink(g); } else g.addScore(50);
+        return false;
+      });
+      if (g.state !== 'play') return;
+      if (!s.cubes.length) {
+        if (!s.lostWave) { g.addScore(500 * s.wave, g.W / 2, g.H / 2); g.float('¡Perfecto!', g.W / 2, g.H / 2 - 30, '#ffd43b', 26); if (s.L < s.maxL) s.L++; }
+        Arcade.sfx.win(); newWave(g);
+      }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      ctx.fillStyle = '#10141f'; ctx.fillRect(0, 0, W, H);
+      if (!s.C) return;
+      const cs = s.cs;
+      for (let r = 0; r < s.maxL; r++) for (let c = 0; c < s.C; c++) {
+        const x = s.ox + c * cs, y = s.oy + r * cs;
+        if (r >= s.L) { ctx.fillStyle = 'rgba(255,255,255,.02)'; ctx.fillRect(x, y, cs, cs); continue; }
+        ctx.fillStyle = (r + c) % 2 ? '#3b5bdb' : '#364fc7'; ctx.fillRect(x + 1, y + 1, cs - 2, cs - 2);
+      }
+      ctx.fillStyle = '#ff6b6b'; ctx.fillRect(s.ox, s.oy + s.L * cs - 3, s.C * cs, 3);
+      for (const m of s.green) { ctx.fillStyle = 'rgba(105,219,124,.45)'; ctx.fillRect(s.ox + (m.c - 1) * cs, s.oy + (m.r - 1) * cs, cs * 3, cs * 3); ctx.strokeStyle = '#69db7c'; ctx.lineWidth = 2; ctx.strokeRect(s.ox + m.c * cs + 3, s.oy + m.r * cs + 3, cs - 6, cs - 6); }
+      if (s.mark) { ctx.fillStyle = 'rgba(255,107,107,.6)'; ctx.fillRect(s.ox + s.mark.c * cs + 2, s.oy + s.mark.r * cs + 2, cs - 4, cs - 4); }
+      ctx.save(); ctx.beginPath(); ctx.rect(s.ox, s.oy - 4, s.C * cs, s.L * cs + 8); ctx.clip();
+      for (const q of s.cubes) {
+        if (q.r < -1) continue;
+        const x = s.ox + q.c * cs, y = s.oy + q.r * cs, [a, b] = LOOK[q.t], sq = 1 - Math.sin(q.roll * Math.PI) * 0.12;
+        ctx.fillStyle = b; Arcade.rr(ctx, x + 3, y + 3 + cs * (1 - sq), cs - 6, (cs - 6) * sq, 5); ctx.fill();
+        ctx.fillStyle = a; Arcade.rr(ctx, x + 3, y + 3 + cs * (1 - sq), cs - 6, (cs - 6) * sq * 0.8, 5); ctx.fill();
+        if (q.t === 2) Arcade.emoji(ctx, '☠️', x + cs / 2, y + cs * 0.45, cs * 0.45);
+      }
+      ctx.restore();
+      if (s.mark) { ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.strokeRect(s.ox + s.mark.c * cs + 2, s.oy + s.mark.r * cs + 2, cs - 4, cs - 4); }
+      Arcade.txt(ctx, 'Plataforma: ' + s.L + ' filas', W / 2, s.oy - 24, 14, s.L < 6 ? '#ff8787' : '#bac8ff', 'center', 800);
+    },
+  });
+})();

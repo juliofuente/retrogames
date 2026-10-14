@@ -1,0 +1,61 @@
+// Golpe de color|#1a1a2e
+(function () {
+  const { ri, rand, clamp, pick } = Arcade;
+  const COL = ['#ff6b6b', '#ffd43b', '#69db7c', '#4dabf7', '#da77f2', '#ff922b'];
+
+  function geo(g) { const s = g.s; s.cx = g.W / 2; s.cy = g.top + (g.bot - g.top) * 0.33; s.R = Math.min(g.W * 0.36, (g.bot - g.top) * 0.24); s.by = g.bot - 80; }
+  function newBall(s) { const present = [...new Set(s.segs)]; s.cur = pick(present); }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Dispara al color correcto', deco: ['🔴', '🟡', '🟢', '🔵', '🟣', '🎡'], font: 'round', bg: ['#2a2a4a', '#1a1a2e'],
+    music: { mode: 'major', bpm: 118, wave: 'triangle', style: 'arcade', root: 62 }, voice: { wave: 'triangle', mul: 1.1, echo: 0.3 },
+    en: { title: 'Color Shot', tag: 'Shoot the right colour', help: 'The wheel spins with coloured sections. <b>Tap</b> to shoot your ball upwards: it must hit the section of its <b>same colour</b>. Hitting a different colour costs a life. Each hit paints that section grey… and the next ball might be another colour! Hit the times each level asks for; the wheel speeds up and changes direction.', tvHelp: 'OK to shoot.', dict: { 'Aciertos: ': 'Hits: ' } },
+    tvHelp: 'OK para disparar.',
+    id: 'golpecolor', title: 'Golpe de color', emoji: '🎡', color: '#ff6b6b', origin: 'Color Hit / Color Switch',
+    help: 'La rueda gira con secciones de colores. <b>Toca</b> para disparar tu bola hacia arriba: debe dar en la sección de su <b>mismo color</b>. Si das en otro color, pierdes una vida. Cada acierto deja esa sección en gris… ¡y la siguiente bola puede ser de otro color! Acierta las veces que pide cada nivel; la rueda acelera y cambia de sentido.',
+    lives: 3, levels: 0, cap: 25,
+    setup(g) {
+      const L = g.lv, n = clamp(4 + Math.floor(L / 2), 4, 12), nc = clamp(2 + Math.floor(L / 3), 2, 6);
+      g.s = { n, segs: [...Array(n)].map((_, i) => i % nc), gray: new Array(n).fill(false), a: 0, sp: 1.2 + Math.min(L, 25) * 0.06, dir: 1, flipT: rand(2, 4), hits: 0, need: 8 + Math.min(L, 25), shot: null };
+      Arcade.shuffle(g.s.segs); geo(g); newBall(g.s);
+    },
+    layout(g) { if (g.s.segs) geo(g); },
+    down(g) { const s = g.s; if (s.shot || s.done) return; s.shot = { y: s.by }; Arcade.tone(500, 0.05, 'square', 0.05, 200); },
+    key(g, k, d) { if (d && k === ' ') this.down(g); },
+    update(g, dt) {
+      const s = g.s; s.a += s.sp * s.dir * dt;
+      if (g.lv >= 4) { s.flipT -= dt; if (s.flipT <= 0) { s.dir *= -1; s.flipT = rand(1.5, 4); } }
+      const sh = s.shot; if (!sh) return;
+      sh.y -= 1300 * dt;
+      if (sh.y <= s.cy + s.R) {
+        s.shot = null;
+        const ang = ((Math.PI / 2 - s.a) % (Math.PI * 2) + Math.PI * 4) % (Math.PI * 2), idx = Math.floor(ang / (Math.PI * 2 / s.n)) % s.n;
+        if (s.gray[idx]) { Arcade.tone(200, 0.05, 'square', 0.05); g.burst(s.cx, s.cy + s.R, { n: 6, color: '#868e96', speed: 100, size: 3 }); newBall(s); return; }
+        if (s.segs[idx] === s.cur) {
+          s.hits++; s.gray[idx] = true; Arcade.sfx.coin(); g.addScore(10 * g.lv, s.cx, s.cy + s.R + 20); g.burst(s.cx, s.cy + s.R, { n: 12, color: COL[s.cur], speed: 180, size: 4 });
+          if (s.gray.every(Boolean)) { s.gray.fill(false); Arcade.shuffle(s.segs); g.flash('#fff', 0.15); g.addScore(50 * g.lv, s.cx, s.cy); }
+          if (s.hits >= s.need) { s.done = true; g.confetti(60); setTimeout(() => { if (g.state === 'play') g.win(); }, 500); }
+          else { const left = s.segs.filter((c, i) => !s.gray[i]); s.cur = pick(left); }
+        } else { Arcade.sfx.bad(); g.shake(0.2, 5); g.die(); newBall(s); }
+      }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      ctx.fillStyle = '#1a1a2e'; ctx.fillRect(0, 0, W, H);
+      if (!s.segs) return;
+      const step = Math.PI * 2 / s.n;
+      for (let i = 0; i < s.n; i++) {
+        const a0 = s.a + i * step, a1 = a0 + step;
+        ctx.fillStyle = s.gray[i] ? '#495057' : COL[s.segs[i]]; ctx.beginPath(); ctx.moveTo(s.cx, s.cy); ctx.arc(s.cx, s.cy, s.R, a0, a1); ctx.closePath(); ctx.fill();
+        ctx.strokeStyle = '#1a1a2e'; ctx.lineWidth = 3; ctx.stroke();
+      }
+      ctx.fillStyle = '#1a1a2e'; ctx.beginPath(); ctx.arc(s.cx, s.cy, s.R * 0.45, 0, 6.3); ctx.fill();
+      Arcade.txt(ctx, String(s.need - s.hits), s.cx, s.cy, s.R * 0.35, '#fff', 'center', 900);
+      // marcador del punto de impacto
+      ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.moveTo(s.cx - 8, s.cy + s.R + 16); ctx.lineTo(s.cx + 8, s.cy + s.R + 16); ctx.lineTo(s.cx, s.cy + s.R + 6); ctx.fill();
+      ctx.setLineDash([4, 8]); ctx.strokeStyle = 'rgba(255,255,255,.2)'; ctx.beginPath(); ctx.moveTo(s.cx, s.by); ctx.lineTo(s.cx, s.cy + s.R + 18); ctx.stroke(); ctx.setLineDash([]);
+      const by = s.shot ? s.shot.y : s.by; ctx.fillStyle = COL[s.cur]; ctx.shadowColor = COL[s.cur]; ctx.shadowBlur = 18; ctx.beginPath(); ctx.arc(s.cx, by, 16, 0, 6.3); ctx.fill(); ctx.shadowBlur = 0;
+      Arcade.txt(ctx, 'Aciertos: ' + s.hits + '/' + s.need, W / 2, g.top + 20, 15, '#fff', 'center', 900);
+    },
+  });
+})();

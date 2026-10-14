@@ -1,0 +1,116 @@
+// Minero|#3d2914
+(function () {
+  const { ri, rand, clamp, pick } = Arcade;
+
+  function geo(g) { const s = g.s; s.u = clamp(Math.min(g.W / 420, (g.bot - g.top) / 640), 0.7, 1.6); s.hx = g.W / 2; s.hy = g.top + 70 * s.u; s.gy = s.hy + 30 * s.u; }
+  function build(g) {
+    const s = g.s, L = g.lv, u = s.u, items = [];
+    const area = { x0: 20, x1: g.W - 20, y0: s.gy + 40 * u, y1: g.bot - 20 };
+    const add = (o) => { for (let t = 0; t < 80; t++) { const x = rand(area.x0 + o.r, area.x1 - o.r), y = rand(area.y0 + o.r, area.y1 - o.r); if (items.every((q) => Math.hypot(q.x - x, q.y - y) > q.r + o.r + 6)) { items.push({ ...o, x, y, vx: o.mole ? rand(30, 60) * (Math.random() < 0.5 ? 1 : -1) * u : 0 }); return; } } };
+    const depthBias = (k) => k;
+    for (let i = 0; i < 3 + Math.min(L, 6); i++) { const big = Math.random() < 0.35; add({ t: 'gold', r: (big ? 34 : rand(12, 22)) * u, val: big ? 500 : 0, w: big ? 6 : 2 }); }
+    for (let i = 0; i < 3 + Math.floor(L / 2); i++) add({ t: 'rock', r: rand(18, 30) * u, w: 6 });
+    for (let i = 0; i < Math.min(1 + Math.floor(L / 3), 4); i++) add({ t: 'gem', r: 12 * u, w: 1 });
+    for (let i = 0; i < 2; i++) add({ t: 'bag', r: 16 * u, w: 2 });
+    if (L >= 3) for (let i = 0; i < Math.min(Math.floor(L / 3), 4); i++) add({ t: 'mole', r: 15 * u, w: 1, mole: true, gem: Math.random() < 0.3 });
+    if (L >= 4) for (let i = 0; i < 2; i++) add({ t: 'tnt', r: 16 * u, w: 1 });
+    if (L >= 2) add({ t: 'bone', r: 14 * u, w: 1 });
+    for (const it of items) { if (it.t === 'gold' && !it.val) it.val = Math.round(it.r / u * 6); it.val = it.val ?? { rock: 20, gem: 600, bag: 0, mole: 2, tnt: 1, bone: 7 }[it.t]; }
+    s.items = items;
+    s.area = area;
+  }
+  function fire(g) { const s = g.s; if (s.state !== 'swing' || s.over) return; s.state = 'out'; s.len = 30 * s.u; Arcade.tone(300, 0.08, 'sawtooth', 0.05, 200); }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Engancha el oro antes de que acabe el tiempo', deco: ['⛏️', '💰', '💎', '🪨', '🐹', '🧨'], font: 'serif', bg: ['#6b4a26', '#3d2914'],
+    music: { mode: 'mixo', bpm: 112, wave: 'square', style: 'arcade', root: 57 }, voice: { wave: 'square', mul: 1, echo: 0.2 },
+    en: { title: 'Miner', tag: 'Hook the gold before time runs out', help: 'The claw swings by itself. <b>Tap</b> to throw it: it grabs the first thing it touches and reels it in. Big gold is worth a lot but comes up slowly; 💎 diamonds are light and valuable; 🪨 rocks waste your time. 💰 bags have a surprise, 🐹 moles walk around and 🧨 dynamite blows up whatever is near. Reach the target money before the clock runs out.', tvHelp: 'OK to throw the claw.', dict: { 'Objetivo: ': 'Target: ' } },
+    tvHelp: 'OK para lanzar la garra.',
+    id: 'minero', title: 'Minero', emoji: '⛏️', color: '#fcc419', origin: 'Gold Miner',
+    help: 'La garra se balancea sola. <b>Toca</b> para lanzarla: engancha lo primero que toque y lo sube. El oro grande vale mucho pero sube despacio; los 💎 pesan poco y valen mucho; las 🪨 te hacen perder tiempo. Las 💰 tienen sorpresa, los 🐹 se mueven y la 🧨 hace explotar lo que tiene cerca. Llega al dinero objetivo antes de que se acabe el tiempo.',
+    lives: 3, levels: 0, cap: 25,
+    setup(g) {
+      g.s = { ang: 0, dir: 1, state: 'swing', len: 0, grab: null, money: 0, time: 60, over: false };
+      const s = g.s, L = g.lv; geo(g); build(g);
+      const total = s.items.reduce((a, it) => a + (it.t === 'gold' || it.t === 'gem' ? it.val : 0), 0);
+      s.target = Math.round(total * clamp(0.4 + L * 0.02, 0.4, 0.75) / 50) * 50;
+    },
+    layout(g) { if (g.s.items) geo(g); },
+    tap(g) { fire(g); },
+    key(g, k, d) { if (d && (k === ' ' || k === 'ArrowDown')) fire(g); },
+    update(g, dt) {
+      const s = g.s; if (s.over) return;
+      s.time -= dt;
+      for (const it of s.items) if (it.mole && it !== s.grab) { it.x += it.vx * dt; if (it.x < s.area.x0 + it.r || it.x > s.area.x1 - it.r) it.vx *= -1; }
+      const spd = 520 * s.u;
+      if (s.state === 'swing') { s.ang += s.dir * dt * 1.6; if (Math.abs(s.ang) > 1.25) { s.ang = Math.sign(s.ang) * 1.25; s.dir *= -1; } }
+      else if (s.state === 'out') {
+        s.len += spd * dt;
+        const tx = s.hx + Math.sin(s.ang) * s.len, ty = s.hy + Math.cos(s.ang) * s.len;
+        for (const it of s.items) if (Math.hypot(it.x - tx, it.y - ty) < it.r + 6) {
+          if (it.t === 'tnt') { // explota
+            Arcade.sfx.boom(); g.shake(0.3, 8); g.burst(it.x, it.y, { n: 24, color: ['#ff922b', '#ffd43b', '#868e96'], speed: 260, size: 5 });
+            const near = s.items.filter((q) => Math.hypot(q.x - it.x, q.y - it.y) < 110 * s.u);
+            s.items = s.items.filter((q) => !near.includes(q)); s.state = 'back'; s.grab = { t: 'bits', r: 6, w: 0.5, val: 1, x: tx, y: ty }; break;
+          }
+          s.grab = it; s.items.splice(s.items.indexOf(it), 1); s.state = 'back'; Arcade.tone(200, 0.06, 'square', 0.06); break;
+        }
+        if (tx < 0 || tx > g.W || ty > g.bot) s.state = 'back';
+      } else if (s.state === 'back') {
+        const w = s.grab ? s.grab.w : 0, v = spd * (s.grab ? 1.4 / (1 + w * 0.55) : 1.6) * (s.strong ? 1.6 : 1);
+        s.len -= v * dt;
+        if (s.grab) { s.grab.x = s.hx + Math.sin(s.ang) * (s.len + s.grab.r); s.grab.y = s.hy + Math.cos(s.ang) * (s.len + s.grab.r); }
+        if (Math.floor(g.rt * 6) !== Math.floor((g.rt - dt) * 6) && s.grab) Arcade.tone(150, 0.03, 'square', 0.03);
+        if (s.len <= 30 * s.u) {
+          if (s.grab) {
+            let val = s.grab.val, txt = null;
+            if (s.grab.t === 'bag') { const r = Math.random(); if (r < 0.15) { s.strong = true; txt = '💪'; val = 0; } else if (r < 0.3) { s.time += 10; txt = '⏱️ +10'; val = 0; } else val = ri(50, 400 + g.lv * 20); }
+            if (s.grab.t === 'mole' && s.grab.gem) val = 602;
+            if (val > 0) { s.money += val; g.addScore(val, s.hx, s.hy + 20); if (val >= 300) { Arcade.sfx.win(); g.ring(s.hx, s.hy + 20, '#ffd43b', 50); } else Arcade.sfx.coin(); }
+            if (txt) g.float(txt, s.hx, s.hy + 40, '#69db7c', 24);
+          }
+          s.grab = null; s.state = 'swing'; s.len = 0;
+          if (!s.items.some((it) => it.t === 'gold' || it.t === 'gem' || it.t === 'bag' || (it.t === 'mole' && it.gem))) s.time = Math.min(s.time, 0.01);
+        }
+      }
+      if (s.time <= 0 && s.state === 'swing') {
+        s.over = true;
+        if (s.money >= s.target) { g.addScore(Math.max(0, s.money - s.target), g.W / 2, g.H / 2); g.win(s.money >= s.target * 1.5 ? 3 : s.money >= s.target * 1.2 ? 2 : 1); }
+        else { g.message(Arcade.T('No llegaste', 'Not enough'), 1.2); setTimeout(() => { if (g.state === 'play' && g.die()) Arcade.current.def.setup(g); }, 1100); }
+      }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      ctx.fillStyle = '#9ad1f5'; ctx.fillRect(0, 0, W, s.gy);
+      if (!s.items) return;
+      const u = s.u;
+      Arcade.emoji(ctx, '☀️', W * 0.85, g.top + 30, 40 * u);
+      const gr = ctx.createLinearGradient(0, s.gy, 0, H); gr.addColorStop(0, '#a87a45'); gr.addColorStop(0.4, '#7a5328'); gr.addColorStop(1, '#3d2914');
+      ctx.fillStyle = gr; ctx.fillRect(0, s.gy, W, H - s.gy);
+      ctx.fillStyle = 'rgba(0,0,0,.12)'; for (let i = 0; i < 60; i++) { ctx.beginPath(); ctx.arc((i * 97) % W, s.gy + 20 + ((i * 53) % (H - s.gy)), 2 + (i % 4), 0, 6.3); ctx.fill(); }
+      ctx.fillStyle = '#5c940d'; ctx.fillRect(0, s.gy - 6, W, 8);
+      const drawItem = (it) => {
+        if (it.t === 'gold') {
+          const gg = ctx.createRadialGradient(it.x - it.r * 0.3, it.y - it.r * 0.3, 2, it.x, it.y, it.r); gg.addColorStop(0, '#fff3bf'); gg.addColorStop(0.4, '#fcc419'); gg.addColorStop(1, '#e67700');
+          ctx.fillStyle = gg; ctx.beginPath(); for (let k = 0; k < 10; k++) { const a = k / 10 * 6.283, rr = it.r * (0.85 + ((k * 7 + Math.round(it.r)) % 5) * 0.05); ctx.lineTo(it.x + Math.cos(a) * rr, it.y + Math.sin(a) * rr); } ctx.fill();
+          if (Math.sin(g.rt * 3 + it.x) > 0.9) Arcade.emoji(ctx, '✨', it.x + it.r * 0.4, it.y - it.r * 0.4, 14);
+        } else Arcade.emoji(ctx, { rock: '🪨', gem: '💎', bag: '💰', mole: '🐹', tnt: '🧨', bone: '🦴', bits: '💨' }[it.t], it.x, it.y, it.r * 2.1, { flip: it.mole && it.vx > 0 });
+        if (it.mole && it.gem) Arcade.emoji(ctx, '💎', it.x + it.r * 0.7, it.y + it.r * 0.4, it.r);
+      };
+      for (const it of s.items) drawItem(it);
+      // minero y garra
+      Arcade.emoji(ctx, '🧑‍🌾', s.hx + 34 * u, s.hy - 24 * u, 40 * u);
+      ctx.fillStyle = '#6b4a26'; Arcade.rr(ctx, s.hx - 26 * u, s.hy - 20 * u, 52 * u, 20 * u, 4); ctx.fill();
+      const L = s.state === 'swing' ? 20 * u : s.len, tx = s.hx + Math.sin(s.ang) * L, ty = s.hy + Math.cos(s.ang) * L;
+      ctx.strokeStyle = '#343a40'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(s.hx, s.hy); ctx.lineTo(tx, ty); ctx.stroke();
+      if (s.grab) drawItem(s.grab);
+      ctx.save(); ctx.translate(tx, ty); ctx.rotate(-s.ang);
+      ctx.strokeStyle = '#495057'; ctx.lineWidth = 4 * u; ctx.beginPath(); ctx.arc(0, 6 * u, 10 * u, Math.PI * 0.05, Math.PI * 0.95, true); ctx.stroke(); ctx.restore();
+      // marcador
+      const t = Math.max(0, Math.ceil(s.time));
+      Arcade.txt(ctx, '💰 ' + s.money + ' / ' + s.target, 16, g.top + 18, 16, s.money >= s.target ? '#2b8a3e' : '#3d2914', 'left', 900);
+      Arcade.txt(ctx, '⏱️ ' + t, W - 16, g.top + 18, 18, t <= 10 ? '#e03131' : '#3d2914', 'right', 900);
+      if (s.strong) Arcade.txt(ctx, '💪', W - 16, g.top + 42, 18, '#fff', 'right');
+    },
+  });
+})();

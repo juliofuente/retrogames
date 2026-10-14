@@ -1,0 +1,136 @@
+// Ladrillos|#1b1b3a
+(function () {
+  const { ri, rand, clamp, pick } = Arcade;
+  const COLS = ['#ff6b6b', '#ff922b', '#ffd43b', '#69db7c', '#4dabf7', '#9775fa', '#f783ac'];
+  const POW = [['↔️', 'wide'], ['⚪', 'multi'], ['🐢', 'slow'], ['🔥', 'fire'], ['❤️', 'life']];
+  // patrones: cada fila es un string; . vacío, 1-3 golpes, # irrompible
+  const PATS = [
+    ['1111111111', '1111111111', '2222222222', '1111111111'],
+    ['..111111..', '.11222211.', '1122332211', '.11222211.', '..111111..'],
+    ['1.1.1.1.1.', '.2.2.2.2.2', '1.1.1.1.1.', '.2.2.2.2.2', '1.1.1.1.1.'],
+    ['2222222222', '1........1', '1.333333.1', '1........1', '2222222222'],
+    ['....33....', '...2222...', '..111111..', '.11####11.', '1111111111'],
+    ['#1#1#1#1#1', '2222222222', '1111111111', '3.3.3.3.3.', '2222222222'],
+    ['1111..1111', '2222..2222', '3333..3333', '#..####..#', '1111111111'],
+  ];
+
+  function geo(g) { const s = g.s, w = Math.min(g.W - 16, 520); s.ox = (g.W - w) / 2; s.fw = w; s.bw = w / 10; s.bh = s.bw * 0.42; s.oy = g.top + 50; s.py = g.bot - 40; }
+  function build(g) {
+    const s = g.s, L = g.lv, pat = PATS[(g.level - 1) % PATS.length].slice();
+    if (L > PATS.length) pat.push('1111111111');
+    if (L > PATS.length * 2) pat.unshift('2222222222');
+    s.bricks = [];
+    pat.forEach((row, r) => { for (let c = 0; c < 10; c++) { const ch = row[c]; if (ch === '.') continue; const hp = ch === '#' ? 99 : +ch + (L > 10 ? 1 : 0); s.bricks.push({ c, r, hp, max: hp, col: COLS[(r + Math.floor(g.level / 2)) % COLS.length], hit: 0 }); } });
+  }
+  function serve(g) { const s = g.s; s.balls = [{ x: s.px, y: s.py - 14, vx: 0, vy: 0, stuck: true }]; }
+  function launch(g) { const s = g.s; for (const b of s.balls) if (b.stuck) { b.stuck = false; const a = -Math.PI / 2 + rand(-0.4, 0.4); b.vx = Math.cos(a) * s.speed; b.vy = Math.sin(a) * s.speed; Arcade.tone(500, 0.05, 'square', 0.06); } }
+  function brickRect(s, k) { return { x: s.ox + k.c * s.bw, y: s.oy + k.r * s.bh, w: s.bw, h: s.bh }; }
+  function hitBrick(g, k, b) {
+    const s = g.s; if (k.hp >= 99) { Arcade.tone(900, 0.03, 'square', 0.04); k.hit = 1; return; }
+    k.hp -= s.fire > 0 ? 9 : 1; k.hit = 1;
+    const R = brickRect(s, k);
+    if (k.hp <= 0) {
+      s.bricks.splice(s.bricks.indexOf(k), 1);
+      g.burst(R.x + R.w / 2, R.y + R.h / 2, { n: 8, color: k.col, speed: 150, size: 3, square: true });
+      g.addScore(10 * g.lv * k.max, R.x + R.w / 2, R.y);
+      Arcade.sfx.combo(Math.min(12, ++s.combo));
+      if (Math.random() < 0.13) { const [e, t] = pick(POW); s.drops.push({ x: R.x + R.w / 2, y: R.y, e, t }); }
+      if (!s.bricks.some((q) => q.hp < 99)) { s.done = true; Arcade.sfx.win(); g.confetti(70); g.addScore(200 * g.lv, g.W / 2, g.H / 2); setTimeout(() => { if (g.state === 'play') g.win(); }, 800); }
+    } else Arcade.tone(400 + k.hp * 100, 0.04, 'square', 0.05);
+  }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Rompe todos los ladrillos', deco: ['🧱', '⚪', '🔥', '🐢', '↔️', '💥'], font: 'impact', bg: ['#2f2f6b', '#1b1b3a'],
+    music: { mode: 'minor', bpm: 132, wave: 'square', style: 'arcade', root: 57 }, voice: { wave: 'square', mul: 1, echo: 0.2 },
+    ambient: { e: ['✨'], n: 10, vy: 0, sway: 0, twinkle: 1, alpha: 0.25, size: [6, 12] },
+    en: { title: 'Bricks', tag: 'Break every brick', help: '<b>Drag</b> to move the paddle and <b>tap</b> to launch the ball. Bounce it to break every brick: the brighter ones need several hits and the grey ones never break. Catch the falling items: ↔️ wide paddle, ⚪ three balls, 🐢 slow ball, 🔥 fireball, ❤️ extra life. If you lose all the balls, you lose a life.', tvHelp: 'Hold ◀ ▶ to move · OK to launch.', dict: {} },
+    tvHelp: 'Mantén ◀ ▶ para moverte · OK para lanzar.',
+    id: 'ladrillos', title: 'Ladrillos', emoji: '🧱', color: '#ff6b6b', origin: 'Breakout (Atari) / Bricks',
+    help: '<b>Arrastra</b> para mover la pala y <b>toca</b> para lanzar la bola. Hazla rebotar para romper todos los ladrillos: los más brillantes necesitan varios golpes y los grises no se rompen. Coge lo que cae: ↔️ pala ancha, ⚪ tres bolas, 🐢 bola lenta, 🔥 bola de fuego, ❤️ vida extra. Si pierdes todas las bolas, pierdes una vida.',
+    lives: 3, levels: 0, cap: 30,
+    setup(g) {
+      g.s = { drops: [], combo: 0, wide: 0, slow: 0, fire: 0 }; const s = g.s; geo(g);
+      s.px = g.W / 2; s.pw0 = s.bw * 1.8; s.speed = (330 + Math.min(g.lv, 20) * 12) * s.fw / 520; build(g); serve(g);
+    },
+    layout(g) { if (g.s.bricks) { geo(g); g.s.px = clamp(g.s.px, g.s.ox, g.s.ox + g.s.fw); } },
+    down(g, p) { g.s.tx = p.x; },
+    move(g, p) { g.s.tx = p.x; },
+    tap(g) { launch(g); },
+    key(g, k, d) { const s = g.s; if (k === 'ArrowLeft' || k === 'ArrowRight') s.kd = d ? (k === 'ArrowLeft' ? -1 : 1) : 0; if (d && (k === ' ' || k === 'ArrowUp')) launch(g); },
+    update(g, dt) {
+      const s = g.s; if (s.done) return;
+      s.wide = Math.max(0, s.wide - dt); s.slow = Math.max(0, s.slow - dt); s.fire = Math.max(0, s.fire - dt);
+      const pw = s.pw0 * (s.wide > 0 ? 1.6 : 1);
+      if (s.kd) s.px += s.kd * 520 * dt;
+      else if (s.tx != null) s.px += (s.tx - s.px) * Math.min(1, dt * 18);
+      s.px = clamp(s.px, s.ox + pw / 2, s.ox + s.fw - pw / 2);
+      for (const k of s.bricks) k.hit = Math.max(0, k.hit - dt * 5);
+      const N = 4, h = dt / N, spk = s.slow > 0 ? 0.65 : 1;
+      for (const b of s.balls) {
+        if (b.stuck) { b.x = s.px; b.y = s.py - 12; continue; }
+        for (let i = 0; i < N; i++) {
+          b.x += b.vx * h * spk; b.y += b.vy * h * spk;
+          const r = 7;
+          if (b.x < s.ox + r) { b.x = s.ox + r; b.vx = Math.abs(b.vx); Arcade.sfx.tick(); }
+          if (b.x > s.ox + s.fw - r) { b.x = s.ox + s.fw - r; b.vx = -Math.abs(b.vx); Arcade.sfx.tick(); }
+          if (b.y < g.top + 30 + r) { b.y = g.top + 30 + r; b.vy = Math.abs(b.vy); Arcade.sfx.tick(); }
+          if (b.vy > 0 && b.y + r > s.py - 6 && b.y - r < s.py + 6 && Math.abs(b.x - s.px) < pw / 2 + r) {
+            const off = clamp((b.x - s.px) / (pw / 2), -1, 1), a = -Math.PI / 2 + off * 1.05;
+            const sp = Math.hypot(b.vx, b.vy); b.vx = Math.cos(a) * sp; b.vy = Math.sin(a) * sp; b.y = s.py - 6 - r;
+            s.combo = 0; Arcade.tone(300, 0.04, 'square', 0.06); g.ring(b.x, s.py, '#fff', 16, 2);
+          }
+          for (const k of s.bricks) {
+            const R = brickRect(s, k);
+            if (b.x + r < R.x || b.x - r > R.x + R.w || b.y + r < R.y || b.y - r > R.y + R.h) continue;
+            if (!(s.fire > 0 && k.hp < 99)) {
+              const ox = Math.min(b.x + r - R.x, R.x + R.w - (b.x - r)), oy = Math.min(b.y + r - R.y, R.y + R.h - (b.y - r));
+              if (ox < oy) b.vx = b.x < R.x + R.w / 2 ? -Math.abs(b.vx) : Math.abs(b.vx); else b.vy = b.y < R.y + R.h / 2 ? -Math.abs(b.vy) : Math.abs(b.vy);
+            }
+            hitBrick(g, k, b); break;
+          }
+          if (b.y > g.bot + 20) { b.dead = true; break; }
+        }
+      }
+      // evitar ángulos casi horizontales
+      for (const b of s.balls) if (!b.stuck && Math.abs(b.vy) < s.speed * 0.25) { b.vy = (b.vy < 0 ? -1 : 1) * s.speed * 0.3; }
+      s.balls = s.balls.filter((b) => !b.dead);
+      if (!s.balls.length) { g.message('💥', 0.6); Arcade.sfx.bad(); if (g.die()) serve(g); return; }
+      for (const d of s.drops) {
+        d.y += 160 * dt;
+        if (d.y > s.py - 12 && d.y < s.py + 12 && Math.abs(d.x - s.px) < pw / 2 + 10) {
+          d.dead = true; Arcade.sfx.up(); g.ring(d.x, d.y, '#ffd43b', 30);
+          if (d.t === 'wide') s.wide = 12; else if (d.t === 'slow') s.slow = 10; else if (d.t === 'fire') s.fire = 7; else if (d.t === 'life') { g.lives++; g.hud && g.hud(); }
+          else { const b0 = s.balls.find((b) => !b.stuck) || s.balls[0]; for (const a of [-0.5, 0.5]) { const sp = s.speed, an = Math.atan2(b0.vy || -1, b0.vx || 0.1) + a; s.balls.push({ x: b0.x, y: b0.y, vx: Math.cos(an) * sp, vy: Math.sin(an) * sp }); } }
+        }
+        if (d.y > g.bot + 20) d.dead = true;
+      }
+      s.drops = s.drops.filter((d) => !d.dead);
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      const bg = ctx.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, '#2f2f6b'); bg.addColorStop(1, '#0e0e24');
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      if (!s.bricks) return;
+      ctx.strokeStyle = 'rgba(120,140,255,.25)'; ctx.lineWidth = 2; ctx.strokeRect(s.ox - 2, g.top + 28, s.fw + 4, H);
+      for (const k of s.bricks) {
+        const R = brickRect(s, k), un = k.hp >= 99;
+        ctx.fillStyle = un ? '#868e96' : k.col; ctx.globalAlpha = un ? 1 : 0.55 + 0.45 * (k.hp / k.max);
+        Arcade.rr(ctx, R.x + 2, R.y + 2, R.w - 4, R.h - 4, 4); ctx.fill(); ctx.globalAlpha = 1;
+        ctx.fillStyle = 'rgba(255,255,255,.35)'; ctx.fillRect(R.x + 4, R.y + 3, R.w - 8, 3);
+        if (k.hit) { ctx.fillStyle = `rgba(255,255,255,${k.hit * 0.7})`; Arcade.rr(ctx, R.x + 2, R.y + 2, R.w - 4, R.h - 4, 4); ctx.fill(); }
+        if (un) Arcade.emoji(ctx, '🔩', R.x + R.w / 2, R.y + R.h / 2, R.h * 0.7);
+        else if (k.hp > 1) Arcade.txt(ctx, String(k.hp), R.x + R.w / 2, R.y + R.h / 2 + 1, R.h * 0.6, '#fff', 'center', 900);
+      }
+      for (const d of s.drops) Arcade.emoji(ctx, d.e, d.x, d.y, 24, { rot: Math.sin(g.rt * 5) * 0.3 });
+      const pw = s.pw0 * (s.wide > 0 ? 1.6 : 1);
+      const gr = ctx.createLinearGradient(0, s.py - 7, 0, s.py + 7); gr.addColorStop(0, '#e7f5ff'); gr.addColorStop(1, '#4dabf7');
+      ctx.fillStyle = gr; Arcade.rr(ctx, s.px - pw / 2, s.py - 7, pw, 14, 7); ctx.fill();
+      for (const b of s.balls) {
+        if (s.fire > 0) { g.burst(b.x, b.y, { n: 1, color: ['#ff922b', '#ffd43b'], speed: 30, size: 3, life: 0.3, grav: 0 }); }
+        ctx.fillStyle = s.fire > 0 ? '#ff922b' : '#fff'; ctx.shadowColor = ctx.fillStyle; ctx.shadowBlur = 12;
+        ctx.beginPath(); ctx.arc(b.x, b.y, 7, 0, Math.PI * 2); ctx.fill(); ctx.shadowBlur = 0;
+      }
+      if (s.balls.some((b) => b.stuck)) Arcade.txt(ctx, Arcade.T('Toca para lanzar', 'Tap to launch'), W / 2, s.py - 50, 16, '#a5d8ff', 'center', 800);
+    },
+  });
+})();

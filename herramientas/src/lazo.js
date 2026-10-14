@@ -1,0 +1,191 @@
+// Lazo|#0f2a1d
+(function () {
+  const { rand, ri, pick, clamp, dist, inPoly, polyArea, segDist } = Arcade;
+  const ITEMS = [{ e: '🍄', v: 10, w: 80 }, { e: '🌼', v: 20, w: 15 }, { e: '💎', v: 100, w: 5 }];
+
+  function bounds(g) { const s = g.s; s.x0 = 16; s.y0 = g.top + 10; s.x1 = g.W - 16; s.y1 = g.bot - 16; }
+  function reset(s) { s.tA = [{ x: s.A.x, y: s.A.y }]; s.tB = [{ x: s.B.x, y: s.B.y }]; s.armed = false; }
+  function tlen(t) { let L = 0; for (let i = 1; i < t.length; i++) L += Math.hypot(t[i].x - t[i - 1].x, t[i].y - t[i - 1].y); return L; }
+  function addPt(s, t, p) {
+    const l = t[t.length - 1];
+    if (Math.hypot(p.x - l.x, p.y - l.y) > 7) {
+      t.push({ x: p.x, y: p.y });
+      const max = Math.max(s.x1 - s.x0, s.y1 - s.y0) * 2.4;
+      while (t.length > 2 && tlen(t) > max) t.shift();
+    }
+  }
+  function loop(s) { return s.tA.concat([{ x: s.A.x, y: s.A.y }, { x: s.B.x, y: s.B.y }], s.tB.slice().reverse()); }
+  function freeSpot(g, m) {
+    const s = g.s;
+    for (let i = 0; i < 40; i++) {
+      const x = rand(s.x0 + m, s.x1 - m), y = rand(s.y0 + m, s.y1 - m);
+      if (dist(x, y, s.A.x, s.A.y) > 90 && dist(x, y, s.B.x, s.B.y) > 90 && s.items.every(o => dist(x, y, o.x, o.y) > 40)) return { x, y };
+    }
+    return { x: rand(s.x0 + m, s.x1 - m), y: rand(s.y0 + m, s.y1 - m) };
+  }
+  function spawnItem(g) {
+    let r = Math.random() * 100, it = ITEMS[0];
+    for (const o of ITEMS) { if (r < o.w) { it = o; break; } r -= o.w; }
+    const p = freeSpot(g, 26);
+    g.s.items.push({ x: p.x, y: p.y, e: it.e, v: it.v, k: 0, ph: Math.random() * 6 });
+  }
+  function spawnEnemy(g) {
+    const s = g.s, side = ri(0, 3);
+    const x = side === 0 ? s.x0 + 10 : side === 1 ? s.x1 - 10 : rand(s.x0, s.x1);
+    const y = side === 2 ? s.y0 + 10 : side === 3 ? s.y1 - 10 : rand(s.y0, s.y1);
+    g.ring(x, y, { color: '#ff6b6b', r: 46, t: 0.6 });
+    s.en.push({ x, y, a: Math.random() * 6.28, v: 45 + g.level * 7, e: Math.random() < 0.5 ? '🐞' : '🕷️', k: 0 });
+  }
+  function close(g) {
+    const s = g.s, poly = loop(s), area = polyArea(poly);
+    if (area < 1200) { reset(s); return; }
+    let n = 0, pts = 0, cx = 0, cy = 0;
+    s.items = s.items.filter(o => {
+      if (inPoly(o.x, o.y, poly)) { n++; pts += o.v; cx += o.x; cy += o.y; g.burst(o.x, o.y, { n: 8, color: ['#ffd166', '#fff', '#ff8fab'], speed: 160, size: 3 }); g.burst(o.x, o.y, { n: 2, emoji: o.e, size: 22, speed: 120, up: 120 }); return false; }
+      return true;
+    });
+    let caught = 0;
+    s.en = s.en.filter(e => { if (inPoly(e.x, e.y, poly)) { caught++; g.burst(e.x, e.y, { n: 10, emoji: '💫', size: 16, speed: 140 }); return false; } return true; });
+    if (n || caught) {
+      const total = pts * Math.max(1, n) + caught * 150;
+      const fx = n ? cx / n : (s.A.x + s.B.x) / 2, fy = n ? cy / n : (s.A.y + s.B.y) / 2;
+      g.addScore(total, fx, fy);
+      if (n >= 3) { g.float('¡x' + n + '!', fx, fy - 30, '#ff8fab', 30); g.flash('#ffd166', 0.2); }
+      g.ring(fx, fy, { color: '#ffd166', r: 90, w: 6 });
+      Arcade.sfx.combo(n); Arcade.buzz(30);
+    } else Arcade.sfx.tick();
+    s.flash = 0.35; s.flashPoly = poly;
+    reset(s);
+  }
+  function hurt(g, e) {
+    const s = g.s;
+    s.en.splice(s.en.indexOf(e), 1);
+    g.burst(e.x, e.y, { n: 16, color: ['#ff6b6b', '#fff'], speed: 220 });
+    s.inv = 2; reset(s);
+    g.die();
+  }
+
+  Arcade.game({
+    id: 'lazo', title: 'Lazo', emoji: '🪢', color: '#ffb703', origin: 'Libble Rabble (Namco, 1983)',
+    help: 'Arrastra los dos extremos de la cuerda 🔴🔵 con <b>dos dedos</b> (o uno cada vez). Rodea setas 🍄 y <b>junta los dos extremos</b> para cerrar el lazo. Cuantas más atrapes a la vez, más puntos. Los bichos 🐞 <b>cortan la cuerda</b> y si tocan un extremo pierdes una vida. ¡También puedes atraparlos dentro del lazo!',
+    lives: 3, levels: null,
+    theme: { font: 'Lilita One', ambient: 'fireflies', music: { tempo: 118, scale: 'major', root: 262, wave: 'triangle', lead: 'square' }, sfx: { wave: 'triangle', pitch: 1.1 } },
+    setup(g) {
+      g.s = { deco: Array.from({ length: 22 }, () => ({ u: Math.random(), v: Math.random(), e: pick(['🌱', '🌿', '🍀', '🌼', '🌾', '🪨']), s: rand(14, 24) })), A: { x: 0, y: 0, pid: null, ox: 0, oy: 0 }, B: { x: 0, y: 0, pid: null, ox: 0, oy: 0 }, items: [], en: [], inv: 0, itemT: 0, lvT: 0, enT: 0, flash: 0 };
+      const s = g.s; bounds(g);
+      s.A.x = s.x0 + (s.x1 - s.x0) * 0.25; s.B.x = s.x0 + (s.x1 - s.x0) * 0.75;
+      s.A.y = s.B.y = s.y1 - 70;
+      reset(s);
+      for (let i = 0; i < 8; i++) spawnItem(g);
+      spawnEnemy(g);
+    },
+    layout(g) {
+      const s = g.s; if (!s.A) return; bounds(g);
+      for (const p of [s.A, s.B]) { p.x = clamp(p.x, s.x0, s.x1); p.y = clamp(p.y, s.y0, s.y1); }
+    },
+    down(g, p) {
+      const s = g.s, free = [s.A, s.B].filter(e => e.pid == null);
+      if (!free.length) return;
+      let e = free[0];
+      if (free.length === 2 && dist(p.x, p.y, s.B.x, s.B.y) < dist(p.x, p.y, s.A.x, s.A.y)) e = s.B;
+      e.pid = p.id; e.ox = e.x - p.x; e.oy = e.y - p.y;
+      // si el dedo está cerca, que el extremo quede justo encima del dedo
+      if (Math.hypot(e.ox, e.oy) < 60) { e.ox = 0; e.oy = p.type === 'touch' ? -34 : 0; }
+    },
+    move(g, p) {
+      const s = g.s;
+      for (const [e, t] of [[s.A, s.tA], [s.B, s.tB]]) {
+        if (e.pid !== p.id) continue;
+        e.x = clamp(p.x + e.ox, s.x0, s.x1); e.y = clamp(p.y + e.oy, s.y0, s.y1);
+        e.ox = e.x - p.x; e.oy = e.y - p.y;
+        addPt(s, t, e);
+      }
+      const d = dist(s.A.x, s.A.y, s.B.x, s.B.y);
+      if (d > 80) s.armed = true;
+      if (s.armed && d < 26) close(g);
+    },
+    up(g, p) { const s = g.s; for (const e of [s.A, s.B]) if (e.pid === p.id) e.pid = null; },
+    update(g, dt) {
+      const s = g.s;
+      s.inv = Math.max(0, s.inv - dt); s.flash = Math.max(0, s.flash - dt);
+      // dificultad progresiva
+      s.lvT += dt;
+      if (s.lvT > 30) { s.lvT = 0; g.level++; g.hud(); g.message('Nivel ' + g.level, 1.2, '¡Más bichos!'); Arcade.sfx.level(); g.ring(g.W / 2, g.H / 2, { r: g.W * 0.7, color: '#ffd166', w: 6 }); }
+      const want = Math.min(10, 1 + g.level);
+      s.enT -= dt;
+      if (s.en.length < want && s.enT <= 0) { spawnEnemy(g); s.enT = 2.5; }
+      s.itemT -= dt;
+      if (s.items.length < 8 + Math.min(6, g.level) && s.itemT <= 0) { spawnItem(g); s.itemT = 0.9; }
+      for (const o of s.items) o.k = Math.min(1, o.k + dt * 4);
+      for (const e of s.en) {
+        e.k = Math.min(1, e.k + dt * 2);
+        e.a += rand(-2.5, 2.5) * dt;
+        e.x += Math.cos(e.a) * e.v * dt; e.y += Math.sin(e.a) * e.v * dt;
+        if (e.x < s.x0) { e.x = s.x0; e.a = Math.PI - e.a; } if (e.x > s.x1) { e.x = s.x1; e.a = Math.PI - e.a; }
+        if (e.y < s.y0) { e.y = s.y0; e.a = -e.a; } if (e.y > s.y1) { e.y = s.y1; e.a = -e.a; }
+        if (e.k < 1) continue;
+        if (s.inv <= 0 && (dist(e.x, e.y, s.A.x, s.A.y) < 26 || dist(e.x, e.y, s.B.x, s.B.y) < 26)) { hurt(g, e); return; }
+        for (const t of [s.tA, s.tB]) {
+          if (t.length < 3) continue;
+          for (let i = 1; i < t.length - 1; i++) {
+            if (segDist(e.x, e.y, t[i - 1].x, t[i - 1].y, t[i].x, t[i].y) < 12) {
+              g.burst(e.x, e.y, { n: 8, emoji: '✂️', size: 14, speed: 120, grav: 0 });
+              Arcade.sfx.bad(); reset(s); break;
+            }
+          }
+        }
+      }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      Arcade.bg(ctx, W, H, '#2f7a4a', '#1d5a36', '#0e2f1d');
+      ctx.fillStyle = 'rgba(255,255,255,.04)';
+      for (let y = 20; y < H; y += 34) for (let x = (y / 34) % 2 ? 17 : 0; x < W; x += 34) { ctx.beginPath(); ctx.ellipse(x, y, 5, 2, 0.6, 0, 6.28); ctx.fill(); }
+      if (!s.A) return;
+      for (const d of s.deco) Arcade.emoji(ctx, d.e, s.x0 + d.u * (s.x1 - s.x0), s.y0 + d.v * (s.y1 - s.y0), d.s, { alpha: 0.35, rot: Math.sin(g.t + d.u * 9) * 0.15 });
+      Arcade.amb(g, ctx);
+      ctx.strokeStyle = 'rgba(255,255,255,.12)'; ctx.lineWidth = 2; ctx.setLineDash([8, 8]);
+      Arcade.rr(ctx, s.x0 - 8, s.y0 - 8, s.x1 - s.x0 + 16, s.y1 - s.y0 + 16, 18); ctx.stroke(); ctx.setLineDash([]);
+
+      if (s.flash > 0 && s.flashPoly) {
+        ctx.globalAlpha = s.flash * 2; ctx.fillStyle = '#ffe066';
+        ctx.beginPath(); s.flashPoly.forEach((p, i) => i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)); ctx.closePath(); ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+      const d = dist(s.A.x, s.A.y, s.B.x, s.B.y);
+      const poly = loop(s);
+      if (s.armed && d < 140) {
+        ctx.fillStyle = 'rgba(255,209,102,' + (0.22 * (1 - d / 140)) + ')';
+        ctx.beginPath(); poly.forEach((p, i) => i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)); ctx.closePath(); ctx.fill();
+      }
+      for (const o of s.items) {
+        const b = Math.sin(g.t * 3 + o.ph) * 2;
+        ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.beginPath(); ctx.ellipse(o.x, o.y + 14, 11 * o.k, 4 * o.k, 0, 0, 6.28); ctx.fill();
+        if (o.v >= 100) Arcade.glow(ctx, o.x, o.y, 30, 'rgba(116,192,252,.6)', 0.5 + Math.sin(g.t * 5) * 0.3);
+        A_e(ctx, o.e, o.x, o.y + b, 30 * (0.4 + 0.6 * o.k));
+      }
+      // cierre punteado
+      const a0 = s.tA[0], b0 = s.tB[0];
+      ctx.strokeStyle = 'rgba(255,255,255,.28)'; ctx.lineWidth = 2; ctx.setLineDash([5, 7]);
+      ctx.beginPath(); ctx.moveTo(a0.x, a0.y); ctx.lineTo(b0.x, b0.y); ctx.stroke(); ctx.setLineDash([]);
+      // cuerda
+      ctx.lineJoin = ctx.lineCap = 'round';
+      ctx.beginPath(); poly.forEach((p, i) => i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y));
+      ctx.strokeStyle = 'rgba(0,0,0,.35)'; ctx.lineWidth = 9; ctx.stroke();
+      if (s.armed && d < 140) { ctx.shadowColor = '#ffd166'; ctx.shadowBlur = 16 * (1 - d / 140); }
+      ctx.strokeStyle = s.armed && d < 140 ? '#fff3bf' : '#ffd166'; ctx.lineWidth = 5; ctx.stroke(); ctx.shadowBlur = 0;
+      ctx.strokeStyle = 'rgba(255,255,255,.5)'; ctx.lineWidth = 1.5; ctx.stroke();
+      for (const e of s.en) A_e(ctx, e.e, e.x, e.y, 30 * e.k, { rot: e.a + Math.PI / 2 });
+      // extremos
+      const blink = s.inv > 0 && Math.floor(g.t * 10) % 2;
+      [[s.A, '#ff5d73'], [s.B, '#4dabf7']].forEach(([e, c]) => {
+        if (blink) return;
+        ctx.fillStyle = 'rgba(0,0,0,.3)'; ctx.beginPath(); ctx.arc(e.x + 2, e.y + 4, 17, 0, 6.28); ctx.fill();
+        ctx.fillStyle = c; ctx.beginPath(); ctx.arc(e.x, e.y, 16, 0, 6.28); ctx.fill();
+        ctx.lineWidth = e.pid != null ? 5 : 3; ctx.strokeStyle = '#fff'; ctx.stroke();
+        ctx.fillStyle = 'rgba(255,255,255,.55)'; ctx.beginPath(); ctx.arc(e.x - 5, e.y - 5, 5, 0, 6.28); ctx.fill();
+      });
+    },
+  });
+  function A_e(ctx, e, x, y, s, o) { Arcade.emoji(ctx, e, x, y, s, o); }
+})();

@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Treses · Arcade Perdido</title>
+<meta name="theme-color" content="#f3ece0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css">
+</head>
+<body class="game">
+<script src="config.js"></script>
+<script src="common.js"></script>
+<script>
+(function () {
+  const { ri, clamp, shuffle } = Arcade;
+  const N = 4;
+  const FACE = { 3: '🙂', 6: '😊', 12: '😄', 24: '😎', 48: '🤩', 96: '🥳', 192: '😺', 384: '👑', 768: '🦄', 1536: '🐉', 3072: '🌟' };
+
+  function geo(g) { const s = g.s, Ha = g.bot - g.top - 130; s.cs = Math.min((g.W - 30) / N, Ha / N * 0.82, 110); s.ch = s.cs * 1.25; s.ox = (g.W - s.cs * N) / 2; s.oy = g.top + 110 + (Ha - s.ch * N) / 2; }
+  function nextTile(s) {
+    if (!s.bag.length) s.bag = shuffle([1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3]);
+    const mx = maxTile(s);
+    if (mx >= 48 && Math.random() < 1 / 21) { const opts = []; for (let v = 6; v <= mx / 8; v *= 2) opts.push(v); if (opts.length) return opts[ri(0, opts.length - 1)]; }
+    return s.bag.pop();
+  }
+  const maxTile = (s) => Math.max(0, ...s.b.map((t) => (t ? t.v : 0)));
+  const can = (a, b) => (a + b === 3) || (a === b && a >= 3);
+  const idx = (c, r) => r * N + c;
+  function slide(g, dir) {
+    const s = g.s; if (s.done || s.anim > 0) return false;
+    const [dc, dr] = { left: [-1, 0], right: [1, 0], up: [0, -1], down: [0, 1] }[dir];
+    const moved = new Set(), merged = new Set();
+    for (const t of s.b) if (t) { t.fc = t.c; t.fr = t.r; }
+    for (let line = 0; line < N; line++) {
+      for (let k = 1; k < N; k++) {
+        // posición k desde el borde frontal
+        const c = dc === -1 ? k : dc === 1 ? N - 1 - k : line, r = dr === -1 ? k : dr === 1 ? N - 1 - k : line;
+        const t = s.b[idx(c, r)]; if (!t) continue;
+        const nc = c + dc, nr = r + dr, d = s.b[idx(nc, nr)];
+        if (!d) { s.b[idx(nc, nr)] = t; s.b[idx(c, r)] = null; t.c = nc; t.r = nr; moved.add(line); }
+        else if (!merged.has(idx(nc, nr)) && can(t.v, d.v)) {
+          d.v += t.v; d.pop = 1; merged.add(idx(nc, nr)); s.b[idx(c, r)] = null; moved.add(line);
+          s.ghost.push({ v: t.v, fc: c, fr: r, c: nc, r: nr });
+          g.addScore(d.v >= 3 ? d.v * g.lv : g.lv, s.ox + (nc + 0.5) * s.cs, s.oy + (nr + 0.5) * s.ch);
+          if (d.v >= 3 && d.v > s.best) { s.best = d.v; if (d.v >= 24) { Arcade.sfx.win(); g.ring(s.ox + (nc + 0.5) * s.cs, s.oy + (nr + 0.5) * s.ch, '#ff922b', 60); } }
+        }
+      }
+    }
+    if (!moved.size) { Arcade.sfx.bad(); return false; }
+    Arcade.sfx.move(); if (merged.size) Arcade.sfx.combo(Math.min(12, Math.log2(maxTile(s))));
+    // nueva ficha por el borde trasero de una línea que se movió
+    const ls = [...moved], line = ls[ri(0, ls.length - 1)];
+    const c = dc === -1 ? N - 1 : dc === 1 ? 0 : line, r = dr === -1 ? N - 1 : dr === 1 ? 0 : line;
+    if (!s.b[idx(c, r)]) { s.b[idx(c, r)] = { v: s.next, c, r, fc: c - dc, fr: r - dr, pop: 0 }; s.next = nextTile(s); }
+    s.anim = 1;
+    if (s.best >= s.goal && !s.done) { s.done = true; g.confetti(70); setTimeout(() => { if (g.state === 'play') g.win(); }, 700); }
+    else if (!anyMove(s)) { s.done = true; g.message(Arcade.T('¡Sin movimientos!', 'No moves left!'), 1.3); setTimeout(() => { if (g.state === 'play' && g.die()) Arcade.current.def.setup(g); }, 1300); }
+    return true;
+  }
+  function anyMove(s) {
+    for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) { const t = s.b[idx(c, r)]; if (!t) return true; for (const [dc, dr] of [[1, 0], [0, 1]]) { const nc = c + dc, nr = r + dr; if (nc < N && nr < N) { const d = s.b[idx(nc, nr)]; if (!d || can(t.v, d.v)) return true; } } }
+    return false;
+  }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Uno más dos, tres. Tres más tres, seis…', deco: ['1️⃣', '2️⃣', '3️⃣', '😊', '😎', '👑'], font: 'round', bg: ['#fffaf0', '#f3ece0'],
+    music: { mode: 'major', bpm: 100, wave: 'triangle', style: 'chill', root: 65 }, voice: { wave: 'triangle', mul: 1.3, echo: 0.35 },
+    en: { title: 'Threes', tag: 'One plus two, three. Three plus three, six…', help: '<b>Swipe</b> to slide every card one step. A <b>1</b> and a <b>2</b> join into a 3; from then on, two <b>equal</b> cards join and double (3+3=6, 6+6=12…). After each move a new card comes in from the edge; the top shows which one is next. Make the card each level asks for before the board jams.', tvHelp: '▲ ▼ ◀ ▶ to slide.', dict: { 'Siguiente': 'Next', 'Objetivo': 'Goal', '¡Sin movimientos!': 'No moves left!' } },
+    tvHelp: '▲ ▼ ◀ ▶ para deslizar.',
+    id: 'treses', title: 'Treses', emoji: '3️⃣', color: '#ff6b6b', origin: 'Threes! (Sirvo)',
+    help: '<b>Desliza</b> para mover todas las cartas un paso. Un <b>1</b> y un <b>2</b> se juntan en un 3; a partir de ahí, dos cartas <b>iguales</b> se juntan y se doblan (3+3=6, 6+6=12…). Tras cada movimiento entra una carta nueva por el borde; arriba ves cuál viene. Consigue la carta que pide cada nivel antes de que se atasque el tablero.',
+    lives: 3, levels: 0, cap: 20,
+    setup(g) {
+      g.s = { b: new Array(N * N).fill(null), bag: [], ghost: [], anim: 0, best: 0 };
+      const s = g.s, L = g.lv;
+      s.goal = 12 * Math.pow(2, Math.min(Math.ceil(L / 2), 6));
+      for (let i = 0; i < 9; i++) { let k; do { k = ri(0, N * N - 1); } while (s.b[k]); const v = nextTile(s); s.b[k] = { v, c: k % N, r: Math.floor(k / N), fc: k % N, fr: Math.floor(k / N), pop: 0 }; }
+      s.next = nextTile(s); s.best = maxTile(s); geo(g);
+    },
+    layout(g) { if (g.s.b) geo(g); },
+    swipe(g, d) { slide(g, d); },
+    key(g, k, d) { if (!d) return; const m = { ArrowLeft: 'left', ArrowRight: 'right', ArrowUp: 'up', ArrowDown: 'down' }[k]; if (m) slide(g, m); },
+    update(g, dt) { const s = g.s; s.anim = Math.max(0, s.anim - dt * 7); if (!s.anim) s.ghost = []; for (const t of s.b) if (t) t.pop = Math.max(0, t.pop - dt * 4); },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      ctx.fillStyle = '#f3ece0'; ctx.fillRect(0, 0, W, H);
+      if (!s.b) return;
+      const cs = s.cs, ch = s.ch;
+      ctx.fillStyle = '#d8e9e4'; Arcade.rr(ctx, s.ox - 10, s.oy - 10, cs * N + 20, ch * N + 20, 18); ctx.fill();
+      for (let i = 0; i < N * N; i++) { ctx.fillStyle = '#bfd8d2'; Arcade.rr(ctx, s.ox + (i % N) * cs + 5, s.oy + Math.floor(i / N) * ch + 5, cs - 10, ch - 10, 10); ctx.fill(); }
+      const card = (v, x, y, pop, alpha) => {
+        const w = (cs - 10) * (1 + pop * 0.12), h = (ch - 10) * (1 + pop * 0.12);
+        ctx.globalAlpha = alpha ?? 1;
+        const col = v === 1 ? ['#66d9e8', '#3bc9db', '#1098ad'] : v === 2 ? ['#ff8787', '#ff6b6b', '#c92a2a'] : ['#fff', '#fff', '#ffc078'];
+        ctx.fillStyle = col[2]; Arcade.rr(ctx, x - w / 2, y - h / 2 + 5, w, h, 10); ctx.fill();
+        ctx.fillStyle = col[0]; Arcade.rr(ctx, x - w / 2, y - h / 2, w, h, 10); ctx.fill();
+        const txtc = v >= 3 ? (v >= 384 ? '#e8590c' : '#343a40') : '#fff';
+        if (v >= 3 && FACE[v]) Arcade.emoji(ctx, FACE[v], x, y + h * 0.18, w * 0.38);
+        Arcade.txt(ctx, String(v), x, v >= 3 ? y - h * 0.18 : y, w * (v >= 100 ? 0.3 : 0.42), txtc, 'center', 900);
+        ctx.globalAlpha = 1;
+      };
+      const k = s.anim, pos = (t) => [s.ox + ((t.c * (1 - k) + t.fc * k) + 0.5) * cs, s.oy + ((t.r * (1 - k) + t.fr * k) + 0.5) * ch];
+      for (const gh of s.ghost) { const [x, y] = pos(gh); card(gh.v, x, y, 0, k); }
+      for (const t of s.b) if (t) { const [x, y] = pos(t); card(t.v, x, y, t.pop); }
+      // siguiente y objetivo
+      const ty = g.top + 52;
+      Arcade.txt(ctx, 'Siguiente', W / 2 - 60, ty - 30, 13, '#868e96', 'center', 800);
+      const nv = s.next, nw = 34;
+      ctx.fillStyle = nv === 1 ? '#66d9e8' : nv === 2 ? '#ff8787' : '#fff'; Arcade.rr(ctx, W / 2 - 60 - nw / 2, ty - 18, nw, nw * 1.2, 6); ctx.fill();
+      if (nv > 3) Arcade.txt(ctx, '+', W / 2 - 60, ty + 2, 18, '#e8590c', 'center', 900);
+      Arcade.txt(ctx, 'Objetivo', W / 2 + 60, ty - 30, 13, '#868e96', 'center', 800);
+      Arcade.txt(ctx, String(s.goal), W / 2 + 60, ty, 24, s.best >= s.goal ? '#2b8a3e' : '#e8590c', 'center', 900);
+      Arcade.emoji(ctx, FACE[s.goal] || '⭐', W / 2 + 104, ty, 24);
+    },
+  });
+})();
+</script>
+</body>
+</html>

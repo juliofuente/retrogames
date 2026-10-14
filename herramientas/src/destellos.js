@@ -1,0 +1,73 @@
+// Destellos|#151530
+(function () {
+  const { ri, rand, clamp, shuffle } = Arcade;
+  const EM = ['⭐', '💎', '🍀', '🔥', '💧', '🌙', '🌸', '⚡', '🍄'];
+
+  function geo(g) { const s = g.s, Ha = g.bot - g.top - 100; s.cs = Math.min((g.W - 30) / s.n, Ha / s.n, 100); s.ox = (g.W - s.cs * s.n) / 2; s.oy = g.top + 80 + (Ha - s.cs * s.n) / 2; }
+  function newRound(g) {
+    const s = g.s, L = g.lv, cells = s.n * s.n;
+    s.seq = []; const len = s.len;
+    if (s.mode === 'seq') { for (let i = 0; i < len; i++) s.seq.push(ri(0, cells - 1)); }
+    else s.seq = shuffle([...Array(cells).keys()]).slice(0, len);
+    s.show = 0.6; s.si = 0; s.input = []; s.phase = 'show'; s.lit = -1; s.litT = 0;
+  }
+  function press(g, i) {
+    const s = g.s; if (s.phase !== 'input') return;
+    s.flash[i] = 1;
+    if (s.mode === 'seq') {
+      const want = s.seq[s.input.length];
+      if (i !== want) return fail(g);
+      s.input.push(i); Arcade.tone(300 + i * 40, 0.12, 'sine', 0.08);
+      if (s.input.length === s.seq.length) ok(g);
+    } else {
+      if (s.input.includes(i)) return;
+      if (!s.seq.includes(i)) return fail(g);
+      s.input.push(i); Arcade.tone(400 + s.input.length * 50, 0.08, 'sine', 0.07);
+      if (s.input.length === s.seq.length) ok(g);
+    }
+  }
+  function ok(g) { const s = g.s; s.phase = 'ok'; s.rounds++; Arcade.sfx.coin(); g.addScore(s.len * 10 * g.lv, g.W / 2, s.oy - 20); setTimeout(() => { if (g.state !== 'play') return; if (s.rounds >= s.need) { g.confetti(60); g.win(); } else { s.len++; newRound(g); } }, 700); }
+  function fail(g) { const s = g.s; s.phase = 'fail'; Arcade.sfx.bad(); g.shake(0.2, 5); setTimeout(() => { if (g.state === 'play' && g.die()) newRound(g); }, 900); }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Mira, recuerda, repite', deco: ['⭐', '💎', '🍀', '🔥', '🧠', '✨'], font: 'round', bg: ['#26264d', '#151530'],
+    music: { mode: 'lydian', bpm: 92, wave: 'sine', style: 'chill', root: 64 }, voice: { wave: 'sine', mul: 1.3, echo: 0.4 },
+    en: { title: 'Flashes', tag: 'Watch, remember, repeat', help: 'Some squares light up: <b>remember</b> them and tap them when it is your turn. In odd levels the <b>order</b> matters (like Simon); in even levels you only need to remember <b>which</b> squares lit up. Each round adds one more. A mistake costs a life.', tvHelp: 'D-pad to the square · OK to press it.', dict: { 'Mira…': 'Watch…', '¡Tu turno!': 'Your turn!', 'En orden': 'In order', 'Cuáles': 'Which ones', 'Ronda ': 'Round ' } },
+    tvHelp: 'Cruceta hasta la casilla · OK para pulsar.',
+    tv: { mode: 'tap', targets: (g) => { const s = g.s, o = []; if (!s.n) return o; for (let i = 0; i < s.n * s.n; i++) o.push({ x: s.ox + (i % s.n) * s.cs, y: s.oy + Math.floor(i / s.n) * s.cs, w: s.cs, h: s.cs }); return o; } },
+    id: 'destellos', title: 'Destellos', emoji: '✨', color: '#9775fa', origin: 'Memdot / Simon',
+    help: 'Se iluminan algunas casillas: <b>recuérdalas</b> y tócalas cuando sea tu turno. En los niveles impares importa el <b>orden</b> (como el Simón); en los pares solo tienes que recordar <b>cuáles</b> se encendieron. Cada ronda añade una más. Un error te cuesta una vida.',
+    lives: 3, levels: 0, cap: 25,
+    setup(g) {
+      const L = g.lv; g.s = { n: clamp(3 + Math.floor(L / 4), 3, 6), mode: g.level % 2 ? 'seq' : 'set', rounds: 0, need: 4 + Math.min(Math.floor(L / 3), 5) };
+      const s = g.s; s.len = (s.mode === 'seq' ? 2 : 3) + Math.floor(L / 5); s.flash = new Array(s.n * s.n).fill(0); s.em = EM[(g.level - 1) % EM.length]; geo(g); newRound(g);
+    },
+    layout(g) { if (g.s.n) geo(g); },
+    tap(g, p) { const s = g.s, c = Math.floor((p.x - s.ox) / s.cs), r = Math.floor((p.y - s.oy) / s.cs); if (c >= 0 && r >= 0 && c < s.n && r < s.n) press(g, r * s.n + c); },
+    update(g, dt) {
+      const s = g.s; for (let i = 0; i < s.flash.length; i++) s.flash[i] = Math.max(0, s.flash[i] - dt * 3);
+      if (s.phase === 'show') {
+        s.show -= dt; if (s.show > 0) return;
+        const speed = Math.max(0.28, 0.6 - g.lv * 0.012);
+        if (s.mode === 'seq') { s.litT -= dt; if (s.litT <= 0) { if (s.si >= s.seq.length) { s.phase = 'input'; s.lit = -1; return; } s.lit = s.seq[s.si++]; s.flash[s.lit] = 1; s.litT = speed; Arcade.tone(300 + s.lit * 40, 0.15, 'sine', 0.08); } }
+        else { if (s.si === 0) { s.si = 1; for (const i of s.seq) s.flash[i] = 1; s.litT = 0.6 + s.len * 0.15; Arcade.tone(600, 0.2, 'sine', 0.08); } else { s.litT -= dt; for (const i of s.seq) s.flash[i] = Math.max(s.flash[i], 0.9); if (s.litT <= 0) { s.phase = 'input'; for (const i of s.seq) s.flash[i] = 0; } } }
+      }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      ctx.fillStyle = s.phase === 'fail' ? '#3d1530' : s.phase === 'ok' ? '#153d30' : '#151530'; ctx.fillRect(0, 0, W, H);
+      if (!s.n) return;
+      const cs = s.cs;
+      for (let i = 0; i < s.n * s.n; i++) {
+        const x = s.ox + (i % s.n) * cs, y = s.oy + Math.floor(i / s.n) * cs, f = s.flash[i], done = s.mode === 'set' && s.input.includes(i);
+        ctx.fillStyle = f > 0 ? `rgba(151,117,250,${0.35 + f * 0.65})` : done ? 'rgba(105,219,124,.5)' : 'rgba(255,255,255,.08)';
+        Arcade.rr(ctx, x + 5, y + 5, cs - 10, cs - 10, 14); ctx.fill();
+        if (f > 0.05 || done) Arcade.emoji(ctx, s.em, x + cs / 2, y + cs / 2, cs * 0.5 * (0.8 + f * 0.3), { alpha: Math.max(f, done ? 0.8 : 0) });
+      }
+      const msg = s.phase === 'show' ? 'Mira…' : s.phase === 'input' ? '¡Tu turno!' : '';
+      Arcade.txt(ctx, msg, W / 2, s.oy - 28, 20, '#e5dbff', 'center', 900);
+      Arcade.txt(ctx, (s.mode === 'seq' ? 'En orden' : 'Cuáles') + '   ·   ' + 'Ronda ' + Math.min(s.rounds + 1, s.need) + '/' + s.need, W / 2, g.top + 22, 14, '#b197fc', 'center', 900);
+      if (s.phase === 'input' && s.mode === 'seq') for (let i = 0; i < s.seq.length; i++) { ctx.fillStyle = i < s.input.length ? '#9775fa' : 'rgba(255,255,255,.2)'; ctx.beginPath(); ctx.arc(W / 2 - (s.seq.length - 1) * 9 + i * 18, s.oy + s.n * cs + 24, 5, 0, 6.3); ctx.fill(); }
+    },
+  });
+})();

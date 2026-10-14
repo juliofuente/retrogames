@@ -1,0 +1,149 @@
+// Emojidoku|#1f1a36
+(function () {
+  const { ri, clamp, shuffle } = Arcade;
+  const SETS = [
+    ['🐶', '🐱', '🐸', '🐵', '🐷', '🐼', '🦊', '🐨', '🐯'],
+    ['🍎', '🍋', '🍇', '🍉', '🍓', '🍑', '🍍', '🥝', '🍒'],
+    ['⚽', '🏀', '🎾', '🏈', '⚾', '🏐', '🎱', '🏓', '🥊'],
+    ['🌞', '🌙', '⭐', '☁️', '⚡', '❄️', '🌈', '🔥', '💧'],
+    ['🚗', '🚀', '🚲', '✈️', '🚂', '⛵', '🚁', '🛸', '🚜'],
+  ];
+  function dims(lv) { return lv <= 3 ? [4, 2, 2] : lv <= 8 ? [6, 2, 3] : [9, 3, 3]; }
+  function solveCount(b, n, bh, bw, lim) {
+    let cnt = 0;
+    const rows = new Array(n).fill(0), cols = new Array(n).fill(0), box = new Array(n).fill(0);
+    const bi = (r, c) => Math.floor(r / bh) * (n / bw) + Math.floor(c / bw);
+    for (let i = 0; i < n * n; i++) if (b[i] >= 0) { const r = (i / n) | 0, c = i % n, m = 1 << b[i]; rows[r] |= m; cols[c] |= m; box[bi(r, c)] |= m; }
+    const cells = []; for (let i = 0; i < n * n; i++) if (b[i] < 0) cells.push(i);
+    const full = (1 << n) - 1;
+    (function rec() {
+      if (cnt >= lim) return;
+      // celda con menos opciones
+      let best = -1, bm = 0, bc = 99;
+      for (const i of cells) { if (b[i] >= 0) continue; const r = (i / n) | 0, c = i % n, m = full & ~(rows[r] | cols[c] | box[bi(r, c)]); let k = 0, x = m; while (x) { x &= x - 1; k++; } if (k < bc) { bc = k; best = i; bm = m; if (k <= 1) break; } }
+      if (best < 0) { cnt++; return; }
+      if (!bc) return;
+      const r = (best / n) | 0, c = best % n, q = bi(r, c);
+      for (let v = 0; v < n; v++) if (bm & (1 << v)) {
+        const m = 1 << v; b[best] = v; rows[r] |= m; cols[c] |= m; box[q] |= m;
+        rec();
+        rows[r] &= ~m; cols[c] &= ~m; box[q] &= ~m; b[best] = -1;
+        if (cnt >= lim) return;
+      }
+    })();
+    return cnt;
+  }
+  function generate(n, bh, bw, holesWanted) {
+    // solución por patrón + barajados válidos
+    const sol = [];
+    for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) sol.push((bw * (r % bh) + Math.floor(r / bh) + c) % n);
+    const perm = shuffle([...Array(n).keys()]);
+    let S = sol.map((v) => perm[v]);
+    const shuffleIdx = (groups, size) => { const order = shuffle([...Array(groups).keys()]); const out = []; for (const g of order) for (const k of shuffle([...Array(size).keys()])) out.push(g * size + k); return out; };
+    const ro = shuffleIdx(n / bh, bh), co = shuffleIdx(n / bw, bw);
+    S = Array.from({ length: n * n }, (_, i) => S[ro[(i / n) | 0] * n + co[i % n]]);
+    const b = S.slice(); let holes = 0;
+    for (const i of shuffle([...Array(n * n).keys()])) {
+      if (holes >= holesWanted) break;
+      const v = b[i]; b[i] = -1;
+      if (solveCount(b.slice(), n, bh, bw, 2) !== 1) b[i] = v; else holes++;
+    }
+    return { sol: S, puz: b };
+  }
+  function geo(g) {
+    const s = g.s, land = g.W > g.H * 1.1, n = s.n;
+    const pc = land ? Math.ceil(n / 3) : Math.ceil(n / (n > 4 ? 2 : 1)) ; // filas/columnas paleta
+    if (land) {
+      const Ha = g.bot - g.top - 30, size = Math.min(Ha, g.W - 200);
+      s.cs = size / n; s.ox = (g.W - size - 160) / 2; s.oy = g.top + 15 + (Ha - size) / 2;
+      const pcols = n === 4 ? 2 : 3, prow = Math.ceil(n / pcols), pb = Math.min(60, size / prow);
+      s.pal = []; for (let i = 0; i < n; i++) s.pal.push({ x: s.ox + size + 30 + (i % pcols) * pb, y: s.oy + (size - prow * pb) / 2 + Math.floor(i / pcols) * pb, w: pb - 6, h: pb - 6 });
+    } else {
+      const pcols = n === 9 ? 5 : n, prow = Math.ceil(n / pcols), pb = Math.min(64, (g.W - 20) / pcols);
+      const Ha = g.bot - g.top - 30 - prow * pb - 20, size = Math.min(g.W - 16, Ha);
+      s.cs = size / n; s.ox = (g.W - size) / 2; s.oy = g.top + 15 + (Ha - size) / 2;
+      s.pal = []; for (let i = 0; i < n; i++) { const row = Math.floor(i / pcols), inRow = Math.min(pcols, n - row * pcols); s.pal.push({ x: (g.W - inRow * pb) / 2 + (i % pcols) * pb + 3, y: s.oy + size + 16 + row * pb, w: pb - 6, h: pb - 6 }); }
+    }
+  }
+  function place(g, v) {
+    const s = g.s, i = s.sel; if (i == null || s.puz[i] >= 0 && s.fixed[i]) return;
+    if (s.cur[i] === s.sol[i]) return;
+    const r = (i / s.n) | 0, c = i % s.n, x = s.ox + (c + 0.5) * s.cs, y = s.oy + (r + 0.5) * s.cs;
+    if (v === s.sol[i]) {
+      s.cur[i] = v; s.pop[i] = 1; Arcade.sfx.coin(); g.addScore(10 * g.lv, x, y);
+      g.burst(x, y, { n: 6, emoji: s.set[v], size: s.cs * 0.25, speed: 120, life: 0.5 });
+      // ¿fila/col/caja completas?
+      const n = s.n, done = (idx) => idx.every((k) => s.cur[k] === s.sol[k]);
+      const row = [...Array(n).keys()].map((k) => r * n + k), col = [...Array(n).keys()].map((k) => k * n + c);
+      const br = Math.floor(r / s.bh) * s.bh, bc = Math.floor(c / s.bw) * s.bw, box = []; for (let a = 0; a < s.bh; a++) for (let b = 0; b < s.bw; b++) box.push((br + a) * n + bc + b);
+      for (const grp of [row, col, box]) if (done(grp)) { for (const k of grp) s.glow[k] = 1; Arcade.sfx.combo(6); g.addScore(30 * g.lv); }
+      if (s.cur.every((v2, k) => v2 === s.sol[k])) { Arcade.sfx.win(); g.confetti(60); g.addScore(200 * g.lv, g.W / 2, g.H / 2); setTimeout(() => { if (g.state === 'play') g.win(s.errors === 0 ? 3 : s.errors === 1 ? 2 : 1); }, 900); }
+      // siguiente celda vacía
+      const nxt = s.cur.findIndex((v2, k) => k > i && v2 < 0); s.sel = nxt >= 0 ? nxt : s.cur.findIndex((v2) => v2 < 0); if (s.sel < 0) s.sel = null;
+    } else {
+      s.errors++; s.bad = { i, v, t: 0.6 }; Arcade.sfx.bad(); g.shake(0.15, 4); g.flash('#ff6b6b', 0.1); g.die();
+    }
+  }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Sudoku sin números', deco: ['🐶', '🍎', '⚽', '🌞', '🚀', '🧩'], font: 'round', bg: ['#3a3266', '#1f1a36'],
+    music: { mode: 'dorian', bpm: 84, wave: 'sine', style: 'chill', root: 62 }, voice: { wave: 'sine', mul: 1.2, echo: 0.35 },
+    ambient: { e: ['✨'], n: 8, vy: 0, sway: 0, twinkle: 1, alpha: 0.2, size: [6, 12] },
+    en: { title: 'Emojidoku', tag: 'Sudoku without numbers', help: 'Fill the grid so that each <b>row</b>, <b>column</b> and <b>box</b> has every emoji exactly once. <b>Tap a cell</b> and then an <b>emoji</b> from the palette. A wrong emoji costs a life. It starts at 4×4, then 6×6 and finally 9×9, with fewer clues each level. Every puzzle has a single solution.', tvHelp: 'D-pad to move the cursor · OK on a cell and then on an emoji.', dict: { 'Errores: ': 'Mistakes: ' } },
+    tvHelp: 'Cruceta para mover el cursor · OK en una casilla y luego en un emoji.',
+    tv: { mode: 'tap', targets: (g) => { const s = g.s, o = []; if (!s.cur) return o; for (let i = 0; i < s.n * s.n; i++) if (!s.fixed[i] && s.cur[i] < 0) o.push({ x: s.ox + (i % s.n) * s.cs, y: s.oy + Math.floor(i / s.n) * s.cs, w: s.cs, h: s.cs }); for (const p of s.pal) o.push(p); return o; } },
+    id: 'emojidoku', title: 'Emojidoku', emoji: '🧩', color: '#9775fa', origin: 'Sudoku',
+    help: 'Rellena la cuadrícula para que cada <b>fila</b>, <b>columna</b> y <b>caja</b> tenga todos los emojis una sola vez. <b>Toca una casilla</b> y luego un <b>emoji</b> de la paleta. Un emoji equivocado te cuesta una vida. Empieza en 4×4, luego 6×6 y al final 9×9, con menos pistas en cada nivel. Cada puzle tiene una única solución.',
+    lives: 3, levels: 0, cap: 30,
+    setup(g) {
+      const [n, bh, bw] = dims(g.lv), L = g.lv;
+      const frac = n === 4 ? 0.4 + L * 0.05 : n === 6 ? 0.42 + (L - 4) * 0.03 : clamp(0.48 + (L - 9) * 0.012, 0.48, 0.66);
+      const { sol, puz } = generate(n, bh, bw, Math.round(n * n * frac));
+      g.s = { n, bh, bw, sol, puz, cur: puz.slice(), fixed: puz.map((v) => v >= 0), pop: new Array(n * n).fill(0), glow: new Array(n * n).fill(0), errors: 0, bad: null };
+      g.s.set = shuffle(SETS[(g.level - 1) % SETS.length].slice()).slice(0, n);
+      g.s.sel = g.s.cur.findIndex((v) => v < 0);
+      geo(g);
+    },
+    layout(g) { if (g.s.cur) geo(g); },
+    tap(g, p) {
+      const s = g.s;
+      for (let i = 0; i < s.pal.length; i++) { const q = s.pal[i]; if (p.x >= q.x && p.x <= q.x + q.w && p.y >= q.y && p.y <= q.y + q.h) return place(g, i); }
+      const c = Math.floor((p.x - s.ox) / s.cs), r = Math.floor((p.y - s.oy) / s.cs);
+      if (c >= 0 && c < s.n && r >= 0 && r < s.n) { const i = r * s.n + c; if (!s.fixed[i] && s.cur[i] < 0) { s.sel = i; Arcade.sfx.tick(); } }
+    },
+    update(g, dt) { const s = g.s; for (let i = 0; i < s.pop.length; i++) { s.pop[i] = Math.max(0, s.pop[i] - dt * 4); s.glow[i] = Math.max(0, s.glow[i] - dt * 1.5); } if (s.bad) { s.bad.t -= dt; if (s.bad.t <= 0) s.bad = null; } },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      const bg = ctx.createLinearGradient(0, 0, W, H); bg.addColorStop(0, '#3a3266'); bg.addColorStop(1, '#1f1a36');
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      if (!s.cur) return;
+      const n = s.n, cs = s.cs, size = cs * n;
+      ctx.fillStyle = 'rgba(0,0,0,.3)'; Arcade.rr(ctx, s.ox - 6, s.oy - 6, size + 12, size + 12, 14); ctx.fill();
+      const sr = s.sel != null ? (s.sel / n) | 0 : -1, sc = s.sel != null ? s.sel % n : -1;
+      const selV = s.sel != null ? -1 : -1;
+      for (let i = 0; i < n * n; i++) {
+        const r = (i / n) | 0, c = i % n, x = s.ox + c * cs, y = s.oy + r * cs;
+        const boxAlt = (Math.floor(r / s.bh) + Math.floor(c / s.bw)) % 2;
+        let fill = boxAlt ? '#ece6ff' : '#f8f6ff';
+        if (r === sr || c === sc || (Math.floor(r / s.bh) === Math.floor(sr / s.bh) && Math.floor(c / s.bw) === Math.floor(sc / s.bw))) fill = boxAlt ? '#ddd3ff' : '#e9e3ff';
+        if (i === s.sel) fill = '#ffe066';
+        ctx.fillStyle = fill; ctx.fillRect(x + 1, y + 1, cs - 2, cs - 2);
+        if (s.glow[i]) { ctx.fillStyle = `rgba(105,219,124,${s.glow[i] * 0.6})`; ctx.fillRect(x + 1, y + 1, cs - 2, cs - 2); }
+        const v = s.cur[i];
+        if (v >= 0) Arcade.emoji(ctx, s.set[v], x + cs / 2, y + cs / 2, cs * 0.66 * (1 + s.pop[i] * 0.4), { alpha: s.fixed[i] ? 1 : 0.95 });
+        if (!s.fixed[i] && v >= 0) { ctx.fillStyle = '#9775fa'; ctx.fillRect(x + cs * 0.3, y + cs - 5, cs * 0.4, 2); }
+        if (s.bad && s.bad.i === i) { ctx.fillStyle = 'rgba(255,80,80,.5)'; ctx.fillRect(x + 1, y + 1, cs - 2, cs - 2); Arcade.emoji(ctx, s.set[s.bad.v], x + cs / 2 + Math.sin(g.rt * 60) * 3, y + cs / 2, cs * 0.6, { alpha: 0.8 }); }
+      }
+      ctx.strokeStyle = '#5f3dc4'; ctx.lineWidth = 3;
+      for (let k = 0; k <= n; k += s.bw) { ctx.beginPath(); ctx.moveTo(s.ox + k * cs, s.oy); ctx.lineTo(s.ox + k * cs, s.oy + size); ctx.stroke(); }
+      for (let k = 0; k <= n; k += s.bh) { ctx.beginPath(); ctx.moveTo(s.ox, s.oy + k * cs); ctx.lineTo(s.ox + size, s.oy + k * cs); ctx.stroke(); }
+      // paleta con recuento
+      s.pal.forEach((q, i) => {
+        const left = s.sol.filter((v, k) => v === i && s.cur[k] !== v).length;
+        ctx.fillStyle = left ? '#fff' : 'rgba(255,255,255,.25)'; Arcade.rr(ctx, q.x, q.y, q.w, q.h, q.w * 0.22); ctx.fill();
+        Arcade.emoji(ctx, s.set[i], q.x + q.w / 2, q.y + q.h / 2, q.w * 0.6, { alpha: left ? 1 : 0.35 });
+        if (left) Arcade.txt(ctx, String(left), q.x + q.w - 8, q.y + 10, 11, '#7048e8', 'center', 900);
+      });
+    },
+  });
+})();

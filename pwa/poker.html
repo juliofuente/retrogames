@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Póker · Arcade Perdido</title>
+<meta name="theme-color" content="#123a2a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css">
+</head>
+<body class="game">
+<script src="config.js"></script>
+<script src="common.js"></script>
+<script>
+(function () {
+  const { ri, clamp, shuffle } = Arcade;
+  const SUITS = ['♠️', '♥️', '♦️', '♣️'], RANKS = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
+  const PAY = [['Escalera real', 'Royal flush', 500], ['Escalera de color', 'Straight flush', 100], ['Póker', 'Four of a kind', 40], ['Full', 'Full house', 15], ['Color', 'Flush', 10], ['Escalera', 'Straight', 8], ['Trío', 'Three of a kind', 5], ['Dobles parejas', 'Two pair', 3], ['Pareja', 'One pair', 1]];
+
+  function evalHand(h) {
+    const rs = h.map((c) => c.r).sort((a, b) => a - b), cnt = {}; for (const r of rs) cnt[r] = (cnt[r] || 0) + 1;
+    const counts = Object.values(cnt).sort((a, b) => b - a), flush = h.every((c) => c.s === h[0].s);
+    const uniq = [...new Set(rs)], straight = uniq.length === 5 && (rs[4] - rs[0] === 4 || rs.join() === '0,1,2,3,12');
+    if (straight && flush && rs[0] === 8) return 0;
+    if (straight && flush) return 1;
+    if (counts[0] === 4) return 2;
+    if (counts[0] === 3 && counts[1] === 2) return 3;
+    if (flush) return 4;
+    if (straight) return 5;
+    if (counts[0] === 3) return 6;
+    if (counts[0] === 2 && counts[1] === 2) return 7;
+    if (counts[0] === 2) return 8;
+    return -1;
+  }
+  function geo(g) {
+    const s = g.s, cw = Math.min((g.W - 30) / 5 - 8, 110), ch = cw * 1.4;
+    s.cw = cw; s.ch = ch; s.cx0 = (g.W - (cw + 8) * 5 + 8) / 2; s.cy = g.bot - ch - 110;
+    s.btn = { x: g.W / 2 - 90, y: g.bot - 80, w: 180, h: 54 };
+  }
+  const cardRect = (s, i) => ({ x: s.cx0 + i * (s.cw + 8), y: s.cy, w: s.cw, h: s.ch });
+  function deal(g) {
+    const s = g.s; if (s.done || s.flip > 0) return;
+    if (s.phase === 'bet') {
+      if (s.credits < s.bet) return;
+      s.credits -= s.bet; s.deck = shuffle([...Array(52).keys()].map((k) => ({ r: k % 13, s: Math.floor(k / 13) })));
+      s.hand = s.deck.splice(0, 5); s.hold = [0, 0, 0, 0, 0]; s.phase = 'hold'; s.flip = 1; s.flipMask = [1, 1, 1, 1, 1]; s.result = null; s.hands--;
+      Arcade.sfx.whoosh();
+      // sugerencia: marca la mano actual
+      s.preview = evalHand(s.hand);
+    } else if (s.phase === 'hold') {
+      s.flipMask = s.hold.map((h) => (h ? 0 : 1));
+      for (let i = 0; i < 5; i++) if (!s.hold[i]) s.hand[i] = s.deck.pop();
+      s.flip = 1; s.phase = 'show'; Arcade.sfx.whoosh();
+      const res = evalHand(s.hand); s.result = res;
+      setTimeout(() => {
+        if (res >= 0) { const win = PAY[res][2] * s.bet; s.credits += win; g.addScore(win * g.lv, g.W / 2, s.cy - 20); res <= 3 ? (Arcade.sfx.win(), g.confetti(50)) : Arcade.sfx.coin(); g.message(Arcade.T(PAY[res][0], PAY[res][1]), 1.2, '+' + win); }
+        else Arcade.sfx.bad();
+        s.phase = 'bet';
+        if (s.credits >= s.target) { s.done = true; setTimeout(() => { if (g.state === 'play') g.win(s.hands >= s.hands0 * 0.4 ? 3 : s.hands >= s.hands0 * 0.15 ? 2 : 1); }, 900); }
+        else if (s.hands <= 0 || s.credits < s.bet) { s.done = true; g.message(Arcade.T('Sin fichas o sin manos', 'Out of chips or hands'), 1.3); setTimeout(() => { if (g.state === 'play' && g.die()) Arcade.current.def.setup(g); }, 1400); }
+      }, 450);
+    }
+  }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Guarda las buenas, cambia el resto', deco: ['♠️', '♥️', '♦️', '♣️', '🃏', '💰'], font: 'serif', bg: ['#1c5c40', '#123a2a'],
+    music: { mode: 'mixo', bpm: 96, wave: 'triangle', style: 'chill', root: 55 }, voice: { wave: 'triangle', mul: 1.1, echo: 0.3 },
+    en: { title: 'Poker', tag: 'Keep the good ones, swap the rest', help: 'Arcade video poker (any pair pays). Press <b>Deal</b> to get 5 cards. <b>Tap</b> the cards you want to <b>keep</b> and press <b>Draw</b>: the others are replaced. The final hand pays according to the table, from a single pair up to a royal flush. Reach the chip target before you run out of hands.', tvHelp: 'D-pad to the cards · OK to keep one · OK on the button to deal.', dict: { 'Repartir': 'Deal', 'Cambiar': 'Draw', 'GUARDADA': 'HELD', 'Fichas: ': 'Chips: ', 'Manos: ': 'Hands: ', 'Objetivo: ': 'Target: ' } },
+    tvHelp: 'Cruceta hasta las cartas · OK para guardar · OK en el botón para repartir.',
+    tv: { mode: 'tap', targets: (g) => { const s = g.s; if (!s.btn) return []; const o = [s.btn]; if (s.phase === 'hold') for (let i = 0; i < 5; i++) o.push(cardRect(s, i)); return o; } },
+    id: 'poker', title: 'Póker', emoji: '🃏', color: '#e03131', origin: 'Video Poker / Card Game',
+    help: 'Póker de máquina. Pulsa <b>Repartir</b> para recibir 5 cartas. <b>Toca</b> las que quieras <b>guardar</b> y pulsa <b>Cambiar</b>: las demás se sustituyen. La mano final paga según la tabla, desde una simple pareja hasta la escalera real. Llega a las fichas objetivo antes de quedarte sin manos.',
+    lives: 3, levels: 0, cap: 30, evalHand,
+    setup(g) {
+      const L = g.lv; g.s = { credits: 100, bet: 5, phase: 'bet', hand: [], hold: [0, 0, 0, 0, 0], flip: 0, flipMask: [1, 1, 1, 1, 1], result: null, done: false };
+      const s = g.s; s.hands = s.hands0 = clamp(26 - Math.floor(L / 3), 14, 26); s.target = 100 + Math.round(s.hands0 * 2.2 / 5) * 5 + Math.min(L, 30); geo(g);
+    },
+    layout(g) { if (g.s.btn) geo(g); },
+    tap(g, p) {
+      const s = g.s, b = s.btn;
+      if (p.x >= b.x && p.x <= b.x + b.w && p.y >= b.y && p.y <= b.y + b.h) return deal(g);
+      if (s.phase !== 'hold') return;
+      for (let i = 0; i < 5; i++) { const R = cardRect(s, i); if (p.x >= R.x && p.x <= R.x + R.w && p.y >= R.y && p.y <= R.y + R.h) { s.hold[i] ^= 1; Arcade.sfx.tick(); } }
+    },
+    key(g, k, d) { if (!d) return; const s = g.s; if (k >= '1' && k <= '5' && s.phase === 'hold') s.hold[+k - 1] ^= 1; if (k === 'Enter') deal(g); },
+    update(g, dt) { const s = g.s; s.flip = Math.max(0, s.flip - dt * 3); },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      const bg = ctx.createRadialGradient(W / 2, H * 0.6, 20, W / 2, H * 0.6, Math.max(W, H)); bg.addColorStop(0, '#2b8a5e'); bg.addColorStop(1, '#0c2a1e');
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      if (!s.btn) return;
+      // tabla de pagos
+      const tw = Math.min(W - 30, 420), tx = (W - tw) / 2, ty = g.top + 46, rh = Math.min(20, (s.cy - ty - 40) / PAY.length);
+      ctx.fillStyle = 'rgba(0,0,0,.3)'; Arcade.rr(ctx, tx - 8, ty - 8, tw + 16, rh * PAY.length + 16, 10); ctx.fill();
+      PAY.forEach(([es, en, m], i) => {
+        const hit = s.phase === 'bet' && s.result === i, prev = s.phase === 'hold' && s.preview === i;
+        if (hit || prev) { ctx.fillStyle = hit ? 'rgba(255,212,59,.45)' : 'rgba(255,255,255,.12)'; ctx.fillRect(tx - 4, ty + i * rh, tw + 8, rh); }
+        Arcade.txt(ctx, Arcade.T(es, en), tx + 6, ty + i * rh + rh / 2, rh * 0.62, '#fff3bf', 'left', 800);
+        Arcade.txt(ctx, String(m * s.bet), tx + tw - 6, ty + i * rh + rh / 2, rh * 0.62, '#ffd43b', 'right', 900);
+      });
+      Arcade.txt(ctx, 'Fichas: ' + s.credits + '   ·   Objetivo: ' + s.target + '   ·   Manos: ' + s.hands, W / 2, g.top + 22, 13, '#fff', 'center', 800);
+      // cartas
+      for (let i = 0; i < 5; i++) {
+        const R = cardRect(s, i), c = s.hand[i], f = s.flipMask[i] ? s.flip : 0, showFront = c && f < 0.5;
+        const sx = Math.abs(Math.cos(f * Math.PI)) || 0.05, lift = s.hold[i] && s.phase === 'hold' ? -12 : 0;
+        ctx.save(); ctx.translate(R.x + R.w / 2, R.y + R.h / 2 + lift); ctx.scale(Math.max(0.05, sx), 1);
+        ctx.fillStyle = 'rgba(0,0,0,.3)'; Arcade.rr(ctx, -R.w / 2 + 3, -R.h / 2 + 4, R.w, R.h, 10); ctx.fill();
+        if (showFront) {
+          ctx.fillStyle = '#fff'; Arcade.rr(ctx, -R.w / 2, -R.h / 2, R.w, R.h, 10); ctx.fill();
+          const red = c.s === 1 || c.s === 2;
+          Arcade.txt(ctx, RANKS[c.r], -R.w / 2 + R.w * 0.2, -R.h / 2 + R.h * 0.14, R.w * 0.28, red ? '#e03131' : '#212529', 'center', 900);
+          Arcade.emoji(ctx, SUITS[c.s], 0, R.h * 0.08, R.w * 0.5);
+          if (c.r >= 9 && c.r <= 11) Arcade.emoji(ctx, ['🤴', '👸', '👑'][c.r - 9], R.w * 0.22, -R.h * 0.3, R.w * 0.28);
+        } else {
+          const gr = ctx.createLinearGradient(-R.w / 2, -R.h / 2, R.w / 2, R.h / 2); gr.addColorStop(0, '#c92a2a'); gr.addColorStop(1, '#5c0d0d');
+          ctx.fillStyle = gr; Arcade.rr(ctx, -R.w / 2, -R.h / 2, R.w, R.h, 10); ctx.fill();
+          ctx.strokeStyle = 'rgba(255,255,255,.4)'; ctx.lineWidth = 2; Arcade.rr(ctx, -R.w / 2 + 5, -R.h / 2 + 5, R.w - 10, R.h - 10, 7); ctx.stroke();
+          Arcade.emoji(ctx, '🃏', 0, 0, R.w * 0.4, { alpha: 0.6 });
+        }
+        ctx.restore();
+        if (s.hold[i] && s.phase !== 'bet') Arcade.txt(ctx, 'GUARDADA', R.x + R.w / 2, R.y + R.h + 14 + lift, Math.min(13, R.w * 0.16), '#ffd43b', 'center', 900);
+      }
+      const b = s.btn, en = s.phase !== 'show' && !s.done;
+      ctx.fillStyle = en ? '#fab005' : 'rgba(255,255,255,.2)'; Arcade.rr(ctx, b.x, b.y, b.w, b.h, 27); ctx.fill();
+      Arcade.txt(ctx, s.phase === 'hold' ? 'Cambiar' : 'Repartir', b.x + b.w / 2, b.y + b.h / 2 + 1, 22, '#3d2900', 'center', 900);
+    },
+  });
+})();
+</script>
+</body>
+</html>

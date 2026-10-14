@@ -1,0 +1,122 @@
+// Bloques|#141433
+(function () {
+  const { ri, clamp, shuffle } = Arcade;
+  const C = 10, R = 20;
+  const SH = {
+    I: [[0, 1], [1, 1], [2, 1], [3, 1]], O: [[1, 0], [2, 0], [1, 1], [2, 1]], T: [[1, 0], [0, 1], [1, 1], [2, 1]],
+    S: [[1, 0], [2, 0], [0, 1], [1, 1]], Z: [[0, 0], [1, 0], [1, 1], [2, 1]], J: [[0, 0], [0, 1], [1, 1], [2, 1]], L: [[2, 0], [0, 1], [1, 1], [2, 1]],
+  };
+  const EM = { I: '🟦', O: '🟨', T: '🟪', S: '🟩', Z: '🟥', J: '🟫', L: '🟧' };
+  const GARB = '⬜';
+
+  function geo(g) { const s = g.s, Ha = g.bot - g.top - 20; s.cs = Math.min((g.W - 110) / C, Ha / R); s.ox = Math.max(8, (g.W - s.cs * C) / 2 - 40); s.oy = g.top + 10 + (Ha - s.cs * R) / 2; }
+  function bag(s) { if (!s.bag.length) s.bag = shuffle(Object.keys(SH)); return s.bag.pop(); }
+  function cells(p) { const n = p.k === 'I' ? 4 : p.k === 'O' ? 4 : 3; return SH[p.k].map(([x, y]) => { for (let i = 0; i < p.rot; i++) { if (p.k === 'O') break; [x, y] = [n - 1 - y, x]; } return [p.x + x, p.y + y]; }); }
+  const fits = (s, p) => cells(p).every(([x, y]) => x >= 0 && x < C && y < R && (y < 0 || !s.b[y][x]));
+  function spawn(g) {
+    const s = g.s; s.p = { k: s.next.shift(), rot: 0, x: 3, y: -1 }; s.next.push(bag(s)); s.canHold = true; s.lockT = 0;
+    if (!fits(s, s.p)) { g.message(Arcade.T('¡Arriba del todo!', 'Topped out!'), 1.2); if (g.die()) { for (let r = 0; r < R; r++) s.b[r].fill(null); } }
+  }
+  function move(g, dx, dy) { const s = g.s; if (!s.p || s.clearing) return false; const q = { ...s.p, x: s.p.x + dx, y: s.p.y + dy }; if (fits(s, q)) { s.p = q; if (dy === 0) s.lockT = 0; return true; } return false; }
+  function rotate(g) {
+    const s = g.s; if (!s.p || s.clearing) return;
+    for (const k of [0, -1, 1, -2, 2]) for (const ky of [0, -1]) { const q = { ...s.p, rot: (s.p.rot + 1) % 4, x: s.p.x + k, y: s.p.y + ky }; if (fits(s, q)) { s.p = q; s.lockT = 0; Arcade.sfx.move(); return; } }
+  }
+  function hard(g) { const s = g.s; if (!s.p || s.clearing) return; let n = 0; while (move(g, 0, 1)) n++; g.addScore(n * 2); lock(g); g.shake(0.1, 3); }
+  function hold(g) { const s = g.s; if (!s.p || !s.canHold || s.clearing) return; const k = s.p.k; if (s.hold) { s.p = { k: s.hold, rot: 0, x: 3, y: -1 }; } else spawn(g); s.hold = k; s.canHold = false; Arcade.sfx.whoosh(); }
+  function lock(g) {
+    const s = g.s;
+    for (const [x, y] of cells(s.p)) if (y >= 0) s.b[y][x] = EM[s.p.k];
+    if (cells(s.p).some(([, y]) => y < 0)) { s.p = null; g.message(Arcade.T('¡Arriba del todo!', 'Topped out!'), 1.2); if (g.die()) { for (let r = 0; r < R; r++) s.b[r].fill(null); spawn(g); } return; }
+    s.p = null; Arcade.tone(150, 0.06, 'square', 0.06);
+    const full = []; for (let r = 0; r < R; r++) if (s.b[r].every(Boolean)) full.push(r);
+    if (full.length) { s.clearing = { rows: full, t: 0.3 }; Arcade.sfx.combo(full.length * 3); if (full.length === 4) { g.flash('#fff', 0.2); g.message('¡TETRA!', 0.8); } }
+    else { s.combo = 0; spawn(g); }
+  }
+  function finishClear(g) {
+    const s = g.s, rows = s.clearing.rows; s.clearing = null;
+    for (const r of rows) { for (let c = 0; c < C; c++) g.burst(s.ox + (c + 0.5) * s.cs, s.oy + (r + 0.5) * s.cs, { n: 2, color: ['#fff', '#ffd43b'], speed: 120, size: 3 }); s.b.splice(r, 1); s.b.unshift(new Array(C).fill(null)); }
+    s.combo++; s.lines += rows.length;
+    g.addScore([0, 100, 300, 500, 800][rows.length] * g.lv + (s.combo > 1 ? 50 * s.combo * g.lv : 0), s.ox + C * s.cs / 2, s.oy + rows[0] * s.cs);
+    if (s.combo > 1) g.float('Combo x' + s.combo, s.ox + C * s.cs / 2, s.oy + rows[0] * s.cs - 30, '#ffd43b', 20);
+    if (s.lines >= s.need) { s.won = true; setTimeout(() => { if (g.state === 'play') g.win(); }, 500); return; }
+    spawn(g);
+  }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Encaja, completa, desaparece', deco: ['🟦', '🟨', '🟪', '🟩', '🟥', '🟧'], font: 'impact', bg: ['#2a2a66', '#141433'],
+    music: { mode: 'harm', bpm: 140, wave: 'square', style: 'arcade', root: 57 }, voice: { wave: 'square', mul: 1, echo: 0.2 },
+    ambient: { e: ['✨'], n: 8, vy: 0, sway: 0, twinkle: 1, alpha: 0.2, size: [6, 12] },
+    en: { title: 'Blocks', tag: 'Fit, fill, vanish', help: 'Pieces fall from the top. <b>Drag</b> sideways to move them, <b>tap</b> to rotate, drag down to drop faster and <b>swipe down</b> quickly to drop instantly. Tap the box on the right to <b>hold</b> a piece for later. Complete full rows to clear them; clearing 4 at once is a TETRA. Clear the lines each level asks for; later levels start with junk rows.', tvHelp: '◀ ▶ move · ▲ or OK rotate · ▼ drop faster · ⏩ hold piece.', dict: { 'Líneas: ': 'Lines: ', 'Siguiente': 'Next', 'Guardar': 'Hold', '¡Arriba del todo!': 'Topped out!' } },
+    tvHelp: '◀ ▶ mover · ▲ u OK girar · ▼ bajar rápido · ⏩ guardar pieza.',
+    id: 'bloques', title: 'Bloques', emoji: '🟪', color: '#9775fa', origin: 'Tetris (Pajitnov, 1984)',
+    help: 'Caen piezas desde arriba. <b>Arrastra</b> a los lados para moverlas, <b>toca</b> para girarlas, arrastra hacia abajo para que bajen más rápido y <b>desliza hacia abajo</b> de golpe para soltarlas al instante. Toca la caja de la derecha para <b>guardar</b> una pieza para luego. Completa filas enteras para que desaparezcan; 4 a la vez es un TETRA. Haz las líneas que pide cada nivel; en los niveles altos empiezas con filas de basura.',
+    lives: 3, levels: 0, cap: 30,
+    setup(g) {
+      g.s = { b: [...Array(R)].map(() => new Array(C).fill(null)), bag: [], next: [], hold: null, lines: 0, combo: 0, t: 0 };
+      const s = g.s, L = g.lv; geo(g);
+      for (let i = 0; i < 3; i++) s.next.push(bag(s));
+      const garbage = Math.min(Math.max(0, L - 3), 10);
+      for (let r = R - garbage; r < R; r++) { const hole = ri(0, C - 1); for (let c = 0; c < C; c++) if (c !== hole && Math.random() < 0.85) s.b[r][c] = GARB; }
+      s.need = 10 + Math.min(L, 30); s.fall = Math.max(0.06, 0.8 * Math.pow(0.88, L - 1));
+      spawn(g);
+    },
+    layout(g) { if (g.s.b) geo(g); },
+    down(g, p) { const s = g.s; s.dx0 = p.x; s.dy0 = p.y; s.moved = false; s.t0 = performance.now(); },
+    move(g, p) {
+      const s = g.s; if (s.dx0 == null) return;
+      while (p.x - s.dx0 > s.cs * 0.9) { s.dx0 += s.cs * 0.9; if (move(g, 1, 0)) Arcade.sfx.tick(); s.moved = true; }
+      while (s.dx0 - p.x > s.cs * 0.9) { s.dx0 -= s.cs * 0.9; if (move(g, -1, 0)) Arcade.sfx.tick(); s.moved = true; }
+      while (p.y - s.dy0 > s.cs * 0.9 && performance.now() - s.t0 > 180) { s.dy0 += s.cs * 0.9; if (move(g, 0, 1)) g.addScore(1); s.moved = true; }
+    },
+    up(g) { g.s.dx0 = null; },
+    tap(g, p) {
+      const s = g.s, hx = s.ox + C * s.cs + 14, hy = s.oy + s.cs * 12;
+      if (p.x > hx && p.y > hy - 10 && p.y < hy + s.cs * 4) return hold(g);
+      rotate(g);
+    },
+    swipe(g, d) { if (d === 'down' && !g.s.moved) hard(g); else if (d === 'down' && performance.now() - g.s.t0 < 200) hard(g); if (d === 'up') hold(g); },
+    key(g, k, d) {
+      const s = g.s;
+      if (k === 'ArrowDown') { s.soft = d; return; }
+      if (!d) return;
+      if (k === 'ArrowLeft') move(g, -1, 0); else if (k === 'ArrowRight') move(g, 1, 0);
+      else if (k === 'ArrowUp' || k === ' ') rotate(g); else if (k === 'f' || k === 'c' || k === 'Shift') hold(g); else if (k === 'r') hard(g);
+    },
+    update(g, dt) {
+      const s = g.s; if (s.won) return;
+      if (s.clearing) { s.clearing.t -= dt; if (s.clearing.t <= 0) finishClear(g); return; }
+      if (!s.p) return;
+      s.t += dt; const iv = s.soft ? Math.min(0.04, s.fall) : s.fall;
+      while (s.t >= iv) { s.t -= iv; if (!move(g, 0, 1)) { s.lockT += iv; if (s.lockT > 0.5) { lock(g); return; } } else if (s.soft) g.addScore(1); }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      const bg = ctx.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, '#2a2a66'); bg.addColorStop(1, '#0b0b1f');
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      if (!s.b) return;
+      const cs = s.cs;
+      ctx.fillStyle = 'rgba(0,0,0,.45)'; Arcade.rr(ctx, s.ox - 4, s.oy - 4, cs * C + 8, cs * R + 8, 8); ctx.fill();
+      ctx.strokeStyle = 'rgba(255,255,255,.05)'; ctx.lineWidth = 1;
+      for (let c = 1; c < C; c++) { ctx.beginPath(); ctx.moveTo(s.ox + c * cs, s.oy); ctx.lineTo(s.ox + c * cs, s.oy + R * cs); ctx.stroke(); }
+      const block = (e, x, y, a) => Arcade.emoji(ctx, e, s.ox + (x + 0.5) * cs, s.oy + (y + 0.5) * cs, cs * 1.12, a != null ? { alpha: a } : undefined);
+      for (let r = 0; r < R; r++) for (let c = 0; c < C; c++) if (s.b[r][c]) { const fl = s.clearing && s.clearing.rows.includes(r); block(fl ? '⬜' : s.b[r][c], c, r, fl ? 0.5 + Math.sin(g.rt * 40) * 0.5 : 1); }
+      if (s.p) {
+        let gp = { ...s.p }; while (fits(s, { ...gp, y: gp.y + 1 })) gp.y++;
+        for (const [x, y] of cells(gp)) if (y >= 0) block(EM[s.p.k], x, y, 0.22);
+        for (const [x, y] of cells(s.p)) if (y >= 0) block(EM[s.p.k], x, y);
+      }
+      // panel lateral
+      const px = s.ox + C * cs + 14, mini = cs * 0.62;
+      const piece = (k, cx, cy, a) => { const cl = SH[k]; const minx = Math.min(...cl.map((q) => q[0])), maxx = Math.max(...cl.map((q) => q[0])), maxy = Math.max(...cl.map((q) => q[1])); for (const [x, y] of cl) Arcade.emoji(ctx, EM[k], cx + (x - (minx + maxx) / 2) * mini, cy + (y - maxy / 2) * mini, mini * 1.1, { alpha: a }); };
+      Arcade.txt(ctx, 'Siguiente', px + cs * 1.4, s.oy + 8, 12, '#d0bfff', 'center', 800);
+      s.next.forEach((k, i) => piece(k, px + cs * 1.4, s.oy + 36 + i * cs * 2.3, i ? 0.6 : 1));
+      const hy = s.oy + cs * 12;
+      ctx.strokeStyle = s.canHold ? 'rgba(255,255,255,.4)' : 'rgba(255,255,255,.12)'; ctx.lineWidth = 2; Arcade.rr(ctx, px, hy - 10, cs * 2.8, cs * 3.4, 8); ctx.stroke();
+      Arcade.txt(ctx, 'Guardar', px + cs * 1.4, hy + 4, 12, '#d0bfff', 'center', 800);
+      if (s.hold) piece(s.hold, px + cs * 1.4, hy + cs * 1.8, s.canHold ? 1 : 0.4);
+      Arcade.txt(ctx, 'Líneas: ', px + cs * 1.4, hy + cs * 4.4, 12, '#d0bfff', 'center', 800);
+      Arcade.txt(ctx, Math.min(s.lines, s.need) + '/' + s.need, px + cs * 1.4, hy + cs * 4.4 + 20, 18, '#ffd43b', 'center', 900);
+    },
+  });
+})();

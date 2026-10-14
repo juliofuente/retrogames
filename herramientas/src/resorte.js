@@ -1,0 +1,74 @@
+// Resorte|#ffd8a8
+(function () {
+  const { ri, rand, clamp } = Arcade;
+  const NINJAS = ['🥷', '🐸', '🐰', '🦘', '🐒'];
+
+  function geo(g) { const s = g.s; s.u = clamp(g.W / 420, 0.7, 1.5); s.base = g.bot - 40; }
+  function addPillar(g) {
+    const s = g.s, L = g.lv, last = s.ps[s.ps.length - 1];
+    const gap = rand(70, 120 + Math.min(L, 20) * 7), w = Math.max(26, rand(46, 80) - Math.min(L, 20) * 1.6), h = clamp(last.h + rand(-60, 60), 60, 280);
+    s.ps.push({ x: last.x + last.w / 2 + gap + w / 2, w, h });
+  }
+  function charge(g) { const s = g.s; if (s.state === 'idle') { s.state = 'charge'; s.pw = 0; } }
+  function release(g) {
+    const s = g.s; if (s.state !== 'charge') return;
+    const p = 120 + s.pw * 520; s.vx = p * 0.55; s.vy = -p * 0.95; s.state = 'fly'; Arcade.tone(300 + s.pw * 500, 0.12, 'triangle', 0.08, 300);
+  }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Carga el muelle y salta', deco: ['🥷', '🌀', '🏯', '⭐', '🎋', '🌸'], font: 'impact', bg: ['#ffe8cc', '#ffd8a8'],
+    music: { mode: 'mixo', bpm: 104, wave: 'triangle', style: 'chill', root: 62 }, voice: { wave: 'triangle', mul: 1.1, echo: 0.3 },
+    en: { title: 'Spring', tag: 'Charge the spring and jump', help: '<b>Hold</b> your finger to compress the spring: the longer you hold, the further you jump. <b>Release</b> to jump onto the next pillar. If you fall short or overshoot, you fall! Landing near the centre is a perfect jump worth double. Reach the number of pillars each level asks for.', tvHelp: 'Hold OK to charge and release to jump.', dict: { 'Pilares: ': 'Pillars: ', '¡Perfecto!': 'Perfect!' } },
+    tvHelp: 'Mantén OK para cargar y suelta para saltar.',
+    id: 'resorte', title: 'Resorte', emoji: '🥷', color: '#ff922b', origin: 'Spring Ninja (Ketchapp)',
+    help: '<b>Mantén el dedo</b> para comprimir el muelle: cuanto más tiempo, más lejos saltas. <b>Suelta</b> para saltar al siguiente pilar. Si te quedas corto o te pasas, ¡caes! Aterrizar cerca del centro es un salto perfecto que vale el doble. Llega a los pilares que pide cada nivel.',
+    lives: 3, levels: 0, cap: 20,
+    setup(g) {
+      g.s = { ps: [{ x: 80, w: 70, h: 120 }], state: 'idle', pw: 0, cur: 0, done: 0, cam: 0, ninja: NINJAS[(g.level - 1) % NINJAS.length] };
+      const s = g.s; geo(g); for (let i = 0; i < 4; i++) addPillar(g); s.need = 6 + Math.min(g.lv, 14); s.x = s.ps[0].x; s.y = 0;
+    },
+    layout(g) { if (g.s.ps) geo(g); },
+    down(g) { charge(g); },
+    up(g) { release(g); },
+    key(g, k, d) { if (k === ' ') d ? charge(g) : release(g); },
+    update(g, dt) {
+      const s = g.s;
+      if (s.state === 'charge') { s.pw = Math.min(1, s.pw + dt * 0.75); if (Math.random() < dt * 20) Arcade.tone(200 + s.pw * 400, 0.02, 'square', 0.02); }
+      else if (s.state === 'fly') {
+        s.vy += 900 * dt; const px = s.x, py = s.y; s.x += s.vx * dt; s.y += s.vy * dt; // y = altura sobre el pilar base (negativa hacia arriba)
+        const n = s.ps[s.cur + 1], c = s.ps[s.cur];
+        const top = (p) => -(p.h - s.ps[0].h);
+        if (s.vy > 0) {
+          for (const p of [n, c]) { const t = top(p); if (py <= t && s.y >= t && Math.abs(s.x - p.x) <= p.w / 2 + 4) { s.y = t; s.state = 'idle'; if (p === n) { s.cur++; s.done++; const perfect = Math.abs(s.x - p.x) < 6; g.addScore((perfect ? 2 : 1) * g.lv, g.W * 0.3, s.base - 120); if (perfect) { g.float(Arcade.T('¡Perfecto!', 'Perfect!'), g.W * 0.4, s.base - 160, '#e8590c', 24); Arcade.sfx.coin(); s.x = p.x; } else Arcade.tone(250, 0.06, 'square', 0.06); addPillar(g); if (s.done >= s.need) { s.won = true; g.confetti(60); setTimeout(() => { if (g.state === 'play') g.win(); }, 600); } } else Arcade.tone(250, 0.06, 'square', 0.06); return; } }
+          // choque lateral con el siguiente pilar
+          if (s.x > n.x - n.w / 2 && s.x < n.x + n.w / 2 && s.y > top(n) + 4) { s.vx = -60; }
+        }
+        if (s.y > 700) { s.state = 'fall'; Arcade.tone(400, 0.6, 'sine', 0.08, -300); setTimeout(() => { if (g.state === 'play' && g.die()) { const c = s.ps[s.cur]; s.x = c.x; s.y = -(c.h - s.ps[0].h); s.state = 'idle'; } }, 700); }
+      }
+      const want = s.ps[s.cur].x - g.W * 0.3 / s.u;
+      s.cam += (want - s.cam) * Math.min(1, dt * 4);
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H, u = s.u;
+      const bg = ctx.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, '#ffa94d'); bg.addColorStop(1, '#fff4e6');
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      if (!s.ps) return;
+      Arcade.emoji(ctx, '🌅', W * 0.75, g.top + 80, 90, { alpha: 0.6 });
+      ctx.fillStyle = 'rgba(232,89,12,.15)'; ctx.beginPath(); ctx.moveTo(0, H); for (let x = 0; x <= W; x += 20) ctx.lineTo(x, s.base - 120 - Math.abs(Math.sin((x + s.cam * u * 0.3) / 90)) * 80); ctx.lineTo(W, H); ctx.fill();
+      const base0 = s.base - s.ps[0].h * u, X = (x) => (x - s.cam) * u, Y = (y) => base0 + y * u;
+      for (const p of s.ps) {
+        const x = X(p.x - p.w / 2), y = s.base - p.h * u;
+        const gr = ctx.createLinearGradient(x, 0, x + p.w * u, 0); gr.addColorStop(0, '#5c3d2e'); gr.addColorStop(0.5, '#8d5524'); gr.addColorStop(1, '#5c3d2e');
+        ctx.fillStyle = gr; ctx.fillRect(x, y, p.w * u, H - y);
+        ctx.fillStyle = '#c92a2a'; ctx.fillRect(x - 3, y, p.w * u + 6, 8 * u);
+        ctx.fillStyle = '#ffd43b'; ctx.fillRect(X(p.x) - 3, y, 6, 4);
+      }
+      // ninja + muelle
+      const nx = X(s.x), ny = s.state === 'fall' ? Y(s.y) : Y(s.y), comp = s.state === 'charge' ? s.pw : 0;
+      ctx.strokeStyle = '#495057'; ctx.lineWidth = 3; ctx.beginPath(); const sh = 22 * u * (1 - comp * 0.6); for (let i = 0; i <= 8; i++) ctx.lineTo(nx + (i % 2 ? 8 : -8) * u, ny - i * sh / 8); ctx.stroke();
+      Arcade.emoji(ctx, s.ninja, nx, ny - sh - 16 * u, 36 * u, { rot: s.state === 'fly' ? clamp(s.vx / 600, -0.5, 0.5) : 0, flip: true });
+      if (s.state === 'charge') { const bw = 120; ctx.fillStyle = 'rgba(0,0,0,.2)'; Arcade.rr(ctx, W / 2 - bw / 2, g.top + 40, bw, 12, 6); ctx.fill(); ctx.fillStyle = `hsl(${120 - s.pw * 120},90%,50%)`; Arcade.rr(ctx, W / 2 - bw / 2, g.top + 40, bw * s.pw, 12, 6); ctx.fill(); }
+      Arcade.txt(ctx, 'Pilares: ' + s.done + '/' + s.need, W / 2, g.top + 20, 16, '#7a3b00', 'center', 900);
+    },
+  });
+})();

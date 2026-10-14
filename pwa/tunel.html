@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Túnel · Arcade Perdido</title>
+<meta name="theme-color" content="#000000">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css">
+</head>
+<body class="game">
+<script src="config.js"></script>
+<script src="common.js"></script>
+<script>
+(function () {
+  const { rand, ri, clamp } = Arcade;
+  const N = 16, TAU = Math.PI * 2;
+  const SHAPES = [
+    () => 1,
+    (a) => 1 / Math.max(Math.abs(Math.cos(a)), Math.abs(Math.sin(a))) * 0.78,
+    (a, i) => (i % 2 ? 0.72 : 1),
+    (a) => 0.8 + 0.2 * Math.cos(a * 3),
+    (a) => 0.75 + 0.25 * Math.abs(Math.sin(a * 2)),
+  ];
+  const COLS = ['#4dabf7', '#ffd43b', '#da77f2', '#69db7c', '#ff922b'];
+
+  function geo(g) { const s = g.s; s.cx = g.W / 2; s.cy = g.top + (g.bot - g.top) / 2; s.R = Math.min(g.W, g.bot - g.top) / 2 - 18; s.r0 = s.R * 0.12; }
+  function bpt(s, i, inner) { const a = i / N * TAU - Math.PI / 2, f = SHAPES[s.shape](a, i), r = (inner ? s.r0 : s.R) * f; return [s.cx + Math.cos(a) * r, s.cy + Math.sin(a) * r]; }
+  function lanePt(s, lane, z) {
+    const a0 = bpt(s, lane, true), a1 = bpt(s, lane + 1, true), b0 = bpt(s, lane, false), b1 = bpt(s, lane + 1, false);
+    const ix = (a0[0] + a1[0]) / 2, iy = (a0[1] + a1[1]) / 2, ox = (b0[0] + b1[0]) / 2, oy = (b0[1] + b1[1]) / 2;
+    const k = z * z * 0.6 + z * 0.4;
+    return [ix + (ox - ix) * k, iy + (oy - iy) * k, k];
+  }
+  const wrap = (l) => ((l % N) + N) % N;
+  function laneDir(a, b) { let d = wrap(b - a); return d === 0 ? 0 : d <= N / 2 ? 1 : -1; }
+  function spawn(g) {
+    const s = g.s, L = g.lv, r = Math.random();
+    const type = L >= 4 && r < 0.15 ? 'S' : L >= 2 && r < 0.35 ? 'T' : 'F';
+    s.en.push({ type, lane: ri(0, N - 1), z: 0, v: (0.12 + L * 0.012) * (type === 'T' ? 0.7 : 1) * rand(0.85, 1.15), crawlT: 0.4, back: false });
+    s.spawned++;
+  }
+  function kill(g, e, pts) {
+    const s = g.s; e.dead = true;
+    const [x, y] = lanePt(s, e.lane, e.z);
+    if (pts) g.addScore(pts, x, y); g.burst(x, y, { n: 8, color: e.type === 'T' ? '#da77f2' : e.type === 'S' ? '#69db7c' : '#ff6b6b', speed: 160, size: 2.5 });
+    Arcade.tone(300 + e.z * 500, 0.05, 'square', 0.05);
+    if (e.type === 'T') for (const d of [-1, 1]) s.en.push({ type: 'F', lane: wrap(e.lane + d), z: e.z, v: 0.2 + g.lv * 0.015, crawlT: 0.4 });
+  }
+
+  Arcade.game({
+    /*THEME*/ tag: "Vectores en el borde del abismo", deco: ["🌀", "⚡", "🔺", "💠", "✳️", "⚡"], font: "mono", bg: ["#0a0a1a", "#000000"], music: {"mode": "minor", "bpm": 146, "wave": "sawtooth", "style": "drive", "root": 52}, voice: {"wave": "sawtooth", "mul": 1, "echo": 0.3},
+    /*EN*/ en: {"title": "Tunnel", "tag": "Vectors on the edge of the abyss", "help": "You are on the rim of a tunnel seen from above. <b>Move your finger around</b> the tunnel and your ship goes to that lane; it fires towards the centre on its own. Enemies come from the depths: red ones 🔺 climb the rim towards you, purple ones split in two and green ones leave <b>spikes</b>. <b>Double tap</b>: Superzapper (once per level) destroys everything.", "tvHelp": "◀ ▶ spin around the tunnel · OK superzapper (once per level).", "dict": {"¡Pinchos en tu carril!": "Spikes in your lane!", "⚡ Supercañón: doble toque": "⚡ Superzapper: double tap", "⚡ usado": "⚡ used"}},
+    /*TV*/ tvHelp: "◀ ▶ girar alrededor del túnel · OK supercañón (una vez por nivel).",
+    id: 'tunel', title: 'Túnel', emoji: '🌀', color: '#4dabf7', origin: 'Tempest (Atari, 1981)',
+    help: 'Estás en el borde de un túnel visto desde arriba. <b>Mueve el dedo alrededor</b> del túnel y tu nave irá a ese carril; dispara sola hacia el centro. Los enemigos salen del fondo: los rojos 🔺 trepan por el borde hacia ti, los morados se dividen en dos y los verdes dejan <b>pinchos</b>. <b>Doble toque</b>: Supercañón (una vez por nivel) que destruye todo.',
+    lives: 3, levels: 0, cap: 20,
+    setup(g) {
+      g.s = { shape: (g.level - 1) % SHAPES.length, pl: 0, plV: 0, shots: [], en: [], spikes: new Array(N).fill(0), fireT: 0, spawnT: 1, spawned: 0, zap: 1, warp: 0, inv: 1, lastTap: 0 };
+      const s = g.s; s.total = Math.min(45, 10 + g.lv * 3); geo(g);
+    },
+    layout(g) { if (g.s.en) geo(g); },
+    down(g, p) { this.move(g, p); const s = g.s, now = performance.now(); if (now - s.lastTap < 300 && s.zap > 0) { s.zap--; for (const e of s.en) if (!e.dead) kill(g, e, 50); g.shake(0.4, 10); Arcade.sfx.boom(); s.flash = 0.3; } s.lastTap = now; },
+    move(g, p) { const s = g.s, a = Math.atan2(p.y - s.cy, p.x - s.cx) + Math.PI / 2; s.target = wrap(Math.floor(((a % TAU) + TAU) % TAU / TAU * N)); },
+    hover(g, x, y) { this.move(g, { x, y }); },
+    key(g, k, d) { if (!d) return; const s = g.s; if (k === 'ArrowLeft') s.target = wrap((s.target ?? s.pl) - 1); else if (k === 'ArrowRight') s.target = wrap((s.target ?? s.pl) + 1); else if (k === ' ') { /*TVKEY*/ if (s.zap > 0) { s.zap--; for (const e of s.en) if (!e.dead) kill(g, e, 50); g.shake(0.4, 10); Arcade.sfx.boom(); s.flash = 0.3; } } },
+    update(g, dt) {
+      const s = g.s;
+      s.inv = Math.max(0, s.inv - dt); s.flash = Math.max(0, (s.flash || 0) - dt);
+      if (s.warp) {
+        s.warp += dt;
+        if (s.warp > 1.4) { g.addScore(1000 * g.lv, g.W / 2, g.H / 2); g.win(); }
+        return;
+      }
+      if (s.target != null && s.target !== s.pl) { s.plV += dt * 18; while (s.plV >= 1 && s.target !== s.pl) { s.plV -= 1; s.pl = wrap(s.pl + laneDir(s.pl, s.target)); } } else s.plV = 0;
+      s.fireT -= dt;
+      if (s.fireT <= 0 && s.shots.length < 6) { s.fireT = 0.13; s.shots.push({ lane: s.pl, z: 1 }); }
+      for (const sh of s.shots) {
+        sh.z -= 2.4 * dt;
+        if (s.spikes[sh.lane] > 0 && sh.z < s.spikes[sh.lane]) { s.spikes[sh.lane] = Math.max(0, s.spikes[sh.lane] - 0.08); sh.dead = true; g.addScore(10); continue; }
+        for (const e of s.en) if (!e.dead && e.lane === sh.lane && Math.abs(e.z - sh.z) < 0.07) { sh.dead = true; kill(g, e, e.type === 'T' ? 100 : e.type === 'S' ? 50 : 150); break; }
+        if (sh.z <= 0) sh.dead = true;
+      }
+      s.shots = s.shots.filter(x => !x.dead);
+      s.spawnT -= dt;
+      if (s.spawned < s.total && s.spawnT <= 0) { s.spawnT = Math.max(0.35, 1.3 - g.lv * 0.05) * rand(0.6, 1.4); spawn(g); }
+      for (const e of s.en) {
+        if (e.dead) continue;
+        if (e.type === 'S') {
+          if (!e.back) { e.z += e.v * dt; s.spikes[e.lane] = Math.max(s.spikes[e.lane], e.z); if (e.z > 0.65) e.back = true; }
+          else { e.z -= e.v * dt; if (e.z <= 0) { e.back = false; e.lane = ri(0, N - 1); } }
+          continue;
+        }
+        if (e.z < 1) { e.z = Math.min(1, e.z + e.v * dt); if (e.z >= 1 && e.type === 'T') { kill(g, e, 0); continue; } }
+        else {
+          e.crawlT -= dt;
+          if (e.crawlT <= 0) { e.crawlT = Math.max(0.2, 0.5 - g.lv * 0.015); e.lane = wrap(e.lane + (laneDir(e.lane, s.pl) || 1)); }
+          if (e.lane === s.pl && s.inv <= 0) {
+            const [x, y] = lanePt(s, s.pl, 1);
+            g.burst(x, y, { n: 20, color: ['#ffd43b', '#fff', '#ff6b6b'], speed: 240 });
+            s.en = s.en.filter(o => o.z < 0.6); s.shots = [];
+            if (g.die()) s.inv = 2; return;
+          }
+        }
+      }
+      s.en = s.en.filter(e => !e.dead);
+      if (s.spawned >= s.total && !s.en.length) {
+        if (s.spikes[s.pl] > 0.15) { g.message('¡Pinchos en tu carril!', 1.3); if (g.die()) { s.spikes[s.pl] = 0; } return; }
+        s.warp = 0.001; Arcade.sfx.win();
+      }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      ctx.fillStyle = s.flash ? '#fff' : '#000'; ctx.fillRect(0, 0, W, H);
+      if (!s.en) return;
+      const col = COLS[(g.level - 1) % COLS.length];
+      ctx.save();
+      if (s.warp) { const k = 1 + s.warp * s.warp * 2; ctx.translate(s.cx, s.cy); ctx.scale(k, k); ctx.translate(-s.cx, -s.cy); ctx.globalAlpha = Math.max(0, 1 - s.warp / 1.4); }
+      ctx.strokeStyle = col; ctx.lineWidth = 1.5;
+      for (let i = 0; i < N; i++) { const a = bpt(s, i, true), b = bpt(s, i, false); ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke(); }
+      for (const inner of [true, false]) { ctx.beginPath(); for (let i = 0; i <= N; i++) { const p = bpt(s, i % N, inner); i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1]); } ctx.stroke(); }
+      // carril del jugador
+      const a0 = bpt(s, s.pl, true), a1 = bpt(s, s.pl + 1, true), b0 = bpt(s, s.pl, false), b1 = bpt(s, wrap(s.pl + 1), false);
+      ctx.fillStyle = 'rgba(255,212,59,.12)'; ctx.beginPath(); ctx.moveTo(a0[0], a0[1]); ctx.lineTo(b0[0], b0[1]); ctx.lineTo(b1[0], b1[1]); ctx.lineTo(a1[0], a1[1]); ctx.fill();
+      // pinchos
+      ctx.strokeStyle = '#69db7c'; ctx.lineWidth = 2;
+      for (let i = 0; i < N; i++) if (s.spikes[i] > 0) { const p0 = lanePt(s, i, 0), p1 = lanePt(s, i, s.spikes[i]); ctx.beginPath(); ctx.moveTo(p0[0], p0[1]); ctx.lineTo(p1[0], p1[1]); ctx.stroke(); }
+      ctx.fillStyle = '#fff3bf'; for (const sh of s.shots) { const [x, y, k] = lanePt(s, sh.lane, sh.z); ctx.beginPath(); ctx.arc(x, y, 1.5 + k * 3, 0, 6.28); ctx.fill(); }
+      for (const e of s.en) {
+        const [x, y, k] = lanePt(s, e.lane, e.z), sz = 6 + k * 18;
+        ctx.save(); ctx.translate(x, y); ctx.rotate(Math.atan2(y - s.cy, x - s.cx) + Math.PI / 2);
+        if (e.type === 'F') { ctx.strokeStyle = '#ff6b6b'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(-sz, 0); ctx.lineTo(0, -sz * 0.5); ctx.lineTo(sz, 0); ctx.lineTo(0, sz * 0.5); ctx.closePath(); ctx.stroke(); }
+        else if (e.type === 'T') { ctx.strokeStyle = '#da77f2'; ctx.lineWidth = 2; ctx.strokeRect(-sz * 0.6, -sz * 0.6, sz * 1.2, sz * 1.2); ctx.beginPath(); ctx.moveTo(-sz * 0.6, -sz * 0.6); ctx.lineTo(sz * 0.6, sz * 0.6); ctx.moveTo(sz * 0.6, -sz * 0.6); ctx.lineTo(-sz * 0.6, sz * 0.6); ctx.stroke(); }
+        else { ctx.strokeStyle = '#69db7c'; ctx.lineWidth = 2; ctx.beginPath(); for (let i = 0; i < 8; i++) { const a = i * Math.PI / 4 + g.t * 6, r = i % 2 ? sz * 0.3 : sz * 0.7; ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r); } ctx.closePath(); ctx.stroke(); }
+        ctx.restore();
+      }
+      // nave
+      if (!(s.inv > 0 && Math.floor(g.t * 10) % 2)) {
+        const m = [(b0[0] + b1[0]) / 2, (b0[1] + b1[1]) / 2], inw = lanePt(s, s.pl, 0.88);
+        ctx.strokeStyle = '#ffd43b'; ctx.lineWidth = 3; ctx.lineJoin = 'round';
+        ctx.beginPath(); ctx.moveTo(b0[0], b0[1]); ctx.lineTo(inw[0], inw[1]); ctx.lineTo(b1[0], b1[1]); ctx.lineTo(m[0] + (m[0] - s.cx) * 0.06, m[1] + (m[1] - s.cy) * 0.06); ctx.closePath(); ctx.stroke();
+      }
+      ctx.restore();
+      Arcade.txt(ctx, (s.zap ? '⚡ Supercañón: doble toque' : '⚡ usado') + '   ·   👾 ' + (s.total - s.spawned + s.en.length), W / 2, g.top + 10, 12, '#adb5bd', 'center', 800);
+    },
+  });
+})();
+</script>
+</body>
+</html>

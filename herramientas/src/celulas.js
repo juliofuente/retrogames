@@ -1,0 +1,96 @@
+// Células|#0d1b2a
+(function () {
+  const { ri, rand, clamp, pick } = Arcade;
+  const COL = ['#868e96', '#4dabf7', '#ff6b6b'], FACE = ['⚪', '🔵', '🔴'];
+
+  function build(g) {
+    const s = g.s, L = g.lv, n = clamp(8 + Math.floor(L / 2), 8, 16), AW = 1000, AH = 700;
+    s.cells = [];
+    for (let t = 0; t < 600 && s.cells.length < n; t++) {
+      const r = rand(26, 46), x = rand(60, AW - 60), y = rand(60, AH - 60);
+      if (s.cells.every((c) => Math.hypot(c.x - x, c.y - y) > c.r + r + 40)) s.cells.push({ x, y, r, own: 0, n: Math.round(r * 0.4 + rand(2, 10 + L)), grow: 0 });
+    }
+    // jugador abajo-izquierda, rival arriba-derecha
+    const byP = s.cells.slice().sort((a, b) => (a.x + a.y) - (b.x + b.y));
+    byP[0].own = 1; byP[0].n = 20; byP[0].r = Math.max(byP[0].r, 38);
+    const ne = clamp(1 + Math.floor(L / 4), 1, 3);
+    for (let i = 0; i < ne; i++) { const c = byP[byP.length - 1 - i]; c.own = 2; c.n = 20 + L * 2; c.r = Math.max(c.r, 36); }
+    s.AW = AW; s.AH = AH;
+  }
+  function geo(g) {
+    const s = g.s, land = g.W > g.H, aw = land ? s.AW : s.AH, ah = land ? s.AH : s.AW;
+    s.rot = !land; s.sc = Math.min((g.W - 20) / aw, (g.bot - g.top - 40) / ah); s.ox = (g.W - aw * s.sc) / 2; s.oy = g.top + 30 + (g.bot - g.top - 40 - ah * s.sc) / 2;
+  }
+  const P = (s, c) => (s.rot ? [s.ox + c.y * s.sc, s.oy + (s.AW - c.x) * s.sc] : [s.ox + c.x * s.sc, s.oy + c.y * s.sc]);
+  const P2 = (s, x, y) => P(s, { x, y });
+  function cellAt(g, x, y) { const s = g.s; for (const c of s.cells) { const [cx, cy] = P(s, c); if (Math.hypot(cx - x, cy - y) < c.r * s.sc + 14) return c; } return null; }
+  function send(g, from, to, frac) {
+    const s = g.s; const k = Math.floor(from.n * frac); if (k < 1 || from === to) return;
+    from.n -= k;
+    for (let i = 0; i < k; i++) s.units.push({ own: from.own, x: from.x + rand(-from.r, from.r) * 0.5, y: from.y + rand(-from.r, from.r) * 0.5, to, delay: i * 0.03 });
+    if (from.own === 1) Arcade.sfx.whoosh();
+  }
+  function ai(g, dt) {
+    const s = g.s; s.aiT -= dt; if (s.aiT > 0) return; s.aiT = Math.max(0.9, 3.2 - g.lv * 0.12);
+    const mine = s.cells.filter((c) => c.own === 2); if (!mine.length) return;
+    const src = mine.reduce((a, b) => (a.n > b.n ? a : b)); if (src.n < 8) return;
+    // objetivo: el más débil y cercano que no sea suyo
+    let best = null, bs = 1e9; for (const c of s.cells) { if (c.own === 2) continue; const sc = c.n * 3 + Math.hypot(c.x - src.x, c.y - src.y) * 0.04 - (c.own === 1 ? 5 : 0); if (sc < bs && c.n < src.n * 0.55) { bs = sc; best = c; } }
+    if (best) send(g, src, best, 0.6);
+  }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Conquista todas las células', deco: ['🔵', '🔴', '⚪', '🦠', '🧫', '🧬'], font: 'round', bg: ['#1b2f45', '#0d1b2a'],
+    music: { mode: 'dorian', bpm: 112, wave: 'sine', style: 'chill', root: 55 }, voice: { wave: 'sine', mul: 1.2, echo: 0.35 },
+    en: { title: 'Cells', tag: 'Conquer every cell', help: 'Your cells are 🔵 blue. Each one makes units over time (bigger cells, faster). <b>Drag</b> from one of your cells to another cell to send <b>half</b> of its units: if more arrive than it has, it becomes yours. Grey cells are neutral and the 🔴 red ones belong to the enemy, who attacks too. Conquer every red cell to win.', tvHelp: 'OK on your cell and then on the target.', dict: {} },
+    tvHelp: 'OK en tu célula y luego en la de destino.',
+    tv: { mode: 'drag', targets: (g) => { const s = g.s; if (!s.cells) return []; return s.cells.map((c) => { const [x, y] = P(s, c), r = c.r * s.sc; return { x: x - r, y: y - r, w: r * 2, h: r * 2 }; }); } },
+    id: 'celulas', title: 'Células', emoji: '🦠', color: '#4dabf7', origin: 'Nano War / Cirplosion / State.io',
+    help: 'Tus células son las 🔵 azules. Cada una fabrica unidades con el tiempo (las grandes, más rápido). <b>Arrastra</b> desde una célula tuya hasta otra para enviar la <b>mitad</b> de sus unidades: si llegan más de las que tiene, pasa a ser tuya. Las grises son neutrales y las 🔴 rojas del rival, que también ataca. Conquista todas las rojas para ganar.',
+    lives: 3, levels: 0, cap: 25,
+    setup(g) { g.s = { units: [], aiT: 3, drag: null }; build(g); geo(g); },
+    layout(g) { if (g.s.cells) geo(g); },
+    down(g, p) { const s = g.s, c = cellAt(g, p.x, p.y); if (c && c.own === 1) s.drag = { from: c, x: p.x, y: p.y }; },
+    move(g, p) { const s = g.s; if (s.drag) { s.drag.x = p.x; s.drag.y = p.y; } },
+    up(g, p) { const s = g.s; if (!s.drag) return; const to = cellAt(g, p.x, p.y); if (to && to !== s.drag.from) send(g, s.drag.from, to, 0.5); s.drag = null; },
+    update(g, dt) {
+      const s = g.s; if (s.done) return;
+      for (const c of s.cells) { if (c.own) { c.grow += dt * c.r / 40 * (c.own === 2 ? 0.85 + g.lv * 0.02 : 1); if (c.grow >= 1 && c.n < c.r * 2.2) { c.grow = 0; c.n++; } } c.pulse = Math.max(0, (c.pulse || 0) - dt * 3); }
+      const sp = 110;
+      for (const u of s.units) {
+        if (u.delay > 0) { u.delay -= dt; continue; }
+        const dx = u.to.x - u.x, dy = u.to.y - u.y, d = Math.hypot(dx, dy);
+        if (d < u.to.r * 0.7) {
+          u.dead = true; const c = u.to;
+          if (c.own === u.own) c.n++; else { c.n--; if (c.n < 0) { c.n = 1; c.own = u.own; c.pulse = 1; if (u.own === 1) { Arcade.sfx.coin(); g.addScore(50 * g.lv, ...P(s, c)); } else Arcade.sfx.bad(); g.ring(...P(s, c), COL[u.own], c.r * s.sc * 1.6); } }
+          c.pulse = Math.max(c.pulse || 0, 0.3);
+        } else { u.x += dx / d * sp * dt; u.y += dy / d * sp * dt; }
+      }
+      // choques entre unidades rivales
+      const blue = s.units.filter((u) => !u.dead && u.own === 1 && u.delay <= 0), red = s.units.filter((u) => !u.dead && u.own === 2 && u.delay <= 0);
+      for (const a of blue) for (const b of red) if (!b.dead && Math.abs(a.x - b.x) < 6 && Math.abs(a.y - b.y) < 6) { a.dead = b.dead = true; break; }
+      s.units = s.units.filter((u) => !u.dead);
+      ai(g, dt);
+      const reds = s.cells.some((c) => c.own === 2) || s.units.some((u) => u.own === 2), blues = s.cells.some((c) => c.own === 1) || s.units.some((u) => u.own === 1);
+      if (!reds) { s.done = true; g.addScore(s.cells.filter((c) => c.own === 1).length * 40 * g.lv, g.W / 2, g.H / 2); g.confetti(70); setTimeout(() => { if (g.state === 'play') g.win(); }, 700); }
+      else if (!blues) { s.done = true; g.message(Arcade.T('Te han conquistado', 'You were conquered'), 1.3); setTimeout(() => { if (g.state === 'play' && g.die()) Arcade.current.def.setup(g); }, 1400); }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      const bg = ctx.createRadialGradient(W / 2, H / 2, 20, W / 2, H / 2, Math.max(W, H) * 0.7); bg.addColorStop(0, '#1b2f45'); bg.addColorStop(1, '#070f18');
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      if (!s.cells) return;
+      for (const c of s.cells) {
+        const [x, y] = P(s, c), r = c.r * s.sc * (1 + (c.pulse || 0) * 0.12 + Math.sin(g.rt * 2 + c.x) * 0.02);
+        const gr = ctx.createRadialGradient(x - r * 0.3, y - r * 0.3, r * 0.1, x, y, r); gr.addColorStop(0, '#fff'); gr.addColorStop(0.3, COL[c.own]); gr.addColorStop(1, c.own === 1 ? '#1864ab' : c.own === 2 ? '#a61e4d' : '#495057');
+        ctx.globalAlpha = 0.9; ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(x, y, r, 0, 6.3); ctx.fill(); ctx.globalAlpha = 1;
+        ctx.strokeStyle = 'rgba(255,255,255,.35)'; ctx.lineWidth = 2; ctx.stroke();
+        Arcade.txt(ctx, String(c.n), x, y + 1, Math.max(12, r * 0.6), '#fff', 'center', 900, 'rgba(0,0,0,.4)');
+      }
+      for (const u of s.units) { if (u.delay > 0) continue; const [x, y] = P2(s, u.x, u.y); ctx.fillStyle = COL[u.own]; ctx.beginPath(); ctx.arc(x, y, 3.2, 0, 6.3); ctx.fill(); }
+      if (s.drag) { const [x, y] = P(s, s.drag.from); ctx.strokeStyle = 'rgba(77,171,247,.8)'; ctx.lineWidth = 4; ctx.setLineDash([10, 8]); ctx.lineDashOffset = -g.rt * 40; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(s.drag.x, s.drag.y); ctx.stroke(); ctx.setLineDash([]); const t = cellAt(g, s.drag.x, s.drag.y); if (t) { const [tx, ty] = P(s, t); ctx.beginPath(); ctx.arc(tx, ty, t.r * s.sc + 8, 0, 6.3); ctx.stroke(); } }
+      const tot = [0, 0, 0]; for (const c of s.cells) tot[c.own] += c.n; const sum = tot[1] + tot[2] || 1, bw = Math.min(W - 40, 360), bx = (W - bw) / 2;
+      ctx.fillStyle = '#ff6b6b'; Arcade.rr(ctx, bx, g.top + 10, bw, 10, 5); ctx.fill(); ctx.fillStyle = '#4dabf7'; Arcade.rr(ctx, bx, g.top + 10, bw * tot[1] / sum, 10, 5); ctx.fill();
+    },
+  });
+})();

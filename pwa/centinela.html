@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Centinela · Arcade Perdido</title>
+<meta name="theme-color" content="#0b1a2a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css">
+</head>
+<body class="game">
+<script src="config.js"></script>
+<script src="common.js"></script>
+<script>
+(function () {
+  const { ri, rand, clamp, shuffle } = Arcade;
+  const ACT = [{ k: 'abs', t: '🌀 Absorber', c: 0 }, { k: 'rock', t: '🪨 Roca −2', c: 2 }, { k: 'bot', t: '🤖 Robot −3', c: 3 }, { k: 'go', t: '🔄 Saltar', c: 0 }];
+
+  function geo(g) {
+    const s = g.s, Wa = g.W - 16, Ha = g.bot - g.top - 130;
+    s.cs = Math.min(Wa / s.C, Ha / s.R);
+    s.ox = (g.W - s.cs * s.C) / 2; s.oy = g.top + 40 + (Ha - s.cs * s.R) / 2;
+    s.by = s.oy + s.cs * s.R + 44;
+  }
+  const T = (s, c, r) => s.t[r][c];
+  const top = (s, c, r) => s.t[r][c].h + s.t[r][c].rocks;
+  const eye = (s) => top(s, s.pc, s.pr) + 1;
+  function los(s, c0, r0, c1, r1, E) {
+    const n = Math.max(Math.abs(c1 - c0), Math.abs(r1 - r0));
+    for (let i = 1; i < n; i++) {
+      const c = Math.round(c0 + (c1 - c0) * i / n), r = Math.round(r0 + (r1 - r0) * i / n);
+      if (top(s, c, r) >= E || (s.sc === c && s.sr === r && s.sH >= E)) return false;
+    }
+    return true;
+  }
+  function visible(s, c, r) {
+    if (c === s.pc && r === s.pr) return false;
+    const E = eye(s);
+    if (c === s.sc && r === s.sr) return s.sH < E && los(s, s.pc, s.pr, c, r, E);
+    return top(s, c, r) <= E && los(s, s.pc, s.pr, c, r, E);
+  }
+  function seenBySentinel(s) {
+    const dx = s.pc - s.sc, dy = s.pr - s.sr;
+    let a = Math.atan2(dy, dx) - s.gaze; a = Math.atan2(Math.sin(a), Math.cos(a));
+    if (Math.abs(a) > Math.PI / 6) return false;
+    const E = s.sH + 1;
+    return top(s, s.pc, s.pr) < E && los(s, s.sc, s.sr, s.pc, s.pr, E);
+  }
+  function gen(g) {
+    const s = g.s, C = s.C, R = s.R;
+    let h = []; for (let r = 0; r < R; r++) { h.push([]); for (let c = 0; c < C; c++) h[r].push(Math.random() * 5); }
+    for (let k = 0; k < 2; k++) h = h.map((row, r) => row.map((v, c) => { let sum = 0, n = 0; for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) { const rr = r + dr, cc = c + dc; if (rr >= 0 && rr < R && cc >= 0 && cc < C) { sum += h[rr][cc]; n++; } } return sum / n; }));
+    const flat = h.flat(), mn = Math.min(...flat), mx = Math.max(...flat);
+    s.t = h.map(row => row.map(v => ({ h: Math.round((v - mn) / (mx - mn || 1) * 3), rocks: 0, tree: false, bot: false })));
+    let best = null; for (let r = 0; r < R; r++) for (let c = 0; c < C; c++) if (!best || s.t[r][c].h > s.t[best[1]][best[0]].h) best = [c, r];
+    s.sc = best[0]; s.sr = best[1]; s.sH = s.t[s.sr][s.sc].h + 2 + Math.floor(g.lv / 4);
+    let low = null, ld = -1;
+    for (let r = 0; r < R; r++) for (let c = 0; c < C; c++) { const d = Math.hypot(c - s.sc, r - s.sr) - s.t[r][c].h * 2; if (d > ld) { ld = d; low = [c, r]; } }
+    s.pc = low[0]; s.pr = low[1];
+    const cells = []; for (let r = 0; r < R; r++) for (let c = 0; c < C; c++) if (!(c === s.sc && r === s.sr) && !(c === s.pc && r === s.pr)) cells.push([c, r]);
+    shuffle(cells);
+    const nt = Math.max(8, 16 - g.lv);
+    for (let i = 0; i < nt; i++) s.t[cells[i][1]][cells[i][0]].tree = true;
+  }
+
+  Arcade.game({
+    /*THEME*/ tag: "Sube sin que te vea", deco: ["🗿", "🌳", "🪨", "🤖", "👁️", "🌳"], font: "serif", bg: ["#12263a", "#0b1a2a"], music: {"mode": "phryg", "bpm": 80, "wave": "sine", "style": "chill", "root": 50, "sparse": 0.5}, voice: {"wave": "sine", "mul": 0.85, "echo": 0.4}, ambient: {"e": ["✨"], "n": 6, "vy": -8, "sway": 6, "twinkle": 1, "alpha": 0.14},
+    /*EN*/ en: {"title": "Sentinel", "tag": "Rise without being seen", "help": "You can't walk: you can only <b>look and absorb</b>. Pick an action below and <b>tap a cell you can see</b> (highlighted). Absorb trees 🌳 (+1 energy) and rocks (+2); create <b>rocks</b> 🪨 to stack them and a <b>robot</b> 🤖 on top; then <b>jump</b> into it to stand higher. When you are <b>above the Sentinel</b> 🗿 and can see it, absorb it. If its red gaze catches you, it drains your energy.", "tvHelp": "D-pad to move the cursor (go down to the buttons to change action) · OK to use.", "dict": {"altura ": "height ", " (¡por encima!)": " (above!)", " para ganar": " to win", "No lo ves": "You can't see it", "Sin energía": "No energy", "Toca un robot 🤖": "Pick a robot 🤖", "⚠️ ¡Te está mirando!": "⚠️ It's watching you!", "🌀 Absorber": "🌀 Absorb", "🪨 Roca −2": "🪨 Rock −2", "🔄 Saltar": "🔄 Jump"}},
+    /*TV*/ tvHelp: "Cruceta mover el cursor (baja hasta los botones para cambiar de acción) · OK usar.", tv: { mode: 'tap', targets: (g) => { const s = g.s, o = []; if (!s.t) return o; for (let r = 0; r < s.R; r++) for (let c = 0; c < s.C; c++) o.push({ x: s.ox + c * s.cs, y: s.oy + r * s.cs, w: s.cs, h: s.cs }); const bw = (g.W - 20) / 4; for (let i = 0; i < 4; i++) o.push({ x: 10 + i * bw + 3, y: s.by - 22, w: bw - 6, h: 44, instant: true }); return o; } },
+    id: 'centinela', title: 'Centinela', emoji: '🗿', color: '#66d9e8', origin: 'The Sentinel (Firebird, 1986)',
+    help: 'No puedes andar: solo <b>ver y absorber</b>. Elige una acción abajo y <b>toca una casilla que veas</b> (marcadas). Absorbe árboles 🌳 (+1 de energía) y rocas (+2); crea <b>rocas</b> 🪨 para apilarlas y un <b>robot</b> 🤖 encima; luego <b>salta</b> a él para estar más alto. Cuando estés <b>por encima del Centinela</b> 🗿 y lo veas, absórbelo. Si su mirada roja te pilla, te roba energía.',
+    lives: 3, levels: 0, cap: 14,
+    setup(g) {
+      g.s = { act: 0, en: 10, gaze: rand(0, 6.28), gazeT: 4, drainT: 0, msg: null };
+      const s = g.s;
+      if (g.W < g.H) { s.C = 7; s.R = 9; } else { s.C = 11; s.R = 6; }
+      gen(g); geo(g);
+    },
+    layout(g) { if (g.s.t) geo(g); },
+    tap(g, p) {
+      const s = g.s;
+      if (Math.abs(p.y - s.by) < 26) { const bw = (g.W - 20) / 4, i = Math.floor((p.x - 10) / bw); if (i >= 0 && i < 4) { s.act = i; Arcade.sfx.tick(); } return; }
+      const c = Math.floor((p.x - s.ox) / s.cs), r = Math.floor((p.y - s.oy) / s.cs);
+      if (c < 0 || c >= s.C || r < 0 || r >= s.R) return;
+      if (!visible(s, c, r)) { g.float('No lo ves', p.x, p.y - 20, '#ff8787', 16); Arcade.sfx.bad(); return; }
+      const t = T(s, c, r), a = ACT[s.act].k, x = s.ox + (c + 0.5) * s.cs, y = s.oy + (r + 0.5) * s.cs;
+      if (c === s.sc && r === s.sr) {
+        if (a === 'abs') { g.addScore(2000 * g.lv + s.en * 100, x, y); g.burst(x, y, { n: 30, emoji: '✨', size: 16, speed: 240 }); g.win(); }
+        return;
+      }
+      if (a === 'abs') {
+        if (t.bot) { t.bot = false; s.en += 3; g.addScore(30, x, y); }
+        else if (t.tree) { t.tree = false; s.en += 1; g.addScore(10, x, y); }
+        else if (t.rocks) { t.rocks--; s.en += 2; g.addScore(20, x, y); }
+        else { Arcade.sfx.bad(); return; }
+        Arcade.tone(700, 0.1, 'sine', 0.08, -400); g.burst(x, y, { n: 6, color: '#66d9e8', speed: 100, size: 3 });
+      } else if (a === 'rock' || a === 'bot') {
+        const cost = ACT[s.act].c;
+        if (s.en < cost) { g.float('Sin energía', x, y - 20, '#ff8787', 16); Arcade.sfx.bad(); return; }
+        if (t.tree || t.bot) { Arcade.sfx.bad(); return; }
+        s.en -= cost;
+        if (a === 'rock') t.rocks++; else t.bot = true;
+        Arcade.tone(300, 0.1, 'sine', 0.08, 300);
+      } else if (a === 'go') {
+        if (!t.bot) { g.float('Toca un robot 🤖', x, y - 20, '#ffd43b', 16); Arcade.sfx.bad(); return; }
+        t.bot = false; T(s, s.pc, s.pr).bot = true; s.pc = c; s.pr = r;
+        Arcade.sfx.up(); s.act = 0;
+      }
+    },
+    update(g, dt) {
+      const s = g.s;
+      s.gazeT -= dt;
+      if (s.gazeT <= 0) { s.gazeT = Math.max(1.6, 4 - g.lv * 0.2); s.gaze += Math.PI / 4; Arcade.tone(110, 0.15, 'sine', 0.05); }
+      s.seen = seenBySentinel(s);
+      if (s.seen) {
+        s.drainT += dt;
+        if (s.drainT > 1.4) {
+          s.drainT = 0; s.en--; Arcade.sfx.bad(); g.shake(0.15, 4);
+          const free = []; for (let r = 0; r < s.R; r++) for (let c = 0; c < s.C; c++) { const t = s.t[r][c]; if (!t.tree && !t.bot && !t.rocks && !(c === s.sc && r === s.sr) && !(c === s.pc && r === s.pr)) free.push(t); }
+          if (free.length) free[ri(0, free.length - 1)].tree = true;
+          if (s.en < 0) { s.en = 5; if (!g.die()) return; }
+        }
+      } else s.drainT = Math.max(0, s.drainT - dt);
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      ctx.fillStyle = '#0b1a2a'; ctx.fillRect(0, 0, W, H);
+      if (!s.t) return;
+      const cs = s.cs, E = eye(s);
+      const HC = ['#2b8a3e', '#40c057', '#8ce99a', '#d3f9d8'];
+      for (let r = 0; r < s.R; r++) for (let c = 0; c < s.C; c++) {
+        const t = s.t[r][c], x = s.ox + c * cs, y = s.oy + r * cs;
+        ctx.fillStyle = HC[t.h]; ctx.fillRect(x, y, cs + 0.5, cs + 0.5);
+        ctx.fillStyle = 'rgba(0,0,0,' + (0.25 - t.h * 0.06) + ')'; ctx.fillRect(x, y + cs - 4, cs, 4);
+        if (visible(s, c, r)) { ctx.strokeStyle = 'rgba(102,217,232,.75)'; ctx.lineWidth = 2; ctx.strokeRect(x + 3, y + 3, cs - 6, cs - 6); }
+        Arcade.txt(ctx, t.h, x + 8, y + 9, 9, 'rgba(0,0,0,.45)', 'center', 900);
+        if (t.rocks) { for (let k = 0; k < t.rocks; k++) Arcade.emoji(ctx, '🪨', x + cs / 2, y + cs * 0.72 - k * cs * 0.16, cs * 0.42); }
+        if (t.tree) Arcade.emoji(ctx, '🌳', x + cs / 2, y + cs / 2, cs * 0.62);
+        if (t.bot) Arcade.emoji(ctx, '🤖', x + cs / 2, y + cs * 0.5 - t.rocks * cs * 0.16, cs * 0.5, { alpha: 0.75 });
+      }
+      // mirada del centinela
+      const sx = s.ox + (s.sc + 0.5) * cs, sy = s.oy + (s.sr + 0.5) * cs;
+      ctx.fillStyle = s.seen ? 'rgba(255,60,60,.32)' : 'rgba(255,60,60,.14)';
+      ctx.beginPath(); ctx.moveTo(sx, sy); ctx.arc(sx, sy, cs * Math.max(s.C, s.R) * 1.5, s.gaze - Math.PI / 6, s.gaze + Math.PI / 6); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#495057'; ctx.fillRect(sx - cs * 0.3, sy - cs * 0.1, cs * 0.6, cs * 0.45);
+      Arcade.emoji(ctx, '🗿', sx, sy - cs * 0.1, cs * 0.75);
+      Arcade.txt(ctx, 'altura ' + s.sH, sx, sy + cs * 0.42, 9, '#fff', 'center', 900, '#000');
+      // jugador
+      const px = s.ox + (s.pc + 0.5) * cs, py = s.oy + (s.pr + 0.5) * cs - T(s, s.pc, s.pr).rocks * cs * 0.16;
+      ctx.strokeStyle = '#ffd43b'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(px, py, cs * 0.36, 0, 6.28); ctx.stroke();
+      Arcade.emoji(ctx, '🤖', px, py, cs * 0.55);
+      Arcade.txt(ctx, '⚡ ' + s.en + '   👁️ altura ' + E + (E > s.sH ? ' (¡por encima!)' : ' / ' + (s.sH + 1) + ' para ganar'), W / 2, s.oy - 18, 14, E > s.sH ? '#69db7c' : '#c5f6fa', 'center', 800);
+      if (s.seen) Arcade.txt(ctx, '⚠️ ¡Te está mirando!', W / 2, g.top + 12, 14, '#ff6b6b', 'center', 900);
+      const bw = (W - 20) / 4;
+      ACT.forEach((a, i) => {
+        const x = 10 + i * bw + 3, w = bw - 6;
+        ctx.fillStyle = i === s.act ? '#66d9e8' : 'rgba(255,255,255,.08)'; Arcade.rr(ctx, x, s.by - 22, w, 44, 12); ctx.fill();
+        Arcade.txt(ctx, a.t, x + w / 2, s.by, Math.min(13, w / 7), i === s.act ? '#0b1a2a' : '#fff', 'center', 800);
+      });
+    },
+  });
+})();
+</script>
+</body>
+</html>

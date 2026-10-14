@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Dos coches · Arcade Perdido</title>
+<meta name="theme-color" content="#25174a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css">
+</head>
+<body class="game">
+<script src="config.js"></script>
+<script src="common.js"></script>
+<script>
+(function () {
+  const { ri, rand, clamp } = Arcade;
+  const SIDE = [{ car: '🚗', col: '#ff6b6b', good: '🍒', bad: '🟥' }, { car: '🚙', col: '#4dabf7', good: '💧', bad: '🟦' }];
+
+  function geo(g) { const s = g.s; s.lw = g.W / 4; s.cy = g.bot - 70; s.sz = Math.min(s.lw * 0.62, 56); }
+  const laneX = (s, side, lane) => (side * 2 + lane + 0.5) * s.lw;
+  function spawn(g) {
+    const s = g.s, side = ri(0, 1), good = Math.random() < 0.5; let lane = ri(0, 1);
+    const last = s.last[side];
+    if (last && g.rt - last.t < 0.55) { if (good && last.good) lane = last.lane; else if (good !== last.good && lane === last.lane) lane ^= 1; }
+    s.last[side] = { lane, good, t: g.rt };
+    s.objs.push({ side, lane, y: g.top - 30, good });
+  }
+  function toggle(g, side) { const s = g.s; if (s.dead) return; s.lane[side] ^= 1; Arcade.tone(side ? 520 : 420, 0.04, 'triangle', 0.06); }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Dos coches, un cerebro', deco: ['🚗', '🚙', '🍒', '💧', '🟥', '🟦'], font: 'wide', bg: ['#3b2470', '#25174a'],
+    music: { mode: 'minor', bpm: 130, wave: 'square', style: 'arcade', root: 60 }, voice: { wave: 'square', mul: 1, echo: 0.2 },
+    en: { title: 'Two Cars', tag: 'Two cars, one brain', help: 'You drive <b>two cars at once</b>. <b>Tap the left half</b> of the screen to switch the left car lane and the <b>right half</b> for the right car. Catch every round item (🍒 and 💧) and dodge the squares. Missing a round item or hitting a square costs a life. Catch the items each level asks for; it keeps getting faster.', tvHelp: '◀ left car · ▶ right car.', dict: { 'Recogidos: ': 'Caught: ' } },
+    tvHelp: '◀ coche izquierdo · ▶ coche derecho.',
+    id: 'doscoches', title: 'Dos coches', emoji: '🚗', color: '#ff6b6b', origin: '2 Cars (Ketchapp)',
+    help: 'Conduces <b>dos coches a la vez</b>. <b>Toca la mitad izquierda</b> de la pantalla para cambiar de carril el coche izquierdo y la <b>mitad derecha</b> para el derecho. Recoge todo lo redondo (🍒 y 💧) y esquiva los cuadrados. Si se te escapa algo redondo o chocas con un cuadrado, pierdes una vida. Recoge lo que pide cada nivel; cada vez va más rápido.',
+    lives: 3, levels: 0, cap: 25,
+    setup(g) {
+      g.s = { lane: [0, 1], vis: [0, 1], objs: [], t: 0, got: 0, road: 0, last: [null, null] };
+      const s = g.s, L = g.lv; geo(g);
+      s.need = 20 + Math.min(L, 25) * 3; s.speed = 260 + Math.min(L, 25) * 14; s.gap = Math.max(0.42, 0.85 - L * 0.02);
+    },
+    layout(g) { if (g.s.objs) geo(g); },
+    down(g, p) { toggle(g, p.x < g.W / 2 ? 0 : 1); },
+    key(g, k, d) { if (!d) return; if (k === 'ArrowLeft') toggle(g, 0); else if (k === 'ArrowRight') toggle(g, 1); },
+    update(g, dt) {
+      const s = g.s;
+      for (let i = 0; i < 2; i++) s.vis[i] += (s.lane[i] - s.vis[i]) * Math.min(1, dt * 16);
+      if (s.dead || s.won) return;
+      s.road += s.speed * dt;
+      s.t -= dt; if (s.t <= 0) { spawn(g); s.t = s.gap * rand(0.8, 1.3); }
+      for (const o of s.objs) {
+        o.y += s.speed * dt;
+        if (!o.done && o.y > s.cy - s.sz * 0.5 && o.y < s.cy + s.sz * 0.5) {
+          const inLane = s.lane[o.side] === o.lane;
+          if (inLane) {
+            o.done = true;
+            if (o.good) { s.got++; Arcade.sfx.coin(); g.addScore(g.lv, laneX(s, o.side, o.lane), s.cy - 40); g.ring(laneX(s, o.side, o.lane), s.cy, SIDE[o.side].col, 30); if (s.got >= s.need) { s.won = true; g.confetti(60); setTimeout(() => { if (g.state === 'play') g.win(); }, 600); } }
+            else { s.dead = true; g.burst(laneX(s, o.side, o.lane), s.cy, { n: 18, color: SIDE[o.side].col, speed: 220, size: 5 }); Arcade.sfx.hit(); }
+          }
+        }
+        if (!o.done && o.good && o.y > s.cy + s.sz) { o.done = true; o.miss = 1; s.dead = true; g.message(Arcade.T('¡Se escapó!', 'Missed one!'), 0.8); Arcade.sfx.bad(); }
+      }
+      s.objs = s.objs.filter((o) => o.y < g.H + 60 && !(o.done && !o.miss && o.good));
+      if (s.dead) setTimeout(() => { if (g.state === 'play' && g.die()) { s.objs = []; s.dead = false; s.t = 1; } }, 800);
+      if (s.dead) s.dead = 'wait';
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      ctx.fillStyle = '#25174a'; ctx.fillRect(0, 0, W, H);
+      if (!s.objs) return;
+      for (let side = 0; side < 2; side++) {
+        ctx.fillStyle = side ? 'rgba(77,171,247,.07)' : 'rgba(255,107,107,.07)'; ctx.fillRect(side * W / 2, 0, W / 2, H);
+        ctx.strokeStyle = 'rgba(255,255,255,.18)'; ctx.lineWidth = 2; ctx.setLineDash([22, 22]); ctx.lineDashOffset = -s.road;
+        ctx.beginPath(); ctx.moveTo((side * 2 + 1) * s.lw, 0); ctx.lineTo((side * 2 + 1) * s.lw, H); ctx.stroke(); ctx.setLineDash([]);
+      }
+      ctx.fillStyle = 'rgba(255,255,255,.35)'; ctx.fillRect(W / 2 - 2, 0, 4, H);
+      for (const o of s.objs) {
+        if (o.done && !o.miss) continue;
+        const x = laneX(s, o.side, o.lane), S = SIDE[o.side];
+        if (o.good) { ctx.fillStyle = S.col; ctx.globalAlpha = 0.3; ctx.beginPath(); ctx.arc(x, o.y, s.sz * 0.45, 0, 6.3); ctx.fill(); ctx.globalAlpha = 1; Arcade.emoji(ctx, S.good, x, o.y, s.sz * 0.6, o.miss ? { alpha: 0.4 + Math.sin(g.rt * 30) * 0.4 } : undefined); }
+        else Arcade.emoji(ctx, S.bad, x, o.y, s.sz * 0.7);
+      }
+      for (let side = 0; side < 2; side++) {
+        const x = (side * 2 + s.vis[side] + 0.5) * s.lw, tilt = (s.lane[side] - s.vis[side]) * 0.6;
+        Arcade.emoji(ctx, SIDE[side].car, x, s.cy, s.sz * 1.1, { rot: Math.PI / 2 + tilt });
+      }
+      Arcade.txt(ctx, 'Recogidos: ' + s.got + '/' + s.need, W / 2, g.top + 18, 15, '#fff', 'center', 900, 'rgba(0,0,0,.5)');
+    },
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,118 @@
+// Artillería|#2a1f3d
+(function () {
+  const { ri, rand, clamp } = Arcade;
+  const WW = 1000, WH = 600, G = 300;
+  const SKY = [['#ff9a5c', '#ffd8a8'], ['#4dabf7', '#d0ebff'], ['#5f3dc4', '#f783ac'], ['#0b7285', '#99e9f2'], ['#212529', '#5c677d']];
+
+  function terrain(L) {
+    const h = new Float32Array(WW + 1), base = rand(330, 420), a1 = rand(40, 90 + L * 4), f1 = rand(0.004, 0.009), a2 = rand(10, 40), f2 = rand(0.015, 0.03), p1 = rand(0, 6), p2 = rand(0, 6);
+    for (let x = 0; x <= WW; x++) h[x] = clamp(base - Math.sin(x * f1 + p1) * a1 - Math.sin(x * f2 + p2) * a2, 150, WH - 40);
+    // montaña central en niveles altos
+    if (L >= 3) { const c = WW / 2 + rand(-80, 80), hh = 60 + Math.min(L, 15) * 10, wdt = 160; for (let x = 0; x <= WW; x++) { const d = (x - c) / wdt; h[x] = Math.max(120, h[x] - hh * Math.exp(-d * d * 2)); } }
+    return h;
+  }
+  function geo(g) { const s = g.s; s.sc = Math.min(g.W / WW, (g.bot - g.top - 40) / WH); s.ox = (g.W - WW * s.sc) / 2; s.oy = g.top + 40 + (g.bot - g.top - 40 - WH * s.sc) / 2; }
+  const gy = (s, x) => s.h[clamp(Math.round(x), 0, WW)];
+  function place(s, t) { t.y = gy(s, t.x) - 10; }
+  function fire(g, who, ang, pw) {
+    const s = g.s, t = s.tanks[who], v = 120 + pw * 380;
+    s.shot = { x: t.x + Math.cos(ang) * 22, y: t.y - 10 + Math.sin(ang) * 22, vx: Math.cos(ang) * v, vy: Math.sin(ang) * v, who, trail: [] };
+    s.phase = 'fly'; Arcade.sfx.boom(); g.shake(0.1, 3);
+  }
+  function explode(g, x, y, r) {
+    const s = g.s;
+    for (let i = Math.max(0, Math.floor(x - r)); i <= Math.min(WW, Math.ceil(x + r)); i++) { const dy = Math.sqrt(Math.max(0, r * r - (i - x) * (i - x))); if (s.h[i] < y + dy) s.h[i] = Math.max(s.h[i], Math.min(WH - 10, y + dy)); }
+    const X = s.ox + x * s.sc, Y = s.oy + y * s.sc;
+    g.burst(X, Y, { n: 26, color: ['#ff922b', '#ffd43b', '#868e96', '#8d5524'], speed: 260, size: 5 }); g.ring(X, Y, '#ff922b', r * s.sc * 1.4); g.shake(0.3, 8); Arcade.sfx.boom();
+    s.tanks.forEach((t, i) => { const d = Math.hypot(t.x - x, t.y - y); if (d < r * 1.8) { const dmg = Math.round(55 * (1 - d / (r * 1.8)) + (d < r * 0.6 ? 20 : 0)); t.hp = Math.max(0, t.hp - dmg); t.hit = 1; g.float('-' + dmg, s.ox + t.x * s.sc, s.oy + (t.y - 40) * s.sc, '#ff6b6b', 22); if (i === 1 && dmg) g.addScore(dmg * g.lv, s.ox + t.x * s.sc, s.oy + t.y * s.sc - 60); } place(s, t); });
+  }
+  function aiTurn(g) {
+    const s = g.s, me = s.tanks[1], tg = s.tanks[0];
+    // busca por simulación el mejor ángulo/fuerza y le añade error según el nivel
+    let best = null, bd = 1e9;
+    for (let a = -Math.PI + 0.25; a < -Math.PI / 2 - 0.05; a += 0.06) for (let p = 0.2; p <= 1; p += 0.05) {
+      const v = 120 + p * 380; let x = me.x + Math.cos(a) * 22, y = me.y - 10 + Math.sin(a) * 22, vx = Math.cos(a) * v, vy = Math.sin(a) * v;
+      for (let i = 0; i < 600; i++) { vx += s.wind * 0.016; vy += G * 0.016; x += vx * 0.016; y += vy * 0.016; if (x < 0 || x > WW) break; if (y >= gy(s, x)) break; }
+      const d = Math.hypot(x - tg.x, y - tg.y); if (d < bd) { bd = d; best = [a, p]; }
+    }
+    const err = clamp(0.16 - g.lv * 0.011, 0.015, 0.16) * (s.aiMiss = (s.aiMiss || 0) + 1, 1 / Math.sqrt(s.aiMiss));
+    s.aiAim = { ang: best[0] + rand(-err, err), pw: clamp(best[1] + rand(-err, err), 0.15, 1) };
+    s.aiT = 0.9;
+  }
+  function endShot(g) {
+    const s = g.s; s.shot = null;
+    const [me, ai] = s.tanks;
+    if (ai.hp <= 0) { s.phase = 'end'; ai.dead = true; g.addScore(300 * g.lv, g.W / 2, g.H / 2); g.confetti(70); setTimeout(() => { if (g.state === 'play') g.win(me.hp >= 70 ? 3 : me.hp >= 35 ? 2 : 1); }, 900); return; }
+    if (me.hp <= 0) { s.phase = 'end'; me.dead = true; g.message(Arcade.T('¡Te han derribado!', 'You were destroyed!'), 1.3); setTimeout(() => { if (g.state === 'play' && g.die()) Arcade.current.def.setup(g); }, 1400); return; }
+    s.turn = 1 - s.turn; s.wind = clamp(s.wind + rand(-15, 15), -s.wmax, s.wmax);
+    if (s.turn === 1) { s.phase = 'ai'; aiTurn(g); } else s.phase = 'aim';
+  }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Por turnos, con viento y cráteres', deco: ['💣', '🛡️', '💥', '🌬️', '⛰️', '🎯'], font: 'impact', bg: ['#4a3a66', '#2a1f3d'],
+    music: { mode: 'minor', bpm: 100, wave: 'sawtooth', style: 'arcade', root: 55 }, voice: { wave: 'square', mul: 1, echo: 0.25 },
+    en: { title: 'Artillery', tag: 'Turn by turn, with wind and craters', help: 'You and the machine take turns firing. <b>Drag backwards</b> from anywhere to set the angle and power, and <b>release</b> to fire. Shells fall with gravity and the <b>wind</b> 🌬️ pushes them; explosions dig craters in the ground. Bring the enemy tank\'s energy to zero before it does the same to you. Later enemies aim better and hills get in the way.', tvHelp: '▲ ▼ angle · hold OK to charge and release to fire.', dict: { 'Tu turno': 'Your turn', 'Turno rival': 'Enemy turn', 'Viento': 'Wind', '¡Te han derribado!': 'You were destroyed!' } },
+    tvHelp: '▲ ▼ ángulo · mantén OK para cargar y suelta para disparar.',
+    id: 'artilleria', title: 'Artillería', emoji: '💣', color: '#ff922b', origin: 'Artillery / Worms / Scorched Earth',
+    help: 'Tú y la máquina disparáis por turnos. <b>Arrastra hacia atrás</b> desde cualquier sitio para fijar el ángulo y la fuerza, y <b>suelta</b> para disparar. Los proyectiles caen por la gravedad y el <b>viento</b> 🌬️ los empuja; las explosiones abren cráteres en el suelo. Deja a cero la energía del tanque rival antes de que él lo haga contigo. Los rivales afinan más y aparecen montañas por medio.',
+    lives: 3, levels: 0, cap: 20,
+    setup(g) {
+      const L = g.lv; g.s = { h: terrain(L), turn: 0, phase: 'aim', ang: -0.8, pw: 0.6, wmax: 10 + Math.min(L, 20) * 4, sky: SKY[(g.level - 1) % SKY.length] };
+      const s = g.s; s.wind = rand(-s.wmax, s.wmax) * 0.5;
+      s.tanks = [{ x: rand(60, 200), hp: 100, e: '🚜', hit: 0 }, { x: rand(WW - 200, WW - 60), hp: 100 + Math.min(L, 20) * 5, e: '🛻', hit: 0 }];
+      s.tanks[1].max = s.tanks[1].hp; s.tanks[0].max = 100;
+      for (const t of s.tanks) { const x0 = Math.round(t.x); for (let x = x0 - 18; x <= x0 + 18; x++) if (x >= 0 && x <= WW) s.h[x] = s.h[x0]; place(s, t); }
+      geo(g);
+    },
+    layout(g) { if (g.s.h) geo(g); },
+    down(g, p) { const s = g.s; if (s.phase !== 'aim') return; s.drag = { x: p.x, y: p.y }; },
+    move(g, p) { const s = g.s; if (!s.drag) return; const dx = (s.drag.x - p.x) / s.sc, dy = (s.drag.y - p.y) / s.sc, d = Math.hypot(dx, dy); if (d > 5) { s.ang = clamp(Math.atan2(dy, dx), -Math.PI + 0.05, -0.05); s.pw = clamp(d / 180, 0.08, 1); } },
+    up(g) { const s = g.s; if (!s.drag) return; s.drag = null; if (s.phase === 'aim') fire(g, 0, s.ang, s.pw); },
+    key(g, k, d) { const s = g.s; if (k === 'ArrowUp' || k === 'ArrowDown' || k === 'ArrowLeft' || k === 'ArrowRight') s.kang = d ? (k === 'ArrowUp' || k === 'ArrowLeft' ? -1 : 1) : 0; if (k === ' ' && s.phase === 'aim') { if (d) { s.charging = true; s.pw = 0.08; } else if (s.charging) { s.charging = false; fire(g, 0, s.ang, s.pw); } } },
+    update(g, dt) {
+      const s = g.s;
+      if (s.kang && s.phase === 'aim') s.ang = clamp(s.ang + s.kang * dt * 0.9, -Math.PI + 0.05, -0.05);
+      if (s.charging) s.pw = Math.min(1, s.pw + dt * 0.6);
+      for (const t of s.tanks) { t.hit = Math.max(0, t.hit - dt * 3); const gyy = gy(s, t.x) - 10; if (t.y < gyy) t.y = Math.min(gyy, t.y + dt * 200); }
+      if (s.phase === 'ai') { s.aiT -= dt; const a = s.aiAim; s.aiAng = (s.aiAng ?? -2.3) + (a.ang - (s.aiAng ?? -2.3)) * Math.min(1, dt * 4); if (s.aiT <= 0) fire(g, 1, a.ang, a.pw); }
+      const sh = s.shot; if (!sh) return;
+      for (let i = 0; i < 3; i++) {
+        const h = dt / 3; sh.vx += s.wind * h; sh.vy += G * h; sh.x += sh.vx * h; sh.y += sh.vy * h;
+        if (sh.x < -50 || sh.x > WW + 50 || sh.y > WH + 50) { endShot(g); return; }
+        const hitTank = s.tanks.some((t) => Math.hypot(t.x - sh.x, t.y - sh.y) < 16);
+        if (sh.x >= 0 && sh.x <= WW && (sh.y >= gy(s, sh.x) || hitTank)) { explode(g, sh.x, sh.y, 34 + Math.min(g.lv, 10)); setTimeout(() => endShot(g), 700); s.phase = 'boom'; s.shot = null; return; }
+      }
+      if (Math.random() < 0.6) { sh.trail.push([sh.x, sh.y]); if (sh.trail.length > 40) sh.trail.shift(); }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      const bg = ctx.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, s.sky[0]); bg.addColorStop(1, s.sky[1]);
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      if (!s.h) return;
+      ctx.save(); ctx.translate(s.ox, s.oy); ctx.scale(s.sc, s.sc);
+      for (let i = 0; i < 4; i++) Arcade.emoji(ctx, '☁️', ((i * 280 + g.rt * s.wind * 0.8) % (WW + 200) + WW + 200) % (WW + 200) - 100, 60 + i * 30, 70, { alpha: 0.7 });
+      const gr = ctx.createLinearGradient(0, 150, 0, WH); gr.addColorStop(0, '#8ce99a'); gr.addColorStop(0.08, '#5c940d'); gr.addColorStop(0.2, '#8d5524'); gr.addColorStop(1, '#3d2914');
+      ctx.fillStyle = gr; ctx.beginPath(); ctx.moveTo(0, WH + 200); for (let x = 0; x <= WW; x += 4) ctx.lineTo(x, s.h[x]); ctx.lineTo(WW, WH + 200); ctx.fill();
+      ctx.strokeStyle = '#2b8a3e'; ctx.lineWidth = 4; ctx.beginPath(); for (let x = 0; x <= WW; x += 4) (x ? ctx.lineTo(x, s.h[x]) : ctx.moveTo(x, s.h[x])); ctx.stroke();
+      s.tanks.forEach((t, i) => {
+        if (t.dead) { Arcade.emoji(ctx, '💥', t.x, t.y - 10, 50); return; }
+        const a = i === 0 ? s.ang : (s.aiAng ?? -2.3);
+        ctx.strokeStyle = '#343a40'; ctx.lineWidth = 6; ctx.beginPath(); ctx.moveTo(t.x, t.y - 12); ctx.lineTo(t.x + Math.cos(a) * 26, t.y - 12 + Math.sin(a) * 26); ctx.stroke();
+        Arcade.emoji(ctx, t.e, t.x + (t.hit ? Math.sin(g.rt * 60) * 3 : 0), t.y - 6, 38, { flip: i === 0 });
+        const bw = 50; ctx.fillStyle = 'rgba(0,0,0,.4)'; ctx.fillRect(t.x - bw / 2, t.y - 46, bw, 7); ctx.fillStyle = t.hp / t.max > 0.4 ? '#51cf66' : '#ff6b6b'; ctx.fillRect(t.x - bw / 2, t.y - 46, bw * t.hp / t.max, 7);
+      });
+      if (s.phase === 'aim') { // guía corta
+        const t = s.tanks[0], v = 120 + s.pw * 380; let x = t.x + Math.cos(s.ang) * 22, y = t.y - 10 + Math.sin(s.ang) * 22, vx = Math.cos(s.ang) * v, vy = Math.sin(s.ang) * v;
+        ctx.fillStyle = 'rgba(255,255,255,.8)'; const n = Math.max(6, 22 - g.lv); for (let i = 0; i < n; i++) { for (let k = 0; k < 4; k++) { vy += G / 60; x += vx / 60; y += vy / 60; } ctx.globalAlpha = 1 - i / n; ctx.beginPath(); ctx.arc(x, y, 3.5, 0, 6.3); ctx.fill(); } ctx.globalAlpha = 1;
+      }
+      if (s.shot) { const sh = s.shot; ctx.strokeStyle = 'rgba(255,255,255,.5)'; ctx.lineWidth = 2; ctx.beginPath(); sh.trail.forEach(([x, y], k) => (k ? ctx.lineTo(x, y) : ctx.moveTo(x, y))); ctx.stroke(); Arcade.emoji(ctx, '💣', sh.x, sh.y, 22, { rot: g.rt * 8 }); }
+      ctx.restore();
+      const wx = W / 2; ctx.fillStyle = 'rgba(0,0,0,.3)'; Arcade.rr(ctx, wx - 110, g.top + 6, 220, 30, 15); ctx.fill();
+      Arcade.txt(ctx, s.turn === 0 ? 'Tu turno' : 'Turno rival', wx - 50, g.top + 21, 13, '#fff', 'center', 900);
+      const len = Math.abs(s.wind) / s.wmax * 40, dir = Math.sign(s.wind) || 1;
+      Arcade.txt(ctx, '🌬️', wx + 20, g.top + 21, 14, '#fff');
+      ctx.strokeStyle = '#ffd43b'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(wx + 60 - dir * len / 2, g.top + 21); ctx.lineTo(wx + 60 + dir * len / 2, g.top + 21); ctx.stroke();
+      if (s.phase === 'aim' && s.charging) { ctx.fillStyle = `hsl(${120 - s.pw * 120},90%,55%)`; Arcade.rr(ctx, wx - 80, g.top + 40, 160 * s.pw, 8, 4); ctx.fill(); }
+    },
+  });
+})();

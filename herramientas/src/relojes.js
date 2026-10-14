@@ -1,0 +1,90 @@
+// Relojes|#2b2118
+(function () {
+  const { ri, rand, clamp, pick } = Arcade;
+  const FACES = ['🕐', '🕑', '🕒', '🕓', '🕔', '🕕', '🕖', '🕗', '🕘', '🕙', '🕚', '🕛'];
+
+  function geo(g) { const s = g.s, Ha = g.bot - g.top - 70; s.cs = Math.min((g.W - 20) / s.C, Ha / s.R, 110); s.ox = (g.W - s.cs * s.C) / 2; s.oy = g.top + 60 + (Ha - s.cs * s.R) / 2; }
+  const cpos = (s, c) => [s.ox + (c.c + 0.5) * s.cs, s.oy + (c.r + 0.5) * s.cs];
+  function trigger(g, c, chain) {
+    const s = g.s; if (c.dead || c.fired) return; c.fired = true; c.flash = 1;
+    const a = c.a, [x, y] = cpos(s, c);
+    // primer reloj en la dirección de la aguja
+    let best = null, bd = 1e9;
+    for (const o of s.clocks) { if (o === c || o.dead || o.fired) continue; const [ox, oy] = cpos(s, o), dx = ox - x, dy = oy - y, fwd = dx * Math.cos(a) + dy * Math.sin(a), perp = Math.abs(-dx * Math.sin(a) + dy * Math.cos(a)); if (fwd > 0 && perp < s.cs * 0.42 && fwd < bd) { bd = fwd; best = o; } }
+    s.pulses.push({ x, y, a, len: best ? bd : Math.max(g.W, g.H), t: 0, to: best, chain });
+    Arcade.tone(400 + chain * 60, 0.08, 'triangle', 0.07);
+    setTimeout(() => { c.dead = true; g.burst(x, y, { n: 8, color: ['#ffd43b', '#fff'], speed: 120, size: 3 }); g.addScore(10 * chain * g.lv, x, y - 20); }, 120);
+  }
+  // simula una cadena: devuelve [relojes disparados, duración]
+  function simChain(s, alive, start, t0) {
+    const killed = new Set([start]); let cur = start, t = t0;
+    for (;;) {
+      const a = cur.a + cur.sp * t, [x, y] = [(cur.c + 0.5), (cur.r + 0.5)];
+      let best = null, bd = 1e9;
+      for (const o of alive) { if (killed.has(o)) continue; const dx = o.c + 0.5 - x, dy = o.r + 0.5 - y, fwd = dx * Math.cos(a) + dy * Math.sin(a), perp = Math.abs(-dx * Math.sin(a) + dy * Math.cos(a)); if (fwd > 0 && perp < 0.42 && fwd < bd) { bd = fwd; best = o; } }
+      if (!best) return [killed, t - t0];
+      t += bd * s.cs / 900; killed.add(best); cur = best;
+    }
+  }
+  function greedyTaps(s) {
+    let alive = s.clocks.slice(), T = 0, taps = 0;
+    while (alive.length && taps < 40) {
+      let bestK = null, bestT = 0;
+      for (const c of alive) for (let d = 0; d < 6.3 / Math.abs(c.sp); d += 0.08) { const [k, dur] = simChain(s, alive, c, T + d); if (!bestK || k.size > bestK.size) { bestK = k; bestT = d + dur; } }
+      alive = alive.filter((c) => !bestK.has(c)); T += bestT + 0.3; taps++;
+    }
+    return taps;
+  }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Cada reloj apunta al siguiente', deco: ['🕐', '🕒', '🕕', '⏰', '⚡', '🕰️'], font: 'serif', bg: ['#4a3a2a', '#2b2118'],
+    music: { mode: 'dorian', bpm: 96, wave: 'triangle', style: 'chill', root: 57 }, voice: { wave: 'triangle', mul: 1.1, echo: 0.35 },
+    en: { title: 'Clocks', tag: 'Each clock points to the next', help: 'The hands of every clock spin non-stop. <b>Tap a clock</b> to set it off: it fires a pulse in the direction its hand is pointing and the first clock it hits goes off too, firing in its own direction… Choose the right moment to chain them all. You only have a few taps per level.', tvHelp: 'D-pad to the clock · OK to set it off.', dict: { 'Toques: ': 'Taps: ' } },
+    tvHelp: 'Cruceta hasta el reloj · OK para dispararlo.',
+    tv: { mode: 'tap', targets: (g) => { const s = g.s; if (!s.clocks) return []; return s.clocks.filter((c) => !c.dead && !c.fired).map((c) => ({ x: s.ox + c.c * s.cs, y: s.oy + c.r * s.cs, w: s.cs, h: s.cs })); } },
+    id: 'relojes', title: 'Relojes', emoji: '⏰', color: '#ffd43b', origin: 'CLOCKS - The Game',
+    help: 'Las agujas de cada reloj giran sin parar. <b>Toca un reloj</b> para dispararlo: lanza un pulso en la dirección de su aguja y el primer reloj que alcance se dispara también, en su propia dirección… Elige el momento justo para encadenarlos todos. Solo tienes unos pocos toques por nivel.',
+    lives: 3, levels: 0, cap: 25,
+    setup(g) {
+      const L = g.lv, land = g.W > g.H, C = land ? clamp(4 + Math.floor(L / 3), 4, 8) : clamp(3 + Math.floor(L / 4), 3, 5), R = land ? clamp(3 + Math.floor(L / 4), 3, 5) : clamp(4 + Math.floor(L / 3), 4, 8);
+      g.s = { C, R, clocks: [], pulses: [], taps: 0 };
+      const s = g.s, n = clamp(5 + L, 5, C * R);
+      const cells = []; for (let r = 0; r < R; r++) for (let c = 0; c < C; c++) cells.push([c, r]);
+      Arcade.shuffle(cells).slice(0, n).forEach(([c, r]) => s.clocks.push({ c, r, a: rand(0, 6.28), sp: (Math.random() < 0.5 ? -1 : 1) * rand(0.8, 1.6 + L * 0.05), dead: false, fired: false, flash: 0 }));
+      geo(g); s.maxTaps = greedyTaps(s) + (L <= 3 ? 2 : L <= 8 ? 1 : 0);
+    },
+    layout(g) { if (g.s.clocks) geo(g); },
+    tap(g, p) {
+      const s = g.s; if (s.done || s.pulses.length) return;
+      for (const c of s.clocks) { if (c.dead || c.fired) continue; const [x, y] = cpos(s, c); if (Math.hypot(p.x - x, p.y - y) < s.cs * 0.48) { if (s.taps >= s.maxTaps) return; s.taps++; trigger(g, c, 1); return; } }
+    },
+    update(g, dt) {
+      const s = g.s;
+      for (const c of s.clocks) { if (!c.fired) c.a += c.sp * dt; c.flash = Math.max(0, c.flash - dt * 3); }
+      for (const p of s.pulses) { p.t += dt * 900; if (p.t >= p.len && !p.done) { p.done = true; if (p.to) trigger(g, p.to, p.chain + 1); } }
+      s.pulses = s.pulses.filter((p) => !p.done || p.t < p.len + 200);
+      if (!s.done && !s.pulses.some((p) => !p.done)) {
+        const left = s.clocks.filter((c) => !c.dead && !c.fired).length;
+        if (!left && s.clocks.every((c) => c.dead)) { s.done = true; g.confetti(60); g.addScore((s.maxTaps - s.taps + 1) * 100 * g.lv, g.W / 2, g.H / 2); setTimeout(() => { if (g.state === 'play') g.win(s.taps <= Math.max(1, s.maxTaps - 1) ? 3 : 2); }, 600); }
+        else if (left && s.taps >= s.maxTaps && s.clocks.every((c) => c.dead || !c.fired)) { s.done = true; g.message(left + ' ⏰', 1.2); setTimeout(() => { if (g.state === 'play' && g.die()) Arcade.current.def.setup(g); }, 1300); }
+      }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      ctx.fillStyle = '#2b2118'; ctx.fillRect(0, 0, W, H);
+      if (!s.clocks) return;
+      const cs = s.cs;
+      for (const p of s.pulses) { const l = Math.min(p.t, p.len); ctx.strokeStyle = `rgba(255,212,59,${p.done ? 0.3 : 0.9})`; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x + Math.cos(p.a) * l, p.y + Math.sin(p.a) * l); ctx.stroke(); }
+      for (const c of s.clocks) {
+        if (c.dead) continue; const [x, y] = cpos(s, c), r = cs * 0.4;
+        ctx.fillStyle = c.fired ? '#ffd43b' : '#f8f0e3'; ctx.beginPath(); ctx.arc(x, y, r, 0, 6.3); ctx.fill(); ctx.strokeStyle = '#8d5524'; ctx.lineWidth = 4; ctx.stroke();
+        ctx.fillStyle = '#8d5524'; for (let k = 0; k < 12; k++) { const a = k * Math.PI / 6; ctx.fillRect(x + Math.cos(a) * r * 0.8 - 1.5, y + Math.sin(a) * r * 0.8 - 1.5, 3, 3); }
+        ctx.setLineDash([3, 6]); ctx.strokeStyle = 'rgba(255,212,59,.25)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + Math.cos(c.a) * cs * 1.6, y + Math.sin(c.a) * cs * 1.6); ctx.stroke(); ctx.setLineDash([]);
+        ctx.strokeStyle = '#c92a2a'; ctx.lineWidth = 4; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + Math.cos(c.a) * r * 0.85, y + Math.sin(c.a) * r * 0.85); ctx.stroke(); ctx.lineCap = 'butt';
+        ctx.fillStyle = '#212529'; ctx.beginPath(); ctx.arc(x, y, 4, 0, 6.3); ctx.fill();
+        Arcade.txt(ctx, c.sp > 0 ? '↻' : '↺', x + r * 0.7, y - r * 0.8, 12, '#ffd8a8', 'center', 900);
+      }
+      Arcade.txt(ctx, 'Toques: ' + (s.maxTaps - s.taps) + '   ·   ⏰ ' + s.clocks.filter((c) => !c.dead).length, W / 2, g.top + 26, 16, '#ffd8a8', 'center', 900);
+    },
+  });
+})();

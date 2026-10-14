@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Saltacolor · Arcade Perdido</title>
+<meta name="theme-color" content="#141421">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css">
+</head>
+<body class="game">
+<script src="config.js"></script>
+<script src="common.js"></script>
+<script>
+(function () {
+  const { ri, pick, rand } = Arcade;
+  const TAU = Math.PI * 2;
+  const CC = ['#ff4d6d', '#ffd43b', '#3bc9db', '#9775fa'];
+  const FACES = ['😊', '😎', '🤩', '😜'];
+
+  function build(g) {
+    const s = g.s, L = g.lv, n = 6 + Math.min(L, 14);
+    s.obs = []; let y = -s.u * 300;
+    for (let i = 0; i < n; i++) {
+      const kind = L < 2 ? 'ring' : pick(L < 4 ? ['ring', 'ring', 'bar'] : ['ring', 'bar', 'double', 'ring']);
+      const sp = (0.9 + Math.min(L, 14) * 0.08) * (Math.random() < 0.5 ? 1 : -1);
+      if (kind === 'ring') s.obs.push({ k: 'ring', y, R: s.u * 95, th: s.u * 16, rot: rand(0, TAU), sp });
+      else if (kind === 'double') { s.obs.push({ k: 'ring', y, R: s.u * 110, th: s.u * 14, rot: rand(0, TAU), sp }); s.obs.push({ k: 'ring', y, R: s.u * 78, th: s.u * 14, rot: rand(0, TAU), sp: -sp }); }
+      else s.obs.push({ k: 'bar', y, th: s.u * 16, off: rand(0, 4), sp: sp * 0.6 });
+      s.obs.push({ k: 'star', y, got: false });
+      y -= s.u * 170;
+      s.obs.push({ k: 'switch', y, used: false });
+      y -= s.u * 170;
+    }
+    s.finish = y;
+  }
+  function geo(g) { const s = g.s; s.u = Math.min(g.W, 480) / 400; s.cx = g.W / 2; s.r = 11 * s.u; }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Pasa solo por tu color', deco: ['🌈', '⭐', '🔴', '🟡', '🔵', '🟣'], font: 'round', bg: ['#26263a', '#141421'],
+    music: { mode: 'minor', bpm: 124, wave: 'triangle', style: 'drive', root: 57 }, voice: { wave: 'triangle', mul: 1.2, echo: 0.25 },
+    ambient: { e: ['✨'], n: 10, vy: 10, sway: 0, twinkle: 1, alpha: 0.25, size: [6, 12] },
+    en: { title: 'Hue Hop', tag: 'Only pass through your colour', help: '<b>Tap</b> to make the ball jump; if you stop, it falls. You can only pass through the parts that are <b>your colour</b>: touching any other colour pops you. 🌈 changes your colour and ⭐ gives points. Reach the 🏁 finish line of each level.', tvHelp: 'OK to jump.', dict: {} },
+    tvHelp: 'OK para saltar.',
+    id: 'saltacolor', title: 'Saltacolor', emoji: '🌈', color: '#ff4d6d', origin: 'Color Switch (Fortafy)',
+    help: '<b>Toca</b> para que la bola salte; si paras, cae. Solo puedes atravesar las partes de <b>tu color</b>: si tocas otro color, explotas. El 🌈 te cambia el color y las ⭐ dan puntos. Llega a la meta 🏁 de cada nivel.',
+    lives: 3, levels: 0, cap: 18,
+    setup(g) {
+      g.s = { col: ri(0, 3) }; const s = g.s; geo(g); build(g);
+      s.y = 0; s.vy = 0; s.cam = 0; s.started = false; s.dead = 0; s.cp = 0;
+    },
+    layout(g) { if (g.s.obs) geo(g); },
+    down(g) { const s = g.s; if (s.dead) return; s.started = true; s.vy = -390 * s.u; Arcade.tone(560, 0.05, 'triangle', 0.06, 120); },
+    key(g, k, d) { if (d && k === ' ') this.down(g); },
+    update(g, dt) {
+      const s = g.s;
+      for (const o of s.obs) { if (o.k === 'ring') o.rot += o.sp * dt; if (o.k === 'bar') o.off = (o.off + o.sp * dt + 4) % 4; }
+      if (s.dead) { s.dead += dt; if (s.dead > 0.9) { if (g.die()) { s.dead = 0; s.y = s.cp; s.vy = 0; s.started = false; } } return; }
+      if (!s.started) return;
+      s.vy += 1150 * s.u * dt; s.y += s.vy * dt;
+      s.cam = Math.min(s.cam, s.y);
+      const screenY = (y) => (y - s.cam) + (g.bot - g.top) * 0.62 + g.top;
+      const die = () => { s.dead = 0.001; Arcade.sfx.boom(); g.shake(0.3, 8); g.burst(s.cx, screenY(s.y), { n: 24, color: CC, speed: 260, size: 4 }); };
+      if (screenY(s.y) > g.bot + 20) return die();
+      for (const o of s.obs) {
+        if (o.k === 'ring') {
+          const dy = s.y - o.y, d = Math.abs(dy);
+          if (Math.abs(d - o.R) < o.th / 2 + s.r * 0.85) {
+            const a = ((Math.atan2(dy, 0) - o.rot) % TAU + TAU) % TAU, ci = Math.floor(a / (TAU / 4));
+            if (ci !== s.col) return die();
+          }
+        } else if (o.k === 'bar') {
+          if (Math.abs(s.y - o.y) < o.th / 2 + s.r * 0.85) {
+            const segW = g.W / 2, x = ((s.cx / segW + o.off) % 4 + 4) % 4, ci = Math.floor(x);
+            if (ci !== s.col) return die();
+          }
+        } else if (o.k === 'star' && !o.got && Math.abs(s.y - o.y) < 24 * s.u) { o.got = true; g.addScore(1, s.cx, screenY(o.y)); Arcade.sfx.coin(); g.ring(s.cx, screenY(o.y), '#ffd43b', 40); }
+        else if (o.k === 'switch' && !o.used && Math.abs(s.y - o.y) < 22 * s.u) {
+          o.used = true; let c; do c = ri(0, 3); while (c === s.col); s.col = c; s.cp = o.y;
+          g.burst(s.cx, screenY(o.y), { n: 14, color: CC, speed: 180, size: 3 }); Arcade.sfx.up();
+        }
+      }
+      if (s.y < s.finish) { g.addScore(30 * g.lv, g.W / 2, g.H / 2); g.win(); }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      ctx.fillStyle = '#141421'; ctx.fillRect(0, 0, W, H);
+      if (!s.obs) return;
+      const SY = (y) => (y - s.cam) + (g.bot - g.top) * 0.62 + g.top;
+      for (const o of s.obs) {
+        const y = SY(o.y); if (y < -200 || y > H + 200) continue;
+        if (o.k === 'ring') {
+          ctx.lineWidth = o.th; ctx.lineCap = 'butt';
+          for (let i = 0; i < 4; i++) { ctx.strokeStyle = CC[i]; ctx.beginPath(); ctx.arc(s.cx, y, o.R, o.rot + i * TAU / 4 + 0.02, o.rot + (i + 1) * TAU / 4 - 0.02); ctx.stroke(); }
+        } else if (o.k === 'bar') {
+          const segW = W / 2;
+          for (let i = -1; i < 6; i++) { const x = (i - o.off) * segW, ci = ((i % 4) + 4) % 4; ctx.fillStyle = CC[ci]; ctx.fillRect(x, y - o.th / 2, segW - 2, o.th); }
+        } else if (o.k === 'star' && !o.got) Arcade.emoji(ctx, '⭐', s.cx, y, 26 * s.u * (1 + Math.sin(g.rt * 5) * 0.08));
+        else if (o.k === 'switch' && !o.used) {
+          for (let i = 0; i < 4; i++) { ctx.fillStyle = CC[i]; ctx.beginPath(); ctx.moveTo(s.cx, y); ctx.arc(s.cx, y, 13 * s.u, g.rt * 2 + i * TAU / 4, g.rt * 2 + (i + 1) * TAU / 4); ctx.fill(); }
+        }
+      }
+      const fy = SY(s.finish);
+      if (fy > -40) { for (let i = 0; i < W / 20; i++) { ctx.fillStyle = i % 2 ? '#fff' : '#212529'; ctx.fillRect(i * 20, fy - 6, 20, 12); } Arcade.emoji(ctx, '🏁', s.cx, fy - 30, 36); }
+      if (!s.dead) {
+        const by = SY(s.y);
+        ctx.fillStyle = CC[s.col]; ctx.beginPath(); ctx.arc(s.cx, by, s.r, 0, TAU); ctx.fill();
+        Arcade.emoji(ctx, FACES[s.col], s.cx, by, s.r * 1.4, { alpha: 0.9 });
+        if (!s.started) Arcade.txt(ctx, Arcade.tv ? 'OK 🎮' : '👆', s.cx, by + 50, 22, '#fff', 'center', 900);
+      }
+      const prog = s.finish ? Math.min(1, s.cam / s.finish) : 0;
+      ctx.fillStyle = 'rgba(255,255,255,.12)'; Arcade.rr(ctx, W - 16, g.top + 10, 6, g.bot - g.top - 40, 3); ctx.fill();
+      ctx.fillStyle = CC[s.col]; Arcade.rr(ctx, W - 16, g.top + 10 + (g.bot - g.top - 40) * (1 - prog), 6, (g.bot - g.top - 40) * prog, 3); ctx.fill();
+    },
+  });
+})();
+</script>
+</body>
+</html>

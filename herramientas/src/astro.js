@@ -1,0 +1,61 @@
+// Astro|#0a0a23
+(function () {
+  const { ri, rand, clamp, pick } = Arcade;
+  const ALIENS = ['👾', '👽', '🛸', '🪐'];
+
+  function geo(g) { const s = g.s; s.gy = g.bot - 70; }
+  function addBall(g, x, y, size, vx) { const s = g.s; s.balls.push({ x, y, size, vx, vy: -200 - size * 40, e: ALIENS[size % ALIENS.length] }); }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Alienígenas saltarines que se dividen', deco: ['👾', '🚀', '🛸', '💥', '⭐', '👽'], font: 'wide', bg: ['#1a1a40', '#0a0a23'],
+    music: { mode: 'phryg', bpm: 132, wave: 'square', style: 'arcade', root: 55 }, voice: { wave: 'square', mul: 1, echo: 0.25 },
+    ambient: { e: ['✨'], n: 20, vy: 10, sway: 0, twinkle: 1, alpha: 0.5, size: [4, 9] },
+    en: { title: 'Astro', tag: 'Bouncing aliens that split', help: '<b>Drag</b> left and right to move your ship; it fires on its own. The aliens bounce around the screen: every hit <b>splits</b> them into two smaller, faster ones, and the tiniest pop for good. If one lands on you, you lose a life. Clear the screen to finish the level.', tvHelp: 'Hold ◀ ▶ to move.', dict: {} },
+    tvHelp: 'Mantén ◀ ▶ para moverte.',
+    id: 'astro', title: 'Astro', emoji: '👾', color: '#69db7c', origin: 'Astro-PANIC! / Pang / Pixel Purge',
+    help: '<b>Arrastra</b> a izquierda y derecha para mover tu nave; dispara sola. Los alienígenas rebotan por la pantalla: cada impacto los <b>divide</b> en dos más pequeños y rápidos, y los diminutos explotan del todo. Si uno te cae encima, pierdes una vida. Limpia la pantalla para pasar de nivel.',
+    lives: 3, levels: 0, cap: 25,
+    setup(g) {
+      g.s = { x: g.W / 2, balls: [], shots: [], cd: 0, inv: 1.5 }; const s = g.s; geo(g);
+      const L = g.lv, n = clamp(1 + Math.floor(L / 3), 1, 4), size = clamp(2 + Math.floor(L / 4), 2, 4);
+      for (let i = 0; i < n; i++) addBall(g, g.W * (i + 1) / (n + 1), g.top + 120, size, (i % 2 ? 1 : -1) * 80);
+    },
+    layout(g) { if (g.s.balls) geo(g); },
+    down(g, p) { g.s.tx = p.x; }, move(g, p) { g.s.tx = p.x; },
+    key(g, k, d) { const s = g.s; if (k === 'ArrowLeft' || k === 'ArrowRight') s.kd = d ? (k === 'ArrowLeft' ? -1 : 1) : 0; },
+    update(g, dt) {
+      const s = g.s; if (s.done) return;
+      s.inv = Math.max(0, s.inv - dt);
+      if (s.kd) s.x += s.kd * 320 * dt; else if (s.tx != null) s.x += clamp(s.tx - s.x, -500 * dt, 500 * dt);
+      s.x = clamp(s.x, 20, g.W - 20);
+      s.cd -= dt; if (s.cd <= 0) { s.cd = 0.22; s.shots.push({ x: s.x, y: s.gy - 20 }); Arcade.tone(900, 0.02, 'square', 0.02); }
+      for (const sh of s.shots) sh.y -= 640 * dt; s.shots = s.shots.filter((sh) => sh.y > g.top);
+      const G = 380;
+      for (const b of s.balls) {
+        const r = 9 + b.size * 8;
+        b.vy += G * dt; b.x += b.vx * dt; b.y += b.vy * dt;
+        if (b.x < r || b.x > g.W - r) { b.vx *= -1; b.x = clamp(b.x, r, g.W - r); }
+        if (b.y > s.gy - r) { b.y = s.gy - r; b.vy = -Math.sqrt(2 * G * (120 + b.size * 70)); }
+        for (const sh of s.shots) if (!sh.dead && Math.abs(sh.x - b.x) < r && sh.y < b.y + r && sh.y > b.y - r) {
+          sh.dead = true; b.dead = true; Arcade.sfx.pop(); g.burst(b.x, b.y, { n: 8, color: ['#69db7c', '#fff', '#ffd43b'], speed: 160, size: 3 }); g.addScore((5 - b.size) * 10 * g.lv, b.x, b.y - 20);
+          if (b.size > 0) { addBall(g, b.x, b.y, b.size - 1, -Math.abs(b.vx) - 30); addBall(g, b.x, b.y, b.size - 1, Math.abs(b.vx) + 30); }
+          break;
+        }
+        if (!s.inv && Math.abs(b.x - s.x) < r + 12 && b.y > s.gy - r - 30) { s.inv = 2; Arcade.sfx.hit(); g.shake(0.25, 6); g.flash('#ff6b6b', 0.15); if (!g.die()) return; }
+      }
+      s.balls = s.balls.filter((b) => !b.dead); s.shots = s.shots.filter((x) => !x.dead);
+      if (!s.balls.length) { s.done = true; g.confetti(60); g.addScore(100 * g.lv, g.W / 2, g.H / 2); setTimeout(() => { if (g.state === 'play') g.win(); }, 600); }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      const bg = ctx.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, '#1a1a40'); bg.addColorStop(1, '#05050f');
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      if (!s.balls) return;
+      ctx.fillStyle = '#2b2b5c'; ctx.fillRect(0, s.gy, W, H - s.gy); ctx.fillStyle = '#69db7c'; ctx.fillRect(0, s.gy, W, 3);
+      for (const sh of s.shots) { ctx.fillStyle = '#ffd43b'; ctx.fillRect(sh.x - 2, sh.y - 8, 4, 12); }
+      for (const b of s.balls) { const r = 9 + b.size * 8; ctx.fillStyle = 'rgba(105,219,124,.2)'; ctx.beginPath(); ctx.arc(b.x, b.y, r + 4, 0, 6.3); ctx.fill(); Arcade.emoji(ctx, b.e, b.x, b.y, r * 2.1, { rot: b.vx * 0.002 }); }
+      Arcade.emoji(ctx, '🚀', s.x, s.gy - 18, 36, { rot: -Math.PI / 4, alpha: s.inv && Math.floor(g.rt * 12) % 2 ? 0.4 : 1 });
+      Arcade.txt(ctx, '👾 ' + s.balls.length, W / 2, g.top + 20, 15, '#d3f9d8', 'center', 900);
+    },
+  });
+})();

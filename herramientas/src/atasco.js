@@ -1,0 +1,156 @@
+// Atasco|#2b2f36
+(function () {
+  const { ri, rand, clamp, pick } = Arcade;
+  const N = 6, EXIT_R = 2;
+  const CARS = [['#4dabf7', '🚙'], ['#69db7c', '🚕'], ['#ffd43b', '🚖'], ['#da77f2', '🚐'], ['#ff922b', '🚓'], ['#38d9a9', '🚑'], ['#f783ac', '🛻'], ['#a9e34b', '🚜']];
+  const TRUCKS = [['#5c7cfa', '🚌'], ['#adb5bd', '🚚'], ['#e8590c', '🚛'], ['#22b8cf', '🚎']];
+
+  function grid(vs, pos) {
+    const gr = new Array(N * N).fill(-1);
+    vs.forEach((v, i) => { const p = pos[i]; for (let k = 0; k < v.len; k++) { const r = v.h ? v.fix : p + k, c = v.h ? p + k : v.fix; gr[r * N + c] = i; } });
+    return gr;
+  }
+  function solve(vs, start, limit) {
+    const key = (p) => p.join(','), seen = new Map([[key(start), 0]]);
+    let fr = [start], d = 0;
+    while (fr.length) {
+      const nx = [];
+      for (const p of fr) {
+        if (p[0] + vs[0].len === N) return d;
+        const gr = grid(vs, p);
+        vs.forEach((v, i) => {
+          for (const dir of [-1, 1]) {
+            for (let st = 1; st < N; st++) {
+              const np = p[i] + dir * st; if (np < 0 || np + v.len > N) break;
+              const cell = dir > 0 ? np + v.len - 1 : np, r = v.h ? v.fix : cell, c = v.h ? cell : v.fix;
+              if (gr[r * N + c] !== -1) break;
+              const q = p.slice(); q[i] = np; const k = key(q);
+              if (!seen.has(k)) { seen.set(k, d + 1); nx.push(q); }
+            }
+          }
+        });
+        if (seen.size > limit) return -1;
+      }
+      fr = nx; d++;
+    }
+    return -1;
+  }
+  function gen(lv) {
+    const want = clamp(3 + Math.floor(lv * 0.9), 3, 22), t0 = performance.now();
+    let best = null;
+    while (performance.now() - t0 < 1300) {
+      const vs = [{ h: true, fix: EXIT_R, len: 2, red: true }], pos = [ri(0, 2)];
+      const occ = new Set([EXIT_R * N + pos[0], EXIT_R * N + pos[0] + 1]);
+      const nv = ri(7, Math.min(13, 8 + Math.floor(lv / 2)));
+      for (let k = 0; k < 60 && vs.length < nv; k++) {
+        const h = Math.random() < 0.5, len = Math.random() < 0.28 ? 3 : 2, fix = ri(0, N - 1), p = ri(0, N - len);
+        if (h && fix === EXIT_R) continue;
+        const cells = []; for (let i = 0; i < len; i++) cells.push(h ? fix * N + p + i : (p + i) * N + fix);
+        if (cells.some((c) => occ.has(c))) continue;
+        cells.forEach((c) => occ.add(c)); vs.push({ h, fix, len }); pos.push(p);
+      }
+      const m = solve(vs, pos, 40000);
+      if (m < 2) continue;
+      if (!best || Math.abs(m - want) < Math.abs(best.m - want)) best = { vs, pos, m };
+      if (m >= want) break;
+    }
+    return best;
+  }
+  function geo(g) { const s = g.s, a = Math.min(g.W - 60, g.bot - g.top - 130, 460); s.cs = a / N; s.ox = (g.W - a) / 2 - s.cs * 0.3; s.oy = g.top + 80 + (g.bot - g.top - 130 - a) / 2; }
+  function vAt(s, x, y) {
+    const c = Math.floor((x - s.ox) / s.cs), r = Math.floor((y - s.oy) / s.cs);
+    if (c < 0 || c >= N || r < 0 || r >= N) return -1;
+    return grid(s.vs, s.pos)[r * N + c];
+  }
+  function range(s, i) {
+    const v = s.vs[i], gr = grid(s.vs, s.pos), p = s.pos[i]; let lo = p, hi = p;
+    const free = (q) => { const r = v.h ? v.fix : q, c = v.h ? q : v.fix; return gr[r * N + c] === -1; };
+    while (lo - 1 >= 0 && free(lo - 1)) lo--;
+    while (hi + v.len < N && free(hi + v.len)) hi++;
+    if (v.red && hi + v.len === N) hi += 3; // puede salir
+    return [lo, hi];
+  }
+  function commit(g, i, np) {
+    const s = g.s; if (np === s.pos[i]) return;
+    s.pos[i] = np; s.moves++; Arcade.tone(220 + np * 40, 0.06, 'square', 0.06);
+    const v = s.vs[i];
+    if (v.red && np + v.len >= N) { s.exit = 0.001; s.pos[i] = N - v.len; Arcade.sfx.win(); }
+  }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Saca el coche rojo del atasco', deco: ['🚗', '🚕', '🚌', '🚚', '🚦', '🚧'], font: 'wide', bg: ['#495057', '#2b2f36'],
+    music: { mode: 'mixo', bpm: 104, wave: 'triangle', style: 'chill', root: 57 }, voice: { wave: 'square', mul: 0.95, echo: 0.2 },
+    en: { title: 'Traffic Jam', tag: 'Get the red car out of the jam', help: 'Slide the vehicles (<b>drag</b> them along their direction: cars go only forwards or backwards) to free the way for the <b>red car</b> 🚗 to the exit on the right. Each level is a different puzzle, harder each time. Fewer moves, more stars.', tvHelp: 'D-pad to move the cursor · OK on a vehicle ✋ and arrows to move it.', dict: { 'Movimientos: ': 'Moves: ', '   ·   Mínimo: ': '   ·   Best: ', 'SALIDA': 'EXIT', '↺ Reiniciar': '↺ Restart' } },
+    tvHelp: 'Cruceta para mover el cursor · OK en un vehículo ✋ y flechas para moverlo.',
+    tv: { mode: 'swipe', canArm: (g, t) => t.v != null, targets: (g) => { const s = g.s, o = []; if (!s.vs || s.exit) return o; const gr = grid(s.vs, s.pos); for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) o.push({ x: s.ox + c * s.cs, y: s.oy + r * s.cs, w: s.cs, h: s.cs, v: gr[r * N + c] >= 0 ? gr[r * N + c] : null }); o.push({ x: g.W / 2 - 70, y: s.oy + N * s.cs + 22, w: 140, h: 40, instant: true }); return o; } },
+    id: 'atasco', title: 'Atasco', emoji: '🚗', color: '#ff6b6b', origin: 'Rush Hour (ThinkFun)',
+    help: 'Desliza los vehículos (<b>arrástralos</b> en su dirección: los coches solo van hacia delante o hacia atrás) para dejar paso al <b>coche rojo</b> 🚗 hasta la salida de la derecha. Cada nivel es un puzle distinto y más difícil. Menos movimientos, más estrellas.',
+    lives: 0, levels: 0, cap: 22,
+    setup(g) {
+      const lv = gen(g.lv);
+      g.s = { vs: lv.vs, pos: lv.pos.slice(), start: lv.pos.slice(), min: lv.m, moves: 0, drag: null, exit: 0, look: [] };
+      const s = g.s; let ci = 0, ti = 0;
+      for (const v of s.vs) v.look = v.red ? ['#ff4d4d', '🚗'] : v.len === 3 ? TRUCKS[ti++ % TRUCKS.length] : CARS[ci++ % CARS.length];
+      geo(g);
+    },
+    layout(g) { if (g.s.vs) geo(g); },
+    down(g, p) {
+      const s = g.s; if (s.exit) return;
+      if (p.y > s.oy + N * s.cs + 16 && p.y < s.oy + N * s.cs + 66 && Math.abs(p.x - g.W / 2) < 80) { s.pos = s.start.slice(); s.moves = 0; Arcade.sfx.tick(); s.drag = null; return; }
+      if (p.type === 'tv') return;
+      const i = vAt(s, p.x, p.y); if (i < 0) return;
+      const [lo, hi] = range(s, i);
+      s.drag = { i, lo, hi, p0: s.pos[i], off: 0, sx: p.x, sy: p.y };
+    },
+    move(g, p) {
+      const s = g.s, d = s.drag; if (!d || d.i == null) return;
+      const v = s.vs[d.i], delta = v.h ? p.x - p.sx : p.y - p.sy;
+      d.off = clamp(delta / s.cs, d.lo - d.p0, d.hi - d.p0);
+    },
+    up(g) {
+      const s = g.s, d = s.drag; if (!d) return; s.drag = null;
+      const np = clamp(d.p0 + Math.round(d.off), d.lo, d.hi);
+      commit(g, d.i, np);
+    },
+    update(g, dt) {
+      const s = g.s;
+      if (s.exit) { s.exit += dt; if (s.exit > 0.9) { const st = s.moves <= s.min ? 3 : s.moves <= s.min * 1.5 ? 2 : 1; g.addScore(100 + Math.max(0, s.min * 3 - s.moves) * 20 + g.lv * 20, g.W / 2, g.H / 2); g.win(st); } }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      ctx.fillStyle = '#2b2f36'; ctx.fillRect(0, 0, W, H);
+      g.scenery(['🏢', '🌳', '🏠', '🚦'], 10, { alpha: 0.12, size: [26, 44] });
+      if (!s.vs) return;
+      const cs = s.cs, a = cs * N;
+      ctx.fillStyle = '#495057'; Arcade.rr(ctx, s.ox - 10, s.oy - 10, a + 20, a + 20, 16); ctx.fill();
+      ctx.fillStyle = '#343a40'; ctx.fillRect(s.ox, s.oy, a, a);
+      ctx.strokeStyle = 'rgba(255,255,255,.06)'; ctx.lineWidth = 1;
+      for (let i = 1; i < N; i++) { ctx.beginPath(); ctx.moveTo(s.ox + i * cs, s.oy); ctx.lineTo(s.ox + i * cs, s.oy + a); ctx.moveTo(s.ox, s.oy + i * cs); ctx.lineTo(s.ox + a, s.oy + i * cs); ctx.stroke(); }
+      // salida
+      ctx.fillStyle = '#343a40'; ctx.fillRect(s.ox + a, s.oy + EXIT_R * cs, 16, cs);
+      ctx.fillStyle = '#ffd43b'; for (let k = 0; k < 4; k++) ctx.fillRect(s.ox + a + 4, s.oy + EXIT_R * cs + 6 + k * cs / 4, 8, cs / 8);
+      Arcade.txt(ctx, 'SALIDA', s.ox + a + 26, s.oy + EXIT_R * cs - 10, 11, '#ffd43b', 'center', 900);
+      s.vs.forEach((v, i) => {
+        let p = s.pos[i];
+        if (s.drag && s.drag.i === i) p = s.drag.p0 + s.drag.off;
+        if (v.red && s.exit) p += s.exit * 6;
+        const x = s.ox + (v.h ? p : v.fix) * cs + 4, y = s.oy + (v.h ? v.fix : p) * cs + 4, w = (v.h ? v.len : 1) * cs - 8, h = (v.h ? 1 : v.len) * cs - 8;
+        ctx.fillStyle = 'rgba(0,0,0,.35)'; Arcade.rr(ctx, x + 3, y + 4, w, h, cs * 0.2); ctx.fill();
+        ctx.fillStyle = v.look[0]; Arcade.rr(ctx, x, y, w, h, cs * 0.2); ctx.fill();
+        ctx.fillStyle = 'rgba(255,255,255,.28)'; Arcade.rr(ctx, x + 4, y + 4, w - 8, Math.min(h, w) * 0.22, cs * 0.1); ctx.fill();
+        Arcade.emoji(ctx, v.look[1], x + w / 2, y + h / 2, cs * 0.62, { rot: v.h ? 0 : -Math.PI / 2, flip: v.h });
+      });
+      Arcade.txt(ctx, 'Movimientos: ' + s.moves + '   ·   Mínimo: ' + s.min, W / 2, s.oy - 34, 15, '#e9ecef', 'center', 800);
+      ctx.fillStyle = 'rgba(255,255,255,.1)'; Arcade.rr(ctx, W / 2 - 70, s.oy + a + 22, 140, 40, 14); ctx.fill();
+      Arcade.txt(ctx, '↺ Reiniciar', W / 2, s.oy + a + 42, 15, '#fff', 'center', 800);
+    },
+    swipe(g, dir, p) {
+      if (p.type !== 'tv') return;
+      const s = g.s, i = vAt(s, p.sx, p.sy); if (i < 0) return;
+      const v = s.vs[i], d = { left: -1, right: 1, up: -1, down: 1 }[dir];
+      if (v.h !== (dir === 'left' || dir === 'right')) { Arcade.sfx.bad(); return; }
+      const [lo, hi] = range(s, i);
+      commit(g, i, clamp(s.pos[i] + d, lo, hi));
+    },
+  });
+})();

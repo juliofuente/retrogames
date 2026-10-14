@@ -1,0 +1,116 @@
+// Justa|#120b0b
+(function () {
+  const { rand, ri, clamp, pick } = Arcade;
+  const PL = [[0, 0.3, 0.95], [0.7, 1, 0.95], [0.04, 0.34, 0.72], [0.66, 0.96, 0.72], [0.36, 0.64, 0.5], [0, 0.22, 0.3], [0.78, 1, 0.3], [0.38, 0.62, 0.17]];
+  const TIER = [{ c: '#ff6b6b', sp: 0.8, pts: 500 }, { c: '#ced4da', sp: 1, pts: 750 }, { c: '#4dabf7', sp: 1.25, pts: 1500 }];
+
+  function plats(g) { const x0 = 0, y0 = g.top + 10, w = g.W, h = g.bot - g.top - 10; return PL.map(([a, b, y]) => ({ x0: x0 + a * w, x1: x0 + b * w, y: y0 + y * h })); }
+  function physics(g, r, dt) {
+    const P = g.s.P;
+    r.vy += 900 * dt; r.vy = Math.min(r.vy, 520);
+    r.vx *= r.ground ? 1 - 3 * dt : 1 - 0.25 * dt;
+    const py = r.y;
+    r.x += r.vx * dt; r.y += r.vy * dt;
+    if (r.x < -15) r.x += g.W + 30; if (r.x > g.W + 15) r.x -= g.W + 30;
+    if (r.y < g.top + 30) { r.y = g.top + 30; r.vy = Math.abs(r.vy) * 0.4; }
+    r.ground = false;
+    for (const p of P) {
+      if (r.x < p.x0 - 6 || r.x > p.x1 + 6) continue;
+      if (r.vy >= 0 && py <= p.y + 1 && r.y >= p.y) { r.y = p.y; r.vy = 0; r.ground = true; }
+      else if (r.vy < 0 && py - 30 >= p.y + 8 && r.y - 30 < p.y + 8) { r.y = p.y + 38; r.vy = 40; }
+    }
+  }
+  function flap(r, dir) { r.face = dir; r.vy = Math.max(-430, Math.min(r.vy, 60) - 300); r.vx = clamp(r.vx + dir * 85, -230, 230); r.ground = false; }
+  function spawnEnemy(g, tier, x, y) {
+    const s = g.s, p = pick(s.P.slice(2));
+    s.en.push({ x: x ?? rand(p.x0 + 10, p.x1 - 10), y: y ?? p.y, vx: 0, vy: 0, face: Math.random() < 0.5 ? -1 : 1, tier, ft: rand(0.2, 0.8), alt: rand(-60, 40), spawn: 1 });
+  }
+  function wave(g) {
+    const s = g.s; s.wave++;
+    const n = Math.min(8, 2 + s.wave);
+    for (let i = 0; i < n; i++) spawnEnemy(g, s.wave >= 6 && i % 3 === 0 ? 2 : s.wave >= 3 && i % 2 ? 1 : 0);
+    g.level = s.wave; g.hud(); g.message('Oleada ' + s.wave, 1.2);
+  }
+
+  Arcade.game({
+    id: 'justa', title: 'Justa', emoji: '🦤', color: '#ff922b', origin: 'Joust (Williams, 1982)',
+    help: 'Montas un pájaro que vuela a base de aletazos. <b>Toca la mitad izquierda</b> para aletear hacia la izquierda y la <b>derecha</b> para ir a la derecha. Cuando chocas con un enemigo <b>gana el que va más alto</b>. Los vencidos sueltan un huevo 🥚: recógelo antes de que eclosione. Cuidado con caer a la lava 🔥.',
+    lives: 3, levels: null, levelLabel: 'Oleada',
+    setup(g) {
+      g.s = { en: [], eggs: [], wave: 0, inv: 2, eggBonus: 250, gap: 0 };
+      const s = g.s; s.P = plats(g);
+      s.pl = { x: g.W * 0.15, y: s.P[0].y, vx: 0, vy: 0, face: 1, ground: true };
+      wave(g);
+    },
+    layout(g) { const s = g.s; if (!s.P) return; const old = s.P, np = plats(g); const ky = (y) => np[0].y + (y - old[0].y) * ((np[0].y - np[7].y) / (old[0].y - old[7].y || 1)); s.pl.y = ky(s.pl.y); for (const e of s.en) e.y = ky(e.y); for (const e of s.eggs) e.y = ky(e.y); s.P = np; },
+    down(g, p) { flap(g.s.pl, p.x < g.W / 2 ? -1 : 1); Arcade.tone(180, 0.05, 'triangle', 0.06, 80); },
+    key(g, k, d) { if (!d) return; if (k === 'ArrowLeft' || k === 'a') this.down(g, { x: 0 }); else if (k === 'ArrowRight' || k === 'd') this.down(g, { x: g.W }); },
+    update(g, dt) {
+      const s = g.s, pl = s.pl;
+      s.inv = Math.max(0, s.inv - dt);
+      physics(g, pl, dt);
+      if (pl.y > g.bot + 10) { g.burst(pl.x, g.bot - 10, { n: 20, color: ['#ff922b', '#ffd43b'], speed: 220, up: 100 }); if (g.die()) { pl.x = g.W * 0.15; pl.y = s.P[0].y; pl.vx = pl.vy = 0; s.inv = 2; } return; }
+      for (const e of s.en) {
+        if (e.spawn > 0) { e.spawn -= dt; continue; }
+        const T = TIER[e.tier];
+        e.ft -= dt;
+        const ty = clamp(pl.y + e.alt, g.top + 60, g.bot - 60);
+        if (e.ft <= 0) {
+          e.ft = rand(0.18, 0.45) / T.sp;
+          let dir = e.face;
+          if (Math.random() < 0.55) dir = pl.x < e.x ? -1 : 1;
+          if (e.y > ty || e.y > g.bot - 90 || Math.random() < 0.15) { flap(e, dir); e.vx = clamp(e.vx, -200 * T.sp, 200 * T.sp); }
+          if (Math.random() < 0.05) e.alt = rand(-70, 40);
+        }
+        physics(g, e, dt);
+        if (e.y > g.bot + 10) e.dead = true;
+        // choque
+        if (Math.abs(e.x - pl.x) < 26 && Math.abs(e.y - pl.y) < 30) {
+          const dy = pl.y - e.y;
+          if (Math.abs(dy) < 9) { const t = pl.vx; pl.vx = e.vx * 0.8 - Math.sign(e.x - pl.x) * 120; e.vx = t * 0.8 + Math.sign(e.x - pl.x) * 120; Arcade.tone(400, 0.04, 'square', 0.05); }
+          else if (dy < 0) {
+            e.dead = true; g.addScore(T.pts, e.x, e.y - 30); Arcade.sfx.coin(); g.burst(e.x, e.y - 15, { n: 10, emoji: '🪶', size: 12, speed: 160 });
+            s.eggs.push({ x: e.x, y: e.y - 20, vx: e.vx * 0.6, vy: -120, t: 0, tier: Math.min(2, e.tier + 1), ground: false });
+          } else if (s.inv <= 0) {
+            g.burst(pl.x, pl.y - 15, { n: 16, emoji: '💥', size: 14, speed: 180 });
+            if (g.die()) { pl.x = g.W * 0.15; pl.y = s.P[0].y; pl.vx = pl.vy = 0; s.inv = 2; }
+            return;
+          }
+        }
+      }
+      s.en = s.en.filter(e => !e.dead);
+      for (const eg of s.eggs) {
+        physics(g, eg, dt); eg.t += dt;
+        if (eg.y > g.bot + 10) eg.dead = true;
+        if (Math.abs(eg.x - pl.x) < 24 && Math.abs(eg.y - pl.y) < 28) { eg.dead = true; g.addScore(s.eggBonus, eg.x, eg.y - 20); s.eggBonus = Math.min(1000, s.eggBonus + 250); Arcade.sfx.pop(); }
+        else if (eg.t > 7) { eg.dead = true; spawnEnemy(g, eg.tier, eg.x, eg.y); Arcade.tone(120, 0.3, 'sawtooth', 0.07, 200); }
+      }
+      s.eggs = s.eggs.filter(e => !e.dead);
+      if (!s.en.length && !s.eggs.length) { s.gap += dt; if (s.gap > 1.2) { s.gap = 0; g.addScore(1000 * s.wave, g.W / 2, g.H / 2); s.eggBonus = 250; Arcade.sfx.win(); wave(g); } }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      ctx.fillStyle = '#120b0b'; ctx.fillRect(0, 0, W, H);
+      if (!s.P) return;
+      // lava
+      const ly = s.P[0].y + 8;
+      const lg = ctx.createLinearGradient(0, ly, 0, H);
+      lg.addColorStop(0, '#ff922b'); lg.addColorStop(1, '#c92a2a');
+      ctx.fillStyle = lg; ctx.fillRect(0, ly + 10, W, H - ly);
+      for (let i = 0; i < 10; i++) { const x = (i * 71 + g.t * 20) % W; ctx.fillStyle = 'rgba(255,212,59,.5)'; ctx.beginPath(); ctx.arc(x, ly + 18 + Math.sin(g.t * 3 + i) * 4, 4, 0, 6.28); ctx.fill(); }
+      for (const p of s.P) {
+        ctx.fillStyle = '#5c4033'; Arcade.rr(ctx, p.x0, p.y, p.x1 - p.x0, p === s.P[0] || p === s.P[1] ? H - p.y : 14, 4); ctx.fill();
+        ctx.fillStyle = '#8b5e3c'; ctx.fillRect(p.x0, p.y, p.x1 - p.x0, 4);
+      }
+      for (const eg of s.eggs) Arcade.emoji(ctx, '🥚', eg.x, eg.y - 10, 22, { rot: eg.t > 5 ? Math.sin(g.t * 30) * 0.3 : 0 });
+      const rider = (r, em, col) => {
+        ctx.fillStyle = col; ctx.beginPath(); ctx.ellipse(r.x, r.y - 4, 16, 5, 0, 0, 6.28); ctx.fill();
+        Arcade.emoji(ctx, em, r.x, r.y - 20, 36, { flip: r.face > 0 });
+        if (!r.ground && Math.floor(g.t * 12) % 2) Arcade.emoji(ctx, '〰️', r.x, r.y - 30, 14, { alpha: 0.5 });
+      };
+      for (const e of s.en) { if (e.spawn > 0) ctx.globalAlpha = 1 - e.spawn; rider(e, '🦅', TIER[e.tier].c); ctx.globalAlpha = 1; }
+      if (!(s.inv > 0 && Math.floor(g.t * 10) % 2)) rider(s.pl, '🦤', '#ffd43b');
+      Arcade.emoji(ctx, '👆', W * 0.08, g.bot - 30, 26, { alpha: 0.25 }); Arcade.emoji(ctx, '👆', W * 0.92, g.bot - 30, 26, { alpha: 0.25 });
+    },
+  });
+})();

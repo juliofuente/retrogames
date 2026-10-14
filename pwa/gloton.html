@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Glotón · Arcade Perdido</title>
+<meta name="theme-color" content="#4dabf7">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css">
+</head>
+<body class="game">
+<script src="config.js"></script>
+<script src="common.js"></script>
+<script>
+(function () {
+  const { ri, rand, clamp, pick } = Arcade;
+  const FOOD = ['🍩', '🍪', '🍓', '🍔', '🍕', '🧁', '🍌', '🍉'], BAD = ['🌩️', '🐝', '🦅', '☄️'];
+
+  function geo(g) { const s = g.s; s.px = g.W * 0.25; s.y0 = g.top + 40; s.y1 = g.bot - 20; }
+  function spawn(g) {
+    const s = g.s, L = g.lv, y = rand(s.y0 + 20, s.y1 - 20);
+    if (Math.random() < 0.55) { const n = ri(3, 6), wave = Math.random() < 0.5; for (let i = 0; i < n; i++) s.items.push({ x: g.W + 30 + i * 36, y: clamp(y + (wave ? Math.sin(i) * 40 : 0), s.y0 + 15, s.y1 - 15), e: pick(FOOD), food: true }); }
+    else { const n = ri(1, 1 + Math.floor(L / 4)); for (let i = 0; i < n; i++) s.items.push({ x: g.W + 40 + i * 80, y: rand(s.y0 + 20, s.y1 - 20), e: pick(BAD.slice(0, 2 + Math.floor(L / 5))), food: false, vy: L >= 3 ? rand(-60, 60) : 0 }); }
+  }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Vuela, come y no pares', deco: ['🦸', '🍩', '🍓', '🐝', '🌩️', '⭐'], font: 'comic', bg: ['#74c0fc', '#4dabf7'],
+    music: { mode: 'major', bpm: 130, wave: 'square', style: 'arcade', root: 62 }, voice: { wave: 'square', mul: 1, echo: 0.2 },
+    en: { title: 'Glutton', tag: 'Fly, eat and never stop', help: 'Our hero flies on their own and gets hungrier by the second. <b>Drag</b> your finger up and down (anywhere) to move them and gobble up all the food 🍩 to refill the energy bar. Avoid bees, eagles and storms: they take a big bite out of your energy. If the bar empties, you lose a life. Fly the distance each level asks for.', tvHelp: 'Hold ▲ ▼ to move.', dict: { 'Energía': 'Energy' } },
+    tvHelp: 'Mantén ▲ ▼ para moverte.',
+    id: 'gloton', title: 'Glotón', emoji: '🍩', color: '#ff8787', origin: 'Hungry Hero / Hop Hop Hop Underwater',
+    help: 'Nuestro héroe vuela solo y cada segundo tiene más hambre. <b>Arrastra</b> el dedo arriba y abajo (en cualquier sitio) para moverlo y zámpate toda la comida 🍩 para recargar la barra de energía. Esquiva abejas, águilas y tormentas: te quitan un buen mordisco de energía. Si la barra se vacía, pierdes una vida. Vuela la distancia que pide cada nivel.',
+    lives: 3, levels: 0, cap: 25,
+    setup(g) { const L = g.lv; g.s = { y: (g.top + g.bot) / 2, ty: null, items: [], energy: 1, dist: 0, need: 600 + Math.min(L, 25) * 90, t: 0, speed: 240 + Math.min(L, 25) * 8, inv: 0, mouth: 0 }; geo(g); },
+    layout(g) { if (g.s.items) geo(g); },
+    down(g, p) { g.s.drag = { y: p.y, sy: g.s.y }; },
+    move(g, p) { const s = g.s; if (s.drag) s.ty = clamp(s.drag.sy + (p.y - s.drag.y) * 1.3, s.y0, s.y1); },
+    up(g) { g.s.drag = null; },
+    key(g, k, d) { const s = g.s; if (k === 'ArrowUp' || k === 'ArrowDown') s.kd = d ? (k === 'ArrowUp' ? -1 : 1) : 0; },
+    update(g, dt) {
+      const s = g.s; if (s.done) return;
+      if (s.kd) s.ty = clamp((s.ty ?? s.y) + s.kd * 380 * dt, s.y0, s.y1);
+      if (s.ty != null) s.y += (s.ty - s.y) * Math.min(1, dt * 10);
+      s.inv = Math.max(0, s.inv - dt); s.mouth = Math.max(0, s.mouth - dt * 4);
+      s.energy -= dt * (0.06 + Math.min(g.lv, 25) * 0.003);
+      s.dist += s.speed * dt / 30; s.t -= dt; if (s.t <= 0) { s.t = rand(0.8, 1.4); spawn(g); }
+      for (const it of s.items) {
+        it.x -= s.speed * dt; if (it.vy) { it.y += it.vy * dt; if (it.y < s.y0 + 15 || it.y > s.y1 - 15) it.vy *= -1; }
+        if (Math.abs(it.x - s.px) < 26 && Math.abs(it.y - s.y) < 26 && !it.dead) {
+          if (it.food) { it.dead = true; s.energy = Math.min(1, s.energy + 0.06); s.mouth = 1; g.addScore(g.lv, it.x, it.y - 20); Arcade.tone(700 + Math.random() * 200, 0.04, 'square', 0.04); }
+          else if (!s.inv) { it.dead = true; s.inv = 1.2; s.energy -= 0.3; Arcade.sfx.hit(); g.shake(0.25, 6); g.burst(it.x, it.y, { n: 12, color: ['#ffd43b', '#fff'], speed: 160, size: 4 }); }
+        }
+      }
+      s.items = s.items.filter((it) => it.x > -40 && !it.dead);
+      if (s.energy <= 0) { s.energy = 0.6; s.items = []; g.message('😵', 0.8); if (!g.die()) return; }
+      if (s.dist >= s.need) { s.done = true; g.addScore(Math.round(s.energy * 200) * g.lv, g.W / 2, g.H / 2); g.confetti(60); setTimeout(() => { if (g.state === 'play') g.win(); }, 500); }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      const bg = ctx.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, '#4dabf7'); bg.addColorStop(1, '#d0ebff');
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      if (!s.items) return;
+      for (let i = 0; i < 6; i++) Arcade.emoji(ctx, '☁️', ((i * 190 - s.dist * 3) % (W + 200) + W + 200) % (W + 200) - 100, g.top + 60 + (i * 97) % (H - g.top - 120), 60 + (i % 3) * 20, { alpha: 0.7 });
+      ctx.fillStyle = 'rgba(64,192,87,.5)'; ctx.beginPath(); ctx.moveTo(0, H); for (let x = 0; x <= W; x += 20) ctx.lineTo(x, H - 30 - Math.abs(Math.sin((x + s.dist * 6) / 80)) * 30); ctx.lineTo(W, H); ctx.fill();
+      for (const it of s.items) Arcade.emoji(ctx, it.e, it.x, it.y, it.food ? 26 : 34, { flip: it.e === '🦅' });
+      Arcade.emoji(ctx, s.mouth > 0.5 ? '😋' : '🦸', s.px, s.y, 44, { flip: true, alpha: s.inv && Math.floor(g.rt * 12) % 2 ? 0.4 : 1, rot: clamp(((s.ty ?? s.y) - s.y) / 200, -0.4, 0.4) });
+      const bw = Math.min(W - 80, 300); ctx.fillStyle = 'rgba(0,0,0,.25)'; Arcade.rr(ctx, (W - bw) / 2, g.top + 10, bw, 14, 7); ctx.fill();
+      ctx.fillStyle = s.energy > 0.3 ? '#ffd43b' : '#ff6b6b'; Arcade.rr(ctx, (W - bw) / 2, g.top + 10, bw * clamp(s.energy, 0, 1), 14, 7); ctx.fill();
+      Arcade.txt(ctx, Math.floor(s.dist) + ' / ' + s.need + ' m', W / 2, g.top + 38, 14, '#1864ab', 'center', 900);
+    },
+  });
+})();
+</script>
+</body>
+</html>

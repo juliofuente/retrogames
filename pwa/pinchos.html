@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Pinchos · Arcade Perdido</title>
+<meta name="theme-color" content="#f1f3f5">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css">
+</head>
+<body class="game">
+<script src="config.js"></script>
+<script src="common.js"></script>
+<script>
+(function () {
+  const { rand, ri, clamp, shuffle } = Arcade;
+  const NS = 9;
+  const BIRDS = ['🐦', '🐤', '🦜', '🐧', '🦉', '🐥'];
+
+  function geo(g) { const s = g.s; s.x0 = 14; s.x1 = g.W - 14; s.y0 = g.top + 36; s.y1 = g.bot - 30; s.sh = (s.y1 - s.y0) / NS; s.r = clamp(s.sh * 0.32, 14, 24); }
+  function spikes(g, side) {
+    const s = g.s, n = Math.min(NS - 3, 2 + Math.floor(s.hits / 4) + Math.floor(g.lv / 3));
+    const idx = shuffle([...Array(NS).keys()]).slice(0, n);
+    s.sp[side] = new Array(NS).fill(0).map((_, i) => (idx.includes(i) ? 1 : 0));
+    s.spAnim[side] = 0;
+    if (!s.candy && Math.random() < 0.5) s.candy = { x: rand(s.x0 + 60, s.x1 - 60), y: rand(s.y0 + s.sh, s.y1 - s.sh) };
+  }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Rebota sin tocar los pinchos', deco: ['🐦', '🔺', '🍬', '🐤', '🔻', '🍭'], font: 'round', bg: ['#e7f5ff', '#a5d8ff'],
+    music: { mode: 'major', bpm: 136, wave: 'square', style: 'arcade', root: 64 }, voice: { wave: 'square', mul: 1.25, echo: 0.15 },
+    en: { title: 'Spikes', tag: 'Bounce without touching the spikes', help: 'The bird flies from wall to wall on its own. <b>Tap</b> to flap and climb. Each time it touches a wall it bounces and the spikes on the other wall <b>change</b>. Don\'t touch any spike, not even the ceiling or floor ones! 🍬 sweets give points. Bounce the times each level asks for.', tvHelp: 'OK to flap.', dict: { 'Rebotes: ': 'Bounces: ' } },
+    tvHelp: 'OK para aletear.',
+    id: 'pinchos', title: 'Pinchos', emoji: '🐦', color: '#ff6b6b', origin: "Don't Touch the Spikes (Ketchapp)",
+    help: 'El pájaro vuela solo de pared a pared. <b>Toca</b> para aletear y subir. Cada vez que toca una pared rebota y los pinchos de la otra <b>cambian</b>. ¡No toques ningún pincho, ni los del techo ni los del suelo! Los caramelos 🍬 dan puntos. Rebota las veces que pide cada nivel.',
+    lives: 3, levels: 0, cap: 20,
+    setup(g) {
+      g.s = { sp: [[], []], spAnim: [1, 1], hits: 0, candy: null, dead: 0, bird: BIRDS[(g.level - 1) % BIRDS.length] };
+      const s = g.s; geo(g);
+      s.x = g.W / 2; s.y = (s.y0 + s.y1) / 2; s.vx = 150 + Math.min(g.lv, 20) * 6; s.vy = 0; s.wait = 1;
+      s.need = 10 + Math.min(g.lv, 20);
+      s.sp[0] = new Array(NS).fill(0); spikes(g, 1);
+    },
+    layout(g) { if (g.s.sp) geo(g); },
+    down(g) { const s = g.s; if (s.dead) return; s.wait = 0; s.vy = -330; Arcade.tone(500, 0.06, 'triangle', 0.06, 200); g.burst(s.x, s.y + 10, { n: 3, emoji: '🪶', size: 10, speed: 60, grav: 100 }); },
+    key(g, k, d) { if (d && k === ' ') this.down(g); },
+    update(g, dt) {
+      const s = g.s;
+      s.spAnim[0] = Math.min(1, s.spAnim[0] + dt * 4); s.spAnim[1] = Math.min(1, s.spAnim[1] + dt * 4);
+      if (s.dead) { s.dead += dt; s.vy += 1200 * dt; s.y += s.vy * dt; s.rot = (s.rot || 0) + dt * 12; if (s.dead > 1) { if (g.die()) { s.dead = 0; s.rot = 0; s.y = (s.y0 + s.y1) / 2; s.vy = 0; s.wait = 1; } } return; }
+      if (s.wait) { s.y += Math.sin(g.t * 6) * 0.6; return; }
+      s.vy += 1000 * dt; s.x += s.vx * dt; s.y += s.vy * dt;
+      const die = () => { s.dead = 0.001; s.vy = -300; Arcade.sfx.hit(); g.shake(0.3, 8); g.burst(s.x, s.y, { n: 14, emoji: '🪶', size: 12, speed: 200 }); };
+      if (s.y - s.r < s.y0 + 12 || s.y + s.r > s.y1 - 12) return die();
+      const side = s.vx > 0 ? 1 : 0, wx = side ? s.x1 - 14 : s.x0 + 14;
+      if ((side && s.x + s.r >= wx) || (!side && s.x - s.r <= wx)) {
+        const i = clamp(Math.floor((s.y - s.y0) / s.sh), 0, NS - 1);
+        if (s.sp[side][i] && s.spAnim[side] > 0.5) return die();
+        s.vx = -s.vx; s.x = side ? wx - s.r : wx + s.r; s.hits++;
+        g.addScore(1, s.x, s.y - 30); Arcade.tone(700, 0.05, 'square', 0.06);
+        spikes(g, 1 - side); s.sp[side] = new Array(NS).fill(0);
+        if (s.hits >= s.need) { g.addScore(50 * g.lv, g.W / 2, g.H / 2); g.win(); return; }
+      }
+      if (s.candy && Math.hypot(s.candy.x - s.x, s.candy.y - s.y) < s.r + 16) { g.addScore(5, s.candy.x, s.candy.y); Arcade.sfx.coin(); g.burst(s.candy.x, s.candy.y, { n: 8, color: ['#ff8fab', '#fff'], speed: 120, size: 3 }); s.candy = null; }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H, hue = (g.level * 53 + s.hits * 6) % 360;
+      ctx.fillStyle = `hsl(${hue},60%,90%)`; ctx.fillRect(0, 0, W, H);
+      if (!s.sp) return;
+      ctx.fillStyle = `hsl(${hue},55%,80%)`; ctx.beginPath(); ctx.arc(W / 2, (s.y0 + s.y1) / 2, Math.min(W, H) * 0.28, 0, 6.28); ctx.fill();
+      Arcade.txt(ctx, s.hits, W / 2, (s.y0 + s.y1) / 2, Math.min(W, H) * 0.22, `hsl(${hue},40%,96%)`, 'center', 900, null, Arcade.TFONT);
+      const sc = `hsl(${hue},35%,35%)`;
+      ctx.fillStyle = sc;
+      // techo y suelo
+      const tw = 26, nt = Math.ceil((s.x1 - s.x0) / tw);
+      for (let i = 0; i < nt; i++) {
+        const x = s.x0 + i * tw;
+        ctx.beginPath(); ctx.moveTo(x, s.y0); ctx.lineTo(x + tw / 2, s.y0 + 14); ctx.lineTo(x + tw, s.y0); ctx.fill();
+        ctx.beginPath(); ctx.moveTo(x, s.y1); ctx.lineTo(x + tw / 2, s.y1 - 14); ctx.lineTo(x + tw, s.y1); ctx.fill();
+      }
+      ctx.fillRect(s.x0, s.y0 - 6, s.x1 - s.x0, 6); ctx.fillRect(s.x0, s.y1, s.x1 - s.x0, 6);
+      for (const side of [0, 1]) {
+        const wx = side ? s.x1 : s.x0, k = s.spAnim[side];
+        s.sp[side].forEach((v, i) => {
+          if (!v) return;
+          const y = s.y0 + i * s.sh, dep = 26 * k;
+          ctx.beginPath(); ctx.moveTo(wx, y + 4); ctx.lineTo(wx + (side ? -dep : dep), y + s.sh / 2); ctx.lineTo(wx, y + s.sh - 4); ctx.fill();
+        });
+      }
+      if (s.candy) Arcade.emoji(ctx, '🍬', s.candy.x, s.candy.y + Math.sin(g.rt * 4) * 4, 26, { rot: g.rt });
+      Arcade.emoji(ctx, s.bird, s.x, s.y, s.r * 2.1, { flip: s.vx > 0, rot: s.dead ? s.rot : clamp(s.vy / 900, -0.5, 0.6) * (s.vx > 0 ? 1 : -1) });
+      Arcade.txt(ctx, 'Rebotes: ' + s.hits + '/' + s.need, W / 2, g.top + 14, 14, sc, 'center', 900);
+      if (s.wait && !s.dead) Arcade.txt(ctx, Arcade.tv ? 'OK 🎮' : '👆', W / 2, s.y + 60, 26, sc, 'center', 900);
+    },
+  });
+})();
+</script>
+</body>
+</html>

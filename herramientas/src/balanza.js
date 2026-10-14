@@ -1,0 +1,64 @@
+// Balanza|#f8f0e3
+(function () {
+  const { ri, rand, clamp } = Arcade;
+  const ITEMS = ['🍎', '🍊', '🍉', '🎃', '🪨', '🧱', '🥥', '🍍'];
+
+  function geo(g) { const s = g.s; s.cx = g.W / 2; s.cy = g.top + (g.bot - g.top) * 0.55; s.arm = Math.min(g.W * 0.36, 220); }
+  const total = (s, i) => s.pans[i].reduce((a, w) => a + w.m, 0);
+  function diffK(s) { const a = total(s, 0), b = total(s, 1); return (a - b) / (s.base + (a + b) * 0.35); }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Haz crecer el peso y equilibra', deco: ['⚖️', '🍉', '🎃', '🪨', '🍎', '🧱'], font: 'serif', bg: ['#fff8ec', '#f8f0e3'],
+    music: { mode: 'lydian', bpm: 88, wave: 'sine', style: 'chill', root: 62 }, voice: { wave: 'sine', mul: 1.2, echo: 0.35 },
+    en: { title: 'Balance', tag: 'Grow the weight and balance it', help: '<b>Hold</b> your finger over one side of the scale: a weight appears and grows while you hold. <b>Release</b> to drop it onto that pan. Keep the scale level: if it leans past the red marks for too long, it tips over and you lose a life. Pile up the total weight each level asks for.', tvHelp: 'Hold ◀ or ▶ to grow a weight on that side; release to drop it.', dict: { 'Peso: ': 'Weight: ' } },
+    tvHelp: 'Mantén ◀ o ▶ para hacer crecer un peso en ese lado; suelta para dejarlo caer.',
+    id: 'balanza', title: 'Balanza', emoji: '⚖️', color: '#e8a54b', origin: 'Mass Attack / Teeter',
+    help: '<b>Mantén el dedo</b> sobre un lado de la balanza: aparece un peso que crece mientras sigas pulsando. <b>Suelta</b> para dejarlo caer en ese plato. Mantén la balanza nivelada: si se inclina más allá de las marcas rojas demasiado tiempo, se vuelca y pierdes una vida. Acumula el peso total que pide cada nivel.',
+    lives: 3, levels: 0, cap: 25,
+    setup(g) { const L = g.lv; g.s = { pans: [[], []], ang: 0, grow: null, falling: [], tip: 0, base: 20, tol: clamp(0.5 - L * 0.012, 0.25, 0.5), need: 60 + Math.min(L, 25) * 18, it: 0 }; geo(g); },
+    layout(g) { if (g.s.pans) geo(g); },
+    down(g, p) { const s = g.s; if (s.done || s.grow) return; s.grow = { side: p.x < s.cx ? 0 : 1, m: 1, e: ITEMS[s.it++ % ITEMS.length] }; },
+    up(g) { const s = g.s; if (!s.grow) return; const gr = s.grow; s.grow = null; const px = s.cx + (gr.side ? 1 : -1) * s.arm; s.falling.push({ ...gr, x: px, y: g.top + 60, vy: 0 }); Arcade.sfx.whoosh(); },
+    key(g, k, d) { if (k === 'ArrowLeft' || k === 'ArrowRight') { if (d) this.down(g, { x: k === 'ArrowLeft' ? 0 : g.W }); else this.up(g); } },
+    update(g, dt) {
+      const s = g.s; if (s.done) return;
+      if (s.grow) { s.grow.m = Math.min(40, s.grow.m + dt * (6 + s.grow.m * 0.9)); if (Math.random() < dt * 10) Arcade.tone(200 + s.grow.m * 12, 0.03, 'sine', 0.03); }
+      const target = clamp(diffK(s), -1.2, 1.2) * 0.5;
+      s.angV = (s.angV || 0) + ((target - s.ang) * 18 - (s.angV || 0) * 5) * dt; s.ang += s.angV * dt;
+      const panY = (side) => s.cy + 70 + (side ? -1 : 1) * Math.sin(s.ang) * s.arm;
+      for (const f of s.falling) { f.vy += 1400 * dt; f.y += f.vy * dt; const py = panY(f.side) - 14 - Math.sqrt(total(s, f.side)) * 4; if (f.y >= py) { f.dead = true; s.pans[f.side].push({ m: f.m, e: f.e }); Arcade.tone(150, 0.08, 'square', 0.06); g.addScore(Math.round(f.m) * g.lv, f.x, py - 30); } }
+      s.falling = s.falling.filter((f) => !f.dead);
+      if (Math.abs(diffK(s)) > s.tol) { s.tip += dt; if (s.tip > 1.6) { s.tip = 0; g.message(Arcade.T('¡Se volcó!', 'It tipped over!'), 1); Arcade.sfx.bad(); s.pans = [[], []]; s.ang = 0; s.angV = 0; if (!g.die()) return; } } else s.tip = Math.max(0, s.tip - dt);
+      const tot = total(s, 0) + total(s, 1);
+      if (tot >= s.need && Math.abs(diffK(s)) <= s.tol * 0.6 && !s.falling.length) { s.done = true; g.confetti(60); g.addScore(200 * g.lv, g.W / 2, g.H / 2); setTimeout(() => { if (g.state === 'play') g.win(); }, 600); }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      ctx.fillStyle = '#f8f0e3'; ctx.fillRect(0, 0, W, H);
+      if (!s.pans) return;
+      const cx = s.cx, cy = s.cy, a = s.ang;
+      ctx.fillStyle = 'rgba(0,0,0,.06)'; ctx.fillRect(cx, g.top, 2, H);
+      // poste
+      ctx.fillStyle = '#8d5524'; ctx.fillRect(cx - 8, cy, 16, g.bot - cy - 30); ctx.fillStyle = '#6b3d14'; Arcade.rr(ctx, cx - 70, g.bot - 40, 140, 24, 8); ctx.fill();
+      // brazo
+      ctx.save(); ctx.translate(cx, cy); ctx.rotate(-a); ctx.fillStyle = '#c68642'; Arcade.rr(ctx, -s.arm - 10, -6, s.arm * 2 + 20, 12, 6); ctx.fill(); ctx.restore();
+      ctx.fillStyle = '#e8a54b'; ctx.beginPath(); ctx.arc(cx, cy, 10, 0, 6.3); ctx.fill();
+      // marcas de tolerancia
+      for (const sg of [-1, 1]) { const ta = s.tol * 0.5 * sg; ctx.strokeStyle = 'rgba(224,49,49,.5)'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(cx + Math.cos(ta) * (s.arm + 20), cy - Math.sin(ta) * (s.arm + 20)); ctx.lineTo(cx + Math.cos(ta) * (s.arm + 40), cy - Math.sin(ta) * (s.arm + 40)); ctx.stroke(); ctx.beginPath(); ctx.moveTo(cx - Math.cos(ta) * (s.arm + 20), cy + Math.sin(ta) * (s.arm + 20)); ctx.lineTo(cx - Math.cos(ta) * (s.arm + 40), cy + Math.sin(ta) * (s.arm + 40)); ctx.stroke(); }
+      for (const side of [0, 1]) {
+        const sg = side ? 1 : -1, ex = cx + sg * Math.cos(a) * s.arm, ey = cy - sg * Math.sin(a) * s.arm, py = ey + 70;
+        ctx.strokeStyle = '#6b3d14'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(ex, ey); ctx.lineTo(ex - 50, py); ctx.moveTo(ex, ey); ctx.lineTo(ex + 50, py); ctx.stroke();
+        ctx.fillStyle = '#adb5bd'; ctx.beginPath(); ctx.ellipse(ex, py, 60, 12, 0, 0, 6.3); ctx.fill();
+        let yy = py - 8; s.pans[side].forEach((w, i) => { const r = 6 + Math.sqrt(w.m) * 5; Arcade.emoji(ctx, w.e, ex + ((i * 23) % 60) - 30, yy - r * 0.6, r * 1.6); yy -= r * 0.4; });
+        Arcade.txt(ctx, String(Math.round(total(s, side))), ex, py + 28, 16, '#6b3d14', 'center', 900);
+      }
+      for (const f of s.falling) Arcade.emoji(ctx, f.e, f.x, f.y, (6 + Math.sqrt(f.m) * 5) * 1.6);
+      if (s.grow) { const x = cx + (s.grow.side ? 1 : -1) * s.arm, r = 6 + Math.sqrt(s.grow.m) * 5; Arcade.emoji(ctx, s.grow.e, x, g.top + 60, r * 1.6 * (1 + Math.sin(g.rt * 20) * 0.03)); Arcade.txt(ctx, String(Math.round(s.grow.m)), x, g.top + 60 + r + 16, 14, '#e8590c', 'center', 900); }
+      if (s.tip > 0) { ctx.fillStyle = `rgba(224,49,49,${Math.min(0.3, s.tip / 4)})`; ctx.fillRect(0, 0, W, H); }
+      const tot = total(s, 0) + total(s, 1), bw = Math.min(W - 60, 300);
+      ctx.fillStyle = 'rgba(0,0,0,.1)'; Arcade.rr(ctx, (W - bw) / 2, g.top + 10, bw, 10, 5); ctx.fill(); ctx.fillStyle = '#e8a54b'; Arcade.rr(ctx, (W - bw) / 2, g.top + 10, bw * clamp(tot / s.need, 0, 1), 10, 5); ctx.fill();
+      Arcade.txt(ctx, 'Peso: ' + Math.round(tot) + '/' + s.need, W / 2, g.top + 34, 14, '#6b3d14', 'center', 900);
+      ctx.fillStyle = 'rgba(0,0,0,.04)'; ctx.fillRect(0, g.top + 50, W / 2 - 1, 30); ctx.fillRect(W / 2 + 1, g.top + 50, W / 2, 30);
+    },
+  });
+})();

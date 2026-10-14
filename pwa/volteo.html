@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Volteo · Arcade Perdido</title>
+<meta name="theme-color" content="#120d24">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css">
+</head>
+<body class="game">
+<script src="config.js"></script>
+<script src="common.js"></script>
+<script>
+(function () {
+  const { ri, rand, clamp, pick } = Arcade;
+  const H = 9; // filas lógicas: 0 techo … 8 suelo
+  const COLS = ['#ff6b6b', '#ffd43b', '#69db7c', '#4dabf7', '#da77f2', '#ff922b'];
+
+  function gen(L) {
+    const W = 80 + Math.min(L, 20) * 12, top = new Array(W).fill(1), bot = new Array(W).fill(1), spT = new Array(W).fill(0), spB = new Array(W).fill(0), coin = new Array(W).fill(0);
+    let x = 10;
+    while (x < W - 12) {
+      const r = Math.random(), len = ri(2, 4);
+      if (r < 0.3) { for (let k = 0; k < len; k++) spB[x + k] = 1; x += len + ri(Math.max(4, 6 - (L >> 2)), Math.max(5, 9 - (L >> 2))); } // pinchos en el suelo: ir por el techo
+      else if (r < 0.6) { for (let k = 0; k < len; k++) spT[x + k] = 1; x += len + ri(Math.max(4, 6 - (L >> 2)), Math.max(5, 9 - (L >> 2))); } // pinchos en el techo: ir por el suelo
+      else if (r < 0.75 && L >= 2) { const w = ri(3, 5); for (let k = 0; k < w; k++) bot[x + k] = 0; coin[x + 1] = 1; x += w + ri(5, 8); } // agujero abajo
+      else if (r < 0.9 && L >= 3) { const w = ri(3, 5); for (let k = 0; k < w; k++) top[x + k] = 0; coin[x + 1] = 2; x += w + ri(5, 8); } // agujero arriba
+      else { coin[x] = Math.random() < 0.5 ? 1 : 2; x += 4; }
+    }
+    // pinchos centrales en niveles altos (obstáculos en mitad del pasillo)
+    return { W, top, bot, spT, spB, coin };
+  }
+  function geo(g) { const s = g.s; s.ts = Math.min((g.bot - g.top - 40) / H, 54); s.oy = g.top + 30 + (g.bot - g.top - 40 - s.ts * H) / 2; }
+  function reset(g) { const s = g.s; s.x = 3; s.y = H - 1.5; s.vy = 0; s.grav = 1; s.ground = true; s.dead = 0; s.cam = 0; s.taken = new Set(); }
+  function flip(g) { const s = g.s; if (s.dead || s.won || !s.ground) return; s.grav *= -1; s.ground = false; s.vy = s.grav * 3; Arcade.tone(s.grav > 0 ? 300 : 600, 0.08, 'triangle', 0.07, s.grav > 0 ? -150 : 150); s.flips++; }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Invierte la gravedad', deco: ['🙃', '🔺', '🔻', '⭐', '🌀', '👾'], font: 'mono', bg: ['#231a45', '#120d24'],
+    music: { mode: 'minor', bpm: 140, wave: 'square', style: 'arcade', root: 57 }, voice: { wave: 'square', mul: 1, echo: 0.2 },
+    en: { title: 'Flip', tag: 'Flip gravity', help: 'You cannot jump: you can only <b>flip gravity</b>. <b>Tap</b> to fall up to the ceiling or down to the floor (only while standing on one). The character runs on their own: dodge the spikes, do not fall through the holes and collect the ⭐. Reach the end of each corridor.', tvHelp: 'OK to flip gravity.', dict: {} },
+    tvHelp: 'OK para invertir la gravedad.',
+    id: 'volteo', title: 'Volteo', emoji: '🙃', color: '#da77f2', origin: 'VVVVVV (Terry Cavanagh)',
+    help: 'No puedes saltar: solo puedes <b>invertir la gravedad</b>. <b>Toca</b> para caer hacia el techo o hacia el suelo (solo cuando estás apoyado). El personaje corre solo: esquiva los pinchos, no caigas por los agujeros y recoge las ⭐. Llega al final de cada pasillo.',
+    lives: 3, levels: 0, cap: 20,
+    setup(g) { g.s = { ...gen(g.lv), flips: 0, stars: 0, col: COLS[(g.level - 1) % COLS.length] }; geo(g); reset(g); },
+    layout(g) { if (g.s.top) geo(g); },
+    down(g) { flip(g); },
+    key(g, k, d) { if (d && (k === ' ' || k === 'ArrowUp' || k === 'ArrowDown')) flip(g); },
+    update(g, dt) {
+      const s = g.s; if (s.won) return;
+      if (s.dead) { s.dead -= dt; if (s.dead <= 0 && g.die()) reset(g); return; }
+      const sp = 6.5 + Math.min(g.lv, 20) * 0.12; s.x += sp * dt;
+      s.vy += s.grav * 60 * dt; s.vy = clamp(s.vy, -16, 16); s.y += s.vy * dt;
+      const c = Math.floor(s.x);
+      s.ground = false;
+      if (s.grav > 0 && s.y > H - 1.5) { if (s.bot[c] || s.bot[Math.floor(s.x + 0.3)]) { s.y = H - 1.5; s.vy = 0; s.ground = true; } }
+      if (s.grav < 0 && s.y < 1.5) { if (s.top[c] || s.top[Math.floor(s.x + 0.3)]) { s.y = 1.5; s.vy = 0; s.ground = true; } }
+      const die = () => { s.dead = 0.9; Arcade.sfx.hit(); g.burst(s.x * s.ts - s.cam * s.ts, s.oy + s.y * s.ts, { n: 16, color: s.col, speed: 200, size: 4 }); g.shake(0.2, 5); };
+      if (s.y > H + 1 || s.y < -2) return die();
+      if (s.ground && s.grav > 0 && (s.spB[c] || s.spB[Math.floor(s.x + 0.35)])) return die();
+      if (s.ground && s.grav < 0 && (s.spT[c] || s.spT[Math.floor(s.x + 0.35)])) return die();
+      if (s.coin[c] && !s.taken.has(c) && ((s.coin[c] === 1 && s.y > H / 2) || (s.coin[c] === 2 && s.y < H / 2))) { s.taken.add(c); s.stars++; Arcade.sfx.coin(); g.addScore(20 * g.lv); }
+      if (Math.floor(s.x) !== Math.floor(s.x - sp * dt)) g.addScore(g.lv * 0 + 1);
+      s.cam = Math.max(0, s.x - (g.W / s.ts) * 0.3);
+      if (s.x >= s.W - 4) { s.won = true; Arcade.sfx.win(); g.confetti(60); g.addScore(100 * g.lv, g.W / 2, g.H / 2); setTimeout(() => { if (g.state === 'play') g.win(); }, 600); }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, Hh = g.H;
+      ctx.fillStyle = '#120d24'; ctx.fillRect(0, 0, W, Hh);
+      if (!s.top) return;
+      const ts = s.ts, ox = -s.cam * ts, oy = s.oy;
+      for (let i = 0; i < 40; i++) { const x = ((i * 97 - s.cam * ts * 0.2) % W + W) % W, y = oy + ((i * 53) % (H * ts)); ctx.fillStyle = 'rgba(255,255,255,.25)'; ctx.fillRect(x, y, 2, 2); }
+      const x0 = Math.floor(s.cam) - 1, x1 = x0 + Math.ceil(W / ts) + 3;
+      ctx.fillStyle = s.col;
+      for (let x = Math.max(0, x0); x < Math.min(s.W, x1); x++) {
+        const px = ox + x * ts;
+        if (s.top[x]) { ctx.globalAlpha = 0.85; ctx.fillRect(px, oy, ts + 0.5, ts); ctx.globalAlpha = 1; }
+        if (s.bot[x]) { ctx.globalAlpha = 0.85; ctx.fillRect(px, oy + (H - 1) * ts, ts + 0.5, ts); ctx.globalAlpha = 1; }
+        ctx.fillStyle = '#fff';
+        if (s.spT[x]) { ctx.beginPath(); ctx.moveTo(px, oy + ts); ctx.lineTo(px + ts / 2, oy + ts * 1.7); ctx.lineTo(px + ts, oy + ts); ctx.fill(); }
+        if (s.spB[x]) { ctx.beginPath(); ctx.moveTo(px, oy + (H - 1) * ts); ctx.lineTo(px + ts / 2, oy + (H - 1.7) * ts); ctx.lineTo(px + ts, oy + (H - 1) * ts); ctx.fill(); }
+        ctx.fillStyle = s.col;
+        if (s.coin[x] && !s.taken.has(x)) Arcade.emoji(ctx, '⭐', px + ts / 2, oy + (s.coin[x] === 1 ? H - 2 : 2) * ts, ts * 0.6, { rot: g.rt * 2 });
+      }
+      Arcade.emoji(ctx, '🏁', ox + (s.W - 4) * ts, oy + (H - 2) * ts, ts * 1.2);
+      if (!s.dead) Arcade.emoji(ctx, '🙂', ox + s.x * ts, oy + s.y * ts, ts * 0.95, { sy: s.grav > 0 ? 1 : -1 });
+      const pr = clamp(s.x / (s.W - 4), 0, 1), bw = Math.min(W - 60, 320);
+      ctx.fillStyle = 'rgba(255,255,255,.15)'; Arcade.rr(ctx, (W - bw) / 2, g.top + 10, bw, 8, 4); ctx.fill(); ctx.fillStyle = s.col; Arcade.rr(ctx, (W - bw) / 2, g.top + 10, bw * pr, 8, 4); ctx.fill();
+      Arcade.txt(ctx, '⭐ ' + s.stars, W / 2, g.top + 32, 14, '#fff', 'center', 900);
+    },
+  });
+})();
+</script>
+</body>
+</html>

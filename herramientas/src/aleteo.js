@@ -1,0 +1,94 @@
+// Aleteo|#1e5f74
+(function () {
+  const { rand, clamp } = Arcade;
+  const BIRDS = ['🐤', '🐦', '🦜', '🐧', '🦉', '🕊️'];
+  const SKIES = [['#74c0fc', '#d0ebff'], ['#ff922b', '#ffd8a8'], ['#5f3dc4', '#e599f7'], ['#0b7285', '#99e9f2'], ['#212529', '#495057']];
+
+  function geo(g) { const s = g.s; s.u = clamp((g.bot - g.top) / 640, 0.6, 1.5); s.ground = g.bot - 50 * s.u; s.bx = g.W * 0.3; }
+  function addPipe(g, x) {
+    const s = g.s, L = g.lv, gap = Math.max(120, 190 - L * 5) * s.u, top = g.top + 40 * s.u, bot = s.ground - 40 * s.u;
+    const cy = rand(top + gap / 2, bot - gap / 2);
+    s.pipes.push({ x, cy, gap, passed: false, amp: L >= 4 && Math.random() < 0.15 + L * 0.03 ? rand(20, 50) * s.u : 0, ph: rand(0, 6), coin: Math.random() < 0.4 });
+  }
+  function flap(g) {
+    const s = g.s; if (s.dead) return;
+    if (!s.started) s.started = true;
+    s.vy = -420 * s.u; Arcade.tone(600, 0.06, 'triangle', 0.06, 300);
+    g.burst(s.bx - 14, s.y + 6, { n: 3, emoji: '🪶', size: 10, speed: 60, life: 0.5, grav: 80 });
+  }
+  function crash(g) {
+    const s = g.s; if (s.dead) return;
+    s.dead = 1; Arcade.sfx.hit(); g.shake(0.3, 8); g.flash('#fff', 0.15);
+    setTimeout(() => { if (g.state === 'play' && g.die()) reset(g); }, 900);
+  }
+  function reset(g) {
+    const s = g.s; s.y = (g.top + s.ground) / 2; s.vy = 0; s.dead = 0; s.started = false; s.pipes = [];
+    const sp = s.spacing; for (let i = 0; i < 4; i++) addPipe(g, g.W + 80 + i * sp);
+  }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Un toque, un aleteo', deco: ['🐤', '🌵', '☁️', '🪶', '⭐', '🌤️'], font: 'comic', bg: ['#3a8fb0', '#1e5f74'],
+    music: { mode: 'major', bpm: 120, wave: 'square', style: 'arcade', root: 65 }, voice: { wave: 'square', mul: 1, echo: 0.2 },
+    ambient: { e: ['☁️'], n: 4, vy: 0, vx: -20, sway: 0, alpha: 0.5, size: [30, 50] },
+    en: { title: 'Flutter', tag: 'One tap, one flap', help: '<b>Tap</b> to flap and fly up; let go and you fall. Fly through the gaps between the cacti without touching them or the ground. Each level asks you to pass a number of gaps; they get narrower and some start to move. Grab the ⭐ for extra points.', tvHelp: 'OK to flap.', dict: { 'Toca para volar': 'Tap to fly', 'Huecos: ': 'Gaps: ' } },
+    tvHelp: 'OK para aletear.',
+    id: 'aleteo', title: 'Aleteo', emoji: '🐤', color: '#ffd43b', origin: 'Flappy Bird (dotGEARS)',
+    help: '<b>Toca</b> para aletear y subir; si no, caes. Pasa por los huecos entre los cactus sin tocarlos ni tocar el suelo. Cada nivel pide pasar un número de huecos; se van estrechando y algunos se mueven. Coge las ⭐ para puntos extra.',
+    lives: 3, levels: 0, cap: 20,
+    setup(g) {
+      g.s = { bird: BIRDS[(g.level - 1) % BIRDS.length], passed: 0, scroll: 0 };
+      const s = g.s; geo(g); s.need = 8 + Math.min(g.lv, 20) * 2; s.speed = (150 + Math.min(g.lv, 20) * 6) * s.u; s.spacing = Math.max(200, 260 - g.lv * 3) * s.u; reset(g);
+    },
+    layout(g) { if (g.s.pipes) geo(g); },
+    down(g) { flap(g); },
+    key(g, k, d) { if (d && (k === ' ' || k === 'ArrowUp')) flap(g); },
+    update(g, dt) {
+      const s = g.s;
+      if (!s.started && !s.dead) { s.y += Math.sin(g.rt * 4) * 0.6; return; }
+      s.vy += 1300 * s.u * dt; s.y += s.vy * dt;
+      if (s.y > s.ground - 14 * s.u) { s.y = s.ground - 14 * s.u; if (!s.dead) crash(g); }
+      if (s.y < g.top) { s.y = g.top; s.vy = 0; }
+      if (s.dead) return;
+      s.scroll += s.speed * dt;
+      const pw = 60 * s.u, r = 14 * s.u;
+      for (const p of s.pipes) {
+        p.x -= s.speed * dt; const cy = p.cy + Math.sin(g.rt * 1.6 + p.ph) * p.amp;
+        if (s.bx + r > p.x && s.bx - r < p.x + pw && (s.y - r < cy - p.gap / 2 || s.y + r > cy + p.gap / 2)) return crash(g);
+        if (p.coin && Math.hypot(s.bx - (p.x + pw / 2), s.y - cy) < 26 * s.u) { p.coin = false; Arcade.sfx.coin(); g.addScore(5 * g.lv, s.bx, s.y - 30); }
+        if (!p.passed && p.x + pw < s.bx) {
+          p.passed = true; s.passed++; g.addScore(g.lv, s.bx, s.y - 20); Arcade.sfx.tick();
+          if (s.passed >= s.need) { s.dead = 2; Arcade.sfx.win(); g.confetti(50); setTimeout(() => { if (g.state === 'play') g.win(); }, 700); }
+        }
+      }
+      if (s.pipes[0].x < -pw - 10) { s.pipes.shift(); addPipe(g, s.pipes[s.pipes.length - 1].x + s.spacing); }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      const sky = SKIES[(g.level - 1) % SKIES.length];
+      const bg = ctx.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, sky[0]); bg.addColorStop(1, sky[1]);
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      if (!s.pipes) return;
+      // ciudad de fondo
+      ctx.fillStyle = 'rgba(255,255,255,.25)';
+      for (let i = 0; i < 14; i++) { const w = 50 * s.u, x = ((i * w * 1.3 - s.scroll * 0.2) % (W + w * 2) + W + w * 2) % (W + w * 2) - w, h = (40 + (i * 37) % 90) * s.u; ctx.fillRect(x, s.ground - h, w, h); }
+      const pw = 60 * s.u;
+      for (const p of s.pipes) {
+        const cy = p.cy + Math.sin(g.rt * 1.6 + p.ph) * p.amp, t = cy - p.gap / 2, b = cy + p.gap / 2;
+        for (const [y0, y1, cap] of [[g.top - 20, t, t], [b, s.ground, b]]) {
+          const gr = ctx.createLinearGradient(p.x, 0, p.x + pw, 0); gr.addColorStop(0, '#2b8a3e'); gr.addColorStop(0.5, '#69db7c'); gr.addColorStop(1, '#2b8a3e');
+          ctx.fillStyle = gr; ctx.fillRect(p.x, y0, pw, y1 - y0);
+          ctx.fillStyle = '#237032'; Arcade.rr(ctx, p.x - 5, cap - 12 * s.u, pw + 10, 24 * s.u, 6); ctx.fill();
+          for (let y = y0 + 16; y < y1 - 14; y += 26 * s.u) { ctx.fillStyle = 'rgba(255,255,255,.5)'; ctx.fillRect(p.x + pw * 0.3, y, 2, 6); ctx.fillRect(p.x + pw * 0.7, y + 10, 2, 6); }
+        }
+        if (p.coin) Arcade.emoji(ctx, '⭐', p.x + pw / 2, cy, 24 * s.u, { sx: Math.abs(Math.cos(g.rt * 3)) * 0.8 + 0.2 });
+      }
+      ctx.fillStyle = '#e9c46a'; ctx.fillRect(0, s.ground, W, H - s.ground);
+      ctx.fillStyle = '#74b816'; ctx.fillRect(0, s.ground, W, 10 * s.u);
+      for (let x = -(s.scroll % 24); x < W; x += 24) { ctx.fillStyle = '#5c940d'; ctx.fillRect(x, s.ground + 10 * s.u, 12, 4); }
+      const rot = s.dead ? 1.4 : clamp(s.vy / 600, -0.5, 1.2);
+      Arcade.emoji(ctx, s.bird, s.bx, s.y, 36 * s.u, { rot, flip: true });
+      if (!s.started && !s.dead) Arcade.txt(ctx, 'Toca para volar', W / 2, s.y + 60 * s.u, 20, '#fff', 'center', 900);
+      Arcade.txt(ctx, 'Huecos: ' + s.passed + '/' + s.need, W / 2, g.top + 24, 18, '#fff', 'center', 900);
+    },
+  });
+})();

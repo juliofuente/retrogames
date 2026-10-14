@@ -1,0 +1,59 @@
+// Sumas|#fff3bf
+(function () {
+  const { ri, rand, clamp, shuffle, pick } = Arcade;
+
+  function question(g) {
+    const s = g.s, L = g.lv; let a, b, op, res;
+    const ops = L < 3 ? ['+'] : L < 6 ? ['+', '−'] : L < 10 ? ['+', '−', '×'] : ['+', '−', '×', '÷'];
+    op = pick(ops); const M = 5 + Math.min(L, 25) * 2;
+    if (op === '+') { a = ri(1, M); b = ri(1, M); res = a + b; }
+    else if (op === '−') { a = ri(2, M + 5); b = ri(1, a - 1); res = a - b; }
+    else if (op === '×') { a = ri(2, Math.min(12, 3 + Math.floor(L / 2))); b = ri(2, 10); res = a * b; }
+    else { b = ri(2, 10); res = ri(2, Math.min(12, 3 + Math.floor(L / 2))); a = b * res; }
+    const opts = new Set([res]); while (opts.size < 3) { const d = ri(1, Math.max(3, Math.round(res * 0.25))) * (Math.random() < 0.5 ? -1 : 1); if (res + d >= 0) opts.add(res + d); }
+    s.q = { a, b, op, res, opts: shuffle([...opts]) }; s.qt = s.qmax; s.pop = 1;
+  }
+  function geo(g) { const s = g.s, bw = Math.min((g.W - 40) / 3, 120); s.btns = [0, 1, 2].map((i) => ({ i, x: g.W / 2 - (bw * 3 + 20) / 2 + i * (bw + 10), y: g.bot - 160, w: bw, h: 100 })); }
+  function answer(g, v) {
+    const s = g.s; if (s.done || s.fb) return;
+    if (v === s.q.res) { s.ok++; s.combo++; const pts = Math.round((5 + s.qt / s.qmax * 10) * g.lv * Math.min(4, 1 + s.combo / 4)); g.addScore(pts, g.W / 2, g.H * 0.35); Arcade.sfx.coin(); s.fb = { ok: true, t: 0.35 }; }
+    else { s.combo = 0; Arcade.sfx.bad(); g.shake(0.15, 4); s.fb = { ok: false, t: 0.6, v }; g.die(); }
+  }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Cálculo mental contra el reloj', deco: ['➕', '➖', '✖️', '➗', '🧮', '⏱️'], font: 'round', bg: ['#fff9db', '#fff3bf'],
+    music: { mode: 'major', bpm: 120, wave: 'triangle', style: 'arcade', root: 64 }, voice: { wave: 'triangle', mul: 1.1, echo: 0.25 },
+    en: { title: 'Sums', tag: 'Mental maths against the clock', help: 'An operation appears with the answer missing. <b>Tap the correct result</b> among the three options before the time bar runs out. Faster answers and streaks are worth more points. Each level asks for a number of correct answers and adds subtraction, multiplication and division.', tvHelp: 'D-pad to the answer · OK to choose.', dict: { 'Aciertos: ': 'Correct: ' } },
+    tvHelp: 'Cruceta hasta la respuesta · OK para elegir.',
+    tv: { mode: 'tap', targets: (g) => g.s.btns || [] },
+    id: 'sumas', title: 'Sumas', emoji: '🧮', color: '#fab005', origin: '1+2=3 / Math Game / zNumbers',
+    help: 'Aparece una operación con el resultado en blanco. <b>Toca el resultado correcto</b> entre las tres opciones antes de que se acabe la barra de tiempo. Cuanto más rápido y más racha, más puntos. Cada nivel pide unos aciertos y añade restas, multiplicaciones y divisiones.',
+    lives: 3, levels: 0, cap: 25,
+    setup(g) { const L = g.lv; g.s = { ok: 0, need: 10 + Math.min(L, 25), combo: 0, qmax: clamp(6 - L * 0.15, 2.4, 6) }; geo(g); question(g); },
+    layout(g) { if (g.s.q) geo(g); },
+    tap(g, p) { const s = g.s; for (const b of s.btns) if (p.x >= b.x && p.x <= b.x + b.w && p.y >= b.y && p.y <= b.y + b.h) return answer(g, s.q.opts[b.i]); },
+    key(g, k, d) { if (!d) return; const i = { ArrowLeft: 0, ArrowDown: 1, ArrowRight: 2, 1: 0, 2: 1, 3: 2 }[k]; if (i != null) answer(g, g.s.q.opts[i]); },
+    update(g, dt) {
+      const s = g.s; if (s.done) return; s.pop = Math.max(0, s.pop - dt * 4);
+      if (s.fb) { s.fb.t -= dt; if (s.fb.t <= 0) { s.fb = null; if (s.ok >= s.need) { s.done = true; g.confetti(60); g.win(); return; } question(g); } return; }
+      s.qt -= dt; if (s.qt <= 0) { s.combo = 0; Arcade.sfx.bad(); s.fb = { ok: false, t: 0.6 }; g.message('⏱️', 0.5); g.die(); }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      ctx.fillStyle = s.fb ? (s.fb.ok ? '#d3f9d8' : '#ffe3e3') : '#fff3bf'; ctx.fillRect(0, 0, W, H);
+      if (!s.q) return;
+      const q = s.q, fs = Math.min(W / 7, 72) * (1 + s.pop * 0.1);
+      const shown = s.fb && s.fb.ok ? String(q.res) : '?';
+      Arcade.txt(ctx, q.a + ' ' + q.op + ' ' + q.b + ' = ' + shown, W / 2, H * 0.38, fs, '#5c3d00', 'center', 900);
+      const bw = Math.min(W - 60, 320), bx = (W - bw) / 2, pr = clamp(s.qt / s.qmax, 0, 1);
+      ctx.fillStyle = 'rgba(0,0,0,.1)'; Arcade.rr(ctx, bx, H * 0.5, bw, 14, 7); ctx.fill(); ctx.fillStyle = pr > 0.35 ? '#fab005' : '#fa5252'; Arcade.rr(ctx, bx, H * 0.5, bw * pr, 14, 7); ctx.fill();
+      for (const b of s.btns) {
+        const v = q.opts[b.i], hl = s.fb && (v === q.res ? '#51cf66' : v === s.fb.v ? '#ff6b6b' : null);
+        ctx.fillStyle = 'rgba(0,0,0,.15)'; Arcade.rr(ctx, b.x, b.y + 6, b.w, b.h, 18); ctx.fill();
+        ctx.fillStyle = hl || '#fff'; Arcade.rr(ctx, b.x, b.y, b.w, b.h, 18); ctx.fill();
+        Arcade.txt(ctx, String(v), b.x + b.w / 2, b.y + b.h / 2, Math.min(44, b.w * 0.4), '#5c3d00', 'center', 900);
+      }
+      Arcade.txt(ctx, 'Aciertos: ' + s.ok + '/' + s.need + (s.combo > 2 ? '   🔥' + s.combo : ''), W / 2, g.top + 22, 16, '#5c3d00', 'center', 900);
+    },
+  });
+})();

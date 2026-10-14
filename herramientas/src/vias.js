@@ -1,0 +1,158 @@
+// Vías|#14322b
+(function () {
+  const { rand, ri, pick, clamp } = Arcade;
+  // lados: 0=N 1=E 2=S 3=O
+  const MID = [[0.5, 0], [1, 0.5], [0.5, 1], [0, 0.5]];
+  const DC = [[0, -1], [1, 0], [0, 1], [-1, 0]];
+  const opp = (i) => (i + 2) % 4;
+  const TYPES = [5, 10, 3, 6, 12, 9, 15];
+  const W8 = [14, 14, 14, 14, 14, 14, 12];
+
+  function randType() { let r = Math.random() * 96; for (let i = 0; i < TYPES.length; i++) { if (r < W8[i]) return TYPES[i]; r -= W8[i]; } return 5; }
+  function exitOf(m, i) { if (!(m >> i & 1)) return -1; if (m === 15) return opp(i); for (let k = 0; k < 4; k++) if (k !== i && (m >> k & 1)) return k; return -1; }
+  function corner(a, b) { const s = new Set([a, b]); if (s.has(0) && s.has(1)) return [1, 0]; if (s.has(1) && s.has(2)) return [1, 1]; if (s.has(2) && s.has(3)) return [0, 1]; return [0, 0]; }
+  function pathPt(a, b, t) {
+    const A = MID[a], B = MID[b];
+    if (b === opp(a)) return [A[0] + (B[0] - A[0]) * t, A[1] + (B[1] - A[1]) * t];
+    const C = corner(a, b);
+    const aa = Math.atan2(A[1] - C[1], A[0] - C[0]), ab = Math.atan2(B[1] - C[1], B[0] - C[0]);
+    let d = ab - aa; while (d > Math.PI) d -= 2 * Math.PI; while (d < -Math.PI) d += 2 * Math.PI;
+    const an = aa + d * t;
+    return [C[0] + Math.cos(an) * 0.5, C[1] + Math.sin(an) * 0.5];
+  }
+  function tracePath(ctx, x, y, ts, a, b) {
+    const A = MID[a], B = MID[b];
+    if (b === opp(a)) { ctx.moveTo(x + A[0] * ts, y + A[1] * ts); ctx.lineTo(x + B[0] * ts, y + B[1] * ts); return; }
+    const C = corner(a, b), aa = Math.atan2(A[1] - C[1], A[0] - C[0]), ab = Math.atan2(B[1] - C[1], B[0] - C[0]);
+    let d = ab - aa; while (d > Math.PI) d -= 2 * Math.PI; while (d < -Math.PI) d += 2 * Math.PI;
+    ctx.moveTo(x + A[0] * ts, y + A[1] * ts);
+    ctx.arc(x + C[0] * ts, y + C[1] * ts, ts * 0.5, aa, ab, d < 0);
+  }
+  function pairs(m) { if (m === 15) return [[0, 2], [1, 3]]; const s = []; for (let i = 0; i < 4; i++) if (m >> i & 1) s.push(i); return [s]; }
+
+  function geo(g) {
+    const s = g.s, availW = g.W - 24, availH = g.bot - g.top - 50;
+    s.ts = Math.min(availW / s.C, availH / s.R);
+    s.ox = (g.W - s.ts * s.C) / 2; s.oy = g.top + 34 + (availH - s.ts * s.R) / 2;
+  }
+  function placeStar(g) {
+    const s = g.s, opts = [];
+    for (let r = 0; r < s.R; r++) for (let c = 0; c < s.C; c++) { const t = s.grid[r][c]; if (t && !(s.tr.c === c && s.tr.r === r)) opts.push(t); }
+    if (opts.length) pick(opts).star = true;
+  }
+  function spawnTrain(g) {
+    const s = g.s, opts = [];
+    for (let r = 0; r < s.R; r++) for (let c = 0; c < s.C; c++) if (s.grid[r][c]) opts.push({ c, r });
+    const p = pick(opts), t = s.grid[p.r][p.c];
+    let inS = 0; for (let i = 0; i < 4; i++) if (t.m >> i & 1) { inS = i; break; }
+    s.tr = { c: p.c, r: p.r, inS, outS: exitOf(t.m, inS), t: 0.5 };
+    s.wait = 2.5;
+  }
+  function slide(g, c, r) {
+    const s = g.s, e = s.empty;
+    if (c === e.c && r === e.r) return;
+    const isTr = (cc, rr) => s.tr.c === cc && s.tr.r === rr;
+    if (r === e.r) {
+      const d = c > e.c ? 1 : -1;
+      for (let k = e.c; k !== c; k += d) if (isTr(k + d, r)) { Arcade.sfx.bad(); return; }
+      for (let k = e.c; k !== c; k += d) { const tl = s.grid[r][k + d]; s.grid[r][k] = tl; tl.ax = d; tl.ay = 0; }
+    } else if (c === e.c) {
+      const d = r > e.r ? 1 : -1;
+      for (let k = e.r; k !== r; k += d) if (isTr(c, k + d)) { Arcade.sfx.bad(); return; }
+      for (let k = e.r; k !== r; k += d) { const tl = s.grid[k + d][c]; s.grid[k][c] = tl; tl.ay = d; tl.ax = 0; }
+    } else { Arcade.sfx.bad(); return; }
+    s.grid[r][c] = null; s.empty = { c, r }; Arcade.sfx.move();
+  }
+
+  Arcade.game({
+    id: 'vias', title: 'Vías', emoji: '🚂', color: '#90be6d', origin: 'Locomotion (Konami, 1982)',
+    help: 'Es un <b>puzle deslizante</b>, pero el tren 🚂 <b>no se para nunca</b>. <b>Toca una pieza</b> en la misma fila o columna que el hueco para deslizarla. Haz que el tren siempre encuentre vía delante. Recoge las estrellas ⭐ (pasajeros) para ganar puntos extra. No puedes mover la pieza donde está el tren.',
+    lives: 3, levels: null, levelLabel: 'Velocidad',
+    theme: { font: 'Rye', ambient: 'dust', music: { tempo: 138, scale: 'mixo', root: 196, wave: 'square', bass: 'triangle', swing: 0.2 }, sfx: { wave: 'triangle', pitch: 0.95 } },
+    setup(g) {
+      g.s = { tiles: 0, smokeT: 0 };
+      const s = g.s;
+      if (g.W < g.H) { s.C = 4; s.R = 5; } else { s.C = 6; s.R = 4; }
+      s.grid = [];
+      for (let r = 0; r < s.R; r++) { const row = []; for (let c = 0; c < s.C; c++) row.push({ m: randType(), star: false, ax: 0, ay: 0 }); s.grid.push(row); }
+      const tr = { c: 0, r: Math.floor(s.R / 2) };
+      s.grid[tr.r][0].m = 10; s.grid[tr.r][1].m = pick([10, 12, 9, 15]);
+      s.empty = { c: s.C - 1, r: 0 }; s.grid[0][s.C - 1] = null;
+      s.tr = { c: 0, r: tr.r, inS: 3, outS: 1, t: 0 }; s.wait = 3.5;
+      placeStar(g); placeStar(g);
+      geo(g);
+    },
+    layout(g) { if (g.s.grid) geo(g); },
+    tap(g, p) {
+      const s = g.s, c = Math.floor((p.sx - s.ox) / s.ts), r = Math.floor((p.sy - s.oy) / s.ts);
+      if (c >= 0 && c < s.C && r >= 0 && r < s.R) slide(g, c, r);
+    },
+    swipe(g, dir, p) { this.tap(g, p); },
+    update(g, dt) {
+      const s = g.s;
+      for (const row of s.grid) for (const t of row) if (t) { t.ax *= Math.pow(1e-6, dt); t.ay *= Math.pow(1e-6, dt); if (Math.abs(t.ax) < 0.01) t.ax = 0; if (Math.abs(t.ay) < 0.01) t.ay = 0; }
+      if (s.wait > 0) { s.wait -= dt; return; }
+      const speed = Math.min(1.6, 0.42 + s.tiles * 0.014);
+      const tr = s.tr;
+      tr.t += speed * dt;
+      s.smokeT -= dt;
+      if (s.smokeT <= 0) { s.smokeT = 0.18; const p = trainXY(s); g.burst(p[0], p[1] - s.ts * 0.25, { n: 1, color: 'rgba(230,230,230,.7)', speed: 20, size: 5, grav: -40, life: 0.9 }); }
+      if (tr.t >= 1) {
+        const nc = tr.c + DC[tr.outS][0], nr = tr.r + DC[tr.outS][1], ent = opp(tr.outS);
+        const tl = nr >= 0 && nr < s.R && nc >= 0 && nc < s.C ? s.grid[nr][nc] : null;
+        const out = tl ? exitOf(tl.m, ent) : -1;
+        if (!tl || out < 0) {
+          const p = trainXY(s);
+          g.burst(p[0], p[1], { n: 24, color: ['#ff6b35', '#ffd166', '#555'], speed: 260 }); g.burst(p[0], p[1], { n: 6, emoji: ['💥', '🔩', '💨'], size: 22, speed: 200 }); g.ring(p[0], p[1], { color: '#ff6b35', r: 120, w: 8 }); Arcade.sfx.boom();
+          if (g.die()) spawnTrain(g);
+          return;
+        }
+        tr.c = nc; tr.r = nr; tr.inS = ent; tr.outS = out; tr.t -= 1;
+        s.tiles++; g.addScore(5);
+        const lv = 1 + Math.floor(s.tiles / 12);
+        if (lv !== g.level) { g.level = lv; g.hud(); Arcade.sfx.level(); g.message('¡Más rápido!', 1.1, 'Velocidad ' + lv); Arcade.music.rate(1 + Math.min(0.3, lv * 0.03)); }
+        if (tl.star) { tl.star = false; const p = trainXY(s); g.addScore(50 * g.level, p[0], p[1] - 20); Arcade.sfx.coin(); g.burst(p[0], p[1], { n: 10, emoji: ['⭐', '🤠', '💰'], size: 16, speed: 160 }); g.ring(p[0], p[1], { color: '#ffd166', r: s.ts }); placeStar(g); }
+      }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      Arcade.bg(ctx, W, H, '#ff9e5e', '#d8693f', '#5c2e1f');
+      Arcade.glow(ctx, W * 0.75, H * 0.16, 90, 'rgba(255,230,150,.9)', 0.7);
+      ctx.fillStyle = '#8f3f2a'; ctx.beginPath(); ctx.moveTo(0, H * 0.3); for (let x = 0; x <= W; x += 40) ctx.lineTo(x, H * 0.3 - 30 - Math.abs(Math.sin(x * 0.013)) * 60); ctx.lineTo(W, H * 0.3); ctx.lineTo(W, H); ctx.lineTo(0, H); ctx.fill();
+      ctx.fillStyle = '#c96f45'; ctx.fillRect(0, H * 0.3, W, H * 0.7);
+      Arcade.decor(ctx, g.t, [{ e: '🌵', x: W * 0.07, y: H * 0.36, s: 40, sway: 0.05 }, { e: '🌵', x: W * 0.93, y: H * 0.9, s: 46, sway: 0.05 }, { e: '🪨', x: W * 0.12, y: H * 0.94, s: 28 }, { e: '🦅', x: (g.t * 30) % (W + 60) - 30, y: H * 0.12, s: 22, a: 0.8, flip: true }, { e: '🌵', x: W * 0.88, y: H * 0.33, s: 30, sway: 0.05 }]);
+      Arcade.emoji(ctx, '🌾', ((g.t * 60) % (W + 80)) - 40, H * 0.97, 22, { rot: g.t * 6, alpha: 0.7 });
+      Arcade.amb(g, ctx);
+      if (!s.grid) return;
+      const ts = s.ts;
+      ctx.fillStyle = 'rgba(0,0,0,.35)'; Arcade.rr(ctx, s.ox - 8, s.oy - 8, ts * s.C + 16, ts * s.R + 16, 18); ctx.fill();
+      for (let r = 0; r < s.R; r++) for (let c = 0; c < s.C; c++) {
+        const t = s.grid[r][c]; if (!t) continue;
+        const x = s.ox + (c + t.ax) * ts, y = s.oy + (r + t.ay) * ts;
+        const busy = s.tr.c === c && s.tr.r === r;
+        ctx.fillStyle = busy ? '#e9c46a' : '#cfa96b'; Arcade.rr(ctx, x + 2, y + 2, ts - 4, ts - 4, ts * 0.12); ctx.fill();
+        ctx.fillStyle = 'rgba(255,255,255,.12)'; Arcade.rr(ctx, x + 5, y + 5, ts - 10, ts * 0.2, ts * 0.08); ctx.fill();
+        ctx.lineCap = 'butt';
+        for (const [a, b] of pairs(t.m)) {
+          ctx.beginPath(); tracePath(ctx, x, y, ts, a, b);
+          ctx.strokeStyle = '#7b5b3a'; ctx.lineWidth = ts * 0.3; ctx.setLineDash([ts * 0.06, ts * 0.07]); ctx.stroke(); ctx.setLineDash([]);
+          ctx.strokeStyle = '#8d99ae'; ctx.lineWidth = ts * 0.2; ctx.stroke();
+          ctx.strokeStyle = busy ? '#e9c46a' : '#cfa96b'; ctx.lineWidth = ts * 0.12; ctx.stroke();
+        }
+        if (t.star) Arcade.emoji(ctx, '⭐', x + ts / 2, y + ts / 2, ts * 0.32, { rot: Math.sin(g.t * 3) * 0.2 });
+      }
+      const p = trainXY(s);
+      const p2 = trainXY(s, 0.05);
+      Arcade.emoji(ctx, '🚂', p[0], p[1] - ts * 0.08, ts * 0.42, { flip: p2[0] - p[0] > 0.01 });
+      if (s.wait > 0) Arcade.txt(ctx, s.wait > 0.6 ? Math.ceil(s.wait - 0.5) + '' : '¡Vamos!', W / 2, s.oy - 16, 22, '#fff', 'center', 900, 'rgba(0,0,0,.5)');
+      else Arcade.txt(ctx, '🛤️ ' + s.tiles, W / 2, s.oy - 16, 16, '#d8f3dc', 'center', 800, 'rgba(0,0,0,.5)');
+    },
+  });
+  function trainXY(s, dt) {
+    const tr = s.tr, t = s.grid[tr.r][tr.c];
+    const k = clamp(tr.t + (dt || 0), 0, 1);
+    const pt = pathPt(tr.inS, tr.outS, k);
+    const ax = t ? t.ax : 0, ay = t ? t.ay : 0;
+    return [s.ox + (tr.c + ax + pt[0]) * s.ts, s.oy + (tr.r + ay + pt[1]) * s.ts];
+  }
+})();

@@ -1,0 +1,116 @@
+// Sombreros|#2b1d14
+(function () {
+  const { ri, clamp } = Arcade;
+  const COLS = 6, CAP = 9, NEED = 5;
+  const HATS = ['🎩', '👒', '🧢', '🎓', '👑', '⛑️'];
+  const HEADS = ['🙂', '😀', '😎', '🤓', '🧔', '👨‍🦲'];
+
+  function geo(g) {
+    const s = g.s, Wa = g.W - 24, Ha = g.bot - g.top - 30;
+    s.cw = Math.min(Wa / COLS, Ha / (CAP + 3.4));
+    s.hh = s.cw * 0.62;
+    s.ox = (g.W - s.cw * COLS) / 2;
+    s.headY = g.bot - 16 - s.cw * 0.55;
+    s.topY = s.headY - s.cw * 0.5 - s.hh * (CAP + 0.5);
+  }
+  const hatY = (s, i) => s.headY - s.cw * 0.5 - s.hh * (i + 0.5);
+  function newPair(g) {
+    const s = g.s, n = Math.min(HATS.length, s.nt);
+    s.pair = s.next || [ri(0, n - 1), ri(0, n - 1)];
+    s.next = [ri(0, n - 1), ri(0, n - 1)];
+    s.pc = clamp(s.pc ?? 2, 0, COLS - 2); s.py = 0;
+    if (s.st[s.pc].length >= CAP || s.st[s.pc + 1].length >= CAP) {
+      Arcade.sfx.lose(); g.state = 'dying'; setTimeout(g.over, 800);
+    }
+  }
+  function check(g, c) {
+    const s = g.s, st = s.st[c];
+    if (!st.length) return false;
+    const t = st[st.length - 1].t; let n = 0;
+    for (let i = st.length - 1; i >= 0 && st[i].t === t; i--) n++;
+    if (n < NEED) return false;
+    for (let k = 0; k < n; k++) { const h = st.pop(); g.burst(s.ox + (c + 0.5) * s.cw, hatY(s, st.length), { n: 4, emoji: '✨', size: 12, speed: 120 }); }
+    s.combo++;
+    const pts = n * 40 * g.level * s.combo;
+    g.addScore(pts, s.ox + (c + 0.5) * s.cw, hatY(s, st.length + 2));
+    if (s.combo > 1) g.float('Combo x' + s.combo, g.W / 2, s.topY + 30, '#ffd43b', 22);
+    Arcade.sfx.coin(); Arcade.buzz(30);
+    s.cleared++;
+    if (s.cleared % 6 === 0) { g.level++; g.hud(); if (s.nt < HATS.length) s.nt++; g.message('Nivel ' + g.level, 1.2, s.nt <= HATS.length ? 'Nuevo sombrero ' + HATS[s.nt - 1] : ''); Arcade.sfx.up(); }
+    return true;
+  }
+  function land(g) {
+    const s = g.s;
+    s.combo = 0;
+    s.st[s.pc].push({ t: s.pair[0], pop: 1 }); s.st[s.pc + 1].push({ t: s.pair[1], pop: 1 });
+    Arcade.tone(260, 0.06, 'triangle', 0.08);
+    check(g, s.pc); check(g, s.pc + 1);
+    for (let c = 0; c < COLS; c++) if (s.st[c].length > CAP) { Arcade.sfx.lose(); g.state = 'dying'; setTimeout(g.over, 800); return; }
+    s.pair = null; s.wait = 0.25;
+  }
+  const colAt = (s, x) => clamp(Math.floor((x - s.ox) / s.cw - 0.5), 0, COLS - 2);
+
+  Arcade.game({
+    id: 'sombreros', title: 'Sombreros', emoji: '🎩', color: '#e8a87c', origin: 'Hatris (Bullet-Proof, 1990)',
+    help: 'Caen sombreros de dos en dos sobre seis cabezas. <b>Arrastra</b> para elegir sobre qué dos cabezas caen, <b>toca</b> para intercambiarlos y <b>desliza hacia abajo</b> para dejarlos caer. Cuando una cabeza tiene <b>5 sombreros iguales seguidos</b> arriba del todo, desaparecen. Si alguna pila llega al techo, se acaba.',
+    lives: 0, levels: null,
+    setup(g) {
+      g.s = { st: [], nt: 3, cleared: 0, combo: 0, pc: 2, wait: 0 };
+      for (let c = 0; c < COLS; c++) g.s.st.push([]);
+      geo(g); newPair(g);
+    },
+    layout(g) { if (g.s.st) geo(g); },
+    down(g, p) { g.s.drag = p.type === 'touch'; },
+    move(g, p) { const s = g.s; if (s.pair) { const c = colAt(s, p.x); if (c !== s.pc) { s.pc = c; Arcade.sfx.tick(); } } },
+    hover(g, x) { const s = g.s; if (s.pair) s.pc = colAt(s, x); },
+    tap(g) { const s = g.s; if (s.pair) { s.pair.reverse(); Arcade.sfx.move(); } },
+    swipe(g, dir) { const s = g.s; if (s.pair && dir === 'down') s.fast = true; },
+    key(g, k, d) {
+      if (!d) return; const s = g.s; if (!s.pair) return;
+      if (k === 'ArrowLeft') s.pc = Math.max(0, s.pc - 1); else if (k === 'ArrowRight') s.pc = Math.min(COLS - 2, s.pc + 1);
+      else if (k === 'ArrowUp' || k === ' ') s.pair.reverse(); else if (k === 'ArrowDown') s.fast = true;
+    },
+    update(g, dt) {
+      const s = g.s;
+      for (const col of s.st) for (const h of col) h.pop = Math.max(0, h.pop - dt * 4);
+      if (!s.pair) { s.wait -= dt; if (s.wait <= 0) { s.fast = false; newPair(g); } return; }
+      const sp = s.fast ? 26 : 1.1 + g.level * 0.16;
+      s.py += sp * dt;
+      const h = Math.max(s.st[s.pc].length, s.st[s.pc + 1].length);
+      if (s.py >= CAP - h - 0.5) land(g);
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      const bg = ctx.createLinearGradient(0, 0, 0, H);
+      bg.addColorStop(0, '#4a2f1d'); bg.addColorStop(1, '#1d120b');
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      if (!s.st.length) return;
+      const cw = s.cw;
+      // percheros
+      for (let c = 0; c < COLS; c++) {
+        const x = s.ox + c * cw;
+        ctx.fillStyle = c % 2 ? 'rgba(255,255,255,.03)' : 'rgba(255,255,255,.06)';
+        ctx.fillRect(x + 2, s.topY, cw - 4, s.headY - s.topY);
+      }
+      ctx.fillStyle = 'rgba(255,90,90,.35)'; ctx.fillRect(s.ox, s.topY, cw * COLS, 3);
+      if (s.pair) { ctx.fillStyle = 'rgba(255,212,59,.08)'; ctx.fillRect(s.ox + s.pc * cw, s.topY, cw * 2, s.headY - s.topY); }
+      for (let c = 0; c < COLS; c++) {
+        const x = s.ox + (c + 0.5) * cw;
+        Arcade.emoji(ctx, HEADS[c], x, s.headY, cw * 0.78);
+        const st = s.st[c];
+        let run = 0; if (st.length) { const t = st[st.length - 1].t; for (let i = st.length - 1; i >= 0 && st[i].t === t; i--) run++; }
+        st.forEach((h, i) => Arcade.emoji(ctx, HATS[h.t], x, hatY(s, i), cw * 0.7 * (1 + h.pop * 0.25)));
+        if (run >= 2) Arcade.txt(ctx, run + '/' + NEED, x, hatY(s, st.length) + s.hh * 0.2, 11, run >= 4 ? '#ffd43b' : 'rgba(255,255,255,.6)', 'center', 900, 'rgba(0,0,0,.5)');
+      }
+      if (s.pair) {
+        const y = s.topY + s.hh * (s.py + 0.5);
+        Arcade.emoji(ctx, HATS[s.pair[0]], s.ox + (s.pc + 0.5) * cw, y, cw * 0.72);
+        Arcade.emoji(ctx, HATS[s.pair[1]], s.ox + (s.pc + 1.5) * cw, y, cw * 0.72);
+      }
+      if (s.next) {
+        Arcade.txt(ctx, 'Siguiente', W - 70, g.top + 12, 11, '#e9d8c4', 'center', 700);
+        Arcade.emoji(ctx, HATS[s.next[0]], W - 86, g.top + 34, 24); Arcade.emoji(ctx, HATS[s.next[1]], W - 54, g.top + 34, 24);
+      }
+    },
+  });
+})();

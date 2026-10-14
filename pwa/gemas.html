@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Gemas · Arcade Perdido</title>
+<meta name="theme-color" content="#2a1650">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css">
+</head>
+<body class="game">
+<script src="config.js"></script>
+<script src="common.js"></script>
+<script>
+(function () {
+  const { ri, clamp, shuffle } = Arcade;
+  const N = 8;
+  const GEM = ['💎', '❤️', '💛', '💚', '💜', '🧡', '🤍'];
+  const GC = ['#74c0fc', '#ff6b6b', '#ffd43b', '#69db7c', '#b197fc', '#ff922b', '#f1f3f5'];
+
+  function geo(g) { const s = g.s, Ha = g.bot - g.top - 90; s.cs = Math.min((g.W - 16) / N, Ha / N, 70); s.ox = (g.W - s.cs * N) / 2; s.oy = g.top + 80 + (Ha - s.cs * N) / 2; }
+  const at = (s, c, r) => (c >= 0 && c < N && r >= 0 && r < N ? s.b[r][c] : null);
+  const rnd = (s) => ({ t: ri(0, s.nt - 1), sp: null, fall: 0, pop: 0 });
+  function findRuns(s) {
+    const runs = [];
+    for (let r = 0; r < N; r++) for (let c = 0; c < N;) { const v = at(s, c, r); let n = 1; while (v && v.t >= 0 && at(s, c + n, r) && at(s, c + n, r).t === v.t) n++; if (v && v.t >= 0 && n >= 3) runs.push({ cells: [...Array(n)].map((_, k) => [c + k, r]), dir: 'h' }); c += n; }
+    for (let c = 0; c < N; c++) for (let r = 0; r < N;) { const v = at(s, c, r); let n = 1; while (v && v.t >= 0 && at(s, c, r + n) && at(s, c, r + n).t === v.t) n++; if (v && v.t >= 0 && n >= 3) runs.push({ cells: [...Array(n)].map((_, k) => [c, r + k]), dir: 'v' }); r += n; }
+    return runs;
+  }
+  function anyMove(s) {
+    for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) for (const [dc, dr] of [[1, 0], [0, 1]]) {
+      const a = at(s, c, r), b = at(s, c + dc, r + dr); if (!a || !b) continue;
+      if (a.sp === 'bomb' || b.sp === 'bomb') return true;
+      s.b[r][c] = b; s.b[r + dr][c + dc] = a; const ok = findRuns(s).length > 0; s.b[r][c] = a; s.b[r + dr][c + dc] = b;
+      if (ok) return true;
+    }
+    return false;
+  }
+  function fill(g, noMatch) {
+    const s = g.s;
+    for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) {
+      let v; do { v = rnd(s); s.b[r][c] = v; } while (noMatch && ((at(s, c - 1, r) && at(s, c - 2, r) && at(s, c - 1, r).t === v.t && at(s, c - 2, r).t === v.t) || (at(s, c, r - 1) && at(s, c, r - 2) && at(s, c, r - 1).t === v.t && at(s, c, r - 2).t === v.t)));
+      v.fall = N - r + 2;
+    }
+  }
+  function trySwap(g, c, r, dc, dr) {
+    const s = g.s; if (s.busy || s.done || s.moves <= 0) return;
+    const a = at(s, c, r), b = at(s, c + dc, r + dr); if (!a || !b) return;
+    s.sel = null;
+    s.anim = { c, r, dc, dr, t: 0 }; s.busy = 'swap';
+    Arcade.sfx.move();
+  }
+  function afterSwap(g) {
+    const s = g.s, { c, r, dc, dr } = s.anim, a = s.b[r][c], b = s.b[r + dr][c + dc];
+    s.b[r][c] = b; s.b[r + dr][c + dc] = a; s.anim = null;
+    // bomba de color
+    if (a.sp === 'bomb' || b.sp === 'bomb') {
+      const target = a.sp === 'bomb' ? b.t : a.t, kill = new Set();
+      kill.add(key(c, r)); kill.add(key(c + dc, r + dr));
+      for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if (s.b[y][x].t === target) kill.add(key(x, y));
+      s.moves--; s.chain = 1; g.flash('#fff', 0.2); Arcade.sfx.win();
+      return clear(g, kill, []);
+    }
+    const runs = findRuns(s);
+    if (!runs.length) { s.b[r][c] = a; s.b[r + dr][c + dc] = b; s.back = { c, r, dc, dr, t: 0 }; s.busy = 'back'; Arcade.sfx.bad(); return; }
+    s.moves--; s.chain = 0; s.swapAt = [[c + dc, r + dr], [c, r]];
+    resolve(g, runs);
+  }
+  const key = (c, r) => r * N + c;
+  function resolve(g, runs) {
+    const s = g.s; s.chain++;
+    const kill = new Set(), make = [];
+    for (const run of runs) {
+      for (const [c, r] of run.cells) kill.add(key(c, r));
+      if (run.cells.length >= 4) {
+        // la gema especial aparece donde se movió (si está en la línea) o en el centro
+        let pos = run.cells[Math.floor(run.cells.length / 2)];
+        if (s.swapAt) for (const p of s.swapAt) if (run.cells.some(([x, y]) => x === p[0] && y === p[1])) { pos = p; break; }
+        make.push({ pos, t: s.b[pos[1]][pos[0]].t, sp: run.cells.length >= 5 ? 'bomb' : run.dir === 'h' ? 'row' : 'col' });
+      }
+    }
+    s.swapAt = null;
+    clear(g, kill, make);
+  }
+  function clear(g, kill, make) {
+    const s = g.s;
+    // explosiones en cadena de gemas especiales
+    let grew = true;
+    while (grew) {
+      grew = false;
+      for (const k of [...kill]) {
+        const c = k % N, r = Math.floor(k / N), v = s.b[r][c]; if (!v || v.used) continue;
+        if (v.sp === 'row' || v.sp === 'col') { v.used = true; for (let i = 0; i < N; i++) { const kk = v.sp === 'row' ? key(i, r) : key(c, i); if (!kill.has(kk)) { kill.add(kk); grew = true; } } g.flash(GC[v.t], 0.12); Arcade.sfx.boom(); }
+      }
+    }
+    for (const m of make) kill.delete(key(m.pos[0], m.pos[1]));
+    const n = kill.size;
+    for (const k of kill) { const c = k % N, r = Math.floor(k / N), v = s.b[r][c]; v.dying = 1; }
+    for (const m of make) { const v = s.b[m.pos[1]][m.pos[0]]; v.sp = m.sp; v.t = m.sp === 'bomb' ? -1 : m.t; v.pop = 1; v.dying = 0; v.used = false; }
+    const pts = n * 10 * s.chain * g.lv;
+    s.score += pts; g.addScore(pts, s.ox + N * s.cs / 2, s.oy + N * s.cs / 2);
+    Arcade.sfx.combo(Math.min(12, s.chain * 2 + n / 3));
+    if (s.chain > 1) g.float('x' + s.chain, g.W / 2, s.oy - 10, '#ffd43b', 26);
+    s.kill = kill; s.busy = 'clear'; s.t = 0.25;
+  }
+  function collapse(g) {
+    const s = g.s;
+    for (const k of s.kill) { const c = k % N, r = Math.floor(k / N), v = s.b[r][c]; g.burst(s.ox + (c + 0.5) * s.cs, s.oy + (r + 0.5) * s.cs, { n: 4, color: v.t >= 0 ? GC[v.t] : '#fff', speed: 150, size: 3 }); s.b[r][c] = null; }
+    for (let c = 0; c < N; c++) {
+      const col = []; for (let r = N - 1; r >= 0; r--) if (s.b[r][c]) col.push({ v: s.b[r][c], r });
+      let r = N - 1; for (const o of col) { o.v.fall = r - o.r; s.b[r][c] = o.v; r--; }
+      for (; r >= 0; r--) { const v = rnd(s); v.fall = (N - col.length) + 0.5; s.b[r][c] = v; }
+    }
+    s.kill = null; s.busy = 'fall'; s.t = 0.3;
+  }
+  function settle(g) {
+    const s = g.s; const runs = findRuns(s);
+    if (runs.length) return resolve(g, runs);
+    s.busy = null;
+    if (s.score >= s.target && !s.done) { s.done = true; g.addScore(s.moves * 30 * g.lv, g.W / 2, g.H / 2); setTimeout(() => { if (g.state === 'play') g.win(s.moves >= s.moves0 * 0.35 ? 3 : s.moves >= s.moves0 * 0.15 ? 2 : 1); }, 700); return; }
+    if (s.moves <= 0 && !s.done) { s.done = true; g.message(Arcade.T('Sin movimientos', 'Out of moves'), 1.2); setTimeout(() => { if (g.state === 'play' && g.die()) Arcade.current.def.setup(g); }, 1100); return; }
+    if (!anyMove(s)) { g.message(Arcade.T('¡Barajando!', 'Shuffling!'), 1); let tries = 0; do { fill(g, true); } while (!anyMove(s) && tries++ < 20); }
+  }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Tres en línea brillan más', deco: ['💎', '❤️', '💛', '💚', '💜', '🌈'], font: 'serif', bg: ['#4a2a80', '#2a1650'],
+    music: { mode: 'lydian', bpm: 112, wave: 'triangle', style: 'chill', root: 64 }, voice: { wave: 'triangle', mul: 1.2, echo: 0.35 },
+    ambient: { e: ['✨'], n: 12, vy: 0, sway: 0, twinkle: 1, alpha: 0.3, size: [6, 14] },
+    en: { title: 'Gems', tag: 'Three in a row shine brighter', help: '<b>Swipe</b> a gem towards a neighbour (or tap two neighbouring gems) to swap them. If you line up <b>3 or more</b> equal gems, they vanish and new ones fall. Line up <b>4</b> to make a striped gem that clears a whole row or column; line up <b>5</b> to make a 🌈 that, when swapped, clears every gem of that colour. Reach the target score before you run out of moves.', tvHelp: 'D-pad to the gem · OK and then an arrow to swap it.', dict: { 'Objetivo: ': 'Target: ', 'Movimientos: ': 'Moves: ', 'Sin movimientos': 'Out of moves', '¡Barajando!': 'Shuffling!' } },
+    tvHelp: 'Cruceta hasta la gema · OK y luego una flecha para intercambiarla.',
+    tv: { mode: 'swipe', targets: (g) => { const s = g.s, o = []; if (!s.b) return o; for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) o.push({ x: s.ox + c * s.cs, y: s.oy + r * s.cs, w: s.cs, h: s.cs }); return o; } },
+    id: 'gemas', title: 'Gemas', emoji: '💎', color: '#b197fc', origin: 'Bejeweled (PopCap) / Diamond Digger · Farm Heroes',
+    help: '<b>Desliza</b> una gema hacia una vecina (o toca dos gemas vecinas) para intercambiarlas. Si juntas <b>3 o más</b> iguales en línea, desaparecen y caen nuevas. Con <b>4</b> en línea creas una gema rayada que limpia toda su fila o columna; con <b>5</b>, un 🌈 que al moverlo borra todas las gemas de ese color. Llega a la puntuación objetivo antes de quedarte sin movimientos.',
+    lives: 3, levels: 0, cap: 30,
+    setup(g) {
+      g.s = { b: [...Array(N)].map(() => new Array(N).fill(null)), busy: null, sel: null, score: 0, chain: 0 };
+      const s = g.s, L = g.lv; s.nt = L < 6 ? 6 : 7;
+      s.moves = s.moves0 = clamp(30 - Math.floor(L / 3), 18, 30);
+      s.target = Math.round((40 + Math.min(L, 30) * 1.2) * s.moves0 / 10) * 10 * g.lv;
+      geo(g); let t = 0; do { fill(g, true); } while (!anyMove(s) && t++ < 20);
+    },
+    layout(g) { if (g.s.b) geo(g); },
+    down(g, p) { const s = g.s; s.dn = { c: Math.floor((p.x - s.ox) / s.cs), r: Math.floor((p.y - s.oy) / s.cs) }; },
+    swipe(g, d) { const s = g.s; if (!s.dn) return; const [dc, dr] = { left: [-1, 0], right: [1, 0], up: [0, -1], down: [0, 1] }[d]; trySwap(g, s.dn.c, s.dn.r, dc, dr); },
+    tap(g, p) {
+      const s = g.s, c = Math.floor((p.x - s.ox) / s.cs), r = Math.floor((p.y - s.oy) / s.cs);
+      if (!at(s, c, r) || s.busy) return;
+      if (s.sel && Math.abs(s.sel[0] - c) + Math.abs(s.sel[1] - r) === 1) return trySwap(g, s.sel[0], s.sel[1], c - s.sel[0], r - s.sel[1]);
+      s.sel = s.sel && s.sel[0] === c && s.sel[1] === r ? null : [c, r]; Arcade.sfx.tick();
+    },
+    update(g, dt) {
+      const s = g.s;
+      for (const row of s.b) for (const v of row) if (v) { if (v.fall > 0) v.fall = Math.max(0, v.fall - dt * 14); v.pop = Math.max(0, v.pop - dt * 3); }
+      if (s.busy === 'swap') { s.anim.t += dt * 7; if (s.anim.t >= 1) afterSwap(g); }
+      else if (s.busy === 'back') { s.back.t += dt * 7; if (s.back.t >= 1) { s.back = null; s.busy = null; } }
+      else if (s.busy === 'clear') { s.t -= dt; if (s.t <= 0) collapse(g); }
+      else if (s.busy === 'fall') { if (s.b.every((row) => row.every((v) => !v.fall))) settle(g); }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      const bg = ctx.createRadialGradient(W / 2, H / 2, 10, W / 2, H / 2, Math.max(W, H)); bg.addColorStop(0, '#5a3399'); bg.addColorStop(1, '#1a0d33');
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      if (!s.b) return;
+      const cs = s.cs;
+      for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) { ctx.fillStyle = (r + c) % 2 ? 'rgba(255,255,255,.07)' : 'rgba(255,255,255,.13)'; ctx.fillRect(s.ox + c * cs, s.oy + r * cs, cs, cs); }
+      ctx.save(); ctx.beginPath(); ctx.rect(s.ox, s.oy, cs * N, cs * N); ctx.clip();
+      for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) {
+        const v = s.b[r][c]; if (!v) continue;
+        let x = s.ox + (c + 0.5) * cs, y = s.oy + (r + 0.5 - v.fall) * cs;
+        const an = s.anim || s.back;
+        if (an) { const k = s.back ? 1 - an.t : an.t; if (c === an.c && r === an.r) { x += an.dc * cs * k; y += an.dr * cs * k; } else if (c === an.c + an.dc && r === an.r + an.dr) { x -= an.dc * cs * k; y -= an.dr * cs * k; } }
+        let sz = cs * 0.72 * (1 + v.pop * 0.35);
+        if (v.dying) sz *= Math.max(0.05, s.t / 0.25) * 1.2;
+        if (s.sel && s.sel[0] === c && s.sel[1] === r) { ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; Arcade.rr(ctx, x - cs / 2 + 3, y - cs / 2 + 3, cs - 6, cs - 6, 8); ctx.stroke(); sz *= 1 + Math.sin(g.rt * 10) * 0.06; }
+        if (v.sp === 'bomb') Arcade.emoji(ctx, '🌈', x, y, sz, { rot: g.rt * 2 });
+        else {
+          if (v.sp) { ctx.fillStyle = GC[v.t]; ctx.globalAlpha = 0.5; if (v.sp === 'row') ctx.fillRect(x - cs / 2, y - 3, cs, 6); else ctx.fillRect(x - 3, y - cs / 2, 6, cs); ctx.globalAlpha = 1; }
+          Arcade.emoji(ctx, GEM[v.t], x, y, sz);
+          if (v.sp) Arcade.emoji(ctx, v.sp === 'row' ? '↔️' : '↕️', x + cs * 0.28, y - cs * 0.28, cs * 0.3);
+        }
+      }
+      ctx.restore();
+      const bw = Math.min(W - 40, 400), bx = (W - bw) / 2, by = g.top + 26;
+      Arcade.txt(ctx, 'Objetivo: ' + s.score + ' / ' + s.target, W / 2, by - 6, 14, '#e5dbff', 'center', 800);
+      ctx.fillStyle = 'rgba(255,255,255,.15)'; Arcade.rr(ctx, bx, by + 6, bw, 10, 5); ctx.fill();
+      ctx.fillStyle = '#ffd43b'; Arcade.rr(ctx, bx, by + 6, bw * clamp(s.score / s.target, 0, 1), 10, 5); ctx.fill();
+      Arcade.txt(ctx, 'Movimientos: ' + s.moves, W / 2, by + 34, 16, s.moves <= 5 ? '#ff8787' : '#fff', 'center', 900);
+    },
+  });
+})();
+</script>
+</body>
+</html>

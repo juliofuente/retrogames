@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Cinta · Arcade Perdido</title>
+<meta name="theme-color" content="#151a2e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css">
+</head>
+<body class="game">
+<script src="config.js"></script>
+<script src="common.js"></script>
+<script>
+(function () {
+  const { rand, ri, clamp } = Arcade;
+  const NL = 5, STEPS = 7, BINR = 5, MAXSTACK = 5;
+  const COL = [['#ff5d73', '🍓'], ['#ffd43b', '🍋'], ['#51cf66', '🍏'], ['#4dabf7', '🫐'], ['#b197fc', '🍇'], ['#ff922b', '🍊']];
+  const GOALS = [
+    { k: 'klax', es: (n) => 'Haz ' + n + ' klax', en: (n) => 'Make ' + n + ' klaxes' },
+    { k: 'diag', es: (n) => 'Haz ' + n + ' diagonales', en: (n) => 'Make ' + n + ' diagonals' },
+    { k: 'pts', es: (n) => 'Consigue ' + n + ' puntos', en: (n) => 'Score ' + n + ' points' },
+    { k: 'catch', es: (n) => 'Atrapa ' + n + ' fichas', en: (n) => 'Catch ' + n + ' tiles' },
+  ];
+
+  function geo(g) {
+    const s = g.s;
+    s.bw = Math.min(g.W - 24, 430);
+    s.cx = g.W / 2;
+    const avail = g.bot - g.top - 30;
+    s.cy0 = g.top + 34; s.cy1 = g.top + avail * 0.46;
+    s.py = s.cy1 + 26;
+    s.binTop = s.py + 46;
+    s.cs = Math.min(s.bw / NL, (g.bot - 8 - s.binTop) / BINR);
+    s.binW = s.cs * NL; s.bx0 = s.cx - s.binW / 2;
+  }
+  // posición en la cinta en perspectiva: lane (0..4), p (0 arriba .. 1 abajo)
+  function beltXY(s, lane, p) {
+    const wTop = s.binW * 0.55, wBot = s.binW, w = wTop + (wBot - wTop) * p;
+    const y = s.cy0 + (s.cy1 - s.cy0) * p;
+    return { x: s.cx - w / 2 + (lane + 0.5) * (w / NL), y, size: (w / NL) * 0.82 };
+  }
+  const laneAtX = (s, x) => clamp(Math.floor((x - s.bx0) / s.cs), 0, NL - 1);
+  function newGoal(g) {
+    const s = g.s, L = g.lv, gk = GOALS[(g.level - 1) % 4];
+    const n = gk.k === 'klax' ? 3 + Math.floor(L / 3) : gk.k === 'diag' ? 1 + Math.floor(L / 5) : gk.k === 'pts' ? 2000 + L * 600 : 18 + L * 3;
+    s.goal = { k: gk.k, n, have: 0, txt: Arcade.T(gk.es(n), gk.en(n)) };
+  }
+  function checkBin(g) {
+    const s = g.s; let chain = 0;
+    for (;;) {
+      const kill = new Set(); let pts = 0, diag = 0, lines = 0;
+      const at = (c, r) => (c >= 0 && c < NL && r >= 0 && r < BINR ? s.bin[c][r] : undefined);
+      const dirs = [[1, 0, 300], [0, 1, 100], [1, 1, 800], [1, -1, 800]];
+      for (let c = 0; c < NL; c++) for (let r = 0; r < BINR; r++) {
+        const v = at(c, r); if (v == null) continue;
+        for (const [dc, dr, val] of dirs) {
+          if (at(c - dc, r - dr) === v) continue; // solo desde el inicio de la línea
+          let n = 1; while (at(c + dc * n, r + dr * n) === v) n++;
+          if (n >= 3) {
+            lines++; pts += val * (n - 2); if (dc && dr) diag++;
+            for (let k = 0; k < n; k++) kill.add((c + dc * k) + ',' + (r + dr * k));
+          }
+        }
+      }
+      if (!kill.size) break;
+      chain++;
+      for (const k of kill) {
+        const [c, r] = k.split(',').map(Number), p = binXY(s, c, r);
+        g.burst(p.x, p.y, { n: 8, color: COL[s.bin[c][r]][0], speed: 200, size: 4 });
+        s.bin[c][r] = null;
+      }
+      // gravedad (índice 0 = fondo)
+      for (let c = 0; c < NL; c++) { const col = s.bin[c].filter((v) => v != null); s.bin[c] = col.concat(new Array(BINR - col.length).fill(null)); }
+      const total = pts * chain;
+      g.addScore(total, s.cx, s.binTop + s.cs * 2);
+      g.message(diag ? 'DIAGONAL!' : 'KLAX!', 0.9, chain > 1 ? 'x' + chain : '');
+      Arcade.sfx.combo(chain + lines); g.flash('#ffffff', 0.12); g.shake(0.15, 5);
+      if (s.goal.k === 'klax') s.goal.have += lines;
+      if (s.goal.k === 'diag') s.goal.have += diag;
+    }
+    if (s.goal.k === 'pts') s.goal.have = g.score - s.scoreStart;
+    if (s.goal.have >= s.goal.n) { g.addScore(1000 * g.lv, g.W / 2, g.H / 2); g.win(s.miss === 0 ? 3 : s.miss === 1 ? 2 : 1); }
+  }
+  const binXY = (s, c, r) => ({ x: s.bx0 + (c + 0.5) * s.cs, y: s.binTop + (BINR - r - 0.5) * s.cs });
+  function drop(g) {
+    const s = g.s; if (!s.stack.length) { Arcade.sfx.bad(); return; }
+    const col = s.bin[s.pl], r = col.indexOf(null);
+    if (r < 0) { Arcade.sfx.bad(); g.shake(0.1, 4); return; }
+    const v = s.stack.pop(); col[r] = v;
+    s.fallFx = { c: s.pl, r, t: 0.18, v };
+    Arcade.tone(300 + r * 60, 0.07, 'triangle', 0.08, -100);
+    checkBin(g);
+    if (g.state === 'play' && s.bin.every((c) => c.every((v) => v != null))) { g.message(Arcade.T('¡Cubeta llena!', 'Bin full!'), 1.2); lose(g); }
+  }
+  function throwBack(g) {
+    const s = g.s; if (!s.stack.length) return;
+    const v = s.stack.pop(); s.tiles.push({ lane: s.pl, step: 3, t: 0, v, back: true });
+    Arcade.sfx.whoosh();
+  }
+  function lose(g) {
+    const s = g.s; s.tiles = []; s.miss = 0; s.spawnT = 1.5;
+    if (g.die()) { s.stack = []; }
+  }
+
+  Arcade.game({
+    /*THEME*/ tag: 'Atrapa, apila y haz KLAX', deco: ['🍓', '🍋', '🍏', '🫐', '🍇', '🍊'], font: 'impact', bg: ['#232b4a', '#151a2e'],
+    music: { mode: 'dorian', bpm: 132, wave: 'square', style: 'drive', root: 57 }, voice: { wave: 'square', mul: 1.05, echo: 0.2 },
+    ambient: { e: ['✨'], n: 8, vy: 0, sway: 0, twinkle: 1, alpha: 0.22, size: [8, 14] },
+    en: { title: 'Conveyor', tag: 'Catch, stack and make KLAX', help: 'Tiles tumble down a <b>conveyor belt</b> with five lanes. Move the <b>paddle</b> (tap or drag a lane) to catch them; it holds up to 5. <b>Swipe down</b> (or tap the paddle\'s lane) to drop the top tile into the bin below, and <b>swipe up</b> to throw it back onto the belt. Line up <b>3 or more of the same colour</b> horizontally, vertically or <b>diagonally</b> (worth the most) to make a KLAX. Each level has its own goal. If you miss 3 tiles or the bin fills up, you lose a life.', tvHelp: '◀ ▶ move the paddle · ▼ or OK drop a tile into the bin · ▲ throw it back.',
+      dict: { 'Haz ': 'Make ', 'Fallos: ': 'Misses: ', '¡Cubeta llena!': 'Bin full!', '¡Se te escapó!': 'Missed!' } },
+    tvHelp: '◀ ▶ mover la paleta · ▼ u OK soltar ficha en la cubeta · ▲ devolverla a la cinta.',
+    id: 'cinta', title: 'Cinta', emoji: '🎛️', color: '#ffd43b', origin: 'Klax (Atari Games, 1990)',
+    help: 'Las fichas bajan dando vueltas por una <b>cinta</b> de cinco carriles. Mueve la <b>paleta</b> (toca o arrastra hacia un carril) para atraparlas; caben 5. <b>Desliza hacia abajo</b> (o toca el carril donde está la paleta) para soltar la de arriba en la cubeta de abajo y <b>desliza hacia arriba</b> para devolverla a la cinta. Alinea <b>3 o más del mismo color</b> en horizontal, vertical o <b>diagonal</b> (la que más puntúa) para hacer un KLAX. Cada nivel tiene su objetivo. Si se te escapan 3 fichas o se llena la cubeta, pierdes una vida.',
+    lives: 3, levels: 0, cap: 18,
+    setup(g) {
+      g.s = { tiles: [], stack: [], pl: 2, bin: [], spawnT: 1, miss: 0, plx: 2 };
+      const s = g.s;
+      for (let c = 0; c < NL; c++) s.bin.push(new Array(BINR).fill(null));
+      s.nc = Math.min(6, 4 + Math.floor((g.lv + 1) / 5));
+      s.scoreStart = g.score;
+      newGoal(g); geo(g);
+    },
+    layout(g) { if (g.s.bin) geo(g); },
+    down(g, p) { g.s.downPl = g.s.pl; },
+    move(g, p) { const s = g.s; if (Math.abs(p.y - p.sy) > Math.abs(p.x - p.sx) * 1.2) return; const l = laneAtX(s, p.x); if (l !== s.pl) { s.pl = l; Arcade.sfx.tick(); } },
+    tap(g, p) { const s = g.s, l = laneAtX(s, p.x); if (l === s.downPl) drop(g); else { s.pl = l; Arcade.sfx.tick(); } },
+    swipe(g, d) { if (d === 'down') drop(g); else if (d === 'up') throwBack(g); },
+    key(g, k, d) {
+      if (!d) return; const s = g.s;
+      if (k === 'ArrowLeft') s.pl = Math.max(0, s.pl - 1); else if (k === 'ArrowRight') s.pl = Math.min(NL - 1, s.pl + 1);
+      else if (k === 'ArrowDown' || k === ' ') drop(g); else if (k === 'ArrowUp') throwBack(g);
+    },
+    update(g, dt) {
+      const s = g.s, L = g.lv;
+      s.plx += (s.pl - s.plx) * Math.min(1, dt * 18);
+      if (s.fallFx) { s.fallFx.t -= dt; if (s.fallFx.t <= 0) s.fallFx = null; }
+      const flip = Math.max(0.16, 0.5 - L * 0.018);
+      s.spawnT -= dt;
+      if (s.spawnT <= 0) { s.spawnT = Math.max(0.55, 1.9 - L * 0.07) * rand(0.7, 1.3); s.tiles.push({ lane: ri(0, NL - 1), step: 0, t: 0, v: ri(0, s.nc - 1) }); }
+      for (const t of s.tiles) {
+        t.t += dt / flip;
+        if (t.t >= 1) {
+          t.t -= 1; t.step++;
+          if (t.step >= STEPS) {
+            t.dead = true;
+            if (s.pl === t.lane && s.stack.length < MAXSTACK) {
+              s.stack.push(t.v); Arcade.tone(500 + s.stack.length * 70, 0.05, 'square', 0.07);
+              const b = beltXY(s, t.lane, 1); g.burst(b.x, b.y, { n: 5, color: COL[t.v][0], speed: 100, size: 3 });
+              if (s.goal.k === 'catch') { s.goal.have++; if (s.goal.have >= s.goal.n) { g.addScore(1000 * g.lv, g.W / 2, g.H / 2); g.win(s.miss === 0 ? 3 : s.miss === 1 ? 2 : 1); return; } }
+            } else {
+              s.miss++; const b = beltXY(s, t.lane, 1);
+              g.float(Arcade.T('¡Se te escapó!', 'Missed!'), b.x, b.y + 20, '#ff6b6b', 18); Arcade.sfx.bad(); g.shake(0.15, 5);
+              if (s.miss >= 3) { lose(g); return; }
+            }
+          }
+        }
+      }
+      s.tiles = s.tiles.filter((t) => !t.dead);
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      const bg = ctx.createLinearGradient(0, 0, 0, H);
+      bg.addColorStop(0, '#2b3566'); bg.addColorStop(1, '#0f1324');
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      g.scenery(['⚙️', '🔩', '🏭'], 6, { alpha: 0.08, size: [30, 50] });
+      if (!s.bin) return;
+      // cinta en perspectiva
+      const tl = beltXY(s, -0.5, 0), tr = beltXY(s, NL - 0.5, 0), bl = beltXY(s, -0.5, 1), br = beltXY(s, NL - 0.5, 1);
+      const pad = 8;
+      ctx.fillStyle = '#3a3f5c'; ctx.beginPath(); ctx.moveTo(tl.x - pad, tl.y - 14); ctx.lineTo(tr.x + pad, tr.y - 14); ctx.lineTo(br.x + pad * 1.5, br.y + 14); ctx.lineTo(bl.x - pad * 1.5, bl.y + 14); ctx.fill();
+      const bg2 = ctx.createLinearGradient(0, tl.y, 0, bl.y); bg2.addColorStop(0, '#1b1f33'); bg2.addColorStop(1, '#2c3150');
+      ctx.fillStyle = bg2; ctx.beginPath(); ctx.moveTo(tl.x, tl.y - 10); ctx.lineTo(tr.x, tr.y - 10); ctx.lineTo(br.x, br.y + 10); ctx.lineTo(bl.x, bl.y + 10); ctx.fill();
+      // rayas de la cinta (se mueven)
+      const off = (g.rt * 1.2) % (1 / STEPS);
+      ctx.strokeStyle = 'rgba(255,255,255,.07)'; ctx.lineWidth = 2;
+      for (let k = 0; k <= STEPS; k++) { const p = k / STEPS + off; if (p > 1) continue; const a = beltXY(s, -0.5, p), b = beltXY(s, NL - 0.5, p); ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke(); }
+      for (let l = 0; l <= NL; l++) { const a = beltXY(s, l - 0.5, 0), b = beltXY(s, l - 0.5, 1); ctx.strokeStyle = 'rgba(255,255,255,.05)'; ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke(); }
+      // carril de la paleta
+      { const a = beltXY(s, s.pl - 0.5, 0), b = beltXY(s, s.pl + 0.5, 0), c = beltXY(s, s.pl + 0.5, 1), d = beltXY(s, s.pl - 0.5, 1);
+        ctx.fillStyle = 'rgba(255,212,59,.07)'; ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.lineTo(c.x, c.y); ctx.lineTo(d.x, d.y); ctx.fill(); }
+      const tile = (x, y, sz, v, sy, alpha) => {
+        ctx.save(); ctx.globalAlpha = alpha ?? 1; ctx.translate(x, y); ctx.scale(1, sy ?? 1);
+        ctx.fillStyle = 'rgba(0,0,0,.35)'; Arcade.rr(ctx, -sz / 2 + 2, -sz / 2 + 3, sz, sz, sz * 0.2); ctx.fill();
+        ctx.fillStyle = COL[v][0]; Arcade.rr(ctx, -sz / 2, -sz / 2, sz, sz, sz * 0.2); ctx.fill();
+        ctx.fillStyle = 'rgba(255,255,255,.3)'; Arcade.rr(ctx, -sz / 2 + 3, -sz / 2 + 3, sz - 6, sz * 0.28, sz * 0.12); ctx.fill();
+        ctx.restore();
+        Arcade.emoji(ctx, COL[v][1], x, y, sz * 0.55, { sy: sy ?? 1, alpha: alpha ?? 1 });
+      };
+      // fichas en la cinta (dando la vuelta)
+      for (const t of s.tiles) {
+        const p = (t.step + t.t) / STEPS, b = beltXY(s, t.lane, p);
+        const sy = Math.abs(Math.cos(t.t * Math.PI)) * 0.8 + 0.2;
+        tile(b.x, b.y - Math.sin(t.t * Math.PI) * b.size * 0.25, b.size, t.v, sy);
+      }
+      // paleta y pila
+      const px = s.bx0 + (s.plx + 0.5) * s.cs, ps = s.cs * 0.62;
+      s.stack.forEach((v, i) => tile(px, s.py - 8 - i * ps * 0.42, ps, v, 0.55));
+      ctx.fillStyle = '#ced4da'; Arcade.rr(ctx, px - s.cs * 0.45, s.py, s.cs * 0.9, 12, 6); ctx.fill();
+      ctx.fillStyle = '#868e96'; Arcade.rr(ctx, px - s.cs * 0.45, s.py + 8, s.cs * 0.9, 6, 3); ctx.fill();
+      Arcade.txt(ctx, s.stack.length + '/5', px, s.py + 26, 11, '#adb5bd', 'center', 800);
+      // cubeta
+      ctx.fillStyle = 'rgba(0,0,0,.35)'; Arcade.rr(ctx, s.bx0 - 6, s.binTop - 6, s.binW + 12, s.cs * BINR + 12, 12); ctx.fill();
+      for (let c = 0; c < NL; c++) for (let r = 0; r < BINR; r++) {
+        const p = binXY(s, c, r);
+        ctx.fillStyle = (c + r) % 2 ? 'rgba(255,255,255,.04)' : 'rgba(255,255,255,.07)'; ctx.fillRect(p.x - s.cs / 2, p.y - s.cs / 2, s.cs, s.cs);
+        const v = s.bin[c][r];
+        if (v != null) {
+          let yy = p.y; if (s.fallFx && s.fallFx.c === c && s.fallFx.r === r) yy -= s.fallFx.t * s.cs * 4;
+          tile(p.x, yy, s.cs * 0.86, v);
+        }
+      }
+      if (s.pl != null) { ctx.strokeStyle = 'rgba(255,212,59,.5)'; ctx.lineWidth = 2; ctx.strokeRect(s.bx0 + s.pl * s.cs + 1, s.binTop + 1, s.cs - 2, s.cs * BINR - 2); }
+      // objetivo y fallos
+      Arcade.txt(ctx, '🎯 ' + s.goal.txt + '  ·  ' + Math.min(s.goal.have, s.goal.n) + '/' + s.goal.n, W / 2, g.top + 14, 14, '#ffe066', 'center', 900, 'rgba(0,0,0,.5)');
+      Arcade.txt(ctx, 'Fallos: ' + '❌'.repeat(s.miss) + '⬜'.repeat(Math.max(0, 3 - s.miss)), W - 12, s.py + 6, 12, '#ffc9c9', 'right', 800);
+    },
+  });
+})();
+</script>
+</body>
+</html>

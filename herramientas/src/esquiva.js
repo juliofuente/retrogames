@@ -1,0 +1,57 @@
+// Esquiva|#111827
+(function () {
+  const { ri, rand, clamp, pick } = Arcade;
+  const FOES = ['🔴', '🟠', '🟣', '🔺', '💣'];
+
+  function area(g) { return { x0: 10, y0: g.top + 40, x1: g.W - 10, y1: g.bot - 10 }; }
+  function placeGem(g) { const s = g.s, A = area(g); let x, y, k = 0; do { x = rand(A.x0 + 30, A.x1 - 30); y = rand(A.y0 + 30, A.y1 - 30); } while (Math.hypot(x - s.px, y - s.py) < 120 && k++ < 30); s.gem = { x, y, t: 0 }; }
+  function addFoe(g) {
+    const s = g.s, A = area(g), side = ri(0, 3), sp = rand(90, 130) + Math.min(g.lv, 20) * 6;
+    const kind = g.lv >= 4 && Math.random() < 0.3 ? 'chase' : 'line';
+    let x, y, a; if (side === 0) { x = A.x0; y = rand(A.y0, A.y1); a = rand(-0.6, 0.6); } else if (side === 1) { x = A.x1; y = rand(A.y0, A.y1); a = Math.PI + rand(-0.6, 0.6); } else if (side === 2) { x = rand(A.x0, A.x1); y = A.y0; a = Math.PI / 2 + rand(-0.6, 0.6); } else { x = rand(A.x0, A.x1); y = A.y1; a = -Math.PI / 2 + rand(-0.6, 0.6); }
+    s.foes.push({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, kind, e: kind === 'chase' ? '💣' : pick(FOES.slice(0, 4)), life: kind === 'chase' ? 7 : 999 });
+  }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Coge los cuadrados, esquiva lo demás', deco: ['🟩', '🔴', '🟠', '💣', '🟦', '✨'], font: 'wide', bg: ['#1f2937', '#111827'],
+    music: { mode: 'minor', bpm: 128, wave: 'square', style: 'arcade', root: 57 }, voice: { wave: 'square', mul: 1, echo: 0.2 },
+    en: { title: 'Dodge', tag: 'Grab the squares, dodge everything else', help: '<b>Drag</b> your finger anywhere to move the white dot (it moves the same distance as your finger, so your finger never hides it). Grab the 🟩 squares: each one sends a new enemy bouncing across the screen. Do not touch anything else! 💣 bombs chase you for a while. Grab the squares each level asks for.', tvHelp: 'Arrows to move.', dict: { 'Cuadrados: ': 'Squares: ' } },
+    tvHelp: 'Flechas para moverte.',
+    id: 'esquiva', title: 'Esquiva', emoji: '⚪', color: '#69db7c', origin: 'Eskiv / Avoider / String Avoider',
+    help: '<b>Arrastra</b> el dedo en cualquier sitio para mover el punto blanco (se mueve lo mismo que tu dedo, así no lo tapas). Coge los cuadrados 🟩: cada uno manda un enemigo nuevo rebotando por la pantalla. ¡No toques nada más! Las 💣 te persiguen un rato. Coge los cuadrados que pide cada nivel.',
+    lives: 3, levels: 0, cap: 25,
+    setup(g) { const A = area(g); g.s = { px: (A.x0 + A.x1) / 2, py: (A.y0 + A.y1) / 2, foes: [], got: 0, need: 12 + Math.min(g.lv, 25), inv: 1 }; placeGem(g); for (let i = 0; i < 1 + Math.floor(g.lv / 3); i++) addFoe(g); },
+    down(g, p) { g.s.drag = { x: p.x, y: p.y }; },
+    move(g, p) { const s = g.s, A = area(g); if (!s.drag) return; s.px = clamp(s.px + (p.x - s.drag.x) * 1.15, A.x0 + 10, A.x1 - 10); s.py = clamp(s.py + (p.y - s.drag.y) * 1.15, A.y0 + 10, A.y1 - 10); s.drag = { x: p.x, y: p.y }; },
+    up(g) { g.s.drag = null; },
+    key(g, k, d) { const s = g.s; s.keys = s.keys || {}; s.keys[k] = d; },
+    update(g, dt) {
+      const s = g.s, A = area(g); s.inv = Math.max(0, s.inv - dt);
+      if (s.keys) { const v = 260 * dt; if (s.keys.ArrowLeft) s.px -= v; if (s.keys.ArrowRight) s.px += v; if (s.keys.ArrowUp) s.py -= v; if (s.keys.ArrowDown) s.py += v; s.px = clamp(s.px, A.x0 + 10, A.x1 - 10); s.py = clamp(s.py, A.y0 + 10, A.y1 - 10); }
+      if (s.gem) s.gem.t += dt;
+      for (const f of s.foes) {
+        if (f.kind === 'chase') { const dx = s.px - f.x, dy = s.py - f.y, d = Math.hypot(dx, dy) || 1; f.vx += (dx / d * 150 - f.vx) * dt * 1.2; f.vy += (dy / d * 150 - f.vy) * dt * 1.2; f.life -= dt; if (f.life <= 0) { f.dead = true; g.burst(f.x, f.y, { n: 10, color: ['#868e96', '#fff'], speed: 100, size: 3 }); } }
+        f.x += f.vx * dt; f.y += f.vy * dt;
+        if (f.x < A.x0 + 10 || f.x > A.x1 - 10) { f.vx *= -1; f.x = clamp(f.x, A.x0 + 10, A.x1 - 10); }
+        if (f.y < A.y0 + 10 || f.y > A.y1 - 10) { f.vy *= -1; f.y = clamp(f.y, A.y0 + 10, A.y1 - 10); }
+        if (!s.inv && Math.hypot(f.x - s.px, f.y - s.py) < 20) { s.inv = 1.5; Arcade.sfx.hit(); g.shake(0.25, 6); g.flash('#ff6b6b', 0.15); f.dead = true; if (!g.die()) return; }
+      }
+      s.foes = s.foes.filter((f) => !f.dead);
+      if (s.gem && Math.hypot(s.gem.x - s.px, s.gem.y - s.py) < 24) {
+        s.got++; Arcade.sfx.coin(); g.addScore(10 * g.lv, s.gem.x, s.gem.y - 20); g.ring(s.gem.x, s.gem.y, '#69db7c', 30);
+        if (s.got >= s.need) { s.gem = null; g.confetti(60); setTimeout(() => { if (g.state === 'play') g.win(); }, 500); return; }
+        addFoe(g); placeGem(g);
+        if (s.foes.length > 6 + g.lv) s.foes.shift();
+      }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H, A = area(g);
+      ctx.fillStyle = '#111827'; ctx.fillRect(0, 0, W, H);
+      ctx.strokeStyle = 'rgba(105,219,124,.3)'; ctx.lineWidth = 2; Arcade.rr(ctx, A.x0, A.y0, A.x1 - A.x0, A.y1 - A.y0, 10); ctx.stroke();
+      if (s.gem) Arcade.emoji(ctx, '🟩', s.gem.x, s.gem.y, 26 * (1 + Math.sin(s.gem.t * 6) * 0.08), { rot: s.gem.t });
+      for (const f of s.foes) Arcade.emoji(ctx, f.e, f.x, f.y, 22, f.kind === 'chase' ? { alpha: f.life < 2 ? (Math.floor(g.rt * 10) % 2 ? 0.4 : 1) : 1 } : undefined);
+      ctx.fillStyle = '#fff'; ctx.shadowColor = '#fff'; ctx.shadowBlur = 12; ctx.globalAlpha = s.inv && Math.floor(g.rt * 12) % 2 ? 0.4 : 1; ctx.beginPath(); ctx.arc(s.px, s.py, 10, 0, 6.3); ctx.fill(); ctx.globalAlpha = 1; ctx.shadowBlur = 0;
+      Arcade.txt(ctx, 'Cuadrados: ' + s.got + '/' + s.need, W / 2, g.top + 20, 15, '#d3f9d8', 'center', 900);
+    },
+  });
+})();

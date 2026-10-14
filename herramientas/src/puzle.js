@@ -1,0 +1,93 @@
+// Puzle|#3b2f2f
+(function () {
+  const { ri, rand, clamp, shuffle, pick } = Arcade;
+  const SCENES = [
+    { bg: ['#74c0fc', '#d0ebff'], ground: '#69db7c', main: '🏰', extra: ['☁️', '🌳', '🌷', '🐦', '☀️'] },
+    { bg: ['#ffa94d', '#ffe8cc'], ground: '#e9c46a', main: '🐫', extra: ['🌵', '☀️', '🏜️', '🦂', '🌴'] },
+    { bg: ['#1c3d5a', '#3b5bdb'], ground: '#1864ab', main: '🐳', extra: ['🐠', '🐙', '🫧', '🐚', '🦀'] },
+    { bg: ['#120a2a', '#5f3dc4'], ground: '#343a40', main: '🚀', extra: ['🌙', '⭐', '🪐', '🛸', '☄️'] },
+    { bg: ['#ffdeeb', '#fcc2d7'], ground: '#f783ac', main: '🦄', extra: ['🌈', '🍭', '🎀', '💖', '🧁'] },
+    { bg: ['#d3f9d8', '#8ce99a'], ground: '#2b8a3e', main: '🐼', extra: ['🎋', '🍃', '🌸', '🦋', '🐞'] },
+    { bg: ['#e7f5ff', '#a5d8ff'], ground: '#f8f9fa', main: '⛄', extra: ['❄️', '🌲', '🎄', '🦌', '🎁'] },
+  ];
+  function paint(g) {
+    const s = g.s, S = SCENES[(g.level - 1) % SCENES.length], W = s.pw, H = s.ph, dpr = Arcade.dpr || 1;
+    const c = document.createElement('canvas'); c.width = Math.round(W * dpr); c.height = Math.round(H * dpr);
+    const x = c.getContext('2d'); x.scale(dpr, dpr);
+    const gr = x.createLinearGradient(0, 0, 0, H); gr.addColorStop(0, S.bg[0]); gr.addColorStop(1, S.bg[1]); x.fillStyle = gr; x.fillRect(0, 0, W, H);
+    x.fillStyle = S.ground; x.beginPath(); x.moveTo(0, H * 0.75); for (let i = 0; i <= 10; i++) x.lineTo(W * i / 10, H * 0.75 + Math.sin(i * 1.3 + g.level) * H * 0.04); x.lineTo(W, H); x.lineTo(0, H); x.fill();
+    const rnd = (a, b) => a + Math.random() * (b - a);
+    for (let i = 0; i < 14; i++) Arcade.emoji(x, pick(S.extra), rnd(0, W), rnd(0, H), rnd(Math.min(W, H) * 0.07, Math.min(W, H) * 0.16));
+    Arcade.emoji(x, S.main, W / 2, H * 0.52, Math.min(W, H) * 0.55);
+    x.strokeStyle = 'rgba(255,255,255,.5)'; x.lineWidth = 6; x.strokeRect(3, 3, W - 6, H - 6);
+    s.img = c;
+  }
+  function geo(g) {
+    const s = g.s, land = g.W > g.H;
+    const area = land ? { w: g.W * 0.6, h: g.bot - g.top - 30 } : { w: g.W - 20, h: (g.bot - g.top) * 0.55 };
+    const ratio = s.cols / s.rows; let w = area.w, h = w / ratio; if (h > area.h) { h = area.h; w = h * ratio; }
+    s.bx = land ? 14 : (g.W - w) / 2; s.by = g.top + 20 + (land ? (area.h - h) / 2 : 10); s.bw = w; s.bh = h; s.pcw = w / s.cols; s.pch = h / s.rows;
+    s.tray = land ? { x: s.bx + w + 20, y: g.top + 10, w: g.W - (s.bx + w + 30), h: g.bot - g.top - 20 } : { x: 10, y: s.by + h + 20, w: g.W - 20, h: g.bot - (s.by + h + 30) };
+  }
+  function scatter(g) { const s = g.s, T = s.tray; for (const p of s.pieces) if (!p.ok) { p.x = rand(T.x, Math.max(T.x, T.x + T.w - s.pcw)); p.y = rand(T.y, Math.max(T.y, T.y + T.h - s.pch)); } }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Pieza a pieza', deco: ['🧩', '🏰', '🐳', '🚀', '🦄', '🐼'], font: 'round', bg: ['#5a4848', '#3b2f2f'],
+    music: { mode: 'lydian', bpm: 84, wave: 'sine', style: 'chill', root: 64 }, voice: { wave: 'sine', mul: 1.2, echo: 0.4 },
+    en: { title: 'Jigsaw', tag: 'Piece by piece', help: '<b>Drag</b> each piece from the tray to its place in the picture. When it is close to the right spot it snaps in with a click. The faint picture in the frame helps you at the start; later levels have more pieces and no help. Finish quickly for more stars.', tvHelp: 'OK on a piece, then on its place.', dict: { 'Piezas: ': 'Pieces: ' } },
+    tvHelp: 'OK sobre una pieza y luego sobre su sitio.',
+    tv: { mode: 'drag', targets: (g) => { const s = g.s, o = []; if (!s.pieces) return o; for (const p of s.pieces) if (!p.ok) o.push({ x: p.x, y: p.y, w: s.pcw, h: s.pch }); for (const p of s.pieces) if (!p.ok) o.push({ x: s.bx + p.c * s.pcw, y: s.by + p.r * s.pch, w: s.pcw, h: s.pch }); return o; } },
+    id: 'puzle', title: 'Puzle', emoji: '🧩', color: '#ffa94d', origin: 'Jigsaw Game',
+    help: '<b>Arrastra</b> cada pieza de la bandeja a su sitio en el dibujo. Cuando está cerca del lugar correcto, encaja sola con un clic. El dibujo tenue del marco te ayuda al principio; en niveles altos hay más piezas y sin ayuda. Termina rápido para más estrellas.',
+    lives: 0, levels: 0, cap: 30,
+    setup(g) {
+      const L = g.lv, land = g.W > g.H, a = clamp(2 + Math.floor(L / 2), 2, 7), b = clamp(3 + Math.floor(L / 2), 3, 9);
+      g.s = { cols: land ? b : a, rows: land ? a : b, pieces: [], t: 0, hint: L <= 8 };
+      const s = g.s; geo(g); s.pw = s.bw; s.ph = s.bh; paint(g);
+      for (let r = 0; r < s.rows; r++) for (let c = 0; c < s.cols; c++) s.pieces.push({ c, r, x: 0, y: 0, ok: false, z: 0 });
+      shuffle(s.pieces); scatter(g); s.par = s.pieces.length * 4;
+    },
+    layout(g) { const s = g.s; if (!s.pieces) return; geo(g); for (const p of s.pieces) if (p.ok) { p.x = s.bx + p.c * s.pcw; p.y = s.by + p.r * s.pch; } scatter(g); },
+    down(g, p) {
+      const s = g.s; if (s.done) return;
+      for (let i = s.pieces.length - 1; i >= 0; i--) { const q = s.pieces[i]; if (q.ok) continue; if (p.x >= q.x && p.x <= q.x + s.pcw && p.y >= q.y && p.y <= q.y + s.pch) { s.drag = { q, dx: p.x - q.x, dy: p.y - q.y }; s.pieces.splice(i, 1); s.pieces.push(q); Arcade.sfx.tick(); return; } }
+    },
+    move(g, p) { const s = g.s; if (!s.drag) return; s.drag.q.x = p.x - s.drag.dx; s.drag.q.y = p.y - s.drag.dy; },
+    up(g, p) {
+      const s = g.s; if (!s.drag) return; const q = s.drag.q; s.drag = null;
+      // en TV el cursor deja el centro de la pieza en el destino
+      if (p && p.type === 'tv') { q.x = p.x - s.pcw / 2; q.y = p.y - s.pch / 2; }
+      const tx = s.bx + q.c * s.pcw, ty = s.by + q.r * s.pch;
+      if (Math.hypot(q.x - tx, q.y - ty) < Math.min(s.pcw, s.pch) * 0.4) {
+        q.x = tx; q.y = ty; q.ok = true; q.pop = 1; Arcade.sfx.coin(); g.addScore(10 * g.lv, tx + s.pcw / 2, ty);
+        if (s.pieces.every((x) => x.ok)) { s.done = true; Arcade.sfx.win(); g.confetti(80); g.addScore(Math.max(50, Math.round((s.par * 2 - s.t) * 3)) * g.lv, g.W / 2, g.H / 2); setTimeout(() => { if (g.state === 'play') g.win(s.t <= s.par ? 3 : s.t <= s.par * 1.7 ? 2 : 1); }, 1000); }
+      } else Arcade.tone(250, 0.04, 'triangle', 0.04);
+    },
+    update(g, dt) { const s = g.s; if (!s.done) s.t += dt; for (const p of s.pieces) if (p.pop) p.pop = Math.max(0, p.pop - dt * 4); },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      ctx.fillStyle = '#3b2f2f'; ctx.fillRect(0, 0, W, H);
+      if (!s.pieces) return;
+      ctx.fillStyle = '#2a2020'; ctx.fillRect(s.bx - 6, s.by - 6, s.bw + 12, s.bh + 12);
+      if (s.hint) { ctx.globalAlpha = 0.22; ctx.drawImage(s.img, s.bx, s.by, s.bw, s.bh); ctx.globalAlpha = 1; }
+      ctx.strokeStyle = 'rgba(255,255,255,.08)'; ctx.lineWidth = 1;
+      for (let c = 1; c < s.cols; c++) { ctx.beginPath(); ctx.moveTo(s.bx + c * s.pcw, s.by); ctx.lineTo(s.bx + c * s.pcw, s.by + s.bh); ctx.stroke(); }
+      for (let r = 1; r < s.rows; r++) { ctx.beginPath(); ctx.moveTo(s.bx, s.by + r * s.pch); ctx.lineTo(s.bx + s.bw, s.by + r * s.pch); ctx.stroke(); }
+      ctx.fillStyle = 'rgba(0,0,0,.2)'; Arcade.rr(ctx, s.tray.x, s.tray.y, s.tray.w, s.tray.h, 12); ctx.fill();
+      const iw = s.img.width / s.cols, ih = s.img.height / s.rows;
+      const draw1 = (q) => {
+        const lift = s.drag && s.drag.q === q ? 1.05 : 1 + (q.pop || 0) * 0.08;
+        ctx.save(); ctx.translate(q.x + s.pcw / 2, q.y + s.pch / 2); ctx.scale(lift, lift);
+        if (!q.ok) { ctx.shadowColor = 'rgba(0,0,0,.5)'; ctx.shadowBlur = 10; ctx.shadowOffsetY = 4; }
+        ctx.drawImage(s.img, q.c * iw, q.r * ih, iw, ih, -s.pcw / 2, -s.pch / 2, s.pcw, s.pch);
+        ctx.shadowColor = 'transparent';
+        if (!q.ok) { ctx.strokeStyle = 'rgba(255,255,255,.7)'; ctx.lineWidth = 2; ctx.strokeRect(-s.pcw / 2, -s.pch / 2, s.pcw, s.pch); }
+        ctx.restore();
+      };
+      for (const q of s.pieces) if (q.ok) draw1(q);
+      for (const q of s.pieces) if (!q.ok) draw1(q);
+      const n = s.pieces.filter((q) => q.ok).length;
+      Arcade.txt(ctx, 'Piezas: ' + n + '/' + s.pieces.length + '   ⏱️ ' + Math.floor(s.t) + 's', W / 2, g.top + 8, 13, '#ffe8cc', 'center', 800);
+    },
+  });
+})();

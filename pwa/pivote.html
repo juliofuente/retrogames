@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Pivote · Arcade Perdido</title>
+<meta name="theme-color" content="#0b1f3a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css">
+</head>
+<body class="game">
+<script src="config.js"></script>
+<script src="common.js"></script>
+<script>
+(function () {
+  const { ri, pick, clamp, dist } = Arcade;
+  const D = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
+  const OPP = { up: 'down', down: 'up', left: 'right', right: 'left' };
+  const RIGHT = { up: 'right', right: 'down', down: 'left', left: 'up' };
+  const LEFT = { up: 'left', left: 'down', down: 'right', right: 'up' };
+
+  function key(c1, r1, c2, r2) { return r1 === r2 ? 'h' + Math.min(c1, c2) + ',' + r1 : 'v' + c1 + ',' + Math.min(r1, r2); }
+  function valid(s, c, r, d) { const nc = c + D[d][0], nr = r + D[d][1]; return nc >= 0 && nc < s.NC && nr >= 0 && nr < s.NR; }
+  function pos(s, m) { return { x: s.ox + (m.c + D[m.dir][0] * m.p) * s.sp, y: s.oy + (m.r + D[m.dir][1] * m.p) * s.sp }; }
+  function mirror(s, k) {
+    const h = k[0] === 'h', [c, r] = k.slice(1).split(',').map(Number);
+    return h ? 'h' + (s.NC - 2 - c) + ',' + r : 'v' + (s.NC - 1 - c) + ',' + r;
+  }
+  function genGold(g) {
+    const s = g.s, target = Math.min(Math.floor((s.NC - 1) * s.NR * 0.9), 8 + g.lv * 2);
+    const set = new Set();
+    let tries = 0;
+    while (set.size < target && tries++ < 500) {
+      let c = ri(0, Math.floor((s.NC - 1) / 2)), r = ri(1, s.NR - 2);
+      const steps = ri(3, 7);
+      for (let i = 0; i < steps && set.size < target; i++) {
+        const opts = Object.keys(D).filter(d => valid(s, c, r, d));
+        const d = pick(opts), nc = c + D[d][0], nr = r + D[d][1];
+        const k = key(c, r, nc, nr);
+        set.add(k); set.add(mirror(s, k));
+        c = nc; r = nr;
+      }
+    }
+    s.gold = set; s.found = new Set();
+  }
+  function placeActors(g) {
+    const s = g.s;
+    s.pl = { c: Math.floor(s.NC / 2), r: s.NR - 1, dir: 'up', p: 0, q: null };
+    s.en = [];
+    const n = Math.min(5, 1 + Math.floor(g.lv / 2));
+    for (let i = 0; i < n; i++) s.en.push({ c: i % 2 ? s.NC - 1 : 0, r: i < 2 ? 0 : Math.floor(s.NR / 2) - 1, dir: 'down', p: 0, sp: 1.15 + g.lv * 0.07 + i * 0.05 });
+  }
+  function arrive(g, m, isPlayer) {
+    const s = g.s, nc = m.c + D[m.dir][0], nr = m.r + D[m.dir][1];
+    if (isPlayer) {
+      const k = key(m.c, m.r, nc, nr), p = { x: s.ox + (m.c + nc) / 2 * s.sp, y: s.oy + (m.r + nr) / 2 * s.sp };
+      if (s.gold.has(k)) {
+        if (s.found.has(k)) { s.found.delete(k); Arcade.sfx.bad(); g.float('¡Tapado!', p.x, p.y, '#ff6b6b', 18); g.addScore(-50); }
+        else {
+          s.found.add(k); g.addScore(100, p.x, p.y); Arcade.sfx.coin();
+          g.burst(p.x, p.y, { n: 8, color: ['#ffd60a', '#fff3b0'], speed: 120, size: 3 });
+          if (s.found.size === s.gold.size) { g.addScore(500 * g.lv, g.W / 2, g.H / 2); g.win(); }
+        }
+      }
+    }
+    m.c = nc; m.r = nr; m.p -= 1;
+    if (isPlayer) {
+      if (m.q && valid(s, m.c, m.r, m.q)) { m.dir = m.q; m.q = null; Arcade.sfx.move(); }
+      if (!valid(s, m.c, m.r, m.dir)) {
+        for (const d of [RIGHT[m.dir], LEFT[m.dir], OPP[m.dir]]) if (valid(s, m.c, m.r, d)) { m.dir = d; break; }
+      }
+    } else {
+      let opts = Object.keys(D).filter(d => valid(s, m.c, m.r, d) && d !== OPP[m.dir]);
+      if (!opts.length) opts = [OPP[m.dir]];
+      if (Math.random() < 0.45) {
+        const pl = s.pl;
+        opts.sort((a, b) => dist(m.c + D[a][0], m.r + D[a][1], pl.c, pl.r) - dist(m.c + D[b][0], m.r + D[b][1], pl.c, pl.r));
+        m.dir = opts[0];
+      } else m.dir = pick(opts);
+    }
+  }
+  function turn(g, dir) {
+    const m = g.s.pl;
+    if (dir === OPP[m.dir] && m.p < 0.08) { if (valid(g.s, m.c, m.r, dir)) { m.dir = dir; m.q = null; } }
+    else if (dir === OPP[m.dir]) { m.c += D[m.dir][0]; m.r += D[m.dir][1]; m.dir = dir; m.p = 1 - m.p; m.q = null; Arcade.sfx.move(); }
+    else m.q = dir;
+  }
+
+  Arcade.game({
+    /*THEME*/ tag: "El pez globo que nunca se para", deco: ["💰", "🫧", "🦔", "🐚", "🫧", "✨"], font: "round", bg: ["#0e3a5c", "#06243a"], music: {"mode": "lydian", "bpm": 104, "wave": "triangle", "style": "chill", "root": 62}, voice: {"wave": "sine", "mul": 1.2, "echo": 0.35}, ambient: {"e": ["🫧"], "n": 14, "vy": -30, "sway": 18, "alpha": 0.25, "size": [8, 18]},
+    /*EN*/ en: {"title": "Pivot", "tag": "The pufferfish that never stops", "help": "The pufferfish <b>never stops</b>. <b>Swipe</b> to a side and it will turn at the next post. Swipe backwards to turn around. Some segments hide <b>buried gold</b>: pass over them to uncover them all. Careful! Passing again over an uncovered segment <b>covers it back</b>. Avoid the hedgehogs 🦔.", "tvHelp": "D-pad: the fish turns at the next post in that direction.", "dict": {"¡Tapado!": "Covered!"}},
+    /*TV*/ tvHelp: "Cruceta: el pez gira en el siguiente poste hacia donde pulses.",
+    id: 'pivote', title: 'Pivote', emoji: '🐡', color: '#4cc9f0', origin: 'Clu Clu Land (Nintendo, 1984)',
+    help: 'El pez globo <b>nunca se para</b>. <b>Desliza</b> hacia un lado y girará en el siguiente poste. Desliza hacia atrás para dar la vuelta. Bajo algunos tramos hay <b>oro escondido</b>: pasa por ellos para descubrirlos todos. ¡Ojo! Si pasas otra vez por un tramo descubierto, <b>se vuelve a tapar</b>. Evita a los erizos 🦔.',
+    lives: 3, levels: 0, cap: 25,
+    setup(g) {
+      g.s = { inv: 1.5 };
+      const s = g.s;
+      s.NC = g.W < g.H ? 5 : 8;
+      const availW = g.W - 48, availH = g.bot - g.top - 70;
+      let sp = availW / (s.NC - 1);
+      s.NR = clamp(Math.floor(availH / sp) + 1, 5, 10);
+      genLayout(g);
+      genGold(g); placeActors(g);
+    },
+    layout(g) { if (g.s.NC) genLayout(g); },
+    swipe(g, dir) { turn(g, dir); },
+    key(g, k, down) { if (!down) return; const m = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right', w: 'up', s: 'down', a: 'left', d: 'right' }[k]; if (m) turn(g, m); },
+    update(g, dt) {
+      const s = g.s;
+      s.inv = Math.max(0, s.inv - dt);
+      const pl = s.pl;
+      pl.p += (2.3 + g.lv * 0.03) * dt;
+      while (pl.p >= 1 && g.state === 'play') arrive(g, pl, true);
+      if (g.state !== 'play') return;
+      const pp = pos(s, pl);
+      for (const e of s.en) {
+        e.p += e.sp * dt;
+        while (e.p >= 1) arrive(g, e, false);
+        const ep = pos(s, e);
+        if (s.inv <= 0 && dist(pp.x, pp.y, ep.x, ep.y) < s.sp * 0.42) {
+          g.burst(pp.x, pp.y, { n: 18, color: ['#4cc9f0', '#fff'], speed: 220 });
+          if (g.die()) { placeActors(g); s.inv = 2; }
+          return;
+        }
+      }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      const bg = ctx.createLinearGradient(0, 0, 0, H);
+      bg.addColorStop(0, '#0b1f3a'); bg.addColorStop(1, '#06324a');
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      for (let i = 0; i < 18; i++) { // burbujas de fondo
+        const x = (i * 97 + 30) % W, y = H - ((g.t * (12 + i % 5 * 6) + i * 140) % (H + 40));
+        ctx.strokeStyle = 'rgba(255,255,255,.08)'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(x, y, 3 + i % 4 * 2, 0, 6.28); ctx.stroke();
+      }
+      g.scenery(['🪸','🐚','🌿','🪨','🦀'], 10, { y0: g.bot - 46, alpha: 0.55, size: [22, 34], bob: 2 }); /*SC*/
+      if (!s.gold) return;
+      const sp = s.sp;
+      // tramos
+      ctx.lineCap = 'round';
+      ctx.strokeStyle = 'rgba(255,255,255,.07)'; ctx.lineWidth = sp * 0.12;
+      ctx.beginPath();
+      for (let r = 0; r < s.NR; r++) { ctx.moveTo(s.ox, s.oy + r * sp); ctx.lineTo(s.ox + (s.NC - 1) * sp, s.oy + r * sp); }
+      for (let c = 0; c < s.NC; c++) { ctx.moveTo(s.ox + c * sp, s.oy); ctx.lineTo(s.ox + c * sp, s.oy + (s.NR - 1) * sp); }
+      ctx.stroke();
+      // oro descubierto
+      for (const k of s.found) {
+        const h = k[0] === 'h', [c, r] = k.slice(1).split(',').map(Number);
+        const x1 = s.ox + c * sp, y1 = s.oy + r * sp, x2 = x1 + (h ? sp : 0), y2 = y1 + (h ? 0 : sp);
+        ctx.strokeStyle = '#b8860b'; ctx.lineWidth = sp * 0.24; ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+        ctx.strokeStyle = '#ffd60a'; ctx.lineWidth = sp * 0.17; ctx.stroke();
+        ctx.strokeStyle = 'rgba(255,255,255,.6)'; ctx.lineWidth = sp * 0.04; ctx.stroke();
+      }
+      // postes
+      for (let r = 0; r < s.NR; r++) for (let c = 0; c < s.NC; c++) {
+        const x = s.ox + c * sp, y = s.oy + r * sp;
+        ctx.fillStyle = '#1b4965'; ctx.beginPath(); ctx.arc(x, y, sp * 0.11, 0, 6.28); ctx.fill();
+        ctx.fillStyle = '#9ad1d4'; ctx.beginPath(); ctx.arc(x - sp * 0.02, y - sp * 0.02, sp * 0.07, 0, 6.28); ctx.fill();
+      }
+      for (const e of s.en) { const p = pos(s, e); Arcade.emoji(ctx, '🦔', p.x, p.y, sp * 0.5, { flip: e.dir === 'right' }); }
+      const pl = s.pl, pp = pos(s, pl);
+      if (!(s.inv > 0 && Math.floor(g.t * 10) % 2)) Arcade.emoji(ctx, '🐡', pp.x, pp.y, sp * 0.56, { flip: pl.dir === 'right', rot: pl.dir === 'up' ? -0.3 : pl.dir === 'down' ? 0.3 : 0 });
+      if (pl.q) { // indicador del giro pendiente
+        const nx = s.ox + (pl.c + D[pl.dir][0]) * sp, ny = s.oy + (pl.r + D[pl.dir][1]) * sp;
+        ctx.strokeStyle = '#4cc9f0'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(nx, ny, sp * 0.2, 0, 6.28); ctx.stroke();
+        Arcade.txt(ctx, { up: '▲', down: '▼', left: '◀', right: '▶' }[pl.q], nx, ny, sp * 0.18, '#4cc9f0');
+      }
+      Arcade.txt(ctx, '💰 ' + s.found.size + ' / ' + s.gold.size, W / 2, s.oy - sp * 0.35 - 6, 16, '#ffd60a', 'center', 800, 'rgba(0,0,0,.5)');
+    },
+  });
+  function genLayout(g) {
+    const s = g.s, availW = g.W - 48, availH = g.bot - g.top - 70;
+    s.sp = Math.min(availW / (s.NC - 1), availH / (s.NR - 1));
+    s.ox = (g.W - s.sp * (s.NC - 1)) / 2;
+    s.oy = g.top + 46 + (availH - s.sp * (s.NR - 1)) / 2;
+  }
+})();
+</script>
+</body>
+</html>

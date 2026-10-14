@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Inundación · Arcade Perdido</title>
+<meta name="theme-color" content="#0c2d48">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css">
+</head>
+<body class="game">
+<script src="config.js"></script>
+<script src="common.js"></script>
+<script>
+(function () {
+  const { ri, clamp } = Arcade;
+  const EM = ['🟥', '🟨', '🟩', '🟦', '🟪', '🟧'];
+  const COL = ['#fa5252', '#fcc419', '#40c057', '#228be6', '#7950f2', '#fd7e14'];
+
+  function region(b, n) {
+    const c0 = b[0], seen = new Uint8Array(n * n), st = [0], out = []; seen[0] = 1;
+    while (st.length) { const i = st.pop(); out.push(i); const x = i % n, y = (i / n) | 0; for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const nx = x + dx, ny = y + dy; if (nx < 0 || ny < 0 || nx >= n || ny >= n) continue; const j = ny * n + nx; if (!seen[j] && b[j] === c0) { seen[j] = 1; st.push(j); } } }
+    return out;
+  }
+  function flood(b, n, c) { const reg = region(b, n); for (const i of reg) b[i] = c; return region(b, n).length; }
+  function greedy(b0, n, nc) {
+    const b = b0.slice(); let steps = 0;
+    while (region(b, n).length < n * n && steps < 200) { let best = -1, bs = -1; for (let c = 0; c < nc; c++) { if (c === b[0]) continue; const t = b.slice(); const sz = flood(t, n, c); if (sz > bs) { bs = sz; best = c; } } flood(b, n, best); steps++; }
+    return steps;
+  }
+  function geo(g) {
+    const s = g.s, land = g.W > g.H;
+    if (land) { const size = Math.min(g.bot - g.top - 30, g.W - 160); s.cs = size / s.n; s.ox = (g.W - size - 120) / 2; s.oy = g.top + (g.bot - g.top - size) / 2; s.pal = EM.slice(0, s.nc).map((_, i) => ({ x: s.ox + size + 30, y: s.oy + i * Math.min(70, size / s.nc), w: 60, h: Math.min(60, size / s.nc - 8) })); }
+    else { const pb = Math.min(60, (g.W - 20) / s.nc - 8), size = Math.min(g.W - 16, g.bot - g.top - pb - 90); s.cs = size / s.n; s.ox = (g.W - size) / 2; s.oy = g.top + 50; s.pal = EM.slice(0, s.nc).map((_, i) => ({ x: (g.W - s.nc * (pb + 8)) / 2 + i * (pb + 8) + 4, y: s.oy + size + 18, w: pb, h: pb })); }
+  }
+  function pickColor(g, c) {
+    const s = g.s; if (s.done || c === s.b[0]) return;
+    const before = new Set(region(s.b, s.n));
+    flood(s.b, s.n, c); s.moves++;
+    const reg = region(s.b, s.n);
+    for (const i of reg) if (!before.has(i)) s.wave[i] = 1;
+    const gained = reg.length - before.size;
+    Arcade.tone(300 + Math.min(gained, 30) * 15, 0.08, 'triangle', 0.07);
+    if (gained > 0) g.addScore(gained * g.lv, s.ox + s.cs, s.oy + s.cs);
+    if (reg.length === s.n * s.n) {
+      s.done = true; const left = s.max - s.moves; g.addScore((100 + left * 50) * g.lv, g.W / 2, g.H / 2); g.confetti(60);
+      setTimeout(() => { if (g.state === 'play') g.win(left >= 2 ? 3 : left >= 1 ? 2 : 1); }, 700);
+    } else if (s.moves >= s.max) {
+      s.done = true; g.message(Arcade.T('Sin movimientos', 'Out of moves'), 1.2);
+      setTimeout(() => { if (g.state === 'play' && g.die()) Arcade.current.def.setup(g); }, 1100);
+    }
+  }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Inunda el tablero de un color', deco: ['🟥', '🟨', '🟩', '🟦', '🟪', '🌊'], font: 'round', bg: ['#174a75', '#0c2d48'],
+    music: { mode: 'lydian', bpm: 96, wave: 'sine', style: 'chill', root: 62 }, voice: { wave: 'sine', mul: 1.2, echo: 0.4 },
+    ambient: { e: ['💧'], n: 6, vy: 20, sway: 10, alpha: 0.15, size: [10, 16] },
+    en: { title: 'Flood', tag: 'Flood the board with one colour', help: 'Your area starts in the <b>top-left corner</b>. Tap a <b>colour</b> from the palette: your whole area changes to that colour and swallows the neighbouring squares of that colour. Turn the entire board one single colour within the move limit. Boards get bigger and the limit tighter.', tvHelp: 'D-pad to the colour · OK to flood.', dict: { 'Movimientos: ': 'Moves: ' } },
+    tvHelp: 'Cruceta hasta el color · OK para inundar.',
+    tv: { mode: 'tap', targets: (g) => (g.s.pal || []) },
+    id: 'inundacion', title: 'Inundación', emoji: '🌊', color: '#228be6', origin: 'Flood-It / Filler / ColorFill',
+    help: 'Tu zona empieza en la <b>esquina de arriba a la izquierda</b>. Toca un <b>color</b> de la paleta: toda tu zona cambia a ese color y se traga las casillas vecinas de ese color. Consigue que todo el tablero sea de un solo color sin pasarte de movimientos. Los tableros crecen y el límite aprieta.',
+    lives: 3, levels: 0, cap: 30,
+    setup(g) {
+      const L = g.lv, n = clamp(6 + Math.floor(L / 2), 6, 16), nc = L < 3 ? 4 : L < 8 ? 5 : 6;
+      g.s = { n, nc, b: [], moves: 0, done: false };
+      const s = g.s; for (let i = 0; i < n * n; i++) s.b.push(ri(0, nc - 1));
+      s.wave = new Float32Array(n * n);
+      s.max = greedy(s.b, n, nc) + Math.max(0, 4 - Math.floor(L / 4));
+      geo(g);
+    },
+    layout(g) { if (g.s.b) geo(g); },
+    tap(g, p) {
+      const s = g.s;
+      for (let i = 0; i < s.pal.length; i++) { const q = s.pal[i]; if (p.x >= q.x && p.x <= q.x + q.w && p.y >= q.y && p.y <= q.y + q.h) return pickColor(g, i); }
+      const c = Math.floor((p.x - s.ox) / s.cs), r = Math.floor((p.y - s.oy) / s.cs);
+      if (c >= 0 && r >= 0 && c < s.n && r < s.n) pickColor(g, s.b[r * s.n + c]);
+    },
+    update(g, dt) { const s = g.s; for (let i = 0; i < s.wave.length; i++) if (s.wave[i] > 0) s.wave[i] = Math.max(0, s.wave[i] - dt * 2.5); },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      const bg = ctx.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, '#174a75'); bg.addColorStop(1, '#081d30');
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      if (!s.b) return;
+      const cs = s.cs, n = s.n, mine = new Set(region(s.b, n));
+      ctx.fillStyle = 'rgba(0,0,0,.35)'; Arcade.rr(ctx, s.ox - 6, s.oy - 6, cs * n + 12, cs * n + 12, 12); ctx.fill();
+      for (let i = 0; i < n * n; i++) {
+        const x = s.ox + (i % n) * cs, y = s.oy + ((i / n) | 0) * cs, w = s.wave[i];
+        ctx.fillStyle = COL[s.b[i]]; ctx.fillRect(x, y - w * 4, cs + 0.5, cs + 0.5);
+        if (mine.has(i)) { ctx.fillStyle = 'rgba(255,255,255,.14)'; ctx.fillRect(x, y, cs + 0.5, cs + 0.5); }
+        if (w) { ctx.fillStyle = `rgba(255,255,255,${w * 0.5})`; ctx.fillRect(x, y, cs, cs); }
+      }
+      Arcade.emoji(ctx, '🚩', s.ox + cs * 0.5, s.oy + cs * 0.5, cs * 0.8);
+      s.pal.forEach((q, i) => {
+        const cur = i === s.b[0];
+        ctx.fillStyle = cur ? 'rgba(255,255,255,.12)' : 'rgba(255,255,255,.25)'; Arcade.rr(ctx, q.x - 3, q.y - 3, q.w + 6, q.h + 6, 12); ctx.fill();
+        Arcade.emoji(ctx, EM[i], q.x + q.w / 2, q.y + q.h / 2, q.w * 0.9, { alpha: cur ? 0.35 : 1 });
+      });
+      const left = s.max - s.moves;
+      Arcade.txt(ctx, 'Movimientos: ' + s.moves + ' / ' + s.max, W / 2, g.top + 22, 17, left <= 2 ? '#ff8787' : '#fff', 'center', 900);
+      Arcade.txt(ctx, Math.round(mine.size / (n * n) * 100) + '%', W / 2, g.top + 42, 13, '#a5d8ff', 'center', 800);
+    },
+  });
+})();
+</script>
+</body>
+</html>

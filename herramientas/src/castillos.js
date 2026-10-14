@@ -1,0 +1,171 @@
+// Castillos|#120d1f
+(function () {
+  const { rand, clamp } = Arcade;
+  const COL = ['#ff6b6b', '#ffd43b', '#69db7c', '#4dabf7'];
+  const ME = 3; // abajo-izquierda
+  const TAU = Math.PI * 2;
+  const norm = (a) => { a %= TAU; return a < 0 ? a + TAU : a; };
+  const adiff = (a, b) => { let d = norm(a - b); return d > Math.PI ? d - TAU : d; };
+
+  function geo(g) {
+    const s = g.s, A = Math.min(g.W - 16, g.bot - g.top - 16);
+    const old = s.A;
+    s.A = A; s.ax = (g.W - A) / 2; s.ay = g.top + 8 + (g.bot - g.top - 16 - A) / 2;
+    if (old && s.ball) { const k = A / old; s.ball.x = s.ax + (s.ball.x - s.oax) * k; s.ball.y = s.ay + (s.ball.y - s.oay) * k; s.ball.vx *= k; s.ball.vy *= k; }
+    s.oax = s.ax; s.oay = s.ay;
+    if (s.cs) s.cs.forEach((c, i) => { c.x = i === 0 || i === 3 ? s.ax : s.ax + A; c.y = i < 2 ? s.ay : s.ay + A; });
+  }
+  function build(g) {
+    const s = g.s, A = s.A, bs = A / 24;
+    s.bs = bs;
+    s.cs = [0, 1, 2, 3].map(i => ({ i, a0: [0, Math.PI / 2, Math.PI, Math.PI * 1.5][i], th: 0, alive: true, human: i === ME, bricks: [], err: 0 }));
+    geo(g);
+    for (const c of s.cs) {
+      c.th = c.a0 + Math.PI / 4;
+      for (let gx = 0; gx < 8; gx++) for (let gy = 0; gy < 8; gy++) {
+        const u = (gx + 0.5) * bs, v = (gy + 0.5) * bs, d = Math.hypot(u, v);
+        if (d > A * 0.13 && d < A * 0.25) c.bricks.push({ u: gx, v: gy, ok: true });
+      }
+    }
+    serve(g);
+  }
+  function serve(g) {
+    const s = g.s, a = rand(0, TAU), sp = s.A * (0.42 + Math.min(g.level, 12) * 0.03);
+    s.ball = { x: s.ax + s.A / 2, y: s.ay + s.A / 2, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, base: sp, owner: -1, trail: [] };
+    s.serveT = 1.2; s.t = 0;
+  }
+  // posición del ladrillo en pantalla según la esquina
+  function brickRect(s, c, b) {
+    const bs = s.bs, sx = c.i === 0 || c.i === 3 ? 1 : -1, sy = c.i < 2 ? 1 : -1;
+    const x = c.x + sx * b.u * bs + (sx < 0 ? -bs : 0), y = c.y + sy * b.v * bs + (sy < 0 ? -bs : 0);
+    return [x, y, bs, bs];
+  }
+  function kingPos(s, c) { const k = s.A * 0.065, sx = c.i === 0 || c.i === 3 ? 1 : -1, sy = c.i < 2 ? 1 : -1; return [c.x + sx * k, c.y + sy * k]; }
+  function control(s, c, x, y) {
+    const a = Math.atan2(y - c.y, x - c.x), w = 0.18;
+    const rel = clamp(adiff(a, c.a0 + Math.PI / 4), -Math.PI / 4 + w, Math.PI / 4 - w);
+    c.target = c.a0 + Math.PI / 4 + rel;
+  }
+  function quad(s, x, y) { const cx = s.ax + s.A / 2, cy = s.ay + s.A / 2; return y < cy ? (x < cx ? 0 : 1) : (x < cx ? 3 : 2); }
+  function kill(g, c) {
+    const s = g.s; c.alive = false;
+    const [kx, ky] = kingPos(s, c);
+    g.burst(kx, ky, { n: 24, color: [COL[c.i], '#fff', '#ffd43b'], speed: 240 }); g.burst(kx, ky, { n: 6, emoji: ['👑', '💥'], size: 20, speed: 200 }); g.ring(kx, ky, { color: COL[c.i], r: s.A * 0.3, w: 8 }); g.flash(COL[c.i], 0.25); Arcade.sfx.boom(); g.shake(0.3, 8);
+    if (c.i === ME) { g.float('¡Tu rey ha caído!', g.W / 2, g.H / 2, '#ff6b6b', 26); if (g.die()) setTimeout(() => { if (g.state === 'play') build(g); }, 1200); return; }
+    if (s.ball.owner === ME) g.addScore(500, kx, ky);
+    if (s.cs.filter(q => q.alive).length === 1 && s.cs[ME].alive) { g.addScore(1000 * g.level, g.W / 2, g.H / 2); setTimeout(() => g.win(), 700); }
+  }
+
+  Arcade.game({
+    id: 'castillos', title: 'Castillos', emoji: '🛡️', color: '#ff6b6b', origin: 'Warlords (Atari, 1980)',
+    help: 'Defiendes el castillo de <b>abajo a la izquierda</b> 🔵. Mueve el dedo y tu <b>escudo</b> girará apuntando hacia él. Desvía la bola de fuego hacia los demás castillos para romper sus muros y derribar a su rey 👑. Gana el último rey en pie. <b>Multijugador:</b> en una tablet, cada persona puede tocar su esquina y controlar ese castillo.',
+    lives: 3, levels: Infinity,
+    theme: { font: 'Cinzel Decorative', ambient: 'embers', music: { tempo: 120, scale: 'harmonic', root: 220, wave: 'square', lead: 'sawtooth' }, sfx: { wave: 'square', pitch: 1 } },
+    setup(g) { g.s = {}; geo(g); build(g); },
+    layout(g) { if (g.s.cs) geo(g); },
+    down(g, p) {
+      const s = g.s, q = p.type === 'touch' ? quad(s, p.x, p.y) : ME, c = s.cs[q];
+      if (!c.alive) return;
+      c.human = true; c.pid = p.id; control(s, c, p.x, p.y);
+    },
+    move(g, p) { const s = g.s; for (const c of s.cs) if (c.pid === p.id) control(s, c, p.x, p.y); },
+    hover(g, x, y) { const s = g.s; control(s, s.cs[ME], x, y); },
+    up(g, p) { for (const c of g.s.cs) if (c.pid === p.id) c.pid = null; },
+    key(g, k, d) { const s = g.s; s.kd = d ? (k === 'ArrowLeft' ? -1 : k === 'ArrowRight' ? 1 : s.kd) : 0; },
+    update(g, dt) {
+      const s = g.s, b = s.ball, A = s.A, w = 0.18, Rs = A * 0.3;
+      if (s.kd) { const c = s.cs[ME]; c.target = clamp((c.target ?? c.th) + s.kd * 3 * dt, c.a0 + w, c.a0 + Math.PI / 2 - w); }
+      // escudos
+      for (const c of s.cs) {
+        if (!c.alive) continue;
+        if (!c.human) {
+          const bx = b.x - c.x, by = b.y - c.y, d = Math.hypot(bx, by), vr = (b.vx * bx + b.vy * by) / (d || 1);
+          if (vr < 0 && d < A * 0.95) { if (!c.errT || c.errT < s.t) { c.err = rand(-0.35, 0.35) / (1 + Math.min(g.level, 12) * 0.25); c.errT = s.t + 1; } control(s, c, b.x + c.err * A * 0.3, b.y - c.err * A * 0.3); }
+          else c.target = c.a0 + Math.PI / 4;
+          const sp = (2 + Math.min(g.level, 12) * 0.35) * dt, d2 = adiff(c.target, c.th);
+          c.th += clamp(d2, -sp, sp);
+        } else if (c.target != null) c.th += adiff(c.target, c.th) * Math.min(1, dt * 25);
+      }
+      if (s.serveT > 0) { s.serveT -= dt; return; }
+      s.t += dt;
+      const sp = Math.hypot(b.vx, b.vy), want = Math.min(b.base * 1.7, b.base * (1 + s.t * 0.02));
+      b.vx *= want / sp; b.vy *= want / sp;
+      const steps = 3, r = A * 0.017;
+      for (let st = 0; st < steps; st++) {
+        b.x += b.vx * dt / steps; b.y += b.vy * dt / steps;
+        if (b.x < s.ax + r) { b.x = s.ax + r; b.vx = Math.abs(b.vx); } if (b.x > s.ax + A - r) { b.x = s.ax + A - r; b.vx = -Math.abs(b.vx); }
+        if (b.y < s.ay + r) { b.y = s.ay + r; b.vy = Math.abs(b.vy); } if (b.y > s.ay + A - r) { b.y = s.ay + A - r; b.vy = -Math.abs(b.vy); }
+        for (const c of s.cs) {
+          const dx = b.x - c.x, dy = b.y - c.y, d = Math.hypot(dx, dy);
+          if (c.alive && Math.abs(d - Rs) < r + 6 && Math.abs(adiff(Math.atan2(dy, dx), c.th)) < w + r / Rs) {
+            const ux = dx / d, uy = dy / d, vr = b.vx * ux + b.vy * uy;
+            if (vr < 0) {
+              b.vx -= 2 * vr * ux; b.vy -= 2 * vr * uy;
+              const off = adiff(Math.atan2(dy, dx), c.th) / w, tx = -uy, ty = ux, spd = Math.hypot(b.vx, b.vy);
+              b.vx += tx * off * spd * 0.45; b.vy += ty * off * spd * 0.45;
+              b.owner = c.i; Arcade.tone(c.i === ME ? 660 : 440, 0.05, 'square', 0.07); if (c.i === ME) Arcade.buzz(15); g.ring(b.x, b.y, { color: COL[c.i], r: 22, t: 0.25, w: 3 });
+            }
+          }
+          if (c.alive) {
+            const [kx, ky] = kingPos(s, c);
+            if (Math.hypot(b.x - kx, b.y - ky) < r + A * 0.04) { kill(g, c); b.vx = -b.vx; b.vy = -b.vy; if (g.state !== 'play') return; }
+          }
+          for (const br of c.bricks) {
+            if (!br.ok) continue;
+            const [x, y, wd, ht] = brickRect(s, c, br);
+            const nx = clamp(b.x, x, x + wd), ny = clamp(b.y, y, y + ht);
+            if ((b.x - nx) ** 2 + (b.y - ny) ** 2 < r * r) {
+              br.ok = false;
+              const ox = Math.min(Math.abs(b.x - x), Math.abs(b.x - x - wd)), oy = Math.min(Math.abs(b.y - y), Math.abs(b.y - y - ht));
+              if (ox < oy) b.vx = -b.vx; else b.vy = -b.vy;
+              g.burst(x + wd / 2, y + ht / 2, { n: 4, color: COL[c.i], speed: 100, size: 2 });
+              if (b.owner === ME && c.i !== ME) g.addScore(10);
+              Arcade.tone(300 + c.i * 60, 0.03, 'triangle', 0.06);
+              break;
+            }
+          }
+        }
+      }
+      b.trail.push([b.x, b.y]); if (b.trail.length > 10) b.trail.shift();
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      Arcade.bg(ctx, W, H, '#2a0f1a', '#120d1f', '#07050c');
+      Arcade.amb(g, ctx);
+      if (!s.cs) return;
+      const A = s.A, Rs = A * 0.3, w = 0.18;
+      ctx.fillStyle = '#1d1533'; Arcade.rr(ctx, s.ax, s.ay, A, A, 12); ctx.fill();
+      ctx.strokeStyle = 'rgba(255,212,59,.35)'; ctx.lineWidth = 3; ctx.stroke();
+      Arcade.glow(ctx, s.ax + A / 2, s.ay + A / 2, A * 0.3, 'rgba(255,120,40,.5)', 0.4 + Math.sin(g.t * 2) * 0.1);
+      ctx.strokeStyle = 'rgba(255,180,80,.18)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(s.ax + A / 2, s.ay + A / 2, A * 0.16, 0, 6.28); ctx.stroke();
+      for (let i = 0; i < 6; i++) { const a = g.t * 0.3 + i * Math.PI / 3; Arcade.txt(ctx, 'ᚱᚢᚾᛖ'[i % 4], s.ax + A / 2 + Math.cos(a) * A * 0.16, s.ay + A / 2 + Math.sin(a) * A * 0.16, A * 0.03, 'rgba(255,200,120,.35)', 'center', 700); }
+      ctx.strokeStyle = 'rgba(255,255,255,.05)'; ctx.lineWidth = 1;
+      for (let i = 1; i < 8; i++) { ctx.beginPath(); ctx.moveTo(s.ax + i * A / 8, s.ay); ctx.lineTo(s.ax + i * A / 8, s.ay + A); ctx.moveTo(s.ax, s.ay + i * A / 8); ctx.lineTo(s.ax + A, s.ay + i * A / 8); ctx.stroke(); }
+      for (const c of s.cs) {
+        for (const br of c.bricks) if (br.ok) {
+          const [x, y, wd, ht] = brickRect(s, c, br);
+          ctx.fillStyle = COL[c.i]; ctx.fillRect(x + 1, y + 1, wd - 2, ht - 2);
+          ctx.fillStyle = 'rgba(255,255,255,.25)'; ctx.fillRect(x + 1, y + 1, wd - 2, (ht - 2) * 0.35);
+        }
+        const [kx, ky] = kingPos(s, c);
+        Arcade.emoji(ctx, c.alive ? '👑' : '💀', kx, ky, A * 0.08);
+        if (c.alive) {
+          ctx.strokeStyle = COL[c.i]; ctx.lineWidth = A * 0.022; ctx.lineCap = 'round';
+          ctx.beginPath(); ctx.arc(c.x, c.y, Rs, c.th - w, c.th + w); ctx.stroke();
+          ctx.strokeStyle = 'rgba(255,255,255,.6)'; ctx.lineWidth = A * 0.006;
+          ctx.beginPath(); ctx.arc(c.x, c.y, Rs - A * 0.005, c.th - w * 0.8, c.th + w * 0.8); ctx.stroke();
+          if (c.human && c.i !== ME) Arcade.emoji(ctx, '🧑', c.x + Math.cos(c.a0 + Math.PI / 4) * A * 0.4, c.y + Math.sin(c.a0 + Math.PI / 4) * A * 0.4, A * 0.05, { alpha: 0.6 });
+        }
+      }
+      const tl = s.cs[ME];
+      Arcade.txt(ctx, 'TÚ', tl.x + A * 0.05, tl.y - A * 0.035, A * 0.03, '#fff', 'left', 900, 'rgba(0,0,0,.5)');
+      const b = s.ball, r = A * 0.017;
+      b.trail.forEach(([x, y], i) => { ctx.globalAlpha = i / b.trail.length * 0.5; ctx.fillStyle = '#ff922b'; ctx.beginPath(); ctx.arc(x, y, r * (i / b.trail.length), 0, TAU); ctx.fill(); });
+      ctx.globalAlpha = 1;
+      const gl = ctx.createRadialGradient(b.x, b.y, 1, b.x, b.y, r * 2.4);
+      gl.addColorStop(0, '#fff'); gl.addColorStop(0.35, '#ffd43b'); gl.addColorStop(1, 'rgba(255,100,0,0)');
+      ctx.fillStyle = gl; ctx.beginPath(); ctx.arc(b.x, b.y, r * 2.4, 0, TAU); ctx.fill();
+      if (s.serveT > 0) Arcade.txt(ctx, Math.ceil(s.serveT) + '', W / 2, s.ay + A / 2 - 40, 34, '#fff', 'center', 900, 'rgba(0,0,0,.5)');
+    },
+  });
+})();

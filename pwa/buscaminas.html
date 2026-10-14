@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Buscaminas · Arcade Perdido</title>
+<meta name="theme-color" content="#1d2b3a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css">
+</head>
+<body class="game">
+<script src="config.js"></script>
+<script src="common.js"></script>
+<script>
+(function () {
+  const { ri, clamp } = Arcade;
+  const NUMC = ['', '#1c7ed6', '#2f9e44', '#e03131', '#5f3dc4', '#c92a2a', '#0c8599', '#212529', '#868e96'];
+
+  function geo(g) {
+    const s = g.s, land = g.W > g.H, cols = land ? s.R : s.C, rows = land ? s.C : s.R;
+    s.T = land; s.cols = cols; s.rows = rows;
+    const Ha = g.bot - g.top - 70; s.cs = Math.min((g.W - 12) / cols, Ha / rows, 56); s.ox = (g.W - s.cs * cols) / 2; s.oy = g.top + 60 + (Ha - s.cs * rows) / 2;
+    s.fbtn = { x: g.W / 2 - 70, y: g.top + 8, w: 140, h: 40 };
+  }
+  const idx = (s, c, r) => r * s.cols + c;
+  function nb(s, c, r) { const o = []; for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { if (!dx && !dy) continue; const x = c + dx, y = r + dy; if (x >= 0 && y >= 0 && x < s.cols && y < s.rows) o.push([x, y]); } return o; }
+  function plant(s, sc, sr) {
+    const n = s.cols * s.rows, safe = new Set([idx(s, sc, sr), ...nb(s, sc, sr).map(([x, y]) => idx(s, x, y))]);
+    let k = 0; while (k < s.mines) { const i = ri(0, n - 1); if (s.cell[i].mine || safe.has(i)) continue; s.cell[i].mine = true; k++; }
+    for (let r = 0; r < s.rows; r++) for (let c = 0; c < s.cols; c++) s.cell[idx(s, c, r)].n = nb(s, c, r).filter(([x, y]) => s.cell[idx(s, x, y)].mine).length;
+    s.planted = true;
+  }
+  function reveal(g, c, r) {
+    const s = g.s, cl = s.cell[idx(s, c, r)]; if (cl.open || cl.flag || s.done) return;
+    if (!s.planted) plant(s, c, r);
+    if (cl.mine) { cl.open = true; cl.boom = true; Arcade.sfx.boom(); g.shake(0.3, 8); g.burst(s.ox + (c + 0.5) * s.cs, s.oy + (r + 0.5) * s.cs, { n: 20, color: ['#ff922b', '#ffd43b', '#495057'], speed: 220, size: 5 }); s.booms++; if (!g.die()) return; checkWin(g); return; }
+    const st = [[c, r]]; let n = 0;
+    while (st.length) {
+      const [x, y] = st.pop(), q = s.cell[idx(s, x, y)]; if (q.open || q.flag) continue;
+      q.open = true; q.t = 0.25 + n * 0.008; n++;
+      if (q.n === 0) for (const [a, b] of nb(s, x, y)) if (!s.cell[idx(s, a, b)].open) st.push([a, b]);
+    }
+    g.addScore(n * g.lv, s.ox + (c + 0.5) * s.cs, s.oy + (r + 0.5) * s.cs);
+    Arcade.tone(400 + Math.min(n, 40) * 10, 0.05, 'triangle', 0.06);
+    checkWin(g);
+  }
+  function chord(g, c, r) {
+    const s = g.s, cl = s.cell[idx(s, c, r)]; if (!cl.open || !cl.n) return false;
+    const around = nb(s, c, r), flags = around.filter(([x, y]) => s.cell[idx(s, x, y)].flag || (s.cell[idx(s, x, y)].open && s.cell[idx(s, x, y)].mine)).length;
+    if (flags !== cl.n) return false;
+    for (const [x, y] of around) reveal(g, x, y);
+    return true;
+  }
+  function toggleFlag(g, c, r) { const s = g.s, cl = s.cell[idx(s, c, r)]; if (cl.open || s.done) return; cl.flag = !cl.flag; Arcade.tone(cl.flag ? 700 : 400, 0.05, 'square', 0.05); }
+  function checkWin(g) {
+    const s = g.s; if (s.done) return;
+    if (s.cell.every((q) => q.mine || q.open)) { s.done = true; for (const q of s.cell) if (q.mine && !q.open) q.flag = true; g.addScore(200 * g.lv, g.W / 2, g.H / 2); g.confetti(60); setTimeout(() => { if (g.state === 'play') g.win(s.booms === 0 ? 3 : s.booms === 1 ? 2 : 1); }, 700); }
+  }
+  function act(g, x, y, forceFlag) {
+    const s = g.s, c = Math.floor((x - s.ox) / s.cs), r = Math.floor((y - s.oy) / s.cs);
+    if (c < 0 || r < 0 || c >= s.cols || r >= s.rows) return;
+    const cl = s.cell[idx(s, c, r)];
+    if (cl.open) { chord(g, c, r); return; }
+    if (forceFlag || s.flagMode) toggleFlag(g, c, r); else reveal(g, c, r);
+  }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Cuenta, deduce, no pises la mina', deco: ['💣', '🚩', '1️⃣', '2️⃣', '3️⃣', '💎'], font: 'mono', bg: ['#2d4459', '#1d2b3a'],
+    music: { mode: 'dorian', bpm: 90, wave: 'sine', style: 'chill', root: 57 }, voice: { wave: 'sine', mul: 1.2, echo: 0.35 },
+    en: { title: 'Minesweeper', tag: 'Count, deduce, do not step on a mine', help: '<b>Tap</b> a square to uncover it. The number says how many mines touch it (including diagonals). <b>Long-press</b> or switch to 🚩 mode to plant a flag where you think a mine is. Tapping an uncovered number with all its flags set opens its neighbours. Uncover every safe square. Your first tap is always safe; each mine you step on costs a life.', tvHelp: 'D-pad to move · OK to uncover · the top button switches to flag mode.', dict: { '⛏️ Descubrir': '⛏️ Dig', '🚩 Bandera': '🚩 Flag', 'Minas: ': 'Mines: ' } },
+    tvHelp: 'Cruceta para moverte · OK para descubrir · el botón de arriba cambia a modo bandera.',
+    tv: { mode: 'tap', targets: (g) => { const s = g.s, o = []; if (!s.cell) return o; o.push(s.fbtn); for (let r = 0; r < s.rows; r++) for (let c = 0; c < s.cols; c++) if (!s.cell[idx(s, c, r)].open || s.cell[idx(s, c, r)].n) o.push({ x: s.ox + c * s.cs, y: s.oy + r * s.cs, w: s.cs, h: s.cs }); return o; } },
+    id: 'buscaminas', title: 'Buscaminas', emoji: '💣', color: '#ff922b', origin: 'Minesweeper / Gem Sweeper',
+    help: '<b>Toca</b> una casilla para descubrirla. El número indica cuántas minas la tocan (también en diagonal). <b>Mantén pulsado</b> o cambia al modo 🚩 para poner una bandera donde creas que hay una mina. Si tocas un número descubierto con todas sus banderas puestas, abre sus vecinas. Descubre todas las casillas sin mina. El primer toque siempre es seguro; cada mina que pisas cuesta una vida.',
+    lives: 3, levels: 0, cap: 30,
+    setup(g) {
+      const L = g.lv, C = clamp(7 + Math.floor(L / 3), 7, 12), R = clamp(9 + Math.floor(L / 2), 9, 18);
+      g.s = { C, R, cell: [], planted: false, flagMode: false, booms: 0, done: false };
+      const s = g.s; s.mines = Math.round(C * R * clamp(0.11 + L * 0.006, 0.11, 0.2));
+      geo(g); for (let i = 0; i < C * R; i++) s.cell.push({ mine: false, open: false, flag: false, n: 0, t: 0 });
+    },
+    layout(g) { const s = g.s; if (!s.cell) return; const was = s.T; geo(g); if (s.planted && was !== s.T) { /* transponer */ const old = s.cell.slice(), oc = s.rows, orr = s.cols; for (let r = 0; r < s.rows; r++) for (let c = 0; c < s.cols; c++) s.cell[r * s.cols + c] = old[c * oc + r]; } },
+    down(g, p) { const s = g.s; s.skipTap = false; s.hold = { x: p.x, y: p.y, t: 0, done: false }; },
+    move(g, p) { const s = g.s; if (s.hold && Math.hypot(p.x - s.hold.x, p.y - s.hold.y) > 12) s.hold = null; },
+    up(g) { const s = g.s; if (s.hold && s.hold.done) s.skipTap = true; s.hold = null; },
+    tap(g, p) {
+      const s = g.s; if (s.skipTap) { s.skipTap = false; return; }
+      const b = s.fbtn; if (p.x >= b.x && p.x <= b.x + b.w && p.y >= b.y && p.y <= b.y + b.h) { s.flagMode = !s.flagMode; Arcade.sfx.tick(); return; }
+      act(g, p.x, p.y, false);
+    },
+    update(g, dt) {
+      const s = g.s; for (const q of s.cell) if (q.t > 0) q.t = Math.max(0, q.t - dt);
+      if (s.hold && !s.hold.done) { s.hold.t += dt; if (s.hold.t > 0.38) { s.hold.done = true; const c = Math.floor((s.hold.x - s.ox) / s.cs), r = Math.floor((s.hold.y - s.oy) / s.cs); if (c >= 0 && r >= 0 && c < s.cols && r < s.rows) { toggleFlag(g, c, r); try { navigator.vibrate && navigator.vibrate(30); } catch (e) {} } } }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      const bg = ctx.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, '#2d4459'); bg.addColorStop(1, '#141f2a');
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      if (!s.cell) return;
+      const cs = s.cs;
+      for (let r = 0; r < s.rows; r++) for (let c = 0; c < s.cols; c++) {
+        const q = s.cell[idx(s, c, r)], x = s.ox + c * cs, y = s.oy + r * cs;
+        if (q.open && q.t <= 0) {
+          ctx.fillStyle = q.boom ? '#ff6b6b' : (r + c) % 2 ? '#e9ecef' : '#dee2e6'; ctx.fillRect(x, y, cs + 0.5, cs + 0.5);
+          if (q.mine) Arcade.emoji(ctx, '💣', x + cs / 2, y + cs / 2, cs * 0.7);
+          else if (q.n) Arcade.txt(ctx, String(q.n), x + cs / 2, y + cs / 2 + 1, cs * 0.6, NUMC[q.n], 'center', 900);
+        } else {
+          const k = q.open ? q.t / 0.25 : 1;
+          ctx.fillStyle = (r + c) % 2 ? '#74c69d' : '#52b788'; ctx.fillRect(x, y, cs + 0.5, cs + 0.5);
+          if (q.open) { ctx.fillStyle = '#e9ecef'; const w = cs * (1 - k); ctx.fillRect(x + (cs - w) / 2, y + (cs - w) / 2, w, w); }
+          else { ctx.fillStyle = 'rgba(255,255,255,.18)'; ctx.fillRect(x, y, cs, 3); }
+          if (q.flag) Arcade.emoji(ctx, '🚩', x + cs / 2, y + cs / 2, cs * 0.65);
+        }
+      }
+      if (s.hold && !s.hold.done && s.hold.t > 0.1) { ctx.strokeStyle = '#ffd43b'; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(s.hold.x, s.hold.y, 30, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * Math.min(1, s.hold.t / 0.38)); ctx.stroke(); }
+      const b = s.fbtn; ctx.fillStyle = s.flagMode ? '#e03131' : 'rgba(255,255,255,.18)'; Arcade.rr(ctx, b.x, b.y, b.w, b.h, 20); ctx.fill();
+      Arcade.txt(ctx, s.flagMode ? '🚩 Bandera' : '⛏️ Descubrir', b.x + b.w / 2, b.y + b.h / 2 + 1, 15, '#fff', 'center', 900);
+      const flags = s.cell.filter((q) => q.flag).length;
+      Arcade.txt(ctx, 'Minas: ' + Math.max(0, s.mines - flags), W - 14, g.top + 28, 13, '#ffd8a8', 'right', 800);
+    },
+  });
+})();
+</script>
+</body>
+</html>

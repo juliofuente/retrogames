@@ -1,0 +1,101 @@
+// Derribo|#f4d9a8
+// @phys
+(function () {
+  const { ri, rand, clamp, pick } = Arcade;
+  const IDOLS = ['🗿', '👑', '🏺', '🦉', '🐸', '💎'];
+  const GY = 520, WW = 600;
+
+  function rng(seed) { return () => { seed |= 0; seed = (seed + 0x6D2B79F5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+  function build(g, seed) {
+    const R = rng(seed), rand = (a, b) => a + R() * (b - a), ri = (a, b) => a + Math.floor(R() * (b - a + 1));
+    const s = g.s, L = g.lv, w = new Arcade.Phys.World({ gy: 700, iterations: 14, substeps: 3 });
+    s.w = w; s.wood = []; s.stone = [];
+    s.ground = w.box(WW / 2, GY + 50, 2000, 100, { static: true, friction: 0.9, data: { ground: true } });
+    const pw = clamp(150 - L * 4, 86, 150), ph = clamp(30 + L * 3, 30, 110), cx = WW / 2 + rand(-40, 40);
+    const ped = w.box(cx, GY - ph / 2, pw, ph, { density: 3, friction: 0.9, data: { stone: true } }); s.stone.push(ped);
+    let y = GY - ph, top = y;
+    const layers = clamp(2 + Math.floor(L / 2), 2, 6);
+    for (let l = 0; l < layers; l++) {
+      const kind = ri(0, L < 3 ? 1 : 3), ice = L >= 5 && R() < 0.25, mat = ice ? 'ice' : 'wood';
+      const mk = (x, yy, bw, bh) => { const b = w.box(x, yy, bw, bh, { density: 0.7, friction: ice ? 0.08 : 0.7, data: { mat } }); s.wood.push(b); return b; };
+      if (kind === 0) { const bh = rand(20, 34); mk(cx, y - bh / 2, pw * rand(0.8, 1.25), bh); y -= bh; }
+      else if (kind === 1) { const bh = rand(30, 50), bw = pw * 0.3; mk(cx - pw / 2 + bw / 2, y - bh / 2, bw, bh); mk(cx + pw / 2 - bw / 2, y - bh / 2, bw, bh); y -= bh; const th = 16; mk(cx, y - th / 2, pw * 1.1, th); y -= th; }
+      else if (kind === 2) { const bh = rand(26, 40), bw = pw / 2 - 1; mk(cx - bw / 2 - 0.5, y - bh / 2, bw, bh); mk(cx + bw / 2 + 0.5, y - bh / 2, bw, bh); y -= bh; }
+      else { const st = l > 0 && L >= 4 && R() < 0.5; const bh = 24; if (st) { const b = w.box(cx, y - bh / 2, pw * 0.6, bh, { density: 3, friction: 0.9, data: { stone: true } }); s.stone.push(b); } else mk(cx, y - bh / 2, pw * 0.6, bh); y -= bh; }
+    }
+    const isz = 40; s.idol = w.box(cx + (L >= 6 ? rand(-pw * 0.2, pw * 0.2) : 0), y - isz / 2, isz, isz, { density: 1, friction: 0.8, data: { idol: true } });
+    // señuelos a los lados
+    for (let i = 0; i < Math.min(1 + Math.floor(L / 3), 4); i++) { const x = R() < 0.5 ? rand(40, cx - pw) : rand(cx + pw, WW - 40); if (x > 20 && x < WW - 20) { const b = w.box(x, GY - 20, rand(30, 60), 40, { density: 0.7, friction: 0.7, data: { mat: 'wood' } }); s.wood.push(b); } }
+    for (let i = 0; i < 60; i++) w.step(1 / 60);
+  }
+  function solvable(g, seed) {
+    const s0 = g.s, t = { s: {} }; t.lv = g.lv; build(t, seed); const s = t.s;
+    for (let i = 0; i < 4000; i++) {
+      if (i % 45 === 44 && s.wood.length) { const b = s.wood.reduce((a, c) => (a.p.y < c.p.y ? a : c)); s.w.remove(b); s.wood.splice(s.wood.indexOf(b), 1); }
+      s.w.step(1 / 60);
+      if (s.w.touching(s.idol).some((b) => b.data && b.data.ground) || s.idol.p.y > GY + 40) return false;
+      if (!s.wood.length && i % 45 === 30 && s.w.bodies.every((b) => !b.im || Math.hypot(b.v.x, b.v.y) < 6)) return true;
+    }
+    return false;
+  }
+  function geo(g) { const s = g.s; s.sc = Math.min(g.W / (WW + 40), (g.bot - g.top - 40) / 600); s.ox = (g.W - WW * s.sc) / 2; s.oy = g.bot - (GY + 30) * s.sc; }
+  const toW = (g, x, y) => [(x - g.s.ox) / g.s.sc, (y - g.s.oy) / g.s.sc];
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Quita la madera, que el ídolo no toque el suelo', deco: ['🗿', '🪵', '🪨', '🧊', '👆', '🏜️'], font: 'serif', bg: ['#ffe8b0', '#f4d9a8'],
+    music: { mode: 'phryg', bpm: 92, wave: 'triangle', style: 'chill', root: 55 }, voice: { wave: 'triangle', mul: 1.1, echo: 0.35 },
+    en: { title: 'Topple', tag: 'Remove the wood, keep the idol off the ground', help: '<b>Tap</b> the wooden 🪵 and ice 🧊 blocks to make them vanish. Remove them all, but the <b>idol</b> on top must never touch the sand: it has to end up resting on the grey stone blocks, which cannot be removed. Think about the order: if you take the wrong piece, everything tips over!', tvHelp: 'D-pad to the block · OK to remove it.', dict: { 'Bloques: ': 'Blocks: ', '¡El ídolo tocó el suelo!': 'The idol hit the ground!' } },
+    tvHelp: 'Cruceta hasta el bloque · OK para quitarlo.',
+    tv: { mode: 'tap', targets: (g) => { const s = g.s, o = []; if (!s.wood) return o; for (const b of s.wood) { const [x0, y0, x1, y1] = s.w.aabb(b); o.push({ x: s.ox + x0 * s.sc, y: s.oy + y0 * s.sc, w: (x1 - x0) * s.sc, h: (y1 - y0) * s.sc }); } return o; } },
+    id: 'derribo', title: 'Derribo', emoji: '🗿', color: '#e8a54b', origin: 'Totem Destroyer / Erase Box / Tipsy Tower',
+    help: '<b>Toca</b> los bloques de madera 🪵 y hielo 🧊 para hacerlos desaparecer. Quítalos todos, pero el <b>ídolo</b> de arriba nunca debe tocar la arena: tiene que acabar apoyado en los bloques grises de piedra, que no se pueden quitar. Piensa el orden: si quitas la pieza equivocada, ¡se vuelca todo!',
+    lives: 3, levels: 0, cap: 25,
+    setup(g) {
+      g.s = { fx: [], idolName: IDOLS[(g.level - 1) % IDOLS.length], calm: 0 }; geo(g);
+      let seed = (Date.now() ^ (g.level * 7919)) >>> 0; for (let k = 0; k < 14; k++) { if (solvable(g, seed)) break; seed = (seed * 16807 + 11) >>> 0; }
+      const keep = g.s; build(g, seed); geo(g);
+    },
+    layout(g) { if (g.s.w) geo(g); },
+    tap(g, p) {
+      const s = g.s; if (s.over) return;
+      const [x, y] = toW(g, p.x, p.y);
+      let hit = null; for (const b of s.wood) if (b.contains(x, y)) hit = b;
+      if (!hit) { let bd = 1e9; for (const b of s.wood) { const d = Math.hypot(b.p.x - x, b.p.y - y); if (d < 30 && d < bd) { bd = d; hit = b; } } }
+      if (!hit) return;
+      s.w.remove(hit); s.wood.splice(s.wood.indexOf(hit), 1);
+      g.burst(p.x, p.y, { n: 10, color: hit.data.mat === 'ice' ? ['#a5d8ff', '#e7f5ff'] : ['#c68642', '#8d5524'], speed: 160, size: 4 });
+      Arcade.tone(hit.data.mat === 'ice' ? 1100 : 380, 0.07, 'square', 0.06); g.addScore(10 * g.lv, p.x, p.y - 20); s.calm = 0;
+    },
+    update(g, dt) {
+      const s = g.s; s.w.step(dt);
+      if (s.over) return;
+      const id = s.idol;
+      const onGround = s.w.touching(id).some((b) => b.data && b.data.ground) || id.p.y > GY + 40;
+      if (onGround) { s.over = true; g.message(Arcade.T('¡El ídolo tocó el suelo!', 'The idol hit the ground!'), 1.3); Arcade.sfx.lose(); setTimeout(() => { if (g.state === 'play' && g.die()) Arcade.current.def.setup(g); }, 1500); return; }
+      const allWoodGone = !s.wood.length || s.wood.every((b) => b.p.y > GY + 200);
+      const calm = s.w.bodies.every((b) => !b.im || Math.hypot(b.v.x, b.v.y) < 6);
+      if (allWoodGone && calm) { s.calm += dt; if (s.calm > 1) { s.over = true; g.addScore(200 * g.lv, g.W / 2, g.H / 2); g.confetti(70); setTimeout(() => { if (g.state === 'play') g.win(); }, 600); } } else s.calm = 0;
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      const bg = ctx.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, '#ffd8a8'); bg.addColorStop(1, '#fff4e6');
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      if (!s.w) return;
+      Arcade.emoji(ctx, '☀️', W * 0.82, g.top + 40, 54);
+      g.scenery(['🌵', '🏜️', '🌵', '🦎'], 6, { alpha: 0.3, size: [30, 50], y0: s.oy + (GY - 60) * s.sc, y1: s.oy + (GY - 10) * s.sc });
+      ctx.save(); ctx.translate(s.ox, s.oy); ctx.scale(s.sc, s.sc);
+      ctx.fillStyle = '#e9c46a'; ctx.fillRect(-500, GY, WW + 1000, 400); ctx.fillStyle = '#d4a84b'; ctx.fillRect(-500, GY, WW + 1000, 6);
+      for (const b of s.stone) { Arcade.Phys.drawBox(ctx, b, '#6c757d', '#343a40'); }
+      for (const b of s.wood) {
+        const ice = b.data.mat === 'ice'; Arcade.Phys.drawBox(ctx, b, ice ? 'rgba(165,216,255,.9)' : '#c68642', ice ? '#4dabf7' : '#8d5524');
+        ctx.save(); ctx.translate(b.p.x, b.p.y); ctx.rotate(b.a); ctx.strokeStyle = ice ? 'rgba(255,255,255,.7)' : 'rgba(0,0,0,.15)'; ctx.lineWidth = 1.5;
+        if (ice) { ctx.beginPath(); ctx.moveTo(-b.hw * 0.6, -b.hh * 0.4); ctx.lineTo(-b.hw * 0.2, -b.hh * 0.4); ctx.stroke(); } else for (let k = -b.hh + 6; k < b.hh; k += 8) { ctx.beginPath(); ctx.moveTo(-b.hw + 3, k); ctx.lineTo(b.hw - 3, k); ctx.stroke(); }
+        ctx.restore();
+      }
+      const id = s.idol; ctx.save(); ctx.translate(id.p.x, id.p.y); ctx.rotate(id.a); ctx.fillStyle = 'rgba(255,212,59,.35)'; ctx.fillRect(-id.hw, -id.hh, id.hw * 2, id.hh * 2); ctx.restore();
+      Arcade.emoji(ctx, s.idolName, id.p.x, id.p.y, id.hw * 2.2, { rot: id.a });
+      ctx.restore();
+      Arcade.txt(ctx, 'Bloques: ' + s.wood.length, W / 2, g.top + 22, 16, '#7a4f1e', 'center', 900);
+    },
+  });
+})();

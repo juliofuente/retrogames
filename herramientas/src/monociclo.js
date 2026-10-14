@@ -1,0 +1,97 @@
+// Monociclo|#2b0f3a
+(function () {
+  const { rand, clamp, pick, dist } = Arcade;
+  const BC = ['#ff6b6b', '#ffd43b', '#69db7c', '#4dabf7', '#da77f2', '#ff922b'];
+
+  function geo(g) { const s = g.s; s.ground = g.bot - 20; s.headY = s.ground - 70; s.bh = 26; s.x = clamp(s.x || g.W / 2, 30, g.W - 30); }
+  const topY = (s) => s.headY - s.stack.length * s.bh;
+  function drawBalloon(ctx, x, y, c, r) {
+    r = r || 13;
+    ctx.strokeStyle = 'rgba(255,255,255,.5)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(x, y + r); ctx.lineTo(x, y + r + 8); ctx.stroke();
+    const gr = ctx.createRadialGradient(x - r * 0.35, y - r * 0.4, 1, x, y, r);
+    gr.addColorStop(0, '#fff'); gr.addColorStop(0.3, c); gr.addColorStop(1, c);
+    ctx.fillStyle = gr; ctx.beginPath(); ctx.ellipse(x, y, r * 0.88, r, 0, 0, 6.28); ctx.fill();
+  }
+  function cash(g) {
+    const s = g.s, n = s.stack.length; if (n < 2) return;
+    const pts = 15 * n * n * g.level;
+    g.addScore(pts, s.x, topY(s) - 10); if (n >= 8) g.float('¡Torre de ' + n + '!', g.W / 2, g.H / 2, '#ffd43b', 26);
+    s.stack.forEach((c, i) => g.burst(s.x, s.headY - i * s.bh, { n: 4, color: c, speed: 140, size: 3 }));
+    s.stack = []; Arcade.sfx.win();
+  }
+
+  Arcade.game({
+    id: 'monociclo', title: 'Monociclo', emoji: '🎈', color: '#da77f2', origin: 'Kick Man (Midway, 1981)',
+    help: '<b>Arrastra</b> para mover al payaso en monociclo. Atrapa los globos 🎈 que caen <b>con lo alto de la torre</b> que llevas en la cabeza. Si uno cae al suelo, ponte al lado y <b>toca</b> para darle una patada y mandarlo arriba. <b>Desliza hacia arriba</b> para cobrar la torre: cuanto más alta, muchísimos más puntos… pero si te cae una bomba 💣 encima, la pierdes entera.',
+    lives: 3, levels: null,
+    setup(g) { g.s = { stack: [], fall: [], spawnT: 1, caught: 0, miss: 0, inv: 0, wob: 0 }; geo(g); },
+    layout(g) { if (g.s.stack) geo(g); },
+    down(g, p) { g.s.tx = p.x; },
+    move(g, p) { g.s.tx = p.x; },
+    hover(g, x) { g.s.tx = x; },
+    tap(g) {
+      const s = g.s;
+      const b = s.fall.find(o => o.st === 'ground' && Math.abs(o.x - s.x) < 60);
+      if (b) { b.st = 'air'; b.vy = -Math.sqrt(2 * 900 * (s.ground - topY(s) + 60)); b.vx = (s.x - b.x) * 1.2; Arcade.tone(260, 0.08, 'square', 0.08, 300); s.kick = 0.2; }
+    },
+    swipe(g, d) { if (d === 'up') cash(g); },
+    key(g, k, d) { const s = g.s; if (k === 'ArrowLeft') s.kd = d ? -1 : 0; else if (k === 'ArrowRight') s.kd = d ? 1 : 0; else if (d && k === ' ') this.tap(g); else if (d && k === 'ArrowUp') cash(g); },
+    update(g, dt) {
+      const s = g.s;
+      s.kick = Math.max(0, (s.kick || 0) - dt); s.wob += dt;
+      if (s.kd) s.tx = s.x + s.kd * 60;
+      if (s.tx != null) s.x = clamp(s.x + clamp(s.tx - s.x, -500 * dt, 500 * dt), 30, g.W - 30);
+      s.spawnT -= dt;
+      if (s.spawnT <= 0) {
+        s.spawnT = Math.max(0.5, 1.6 - g.level * 0.1) * rand(0.6, 1.4);
+        const bomb = Math.random() < 0.08 + g.level * 0.015;
+        s.fall.push({ x: rand(30, g.W - 30), y: g.top + 10, vx: 0, vy: 40 + g.level * 10, st: 'air', c: pick(BC), bomb, t: 0, ph: rand(0, 6) });
+      }
+      const ty = topY(s);
+      for (const b of s.fall) {
+        if (b.st === 'ground') { b.t += dt; if (b.t > 2.2) { b.dead = true; g.burst(b.x, b.y, { n: 6, color: b.c, speed: 120, size: 3 }); if (!b.bomb) { s.miss++; Arcade.sfx.bad(); if (s.miss >= 3) { s.miss = 0; g.die(); } } } continue; }
+        const py = b.y;
+        if (b.vy < 0 || b.vx) { b.vy += 900 * dt; } else b.x += Math.sin(g.t * 2 + b.ph) * 25 * dt;
+        b.vy = Math.min(b.vy, b.bomb ? 260 : 170 + g.level * 12);
+        b.x = clamp(b.x + b.vx * dt, 15, g.W - 15); b.y += b.vy * dt;
+        if (b.vy > 0 && py <= ty - 10 && b.y >= ty - 10 && Math.abs(b.x - s.x) < 26) {
+          b.dead = true;
+          if (b.bomb) { g.burst(s.x, ty, { n: 24, color: ['#ff922b', '#ffd43b', '#495057'], speed: 240 }); Arcade.sfx.boom(); g.shake(0.4, 10); s.stack = []; if (g.die()) s.inv = 1; }
+          else { s.stack.push(b.c); s.caught++; g.addScore(10 * s.stack.length); Arcade.tone(400 + s.stack.length * 40, 0.06, 'triangle', 0.08); if (s.caught % 25 === 0) { g.level++; g.hud(); g.message('Nivel ' + g.level, 1.1); } if (s.stack.length >= 14) cash(g); }
+          continue;
+        }
+        if (b.y >= s.ground - 12) {
+          if (b.bomb) { b.dead = true; g.burst(b.x, s.ground, { n: 14, color: ['#ff922b', '#495057'], speed: 180 }); Arcade.noise(0.2, 0.15); }
+          else { b.y = s.ground - 12; b.st = 'ground'; b.vy = 0; b.vx = 0; b.t = 0; Arcade.tone(150, 0.06, 'triangle', 0.06); }
+        }
+      }
+      s.fall = s.fall.filter(b => !b.dead);
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      const bg = ctx.createLinearGradient(0, 0, 0, H);
+      bg.addColorStop(0, '#3b1352'); bg.addColorStop(1, '#14061d');
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      for (let i = 0; i < 30; i++) { ctx.fillStyle = 'rgba(255,255,255,' + (0.2 + (i % 3) * 0.2) + ')'; ctx.fillRect((i * 83) % W, (i * 47) % (H * 0.6), 2, 2); }
+      if (!s.stack) return;
+      ctx.fillStyle = '#5c2a7a'; ctx.fillRect(0, s.ground, W, H - s.ground); ctx.fillStyle = '#da77f2'; ctx.fillRect(0, s.ground, W, 3);
+      for (const b of s.fall) {
+        if (b.bomb) { Arcade.emoji(ctx, '💣', b.x, b.y, 28); continue; }
+        const warn = b.st === 'ground' && b.t > 1.4 && Math.floor(g.t * 10) % 2;
+        drawBalloon(ctx, b.x, b.y, warn ? '#fff' : b.c);
+        if (b.st === 'ground' && Math.abs(b.x - s.x) < 60) Arcade.txt(ctx, '¡Toca!', b.x, b.y - 26, 12, '#fff', 'center', 900);
+      }
+      // payaso + torre
+      const wob = Math.sin(s.wob * 6) * 0.04 * Math.min(1, s.stack.length / 4);
+      ctx.save(); ctx.translate(s.x, s.ground);
+      ctx.strokeStyle = '#ced4da'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(0, -14, 14, 0, 6.28); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, -14); ctx.lineTo(0, -40); ctx.stroke();
+      ctx.rotate(wob);
+      Arcade.emoji(ctx, '🤡', 0, -56, 40, { rot: s.kick ? -0.3 : 0 });
+      s.stack.forEach((c, i) => drawBalloon(ctx, Math.sin(i * 0.8 + s.wob * 3) * i * 0.6, -(s.ground - s.headY) - i * s.bh - 8, c));
+      ctx.restore();
+      Arcade.txt(ctx, '🎈 ' + s.stack.length + (s.stack.length >= 2 ? '  ·  ↑ cobrar ' + 15 * s.stack.length * s.stack.length * g.level : ''), W / 2, g.top + 14, 14, '#fff', 'center', 800);
+      Arcade.txt(ctx, 'Fallos: ' + '❌'.repeat(s.miss) + '⬜'.repeat(3 - s.miss), W / 2, g.top + 36, 12, '#e5dbff', 'center', 700);
+    },
+  });
+})();

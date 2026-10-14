@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Fusión · Arcade Perdido</title>
+<meta name="theme-color" content="#2a1a12">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css">
+</head>
+<body class="game">
+<script src="config.js"></script>
+<script src="common.js"></script>
+<script>
+(function () {
+  const { ri, pick, clamp } = Arcade;
+  const N = 4;
+  const TIERS = ['🥚', '🐣', '🐥', '🐔', '🦆', '🦢', '🦩', '🦚', '🦜', '🦅', '🐉', '👑'];
+  const TC = ['#fff3bf', '#ffe066', '#ffd43b', '#fab005', '#ff922b', '#ff6b6b', '#f783ac', '#cc5de8', '#845ef7', '#5c7cfa', '#22b8cf', '#20c997'];
+
+  function geo(g) { const s = g.s, a = Math.min(g.W - 32, g.bot - g.top - 150, 460); s.cs = a / N; s.ox = (g.W - a) / 2; s.oy = g.top + 96 + (g.bot - g.top - 150 - a) / 2; }
+  function empty(s) { const e = []; for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) if (!s.b[r][c]) e.push([r, c]); return e; }
+  function add(s) { const e = empty(s); if (!e.length) return; const [r, c] = pick(e); s.b[r][c] = { t: Math.random() < 0.88 ? 0 : 1, pop: 0, new: 1, px: c, py: r }; }
+  function canMove(s) {
+    if (empty(s).length) return true;
+    for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) { const t = s.b[r][c]; if (!t || t.rock) continue; for (const [dr, dc] of [[0, 1], [1, 0]]) { const o = s.b[r + dr] && s.b[r + dr][c + dc]; if (o && !o.rock && o.t === t.t) return true; } }
+    return false;
+  }
+  function slide(g, dir) {
+    const s = g.s, D = { left: [0, -1], right: [0, 1], up: [-1, 0], down: [1, 0] }[dir];
+    let moved = false, best = -1, gained = 0;
+    for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) if (s.b[r][c]) { s.b[r][c].px = c; s.b[r][c].py = r; s.b[r][c].merged = false; }
+    const order = []; for (let i = 0; i < N; i++) order.push(i);
+    const rs = D[0] > 0 ? order.slice().reverse() : order, cs = D[1] > 0 ? order.slice().reverse() : order;
+    for (const r of rs) for (const c of cs) {
+      const t = s.b[r][c]; if (!t || t.rock) continue;
+      let nr = r, nc = c;
+      for (;;) {
+        const tr = nr + D[0], tc = nc + D[1];
+        if (tr < 0 || tr >= N || tc < 0 || tc >= N) break;
+        const o = s.b[tr][tc];
+        if (!o) { s.b[tr][tc] = t; s.b[nr][nc] = null; nr = tr; nc = tc; moved = true; continue; }
+        if (!o.rock && o.t === t.t && !o.merged && !t.merged && t.t < TIERS.length - 1) {
+          o.t++; o.merged = true; o.pop = 1; o.px = t.px; o.py = t.py; s.b[nr][nc] = null; moved = true;
+          gained += Math.pow(2, o.t + 1); best = Math.max(best, o.t);
+          g.burst(s.ox + (tc + 0.5) * s.cs, s.oy + (tr + 0.5) * s.cs, { n: 8, color: TC[o.t], speed: 150, size: 3 });
+        }
+        break;
+      }
+    }
+    if (!moved) { Arcade.sfx.bad(); return; }
+    s.anim = 1; Arcade.sfx.move();
+    if (gained) { g.addScore(gained); Arcade.sfx.combo(best); if (best >= 4) g.ring(g.W / 2, s.oy + N * s.cs / 2, TC[best], 120, 5); }
+    if (best > s.maxT) { s.maxT = best; if (best >= 3) g.float(TIERS[best] + '!', g.W / 2, s.oy - 20, TC[best], 32); }
+    add(s);
+    if (s.maxT >= s.goal) { setTimeout(() => { if (g.state === 'play') { g.addScore(200 * g.lv, g.W / 2, g.H / 2); g.win(); } }, 350); return; }
+    if (!canMove(s)) { g.message(Arcade.T('Sin movimientos', 'No moves left'), 1.2); setTimeout(() => { if (g.state === 'play' && g.die()) { g.s = {}; this_setup(g); } }, 900); }
+  }
+  let this_setup;
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Del huevo al dragón', deco: ['🥚', '🐣', '🐥', '🐔', '🦚', '🐉'], font: 'round', bg: ['#4a2e1c', '#2a1a12'],
+    music: { mode: 'major', bpm: 116, wave: 'triangle', style: 'arcade', root: 62 }, voice: { wave: 'triangle', mul: 1.15, echo: 0.2 },
+    ambient: { e: ['🪶'], n: 6, vy: 18, sway: 30, spin: 1, alpha: 0.15 },
+    en: { title: 'Merge', tag: 'From egg to dragon', help: '<b>Swipe</b> to slide every animal. Two <b>equal</b> ones that bump merge into the next stage: 🥚→🐣→🐥→🐔→🦆→🦢→🦩→🦚→🦜→🦅→🐉→👑. Reach each level\'s target animal. From level 3 on there are 🪨 rocks that never move. If the board fills up with no moves, you lose a life.', tvHelp: 'D-pad to slide all the animals.', dict: { 'Objetivo: ': 'Target: ', 'Sin movimientos': 'No moves left' } },
+    tvHelp: 'Cruceta para deslizar todos los animales.',
+    id: 'fusion', title: 'Fusión', emoji: '🐣', color: '#fab005', origin: '2048 (Gabriele Cirulli)',
+    help: '<b>Desliza</b> para mover todos los animales. Dos <b>iguales</b> que chocan se fusionan en la siguiente etapa: 🥚→🐣→🐥→🐔→🦆→🦢→🦩→🦚→🦜→🦅→🐉→👑. Consigue el animal objetivo de cada nivel. Desde el nivel 3 hay 🪨 rocas que nunca se mueven. Si el tablero se llena sin movimientos, pierdes una vida.',
+    lives: 3, levels: 0, cap: 20,
+    setup(g) {
+      g.s = { b: [], maxT: 0, anim: 0 };
+      const s = g.s;
+      for (let r = 0; r < N; r++) s.b.push(new Array(N).fill(null));
+      s.goal = clamp(3 + Math.floor((g.lv + 1) / 2), 3, 11);
+      const rocks = g.lv >= 3 ? Math.min(3, Math.floor((g.lv - 1) / 4) + 1) : 0;
+      for (let i = 0; i < rocks; i++) { const e = empty(s), [r, c] = pick(e); s.b[r][c] = { rock: true, pop: 0, px: c, py: r }; }
+      add(s); add(s); geo(g);
+    },
+    layout(g) { if (g.s.b) geo(g); },
+    swipe(g, d) { slide(g, d); },
+    key(g, k, d) { if (!d) return; const m = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right' }[k]; if (m) slide(g, m); },
+    update(g, dt) {
+      const s = g.s; s.anim = Math.max(0, s.anim - dt * 8);
+      for (const row of s.b) for (const t of row) if (t) { t.pop = Math.max(0, t.pop - dt * 5); t.new = Math.max(0, (t.new || 0) - dt * 5); }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      const bg = ctx.createLinearGradient(0, 0, 0, H);
+      bg.addColorStop(0, '#5c3a24'); bg.addColorStop(1, '#24150d');
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      g.scenery(['🌾', '🌻', '🪺', '🌿'], 12, { alpha: 0.12, size: [20, 36] });
+      if (!s.b) return;
+      const cs = s.cs, a = cs * N;
+      ctx.fillStyle = '#8d6e63'; Arcade.rr(ctx, s.ox - 10, s.oy - 10, a + 20, a + 20, 18); ctx.fill();
+      for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) { ctx.fillStyle = '#a1887f'; Arcade.rr(ctx, s.ox + c * cs + 5, s.oy + r * cs + 5, cs - 10, cs - 10, 12); ctx.fill(); }
+      const k = 1 - s.anim;
+      for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) {
+        const t = s.b[r][c]; if (!t) continue;
+        const x = s.ox + ((t.px ?? c) + (c - (t.px ?? c)) * k + 0.5) * cs, y = s.oy + ((t.py ?? r) + (r - (t.py ?? r)) * k + 0.5) * cs;
+        const z = (cs - 10) * (1 + t.pop * 0.18) * (1 - (t.new || 0) * 0.6);
+        if (t.rock) { ctx.fillStyle = '#495057'; Arcade.rr(ctx, x - z / 2, y - z / 2, z, z, 12); ctx.fill(); Arcade.emoji(ctx, '🪨', x, y, z * 0.6); continue; }
+        ctx.fillStyle = TC[t.t]; Arcade.rr(ctx, x - z / 2, y - z / 2, z, z, 12); ctx.fill();
+        ctx.fillStyle = 'rgba(255,255,255,.35)'; Arcade.rr(ctx, x - z / 2 + 4, y - z / 2 + 4, z - 8, z * 0.2, 8); ctx.fill();
+        Arcade.emoji(ctx, TIERS[t.t], x, y - z * 0.04, z * 0.58);
+        Arcade.txt(ctx, Math.pow(2, t.t + 1), x + z * 0.36, y + z * 0.36, z * 0.15, 'rgba(0,0,0,.45)', 'right', 900);
+      }
+      // objetivo
+      Arcade.txt(ctx, 'Objetivo: ', W / 2 - 10, s.oy - 52, 16, '#ffe8cc', 'right', 800);
+      Arcade.emoji(ctx, TIERS[s.goal], W / 2 + 14, s.oy - 52, 34);
+      for (let i = 0; i <= s.goal; i++) Arcade.emoji(ctx, TIERS[i], W / 2 - (s.goal * 11) + i * 22, s.oy - 24, 16, { alpha: i <= s.maxT ? 1 : 0.25 });
+    },
+  });
+  this_setup = (g) => Arcade.current.def.setup(g);
+})();
+</script>
+</body>
+</html>

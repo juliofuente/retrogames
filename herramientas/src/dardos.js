@@ -1,0 +1,59 @@
+// Dardos|#a5d8ff
+(function () {
+  const { ri, rand, clamp, pick } = Arcade;
+  const BAL = ['🎈'];
+  const HUES = [0, 30, 55, 120, 200, 270, 320];
+
+  function geo(g) { const s = g.s; s.ox = g.W / 2; s.oy = g.bot - 40; }
+  function spawn(g) { const s = g.s, L = g.lv; s.bal.push({ x: rand(30, g.W - 30), y: g.bot + 30, sp: rand(40, 70) + Math.min(L, 25) * 3, hue: pick(HUES), ph: rand(0, 6), r: rand(18, 24), gold: Math.random() < 0.08, bomb: L >= 5 && Math.random() < 0.08 }); }
+  function throwDart(g, tx, ty) {
+    const s = g.s; if (s.darts <= 0 || s.cd > 0 || s.done) return;
+    const a = Math.atan2(ty - s.oy, tx - s.ox); s.darts--; s.cd = 0.25;
+    s.flying.push({ x: s.ox, y: s.oy, vx: Math.cos(a) * 900, vy: Math.sin(a) * 900, pierce: 3, hits: 0 });
+    Arcade.sfx.whoosh();
+  }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Revienta globos con pocos dardos', deco: ['🎈', '🎯', '🎪', '💥', '⭐', '🎉'], font: 'comic', bg: ['#d0ebff', '#a5d8ff'],
+    music: { mode: 'major', bpm: 122, wave: 'triangle', style: 'arcade', root: 64 }, voice: { wave: 'triangle', mul: 1.1, echo: 0.25 },
+    en: { title: 'Darts', tag: 'Pop balloons with few darts', help: 'Balloons float up from below. <b>Tap</b> where you want to throw a dart: it flies from the bottom in a straight line and goes through up to <b>3 balloons</b>. Line up several to save darts! Golden 🌟 balloons give extra darts and 💣 ones blow up everything around them. Pop the balloons each level asks for before you run out of darts.', tvHelp: 'D-pad to aim · OK to throw.', dict: { 'Globos: ': 'Balloons: ', 'Dardos: ': 'Darts: ' } },
+    tvHelp: 'Cruceta para apuntar · OK para lanzar.',
+    tv: { mode: 'tap', targets: (g) => { const o = [], n = 7; for (let i = 0; i < n; i++) for (let j = 0; j < 5; j++) o.push({ x: g.W * i / n, y: g.top + 40 + (g.bot - g.top - 120) * j / 5, w: g.W / n, h: (g.bot - g.top - 120) / 5 }); return o; } },
+    id: 'dardos', title: 'Dardos', emoji: '🎈', color: '#ff6b6b', origin: 'Bloons / Balloon Invasion / Pop to Save',
+    help: 'Los globos suben desde abajo. <b>Toca</b> donde quieras lanzar un dardo: sale desde abajo en línea recta y atraviesa hasta <b>3 globos</b>. ¡Alinéalos para ahorrar dardos! Los globos dorados 🌟 dan dardos extra y los 💣 revientan todo lo que tienen alrededor. Revienta los globos que pide cada nivel antes de quedarte sin dardos.',
+    lives: 3, levels: 0, cap: 25,
+    setup(g) { const L = g.lv; g.s = { bal: [], flying: [], need: 15 + Math.min(L, 25) * 2, popped: 0, t: 0, cd: 0 }; g.s.darts = Math.ceil(g.s.need * clamp(0.8 - L * 0.017, 0.45, 0.8)); geo(g); for (let i = 0; i < 5; i++) { spawn(g); g.s.bal[i].y = rand(g.top + 100, g.bot - 50); } },
+    layout(g) { if (g.s.bal) geo(g); },
+    tap(g, p) { throwDart(g, p.x, p.y); },
+    update(g, dt) {
+      const s = g.s; if (s.done) return;
+      s.cd -= dt; s.t -= dt; if (s.t <= 0) { s.t = Math.max(0.35, 0.9 - g.lv * 0.02); spawn(g); }
+      for (const b of s.bal) { b.y -= b.sp * dt; b.ph += dt; b.x += Math.sin(b.ph * 1.5) * 20 * dt; }
+      s.bal = s.bal.filter((b) => b.y > g.top - 40 && !b.dead);
+      const pop = (b) => { if (b.dead) return; b.dead = true; s.popped++; Arcade.sfx.pop(); g.burst(b.x, b.y, { n: 10, color: `hsl(${b.hue},90%,60%)`, speed: 160, size: 3 }); g.addScore(10 * g.lv, b.x, b.y - 20); if (b.gold) { s.darts += 2; g.float('+2 🎯', b.x, b.y - 40, '#fab005', 20); } if (b.bomb) { g.ring(b.x, b.y, '#ff922b', 90); for (const o of s.bal) if (!o.dead && Math.hypot(o.x - b.x, o.y - b.y) < 90) pop(o); } };
+      for (const d of s.flying) {
+        d.x += d.vx * dt; d.y += d.vy * dt;
+        for (const b of s.bal) if (!b.dead && Math.hypot(b.x - d.x, b.y - d.y) < b.r + 6) { pop(b); d.hits++; if (--d.pierce <= 0) { d.dead = true; break; } }
+        if (d.x < -20 || d.x > g.W + 20 || d.y < g.top - 20) { d.dead = true; if (d.hits >= 2) g.float('x' + d.hits, clamp(d.x, 40, g.W - 40), g.top + 60, '#ffd43b', 24); }
+      }
+      s.flying = s.flying.filter((d) => !d.dead);
+      if (s.popped >= s.need) { s.done = true; g.addScore(s.darts * 30 * g.lv, g.W / 2, g.H / 2); g.confetti(60); setTimeout(() => { if (g.state === 'play') g.win(s.darts >= 4 ? 3 : s.darts >= 1 ? 2 : 1); }, 500); }
+      else if (s.darts <= 0 && !s.flying.length) { s.done = true; g.message(Arcade.T('Sin dardos', 'Out of darts'), 1.2); setTimeout(() => { if (g.state === 'play' && g.die()) Arcade.current.def.setup(g); }, 1300); }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      const bg = ctx.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, '#74c0fc'); bg.addColorStop(1, '#e7f5ff');
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      if (!s.bal) return;
+      g.scenery(['☁️', '☁️', '🎪'], 5, { alpha: 0.6, size: [40, 70] });
+      for (const b of s.bal) {
+        ctx.strokeStyle = 'rgba(0,0,0,.25)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(b.x, b.y + b.r); ctx.quadraticCurveTo(b.x + Math.sin(b.ph * 3) * 6, b.y + b.r + 15, b.x, b.y + b.r + 30); ctx.stroke();
+        ctx.save(); ctx.filter = `hue-rotate(${b.hue}deg)`; Arcade.emoji(ctx, b.bomb ? '💣' : '🎈', b.x, b.y, b.r * 2.4); ctx.restore();
+        if (b.gold) Arcade.emoji(ctx, '🌟', b.x, b.y - 2, b.r * 1.1);
+      }
+      for (const d of s.flying) Arcade.emoji(ctx, '🎯', d.x, d.y, 22, { rot: Math.atan2(d.vy, d.vx) + Math.PI / 4 });
+      ctx.fillStyle = '#8d5524'; ctx.beginPath(); ctx.arc(s.ox, s.oy + 10, 26, Math.PI, 0); ctx.fill();
+      Arcade.txt(ctx, 'Globos: ' + s.popped + '/' + s.need + '   ·   ' + 'Dardos: ' + s.darts, W / 2, g.top + 20, 15, '#1864ab', 'center', 900);
+    },
+  });
+})();

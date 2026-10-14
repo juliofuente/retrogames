@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Gravedad · Arcade Perdido</title>
+<meta name="theme-color" content="#0b0b26">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css">
+</head>
+<body class="game">
+<script src="config.js"></script>
+<script src="common.js"></script>
+<script>
+(function () {
+  const { ri, rand, clamp, pick } = Arcade;
+  const PLAN = ['🌍', '🪐', '🌕', '🌑', '🌎', '🌏'];
+  const TARGETS = ['👾', '👽', '🛸', '🤖'];
+  const WW = 1000, WH = 640, SX = 90, SY = 520, VMAX = 520;
+
+  function sim(s, vx, vy, steps, cb) {
+    let x = SX, y = SY; const dt = 1 / 60;
+    for (let i = 0; i < steps; i++) {
+      for (const p of s.planets) { const dx = p.x - x, dy = p.y - y, d2 = dx * dx + dy * dy, d = Math.sqrt(d2); if (d < p.field) { const a = p.g / Math.max(d2, p.r * p.r); vx += dx / d * a * dt; vy += dy / d * a * dt; } if (d < p.r) return cb(x, y, 'planet', p); }
+      x += vx * dt; y += vy * dt;
+      if (x < -60 || x > WW + 60 || y < -200 || y > WH + 60) return cb(x, y, 'out');
+      if (cb(x, y, null) === true) return true;
+    }
+    return cb(x, y, 'time');
+  }
+  function reachable(s, t) {
+    for (let a = -1.5; a <= 0.6; a += 0.05) for (let v = 180; v <= VMAX; v += 30) {
+      let hit = false; sim(s, Math.cos(a) * v, Math.sin(a) * v, 600, (x, y, why) => { if (why) return; if (Math.hypot(x - t.x, y - t.y) < t.r + 10) { hit = true; return true; } });
+      if (hit) return true;
+    }
+    return false;
+  }
+  function build(g) {
+    const s = g.s, L = g.lv;
+    for (let attempt = 0; attempt < 40; attempt++) {
+      s.planets = []; s.targets = [];
+      const np = clamp(1 + Math.floor((L + 1) / 3), 1, 4);
+      for (let i = 0; i < np; i++) { for (let k = 0; k < 30; k++) { const r = rand(38, 70), x = rand(300, WW - 120), y = rand(110, WH - 110); if (s.planets.every((p) => Math.hypot(p.x - x, p.y - y) > p.r + r + 90)) { s.planets.push({ x, y, r, field: r * rand(2.4, 3.2), g: 260000 * (r / 50) * rand(0.8, 1.2), e: pick(PLAN), rot: rand(0, 6) }); break; } } }
+      const nt = clamp(1 + Math.floor(L / 2), 1, 6);
+      for (let i = 0; i < nt; i++) for (let k = 0; k < 40; k++) {
+        const p = pick(s.planets), onP = Math.random() < 0.5, a = rand(0, 6.28);
+        const x = onP ? p.x + Math.cos(a) * (p.r + 16) : rand(320, WW - 40), y = onP ? p.y + Math.sin(a) * (p.r + 16) : rand(60, WH - 60);
+        if (x < 280 || x > WW - 20 || y < 30 || y > WH - 30) continue;
+        if (!onP && s.planets.some((q) => Math.hypot(q.x - x, q.y - y) < q.r + 30)) continue;
+        if (s.targets.some((q) => Math.hypot(q.x - x, q.y - y) < 50)) continue;
+        const t = { x, y, r: 16, e: pick(TARGETS), ph: rand(0, 6) };
+        if (!reachable(s, t)) continue;
+        s.targets.push(t); break;
+      }
+      // al menos un objetivo escondido detrás de un planeta en niveles altos
+      if (s.targets.length >= Math.max(1, nt - 1)) return;
+    }
+  }
+  function geo(g) {
+    const s = g.s, Ha = g.bot - g.top - 30; s.rot = g.H > g.W * 1.1;
+    if (s.rot) { s.sc = Math.min(g.W / WH, Ha / WW); s.ox = (g.W - WH * s.sc) / 2; s.oy = g.top + 30 + (Ha - WW * s.sc) / 2; }
+    else { s.sc = Math.min(g.W / WW, Ha / WH); s.ox = (g.W - WW * s.sc) / 2; s.oy = g.top + 30 + (Ha - WH * s.sc) / 2; }
+  }
+  const toS = (s, x, y) => (s.rot ? [s.ox + y * s.sc, s.oy + (WW - x) * s.sc] : [s.ox + x * s.sc, s.oy + y * s.sc]);
+  function fire(g, vx, vy) { const s = g.s; if (s.ship || s.over || !s.shots) return; s.ship = { x: SX, y: SY, vx, vy, t: 0, trail: [] }; s.shots--; Arcade.sfx.whoosh(); }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Curva tu disparo con la gravedad', deco: ['🪐', '🚀', '👾', '🌍', '⭐', '☄️'], font: 'wide', bg: ['#1b1b4a', '#0b0b26'],
+    music: { mode: 'lydian', bpm: 90, wave: 'sine', style: 'chill', root: 57 }, voice: { wave: 'sine', mul: 1.2, echo: 0.45 },
+    ambient: { e: ['✨'], n: 20, vy: 0, sway: 0, twinkle: 1, alpha: 0.5, size: [4, 10] },
+    en: { title: 'Gravity', tag: 'Bend your shot with gravity', help: '<b>Drag backwards</b> from anywhere and <b>release</b> to launch the rocket. Inside the dotted circle of each planet, gravity pulls it in and bends the path: use it to curve your shot around planets and hit every alien 👾. Crashing into a planet or flying off the screen wastes the shot. The aiming guide gets shorter in later levels.', tvHelp: '▲ ▼ angle · hold OK to charge and release to fire.', dict: { 'Disparos: ': 'Shots: ' } },
+    tvHelp: '▲ ▼ ángulo · mantén OK para cargar y suelta para disparar.',
+    id: 'gravedad', title: 'Gravedad', emoji: '🪐', color: '#9775fa', origin: 'Angry Birds Space / Planet Revenge',
+    help: '<b>Arrastra hacia atrás</b> desde cualquier sitio y <b>suelta</b> para lanzar el cohete. Dentro del círculo punteado de cada planeta, la gravedad lo atrae y curva la trayectoria: úsala para rodear planetas y acertar a todos los alienígenas 👾. Si chocas con un planeta o sales de la pantalla, pierdes el disparo. La guía de puntería se acorta en los niveles altos.',
+    lives: 3, levels: 0, cap: 25,
+    setup(g) { g.s = { ang: -0.4, pw: 0.5 }; const s = g.s; build(g); s.shots = s.shots0 = s.targets.length + 3; geo(g); },
+    layout(g) { if (g.s.planets) geo(g); },
+    down(g, p) { const s = g.s; if (s.ship || s.over) return; s.drag = { x: p.x, y: p.y }; },
+    move(g, p) { const s = g.s; if (!s.drag) return; const vx = (s.drag.x - p.x) / s.sc, vy = (s.drag.y - p.y) / s.sc, dx = s.rot ? -vy : vx, dy = s.rot ? vx : vy, d = Math.hypot(dx, dy); if (d > 5) { s.ang = Math.atan2(dy, dx); s.pw = clamp(d / 160, 0.1, 1); s.aiming = true; } },
+    up(g) { const s = g.s; if (!s.drag) return; s.drag = null; if (s.aiming) fire(g, Math.cos(s.ang) * VMAX * s.pw, Math.sin(s.ang) * VMAX * s.pw); s.aiming = false; },
+    key(g, k, d) { const s = g.s; if (k === 'ArrowUp' || k === 'ArrowDown') s.kang = d ? (k === 'ArrowUp' ? -1 : 1) : 0; if (k === ' ') { if (d) { if (!s.ship) { s.charging = true; s.pw = 0.1; s.aiming = true; } } else if (s.charging) { s.charging = false; s.aiming = false; fire(g, Math.cos(s.ang) * VMAX * s.pw, Math.sin(s.ang) * VMAX * s.pw); } } },
+    update(g, dt) {
+      const s = g.s; if (s.kang) { s.ang += s.kang * dt; s.aiming = true; } if (s.charging) s.pw = Math.min(1, s.pw + dt * 0.6);
+      for (const p of s.planets) p.rot += dt * 0.1;
+      for (const t of s.targets) t.ph += dt;
+      const sh = s.ship; if (!sh) return;
+      let end = null;
+      const steps = Math.max(1, Math.round(dt * 60));
+      for (let i = 0; i < steps && !end; i++) {
+        for (const p of s.planets) { const dx = p.x - sh.x, dy = p.y - sh.y, d2 = dx * dx + dy * dy, d = Math.sqrt(d2); if (d < p.field) { const a = p.g / Math.max(d2, p.r * p.r); sh.vx += dx / d * a / 60; sh.vy += dy / d * a / 60; } if (d < p.r) end = 'planet'; }
+        sh.x += sh.vx / 60; sh.y += sh.vy / 60; sh.t += 1 / 60;
+        for (const t of s.targets.slice()) if (Math.hypot(sh.x - t.x, sh.y - t.y) < t.r + 12) { s.targets.splice(s.targets.indexOf(t), 1); const [X, Y] = toS(s, t.x, t.y); g.burst(X, Y, { n: 16, color: ['#69db7c', '#b2f2bb', '#fff'], speed: 200, size: 4 }); g.addScore(100 * g.lv, X, Y - 20); Arcade.sfx.pop(); Arcade.sfx.coin(); }
+        if (sh.x < -60 || sh.x > WW + 60 || sh.y < -260 || sh.y > WH + 60 || sh.t > 12) end = 'out';
+      }
+      if (sh.t % 0.05 < 1 / 60) { sh.trail.push([sh.x, sh.y]); if (sh.trail.length > 80) sh.trail.shift(); }
+      if (end) {
+        if (end === 'planet') { const [X, Y] = toS(s, sh.x, sh.y); g.burst(X, Y, { n: 14, color: ['#ff922b', '#ffd43b'], speed: 150, size: 4 }); Arcade.sfx.boom(); }
+        s.last = sh.trail; s.ship = null;
+        if (!s.targets.length) { s.over = true; g.addScore(s.shots * 150 * g.lv, g.W / 2, g.H / 2); g.confetti(60); setTimeout(() => { if (g.state === 'play') g.win(s.shots >= 2 ? 3 : s.shots === 1 ? 2 : 1); }, 600); }
+        else if (!s.shots) { s.over = true; g.message(Arcade.T('Sin disparos', 'Out of shots'), 1.2); setTimeout(() => { if (g.state === 'play' && g.die()) Arcade.current.def.setup(g); }, 1300); }
+      }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      const bg = ctx.createRadialGradient(W * 0.7, H * 0.3, 10, W / 2, H / 2, Math.max(W, H)); bg.addColorStop(0, '#2b1b6b'); bg.addColorStop(1, '#05051a');
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      if (!s.planets) return;
+      ctx.save(); if (s.rot) { ctx.translate(s.ox, s.oy + WW * s.sc); ctx.rotate(-Math.PI / 2); } else ctx.translate(s.ox, s.oy); ctx.scale(s.sc, s.sc);
+      for (const p of s.planets) {
+        ctx.setLineDash([6, 10]); ctx.strokeStyle = 'rgba(177,151,252,.35)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(p.x, p.y, p.field, 0, 6.3); ctx.stroke(); ctx.setLineDash([]);
+        const gr = ctx.createRadialGradient(p.x, p.y, p.r, p.x, p.y, p.field); gr.addColorStop(0, 'rgba(151,117,250,.18)'); gr.addColorStop(1, 'rgba(151,117,250,0)'); ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(p.x, p.y, p.field, 0, 6.3); ctx.fill();
+        Arcade.emoji(ctx, p.e, p.x, p.y, p.r * 2.3, { rot: p.rot });
+      }
+      const er = s.rot ? Math.PI / 2 : 0;
+      for (const t of s.targets) Arcade.emoji(ctx, t.e, t.x, t.y + Math.sin(t.ph * 2) * 3, t.r * 2.3, { rot: er });
+      if (s.last) { ctx.fillStyle = 'rgba(255,255,255,.25)'; for (const [x, y] of s.last) { ctx.beginPath(); ctx.arc(x, y, 2, 0, 6.3); ctx.fill(); } }
+      // base de lanzamiento
+      Arcade.emoji(ctx, '🛰️', SX - 20, SY + 30, 50, { rot: er });
+      if (!s.ship && !s.over && s.aiming) {
+        const len = Math.max(25, 110 - g.lv * 5); let i = 0;
+        ctx.fillStyle = 'rgba(255,255,255,.8)';
+        sim(s, Math.cos(s.ang) * VMAX * s.pw, Math.sin(s.ang) * VMAX * s.pw, len, (x, y, why) => { if (why) return; if (i++ % 4 === 0) { ctx.globalAlpha = 1 - i / len; ctx.beginPath(); ctx.arc(x, y, 3, 0, 6.3); ctx.fill(); } });
+        ctx.globalAlpha = 1;
+      }
+      if (s.ship) { const sh = s.ship; ctx.strokeStyle = 'rgba(255,169,77,.6)'; ctx.lineWidth = 3; ctx.beginPath(); sh.trail.forEach(([x, y], k) => (k ? ctx.lineTo(x, y) : ctx.moveTo(x, y))); ctx.lineTo(sh.x, sh.y); ctx.stroke(); Arcade.emoji(ctx, '🚀', sh.x, sh.y, 30, { rot: Math.atan2(sh.vy, sh.vx) + Math.PI / 4 }); }
+      else if (!s.over && s.shots) Arcade.emoji(ctx, '🚀', SX, SY, 30, { rot: s.ang + Math.PI / 4 });
+      ctx.restore();
+      Arcade.txt(ctx, 'Disparos: ' + s.shots + '   ·   👾 ' + s.targets.length, W / 2, g.top + 16, 15, '#d0bfff', 'center', 900);
+    },
+  });
+})();
+</script>
+</body>
+</html>

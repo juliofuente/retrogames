@@ -1,0 +1,70 @@
+// Teeter|#2d1e2f
+(function () {
+  const { ri, rand, clamp } = Arcade;
+  const WW = 400;
+
+  function build(g) {
+    const s = g.s, L = g.lv; s.holes = [];
+    s.goalY = 900 + Math.min(L, 20) * 120;
+    const tx = rand(80, WW - 80); s.target = { x: tx, y: s.goalY, r: 22 };
+    for (let y = 220; y < s.goalY - 60; y += rand(60, 100) - Math.min(L, 20) * 1.5) {
+      const n = ri(1, 1 + Math.floor(L / 5));
+      for (let k = 0; k < n; k++) { const x = rand(30, WW - 30); if (s.holes.some((h) => Math.hypot(h.x - x, h.y - y) < 70)) continue; s.holes.push({ x, y: y + rand(-15, 15), r: rand(16, 22) }); }
+    }
+    // pasillo libre: asegúrate de que siempre haya hueco suficiente en cada franja
+    for (let y = 220; y < s.goalY; y += 50) { const band = s.holes.filter((h) => Math.abs(h.y - y) < 30); if (band.length >= 3) band.slice(2).forEach((h) => (h.dead = true)); }
+    s.holes = s.holes.filter((h) => !h.dead);
+  }
+  function geo(g) { const s = g.s; s.sc = Math.min(g.W / WW, 1.6); s.ox = (g.W - WW * s.sc) / 2; }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Dos manos, una barra, una bola', deco: ['⚪', '🕳️', '🟢', '🎯', '⬆️', '⚖️'], font: 'wide', bg: ['#45304a', '#2d1e2f'],
+    music: { mode: 'dorian', bpm: 96, wave: 'sine', style: 'chill', root: 57 }, voice: { wave: 'sine', mul: 1.2, echo: 0.35 },
+    en: { title: 'Teeter', tag: 'Two hands, one bar, one ball', help: '<b>Hold the left half</b> of the screen to lift the left end of the bar and the <b>right half</b> to lift the right end (both at once lifts it straight). Tilting the bar makes the ball roll. Steer the ball upwards dodging the 🕳️ holes and drop it into the 🟢 green hole at the top.', tvHelp: 'Hold ◀ for the left end, ▶ for the right end.', dict: {} },
+    tvHelp: 'Mantén ◀ para el extremo izquierdo y ▶ para el derecho.',
+    id: 'teeter', title: 'Teeter', emoji: '⚖️', color: '#da77f2', origin: 'Teeter Up / Ice Cold Beer',
+    help: '<b>Mantén la mitad izquierda</b> de la pantalla para subir el extremo izquierdo de la barra y la <b>mitad derecha</b> para el derecho (las dos a la vez la suben recta). Al inclinar la barra, la bola rueda. Guía la bola hacia arriba esquivando los agujeros 🕳️ y métela en el agujero verde 🟢 de arriba.',
+    lives: 3, levels: 0, cap: 20,
+    setup(g) { g.s = { yl: 60, yr: 60, u: 0.5, v: 0, hold: [false, false], pts: new Map() }; build(g); geo(g); },
+    layout(g) { if (g.s.holes) geo(g); },
+    down(g, p) { const s = g.s; const side = p.x < g.W / 2 ? 0 : 1; s.pts.set(p.id, side); s.hold = [false, false]; for (const v of s.pts.values()) s.hold[v] = true; },
+    up(g, p) { const s = g.s; s.pts.delete(p.id); s.hold = [false, false]; for (const v of s.pts.values()) s.hold[v] = true; },
+    key(g, k, d) { const s = g.s; if (k === 'ArrowLeft') s.hold[0] = d; if (k === 'ArrowRight') s.hold[1] = d; if (k === 'ArrowUp' || k === ' ') { s.hold[0] = d; s.hold[1] = d; } },
+    update(g, dt) {
+      const s = g.s; if (s.done || s.dead) return;
+      const sp = 70;
+      if (s.hold[0]) s.yl += sp * dt; if (s.hold[1]) s.yr += sp * dt;
+      // límite de inclinación
+      const maxD = WW * 0.35; if (s.yl - s.yr > maxD) s.yl = s.yr + maxD; if (s.yr - s.yl > maxD) s.yr = s.yl + maxD;
+      const slope = (s.yr - s.yl) / WW; // positivo: derecha más alta -> rueda a la izquierda
+      s.v += -slope * 900 * dt / WW; s.v *= Math.pow(0.6, dt); s.u += s.v * dt;
+      if (s.u < 0.02) { s.u = 0.02; s.v = Math.abs(s.v) * 0.3; } if (s.u > 0.98) { s.u = 0.98; s.v = -Math.abs(s.v) * 0.3; }
+      const bx = s.u * WW, by = s.yl + (s.yr - s.yl) * s.u + 12;
+      s.bx = bx; s.by = by;
+      if (Math.hypot(bx - s.target.x, by - s.target.y) < s.target.r * 0.75) { s.done = true; Arcade.sfx.win(); g.confetti(70); g.addScore(300 * g.lv, g.W / 2, g.H / 2); setTimeout(() => { if (g.state === 'play') g.win(); }, 700); return; }
+      for (const h of s.holes) if (Math.hypot(bx - h.x, by - h.y) < h.r * 0.75) {
+        s.dead = true; Arcade.tone(500, 0.5, 'sine', 0.08, -400); g.message('🕳️', 0.8);
+        setTimeout(() => { if (g.state === 'play' && g.die()) { s.dead = false; s.yl = s.yr = Math.max(60, h.y - 120); s.u = 0.5; s.v = 0; } }, 900);
+        return;
+      }
+      if (Math.floor(Math.max(s.yl, s.yr) / 50) !== Math.floor((Math.max(s.yl, s.yr) - sp * dt) / 50)) g.addScore(g.lv);
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      ctx.fillStyle = '#2d1e2f'; ctx.fillRect(0, 0, W, H);
+      if (!s.holes) return;
+      const sc = s.sc, baseY = g.bot - 120, cam = Math.min(s.yl, s.yr), Y = (wy) => baseY - (wy - cam) * sc, X = (wx) => s.ox + wx * sc;
+      ctx.fillStyle = '#4a3550'; ctx.fillRect(X(0), 0, WW * sc, H);
+      for (let y = Math.floor(cam / 80) * 80 - 80; y < cam + H / sc; y += 80) { ctx.fillStyle = 'rgba(255,255,255,.04)'; ctx.fillRect(X(0), Y(y), WW * sc, 2); }
+      for (const h of s.holes) { const y = Y(h.y); if (y < -40 || y > H + 40) continue; ctx.fillStyle = '#111'; ctx.beginPath(); ctx.arc(X(h.x), y, h.r * sc, 0, 6.3); ctx.fill(); ctx.strokeStyle = '#ff6b6b'; ctx.lineWidth = 2; ctx.stroke(); }
+      const t = s.target; ctx.fillStyle = '#2b8a3e'; ctx.beginPath(); ctx.arc(X(t.x), Y(t.y), t.r * sc, 0, 6.3); ctx.fill(); ctx.strokeStyle = '#8ce99a'; ctx.lineWidth = 3 + Math.sin(g.rt * 6) * 2; ctx.stroke();
+      // barra
+      ctx.strokeStyle = '#ced4da'; ctx.lineWidth = 8 * sc; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(X(0), Y(s.yl)); ctx.lineTo(X(WW), Y(s.yr)); ctx.stroke(); ctx.lineCap = 'butt';
+      for (const [i, wx, wy] of [[0, 0, s.yl], [1, WW, s.yr]]) { ctx.fillStyle = s.hold[i] ? '#ffd43b' : '#868e96'; ctx.beginPath(); ctx.arc(X(wx), Y(wy), 10 * sc, 0, 6.3); ctx.fill(); }
+      if (!s.dead && s.bx != null) { const gr = ctx.createRadialGradient(X(s.bx) - 4, Y(s.by) - 4, 2, X(s.bx), Y(s.by), 12 * sc); gr.addColorStop(0, '#fff'); gr.addColorStop(1, '#adb5bd'); ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(X(s.bx), Y(s.by), 11 * sc, 0, 6.3); ctx.fill(); }
+      const pr = clamp(Math.max(s.yl, s.yr) / s.goalY, 0, 1); ctx.fillStyle = 'rgba(255,255,255,.15)'; Arcade.rr(ctx, W - 16, g.top + 20, 8, H * 0.4, 4); ctx.fill(); ctx.fillStyle = '#8ce99a'; Arcade.rr(ctx, W - 16, g.top + 20 + H * 0.4 * (1 - pr), 8, H * 0.4 * pr, 4); ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,.05)'; ctx.fillRect(0, g.bot - 60, W / 2 - 1, 60); ctx.fillRect(W / 2 + 1, g.bot - 60, W / 2, 60);
+      Arcade.txt(ctx, '⬆️', W / 4, g.bot - 30, 22); Arcade.txt(ctx, '⬆️', W * 0.75, g.bot - 30, 22);
+    },
+  });
+})();

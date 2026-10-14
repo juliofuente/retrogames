@@ -1,0 +1,62 @@
+// Esquí|#f1f8ff
+(function () {
+  const { ri, rand, clamp, pick } = Arcade;
+
+  function geo(g) { const s = g.s; s.py = g.top + (g.bot - g.top) * 0.28; }
+  function spawnRow(g, y) {
+    const s = g.s, L = g.lv, W = g.W;
+    if (s.nextGate <= y) { const gw = Math.max(90, 170 - L * 4), cx = clamp(s.lastGate + rand(-W * 0.35, W * 0.35), gw / 2 + 20, W - gw / 2 - 20); s.items.push({ t: 'gate', x: cx, y, w: gw, col: s.gates % 2 ? '#e03131' : '#1c7ed6' }); s.lastGate = cx; s.gates++; s.nextGate = y + rand(260, 340) - Math.min(L, 20) * 4; }
+    for (let k = 0; k < 1 + Math.floor(L / 4); k++) if (Math.random() < 0.55) { const x = rand(20, W - 20); if (!s.items.some((it) => it.t === 'gate' && Math.abs(it.y - y) < 60 && Math.abs(it.x - x) < it.w / 2 + 30)) s.items.push({ t: pick(['🌲', '🌲', '🪨', '⛄']), x, y: y + rand(0, 80) }); }
+    if (Math.random() < 0.15) s.items.push({ t: '⭐', x: rand(30, W - 30), y: y + 40 });
+  }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Pasa por las puertas, esquiva los árboles', deco: ['⛷️', '🚩', '🌲', '⛄', '❄️', '🏔️'], font: 'round', bg: ['#ffffff', '#f1f8ff'],
+    music: { mode: 'major', bpm: 128, wave: 'triangle', style: 'arcade', root: 64 }, voice: { wave: 'triangle', mul: 1.1, echo: 0.25 },
+    en: { title: 'Ski', tag: 'Through the gates, around the trees', help: 'The skier slides downhill by itself and keeps speeding up. <b>Drag</b> your finger left and right to steer. Go <b>between the flags</b> of every gate and avoid trees, rocks and snowmen. Missing a gate or crashing costs a life. Pass the gates each level asks for.', tvHelp: 'Hold ◀ ▶ to steer.', dict: { 'Puertas: ': 'Gates: ' } },
+    tvHelp: 'Mantén ◀ ▶ para girar.',
+    id: 'esqui', title: 'Esquí', emoji: '⛷️', color: '#1c7ed6', origin: 'Dudeski / Slalom / Goat Rider',
+    help: 'El esquiador baja solo y cada vez más rápido. <b>Arrastra</b> el dedo a izquierda y derecha para girar. Pasa <b>entre las banderas</b> de cada puerta y esquiva árboles, rocas y muñecos de nieve. Si te saltas una puerta o chocas, pierdes una vida. Pasa las puertas que pide cada nivel.',
+    lives: 3, levels: 0, cap: 25,
+    setup(g) {
+      const L = g.lv; g.s = { x: g.W / 2, tx: g.W / 2, dist: 0, items: [], gates: 0, passed: 0, nextGate: 200, lastGate: g.W / 2, gen: 0, speed: 220 + Math.min(L, 25) * 8, need: 10 + Math.min(L, 25), trail: [], inv: 0 };
+      geo(g); const s = g.s; while (s.gen < g.H * 1.5) { spawnRow(g, s.gen); s.gen += 120; }
+    },
+    layout(g) { if (g.s.items) geo(g); },
+    down(g, p) { g.s.tx = p.x; },
+    move(g, p) { g.s.tx = p.x; },
+    key(g, k, d) { const s = g.s; if (k === 'ArrowLeft' || k === 'ArrowRight') s.kd = d ? (k === 'ArrowLeft' ? -1 : 1) : 0; },
+    update(g, dt) {
+      const s = g.s; if (s.won) return;
+      if (s.kd) s.tx = clamp(s.tx + s.kd * 420 * dt, 10, g.W - 10);
+      const dx = s.tx - s.x; s.lean = clamp(dx / 80, -1, 1); s.x += clamp(dx, -380 * dt, 380 * dt);
+      const sp = s.speed * (1 - Math.abs(s.lean) * 0.25) * (1 + s.dist / 20000); s.dist += sp * dt; s.inv = Math.max(0, s.inv - dt);
+      while (s.gen < s.dist + g.H * 1.5) { spawnRow(g, s.gen); s.gen += 120; }
+      const sy = s.dist + s.py - g.top - (g.bot - g.top) * 0.28 + (g.bot - g.top) * 0.28; // posición del esquiador en coordenadas de pista
+      const myY = s.dist + s.py;
+      for (const it of s.items) {
+        if (it.done) continue;
+        const iy = it.y + g.top + 200;
+        if (it.t === 'gate') { if (iy < myY) { it.done = true; if (Math.abs(s.x - it.x) < it.w / 2 - 6) { s.passed++; Arcade.sfx.coin(); g.addScore(10 * g.lv, s.x, s.py - 30); if (s.passed >= s.need) { s.won = true; g.confetti(60); g.addScore(100 * g.lv, g.W / 2, g.H / 2); setTimeout(() => { if (g.state === 'play') g.win(); }, 600); } } else { it.miss = true; g.message('🚩', 0.6); Arcade.sfx.bad(); if (!g.die()) return; } } }
+        else if (Math.abs(iy - myY) < 18 && Math.abs(it.x - s.x) < 22) { it.done = true; if (it.t === '⭐') { Arcade.sfx.coin(); g.addScore(20 * g.lv); } else if (!s.inv) { s.inv = 1.2; Arcade.sfx.hit(); g.shake(0.25, 6); g.burst(s.x, s.py, { n: 14, color: ['#fff', '#d0ebff'], speed: 160, size: 4 }); if (!g.die()) return; } }
+      }
+      s.items = s.items.filter((it) => it.y + g.top + 200 > s.dist - 100);
+      s.trail.push([s.x, s.dist + s.py]); if (s.trail.length > 60) s.trail.shift();
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      ctx.fillStyle = '#f8fbff'; ctx.fillRect(0, 0, W, H);
+      if (!s.items) return;
+      const Y = (wy) => wy - s.dist;
+      ctx.strokeStyle = 'rgba(165,216,255,.6)'; ctx.lineWidth = 3; ctx.beginPath(); s.trail.forEach(([x, y], i) => { const yy = Y(y) - 8; i ? ctx.lineTo(x - 5, yy) : ctx.moveTo(x - 5, yy); }); ctx.stroke();
+      ctx.beginPath(); s.trail.forEach(([x, y], i) => { const yy = Y(y) - 8; i ? ctx.lineTo(x + 5, yy) : ctx.moveTo(x + 5, yy); }); ctx.stroke();
+      for (const it of s.items) {
+        const y = Y(it.y + g.top + 200); if (y < -60 || y > H + 60) continue;
+        if (it.t === 'gate') { for (const sg of [-1, 1]) { const x = it.x + sg * it.w / 2; ctx.strokeStyle = '#495057'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y - 34); ctx.stroke(); ctx.fillStyle = it.miss ? '#adb5bd' : it.col; ctx.beginPath(); ctx.moveTo(x, y - 34); ctx.lineTo(x + 18 * -sg, y - 28); ctx.lineTo(x, y - 22); ctx.fill(); } if (!it.done) { ctx.strokeStyle = 'rgba(0,0,0,.08)'; ctx.setLineDash([6, 6]); ctx.beginPath(); ctx.moveTo(it.x - it.w / 2, y); ctx.lineTo(it.x + it.w / 2, y); ctx.stroke(); ctx.setLineDash([]); } }
+        else Arcade.emoji(ctx, it.t, it.x, y - 16, it.t === '⭐' ? 22 : 40);
+      }
+      Arcade.emoji(ctx, '⛷️', s.x, s.py - 14, 40, { rot: s.lean * 0.5, flip: s.lean > 0, alpha: s.inv && Math.floor(g.rt * 12) % 2 ? 0.4 : 1 });
+      Arcade.txt(ctx, 'Puertas: ' + s.passed + '/' + s.need, W / 2, g.top + 20, 15, '#1864ab', 'center', 900);
+    },
+  });
+})();

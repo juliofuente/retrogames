@@ -1,0 +1,71 @@
+// Globo|#a5d8ff
+// @phys
+(function () {
+  const { ri, rand, clamp, pick } = Arcade;
+  const WW = 400, WH = 700;
+  const JUNK = ['📦', '🪨', '⚽', '🧱', '🎳', '🥥'];
+
+  function geo(g) { const s = g.s; s.sc = Math.min(g.W / WW, (g.bot - g.top) / WH); s.ox = (g.W - WW * s.sc) / 2; s.oy = g.top + (g.bot - g.top - WH * s.sc) / 2; }
+  function spawn(g) {
+    const s = g.s, L = g.lv, x = rand(40, WW - 40), y = -40 + s.cam;
+    let b; if (Math.random() < 0.5) b = s.w.circle(x, y, rand(12, 20), { density: 1, friction: 0.4, restitution: 0.3, data: { e: pick(['🪨', '⚽', '🥥', '🎳']) } });
+    else { const w = rand(24, 60), h = rand(16, 34); b = s.w.box(x, y, w, h, { density: 1, friction: 0.5, angle: rand(-0.5, 0.5), data: { e: '📦', box: true } }); }
+    b.v.y = rand(40, 120) + L * 6; s.junk.push(b);
+  }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Protege el globo con tu escudo', deco: ['🎈', '🛡️', '📦', '🪨', '☁️', '⬆️'], font: 'round', bg: ['#d0ebff', '#a5d8ff'],
+    music: { mode: 'lydian', bpm: 104, wave: 'triangle', style: 'chill', root: 64 }, voice: { wave: 'triangle', mul: 1.2, echo: 0.3 },
+    en: { title: 'Balloon', tag: 'Protect the balloon with your shield', help: 'The 🎈 balloon rises on its own and junk falls from the sky. <b>Drag</b> your finger to move the ⚪ shield and push everything out of the way. If anything touches the balloon, it pops and you lose a life. Reach the height each level asks for.', tvHelp: 'Arrows to move the shield.', dict: { 'Altura: ': 'Height: ' } },
+    tvHelp: 'Flechas para mover el escudo.',
+    id: 'globo', title: 'Globo', emoji: '🎈', color: '#ff6b6b', origin: 'Rise Above / Rise Up',
+    help: 'El globo 🎈 sube solo y del cielo caen trastos. <b>Arrastra</b> el dedo para mover el escudo ⚪ y apartar todo lo que se acerque. Si algo toca el globo, explota y pierdes una vida. Llega a la altura que pide cada nivel.',
+    lives: 3, levels: 0, cap: 25,
+    setup(g) {
+      const L = g.lv; g.s = { w: new Arcade.Phys.World({ gy: 220, iterations: 8, substeps: 2 }), junk: [], cam: 0, alt: 0, rise: 60 + Math.min(L, 25) * 2, need: 2000 + Math.min(L, 25) * 250, t: 1, inv: 1.5 };
+      const s = g.s; geo(g);
+      s.bal = { x: WW / 2, y: WH * 0.7 }; s.sh = s.w.circle(WW / 2, WH * 0.45, 22, { static: true, friction: 0.2 }); s.tx = WW / 2; s.ty = WH * 0.45;
+    },
+    layout(g) { if (g.s.w) geo(g); },
+    down(g, p) { const s = g.s; s.drag = { x: p.x, y: p.y, sx: s.tx, sy: s.ty }; },
+    move(g, p) { const s = g.s; if (!s.drag) return; s.tx = clamp(s.drag.sx + (p.x - s.drag.x) / s.sc * 1.2, 20, WW - 20); s.ty = clamp(s.drag.sy + (p.y - s.drag.y) / s.sc * 1.2, 40, WH * 0.68); },
+    up(g) { g.s.drag = null; },
+    key(g, k, d) { const s = g.s; s.keys = s.keys || {}; s.keys[k] = d; },
+    update(g, dt) {
+      const s = g.s; if (s.done) return;
+      s.inv = Math.max(0, s.inv - dt);
+      if (s.keys) { const v = 300 * dt; if (s.keys.ArrowLeft) s.tx -= v; if (s.keys.ArrowRight) s.tx += v; if (s.keys.ArrowUp) s.ty -= v; if (s.keys.ArrowDown) s.ty += v; s.tx = clamp(s.tx, 20, WW - 20); s.ty = clamp(s.ty, 40, WH * 0.68); }
+      const rise = s.rise * dt; s.cam -= rise; s.alt = -s.cam;
+      // el escudo es un cuerpo estático que movemos: le damos velocidad para que empuje bien
+      const nx = s.tx, ny = s.ty + s.cam; s.sh.v.x = (nx - s.sh.p.x) / Math.max(dt, 1e-3); s.sh.v.y = (ny - s.sh.p.y) / Math.max(dt, 1e-3); s.sh.p.x = nx; s.sh.p.y = ny;
+      s.t -= dt; if (s.t <= 0) { s.t = Math.max(0.35, 1.3 - g.lv * 0.04); spawn(g); }
+      s.w.step(dt);
+      const by = s.bal.y + s.cam;
+      for (const b of s.junk.slice()) {
+        const r = b.kind === 'circle' ? b.r : Math.max(b.hw, b.hh);
+        if (!s.inv && Math.hypot(b.p.x - s.bal.x, b.p.y - by) < r + 20) { s.inv = 1.5; Arcade.sfx.pop(); g.shake(0.25, 6); g.burst(s.ox + s.bal.x * s.sc, s.oy + s.bal.y * s.sc, { n: 16, color: ['#ff6b6b', '#fff'], speed: 200, size: 4 }); for (const o of s.junk) if (Math.hypot(o.p.x - s.bal.x, o.p.y - by) < 160) { s.w.remove(o); o.gone = true; } if (!g.die()) return; break; }
+        if (b.p.y > by + WH || b.p.x < -100 || b.p.x > WW + 100) { s.w.remove(b); b.gone = true; }
+      }
+      s.junk = s.junk.filter((b) => !b.gone);
+      if (Math.floor(s.alt / 50) !== Math.floor((s.alt - rise) / 50)) g.addScore(g.lv);
+      if (s.alt >= s.need) { s.done = true; g.confetti(60); setTimeout(() => { if (g.state === 'play') g.win(); }, 500); }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      const k = clamp(s.alt / s.need, 0, 1);
+      const bg = ctx.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, `hsl(${210 + k * 30},70%,${70 - k * 45}%)`); bg.addColorStop(1, `hsl(200,80%,${88 - k * 40}%)`);
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      if (!s.w) return;
+      ctx.save(); ctx.translate(s.ox, s.oy); ctx.scale(s.sc, s.sc);
+      for (let i = 0; i < 8; i++) { const y = ((i * 170 - s.cam * 0.4) % (WH + 200)) - 100; Arcade.emoji(ctx, k > 0.7 ? '⭐' : '☁️', (i * 97) % WW, y, k > 0.7 ? 16 : 60, { alpha: 0.6 }); }
+      ctx.translate(0, -s.cam);
+      for (const b of s.junk) { if (b.data.box) { Arcade.Phys.drawBox(ctx, b, '#c68642', '#8d5524'); Arcade.emoji(ctx, '📦', b.p.x, b.p.y, Math.min(b.hw, b.hh) * 1.8, { rot: b.a }); } else Arcade.emoji(ctx, b.data.e, b.p.x, b.p.y, b.r * 2.2, { rot: b.a }); }
+      const sh = s.sh; ctx.fillStyle = 'rgba(255,255,255,.85)'; ctx.beginPath(); ctx.arc(sh.p.x, sh.p.y, 22, 0, 6.3); ctx.fill(); ctx.strokeStyle = '#4dabf7'; ctx.lineWidth = 3; ctx.stroke();
+      ctx.restore();
+      const bx = s.ox + s.bal.x * s.sc, byy = s.oy + s.bal.y * s.sc;
+      ctx.strokeStyle = 'rgba(0,0,0,.3)'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(bx, byy + 22 * s.sc); ctx.quadraticCurveTo(bx + Math.sin(g.rt * 3) * 6, byy + 50 * s.sc, bx, byy + 80 * s.sc); ctx.stroke();
+      Arcade.emoji(ctx, '🎈', bx, byy, 48 * s.sc, { alpha: s.inv && Math.floor(g.rt * 12) % 2 ? 0.4 : 1 });
+      Arcade.txt(ctx, 'Altura: ' + Math.floor(s.alt / 10) + ' / ' + Math.floor(s.need / 10) + ' m', W / 2, g.top + 20, 15, '#1864ab', 'center', 900);
+    },
+  });
+})();

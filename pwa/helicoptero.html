@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Helicóptero · Arcade Perdido</title>
+<meta name="theme-color" content="#10222e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css">
+</head>
+<body class="game">
+<script src="config.js"></script>
+<script src="common.js"></script>
+<script>
+(function () {
+  const { rand, clamp } = Arcade;
+
+  function geo(g) { const s = g.s; s.u = clamp((g.bot - g.top) / 600, 0.6, 1.6); s.px = g.W * 0.25; }
+  function genCol(g) {
+    const s = g.s, L = g.lv, H = g.bot - g.top - 30;
+    s.phase += 0.12 + L * 0.004;
+    const gap = clamp(H * (0.62 - Math.min(L, 20) * 0.015) - s.dist * 0.00002, H * 0.32, H * 0.7);
+    s.mid += (Math.sin(s.phase) * 0.6 + Math.sin(s.phase * 0.37) * 0.4) * (4 + L * 0.3) * s.u;
+    const top0 = g.top + 30;
+    s.mid = clamp(s.mid, top0 + gap / 2 + 10, g.bot - gap / 2 - 10);
+    s.cols.push({ t: s.mid - gap / 2, b: s.mid + gap / 2 });
+    s.colN++;
+    if (s.colN % Math.max(9, 22 - L) === 0) { const y = rand(s.mid - gap * 0.35, s.mid + gap * 0.35); s.blocks.push({ x: g.W + 40, y, h: clamp(gap * 0.28, 40 * s.u, 120 * s.u) }); }
+    if (s.colN % 13 === 5) s.coins.push({ x: g.W + 40, y: s.mid + rand(-gap * 0.3, gap * 0.3) });
+  }
+  function reset(g) {
+    const s = g.s; s.cols = []; s.blocks = []; s.coins = []; s.colN = 0; s.mid = (g.top + g.bot) / 2; s.phase = 0;
+    s.y = s.mid; s.vy = 0; s.started = false; s.dead = false; s.off = 0;
+    const n = Math.ceil(g.W / s.cw) + 3; for (let i = 0; i < n; i++) genCol(g);
+    s.blocks = []; s.coins = [];
+  }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Mantén para subir, suelta para bajar', deco: ['🚁', '🪨', '⭐', '🦇', '⛰️', '💨'], font: 'impact', bg: ['#1f3f52', '#10222e'],
+    music: { mode: 'minor', bpm: 124, wave: 'sawtooth', style: 'arcade', root: 55 }, voice: { wave: 'square', mul: 1, echo: 0.25 },
+    en: { title: 'Chopper', tag: 'Hold to rise, release to fall', help: '<b>Hold</b> your finger anywhere to lift the helicopter and <b>release</b> to let it drop. Fly through the cave without touching the walls or the rocks in the middle. The cave gets narrower and wigglier. Fly the distance each level asks; grab the ⭐ for extra points.', tvHelp: 'Hold OK to rise.', dict: { 'Mantén para subir': 'Hold to rise' } },
+    tvHelp: 'Mantén OK para subir.',
+    id: 'helicoptero', title: 'Helicóptero', emoji: '🚁', color: '#20c997', origin: 'Helicopter Game / Metro Siberia Underground',
+    help: '<b>Mantén el dedo</b> en cualquier sitio para que el helicóptero suba y <b>suelta</b> para que baje. Recorre la cueva sin tocar las paredes ni las rocas del medio. La cueva se estrecha y retuerce. Recorre la distancia que pide cada nivel; coge las ⭐ para puntos extra.',
+    lives: 3, levels: 0, cap: 20,
+    setup(g) { g.s = { dist: 0 }; const s = g.s; geo(g); s.cw = 14 * s.u; s.need = 800 + Math.min(g.lv, 20) * 120; s.speed = (210 + Math.min(g.lv, 20) * 8) * s.u; reset(g); },
+    layout(g) { if (g.s.cols) { geo(g); } },
+    down(g) { const s = g.s; s.hold = true; s.started = true; },
+    up(g) { g.s.hold = false; },
+    key(g, k, d) { if (k === ' ' || k === 'ArrowUp') { g.s.hold = d; if (d) g.s.started = true; } },
+    update(g, dt) {
+      const s = g.s; if (s.dead || s.won) return;
+      if (!s.started) return;
+      s.vy += (s.hold ? -1100 : 900) * s.u * dt; s.vy = clamp(s.vy, -380 * s.u, 420 * s.u); s.y += s.vy * dt;
+      const dx = s.speed * dt, d0 = s.dist; s.off += dx; s.dist += dx / s.u * 0.1;
+      while (s.off >= s.cw) { s.off -= s.cw; s.cols.shift(); genCol(g); }
+      for (const b of s.blocks) b.x -= dx; s.blocks = s.blocks.filter((b) => b.x > -60);
+      for (const c of s.coins) c.x -= dx;
+      const r = 13 * s.u, ci = Math.floor((s.px + s.off) / s.cw), col = s.cols[ci];
+      let hit = col && (s.y - r < col.t || s.y + r > col.b);
+      for (const b of s.blocks) if (Math.abs(b.x - s.px) < 16 * s.u + r && Math.abs(b.y - s.y) < b.h / 2 + r * 0.7) hit = true;
+      for (const c of s.coins) if (!c.got && Math.hypot(c.x - s.px, c.y - s.y) < 26 * s.u) { c.got = true; Arcade.sfx.coin(); g.addScore(10 * g.lv, c.x, c.y - 20); }
+      s.coins = s.coins.filter((c) => c.x > -30 && !c.got);
+      if (hit) {
+        s.dead = true; Arcade.sfx.boom(); g.burst(s.px, s.y, { n: 24, color: ['#ff922b', '#ffd43b', '#868e96'], speed: 240, size: 5 }); g.shake(0.35, 9);
+        setTimeout(() => { if (g.state === 'play' && g.die()) reset(g); }, 900); return;
+      }
+      if (Math.floor(s.dist / 50) !== Math.floor(d0 / 50)) g.addScore(g.lv);
+      if (s.dist >= s.need) { s.won = true; Arcade.sfx.win(); setTimeout(() => { if (g.state === 'play') g.win(); }, 600); }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      const bg = ctx.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, '#1f3f52'); bg.addColorStop(1, '#0a161e');
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      if (!s.cols) return;
+      // estalactitas lejanas
+      ctx.fillStyle = 'rgba(255,255,255,.04)';
+      for (let i = 0; i < 12; i++) { const x = ((i * 130 - s.dist * 0.6) % (W + 130) + W + 130) % (W + 130) - 65; ctx.beginPath(); ctx.moveTo(x - 30, g.top); ctx.lineTo(x, g.top + 80 + (i % 3) * 40); ctx.lineTo(x + 30, g.top); ctx.fill(); }
+      const hue = 150 + (g.level * 25) % 120;
+      ctx.fillStyle = `hsl(${hue},45%,32%)`;
+      ctx.beginPath(); ctx.moveTo(0, 0); s.cols.forEach((c, i) => ctx.lineTo(i * s.cw - s.off, c.t)); ctx.lineTo(W + 40, 0); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(0, H); s.cols.forEach((c, i) => ctx.lineTo(i * s.cw - s.off, c.b)); ctx.lineTo(W + 40, H); ctx.fill();
+      ctx.strokeStyle = `hsl(${hue},70%,60%)`; ctx.lineWidth = 3;
+      ctx.beginPath(); s.cols.forEach((c, i) => (i ? ctx.lineTo(i * s.cw - s.off, c.t) : ctx.moveTo(-s.off, c.t))); ctx.stroke();
+      ctx.beginPath(); s.cols.forEach((c, i) => (i ? ctx.lineTo(i * s.cw - s.off, c.b) : ctx.moveTo(-s.off, c.b))); ctx.stroke();
+      for (const b of s.blocks) { ctx.fillStyle = `hsl(${hue},40%,28%)`; Arcade.rr(ctx, b.x - 16 * s.u, b.y - b.h / 2, 32 * s.u, b.h, 8); ctx.fill(); ctx.strokeStyle = `hsl(${hue},70%,60%)`; ctx.stroke(); }
+      for (const c of s.coins) Arcade.emoji(ctx, '⭐', c.x, c.y, 22 * s.u, { sx: Math.abs(Math.cos(g.rt * 3)) * 0.8 + 0.2 });
+      if (!s.dead) {
+        if (s.hold) g.burst(s.px - 22 * s.u, s.y + 8, { n: 1, color: 'rgba(255,255,255,.6)', speed: 40, size: 3, life: 0.4, grav: 0 });
+        Arcade.emoji(ctx, '🚁', s.px, s.y, 40 * s.u, { rot: clamp(s.vy / 900, -0.3, 0.3), flip: true });
+      }
+      if (!s.started) Arcade.txt(ctx, 'Mantén para subir', W / 2, s.y + 60 * s.u, 20, '#fff', 'center', 900);
+      const pr = clamp(s.dist / s.need, 0, 1), bw = Math.min(W - 60, 300);
+      ctx.fillStyle = 'rgba(255,255,255,.2)'; Arcade.rr(ctx, (W - bw) / 2, g.top + 8, bw, 8, 4); ctx.fill();
+      ctx.fillStyle = '#20c997'; Arcade.rr(ctx, (W - bw) / 2, g.top + 8, bw * pr, 8, 4); ctx.fill();
+      Arcade.txt(ctx, Math.floor(s.dist) + ' m / ' + s.need + ' m', W / 2, g.top + 28, 13, '#fff', 'center', 800);
+    },
+  });
+})();
+</script>
+</body>
+</html>

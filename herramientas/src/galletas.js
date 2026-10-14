@@ -1,0 +1,115 @@
+// Galletas|#3a1f12
+(function () {
+  const { pick, clamp } = Arcade;
+  const N = 5, ALL = ['🍪', '🍩', '🧁', '🥨', '🍬', '🍫'], WILD = '🌟';
+
+  function geo(g) {
+    const s = g.s, avail = Math.min(g.W - 32, g.bot - g.top - 120);
+    s.cs = avail / N; s.ox = (g.W - avail) / 2; s.oy = g.top + 70 + (g.bot - g.top - 120 - avail) / 2;
+  }
+  function rnd(s) { return Math.random() < 0.04 ? WILD : pick(ALL.slice(0, s.nt)); }
+  function lineOk(vals) { const base = vals.find(v => v !== WILD); return vals.every(v => v === WILD || v === base); }
+  function findLines(s) {
+    const marks = new Set(); let lines = 0;
+    for (let r = 0; r < N; r++) { if (lineOk(s.b[r])) { lines++; for (let c = 0; c < N; c++) marks.add(r * N + c); } }
+    for (let c = 0; c < N; c++) { const col = s.b.map(row => row[c]); if (lineOk(col)) { lines++; for (let r = 0; r < N; r++) marks.add(r * N + c); } }
+    return { marks, lines };
+  }
+  function shift(g, kind, idx, amt) {
+    const s = g.s;
+    if (kind === 'row') { const row = s.b[idx]; for (let i = 0; i < Math.abs(amt); i++) amt > 0 ? row.unshift(row.pop()) : row.push(row.shift()); }
+    else { const col = s.b.map(r => r[idx]); for (let i = 0; i < Math.abs(amt); i++) amt > 0 ? col.unshift(col.pop()) : col.push(col.shift()); col.forEach((v, r) => s.b[r][idx] = v); }
+    s.anim = { kind, idx, off: -amt };
+    Arcade.sfx.move();
+    resolve(g);
+  }
+  function resolve(g) {
+    const s = g.s, { marks, lines } = findLines(s);
+    if (!lines) { s.combo = 0; return; }
+    s.combo++;
+    s.clear = { marks, t: 0.3 };
+    const pts = lines * 100 * s.combo * (lines > 1 ? lines : 1);
+    g.addScore(pts, g.W / 2, s.oy + N * s.cs / 2);
+    if (s.combo > 1) g.float('Combo x' + s.combo, g.W / 2, s.oy - 20, '#ffd166', 24);
+    if (lines > 1) g.float('¡' + lines + ' líneas!', g.W / 2, s.oy + N * s.cs / 2 + 34, '#ff8fab', 22);
+    s.time = Math.min(s.maxT, s.time + 3 * lines);
+    s.lines += lines;
+    Arcade.sfx.combo(s.combo * 3 + lines); Arcade.buzz(30); g.ring(g.W / 2, s.oy + N * s.cs / 2, { color: '#e8a87c', r: N * s.cs * 0.7, w: 6 }); if (lines > 1 || s.combo > 1) g.flash('#ffe8cc', 0.2);
+    for (const k of marks) g.burst(s.ox + (k % N + 0.5) * s.cs, s.oy + (Math.floor(k / N) + 0.5) * s.cs, { n: 4, emoji: '✨', size: 12, speed: 120 });
+  }
+
+  Arcade.game({
+    id: 'galletas', title: 'Galletas', emoji: '🍪', color: '#e8a87c', origin: "Yoshi's Cookie (Nintendo, 1992)",
+    help: '<b>Desliza</b> una fila hacia los lados o una columna arriba o abajo para moverla en círculo (cuanto más largo el gesto, más casillas). Cuando una fila o columna entera tenga <b>el mismo dulce</b>, desaparece y ganas tiempo. 🌟 vale por cualquiera. ¡Que no se acabe el reloj!',
+    lives: 0, levels: null,
+    theme: { font: 'Chewy', ambient: 'sparkles', music: { tempo: 118, scale: 'major', root: 262, wave: 'triangle', lead: 'square' }, sfx: { wave: 'triangle', pitch: 1.15 } },
+    setup(g) {
+      g.s = { nt: 3, b: [], anim: null, clear: null, combo: 0, lines: 0, time: 60, maxT: 60 };
+      const s = g.s;
+      do { s.b = []; for (let r = 0; r < N; r++) { const row = []; for (let c = 0; c < N; c++) row.push(pick(ALL.slice(0, s.nt))); s.b.push(row); } } while (findLines(s).lines);
+      geo(g);
+    },
+    layout(g) { if (g.s.b) geo(g); },
+    swipe(g, dir, p) {
+      const s = g.s; if (s.clear) return;
+      const c = Math.floor((p.sx - s.ox) / s.cs), r = Math.floor((p.sy - s.oy) / s.cs);
+      if (c < 0 || c >= N || r < 0 || r >= N) return;
+      const dx = p.x - p.sx, dy = p.y - p.sy;
+      if (dir === 'left' || dir === 'right') shift(g, 'row', r, clamp(Math.round(dx / s.cs), -(N - 1), N - 1) || (dx > 0 ? 1 : -1));
+      else shift(g, 'col', c, clamp(Math.round(dy / s.cs), -(N - 1), N - 1) || (dy > 0 ? 1 : -1));
+    },
+    update(g, dt) {
+      const s = g.s;
+      if (s.anim) { s.anim.off *= Math.pow(1e-5, dt); if (Math.abs(s.anim.off) < 0.01) s.anim = null; }
+      if (s.clear) {
+        s.clear.t -= dt;
+        if (s.clear.t <= 0) {
+          for (const k of s.clear.marks) s.b[Math.floor(k / N)][k % N] = rnd(s);
+          s.clear = null;
+          const lv = 1 + Math.floor(s.lines / 6);
+          if (lv > g.level) { g.level = lv; g.hud(); if (s.nt < ALL.length) { s.nt++; g.message('Nivel ' + lv, 1.3, 'Nuevo dulce: ' + ALL[s.nt - 1]); } Arcade.sfx.level(); }
+          resolve(g);
+        }
+        return;
+      }
+      s.time -= dt * (1 + (g.level - 1) * 0.08);
+      if (s.time <= 0) { s.time = 0; Arcade.sfx.lose(); g.state = 'dying'; setTimeout(g.over, 600); }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      const bg = ctx.createLinearGradient(0, 0, 0, H);
+      bg.addColorStop(0, '#5c3420'); bg.addColorStop(1, '#2a160c');
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = 'rgba(255,255,255,.04)';
+      for (let y = 0; y < H; y += 40) for (let x = (y / 40) % 2 * 20; x < W; x += 40) ctx.fillRect(x, y, 20, 20);
+      Arcade.decor(ctx, g.t, [{ e: '🥐', x: 26, y: g.top + 26, s: 30, a: 0.4, sway: 0.1 }, { e: '🍰', x: W - 26, y: g.top + 26, s: 30, a: 0.4 }, { e: '🧁', x: 26, y: H - 30, s: 30, a: 0.4, bob: 3 }, { e: '🥧', x: W - 28, y: H - 30, s: 30, a: 0.4 }]);
+      Arcade.amb(g, ctx);
+      if (!s.b.length) return;
+      const cs = s.cs, bw = cs * N;
+      // reloj
+      const k = s.time / s.maxT;
+      ctx.fillStyle = 'rgba(0,0,0,.35)'; Arcade.rr(ctx, s.ox, s.oy - 50, bw, 16, 8); ctx.fill();
+      ctx.fillStyle = k < 0.2 ? '#ff6b6b' : k < 0.45 ? '#ffd43b' : '#69db7c'; Arcade.rr(ctx, s.ox, s.oy - 50, bw * k, 16, 8); ctx.fill();
+      Arcade.txt(ctx, '⏱️ ' + Math.ceil(s.time) + 's', s.ox + bw / 2, s.oy - 42, 12, '#fff', 'center', 800);
+      ctx.fillStyle = '#f1d3b3'; Arcade.rr(ctx, s.ox - 10, s.oy - 10, bw + 20, bw + 20, 22); ctx.fill();
+      ctx.fillStyle = '#e4bf98'; Arcade.rr(ctx, s.ox - 4, s.oy - 4, bw + 8, bw + 8, 16); ctx.fill();
+      ctx.save(); ctx.beginPath(); ctx.rect(s.ox, s.oy, bw, bw); ctx.clip();
+      ctx.fillStyle = 'rgba(255,255,255,.18)';
+      for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) if ((r + c) % 2) ctx.fillRect(s.ox + c * cs, s.oy + r * cs, cs, cs);
+      for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) {
+        let x = c, y = r;
+        const a = s.anim;
+        const draw1 = (xx, yy) => {
+          const m = s.clear && s.clear.marks.has(r * N + c);
+          const sc = m ? Math.max(0.05, s.clear.t / 0.3) : 1;
+          Arcade.emoji(ctx, s.b[r][c], s.ox + (xx + 0.5) * cs, s.oy + (yy + 0.5) * cs, cs * 0.72 * sc, m ? { rot: (1 - sc) * 3 } : null);
+        };
+        if (a && a.kind === 'row' && a.idx === r) { x = c + a.off; draw1(x, y); draw1(x + (x < 0.5 ? N : -N), y); }
+        else if (a && a.kind === 'col' && a.idx === c) { y = r + a.off; draw1(x, y); draw1(x, y + (y < 0.5 ? N : -N)); }
+        else draw1(x, y);
+      }
+      ctx.restore();
+      Arcade.txt(ctx, 'Líneas: ' + s.lines, W / 2, s.oy + bw + 32, 15, '#f1d3b3', 'center', 800);
+    },
+  });
+})();

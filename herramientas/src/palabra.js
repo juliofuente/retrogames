@@ -1,0 +1,107 @@
+// Palabra|#121821
+(function () {
+  const { ri, clamp, shuffle } = Arcade;
+  const ES = 'ABEJA ACERO AGUJA ALAMO ALBUM ALETA ALGAS ALTAR AMIGO ANCHO ANGEL APODO ARBOL ARCOS ARENA ARMAS AROMA ARROZ ASADO ATLAS AVION BAILE BALON BANCO BARCO BARRO BESOS BOTAS BOTON BRAZO BRISA BROMA BRUJA BUENO BURRO CABRA CAJON CALLE CALMA CALOR CAMPO CANTO CARNE CARTA CASCO CEBRA CERDO CIELO CINTA CIRCO CLAVO COBRE COCHE COFRE COLOR COMER CORAL CORTE COSTA CREMA CUERO CUEVA DEDOS DISCO DOLOR DUCHA DULCE ENANO ENERO FALDA FAROL FELIZ FIRMA FLACO FLOTA FOCAS FRESA FRUTA FUEGO GAFAS GALLO GANSO GARZA GATOS GENTE GLOBO GOLPE GORRA GOTAS GRANO GRUPO GUSTO HACHA HIELO HIGOS HOGAR HOJAS HONGO HORNO HUESO HUEVO IGUAL ISLAS JARRA JAULA JOYAS JUEGO JUGAR LAPIZ LARGO LECHE LENTO LIBRO LIMON LINEA LLAMA LLAVE LOBOS LUCES LUNES MANGO MANOS MANTA MAPAS MARCO MAREA MELON MENTA MIEDO MONTE MOSCA MOTOR MUNDO MUSEO NARIZ NEGRO NIEVE NOCHE NUBES NUEVO OCASO OLIVO ONDAS ORUGA OSTRA PADRE PALMA PAPEL PARED PASTA PATIO PECES PEINE PERLA PERRO PIANO PIEZA PISTA PLATO PLAYA PLUMA POEMA POLLO PRADO PUNTO QUESO RADIO RAMAS RATON REINA RELOJ RISAS ROBLE ROCAS RUEDA RUIDO SABIO SALSA SALTO SELVA SIGLO SILLA SOBRE SUELO SUSTO TABLA TARDE TARTA TECHO TIGRE TINTA TORRE TRAJE TRIGO TRUCO TUMBA VACAS VAPOR VELAS VERDE VIAJE VIDEO VIEJO VUELO YEGUA ZORRO ZUMOS'.split(' ');
+  const EN = 'APPLE BEACH BREAD BRICK CANDY CHAIR CHALK CHESS CLOCK CLOUD COAST CRANE CROWN DANCE DREAM EAGLE EARTH FEAST FIELD FLAME FLUTE FROST FRUIT GHOST GLASS GLOVE GRAPE GRASS HEART HONEY HORSE HOUSE JELLY JUICE KNIFE LEMON LIGHT LLAMA MANGO MAPLE MONEY MOUSE MUSIC NIGHT NOISE OCEAN OLIVE ONION OTTER PAINT PANDA PAPER PARTY PEACH PEARL PIANO PILOT PIZZA PLANE PLANT PLATE QUEEN RADIO RAVEN RIVER ROBOT SALAD SCARF SHARK SHEEP SHELL SHIRT SKATE SMILE SNAKE SPOON STAIR STONE STORM SUGAR TABLE TIGER TOAST TOWER TRAIN TRUCK UNCLE WATER WHALE WHEAT WORLD YACHT ZEBRA BACON BADGE BASIL BERRY BLADE BLOOM BOARD BRAIN BRUSH CABIN CAMEL CANOE CARGO CHARM CHEST CHILI CIDER CLIFF COCOA CORAL COUCH CRUMB DAISY DELTA DINER DRAIN DRILL FAIRY FENCE FERRY FLOOR FLOUR FORGE GECKO GIANT GRAIN HATCH HIPPO IGLOO IVORY JEWEL KOALA LASER LEMUR LODGE LUNAR MARSH MEDAL MOTOR NOVEL ORBIT PATIO PECAN PETAL PRISM QUILT RANCH SAUCE SCOUT SPICE SQUID STEAM SWORD THORN TORCH TULIP VAULT VIOLA WAGON WALTZ WHEEL WITCH'.split(' ');
+  const ROWS = (es) => [['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'], ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L'].concat(es ? ['Ñ'] : []), ['⏎', 'Z', 'X', 'C', 'V', 'B', 'N', 'M', '⌫']];
+  const TRIES = 6, LEN = 5;
+
+  function geo(g) {
+    const s = g.s, rows = s.rows, kbH = Math.min(3 * 58, (g.bot - g.top) * 0.3);
+    const kw = Math.min((g.W - 12) / 10, 52), kh = kbH / 3 - 6;
+    s.keys = [];
+    rows.forEach((row, ri2) => { const wsum = row.reduce((a, k) => a + (k.length > 1 || k === '⏎' || k === '⌫' ? 1.5 : 1), 0) * kw; let x = (g.W - wsum) / 2; for (const k of row) { const w = (k === '⏎' || k === '⌫' ? 1.5 : 1) * kw; s.keys.push({ k, x: x + 2, y: g.bot - kbH - 6 + ri2 * (kh + 6), w: w - 4, h: kh }); x += w; } });
+    const gh = g.bot - kbH - 20 - (g.top + 30);
+    s.cs = Math.min((g.W - 40) / LEN, gh / TRIES, 66); s.ox = (g.W - s.cs * LEN) / 2; s.oy = g.top + 24 + (gh - s.cs * TRIES) / 2;
+  }
+  function score(guess, ans) {
+    const res = new Array(LEN).fill(0), left = {};
+    for (let i = 0; i < LEN; i++) { if (guess[i] === ans[i]) res[i] = 2; else left[ans[i]] = (left[ans[i]] || 0) + 1; }
+    for (let i = 0; i < LEN; i++) if (res[i] !== 2 && left[guess[i]]) { res[i] = 1; left[guess[i]]--; }
+    return res;
+  }
+  function press(g, k) {
+    const s = g.s; if (s.done || s.reveal) return;
+    if (k === '⌫') { s.cur = s.cur.slice(0, -1); Arcade.sfx.tick(); return; }
+    if (k === '⏎') {
+      if (s.cur.length < LEN) { s.shake = 0.4; Arcade.sfx.bad(); return; }
+      const res = score(s.cur, s.ans); s.rows2.push({ w: s.cur, res }); s.cur = ''; s.reveal = { row: s.rows2.length - 1, t: 0 };
+      return;
+    }
+    if (s.cur.length < LEN) { s.cur += k; s.popAt = s.cur.length - 1; s.pop = 1; Arcade.tone(400 + s.cur.length * 60, 0.04, 'triangle', 0.05); }
+  }
+  function finishReveal(g) {
+    const s = g.s, row = s.rows2[s.reveal.row]; s.reveal = null;
+    row.w.split('').forEach((ch, i) => { s.state[ch] = Math.max(s.state[ch] ?? -1, row.res[i]); });
+    if (row.res.every((v) => v === 2)) {
+      s.done = true; s.bounce = 1; const n = s.rows2.length;
+      g.addScore((TRIES + 1 - n) * 50 * g.lv, g.W / 2, s.oy + n * s.cs); Arcade.sfx.win(); g.confetti(60);
+      g.message(['¡Genio!', '¡Magnífico!', '¡Impresionante!', '¡Muy bien!', '¡Bien!', '¡Uf!'][n - 1], 1.2);
+      setTimeout(() => { if (g.state === 'play') g.win(n <= 3 ? 3 : n <= 5 ? 2 : 1); }, 1300);
+    } else if (s.rows2.length >= TRIES) {
+      s.done = true; g.message(s.ans, 2, Arcade.T('Era esta palabra', 'The word was'));
+      setTimeout(() => { if (g.state === 'play' && g.die()) Arcade.current.def.setup(g); }, 2200);
+    } else Arcade.sfx.move();
+  }
+  const COL = ['#3a3a3c', '#c9b458', '#6aaa64'];
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Cinco letras, seis intentos', deco: ['🟩', '🟨', '⬛', '🔤', '💡', '📝'], font: 'wide', bg: ['#1f2933', '#121821'],
+    music: { mode: 'dorian', bpm: 84, wave: 'sine', style: 'chill', root: 60 }, voice: { wave: 'sine', mul: 1.2, echo: 0.35 },
+    en: { title: 'Word', tag: 'Five letters, six tries', help: 'Guess the hidden <b>5-letter word</b> in 6 tries. Type with the on-screen keyboard and press ⏎. After each try the letters change colour: 🟩 right letter in the right place, 🟨 the letter is in the word but somewhere else, ⬛ not in the word. Each level is a new word; failing one costs a life. Words are in English (or Spanish if you play in Spanish).', tvHelp: 'D-pad over the keyboard · OK to press a key.', dict: { 'Era esta palabra': 'The word was', '¡Genio!': 'Genius!', '¡Magnífico!': 'Magnificent!', '¡Impresionante!': 'Impressive!', '¡Muy bien!': 'Splendid!', '¡Bien!': 'Great!', '¡Uf!': 'Phew!' } },
+    tvHelp: 'Cruceta por el teclado · OK para pulsar una tecla.',
+    tv: { mode: 'tap', targets: (g) => g.s.keys || [] },
+    id: 'palabra', title: 'Palabra', emoji: '🔤', color: '#6aaa64', origin: 'Wordle (Josh Wardle) / Word Game',
+    help: 'Adivina la <b>palabra oculta de 5 letras</b> en 6 intentos. Escribe con el teclado de la pantalla y pulsa ⏎. Tras cada intento, las letras cambian de color: 🟩 letra correcta en su sitio, 🟨 la letra está en la palabra pero en otro sitio, ⬛ no está. Cada nivel es una palabra nueva; si fallas una, pierdes una vida. Sin tildes.',
+    lives: 3, levels: 0, cap: 99,
+    setup(g) {
+      const es = Arcade.lang !== 'en', list = (es ? ES : EN).filter((w) => w.length === LEN);
+      let used = []; try { used = JSON.parse(localStorage.getItem('arc_palabra_used') || '[]'); } catch (e) {}
+      let pool = list.filter((w) => !used.includes(w)); if (!pool.length) { pool = list; used = []; }
+      const ans = pool[ri(0, pool.length - 1)]; used.push(ans); try { localStorage.setItem('arc_palabra_used', JSON.stringify(used.slice(-150))); } catch (e) {}
+      g.s = { ans, cur: '', rows2: [], state: {}, rows: ROWS(es), done: false, reveal: null, shake: 0, pop: 0 };
+      geo(g);
+    },
+    layout(g) { if (g.s.keys) geo(g); },
+    tap(g, p) { const s = g.s; for (const q of s.keys) if (p.x >= q.x && p.x <= q.x + q.w && p.y >= q.y && p.y <= q.y + q.h) return press(g, q.k); },
+    key(g, k, d) {
+      if (!d) return; const K = k.length === 1 ? k.toUpperCase() : k;
+      if (K === 'Enter') press(g, '⏎'); else if (K === 'Backspace') press(g, '⌫'); else if (/^[A-ZÑ]$/.test(K)) press(g, K);
+    },
+    update(g, dt) {
+      const s = g.s; s.shake = Math.max(0, s.shake - dt); s.pop = Math.max(0, s.pop - dt * 6); if (s.bounce) s.bounce += dt;
+      if (s.reveal) { s.reveal.t += dt; const i = Math.floor(s.reveal.t / 0.3); if (i !== s.lastFlip && i < LEN) { s.lastFlip = i; Arcade.tone(300 + s.rows2[s.reveal.row].res[i] * 200, 0.08, 'triangle', 0.06); } if (s.reveal.t >= LEN * 0.3 + 0.2) { s.lastFlip = -1; finishReveal(g); } }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      ctx.fillStyle = '#121821'; ctx.fillRect(0, 0, W, H);
+      if (!s.keys) return;
+      const cs = s.cs;
+      for (let r = 0; r < TRIES; r++) {
+        const row = s.rows2[r], isCur = r === s.rows2.length && !s.done;
+        const sx = isCur && s.shake ? Math.sin(s.shake * 60) * 8 * s.shake : 0;
+        for (let c = 0; c < LEN; c++) {
+          let x = s.ox + c * cs + 3 + sx, y = s.oy + r * cs + 3, w = cs - 6;
+          let ch = row ? row.w[c] : isCur ? s.cur[c] || '' : '', fill = null, flip = 1;
+          if (row) {
+            const rv = s.reveal && s.reveal.row === r, t = rv ? s.reveal.t - c * 0.3 : 1;
+            if (t < 0) fill = null; else if (t < 0.3) { flip = Math.abs(Math.cos(t / 0.3 * Math.PI)); fill = t > 0.15 ? COL[row.res[c]] : null; } else fill = COL[row.res[c]];
+            if (s.bounce && r === s.rows2.length - 1) y -= Math.max(0, Math.sin((s.bounce - c * 0.1) * 8)) * 12 * Math.max(0, 1 - s.bounce);
+          }
+          ctx.save(); ctx.translate(x + w / 2, y + w / 2); ctx.scale(1, Math.max(0.05, flip));
+          if (fill) { ctx.fillStyle = fill; ctx.fillRect(-w / 2, -w / 2, w, w); }
+          else { ctx.strokeStyle = ch ? '#868e96' : '#3a3f47'; ctx.lineWidth = 2; ctx.strokeRect(-w / 2 + 1, -w / 2 + 1, w - 2, w - 2); }
+          const sc = isCur && c === s.popAt ? 1 + s.pop * 0.15 : 1;
+          ctx.scale(sc, sc);
+          if (ch) Arcade.txt(ctx, ch, 0, 2, w * 0.55, '#fff', 'center', 900);
+          ctx.restore();
+        }
+      }
+      for (const q of s.keys) {
+        const st = s.state[q.k]; ctx.fillStyle = st === 2 ? COL[2] : st === 1 ? COL[1] : st === 0 ? '#2b2f33' : '#818384';
+        Arcade.rr(ctx, q.x, q.y, q.w, q.h, 6); ctx.fill();
+        Arcade.txt(ctx, q.k, q.x + q.w / 2, q.y + q.h / 2 + 1, Math.min(q.h * 0.42, 20), st === 0 ? '#6c757d' : '#fff', 'center', 900);
+      }
+    },
+  });
+})();

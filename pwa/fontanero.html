@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Fontanero · Arcade Perdido</title>
+<meta name="theme-color" content="#2a2a35">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css">
+</head>
+<body class="game">
+<script src="config.js"></script>
+<script src="common.js"></script>
+<script>
+(function () {
+  const { rand, ri, clamp, dist } = Arcade;
+
+  function geo(g) {
+    const s = g.s, Wa = g.W - 70, Ha = g.bot - g.top - 150;
+    s.sx = Wa / (s.NC - 1); s.sy = Ha / (s.NR - 1);
+    s.ox = 35; s.oy = g.top + 80;
+  }
+  function nodeXY(s, i) {
+    const r = Math.floor(i / s.NC), k = i % s.NC, c = r % 2 ? s.NC - 1 - k : k;
+    return { x: s.ox + c * s.sx, y: s.oy + r * s.sy };
+  }
+  function ptAt(s, p) {
+    const i = clamp(Math.floor(p), 0, s.N - 2), f = p - i, a = nodeXY(s, i), b = nodeXY(s, i + 1);
+    return { x: a.x + (b.x - a.x) * f, y: a.y + (b.y - a.y) * f };
+  }
+  function firstBreak(s) { for (let j = 1; j < s.N - 1; j++) if (s.broken[j]) return j; return s.N - 1; }
+
+  Arcade.game({
+    /*THEME*/ tag: "Ratones, juntas y una bañera", deco: ["🔧", "🐭", "💧", "🛁", "💣", "🧀"], font: "wide", bg: ["#34343f", "#1f1f28"], music: {"mode": "dorian", "bpm": 118, "wave": "square", "style": "arcade", "root": 57}, voice: {"wave": "square", "mul": 1, "echo": 0.18}, ambient: {"e": ["💧"], "n": 6, "vy": 45, "sway": 2, "alpha": 0.12, "size": [8, 14]},
+    /*EN*/ en: {"title": "Plumber", "tag": "Mice, joints and a bathtub", "help": "Water flows from the tank 🛢️ to the bathtub 🛁 through the pipe. Mice 🐭 <b>gnaw the joints</b> and the water leaks. <b>Tap a broken joint</b> to fix it and <b>tap a mouse</b> to scare it off before it bites. Some leave bombs 💣: tap them to defuse them. Fill the bathtub before the tank runs dry.", "dict": {"¡Se acabó el agua!": "Out of water!"}},
+    /*TV*/ tv: false,
+    id: 'fontanero', title: 'Fontanero', emoji: '🔧', color: '#4dabf7', origin: 'Frisky Tom (Nichibutsu, 1981)',
+    help: 'El agua va del depósito 🛢️ a la bañera 🛁 por la tubería. Los ratones 🐭 <b>roen las juntas</b> y el agua se escapa. <b>Toca una junta rota</b> para arreglarla y <b>toca un ratón</b> para espantarlo antes de que muerda. Algunos dejan bombas 💣: tócalas para desactivarlas. Llena la bañera antes de que se vacíe el depósito.',
+    lives: 3, levels: 0, cap: 16,
+    setup(g) {
+      g.s = { mice: [], bombs: [], spawnT: 1.5, tank: 100, tub: 0, wf: 0, wrench: null, flowT: 0 };
+      const s = g.s;
+      if (g.W < g.H) { s.NC = 4; s.NR = 6; } else { s.NC = 7; s.NR = 3; }
+      s.N = s.NC * s.NR; s.broken = new Array(s.N).fill(false);
+      const pre = Math.min(4, Math.floor(g.lv / 2));
+      for (let k = 0; k < pre; k++) s.broken[ri(1, s.N - 2)] = true;
+      geo(g);
+    },
+    layout(g) { if (g.s.N) geo(g); },
+    down(g, p) {
+      const s = g.s;
+      for (const b of s.bombs) { const q = nodeXY(s, b.j); if (dist(p.x, p.y, q.x, q.y - 14) < 34) { b.dead = true; g.addScore(80, q.x, q.y - 30); Arcade.sfx.coin(); s.wrench = { x: q.x, y: q.y, t: 0.4 }; return; } }
+      let best = null, bd = 34;
+      for (const m of s.mice) { const q = ptAt(s, m.pos); const d = dist(p.x, p.y, q.x, q.y); if (d < bd) { bd = d; best = m; } }
+      if (best) { best.dead = true; const q = ptAt(s, best.pos); g.addScore(20, q.x, q.y - 20); Arcade.tone(900, 0.06, 'square', 0.06, 300); g.burst(q.x, q.y, { n: 6, emoji: '💨', size: 14, speed: 120 }); return; }
+      for (let j = 1; j < s.N - 1; j++) {
+        if (!s.broken[j]) continue;
+        const q = nodeXY(s, j);
+        if (dist(p.x, p.y, q.x, q.y) < 36) { s.broken[j] = false; g.addScore(10, q.x, q.y - 20); Arcade.tone(500, 0.08, 'triangle', 0.1, 300); s.wrench = { x: q.x, y: q.y, t: 0.4 }; return; }
+      }
+    },
+    update(g, dt) {
+      const s = g.s;
+      if (s.wrench) { s.wrench.t -= dt; if (s.wrench.t <= 0) s.wrench = null; }
+      const fb = firstBreak(s);
+      if (s.wf < fb) s.wf = Math.min(fb, s.wf + 4 * dt); else s.wf = fb;
+      s.tank -= (2.6 + g.lv * 0.12) * dt;
+      if (s.wf >= s.N - 1) { s.tub += 7 * dt; s.flowT -= dt; if (s.flowT <= 0) { s.flowT = 0.25; g.addScore(2); } }
+      else if (Math.random() < 0.5) { const q = nodeXY(s, fb); g.parts.push({ x: q.x, y: q.y, vx: rand(-90, 90), vy: rand(-140, -30), life: 0.6, max: 0.6, color: '#74c0fc', size: 3, grav: 500, rot: 0 }); }
+      if (s.tub >= 100) { g.addScore(500 + Math.floor(s.tank) * 10, g.W / 2, g.H / 2); g.win(); return; }
+      if (s.tank <= 0) { s.tank = 0; g.message('¡Se acabó el agua!', 1.4); if (g.die()) { s.tank = 100; s.mice = []; s.bombs = []; } return; }
+      // ratones
+      s.spawnT -= dt;
+      if (s.spawnT <= 0) {
+        s.spawnT = Math.max(0.7, 2.6 - g.lv * 0.18) * rand(0.7, 1.3);
+        const fromEnd = Math.random() < 0.5;
+        s.mice.push({ pos: fromEnd ? s.N - 1.01 : 0.01, dir: fromEnd ? -1 : 1, sp: 0.9 + g.lv * 0.1, st: 'walk', t: 0, last: -1, bomb: g.lv >= 3 && Math.random() < 0.15 + g.lv * 0.02 });
+      }
+      for (const m of s.mice) {
+        if (m.st === 'gnaw') {
+          m.t -= dt;
+          if (m.t <= 0) {
+            if (m.bomb) { s.bombs.push({ j: m.gj, t: 3 }); m.bomb = false; Arcade.tone(200, 0.1, 'square', 0.06); }
+            else { s.broken[m.gj] = true; Arcade.noise(0.15, 0.1); }
+            m.st = 'walk';
+          }
+          continue;
+        }
+        const prev = m.pos;
+        m.pos += m.dir * m.sp * dt;
+        if (m.pos <= 0 || m.pos >= s.N - 1) { m.dead = true; continue; }
+        const j = m.dir > 0 ? Math.floor(m.pos) : Math.ceil(m.pos);
+        if (j !== m.last && j >= 1 && j <= s.N - 2 && ((m.dir > 0 && prev < j && m.pos >= j) || (m.dir < 0 && prev > j && m.pos <= j))) {
+          m.last = j;
+          if (!s.broken[j] && Math.random() < 0.38) { m.st = 'gnaw'; m.t = Math.max(0.9, 1.8 - g.lv * 0.07); m.gj = j; m.pos = j; }
+        }
+      }
+      s.mice = s.mice.filter(m => !m.dead);
+      for (const b of s.bombs) {
+        b.t -= dt;
+        if (b.t <= 0 && !b.dead) {
+          b.dead = true; const q = nodeXY(s, b.j);
+          g.burst(q.x, q.y, { n: 24, color: ['#ff922b', '#ffd43b', '#495057'], speed: 260 }); Arcade.sfx.boom();
+          for (let k = b.j - 1; k <= b.j + 1; k++) if (k >= 1 && k <= s.N - 2) s.broken[k] = true;
+          s.mice = [];
+          if (!g.die()) return;
+        }
+      }
+      s.bombs = s.bombs.filter(b => !b.dead);
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      ctx.fillStyle = '#2a2a35'; ctx.fillRect(0, 0, W, H);
+      ctx.strokeStyle = 'rgba(255,255,255,.04)'; ctx.lineWidth = 1;
+      for (let y = 0; y < H; y += 28) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+      g.scenery(['🧰','🪛','🔩','🪚','🧽'], 10, { alpha: 0.25 }); /*SC*/
+      if (!s.N) return;
+      // tubería
+      ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+      ctx.beginPath(); for (let i = 0; i < s.N; i++) { const q = nodeXY(s, i); i ? ctx.lineTo(q.x, q.y) : ctx.moveTo(q.x, q.y); }
+      ctx.strokeStyle = '#343a40'; ctx.lineWidth = 20; ctx.stroke();
+      ctx.strokeStyle = '#868e96'; ctx.lineWidth = 14; ctx.stroke();
+      ctx.strokeStyle = 'rgba(255,255,255,.25)'; ctx.lineWidth = 3; ctx.stroke();
+      // agua
+      if (s.wf > 0) {
+        ctx.beginPath(); ctx.moveTo(nodeXY(s, 0).x, nodeXY(s, 0).y);
+        for (let i = 1; i <= Math.floor(s.wf); i++) { const q = nodeXY(s, i); ctx.lineTo(q.x, q.y); }
+        const e = ptAt(s, s.wf); ctx.lineTo(e.x, e.y);
+        ctx.strokeStyle = '#4dabf7'; ctx.lineWidth = 8; ctx.stroke();
+        ctx.setLineDash([6, 10]); ctx.lineDashOffset = -g.t * 40; ctx.strokeStyle = '#d0ebff'; ctx.lineWidth = 2; ctx.stroke(); ctx.setLineDash([]);
+      }
+      for (let j = 1; j < s.N - 1; j++) {
+        const q = nodeXY(s, j);
+        if (s.broken[j]) {
+          ctx.fillStyle = '#2a2a35'; ctx.beginPath(); ctx.arc(q.x, q.y, 12, 0, 6.28); ctx.fill();
+          ctx.strokeStyle = '#ff6b6b'; ctx.lineWidth = 3; ctx.setLineDash([4, 4]); ctx.beginPath(); ctx.arc(q.x, q.y, 16 + Math.sin(g.t * 8) * 2, 0, 6.28); ctx.stroke(); ctx.setLineDash([]);
+        } else { ctx.strokeStyle = '#495057'; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(q.x, q.y, 11, 0, 6.28); ctx.stroke(); }
+      }
+      // depósito y bañera
+      const t0 = nodeXY(s, 0), t1 = nodeXY(s, s.N - 1);
+      Arcade.emoji(ctx, '🛢️', t0.x, t0.y - 28, 44);
+      ctx.fillStyle = 'rgba(0,0,0,.4)'; Arcade.rr(ctx, t0.x + 26, t0.y - 50, 12, 44, 5); ctx.fill();
+      ctx.fillStyle = s.tank < 25 ? '#ff6b6b' : '#4dabf7'; const th = 44 * s.tank / 100; Arcade.rr(ctx, t0.x + 26, t0.y - 6 - th, 12, th, 5); ctx.fill();
+      Arcade.emoji(ctx, '🛁', t1.x, t1.y + 34, 56);
+      ctx.fillStyle = 'rgba(0,0,0,.4)'; Arcade.rr(ctx, W / 2 - 90, g.bot - 34, 180, 16, 8); ctx.fill();
+      ctx.fillStyle = '#74c0fc'; Arcade.rr(ctx, W / 2 - 90, g.bot - 34, 180 * Math.min(1, s.tub / 100), 16, 8); ctx.fill();
+      Arcade.txt(ctx, '🛁 ' + Math.floor(s.tub) + '%', W / 2, g.bot - 26, 11, '#fff', 'center', 900);
+      for (const b of s.bombs) { const q = nodeXY(s, b.j); Arcade.emoji(ctx, '💣', q.x, q.y - 14, 30, { sx: 1 + Math.sin(g.t * 20) * 0.08 }); Arcade.txt(ctx, Math.ceil(b.t), q.x + 16, q.y - 28, 13, '#ff6b6b', 'center', 900, '#000'); }
+      for (const m of s.mice) {
+        const q = ptAt(s, m.pos);
+        Arcade.emoji(ctx, '🐭', q.x, q.y - 4 + (m.st === 'gnaw' ? Math.sin(g.t * 40) * 2 : 0), 30, { flip: m.dir > 0 });
+        if (m.bomb) Arcade.emoji(ctx, '💣', q.x + 10, q.y - 16, 14);
+      }
+      if (s.wrench) Arcade.emoji(ctx, '🔧', s.wrench.x + 14, s.wrench.y - 14, 28, { rot: s.wrench.t * 8 });
+    },
+  });
+})();
+</script>
+</body>
+</html>

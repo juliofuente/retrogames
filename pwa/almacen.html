@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Almacén · Arcade Perdido</title>
+<meta name="theme-color" content="#2b2118">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css">
+</head>
+<body class="game">
+<script src="config.js"></script>
+<script src="common.js"></script>
+<script>
+(function () {
+  const { ri, clamp, pick } = Arcade;
+  const D = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
+  const WORKERS = ['👷', '🧑‍🔧', '🦺', '🐻', '🤖'];
+  const BOXES = ['📦', '🎁', '🧺', '🛢️'];
+
+  function generate(L) {
+    for (let attempt = 0; attempt < 200; attempt++) {
+      const w = clamp(6 + Math.floor(L / 3), 6, 10), h = clamp(6 + Math.floor(L / 2), 6, 11), nb = clamp(2 + Math.floor(L / 4), 2, 6);
+      const wall = [...Array(h)].map((_, y) => [...Array(w)].map((_, x) => x === 0 || y === 0 || x === w - 1 || y === h - 1 || Math.random() < 0.14));
+      // conectividad
+      const floor = []; for (let y = 1; y < h - 1; y++) for (let x = 1; x < w - 1; x++) if (!wall[y][x]) floor.push([x, y]);
+      if (floor.length < nb * 4 + 6) continue;
+      const seen = new Set([floor[0].join()]), st = [floor[0]];
+      while (st.length) { const [x, y] = st.pop(); for (const [dx, dy] of Object.values(D)) { const k = (x + dx) + ',' + (y + dy); if (!wall[y + dy][x + dx] && !seen.has(k)) { seen.add(k); st.push([x + dx, y + dy]); } } }
+      if (seen.size !== floor.length) continue;
+      const free = (x, y) => !wall[y][x];
+      const goals = []; const pool = floor.filter(([x, y]) => [[1, 0], [-1, 0], [0, 1], [0, -1]].filter(([dx, dy]) => free(x + dx, y + dy)).length >= 3);
+      if (pool.length < nb + 2) continue;
+      while (goals.length < nb) { const c = pick(pool); if (!goals.some((q) => q[0] === c[0] && q[1] === c[1])) goals.push(c); }
+      const boxes = goals.map((q) => q.slice());
+      const boxAt = (x, y) => boxes.findIndex((b) => b[0] === x && b[1] === y);
+      let p; do { p = pick(floor); } while (boxAt(p[0], p[1]) >= 0);
+      let pulls = 0;
+      for (let k = 0; k < 400 + L * 30; k++) {
+        const [dx, dy] = pick(Object.values(D)), nx = p[0] + dx, ny = p[1] + dy;
+        if (!free(nx, ny) || boxAt(nx, ny) >= 0) continue;
+        const bi = boxAt(p[0] - dx, p[1] - dy);
+        if (bi >= 0 && Math.random() < 0.65) { boxes[bi] = [p[0], p[1]]; pulls++; }
+        p = [nx, ny];
+      }
+      const off = boxes.filter((b) => !goals.some((q) => q[0] === b[0] && q[1] === b[1])).length;
+      if (off < Math.max(1, nb - 1) || pulls < nb * 4) continue;
+      return { w, h, wall, goals, boxes, p };
+    }
+    return generate(Math.max(1, L - 1));
+  }
+  function geo(g) { const s = g.s, Ha = g.bot - g.top - 70; s.cs = Math.min((g.W - 16) / s.w, Ha / s.h, 64); s.ox = (g.W - s.cs * s.w) / 2; s.oy = g.top + 60 + (Ha - s.cs * s.h) / 2; s.btn = [{ k: 'undo', x: g.W / 2 - 110, y: g.top + 10, w: 100, h: 38 }, { k: 'reset', x: g.W / 2 + 10, y: g.top + 10, w: 100, h: 38 }]; }
+  const boxAt = (s, x, y) => s.boxes.findIndex((b) => b[0] === x && b[1] === y);
+  const isGoal = (s, x, y) => s.goals.some((q) => q[0] === x && q[1] === y);
+  function step(g, dir) {
+    const s = g.s; if (s.done) return false;
+    const [dx, dy] = D[dir], nx = s.p[0] + dx, ny = s.p[1] + dy;
+    if (s.wall[ny][nx]) { Arcade.sfx.bad(); return false; }
+    const bi = boxAt(s, nx, ny);
+    if (bi >= 0) {
+      const bx = nx + dx, by = ny + dy; if (s.wall[by][bx] || boxAt(s, bx, by) >= 0) { Arcade.sfx.bad(); return false; }
+      s.hist.push({ p: s.p.slice(), boxes: s.boxes.map((b) => b.slice()) });
+      s.boxes[bi] = [bx, by]; s.pushes++; s.anim = { bi, dx, dy, t: 1 };
+      if (isGoal(s, bx, by)) { Arcade.sfx.coin(); g.ring(s.ox + (bx + 0.5) * s.cs, s.oy + (by + 0.5) * s.cs, '#69db7c', s.cs * 0.7); } else Arcade.tone(200, 0.05, 'square', 0.06);
+    } else { s.hist.push({ p: s.p.slice(), boxes: s.boxes.map((b) => b.slice()) }); Arcade.sfx.tick(); s.anim = { bi: -1, dx, dy, t: 1 }; }
+    s.p = [nx, ny]; s.moves++; s.face = dx || s.face;
+    if (s.boxes.every((b) => isGoal(s, b[0], b[1]))) { s.done = true; g.addScore(Math.max(50, 400 - s.moves * 2) * g.lv, g.W / 2, g.H / 2); g.confetti(60); setTimeout(() => { if (g.state === 'play') g.win(s.undos === 0 && !s.resets ? 3 : s.resets ? 1 : 2); }, 800); }
+    return true;
+  }
+  function walkTo(g, tx, ty) {
+    const s = g.s, prev = new Map(), k0 = s.p.join(), q = [s.p]; prev.set(k0, null);
+    while (q.length) { const [x, y] = q.shift(); if (x === tx && y === ty) break; for (const [d, [dx, dy]] of Object.entries(D)) { const nx = x + dx, ny = y + dy, k = nx + ',' + ny; if (prev.has(k) || s.wall[ny][nx] || boxAt(s, nx, ny) >= 0) continue; prev.set(k, [x + ',' + y, d]); q.push([nx, ny]); } }
+    const path = []; let k = tx + ',' + ty; if (!prev.has(k)) return;
+    while (prev.get(k)) { const [pk, d] = prev.get(k); path.unshift(d); k = pk; }
+    s.queue = path;
+  }
+  function undo(g) { const s = g.s; const h = s.hist.pop(); if (!h || s.done) return; s.p = h.p; s.boxes = h.boxes; s.undos++; Arcade.sfx.whoosh(); }
+  function reset(g) { const s = g.s; if (s.done) return; s.p = s.start.p.slice(); s.boxes = s.start.boxes.map((b) => b.slice()); s.hist = []; s.resets++; s.moves = 0; Arcade.sfx.whoosh(); }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Empuja las cajas a su sitio', deco: ['📦', '👷', '🎯', '🧱', '↩️', '🏭'], font: 'mono', bg: ['#4a3a2a', '#2b2118'],
+    music: { mode: 'dorian', bpm: 92, wave: 'triangle', style: 'chill', root: 57 }, voice: { wave: 'triangle', mul: 1.1, echo: 0.3 },
+    en: { title: 'Warehouse', tag: 'Push the boxes into place', help: '<b>Swipe</b> to walk one step, or <b>tap</b> a free square to walk there. Walk into a box to <b>push</b> it (you can never pull). Get every box onto a 🎯 target. Careful: a box in a corner is stuck for good! Use ↩️ to undo and 🔄 to restart the level. Every level is generated and always has a solution.', tvHelp: 'Arrows to walk and push · OK to undo.', dict: { '↩️ Deshacer': '↩️ Undo', '🔄 Reiniciar': '🔄 Restart', 'Movimientos: ': 'Moves: ' } },
+    tvHelp: 'Flechas para andar y empujar · OK para deshacer.',
+    id: 'almacen', title: 'Almacén', emoji: '📦', color: '#e8a54b', origin: 'Sokoban (Thinking Rabbit) / Pushori / A Blocky Christmas',
+    help: '<b>Desliza</b> para andar un paso o <b>toca</b> una casilla libre para ir hasta ella. Camina contra una caja para <b>empujarla</b> (nunca puedes tirar de ella). Lleva todas las cajas a las dianas 🎯. Ojo: ¡una caja en una esquina ya no sale! Usa ↩️ para deshacer y 🔄 para empezar el nivel de nuevo. Cada nivel se genera y siempre tiene solución.',
+    lives: 0, levels: 0, cap: 30,
+    setup(g) {
+      const lv = generate(g.lv);
+      g.s = { ...lv, hist: [], moves: 0, pushes: 0, undos: 0, resets: 0, done: false, queue: [], qt: 0, face: -1, worker: WORKERS[(g.level - 1) % WORKERS.length], box: BOXES[(g.level - 1) % BOXES.length] };
+      g.s.start = { p: lv.p.slice(), boxes: lv.boxes.map((b) => b.slice()) };
+      geo(g);
+    },
+    layout(g) { if (g.s.wall) geo(g); },
+    swipe(g, d) { g.s.queue = []; step(g, d); },
+    tap(g, p) {
+      const s = g.s;
+      for (const b of s.btn) if (p.x >= b.x && p.x <= b.x + b.w && p.y >= b.y && p.y <= b.y + b.h) return b.k === 'undo' ? undo(g) : reset(g);
+      const x = Math.floor((p.x - s.ox) / s.cs), y = Math.floor((p.y - s.oy) / s.cs);
+      if (x < 0 || y < 0 || x >= s.w || y >= s.h || s.wall[y][x]) return;
+      const dx = x - s.p[0], dy = y - s.p[1];
+      if (Math.abs(dx) + Math.abs(dy) === 1) return step(g, dx === 1 ? 'right' : dx === -1 ? 'left' : dy === 1 ? 'down' : 'up');
+      if (boxAt(s, x, y) < 0) walkTo(g, x, y);
+    },
+    key(g, k, d) { if (!d) return; const m = { ArrowLeft: 'left', ArrowRight: 'right', ArrowUp: 'up', ArrowDown: 'down' }[k]; if (m) step(g, m); else if (k === ' ' || k === 'z' || k === 'Backspace') undo(g); else if (k === 'r') reset(g); },
+    update(g, dt) {
+      const s = g.s; if (s.anim) { s.anim.t -= dt * 9; if (s.anim.t <= 0) s.anim = null; }
+      if (s.queue.length) { s.qt -= dt; if (s.qt <= 0) { s.qt = 0.08; const d = s.queue.shift(); step(g, d); } }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      ctx.fillStyle = '#2b2118'; ctx.fillRect(0, 0, W, H);
+      if (!s.wall) return;
+      const cs = s.cs;
+      for (let y = 0; y < s.h; y++) for (let x = 0; x < s.w; x++) {
+        const px = s.ox + x * cs, py = s.oy + y * cs;
+        if (s.wall[y][x]) { ctx.fillStyle = '#7a4f2a'; ctx.fillRect(px, py, cs + 0.5, cs + 0.5); ctx.strokeStyle = '#5c3a1e'; ctx.lineWidth = 2; ctx.strokeRect(px + 2, py + 2, cs - 4, cs / 2 - 2); ctx.strokeRect(px + 2, py + cs / 2, cs - 4, cs / 2 - 2); }
+        else { ctx.fillStyle = (x + y) % 2 ? '#d9c6a5' : '#cfb995'; ctx.fillRect(px, py, cs + 0.5, cs + 0.5); }
+      }
+      for (const [x, y] of s.goals) { ctx.strokeStyle = '#e03131'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(s.ox + (x + 0.5) * cs, s.oy + (y + 0.5) * cs, cs * 0.28, 0, 6.3); ctx.stroke(); ctx.fillStyle = 'rgba(224,49,49,.25)'; ctx.fill(); }
+      const an = s.anim, off = an ? an.t : 0;
+      s.boxes.forEach(([x, y], i) => {
+        let px = s.ox + (x + 0.5) * cs, py = s.oy + (y + 0.5) * cs; if (an && an.bi === i) { px -= an.dx * cs * off; py -= an.dy * cs * off; }
+        const ok = isGoal(s, x, y);
+        if (ok) { ctx.fillStyle = 'rgba(105,219,124,.45)'; ctx.fillRect(px - cs / 2 + 3, py - cs / 2 + 3, cs - 6, cs - 6); }
+        Arcade.emoji(ctx, s.box, px, py, cs * 0.82);
+        if (ok) Arcade.emoji(ctx, '✅', px + cs * 0.28, py - cs * 0.28, cs * 0.3);
+      });
+      let wx = s.ox + (s.p[0] + 0.5) * cs, wy = s.oy + (s.p[1] + 0.5) * cs; if (an) { wx -= an.dx * cs * off; wy -= an.dy * cs * off; }
+      Arcade.emoji(ctx, s.worker, wx, wy - Math.abs(Math.sin(off * Math.PI)) * 4, cs * 0.85, { flip: s.face > 0 });
+      for (const b of s.btn) { ctx.fillStyle = 'rgba(255,255,255,.14)'; Arcade.rr(ctx, b.x, b.y, b.w, b.h, 10); ctx.fill(); Arcade.txt(ctx, b.k === 'undo' ? '↩️ Deshacer' : '🔄 Reiniciar', b.x + b.w / 2, b.y + b.h / 2 + 1, 14, '#fff', 'center', 800); }
+      const on = s.boxes.filter((b) => isGoal(s, b[0], b[1])).length;
+      Arcade.txt(ctx, '🎯 ' + on + '/' + s.boxes.length + '   ·   Movimientos: ' + s.moves, W / 2, s.oy - 14, 13, '#e9d8b9', 'center', 800);
+    },
+  });
+})();
+</script>
+</body>
+</html>

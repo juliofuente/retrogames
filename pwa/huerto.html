@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Huerto · Arcade Perdido</title>
+<meta name="theme-color" content="#3a6b2a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css">
+</head>
+<body class="game">
+<script src="config.js"></script>
+<script src="common.js"></script>
+<script>
+(function () {
+  const { ri, rand, clamp, pick } = Arcade;
+  const ROWS = 5, COLS = 9;
+  const PL = [
+    { k: 'sun', e: '🌻', cost: 50, hp: 60, cd: 4 },
+    { k: 'shoot', e: '🌵', cost: 100, hp: 60, cd: 4 },
+    { k: 'wall', e: '🥥', cost: 50, hp: 400, cd: 12 },
+    { k: 'ice', e: '❄️', cost: 150, hp: 60, cd: 8 },
+    { k: 'bomb', e: '🌶️', cost: 150, hp: 999, cd: 20 },
+  ];
+  const ZT = { norm: { e: '🧟', hp: 100, sp: 9 }, cone: { e: '🧟‍♂️', hp: 230, sp: 9, hat: '🪖' }, fast: { e: '🧟‍♀️', hp: 80, sp: 17 }, big: { e: '🧌', hp: 520, sp: 6 } };
+
+  function geo(g) {
+    const s = g.s, top = g.top + 60, bot = g.bot - 90;
+    s.cw = Math.min((g.W - 40) / COLS, 80); s.ch = Math.min((bot - top) / ROWS, s.cw * 1.25); s.ox = (g.W - s.cw * COLS) / 2 + 10; s.oy = top + (bot - top - s.ch * ROWS) / 2;
+    const n = PL.length, bw = Math.min(70, (g.W - 20) / n - 6); s.cards = PL.map((p, i) => ({ i, x: (g.W - n * (bw + 6)) / 2 + i * (bw + 6), y: g.bot - 80, w: bw, h: 72 }));
+  }
+  const cell = (s, c, r) => s.grid[r * COLS + c];
+  function addSun(g, x, y, fall) { g.s.suns.push({ x, y, ty: fall ? rand(g.s.oy + 20, g.s.oy + g.s.ch * ROWS - 20) : y + 30, t: 0, v: 25 }); }
+  function spawnWave(g) {
+    const s = g.s, L = g.lv, w = s.wave;
+    const n = 2 + Math.floor(w * (1 + L * 0.25)), pool = ['norm'].concat(L >= 2 ? ['cone'] : [], L >= 3 ? ['fast'] : [], L >= 5 ? ['big'] : []);
+    for (let i = 0; i < n; i++) s.queue.push({ t: i * rand(1.2, 2.6) * Math.max(0.5, 1 - L * 0.03), type: w === s.waves - 1 && i % 3 === 0 ? pick(pool) : pick(pool.slice(0, Math.min(pool.length, 1 + Math.floor(w / 2)))) });
+    if (w === s.waves - 1) g.message(Arcade.T('¡Gran oleada!', 'Huge wave!'), 1.4);
+  }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Planta, defiende, aguanta', deco: ['🌻', '🌵', '🥥', '🧟', '🌶️', '☀️'], font: 'comic', bg: ['#5a9b3f', '#3a6b2a'],
+    music: { mode: 'dorian', bpm: 104, wave: 'triangle', style: 'arcade', root: 57 }, voice: { wave: 'triangle', mul: 1.1, echo: 0.25 },
+    en: { title: 'Garden', tag: 'Plant, defend, hold on', help: 'The zombies are coming from the right! <b>Tap a card</b> at the bottom and then a <b>square</b> on the lawn to plant it. Plants cost ☀️: tap the suns to collect them. 🌻 makes suns, 🌵 shoots spines, 🥥 is a sturdy wall, ❄️ shoots ice that slows them down and 🌶️ blows up its whole row. If a zombie reaches the house, you lose a life. Survive every wave.', tvHelp: 'D-pad to cards, suns and squares · OK to choose/plant.', dict: { 'Oleada ': 'Wave ', '¡Gran oleada!': 'Huge wave!' } },
+    tvHelp: 'Cruceta por cartas, soles y casillas · OK para elegir/plantar.',
+    tv: { mode: 'tap', targets: (g) => { const s = g.s, o = []; if (!s.cards) return o; for (const c of s.cards) o.push(c); for (const u of s.suns) o.push({ x: u.x - 20, y: u.y - 20, w: 40, h: 40 }); for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) o.push({ x: s.ox + c * s.cw, y: s.oy + r * s.ch, w: s.cw, h: s.ch }); return o; } },
+    id: 'huerto', title: 'Huerto', emoji: '🌻', color: '#94d82d', origin: 'Plants vs. Zombies / Tower Defense',
+    help: '¡Los zombis vienen por la derecha! <b>Toca una carta</b> de abajo y luego una <b>casilla</b> del césped para plantarla. Las plantas cuestan ☀️: toca los soles para recogerlos. 🌻 da soles, 🌵 dispara pinchos, 🥥 es un muro resistente, ❄️ dispara hielo que los frena y 🌶️ explota toda su fila. Si un zombi llega a la casa, pierdes una vida. Aguanta todas las oleadas.',
+    lives: 3, levels: 0, cap: 25,
+    setup(g) {
+      const L = g.lv; g.s = { grid: new Array(ROWS * COLS).fill(null), zs: [], shots: [], suns: [], sun: 150, sel: -1, cd: PL.map(() => 0), wave: 0, waves: 2 + Math.min(Math.floor(L / 2), 6), queue: [], wt: 8, skyT: 5, fx: [] };
+      geo(g);
+    },
+    layout(g) { if (g.s.grid) geo(g); },
+    tap(g, p) {
+      const s = g.s;
+      for (const u of s.suns) if (Math.hypot(u.x - p.x, u.y - p.y) < 34) { s.sun += u.v; u.dead = true; Arcade.sfx.coin(); return; }
+      for (const c of s.cards) if (p.x >= c.x && p.x <= c.x + c.w && p.y >= c.y && p.y <= c.y + c.h) { const P = PL[c.i]; if (s.sun >= P.cost && s.cd[c.i] <= 0) { s.sel = s.sel === c.i ? -1 : c.i; Arcade.sfx.tick(); } else Arcade.sfx.bad(); return; }
+      const c = Math.floor((p.x - s.ox) / s.cw), r = Math.floor((p.y - s.oy) / s.ch);
+      if (c < 0 || r < 0 || c >= COLS || r >= ROWS || s.sel < 0 || cell(s, c, r)) return;
+      const P = PL[s.sel]; if (s.sun < P.cost) return;
+      s.sun -= P.cost; s.cd[s.sel] = P.cd; s.grid[r * COLS + c] = { ...P, c, r, t: 0, hpNow: P.hp, fuse: P.k === 'bomb' ? 0.8 : 0, pop: 1 }; s.sel = -1; Arcade.tone(400, 0.08, 'triangle', 0.08);
+    },
+    update(g, dt) {
+      const s = g.s; if (s.done) return;
+      for (let i = 0; i < s.cd.length; i++) s.cd[i] = Math.max(0, s.cd[i] - dt);
+      // soles del cielo
+      s.skyT -= dt; if (s.skyT <= 0) { s.skyT = rand(7, 11); addSun(g, rand(s.ox + 20, s.ox + s.cw * COLS - 20), g.top + 40, true); }
+      for (const u of s.suns) { u.t += dt; if (u.y < u.ty) u.y = Math.min(u.ty, u.y + 60 * dt); if (u.t > 9) { s.sun += u.v; u.dead = true; } }
+      s.suns = s.suns.filter((u) => !u.dead);
+      // oleadas
+      if (!s.queue.length && !s.zs.length) { if (s.wave >= s.waves) { s.done = true; g.addScore(200 * g.lv, g.W / 2, g.H / 2); g.confetti(70); setTimeout(() => { if (g.state === 'play') g.win(); }, 700); return; } s.wt -= dt; if (s.wt <= 0) { spawnWave(g); s.wave++; s.wt = 6; } }
+      for (const q of s.queue) { q.t -= dt; if (q.t <= 0) { const Z = ZT[q.type], r = ri(0, ROWS - 1); s.zs.push({ ...Z, type: q.type, r, x: s.ox + COLS * s.cw + 20, hpNow: Z.hp * (1 + g.lv * 0.05), max: Z.hp * (1 + g.lv * 0.05), slow: 0, eat: 0, hit: 0 }); q.dead = true; } }
+      s.queue = s.queue.filter((q) => !q.dead);
+      // plantas
+      for (const pl of s.grid) {
+        if (!pl) continue; pl.t += dt; pl.pop = Math.max(0, (pl.pop || 0) - dt * 3);
+        const cx = s.ox + (pl.c + 0.5) * s.cw, cy = s.oy + (pl.r + 0.5) * s.ch;
+        if (pl.k === 'sun' && pl.t > 9) { pl.t = 0; addSun(g, cx, cy - 10, false); }
+        if ((pl.k === 'shoot' || pl.k === 'ice') && pl.t > 1.4 && s.zs.some((z) => z.r === pl.r && z.x > cx)) { pl.t = 0; s.shots.push({ x: cx + 14, y: cy - 6, r: pl.r, ice: pl.k === 'ice' }); Arcade.tone(700, 0.03, 'square', 0.03); }
+        if (pl.k === 'bomb') { pl.fuse -= dt; if (pl.fuse <= 0) { s.grid[pl.r * COLS + pl.c] = null; for (const z of s.zs) if (z.r === pl.r || (Math.abs(z.r - pl.r) === 1 && Math.abs(z.x - cx) < s.cw * 1.5)) z.hpNow -= 600; g.burst(cx, cy, { n: 30, color: ['#ff6b6b', '#ff922b', '#ffd43b'], speed: 280, size: 5 }); g.shake(0.3, 8); Arcade.sfx.boom(); s.fx.push({ r: pl.r, t: 0.4 }); } }
+      }
+      // disparos
+      for (const sh of s.shots) {
+        sh.x += 260 * dt;
+        const z = s.zs.find((z) => z.r === sh.r && Math.abs(z.x - sh.x) < 16 && z.hpNow > 0);
+        if (z) { z.hpNow -= 20; z.hit = 0.15; if (sh.ice) z.slow = 3; sh.dead = true; Arcade.tone(200, 0.02, 'square', 0.03); }
+        if (sh.x > g.W + 20) sh.dead = true;
+      }
+      s.shots = s.shots.filter((x) => !x.dead);
+      // zombis
+      for (const z of s.zs) {
+        z.slow = Math.max(0, z.slow - dt); z.hit = Math.max(0, z.hit - dt);
+        const c = Math.floor((z.x - 10 - s.ox) / s.cw), pl = c >= 0 && c < COLS ? cell(s, c, z.r) : null;
+        if (pl && z.x - 10 < s.ox + (c + 0.9) * s.cw) { z.eat += dt; pl.hpNow -= 25 * dt; if (z.eat > 0.5) { z.eat = 0; Arcade.tone(120, 0.04, 'square', 0.03); } if (pl.hpNow <= 0) s.grid[z.r * COLS + c] = null; }
+        else z.x -= z.sp * (s.cw / 50) * (z.slow ? 0.5 : 1) * dt;
+        if (z.hpNow <= 0) { z.dead = true; g.addScore(20 * g.lv, z.x, s.oy + (z.r + 0.5) * s.ch); g.burst(z.x, s.oy + (z.r + 0.5) * s.ch, { n: 10, color: ['#69db7c', '#2b8a3e'], speed: 140, size: 4 }); }
+        if (z.x < s.ox - 20 && !z.dead) { z.dead = true; g.message('🏠💥', 0.9); for (const o of s.zs) if (o.r === z.r) o.dead = true; if (!g.die()) return; }
+      }
+      s.zs = s.zs.filter((z) => !z.dead);
+      for (const f of s.fx) f.t -= dt; s.fx = s.fx.filter((f) => f.t > 0);
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      ctx.fillStyle = '#87ceeb'; ctx.fillRect(0, 0, W, H);
+      if (!s.grid) return;
+      ctx.fillStyle = '#3a6b2a'; ctx.fillRect(0, s.oy - 20, W, H);
+      Arcade.emoji(ctx, '🏡', s.ox - 22, s.oy + s.ch * ROWS / 2, 46);
+      for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) { ctx.fillStyle = (r + c) % 2 ? '#74b816' : '#82c91e'; ctx.fillRect(s.ox + c * s.cw, s.oy + r * s.ch, s.cw + 0.5, s.ch + 0.5); }
+      for (const f of s.fx) { ctx.fillStyle = `rgba(255,120,0,${f.t})`; ctx.fillRect(s.ox, s.oy + f.r * s.ch, s.cw * COLS, s.ch); }
+      if (s.sel >= 0) { ctx.fillStyle = 'rgba(255,255,255,.12)'; ctx.fillRect(s.ox, s.oy, s.cw * COLS, s.ch * ROWS); }
+      const sz = Math.min(s.cw, s.ch);
+      for (const pl of s.grid) { if (!pl) continue; const cx = s.ox + (pl.c + 0.5) * s.cw, cy = s.oy + (pl.r + 0.5) * s.ch; Arcade.emoji(ctx, pl.e, cx, cy + Math.sin(g.rt * 3 + pl.c) * 2, sz * 0.78 * (1 + pl.pop * 0.3) * (pl.k === 'bomb' ? 1 + (0.8 - pl.fuse) * 0.6 : 1)); if (pl.hpNow < pl.hp && pl.k !== 'bomb') { ctx.fillStyle = '#e03131'; ctx.fillRect(cx - sz * 0.35, cy + sz * 0.4, sz * 0.7 * pl.hpNow / pl.hp, 3); } }
+      for (const sh of s.shots) { if (sh.ice) Arcade.emoji(ctx, '🧊', sh.x, sh.y, sz * 0.3); else { ctx.fillStyle = '#2b8a3e'; ctx.beginPath(); ctx.ellipse(sh.x, sh.y, 7, 3, 0, 0, 6.3); ctx.fill(); } }
+      for (const z of s.zs) { const cy = s.oy + (z.r + 0.5) * s.ch; Arcade.emoji(ctx, z.e, z.x + (z.hit ? 2 : 0), cy + Math.abs(Math.sin(g.rt * 4 + z.x)) * -3, sz * (z.type === 'big' ? 1.1 : 0.85), { flip: false, alpha: z.slow ? 0.7 : 1 }); if (z.hat) Arcade.emoji(ctx, z.hat, z.x, cy - sz * 0.42, sz * 0.4); if (z.slow) Arcade.emoji(ctx, '❄️', z.x + sz * 0.3, cy - sz * 0.3, sz * 0.25); }
+      for (const u of s.suns) Arcade.emoji(ctx, '☀️', u.x, u.y, 36 * (1 + Math.sin(g.rt * 5) * 0.05), { rot: g.rt });
+      // cartas
+      ctx.fillStyle = 'rgba(80,50,20,.9)'; Arcade.rr(ctx, 6, g.bot - 86, W - 12, 84, 12); ctx.fill();
+      for (const c of s.cards) {
+        const P = PL[c.i], ok = s.sun >= P.cost && s.cd[c.i] <= 0;
+        ctx.fillStyle = s.sel === c.i ? '#ffd43b' : ok ? '#fff3bf' : '#868e96'; Arcade.rr(ctx, c.x, c.y, c.w, c.h, 8); ctx.fill();
+        Arcade.emoji(ctx, P.e, c.x + c.w / 2, c.y + c.h * 0.4, c.w * 0.5, { alpha: ok ? 1 : 0.5 });
+        Arcade.txt(ctx, String(P.cost), c.x + c.w / 2, c.y + c.h - 12, 13, '#5c3d1e', 'center', 900);
+        if (s.cd[c.i] > 0) { ctx.fillStyle = 'rgba(0,0,0,.4)'; ctx.fillRect(c.x, c.y, c.w, c.h * s.cd[c.i] / P.cd); }
+      }
+      ctx.fillStyle = 'rgba(0,0,0,.35)'; Arcade.rr(ctx, 10, g.top + 8, 110, 36, 18); ctx.fill();
+      Arcade.txt(ctx, '☀️ ' + s.sun, 65, g.top + 26, 18, '#ffd43b', 'center', 900);
+      Arcade.txt(ctx, 'Oleada ' + Math.min(s.wave, s.waves) + '/' + s.waves, W - 70, g.top + 26, 15, '#fff', 'center', 900, 'rgba(0,0,0,.4)');
+    },
+  });
+})();
+</script>
+</body>
+</html>

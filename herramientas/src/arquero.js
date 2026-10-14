@@ -1,0 +1,133 @@
+// Arquero|#14321f
+(function () {
+  const { rand, clamp } = Arcade;
+  const ARCHERS = ['🏹', '🧝', '🤠', '🥷'];
+  const GRAV = 520;
+
+  function geo(g) {
+    const s = g.s; s.gy = g.bot - 40; s.u = Math.min(g.W / 420, (g.bot - g.top) / 520, 1.6);
+    s.ax = Math.max(40, g.W * 0.1); s.ay = s.gy - 50 * s.u;
+  }
+  function newTarget(g) {
+    const s = g.s, L = g.lv;
+    s.tx = g.W * clamp(0.62 + rand(0, 0.3), 0.55, 0.92); s.tyBase = s.gy - rand(70, Math.min(260, 90 + L * 14)) * s.u;
+    s.tr = Math.max(14, 34 - L * 1.2) * s.u; s.tmove = L >= 3 ? rand(20, 30 + L * 4) * s.u : 0; s.tsp = rand(1, 1.6 + L * 0.08);
+    s.wind = L >= 2 ? Math.round(rand(-1, 1) * Math.min(L, 12) * 10) : 0;
+  }
+  const ty = (g) => g.s.tyBase + Math.sin(g.rt * g.s.tsp) * g.s.tmove;
+  function shoot(g) {
+    const s = g.s; if (s.arrow || s.wait > 0) return;
+    const p = s.pow * 900 * s.u + 200 * s.u;
+    s.arrow = { x: s.ax + 20, y: s.ay - 10, vx: Math.cos(s.ang) * p, vy: -Math.sin(s.ang) * p, trail: [] };
+    s.pow = 0; s.drag = null; Arcade.sfx.whoosh(); Arcade.tone(700, 0.08, 'triangle', 0.06, -300);
+  }
+  function result(g, hit, ring) {
+    const s = g.s; s.arrow = null; s.wait = 0.9;
+    if (hit) {
+      const pts = [50, 30, 20, 10][ring] * g.lv;
+      g.addScore(pts, s.tx, ty(g) - 40); s.hits++;
+      g.ring(s.tx, ty(g), ring === 0 ? '#ffd43b' : '#fff', s.tr * 1.5);
+      if (ring === 0) { g.float(Arcade.T('¡Diana!', 'Bullseye!'), s.tx, ty(g) - 70, '#ffd43b', 26); Arcade.sfx.win(); g.flash('#ffd43b', 0.12); s.bulls++; }
+      else Arcade.sfx.coin();
+      if (s.hits >= s.need) { setTimeout(() => { if (g.state === 'play') g.win(s.bulls >= s.need ? 3 : s.bulls >= 1 ? 2 : 1); }, 700); return; }
+      setTimeout(() => { if (g.state === 'play') newTarget(g); }, 700);
+    } else {
+      g.message(Arcade.T('¡Fallo!', 'Miss!'), 0.8); Arcade.sfx.bad(); g.die();
+    }
+  }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Tensa, apunta… ¡y viento!', deco: ['🏹', '🎯', '🍎', '🌬️', '🌲', '🏰'], font: 'serif', bg: ['#2b6b40', '#14321f'],
+    music: { mode: 'dorian', bpm: 96, wave: 'triangle', style: 'chill', root: 57 }, voice: { wave: 'triangle', mul: 1, echo: 0.3 },
+    ambient: { e: ['🍃'], n: 6, vy: 10, vx: 30, sway: 20, spin: 1, alpha: 0.18 },
+    en: { title: 'Archer', tag: 'Draw, aim… and wind!', help: '<b>Drag backwards</b> from anywhere like a slingshot: the direction sets the angle and the length sets the power. <b>Release</b> to shoot. Arrows fall with gravity and the <b>wind</b> 🌬️ pushes them. Hit the target the number of times each level asks; the centre is a bullseye. Every miss costs a life. Targets get smaller and start moving.', tvHelp: '▲ ▼ angle · hold OK to charge power and release to shoot.', dict: { '¡Diana!': 'Bullseye!', '¡Fallo!': 'Miss!', 'Viento': 'Wind', 'Dianas: ': 'Hits: ' } },
+    tvHelp: '▲ ▼ ángulo · mantén OK para cargar la fuerza y suelta para disparar.',
+    id: 'arquero', title: 'Arquero', emoji: '🏹', color: '#94d82d', origin: 'Mini Archer',
+    help: '<b>Arrastra hacia atrás</b> desde cualquier sitio como un tirachinas: la dirección marca el ángulo y la distancia la fuerza. <b>Suelta</b> para disparar. Las flechas caen por la gravedad y el <b>viento</b> 🌬️ las desvía. Acierta en la diana las veces que pide cada nivel; el centro es diana perfecta. Cada fallo te cuesta una vida. Las dianas encogen y empiezan a moverse.',
+    lives: 3, levels: 0, cap: 20,
+    setup(g) {
+      g.s = { ang: 0.5, pow: 0, hits: 0, bulls: 0, wait: 0, arrow: null, stuck: [], who: ARCHERS[(g.level - 1) % ARCHERS.length] };
+      const s = g.s; geo(g); s.need = 3 + Math.floor(Math.min(g.lv, 14) / 3); newTarget(g);
+    },
+    layout(g) { if (g.s.need) { const s = g.s, k = g.W; geo(g); s.tx = clamp(s.tx, g.W * 0.5, g.W - 30); } },
+    down(g, p) { const s = g.s; if (s.arrow) return; s.drag = { x: p.x, y: p.y }; },
+    move(g, p) {
+      const s = g.s; if (!s.drag) return;
+      const dx = s.drag.x - p.x, dy = p.y - s.drag.y, d = Math.hypot(dx, dy);
+      if (d < 8) return;
+      s.ang = clamp(Math.atan2(dy, Math.max(1, dx)), -0.3, 1.45); s.pow = clamp(d / (220 * s.u), 0, 1);
+    },
+    up(g) { const s = g.s; if (s.drag) { if (s.pow > 0.08) shoot(g); else { s.drag = null; s.pow = 0; } } },
+    key(g, k, d) {
+      const s = g.s;
+      if (k === 'ArrowUp' || k === 'ArrowDown') s.kang = d ? (k === 'ArrowUp' ? 1 : -1) : 0;
+      if (k === ' ') { if (d) { if (!s.arrow) s.charging = true; } else if (s.charging) { s.charging = false; if (s.pow > 0.05) shoot(g); } }
+    },
+    update(g, dt) {
+      const s = g.s;
+      s.wait = Math.max(0, s.wait - dt);
+      if (s.kang) s.ang = clamp(s.ang + s.kang * dt * 0.9, -0.3, 1.45);
+      if (s.charging) { s.pow = Math.min(1, s.pow + dt * 0.7); }
+      const a = s.arrow; if (!a) return;
+      for (let k = 0; k < 3; k++) {
+        const h = dt / 3;
+        a.vy += GRAV * s.u * h; a.vx += s.wind * s.u * h * 1.2;
+        a.x += a.vx * h; a.y += a.vy * h;
+        const yT = ty(g);
+        if (Math.abs(a.x - s.tx) < 8 && Math.abs(a.y - yT) < s.tr) {
+          const dd = Math.abs(a.y - yT) / s.tr, ring = dd < 0.22 ? 0 : dd < 0.5 ? 1 : dd < 0.78 ? 2 : 3;
+          s.stuck.push({ dy: a.y - yT, ang: Math.atan2(a.vy, a.vx) }); if (s.stuck.length > 8) s.stuck.shift();
+          g.shake(0.1, 3); return result(g, true, ring);
+        }
+        if (a.y > s.gy || a.x > g.W + 40 || a.x < -40) { g.burst(clamp(a.x, 0, g.W), Math.min(a.y, s.gy), { n: 6, color: '#8d6e3f', speed: 120, size: 3 }); return result(g, false); }
+      }
+      a.trail.push([a.x, a.y]); if (a.trail.length > 14) a.trail.shift();
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      const bg = ctx.createLinearGradient(0, 0, 0, H);
+      bg.addColorStop(0, g.level % 3 === 0 ? '#ff9a5c' : '#74c0fc'); bg.addColorStop(1, '#d3f9d8');
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      if (!s.need) return;
+      // nubes con el viento
+      for (let i = 0; i < 4; i++) { const x = ((i * 173 + g.rt * (12 + s.wind * 0.6)) % (W + 160) + W + 160) % (W + 160) - 80; Arcade.emoji(ctx, '☁️', x, g.top + 40 + i * 30, 46, { alpha: 0.7 }); }
+      ctx.fillStyle = '#69a84f'; ctx.beginPath(); ctx.moveTo(0, s.gy); for (let x = 0; x <= W; x += 30) ctx.lineTo(x, s.gy - Math.sin(x / 70) * 6); ctx.lineTo(W, H); ctx.lineTo(0, H); ctx.fill();
+      ctx.fillStyle = '#4c7a36'; ctx.fillRect(0, s.gy + 10, W, H);
+      g.scenery(['🌲', '🌳', '🏰', '🌲'], 5, { alpha: 0.35, size: [30, 54], y0: s.gy - 30, y1: s.gy - 12 });
+      // diana en poste
+      const yT = ty(g), r = s.tr;
+      ctx.strokeStyle = '#8d6e3f'; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(s.tx + 4, yT); ctx.lineTo(s.tx + 4, s.gy); ctx.stroke();
+      ['#fff', '#e03131', '#fff', '#e03131', '#ffd43b'].forEach((c, i) => { const k = 1 - i * 0.2; ctx.fillStyle = c; ctx.beginPath(); ctx.ellipse(s.tx, yT, r * 0.35 * k, r * k, 0, 0, Math.PI * 2); ctx.fill(); });
+      ctx.strokeStyle = '#333'; ctx.lineWidth = 1; ctx.beginPath(); ctx.ellipse(s.tx, yT, r * 0.35, r, 0, 0, Math.PI * 2); ctx.stroke();
+      for (const st of s.stuck.slice(-3)) { ctx.save(); ctx.translate(s.tx, yT + st.dy); ctx.rotate(st.ang); ctx.strokeStyle = '#6b4b2a'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(-26, 0); ctx.lineTo(0, 0); ctx.stroke(); ctx.restore(); }
+      // arquero y guía
+      Arcade.emoji(ctx, s.who, s.ax - 6, s.ay + 6, 46 * s.u);
+      Arcade.emoji(ctx, '🏹', s.ax + 18, s.ay - 8, 34 * s.u, { rot: -s.ang + Math.PI / 4 * 0 });
+      if (!s.arrow) {
+        const p = s.pow * 900 * s.u + 200 * s.u;
+        let x = s.ax + 20, y = s.ay - 10, vx = Math.cos(s.ang) * p, vy = -Math.sin(s.ang) * p;
+        ctx.fillStyle = 'rgba(255,255,255,.85)';
+        const steps = 6 + Math.floor(g.lv < 6 ? 14 : g.lv < 12 ? 8 : 4);
+        for (let i = 0; i < steps; i++) { for (let k = 0; k < 4; k++) { const h = 0.02; vy += GRAV * s.u * h; x += vx * h; y += vy * h; } ctx.globalAlpha = 1 - i / steps; ctx.beginPath(); ctx.arc(x, y, 3, 0, Math.PI * 2); ctx.fill(); }
+        ctx.globalAlpha = 1;
+        // barra de fuerza
+        ctx.fillStyle = 'rgba(0,0,0,.3)'; Arcade.rr(ctx, s.ax - 30, s.gy + 14, 80, 10, 5); ctx.fill();
+        ctx.fillStyle = `hsl(${120 - s.pow * 120},80%,50%)`; Arcade.rr(ctx, s.ax - 30, s.gy + 14, 80 * s.pow, 10, 5); ctx.fill();
+      } else {
+        const a = s.arrow;
+        ctx.strokeStyle = 'rgba(255,255,255,.5)'; ctx.lineWidth = 2; ctx.beginPath(); a.trail.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y))); ctx.stroke();
+        ctx.save(); ctx.translate(a.x, a.y); ctx.rotate(Math.atan2(a.vy, a.vx));
+        ctx.strokeStyle = '#6b4b2a'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(-28, 0); ctx.lineTo(0, 0); ctx.stroke();
+        ctx.fillStyle = '#adb5bd'; ctx.beginPath(); ctx.moveTo(4, 0); ctx.lineTo(-4, -4); ctx.lineTo(-4, 4); ctx.fill();
+        ctx.fillStyle = '#e03131'; ctx.fillRect(-30, -3, 6, 6); ctx.restore();
+      }
+      // viento
+      const wx = W / 2, wy = g.top + 30;
+      ctx.fillStyle = 'rgba(0,0,0,.25)'; Arcade.rr(ctx, wx - 90, wy - 16, 180, 32, 16); ctx.fill();
+      Arcade.txt(ctx, 'Viento', wx - 52, wy + 1, 13, '#fff', 'center', 800);
+      if (s.wind) { const len = Math.abs(s.wind) / 120 * 70, dir = Math.sign(s.wind); ctx.strokeStyle = '#ffd43b'; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(wx + 30 - dir * len / 2, wy); ctx.lineTo(wx + 30 + dir * len / 2, wy); ctx.lineTo(wx + 30 + dir * (len / 2 - 6), wy - 6); ctx.moveTo(wx + 30 + dir * len / 2, wy); ctx.lineTo(wx + 30 + dir * (len / 2 - 6), wy + 6); ctx.stroke(); }
+      else Arcade.txt(ctx, '0', wx + 30, wy + 1, 14, '#fff', 'center', 900);
+      Arcade.txt(ctx, 'Dianas: ' + s.hits + '/' + s.need, W / 2, wy + 34, 15, '#1b4332', 'center', 900);
+    },
+  });
+})();

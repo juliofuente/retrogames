@@ -1,0 +1,158 @@
+// Barra|#1c1233
+(function () {
+  const { rand, clamp, dist } = Arcade;
+  const BOTTOM = 0.965, TOPV = 0.03, MAXD = 0.3;
+
+  function geo(g) {
+    const s = g.s, m = 14;
+    s.bx0 = m; s.bx1 = g.W - m;
+    s.by0 = g.top + 26; s.by1 = g.bot - 14;
+    s.bw = s.bx1 - s.bx0; s.bh = s.by1 - s.by0;
+    s.r = clamp(Math.min(s.bw, s.bh * 0.6) * 0.036, 9, 18);
+    s.R = s.r * 1.4;
+  }
+  const hx = (s, h) => s.bx0 + h.u * s.bw, hy = (s, h) => s.by0 + h.v * s.bh;
+  function genHoles(g) {
+    const s = g.s, holes = [], need = 2.7 * s.R;
+    const tries = (v0, v1, target) => {
+      for (let i = 0; i < 300; i++) {
+        const h = { u: rand(0.06, 0.94), v: rand(v0, v1), n: target || 0, done: false };
+        if (holes.every(o => dist(hx(s, h), hy(s, h), hx(s, o), hy(s, o)) > need)) { holes.push(h); return h; }
+      }
+      return null;
+    };
+    const T = 3 + (g.level >= 6 ? 1 : 0) + (g.level >= 14 ? 1 : 0);
+    for (let k = 1; k <= T; k++) { const v1 = 0.8 - (k - 1) * (0.66 / T); tries(Math.max(0.06, v1 - 0.6 / T), v1, k); }
+    const decoys = 6 + Math.min(g.level, 12) * 3;
+    for (let i = 0; i < decoys; i++) tries(0.05, 0.84, 0);
+    s.holes = holes; s.T = T; s.k = 1;
+  }
+  function resetBar(s) { s.yL = s.yR = s.tL = s.tR = BOTTOM; s.u = 0.5; s.vu = 0; s.fall = null; s.wait = 0.6; s.clock = 0; }
+  function barY(s, u) { return s.by0 + (s.yL + (s.yR - s.yL) * u) * s.bh; }
+
+  Arcade.game({
+    id: 'barra', title: 'Barra', emoji: '⚪', color: '#c77dff', origin: 'Ice Cold Beer (Taito, 1983)',
+    help: 'Usa <b>un dedo en cada mitad</b> de la pantalla: cada dedo sube o baja su extremo de la barra. Inclínala para que la bola ruede y súbela hasta meterla en el agujero <b>que brilla</b>, en orden 1, 2, 3. Si cae en cualquier otro agujero pierdes la bola.',
+    lives: 3, levels: Infinity,
+    theme: { font: 'Righteous', ambient: 'sparkles', music: { tempo: 96, scale: 'minor', root: 220, wave: 'square', lead: 'triangle' }, sfx: { wave: 'sine', pitch: 1 } },
+    setup(g) {
+      g.s = { ptr: {} };
+      geo(g); genHoles(g); resetBar(g.s);
+    },
+    layout(g) { if (g.s.ptr) geo(g); },
+    down(g, p) { g.s.ptr[p.id] = p.x < g.W / 2 ? 'L' : 'R'; this.move(g, p); },
+    move(g, p) {
+      const s = g.s, side = s.ptr[p.id]; if (!side) return;
+      const v = clamp((p.y - s.by0) / s.bh, TOPV, BOTTOM);
+      if (side === 'L') s.tL = v; else s.tR = v;
+    },
+    up(g, p) { delete g.s.ptr[p.id]; },
+    key(g, k, d) { const s = g.s; s.keys = s.keys || {}; s.keys[k.toLowerCase()] = d; },
+    update(g, dt) {
+      const s = g.s;
+      if (s.keys) {
+        const kv = 0.5 * dt;
+        if (s.keys.q) s.tL = clamp(s.yL - 0.08, TOPV, BOTTOM); if (s.keys.a) s.tL = clamp(s.yL + 0.08, TOPV, BOTTOM);
+        if (s.keys.p) s.tR = clamp(s.yR - 0.08, TOPV, BOTTOM); if (s.keys.l) s.tR = clamp(s.yR + 0.08, TOPV, BOTTOM);
+        if (!s.keys.q && !s.keys.a && !Object.values(s.ptr).includes('L')) s.tL = s.yL;
+        if (!s.keys.p && !s.keys.l && !Object.values(s.ptr).includes('R')) s.tR = s.yR;
+      }
+      if (s.fall) {
+        const f = s.fall; f.t += dt;
+        if (f.t > 0.55) {
+          if (f.h.n === s.k) {
+            f.h.done = true; const bonus = Math.max(50, 500 - Math.floor(s.clock) * 10);
+            g.ring(hx(s, f.h), hy(s, f.h), { color: '#ffd60a', r: 90, w: 6 }); g.burst(hx(s, f.h), hy(s, f.h), { n: 16, color: ['#ffd60a', '#c77dff', '#fff'], speed: 200 }); Arcade.sfx.level();
+            g.addScore(100 * s.k * g.level + bonus, hx(s, f.h), hy(s, f.h) - 20);
+            s.k++; resetBar(s);
+            if (s.k > s.T) { g.win(); return; }
+          } else {
+            if (g.die()) resetBar(s); else s.fall = null;
+          }
+        }
+        return;
+      }
+      if (s.wait > 0) { s.wait -= dt; return; }
+      s.clock += dt;
+      const sp = 0.42 * dt;
+      s.yL += clamp(s.tL - s.yL, -sp, sp); s.yR += clamp(s.tR - s.yR, -sp, sp);
+      // limita la inclinación
+      const d = s.yR - s.yL;
+      if (d > MAXD) { if (s.tR > s.tL) s.yR = s.yL + MAXD; else s.yL = s.yR - MAXD; }
+      if (d < -MAXD) { if (s.tL > s.tR) s.yL = s.yR + MAXD; else s.yR = s.yL - MAXD; }
+      // física de la bola
+      const dy = (s.yR - s.yL) * s.bh, dx = s.bw;
+      const acc = 1500 * dy / Math.hypot(dx, dy);
+      s.vu += acc / s.bw * dt;
+      s.vu *= 1 - 0.9 * dt;
+      s.u += s.vu * dt;
+      const mu = s.r / s.bw;
+      if (s.u < mu) { s.u = mu; s.vu = -s.vu * 0.25; }
+      if (s.u > 1 - mu) { s.u = 1 - mu; s.vu = -s.vu * 0.25; }
+      const bx = s.bx0 + s.u * s.bw, by = barY(s, s.u) - s.r;
+      for (const h of s.holes) {
+        if (h.done) continue;
+        if (dist(bx, by, hx(s, h), hy(s, h)) < s.R * 0.62) {
+          s.fall = { h, t: 0, x: bx, y: by };
+          if (h.n === s.k) { Arcade.sfx.coin(); Arcade.buzz(40); } else { Arcade.sfx.lose(); }
+          return;
+        }
+      }
+      if (Math.abs(s.vu) > 0.05 && Math.random() < 0.3) Arcade.tone(80 + Math.abs(s.vu) * 200, 0.03, 'triangle', 0.02);
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      Arcade.bg(ctx, W, H, '#2a1150', '#160a2e', '#07030f');
+      Arcade.amb(g, ctx);
+      if (!s.holes) return;
+      // tablero
+      const pg = ctx.createLinearGradient(s.bx0, 0, s.bx1, 0);
+      pg.addColorStop(0, '#3d2b6b'); pg.addColorStop(0.5, '#4b3786'); pg.addColorStop(1, '#3d2b6b');
+      ctx.fillStyle = pg; Arcade.rr(ctx, s.bx0 - 6, s.by0 - 10, s.bw + 12, s.bh + 20, 16); ctx.fill();
+      ctx.shadowColor = '#e599f7'; ctx.shadowBlur = 18; ctx.strokeStyle = '#e599f7'; ctx.lineWidth = 3; ctx.stroke(); ctx.shadowBlur = 0;
+      ctx.strokeStyle = 'rgba(255,255,255,.5)'; ctx.lineWidth = 1; ctx.stroke();
+      ctx.strokeStyle = 'rgba(255,255,255,.08)'; ctx.lineWidth = 1;
+      for (let x = s.bx0 + 20; x < s.bx1; x += 28) { ctx.beginPath(); ctx.moveTo(x, s.by0); ctx.lineTo(x, s.by1); ctx.stroke(); }
+      // agujeros
+      for (const h of s.holes) {
+        const x = hx(s, h), y = hy(s, h);
+        if (h.done) { ctx.fillStyle = '#2d6a4f'; ctx.beginPath(); ctx.arc(x, y, s.R, 0, 6.28); ctx.fill(); Arcade.emoji(ctx, '✅', x, y, s.R * 1.2); continue; }
+        const cur = h.n === s.k;
+        if (cur) {
+          const pu = 1 + Math.sin(g.t * 6) * 0.12;
+          Arcade.glow(ctx, x, y, s.R * 3 * pu, 'rgba(255,214,10,.8)', 0.6);
+          ctx.strokeStyle = 'rgba(255,214,10,.8)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x, y, s.R * 1.6 * pu, 0, 6.28); ctx.stroke();
+        }
+        ctx.fillStyle = cur ? '#ffd60a' : h.n ? '#9d7bff' : '#6c5a9c'; ctx.beginPath(); ctx.arc(x, y, s.R * 1.12, 0, 6.28); ctx.fill();
+        const hg = ctx.createRadialGradient(x, y - s.R * 0.3, 1, x, y, s.R);
+        hg.addColorStop(0, '#000'); hg.addColorStop(1, '#1a1030');
+        ctx.fillStyle = hg; ctx.beginPath(); ctx.arc(x, y, s.R, 0, 6.28); ctx.fill();
+        if (h.n) Arcade.txt(ctx, h.n, x, y + 1, s.R * 1.05, cur ? '#ffd60a' : 'rgba(255,255,255,.55)', 'center', 900);
+      }
+      // barra
+      const yl = barY(s, 0), yr = barY(s, 1);
+      ctx.lineCap = 'round';
+      ctx.strokeStyle = 'rgba(0,0,0,.4)'; ctx.lineWidth = s.r * 0.8; ctx.beginPath(); ctx.moveTo(s.bx0, yl + 4); ctx.lineTo(s.bx1, yr + 4); ctx.stroke();
+      ctx.strokeStyle = '#ced4da'; ctx.lineWidth = s.r * 0.6; ctx.beginPath(); ctx.moveTo(s.bx0, yl); ctx.lineTo(s.bx1, yr); ctx.stroke();
+      ctx.strokeStyle = '#fff'; ctx.lineWidth = s.r * 0.15; ctx.beginPath(); ctx.moveTo(s.bx0, yl - s.r * 0.12); ctx.lineTo(s.bx1, yr - s.r * 0.12); ctx.stroke();
+      const hands = Object.values(s.ptr);
+      [[s.bx0, yl, '#ff5d8f', 'L'], [s.bx1, yr, '#4cc9f0', 'R']].forEach(([x, y, c, k]) => {
+        ctx.fillStyle = c; ctx.beginPath(); ctx.arc(x, y, s.r * (hands.includes(k) ? 1.25 : 1), 0, 6.28); ctx.fill();
+        ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
+      });
+      // bola
+      let bx = s.bx0 + s.u * s.bw, by = barY(s, s.u) - s.r, br = s.r;
+      if (s.fall) { const k = Math.min(1, s.fall.t / 0.5); bx = s.fall.x + (hx(s, s.fall.h) - s.fall.x) * k; by = s.fall.y + (hy(s, s.fall.h) - s.fall.y) * k; br = s.r * (1 - k * 0.6); }
+      const bg2 = ctx.createRadialGradient(bx - br * 0.35, by - br * 0.4, br * 0.1, bx, by, br);
+      bg2.addColorStop(0, '#fff'); bg2.addColorStop(0.4, '#ced4da'); bg2.addColorStop(1, '#495057');
+      ctx.fillStyle = bg2; ctx.beginPath(); ctx.arc(bx, by, br, 0, 6.28); ctx.fill();
+      // guías de dedos
+      if (!hands.length && s.wait <= 0 && s.clock < 2) {
+        ctx.globalAlpha = 0.5 + Math.sin(g.t * 5) * 0.3;
+        Arcade.emoji(ctx, '👆', W * 0.2, H * 0.78, 40); Arcade.emoji(ctx, '👆', W * 0.8, H * 0.78, 40);
+        ctx.globalAlpha = 1;
+      }
+      Arcade.txt(ctx, 'Agujero ' + Math.min(s.k, s.T) + ' de ' + s.T, W / 2, s.by0 - 18, 14, '#e0d4ff', 'center', 800);
+    },
+  });
+})();

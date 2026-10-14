@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Alas · Arcade Perdido</title>
+<meta name="theme-color" content="#ffb4a2">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css">
+</head>
+<body class="game">
+<script src="config.js"></script>
+<script src="common.js"></script>
+<script>
+(function () {
+  const { rand, clamp } = Arcade;
+  const PAL = [['#ffb4a2', '#ffe5d9', '#e5989b'], ['#a2d2ff', '#e7f5ff', '#5e60ce'], ['#b8f2e6', '#effff9', '#2a9d8f'], ['#ffd6a5', '#fffbea', '#e76f51'], ['#cdb4db', '#f8edff', '#7b2cbf']];
+
+  function hillsFor(s, L) {
+    // colinas como suma de cosenos por tramos: cada tramo une dos alturas
+    s.pts = []; let x = 0, y = 0;
+    for (let i = 0; i < 400; i++) { const w = rand(260, 420) - Math.min(L, 20) * 4, amp = rand(60, 120 + Math.min(L, 20) * 6); const ny = (i % 2 ? -1 : 1) * amp * 0.5 + rand(-20, 20); s.pts.push([x, y]); x += w; y = ny; }
+    s.pts.push([x, y]); s.islandLen = 9000;
+  }
+  function hy(s, x) {
+    const P = s.pts; let lo = 0, hi = P.length - 1; while (hi - lo > 1) { const m = (lo + hi) >> 1; if (P[m][0] <= x) lo = m; else hi = m; }
+    const [x0, y0] = P[lo], [x1, y1] = P[hi], t = (x - x0) / (x1 - x0);
+    return y0 + (y1 - y0) * (1 - Math.cos(t * Math.PI)) / 2;
+  }
+  function geo(g) { const s = g.s; s.base = g.top + (g.bot - g.top) * 0.62; }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Baja en picado, vuela en la subida', deco: ['🐦', '🌄', '☀️', '🌙', '🪺', '⭐'], font: 'round', bg: ['#ffe5d9', '#ffb4a2'],
+    music: { mode: 'major', bpm: 108, wave: 'sine', style: 'chill', root: 64 }, voice: { wave: 'sine', mul: 1.2, echo: 0.4 },
+    en: { title: 'Wings', tag: 'Dive down, fly on the rise', help: 'The little bird is too chubby to fly on its own. <b>Hold</b> your finger to dive and press it against the hills: pick up speed on the <b>downhill</b> and <b>let go</b> at the bottom so the slope launches you into the air. Land gently on a downhill for a <b>perfect slide</b>; three in a row gives a ⚡ boost. Reach the island ⛳ before the sun sets.', tvHelp: 'Hold OK to dive.', dict: { '¡Perfecto!': 'Perfect!', 'Isla: ': 'Island: ' } },
+    tvHelp: 'Mantén OK para lanzarte en picado.',
+    id: 'alas', title: 'Alas', emoji: '🐦', color: '#ff8fab', origin: 'Tiny Wings (Andreas Illiger)',
+    help: 'El pajarito está demasiado gordito para volar solo. <b>Mantén el dedo</b> para lanzarte en picado y pegarte a las colinas: gana velocidad en la <b>bajada</b> y <b>suelta</b> al llegar al fondo para que la cuesta te lance por el aire. Aterriza suave en una bajada para un <b>deslizamiento perfecto</b>; tres seguidos dan un impulso ⚡. Llega a la isla ⛳ antes de que se ponga el sol.',
+    lives: 3, levels: 0, cap: 20,
+    setup(g) {
+      const L = g.lv; g.s = { x: 0, y: -60, vx: 260, vy: 0, air: true, combo: 0, fever: 0, time: 0, pal: PAL[(g.level - 1) % PAL.length], trail: [] };
+      const s = g.s; hillsFor(s, L); s.goal = 9000 + Math.min(L, 20) * 800; s.day = s.goal / 320; geo(g);
+    },
+    layout(g) { if (g.s.pts) geo(g); },
+    down(g) { g.s.hold = true; },
+    up(g) { g.s.hold = false; },
+    key(g, k, d) { if (k === ' ' || k === 'ArrowDown') g.s.hold = d; },
+    update(g, dt) {
+      const s = g.s; if (s.done) return;
+      s.time += dt;
+      const N = 4, h = dt / N;
+      for (let i = 0; i < N; i++) {
+        const grav = s.hold ? 1700 : 520;
+        s.vy += grav * h; s.x += s.vx * h; s.y += s.vy * h;
+        const gyy = hy(s, s.x);
+        if (s.y >= gyy) {
+          const sl = (hy(s, s.x + 2) - hy(s, s.x - 2)) / 4, tx = 1 / Math.hypot(1, sl), ty = sl * tx; // tangente
+          if (s.air) { // aterrizaje
+            const vang = Math.atan2(s.vy, s.vx), sang = Math.atan2(sl, 1);
+            if (Math.abs(vang - sang) < 0.3 && sl > 0.05) { s.combo++; g.float(Arcade.T('¡Perfecto!', 'Perfect!'), g.W * 0.3, s.base - 120, '#ff8fab', 22); Arcade.sfx.coin(); g.addScore(10 * g.lv * s.combo, g.W * 0.3, s.base - 90); if (s.combo >= 3) { s.fever = 4; s.combo = 0; Arcade.sfx.up(); g.flash('#fff', 0.15); } }
+            else { if (sl < -0.15) { s.vx *= 0.75; Arcade.sfx.bad(); } s.combo = 0; }
+            s.air = false;
+          }
+          const sp = s.vx * tx + s.vy * ty; s.vx = Math.max(140, sp) * tx; s.vy = Math.max(140, sp) * ty; s.y = gyy;
+          if (!s.hold && sl < 0) { /* subida: se mantiene la velocidad, puede despegar */ }
+        } else if (!s.air && s.y < gyy - 2) { s.air = true; }
+        s.vx = Math.max(140, s.vx * (s.air ? 0.99995 : 0.9997)); if (s.fever > 0) s.vx = Math.max(s.vx, 700);
+      }
+      s.fever = Math.max(0, s.fever - dt);
+      if (!s.air && s.hold) s.vx = Math.min(s.vx + dt * 40, 1400);
+      if (s.y < hy(s, s.x) - 260) { if (!s.cloud) { s.cloud = true; g.addScore(20 * g.lv, g.W * 0.3, g.top + 40); g.float('☁️', g.W * 0.3, g.top + 60, '#fff', 30); } } else s.cloud = false;
+      if (Math.floor(s.x / 100) !== Math.floor((s.x - s.vx * dt) / 100)) g.addScore(g.lv);
+      s.trail.push(s.y); if (s.trail.length > 14) s.trail.shift();
+      if (s.x >= s.goal) { s.done = true; Arcade.sfx.win(); g.confetti(70); g.addScore(Math.round((s.day - s.time) * 20) * g.lv, g.W / 2, g.H / 2); setTimeout(() => { if (g.state === 'play') g.win(s.time <= s.day * 0.7 ? 3 : s.time <= s.day * 0.85 ? 2 : 1); }, 700); }
+      else if (s.time >= s.day) { s.done = true; g.message(Arcade.T('Se hizo de noche', 'Night fell'), 1.3); setTimeout(() => { if (g.state === 'play' && g.die()) Arcade.current.def.setup(g); }, 1400); }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      if (!s.pts) return;
+      const dayK = clamp(s.time / s.day, 0, 1), [c1, c2, c3] = s.pal;
+      const bg = ctx.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, dayK > 0.8 ? '#1b1b3a' : c1); bg.addColorStop(1, c2);
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      if (dayK > 0.6) { ctx.fillStyle = `rgba(20,20,60,${(dayK - 0.6) * 1.6})`; ctx.fillRect(0, 0, W, H); }
+      // zoom según altura
+      const ground = hy(s, s.x), alt = Math.max(0, ground - s.y), z = clamp(1 - alt / 1400, 0.45, 1);
+      const camY = s.y + Math.min(alt, 99999) * 0.4;
+      const sunY = g.top + 40 + dayK * (H - g.top);
+      Arcade.emoji(ctx, dayK > 0.85 ? '🌙' : '☀️', W * 0.8, sunY, 60);
+      const X = (x) => W * 0.3 + (x - s.x) * z, Y = (y) => s.base + (y - camY) * z;
+      ctx.fillStyle = c3; ctx.globalAlpha = 0.4; ctx.beginPath(); ctx.moveTo(0, H); for (let px = 0; px <= W; px += 10) ctx.lineTo(px, Y(hy(s, s.x * 0.5 + (px - W * 0.3) / z * 0.5) - 160)); ctx.lineTo(W, H); ctx.fill(); ctx.globalAlpha = 1;
+      // colinas a franjas
+      const x0 = s.x - W * 0.3 / z, x1 = s.x + W * 0.7 / z;
+      ctx.beginPath(); ctx.moveTo(0, H); for (let px = 0; px <= W; px += 4) { const wx = x0 + (px / W) * (x1 - x0); ctx.lineTo(px, Y(hy(s, wx))); } ctx.lineTo(W, H); ctx.closePath();
+      ctx.save(); ctx.clip();
+      for (let k = Math.floor(x0 / 60); k * 60 < x1; k++) { ctx.fillStyle = k % 2 ? c3 : c1; ctx.fillRect(X(k * 60), 0, 60 * z + 1, H); }
+      ctx.fillStyle = 'rgba(255,255,255,.12)'; ctx.fillRect(0, 0, W, H); ctx.restore();
+      if (s.goal < x1) { Arcade.emoji(ctx, '🏝️', X(s.goal), Y(hy(s, s.goal)) - 40 * z, 90 * z); Arcade.emoji(ctx, '⛳', X(s.goal), Y(hy(s, s.goal)) - 70 * z, 50 * z); }
+      s.trail.forEach((ty, i) => { ctx.fillStyle = `rgba(255,255,255,${i / s.trail.length * 0.5})`; ctx.beginPath(); ctx.arc(X(s.x) - (s.trail.length - i) * 6, Y(ty), 6 * z, 0, 6.3); ctx.fill(); });
+      if (s.fever > 0) g.burst(X(s.x), Y(s.y), { n: 1, color: ['#ffd43b', '#fff'], speed: 60, size: 4, life: 0.4, grav: 0 });
+      const ang = Math.atan2(s.vy, s.vx);
+      Arcade.emoji(ctx, s.hold ? '🐤' : '🐦', X(s.x), Y(s.y) - 14 * z, 40 * z, { rot: ang, flip: true, sy: s.hold ? 0.85 : 1 });
+      // HUD
+      const bw = Math.min(W - 60, 320), bx = (W - bw) / 2, pr = clamp(s.x / s.goal, 0, 1);
+      ctx.fillStyle = 'rgba(0,0,0,.2)'; Arcade.rr(ctx, bx, g.top + 10, bw, 10, 5); ctx.fill();
+      ctx.fillStyle = '#ff8fab'; Arcade.rr(ctx, bx, g.top + 10, bw * pr, 10, 5); ctx.fill();
+      Arcade.emoji(ctx, '🏝️', bx + bw + 14, g.top + 15, 22);
+      ctx.fillStyle = 'rgba(0,0,0,.2)'; Arcade.rr(ctx, bx, g.top + 26, bw, 6, 3); ctx.fill();
+      ctx.fillStyle = dayK > 0.8 ? '#ff6b6b' : '#ffd43b'; Arcade.rr(ctx, bx, g.top + 26, bw * (1 - dayK), 6, 3); ctx.fill();
+      if (s.fever > 0) Arcade.txt(ctx, '⚡ FEVER ⚡', W / 2, g.top + 50, 18, '#ffd43b', 'center', 900, 'rgba(0,0,0,.4)');
+    },
+  });
+})();
+</script>
+</body>
+</html>

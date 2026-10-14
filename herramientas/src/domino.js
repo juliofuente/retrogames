@@ -1,0 +1,172 @@
+// Dominó|#13222e
+(function () {
+  const { ri, clamp } = Arcade;
+  const COL = ['', '#ffd43b', '#ff6b6b', '#4dabf7', '#69db7c'];
+  const SYM = ['', '•', '✋', '↔', '⟳'];
+  const NAME = ['', 'Normal', 'Tope (no cae)', 'Divide', 'Rueda'];
+  const canFall = (t) => t === 1 || t === 3 || t === 4;
+
+  function sim(line, start, d) {
+    const n = line.length, fall = new Array(n).fill(null), q = [[start, d, 0]];
+    while (q.length) {
+      q.sort((a, b) => a[2] - b[2]);
+      const [i, dir, t] = q.shift();
+      if (i < 0 || i >= n || fall[i] || !canFall(line[i])) continue;
+      const ty = line[i];
+      fall[i] = { dir: ty === 3 ? 0 : dir, t };
+      if (ty === 1) q.push([i + dir, dir, t + 0.2]);
+      else if (ty === 3) { q.push([i - 1, -1, t + 0.2], [i + 1, 1, t + 0.2]); }
+      else { let j = i + dir, gaps = 0; while (j >= 0 && j < n && line[j] === 0) { j += dir; gaps++; } fall[i].roll = gaps; q.push([j, dir, t + 0.2 + gaps * 0.18]); }
+    }
+    return fall;
+  }
+  function wins(line, fall) { return line.every((t, i) => !canFall(t) || fall[i]); }
+  function solvable(line) {
+    for (let i = 0; i < line.length; i++) if (canFall(line[i])) for (const d of [-1, 1]) if (wins(line, sim(line, i, d))) return true;
+    return false;
+  }
+  function solvableIn(line, k) {
+    if (solvable(line)) return true;
+    if (!k) return false;
+    for (let i = 0; i < line.length; i++) for (let j = i + 1; j < line.length; j++) {
+      if (line[i] === line[j]) continue;
+      const b = line.slice(); [b[i], b[j]] = [b[j], b[i]];
+      if (solvableIn(b, k - 1)) return true;
+    }
+    return false;
+  }
+  function gen(n, lv) {
+    const S = lv < 8 ? 1 : 2, t0 = performance.now();
+    let fallback = null;
+    while (performance.now() - t0 < 1500) {
+      const line = [];
+      for (let i = 0; i < n; i++) {
+        const r = Math.random();
+        line.push(r < 0.2 ? 0 : r < 0.62 ? 1 : r < 0.62 + Math.min(0.18, 0.06 + lv * 0.01) ? 2 : r < 0.88 ? 4 : 3);
+      }
+      if (line.filter(canFall).length < 5) continue;
+      if (solvable(line)) continue;
+      if (S === 2 && solvableIn(line, 1)) { fallback = fallback || { line, S: 1 }; continue; }
+      if (solvableIn(line, S)) return { line, S };
+    }
+    if (fallback) return fallback;
+    const line = new Array(n).fill(1); line[Math.floor(n / 2)] = 2;
+    return { line, S: 1 };
+  }
+  function geo(g) {
+    const s = g.s, n = s.line.length;
+    s.sw = Math.min((g.W - 24) / n, 70);
+    s.ox = (g.W - s.sw * n) / 2;
+    s.floor = g.top + (g.bot - g.top) * 0.55;
+    s.dh = Math.min(s.sw * 1.9, (g.bot - g.top) * 0.28);
+  }
+  const slotAt = (s, x, y) => { const i = Math.floor((x - s.ox) / s.sw); return i >= 0 && i < s.line.length && y > s.floor - s.dh - 70 && y < s.floor + 40 ? i : -1; };
+
+  Arcade.game({
+    id: 'domino', title: 'Dominó', emoji: '🁫', color: '#ffd43b', origin: 'Pushover (Ocean, 1992)',
+    help: 'Tienes <b>un solo empujón</b> para tirar todas las fichas (menos las rojas ✋, que nunca caen). Antes puedes <b>reordenar</b>: arrastra una ficha a otro hueco para intercambiarlas (tienes un número limitado de cambios). Luego <b>toca una ficha</b> y elige ◀ o ▶ para empujarla. Las azules ↔ caen hacia los dos lados y las verdes ⟳ ruedan por los huecos hasta la siguiente.',
+    lives: 3, levels: 20,
+    setup(g) {
+      const n = g.W < g.H ? 9 : 13, lv = gen(n, g.level);
+      g.s = { line: lv.line.slice(), start: lv.line.slice(), S: lv.S, swaps: lv.S, sel: -1, drag: null, fall: null, t: 0, hist: [] };
+      geo(g);
+    },
+    layout(g) { if (g.s.line) geo(g); },
+    down(g, p) {
+      const s = g.s; if (s.fall) return;
+      if (s.sel >= 0) {
+        const x = s.ox + (s.sel + 0.5) * s.sw, y = s.floor - s.dh - 34;
+        if (Math.abs(p.y - y) < 26 && Math.abs(p.x - (x - 28)) < 26) { push(g, s.sel, -1); return; }
+        if (Math.abs(p.y - y) < 26 && Math.abs(p.x - (x + 28)) < 26) { push(g, s.sel, 1); return; }
+      }
+      if (p.y > g.bot - 70 && Math.abs(p.x - g.W / 2) < 90) { if (s.hist.length) { const h = s.hist.pop(); s.line = h; s.swaps++; s.sel = -1; Arcade.sfx.tick(); } return; }
+      const i = slotAt(s, p.x, p.y);
+      if (i >= 0) s.drag = { i, x: p.x, y: p.y, id: p.id };
+    },
+    move(g, p) { const d = g.s.drag; if (d && d.id === p.id) { d.x = p.x; d.y = p.y; } },
+    up(g, p) {
+      const s = g.s, d = s.drag; if (!d || d.id !== p.id) return;
+      s.drag = null;
+      const j = slotAt(s, p.x, p.y);
+      if (j >= 0 && j !== d.i && Math.hypot(p.x - p.sx, p.y - p.sy) > 16) {
+        if (s.swaps <= 0) { g.float('Sin cambios', p.x, p.y - 40, '#ff8787', 18); Arcade.sfx.bad(); return; }
+        if (s.line[j] === s.line[d.i]) return;
+        s.hist.push(s.line.slice());
+        [s.line[d.i], s.line[j]] = [s.line[j], s.line[d.i]]; s.swaps--; s.sel = -1; Arcade.sfx.move();
+        return;
+      }
+      if (j === d.i && canFall(s.line[j])) { s.sel = s.sel === j ? -1 : j; Arcade.sfx.tick(); }
+    },
+    update(g, dt) {
+      const s = g.s;
+      if (!s.fall) return;
+      s.t += dt;
+      if (s.t > s.endT && !s.done) {
+        s.done = true;
+        if (wins(s.line, s.fall)) { g.addScore(500 + g.level * 100 + s.swaps * 200, g.W / 2, g.H / 3); g.win(); }
+        else {
+          g.message('¡Casi!', 1.3, 'Quedaron fichas en pie');
+          setTimeout(() => { if (g.state !== 'play') return; if (g.die()) { s.line = s.start.slice(); s.swaps = s.S; s.fall = null; s.hist = []; s.sel = -1; } }, 1300);
+        }
+      }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      const bg = ctx.createLinearGradient(0, 0, 0, H);
+      bg.addColorStop(0, '#1c3144'); bg.addColorStop(1, '#0b1620');
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      if (!s.line) return;
+      const sw = s.sw, dh = s.dh, dw = Math.min(sw * 0.42, dh * 0.4);
+      ctx.fillStyle = '#5c4033'; ctx.fillRect(s.ox - 10, s.floor, sw * s.line.length + 20, 14);
+      ctx.fillStyle = '#8b5e3c'; ctx.fillRect(s.ox - 10, s.floor, sw * s.line.length + 20, 4);
+      for (let i = 0; i < s.line.length; i++) { ctx.fillStyle = 'rgba(255,255,255,.06)'; ctx.fillRect(s.ox + i * sw + sw * 0.2, s.floor - 3, sw * 0.6, 3); }
+      const drawDom = (t, x, a, alpha) => {
+        ctx.save(); ctx.globalAlpha = alpha ?? 1;
+        ctx.translate(x, s.floor); ctx.rotate(a);
+        ctx.fillStyle = 'rgba(0,0,0,.35)'; Arcade.rr(ctx, -dw / 2 + 3, -dh + 3, dw, dh, dw * 0.2); ctx.fill();
+        ctx.fillStyle = COL[t]; Arcade.rr(ctx, -dw / 2, -dh, dw, dh, dw * 0.2); ctx.fill();
+        ctx.fillStyle = 'rgba(255,255,255,.35)'; ctx.fillRect(-dw / 2 + 3, -dh + 4, dw * 0.25, dh - 8);
+        ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.fillRect(-dw / 2 + 3, -dh / 2 - 1, dw - 6, 2);
+        Arcade.txt(ctx, SYM[t], 0, -dh * 0.75, dw * 0.6, 'rgba(0,0,0,.6)', 'center', 900);
+        Arcade.txt(ctx, SYM[t], 0, -dh * 0.25, dw * 0.6, 'rgba(0,0,0,.6)', 'center', 900);
+        ctx.restore();
+      };
+      for (let i = 0; i < s.line.length; i++) {
+        const t = s.line[i]; if (!t) continue;
+        if (s.drag && s.drag.i === i && Math.hypot(s.drag.x - (s.ox + (i + 0.5) * sw), s.drag.y - s.floor) > 20) { drawDom(t, s.ox + (i + 0.5) * sw, 0, 0.25); continue; }
+        let a = 0, x = s.ox + (i + 0.5) * sw;
+        const f = s.fall && s.fall[i];
+        if (f && s.t > f.t) {
+          const k = clamp((s.t - f.t) / 0.25, 0, 1);
+          if (f.dir === 0) { a = 0; x += 0; ctx.globalAlpha = 1; drawDom(t, x, -k * 1.3, 0.5); drawDom(t, x, k * 1.3, 1); continue; }
+          if (f.roll) { const kr = clamp((s.t - f.t) / (0.2 + f.roll * 0.18), 0, 1); x += f.dir * kr * f.roll * sw; a = f.dir * kr * Math.PI * 2 * f.roll * 0.5; if (kr >= 1) a = f.dir * 1.3; }
+          else a = f.dir * k * 1.3;
+        }
+        drawDom(t, x, a);
+      }
+      if (s.drag && s.line[s.drag.i] && Math.hypot(s.drag.x - (s.ox + (s.drag.i + 0.5) * sw), s.drag.y - s.floor) > 20) {
+        ctx.save(); ctx.translate(0, s.drag.y - s.floor + dh / 2); drawDom(s.line[s.drag.i], s.drag.x, 0, 0.9); ctx.restore();
+      }
+      if (s.sel >= 0 && !s.fall) {
+        const x = s.ox + (s.sel + 0.5) * sw, y = s.floor - dh - 34;
+        for (const [dx, t] of [[-28, '◀'], [28, '▶']]) { ctx.fillStyle = '#ffd43b'; ctx.beginPath(); ctx.arc(x + dx, y, 22, 0, 6.28); ctx.fill(); Arcade.txt(ctx, t, x + dx, y + 1, 20, '#1b1530', 'center', 900); }
+      }
+      Arcade.txt(ctx, 'Cambios: ' + '🔁'.repeat(Math.max(0, s.swaps)) + (s.swaps ? '' : '0'), W / 2, g.top + 24, 16, '#fff', 'center', 800);
+      // leyenda
+      const ly = s.floor + 50;
+      [1, 2, 3, 4].forEach((t, k) => {
+        const x = W / 2 + (k % 2 ? 10 : -150), y = ly + Math.floor(k / 2) * 30;
+        ctx.fillStyle = COL[t]; Arcade.rr(ctx, x, y - 10, 14, 20, 4); ctx.fill();
+        Arcade.txt(ctx, SYM[t] + ' ' + NAME[t], x + 22, y, 13, '#d0ebff', 'left', 700);
+      });
+      if (s.hist.length && !s.fall) { ctx.fillStyle = 'rgba(255,255,255,.1)'; Arcade.rr(ctx, W / 2 - 80, g.bot - 62, 160, 42, 14); ctx.fill(); Arcade.txt(ctx, '↩️ Deshacer', W / 2, g.bot - 41, 15, '#fff', 'center', 800); }
+    },
+  });
+  function push(g, i, d) {
+    const s = g.s;
+    s.fall = sim(s.line, i, d); s.t = 0; s.done = false; s.sel = -1;
+    s.endT = Math.max(0, ...s.fall.filter(Boolean).map(f => f.t + 0.3 + (f.roll || 0) * 0.18)) + 0.4;
+    Arcade.tone(300, 0.05, 'square', 0.07);
+    s.fall.forEach((f, k) => { if (f) setTimeout(() => Arcade.tone(500 + k * 30, 0.03, 'square', 0.04), f.t * 1000); });
+  }
+})();

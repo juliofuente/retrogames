@@ -1,0 +1,59 @@
+// Circuito|#1f1f2e
+(function () {
+  const { ri, rand, clamp, pick } = Arcade;
+  const CARS = ['🚗', '🚙', '🚕', '🚓', '🚌', '🏎️'];
+  const LANES = 3;
+
+  function geo(g) { const s = g.s; s.cx = g.W / 2; s.cy = (g.top + g.bot) / 2 + 10; s.R = Math.min(g.W, g.bot - g.top - 40) * 0.42; s.lw = s.R * 0.17; }
+  const laneR = (s, l) => s.R - s.lw * (l + 0.5);
+  function change(g, d) { const s = g.s; if (s.dead) return; const nl = clamp(s.lane + d, 0, LANES - 1); if (nl !== s.lane) { s.lane = nl; Arcade.tone(500 + nl * 80, 0.04, 'triangle', 0.05); } }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Vueltas y más vueltas a contramano', deco: ['🏎️', '🚗', '🏁', '🪙', '🛞', '🚦'], font: 'impact', bg: ['#2f2f45', '#1f1f2e'],
+    music: { mode: 'minor', bpm: 140, wave: 'sawtooth', style: 'arcade', root: 57 }, voice: { wave: 'square', mul: 1, echo: 0.2 },
+    en: { title: 'Circuit', tag: 'Lap after lap, against the traffic', help: 'Your 🏎️ goes round the track by itself and the other cars come the other way. <b>Tap the left half</b> of the screen to move one lane <b>inwards</b> and the <b>right half</b> to move <b>outwards</b>. Dodge the traffic and grab the 🪙 coins. Complete the laps each level asks for.', tvHelp: '◀ inner lane · ▶ outer lane.', dict: { 'Vueltas: ': 'Laps: ' } },
+    tvHelp: '◀ carril interior · ▶ carril exterior.',
+    id: 'circuito', title: 'Circuito', emoji: '🏎️', color: '#ff6b6b', origin: 'Circle Race / Racing',
+    help: 'Tu 🏎️ da vueltas a la pista sola y los demás coches vienen en sentido contrario. <b>Toca la mitad izquierda</b> de la pantalla para pasar a un carril más <b>interior</b> y la <b>mitad derecha</b> para uno más <b>exterior</b>. Esquiva el tráfico y coge las 🪙 monedas. Completa las vueltas que pide cada nivel.',
+    lives: 3, levels: 0, cap: 25,
+    setup(g) {
+      const L = g.lv; g.s = { a: -Math.PI / 2, lane: 1, laneV: 1, laps: 0, need: 3 + Math.floor(Math.min(L, 25) / 3), sp: 1.1 + Math.min(L, 25) * 0.035, foes: [], coins: [], inv: 0, total: 0 };
+      const s = g.s; geo(g);
+      const n = 2 + Math.min(Math.floor(L / 2), 8);
+      for (let i = 0; i < n; i++) s.foes.push({ a: -Math.PI / 2 + Math.PI * 0.6 + i * (Math.PI * 1.6 / n) + rand(-0.15, 0.15), lane: ri(0, LANES - 1), sp: rand(0.25, 0.5) + L * 0.01, e: pick(CARS), t: rand(0, 3) });
+      for (let i = 0; i < 6; i++) s.coins.push({ a: rand(0, Math.PI * 2), lane: ri(0, LANES - 1) });
+    },
+    layout(g) { if (g.s.foes) geo(g); },
+    down(g, p) { change(g, p.x < g.W / 2 ? 1 : -1); },
+    key(g, k, d) { if (!d) return; if (k === 'ArrowLeft' || k === 'ArrowUp') change(g, 1); else if (k === 'ArrowRight' || k === 'ArrowDown') change(g, -1); },
+    update(g, dt) {
+      const s = g.s; if (s.won) return;
+      s.inv = Math.max(0, s.inv - dt); s.laneV += (s.lane - s.laneV) * Math.min(1, dt * 14);
+      if (s.dead) { s.dead -= dt; if (s.dead <= 0) s.dead = 0; return; }
+      const da = s.sp * dt; s.a += da; s.total += da;
+      if (s.total >= Math.PI * 2) { s.total -= Math.PI * 2; s.laps++; Arcade.sfx.up(); g.addScore(50 * g.lv, s.cx, s.cy); g.message('🏁 ' + s.laps + '/' + s.need, 0.7); if (s.laps >= s.need) { s.won = true; g.confetti(60); setTimeout(() => { if (g.state === 'play') g.win(); }, 600); return; } }
+      for (const f of s.foes) { f.a -= f.sp * dt; f.t -= dt; if (f.t <= 0) { f.t = rand(2, 5); if (Math.random() < 0.4 + g.lv * 0.02) f.lane = clamp(f.lane + (Math.random() < 0.5 ? -1 : 1), 0, LANES - 1); } f.lv = f.lv == null ? f.lane : f.lv + (f.lane - f.lv) * Math.min(1, dt * 4); }
+      const wrap = (x) => Math.atan2(Math.sin(x), Math.cos(x));
+      if (!s.inv) for (const f of s.foes) if (Math.abs(f.lv - s.laneV) < 0.55 && Math.abs(wrap(f.a - s.a)) * laneR(s, s.lane) < s.lw * 0.85) { s.inv = 1.5; s.dead = 0.5; Arcade.sfx.hit(); g.shake(0.3, 8); const r = laneR(s, s.laneV); g.burst(s.cx + Math.cos(s.a) * r, s.cy + Math.sin(s.a) * r, { n: 16, color: ['#ff922b', '#ffd43b', '#495057'], speed: 200, size: 4 }); if (!g.die()) return; f.a += 1; break; }
+      for (const c of s.coins) if (c.lane === s.lane && Math.abs(wrap(c.a - s.a)) < 0.12) { c.a = s.a + rand(1.5, 5); c.lane = ri(0, LANES - 1); Arcade.sfx.coin(); g.addScore(10 * g.lv); }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      ctx.fillStyle = '#2b8a3e'; ctx.fillRect(0, 0, W, H);
+      if (!s.foes) return;
+      g.scenery(['🌳', '🌲', '🏟️', '🚩'], 14, { alpha: 0.5, size: [24, 40] });
+      const { cx, cy, R, lw } = s;
+      ctx.fillStyle = '#495057'; ctx.beginPath(); ctx.arc(cx, cy, R, 0, 6.3); ctx.arc(cx, cy, R - lw * LANES, 0, 6.3, true); ctx.fill('evenodd');
+      ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(cx, cy, R, 0, 6.3); ctx.stroke(); ctx.beginPath(); ctx.arc(cx, cy, R - lw * LANES, 0, 6.3); ctx.stroke();
+      ctx.setLineDash([12, 12]); ctx.strokeStyle = 'rgba(255,255,255,.5)'; ctx.lineWidth = 2; for (let l = 1; l < LANES; l++) { ctx.beginPath(); ctx.arc(cx, cy, R - lw * l, 0, 6.3); ctx.stroke(); } ctx.setLineDash([]);
+      // línea de meta
+      for (let k = 0; k < 6; k++) { ctx.fillStyle = k % 2 ? '#fff' : '#111'; ctx.fillRect(cx - 4 + (k % 2) * 4, cy - R + k * lw * LANES / 6, 8, lw * LANES / 6); }
+      for (const c of s.coins) { const r = laneR(s, c.lane); Arcade.emoji(ctx, '🪙', cx + Math.cos(c.a) * r, cy + Math.sin(c.a) * r, lw * 0.6); }
+      for (const f of s.foes) { const r = laneR(s, f.lv ?? f.lane); Arcade.emoji(ctx, f.e, cx + Math.cos(f.a) * r, cy + Math.sin(f.a) * r, lw * 0.95, { rot: f.a + Math.PI / 2 }); }
+      const r = laneR(s, s.laneV);
+      if (!(s.inv && Math.floor(g.rt * 12) % 2)) Arcade.emoji(ctx, '🏎️', cx + Math.cos(s.a) * r, cy + Math.sin(s.a) * r, lw * 1.05, { rot: s.a + Math.PI / 2, flip: true });
+      Arcade.txt(ctx, 'Vueltas: ' + s.laps + '/' + s.need, cx, cy - 10, 22, '#fff', 'center', 900);
+      const pr = s.total / (Math.PI * 2); ctx.strokeStyle = '#ffd43b'; ctx.lineWidth = 6; ctx.beginPath(); ctx.arc(cx, cy + 22, 22, -Math.PI / 2, -Math.PI / 2 + pr * 6.283); ctx.stroke();
+    },
+  });
+})();

@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Hélice · Arcade Perdido</title>
+<meta name="theme-color" content="#1a2a4a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css">
+</head>
+<body class="game">
+<script src="config.js"></script>
+<script src="common.js"></script>
+<script>
+(function () {
+  const { ri, rand, clamp } = Arcade;
+  const NS = 12, TAU = Math.PI * 2;
+  const BALLS = ['🔴', '🟠', '🟡', '🟢', '🔵', '🟣'];
+
+  function build(g) {
+    const s = g.s, L = g.lv, n = 14 + Math.min(L, 25) * 2;
+    s.floors = [];
+    for (let i = 0; i < n; i++) {
+      const seg = new Array(NS).fill(0); // 0 sólido, 1 hueco, 2 peligro
+      const gapStart = ri(0, NS - 1), gapLen = ri(2, Math.max(2, 4 - Math.floor(L / 8)));
+      for (let k = 0; k < gapLen; k++) seg[(gapStart + k) % NS] = 1;
+      const nd = i === 0 ? 0 : Math.min(ri(0, 1 + Math.floor(L / 3)), 6);
+      for (let k = 0; k < nd; k++) { const j = ri(0, NS - 1); if (seg[j] === 0 && Math.abs(((j - gapStart + NS) % NS)) > 0) seg[j] = 2; }
+      s.floors.push({ seg, broken: 0, hue: (i * 23 + g.level * 40) % 360 });
+    }
+    s.floors.push({ seg: new Array(NS).fill(3), broken: 0, hue: 50 });
+  }
+  function geo(g) { const s = g.s; s.R = Math.min(g.W * 0.42, 190); s.F = clamp((g.bot - g.top) / 5.2, 90, 150); s.cx = g.W / 2; }
+  const segAt = (s, i) => { const a = ((Math.PI / 2 - s.th) % TAU + TAU) % TAU; return Math.floor(a / (TAU / NS)) % NS; };
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Gira la torre, cae la bola', deco: ['🔴', '🌀', '🗼', '⭐', '🔥', '🟡'], font: 'round', bg: ['#2b4a7a', '#1a2a4a'],
+    music: { mode: 'dorian', bpm: 118, wave: 'triangle', style: 'chill', root: 60 }, voice: { wave: 'triangle', mul: 1.2, echo: 0.3 },
+    ambient: { e: ['✨'], n: 10, vy: -10, sway: 6, twinkle: 1, alpha: 0.25, size: [6, 12] },
+    en: { title: 'Helix', tag: 'Spin the tower, drop the ball', help: '<b>Drag</b> sideways to spin the tower. The ball bounces on its own: line up the <b>gaps</b> so it falls floor by floor. Avoid the <b>red</b> sections, they break the ball. If you drop through 3 floors in a row without bouncing, the ball catches 🔥 and smashes the next floor, red or not. Reach the golden floor at the bottom.', tvHelp: 'Hold ◀ ▶ to spin the tower.', dict: { 'Pisos: ': 'Floors: ' } },
+    tvHelp: 'Mantén ◀ ▶ para girar la torre.',
+    id: 'helice', title: 'Hélice', emoji: '🌀', color: '#4dabf7', origin: 'Helix Jump (Voodoo)',
+    help: '<b>Arrastra</b> a los lados para girar la torre. La bola bota sola: alinea los <b>huecos</b> para que caiga piso a piso. Evita las zonas <b>rojas</b>, rompen la bola. Si caes 3 pisos seguidos sin botar, la bola se pone en 🔥 y rompe el siguiente piso aunque sea rojo. Llega al piso dorado del fondo.',
+    lives: 3, levels: 0, cap: 25,
+    setup(g) {
+      g.s = { th: 0, by: -40, vy: 0, cam: -120, fall: 0, passed: 0, ball: BALLS[(g.level - 1) % BALLS.length], splats: [] };
+      const s = g.s; geo(g); build(g);
+    },
+    layout(g) { if (g.s.floors) geo(g); },
+    down(g, p) { g.s.dx = p.x; },
+    move(g, p) { const s = g.s; if (s.dx == null) return; s.th += (p.x - s.dx) / s.R * 1.1; s.dx = p.x; },
+    up(g) { g.s.dx = null; },
+    key(g, k, d) { const s = g.s; if (k === 'ArrowLeft' || k === 'ArrowRight') s.kd = d ? (k === 'ArrowLeft' ? -1 : 1) : 0; },
+    update(g, dt) {
+      const s = g.s; if (s.dead || s.won) return;
+      if (s.kd) s.th += s.kd * dt * 3.2;
+      const prev = s.by;
+      s.vy += 1500 * dt; s.by += s.vy * dt;
+      const i = Math.floor(prev / s.F + 1), fy = i * s.F; // siguiente piso por debajo
+      if (i >= 0 && i < s.floors.length && prev < fy && s.by >= fy) {
+        const fl = s.floors[i];
+        if (fl.broken) { s.fall++; }
+        else {
+          const sg = fl.seg[segAt(s)];
+          if (sg === 3) { s.won = true; s.by = fy; Arcade.sfx.win(); g.confetti(80); g.addScore(100 * g.lv, g.W / 2, g.H / 2); setTimeout(() => { if (g.state === 'play') g.win(); }, 800); return; }
+          if (s.fall >= 3) { // bola de fuego
+            fl.broken = 1; g.shake(0.2, 6); Arcade.sfx.boom(); g.addScore(5 * g.lv * s.fall, s.cx, g.H / 2); s.fall = 0; s.vy = -520;
+            g.burst(s.cx, fy - s.cam, { n: 20, color: `hsl(${fl.hue},80%,60%)`, speed: 260, size: 5 });
+          } else if (sg === 1) { s.fall++; s.passed++; g.addScore(g.lv * Math.max(1, s.fall), s.cx, fy - s.cam); Arcade.tone(500 + s.fall * 120, 0.06, 'triangle', 0.06); fl.broken = 1; g.burst(s.cx, fy - s.cam + 10, { n: 10, color: `hsl(${fl.hue},80%,60%)`, speed: 160, size: 4 }); }
+          else if (sg === 2) { s.dead = true; s.by = fy; Arcade.sfx.hit(); g.burst(s.cx, fy - s.cam, { n: 18, color: '#ff6b6b', speed: 200, size: 5 }); setTimeout(() => { if (g.state === 'play' && g.die()) { s.dead = false; s.by = fy - s.F * 0.6; s.vy = -500; s.fall = 0; s.th += Math.PI / NS * 3; } }, 900); }
+          else { s.by = fy; s.vy = -560; s.fall = 0; Arcade.tone(260, 0.05, 'sine', 0.08); s.splats.push({ i, a: Math.PI / 2 - s.th, t: 1 }); if (s.splats.length > 20) s.splats.shift(); }
+        }
+      }
+      const want = s.by - (g.bot - g.top) * 0.32;
+      s.cam += (Math.max(s.cam, want) - s.cam) * Math.min(1, dt * 6);
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      const hue = (g.level * 40) % 360;
+      const bg = ctx.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, `hsl(${hue},45%,30%)`); bg.addColorStop(1, `hsl(${(hue + 60) % 360},50%,14%)`);
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      if (!s.floors) return;
+      const R = s.R, tilt = 0.32, top = g.top + 10;
+      const Y = (wy) => top + 60 + wy - s.cam;
+      const pw = R * 0.16;
+      // poste (detrás)
+      ctx.fillStyle = 'rgba(255,255,255,.85)'; ctx.fillRect(s.cx - pw, 0, pw * 2, H);
+      ctx.fillStyle = 'rgba(0,0,0,.08)'; ctx.fillRect(s.cx + pw * 0.3, 0, pw * 0.7, H);
+      const drawFloor = (fl, i, front) => {
+        const y = Y(i * s.F); if (y < -40 || y > H + 40) return;
+        const th = R * 0.12;
+        for (let k = 0; k < NS; k++) {
+          const v = fl.seg[k]; if (v === 1 || fl.broken) continue;
+          const a0 = s.th + k * TAU / NS, a1 = a0 + TAU / NS, mid = (a0 + a1) / 2;
+          const isFront = Math.sin(mid) > 0; if (isFront !== front) continue;
+          const col = v === 2 ? '#fa5252' : v === 3 ? '#fcc419' : `hsl(${fl.hue},70%,62%)`;
+          ctx.beginPath();
+          for (let t = 0; t <= 6; t++) { const a = a0 + (a1 - a0) * t / 6; ctx.lineTo(s.cx + Math.cos(a) * R, y + Math.sin(a) * R * tilt); }
+          for (let t = 6; t >= 0; t--) { const a = a0 + (a1 - a0) * t / 6; ctx.lineTo(s.cx + Math.cos(a) * pw, y + Math.sin(a) * pw * tilt); }
+          ctx.closePath(); ctx.fillStyle = col; ctx.fill();
+          if (front) { // canto
+            ctx.beginPath(); for (let t = 0; t <= 6; t++) { const a = a0 + (a1 - a0) * t / 6; ctx.lineTo(s.cx + Math.cos(a) * R, y + Math.sin(a) * R * tilt); } for (let t = 6; t >= 0; t--) { const a = a0 + (a1 - a0) * t / 6; ctx.lineTo(s.cx + Math.cos(a) * R, y + Math.sin(a) * R * tilt + th); }
+            ctx.closePath(); ctx.fillStyle = v === 2 ? '#c92a2a' : v === 3 ? '#e67700' : `hsl(${fl.hue},60%,42%)`; ctx.fill();
+          }
+          if (v === 2 && front) Arcade.emoji(ctx, '⚠️', s.cx + Math.cos(mid) * R * 0.62, y + Math.sin(mid) * R * tilt * 0.62, R * 0.12);
+        }
+      };
+      const lo = Math.max(0, Math.floor((s.cam - 100) / s.F)), hi = Math.min(s.floors.length - 1, lo + 10);
+      for (let i = hi; i >= lo; i--) drawFloor(s.floors[i], i, false);
+      for (let i = hi; i >= lo; i--) {
+        drawFloor(s.floors[i], i, true);
+        for (const sp of s.splats) if (sp.i === i && !s.floors[i].broken) { const a = sp.a + s.th; ctx.fillStyle = 'rgba(255,255,255,.25)'; ctx.beginPath(); ctx.ellipse(s.cx + Math.cos(a) * R * 0.6, Y(i * s.F) + Math.sin(a) * R * tilt * 0.6, 8, 3, 0, 0, TAU); ctx.fill(); }
+      }
+      // bola (delante, en ángulo π/2)
+      if (!s.dead) {
+        const bx = s.cx, byy = Y(s.by) + R * tilt * 0.6 - 12, sq = s.vy < 0 && s.vy > -560 * 0.9 ? 1 : 1 + clamp(-s.vy / 3000, -0.15, 0.15);
+        if (s.fall >= 3) g.burst(bx, byy, { n: 1, color: ['#ff922b', '#ffd43b'], speed: 40, size: 4, life: 0.3, grav: -100 });
+        Arcade.emoji(ctx, s.fall >= 3 ? '🔥' : s.ball, bx, byy, 26, { sy: sq });
+      }
+      Arcade.txt(ctx, 'Pisos: ' + Math.min(s.floors.length - 1, Math.max(0, Math.floor(s.by / s.F))) + '/' + (s.floors.length - 1), W / 2, g.top + 18, 15, '#fff', 'center', 900, 'rgba(0,0,0,.4)');
+      const pr = clamp(s.by / ((s.floors.length - 1) * s.F), 0, 1);
+      ctx.fillStyle = 'rgba(255,255,255,.2)'; Arcade.rr(ctx, W / 2 - 100, g.top + 32, 200, 6, 3); ctx.fill();
+      ctx.fillStyle = '#ffd43b'; Arcade.rr(ctx, W / 2 - 100, g.top + 32, 200 * pr, 6, 3); ctx.fill();
+    },
+  });
+})();
+</script>
+</body>
+</html>

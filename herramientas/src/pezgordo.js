@@ -1,0 +1,69 @@
+// Pez gordo|#0b3c5d
+(function () {
+  const { ri, rand, clamp, pick } = Arcade;
+  const FISH = ['🦐', '🐟', '🐠', '🐡', '🦑', '🐙', '🐬', '🦈', '🐋'];
+
+  function spawn(g, far) {
+    const s = g.s, a = rand(0, 6.28), d = far ? rand(1.1, 1.6) * s.view : rand(0.3, 1.4) * s.view;
+    const k = Math.random() < 0.62 - g.lv * 0.01 ? rand(0.3, 0.92) : rand(1.1, 2.6);
+    const r = s.r * k, idx = clamp(Math.floor(Math.log2(r / 6) * 1.6), 0, FISH.length - 1);
+    const sp = rand(20, 60) * Math.sqrt(r / 10), ang = rand(0, 6.28);
+    s.fish.push({ x: s.x + Math.cos(a) * d, y: s.y + Math.sin(a) * d, r, e: FISH[idx], vx: Math.cos(ang) * sp, vy: Math.sin(ang) * sp, hunter: k > 1.4 && Math.random() < 0.25 + g.lv * 0.02 });
+  }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Come peces pequeños, huye de los grandes', deco: ['🐟', '🐠', '🦈', '🐋', '🫧', '🌊'], font: 'round', bg: ['#1864ab', '#0b3c5d'],
+    music: { mode: 'dorian', bpm: 96, wave: 'sine', style: 'chill', root: 57 }, voice: { wave: 'sine', mul: 1.2, echo: 0.4 },
+    ambient: { e: ['🫧'], n: 10, vy: -25, sway: 15, alpha: 0.35, size: [8, 16] },
+    en: { title: 'Big Fish', tag: 'Eat small fish, flee from big ones', help: '<b>Drag</b> your finger anywhere to swim. Eat the fish that are <b>smaller</b> than you to grow, and run away from the <b>bigger</b> ones: if they catch you, you lose a life. Some big fish hunt you down! Reach the size each level asks for.', tvHelp: 'Arrows to swim.', dict: { 'Tamaño: ': 'Size: ' } },
+    tvHelp: 'Flechas para nadar.',
+    id: 'pezgordo', title: 'Pez gordo', emoji: '🐠', color: '#22b8cf', origin: 'Biggification / Hungry Hero / Feeding Frenzy',
+    help: '<b>Arrastra</b> el dedo en cualquier sitio para nadar. Cómete los peces <b>más pequeños</b> que tú para crecer y huye de los <b>más grandes</b>: si te pillan, pierdes una vida. ¡Algunos grandes te persiguen! Alcanza el tamaño que pide cada nivel.',
+    lives: 3, levels: 0, cap: 25,
+    setup(g) { const L = g.lv; g.s = { x: 0, y: 0, r: 12, r0: 12, fish: [], need: 12 * (2.2 + Math.min(L, 25) * 0.18), face: 1, inv: 1.5 }; const s = g.s; s.view = Math.max(g.W, g.H) * 0.6; for (let i = 0; i < 16; i++) spawn(g, false); },
+    down(g, p) { g.s.joy = { x: p.x, y: p.y, dx: 0, dy: 0 }; },
+    move(g, p) { const s = g.s; if (!s.joy) return; let dx = p.x - s.joy.x, dy = p.y - s.joy.y; const d = Math.hypot(dx, dy); if (d > 50) { s.joy.x = p.x - dx / d * 50; s.joy.y = p.y - dy / d * 50; dx = dx / d * 50; dy = dy / d * 50; } s.joy.dx = dx / 50; s.joy.dy = dy / 50; },
+    up(g) { g.s.joy = null; },
+    key(g, k, d) { const s = g.s; s.keys = s.keys || {}; s.keys[k] = d; },
+    update(g, dt) {
+      const s = g.s; if (s.done) return;
+      s.inv = Math.max(0, s.inv - dt);
+      let mx = 0, my = 0; if (s.joy) { mx = s.joy.dx; my = s.joy.dy; } if (s.keys) { if (s.keys.ArrowLeft) mx = -1; if (s.keys.ArrowRight) mx = 1; if (s.keys.ArrowUp) my = -1; if (s.keys.ArrowDown) my = 1; }
+      const sp = 150 * Math.pow(s.r / 12, 0.35); s.vx = (s.vx || 0) + (mx * sp - (s.vx || 0)) * Math.min(1, dt * 5); s.vy = (s.vy || 0) + (my * sp - (s.vy || 0)) * Math.min(1, dt * 5);
+      s.x += s.vx * dt; s.y += s.vy * dt; if (Math.abs(mx) > 0.1) s.face = mx > 0 ? 1 : -1;
+      s.view = Math.max(g.W, g.H) * 0.6 * (s.r / 12) ** 0.6;
+      for (const f of s.fish) {
+        if (f.hunter && f.r > s.r) { const dx = s.x - f.x, dy = s.y - f.y, d = Math.hypot(dx, dy) || 1; if (d < s.view * 0.8) { f.vx += (dx / d * 55 - f.vx) * dt; f.vy += (dy / d * 55 - f.vy) * dt; } }
+        f.x += f.vx * dt; f.y += f.vy * dt;
+        const d = Math.hypot(f.x - s.x, f.y - s.y);
+        if (d < (f.r + s.r) * 0.75) {
+          if (f.r < s.r * 0.95) { f.dead = true; s.r = Math.sqrt(s.r * s.r + f.r * f.r * 0.45); Arcade.tone(500 + Math.min(600, s.r * 5), 0.05, 'triangle', 0.06); g.addScore(Math.round(f.r) * g.lv); g.burst(g.W / 2 + (f.x - s.x) * s.z, g.H / 2 + (f.y - s.y) * s.z, { n: 5, emoji: '🫧', size: 10, speed: 80 }); }
+          else if (f.r > s.r * 1.05 && !s.inv) { s.inv = 2; s.r = Math.max(s.r0, s.r * 0.8); Arcade.sfx.hit(); g.shake(0.25, 6); g.flash('#ff6b6b', 0.2); if (!g.die()) return; }
+        }
+        if (d > s.view * 2.2) f.dead = true;
+      }
+      s.fish = s.fish.filter((f) => !f.dead);
+      while (s.fish.length < 16 + Math.min(g.lv, 10)) spawn(g, true);
+      if (s.r >= s.need) { s.done = true; Arcade.sfx.win(); g.confetti(60); setTimeout(() => { if (g.state === 'play') g.win(); }, 600); }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      const bg = ctx.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, '#1971c2'); bg.addColorStop(1, '#0b2a40');
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      if (!s.fish) return;
+      const z = s.z = clamp(28 / s.r, 0.25, 2.3), cx = W / 2, cy = (g.top + g.bot) / 2;
+      ctx.fillStyle = 'rgba(255,255,255,.04)'; for (let i = 0; i < 30; i++) { const px = ((i * 137 - s.x * z * 0.5) % W + W) % W, py = ((i * 89 - s.y * z * 0.5) % H + H) % H; ctx.beginPath(); ctx.arc(px, py, 2 + (i % 3), 0, 6.3); ctx.fill(); }
+      for (const f of s.fish) {
+        const x = cx + (f.x - s.x) * z, y = cy + (f.y - s.y) * z; if (x < -100 || y < -100 || x > W + 100 || y > H + 100) continue;
+        const big = f.r > s.r * 1.05;
+        if (big) { ctx.strokeStyle = 'rgba(255,107,107,.6)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x, y, f.r * z * 1.05, 0, 6.3); ctx.stroke(); }
+        Arcade.emoji(ctx, f.e, x, y, f.r * 2.2 * z, { flip: f.vx > 0 });
+      }
+      Arcade.emoji(ctx, s.r < 30 ? '🐠' : s.r < 60 ? '🐡' : s.r < 120 ? '🦈' : '🐋', cx, cy, s.r * 2.3 * z, { flip: s.face > 0, alpha: s.inv && Math.floor(g.rt * 10) % 2 ? 0.4 : 1 });
+      if (s.joy) { ctx.strokeStyle = 'rgba(255,255,255,.3)'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(s.joy.x, s.joy.y, 50, 0, 6.3); ctx.stroke(); ctx.fillStyle = 'rgba(255,255,255,.4)'; ctx.beginPath(); ctx.arc(s.joy.x + s.joy.dx * 50, s.joy.y + s.joy.dy * 50, 18, 0, 6.3); ctx.fill(); }
+      const pr = clamp((s.r - s.r0) / (s.need - s.r0), 0, 1), bw = Math.min(W - 60, 300);
+      ctx.fillStyle = 'rgba(255,255,255,.15)'; Arcade.rr(ctx, (W - bw) / 2, g.top + 10, bw, 10, 5); ctx.fill(); ctx.fillStyle = '#3bc9db'; Arcade.rr(ctx, (W - bw) / 2, g.top + 10, bw * pr, 10, 5); ctx.fill();
+      Arcade.txt(ctx, 'Tamaño: ' + Math.round(pr * 100) + '%', W / 2, g.top + 32, 14, '#fff', 'center', 900);
+    },
+  });
+})();

@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Cuadra · Arcade Perdido</title>
+<meta name="theme-color" content="#0c0c1e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css">
+</head>
+<body class="game">
+<script src="config.js"></script>
+<script src="common.js"></script>
+<script>
+(function () {
+  const { ri, pick, clamp } = Arcade;
+  const COLS = 8, ROWS = 15;
+  const PAL = ['#ff6b6b', '#ffd43b', '#69db7c', '#4dabf7', '#da77f2', '#ff922b', '#3bc9db'];
+
+  function geo(g) {
+    const s = g.s, availW = g.W - 24, availH = g.bot - g.top - 30;
+    s.cs = Math.min(availW / COLS, availH / (ROWS + 1.6));
+    s.ox = (g.W - s.cs * COLS) / 2; s.oy = g.top + 14 + (availH - s.cs * (ROWS + 1.6)) / 2;
+  }
+  function spawn(g) {
+    const s = g.s, w = ri(2, Math.min(4, 2 + Math.floor(g.level / 2))), h = ri(2, 3);
+    const d = []; for (let i = 0; i < w; i++) d.push(ri(1, h));
+    if (Math.min(...d) === h) d[ri(0, w - 1)] = ri(1, h - 1);
+    for (let t = 0; t < 12; t++) {
+      const x = ri(0, COLS - w);
+      let ok = true;
+      for (let i = 0; i < w && ok; i++) for (let j = 0; j < h; j++) if (s.grid[j][x + i]) ok = false;
+      if (!ok) continue;
+      const col = PAL[s.pid++ % PAL.length];
+      for (let i = 0; i < w; i++) for (let j = 0; j < d[i]; j++) s.grid[j][x + i] = { col, pop: 0 };
+      return;
+    }
+  }
+  function scroll(g) {
+    const s = g.s;
+    if (s.grid[ROWS - 1].some(Boolean)) {
+      Arcade.sfx.boom(); g.shake(0.5, 12); g.lives = 0; g.state = 'dying'; setTimeout(g.over, 900); return;
+    }
+    s.grid.pop(); s.grid.unshift(new Array(COLS).fill(null));
+    s.since++;
+    if (s.since >= s.gap) { s.since = 0; s.gap = ri(3, 5); spawn(g); }
+  }
+  function fire(g, c) {
+    const s = g.s; if (s.cool > 0) return;
+    s.cool = 0.07; s.sc = c;
+    let r = -1; for (let k = ROWS - 1; k >= 0; k--) if (s.grid[k][c]) { r = k; break; }
+    const shipY = s.oy + (ROWS + 0.8) * s.cs;
+    if (r < 0 || r + 1 >= ROWS) { s.trail = { c, y: s.oy, t: 0.12 }; Arcade.tone(900, 0.03, 'square', 0.03); return; }
+    const nr = r + 1;
+    s.grid[nr][c] = { col: s.grid[r][c].col, pop: 1 };
+    s.trail = { c, y: s.oy + (nr + 1) * s.cs, t: 0.12 };
+    Arcade.tone(700, 0.04, 'square', 0.05, 200);
+    check(g, nr, c);
+  }
+  function check(g, r0, c0) {
+    const s = g.s, seen = new Set(), st = [[r0, c0]], cells = [];
+    while (st.length) {
+      const [r, c] = st.pop(), k = r * 100 + c;
+      if (seen.has(k) || r < 0 || r >= ROWS || c < 0 || c >= COLS || !s.grid[r][c]) continue;
+      seen.add(k); cells.push([r, c]);
+      st.push([r + 1, c], [r - 1, c], [r, c + 1], [r, c - 1]);
+    }
+    let r1 = 99, r2 = -1, c1 = 99, c2 = -1;
+    for (const [r, c] of cells) { r1 = Math.min(r1, r); r2 = Math.max(r2, r); c1 = Math.min(c1, c); c2 = Math.max(c2, c); }
+    const w = c2 - c1 + 1, h = r2 - r1 + 1;
+    if (w >= 2 && h >= 2 && cells.length === w * h) {
+      for (const [r, c] of cells) { g.burst(s.ox + (c + 0.5) * s.cs, s.oy + (r + 0.5) * s.cs, { n: 4, color: s.grid[r][c].col, speed: 160, size: 3 }); s.grid[r][c] = null; }
+      const pts = w * h * 10 * g.level;
+      g.addScore(pts, s.ox + (c1 + w / 2) * s.cs, s.oy + (r1 + h / 2) * s.cs);
+      if (w * h >= 9) g.float('¡Grande!', s.ox + (c1 + w / 2) * s.cs, s.oy + r1 * s.cs - 10, '#ffd43b', 22);
+      Arcade.sfx.coin(); Arcade.buzz(25);
+      s.done++;
+      if (s.done % 10 === 0) { g.level++; g.hud(); g.message('Nivel ' + g.level, 1.2); Arcade.sfx.up(); }
+    }
+  }
+  const colAt = (s, x) => clamp(Math.floor((x - s.ox) / s.cs), 0, COLS - 1);
+
+  Arcade.game({
+    /*THEME*/ tag: "Tetris al revés en el espacio", deco: ["🚀", "🟦", "🟨", "✨", "🪐", "🟥"], font: "mono", bg: ["#16163a", "#0c0c1e"], music: {"mode": "minor", "bpm": 138, "wave": "square", "style": "drive", "root": 57}, voice: {"wave": "square", "mul": 1.05, "echo": 0.2}, ambient: {"e": ["⭐", "✨"], "n": 10, "vy": 18, "sway": 0, "twinkle": 1, "alpha": 0.3, "size": [6, 12]},
+    /*EN*/ en: {"title": "Squared", "tag": "Reverse Tetris in space", "help": "The pieces creep down slowly. <b>Tap a column</b> to shoot a block upwards: it sticks under whatever is there. When a shape forms a <b>perfect rectangle</b>, it disappears. Drag to move the ship. If a block reaches the bottom, it's over.", "tvHelp": "◀ ▶ move the ship · OK shoot.", "dict": {"¡Grande!": "Big one!"}},
+    /*TV*/ tvHelp: "◀ ▶ mover la nave · OK disparar.",
+    id: 'cuadra', title: 'Cuadra', emoji: '🟦', color: '#4dabf7', origin: 'Quarth (Konami, 1989)',
+    help: 'Las piezas bajan poco a poco. <b>Toca una columna</b> para disparar un bloque hacia arriba: se pega debajo de lo que haya. Cuando una figura forma un <b>rectángulo perfecto</b>, desaparece. Arrastra para mover la nave. Si un bloque llega abajo, se acaba.',
+    lives: 0, levels: null,
+    setup(g) {
+      g.s = { grid: [], pid: 0, since: 0, gap: 3, sc: 3, cool: 0, done: 0, scT: 1.5 };
+      const s = g.s;
+      for (let r = 0; r < ROWS; r++) s.grid.push(new Array(COLS).fill(null));
+      geo(g);
+      spawn(g); for (let i = 0; i < 4; i++) { s.grid.pop(); s.grid.unshift(new Array(COLS).fill(null)); } spawn(g);
+    },
+    layout(g) { if (g.s.grid) geo(g); },
+    tap(g, p) { fire(g, colAt(g.s, p.x)); },
+    move(g, p) { g.s.sc = colAt(g.s, p.x); },
+    up(g, p) { if (Math.hypot(p.x - p.sx, p.y - p.sy) >= 16) fire(g, colAt(g.s, p.x)); },
+    key(g, k, d) {
+      if (!d) return; const s = g.s;
+      if (k === 'ArrowLeft') s.sc = Math.max(0, s.sc - 1); else if (k === 'ArrowRight') s.sc = Math.min(COLS - 1, s.sc + 1);
+      else if (k === ' ' || k === 'ArrowUp') fire(g, s.sc);
+    },
+    update(g, dt) {
+      const s = g.s;
+      s.cool -= dt;
+      if (s.trail) { s.trail.t -= dt; if (s.trail.t <= 0) s.trail = null; }
+      for (const row of s.grid) for (const b of row) if (b && b.pop) b.pop = Math.max(0, b.pop - dt * 5);
+      s.scT -= dt;
+      if (s.scT <= 0) { s.scT = Math.max(0.5, 1.6 - g.level * 0.09); scroll(g); }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      ctx.fillStyle = '#0c0c1e'; ctx.fillRect(0, 0, W, H);
+      for (let i = 0; i < 40; i++) { ctx.fillStyle = 'rgba(255,255,255,' + (0.2 + (i % 3) * 0.2) + ')'; ctx.fillRect((i * 97) % W, ((i * 53) + g.t * (10 + i % 4 * 10)) % H, 2, 2); }
+      g.scenery(['🪐','🌍','☄️','🛰️'], 4, { alpha: 0.35, size: [30, 50], bob: 4 }); /*SC*/
+      if (!s.grid) return;
+      const cs = s.cs;
+      ctx.fillStyle = 'rgba(255,255,255,.04)'; ctx.fillRect(s.ox, s.oy, cs * COLS, cs * ROWS);
+      ctx.fillStyle = 'rgba(77,171,247,.08)'; ctx.fillRect(s.ox + s.sc * cs, s.oy, cs, cs * ROWS);
+      ctx.fillStyle = 'rgba(255,60,60,.18)'; ctx.fillRect(s.ox, s.oy + (ROWS - 2) * cs, cs * COLS, cs * 2);
+      for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
+        const b = s.grid[r][c]; if (!b) continue;
+        const k = 1 + b.pop * 0.2, x = s.ox + c * cs + cs / 2, y = s.oy + r * cs + cs / 2, z = (cs - 3) * k;
+        ctx.fillStyle = b.col; Arcade.rr(ctx, x - z / 2, y - z / 2, z, z, cs * 0.18); ctx.fill();
+        ctx.fillStyle = 'rgba(255,255,255,.35)'; Arcade.rr(ctx, x - z / 2 + 3, y - z / 2 + 3, z - 6, z * 0.25, cs * 0.1); ctx.fill();
+        ctx.fillStyle = 'rgba(0,0,0,.18)'; ctx.fillRect(x - z / 2 + 3, y + z / 2 - 5, z - 6, 3);
+      }
+      const shipY = s.oy + (ROWS + 0.8) * cs, sx = s.ox + (s.sc + 0.5) * cs;
+      if (s.trail) {
+        const tx = s.ox + (s.trail.c + 0.5) * cs;
+        ctx.strokeStyle = 'rgba(255,255,255,' + (s.trail.t * 6) + ')'; ctx.lineWidth = cs * 0.3;
+        ctx.beginPath(); ctx.moveTo(tx, shipY - cs * 0.4); ctx.lineTo(tx, s.trail.y); ctx.stroke();
+      }
+      Arcade.emoji(ctx, '🚀', sx, shipY, cs * 0.95, { rot: -Math.PI / 4 });
+    },
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,109 @@
+// Saltarín|#5c7cfa
+(function () {
+  const { ri, rand, clamp, pick } = Arcade;
+  const HEROES = ['🧑‍🚀', '🦊', '🐸', '🤠', '🧝', '🐵'];
+  const TW = 18, TH = 13; // tiles de la pantalla lógica
+
+  function genLevel(L) {
+    // mapa: '#' suelo/pared, '^' pinchos, 'o' moneda, 'E' enemigo, 'D' puerta, 'P' jugador, '=' plataforma
+    for (let attempt = 0; attempt < 50; attempt++) {
+      const W = 40 + Math.min(L, 20) * 6, H = TH, m = [...Array(H)].map(() => new Array(W).fill('.'));
+      for (let x = 0; x < W; x++) { m[H - 1][x] = '#'; m[0][x] = '#'; }
+      for (let y = 0; y < H; y++) { m[y][0] = '#'; m[y][W - 1] = '#'; }
+      let gy = H - 2, x = 1;
+      m[gy][2] = 'P';
+      x = 5;
+      while (x < W - 6) {
+        const r = Math.random();
+        if (r < 0.25 && L >= 1) { // escalón
+          const ny = clamp(gy + (Math.random() < 0.6 ? -1 : 1) * ri(1, 2), 5, H - 2); for (let k = x; k < W - 1; k++) for (let y = ny + 1; y < H - 1; y++) m[y][k] = '#'; for (let k = x; k < W - 1; k++) for (let y = 1; y <= ny; y++) if (m[y][k] === '#' && y > 0) m[y][k] = '.'; gy = ny; x += ri(3, 6);
+        } else if (r < 0.45) { // hueco
+          const w = ri(2, Math.min(3, 2 + Math.floor(L / 5))); for (let k = x; k < x + w; k++) for (let y = gy + 1; y < H; y++) m[y][k] = y === H - 1 ? '^' : '.'; x += w + ri(3, 5);
+        } else if (r < 0.62 && L >= 2) { // pinchos sueltos
+          m[gy][x] = '^'; if (L >= 6 && Math.random() < 0.4) m[gy][x + 1] = '^'; x += ri(4, 6);
+        } else if (r < 0.78) { // plataforma flotante con monedas
+          const py = gy - 3, w = ri(3, 5); if (py > 2) { for (let k = x; k < x + w && k < W - 2; k++) { m[py][k] = '='; m[py - 1][k] = 'o'; } } x += w + 2;
+        } else if (r < 0.9 && L >= 3) { m[gy][x] = 'E'; x += ri(4, 7); }
+        else { m[gy][x] = 'o'; m[gy][x + 1] = 'o'; x += 3; }
+      }
+      m[gy][W - 3] = 'D';
+      return m;
+    }
+  }
+  const solidAt = (s, tx, ty) => { if (ty < 0 || ty >= s.m.length || tx < 0 || tx >= s.m[0].length) return true; const c = s.m[ty][tx]; return c === '#' || c === '='; };
+  function geo(g) { const s = g.s; s.ts = Math.min((g.bot - g.top - 10) / TH, g.W / 10); s.oy = g.top + 5 + (g.bot - g.top - 10 - s.ts * TH) / 2; }
+  function respawn(g) { const s = g.s; s.p = { x: s.sx + 0.5, y: s.sy + 0.5, vx: 1, vy: 0, dir: 1, ground: false, dead: 0 }; s.cam = Math.max(0, s.p.x - 5); }
+  function jump(g) { const s = g.s, p = s.p; if (p.dead || s.won) return; if (p.ground || p.coyote > 0) { p.vy = -14.2; p.ground = false; p.coyote = 0; Arcade.tone(520, 0.06, 'square', 0.05, 300); } else s.buffer = 0.12; }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Corre solo, tú solo saltas', deco: ['🦊', '🪙', '🚪', '🐌', '🧱', '⭐'], font: 'impact', bg: ['#748ffc', '#5c7cfa'],
+    music: { mode: 'major', bpm: 132, wave: 'square', style: 'arcade', root: 60 }, voice: { wave: 'square', mul: 1, echo: 0.2 },
+    en: { title: 'Jumper', tag: 'It runs by itself, you just jump', help: 'Your hero runs on their own and turns around when they hit a wall. <b>Tap</b> to jump: hold it a little longer to jump higher. Avoid the spikes 🔺 and the holes, jump on the 🐌 to squash them and grab the 🪙 coins. Reach the 🚪 door at the end of each level.', tvHelp: 'OK to jump.', dict: { 'Monedas: ': 'Coins: ' } },
+    tvHelp: 'OK para saltar.',
+    id: 'saltarin', title: 'Saltarín', emoji: '🦊', color: '#ffd43b', origin: 'Platformer / Super Mario Bros / Jet Set Willy / Mike Dangers / Lep\'s World',
+    help: 'Tu héroe corre solo y se da la vuelta al chocar con una pared. <b>Toca</b> para saltar: mantén un poco más para saltar más alto. Evita los pinchos 🔺 y los agujeros, salta encima de los 🐌 para aplastarlos y coge las 🪙 monedas. Llega a la puerta 🚪 del final de cada nivel.',
+    lives: 3, levels: 0, cap: 20,
+    setup(g) {
+      const m = genLevel(g.lv); g.s = { m, coins: 0, total: 0, hero: HEROES[(g.level - 1) % HEROES.length], ens: [] };
+      const s = g.s; geo(g);
+      for (let y = 0; y < m.length; y++) for (let x = 0; x < m[0].length; x++) { const c = m[y][x]; if (c === 'P') { s.sx = x; s.sy = y; m[y][x] = '.'; } if (c === 'o') s.total++; if (c === 'E') { s.ens.push({ x: x + 0.5, y: y + 0.5, dir: -1 }); m[y][x] = '.'; } }
+      respawn(g);
+    },
+    layout(g) { if (g.s.m) geo(g); },
+    down(g) { g.s.hold = true; jump(g); },
+    up(g) { g.s.hold = false; },
+    key(g, k, d) { if (k === ' ' || k === 'ArrowUp') { g.s.hold = d; if (d) jump(g); } },
+    update(g, dt) {
+      const s = g.s, p = s.p; if (s.won) return;
+      if (p.dead) { p.dead -= dt; p.vy += 40 * dt; p.y += p.vy * dt; if (p.dead <= 0) { if (g.die()) respawn(g); } return; }
+      const sp = 5.2 + Math.min(g.lv, 20) * 0.08;
+      const N = 4, h = dt / N;
+      for (let it = 0; it < N; it++) {
+        p.vy += (s.hold && p.vy < 0 ? 26 : 48) * h; p.vy = Math.min(p.vy, 18);
+        // horizontal
+        let nx = p.x + p.dir * sp * h; const hw = 0.32, hh = 0.42;
+        if (solidAt(s, Math.floor(nx + p.dir * hw), Math.floor(p.y - hh + 0.05)) || solidAt(s, Math.floor(nx + p.dir * hw), Math.floor(p.y + hh - 0.05))) { p.dir *= -1; nx = p.x; }
+        p.x = nx;
+        // vertical
+        let ny = p.y + p.vy * h; p.ground = false;
+        if (p.vy > 0) { if (solidAt(s, Math.floor(p.x - hw + 0.05), Math.floor(ny + hh)) || solidAt(s, Math.floor(p.x + hw - 0.05), Math.floor(ny + hh))) { ny = Math.floor(ny + hh) - hh; p.vy = 0; p.ground = true; p.coyote = 0.08; } }
+        else if (p.vy < 0) { const ty = Math.floor(ny - hh); if ((solidAt(s, Math.floor(p.x - hw + 0.05), ty) && s.m[ty][Math.floor(p.x - hw + 0.05)] === '#') || (solidAt(s, Math.floor(p.x + hw - 0.05), ty) && s.m[ty][Math.floor(p.x + hw - 0.05)] === '#')) { ny = ty + 1 + hh; p.vy = 0; } }
+        p.y = ny;
+      }
+      if (!p.ground) p.coyote = Math.max(0, (p.coyote || 0) - dt);
+      if (s.buffer > 0) { s.buffer -= dt; if (p.ground) { s.buffer = 0; jump(g); } }
+      const tx = Math.floor(p.x), ty = Math.floor(p.y), c = s.m[ty] && s.m[ty][tx];
+      if (c === 'o') { s.m[ty][tx] = '.'; s.coins++; Arcade.sfx.coin(); g.addScore(10 * g.lv); }
+      if (c === '^' || p.y > s.m.length) { p.dead = 1; p.vy = -10; Arcade.sfx.hit(); g.shake(0.2, 5); return; }
+      if (c === 'D') { s.won = true; Arcade.sfx.win(); g.confetti(60); g.addScore((50 + s.coins * 5) * g.lv, g.W / 2, g.H / 2); setTimeout(() => { if (g.state === 'play') g.win(s.coins >= s.total * 0.8 ? 3 : s.coins >= s.total * 0.4 ? 2 : 1); }, 700); return; }
+      for (const e of s.ens) {
+        if (e.dead) continue;
+        const nx = e.x + e.dir * 1.6 * dt; if (solidAt(s, Math.floor(nx + e.dir * 0.4), Math.floor(e.y)) || !solidAt(s, Math.floor(nx + e.dir * 0.4), Math.floor(e.y) + 1)) e.dir *= -1; else e.x = nx;
+        if (Math.abs(e.x - p.x) < 0.7 && Math.abs(e.y - p.y) < 0.8) { if (p.vy > 0 && p.y < e.y - 0.2) { e.dead = true; p.vy = -11; Arcade.sfx.pop(); g.addScore(30 * g.lv); } else { p.dead = 1; p.vy = -10; Arcade.sfx.hit(); return; } }
+      }
+      s.cam += (clamp(p.x - g.W / s.ts * 0.4, 0, s.m[0].length - g.W / s.ts) - s.cam) * Math.min(1, dt * 6);
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      const bg = ctx.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, '#748ffc'); bg.addColorStop(1, '#d0ebff');
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      if (!s.m) return;
+      const ts = s.ts, ox = -s.cam * ts, oy = s.oy;
+      for (let i = 0; i < 6; i++) Arcade.emoji(ctx, '☁️', ((i * 220 - s.cam * ts * 0.3) % (W + 200) + W + 200) % (W + 200) - 100, g.top + 30 + (i % 3) * 30, 60, { alpha: 0.8 });
+      ctx.fillStyle = 'rgba(64,192,87,.35)'; ctx.beginPath(); ctx.moveTo(0, H); for (let x = 0; x <= W; x += 20) ctx.lineTo(x, oy + ts * (TH - 4) - Math.abs(Math.sin((x + s.cam * ts * 0.5) / 140)) * ts * 3); ctx.lineTo(W, H); ctx.fill();
+      const x0 = Math.max(0, Math.floor(s.cam) - 1), x1 = Math.min(s.m[0].length, x0 + Math.ceil(W / ts) + 3);
+      for (let y = 0; y < s.m.length; y++) for (let x = x0; x < x1; x++) {
+        const c = s.m[y][x], px = ox + x * ts, py = oy + y * ts;
+        if (c === '#') { const top = y > 0 && s.m[y - 1][x] !== '#'; ctx.fillStyle = '#8d5524'; ctx.fillRect(px, py, ts + 0.5, ts + 0.5); if (top) { ctx.fillStyle = '#51cf66'; ctx.fillRect(px, py, ts + 0.5, ts * 0.28); } ctx.fillStyle = 'rgba(0,0,0,.08)'; ctx.fillRect(px + ts * 0.2, py + ts * 0.5, ts * 0.2, ts * 0.15); }
+        else if (c === '=') { ctx.fillStyle = '#e8590c'; Arcade.rr(ctx, px + 1, py, ts - 2, ts * 0.45, 4); ctx.fill(); ctx.fillStyle = '#ffa94d'; ctx.fillRect(px + 2, py + 2, ts - 4, ts * 0.12); }
+        else if (c === '^') { ctx.fillStyle = '#adb5bd'; for (let k = 0; k < 3; k++) { ctx.beginPath(); ctx.moveTo(px + k * ts / 3, py + ts); ctx.lineTo(px + (k + 0.5) * ts / 3, py + ts * 0.35); ctx.lineTo(px + (k + 1) * ts / 3, py + ts); ctx.fill(); } }
+        else if (c === 'o') Arcade.emoji(ctx, '🪙', px + ts / 2, py + ts / 2 + Math.sin(g.rt * 4 + x) * 2, ts * 0.6, { sx: Math.abs(Math.cos(g.rt * 3 + x)) * 0.7 + 0.3 });
+        else if (c === 'D') Arcade.emoji(ctx, '🚪', px + ts / 2, py + ts * 0.4, ts * 1.3);
+      }
+      for (const e of s.ens) if (!e.dead) Arcade.emoji(ctx, '🐌', ox + e.x * ts, oy + e.y * ts, ts * 0.85, { flip: e.dir > 0 });
+      const p = s.p;
+      Arcade.emoji(ctx, s.hero, ox + p.x * ts, oy + p.y * ts - (p.ground ? Math.abs(Math.sin(g.rt * 14)) * ts * 0.06 : 0), ts * 0.95, { flip: p.dir > 0, rot: p.dead ? g.rt * 10 : 0 });
+      Arcade.txt(ctx, 'Monedas: ' + s.coins + '/' + s.total, W / 2, g.top + 20, 15, '#fff', 'center', 900, 'rgba(0,0,0,.4)');
+    },
+  });
+})();

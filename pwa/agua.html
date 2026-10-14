@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Agua · Arcade Perdido</title>
+<meta name="theme-color" content="#4a2f1b">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css">
+</head>
+<body class="game">
+<script src="config.js"></script>
+<script src="common.js"></script>
+<script>
+(function () {
+  const { ri, rand, clamp } = Arcade;
+  const C = 30, R = 44; // celdas
+  const EMPTY = 0, DIRT = 1, ROCK = 2;
+
+  function gen(L) {
+    for (let at = 0; at < 60; at++) {
+      const b = new Uint8Array(C * R).fill(DIRT);
+      const wx = ri(5, C - 6), wy = ri(3, 7), drx = ri(3, C - 4);
+      // bolsa de agua arriba
+      for (let y = wy - 2; y <= wy + 2; y++) for (let x = wx - 4; x <= wx + 4; x++) if (x >= 0 && x < C && y >= 0) b[y * C + x] = EMPTY;
+      // rocas
+      const nr = 3 + Math.min(L, 15);
+      for (let k = 0; k < nr; k++) { const horiz = Math.random() < 0.6, len = ri(4, 10), x0 = ri(0, C - 1), y0 = ri(wy + 5, R - 6); for (let i = 0; i < len; i++) { const x = horiz ? x0 + i : x0, y = horiz ? y0 : y0 + i; if (x < C && y < R - 2) b[y * C + x] = ROCK; } }
+      // marco de roca en el fondo menos el desagüe
+      for (let x = 0; x < C; x++) if (Math.abs(x - drx) > 1) b[(R - 1) * C + x] = ROCK; else b[(R - 1) * C + x] = EMPTY;
+      // ¿hay camino sin roca?
+      const seen = new Uint8Array(C * R), st = [wy * C + wx]; seen[st[0]] = 1; let ok = false;
+      while (st.length) { const i = st.pop(), x = i % C, y = (i / C) | 0; if (y === R - 1 && Math.abs(x - drx) <= 1) { ok = true; break; } for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const nx = x + dx, ny = y + dy; if (nx < 0 || ny < 0 || nx >= C || ny >= R) continue; const j = ny * C + nx; if (!seen[j] && b[j] !== ROCK) { seen[j] = 1; st.push(j); } } }
+      if (!ok) continue;
+      // patos en celdas alcanzables
+      const reach = []; for (let i = 0; i < C * R; i++) if (seen[i] && ((i / C) | 0) > wy + 3 && ((i / C) | 0) < R - 3) reach.push(i);
+      const ducks = []; for (let k = 0; k < 3 && reach.length; k++) { const i = reach.splice(ri(0, reach.length - 1), 1)[0]; ducks.push({ x: i % C, y: (i / C) | 0, got: false }); for (let y = -1; y <= 0; y++) for (let x = -1; x <= 1; x++) { const j = (((i / C) | 0) + y) * C + (i % C) + x; if (j >= 0 && j < C * R && b[j] !== ROCK) b[j] = EMPTY; } }
+      return { b, wx, wy, drx, ducks };
+    }
+    return gen(Math.max(1, L - 2));
+  }
+  function geo(g) { const s = g.s, Ha = g.bot - g.top - 60; s.cs = Math.min((g.W - 10) / C, Ha / R); s.ox = (g.W - s.cs * C) / 2; s.oy = g.top + 50 + (Ha - s.cs * R) / 2; s.btn = { x: g.W - 70, y: g.top + 6, w: 56, h: 36 }; }
+  const solid = (s, x, y) => { const cx = Math.floor(x), cy = Math.floor(y); if (cx < 0 || cx >= C || cy < 0) return true; if (cy >= R) return false; return s.b[cy * C + cx] !== EMPTY; };
+  function dig(g, px, py) {
+    const s = g.s, x = (px - s.ox) / s.cs, y = (py - s.oy) / s.cs, r = 1.7;
+    let n = 0;
+    for (let cy = Math.floor(y - r); cy <= y + r; cy++) for (let cx = Math.floor(x - r); cx <= x + r; cx++) { if (cx < 0 || cy < 0 || cx >= C || cy >= R) continue; const i = cy * C + cx; if (s.b[i] === DIRT && Math.hypot(cx + 0.5 - x, cy + 0.5 - y) <= r) { s.b[i] = EMPTY; n++; } }
+    if (n) { s.dug += n; if (Math.random() < 0.4) Arcade.tone(rand(150, 220), 0.03, 'triangle', 0.03); if (Math.random() < 0.3) g.burst(px, py, { n: 2, color: ['#8d5524', '#a0703c'], speed: 60, size: 3 }); }
+  }
+  function reset(g) {
+    const s = g.s; s.b = s.orig.slice(); s.parts = []; s.got = 0; s.ducks.forEach((d) => (d.got = false)); s.idle = 0;
+    for (let i = 0; i < s.np; i++) s.parts.push({ x: s.wx - 3.5 + rand(0, 8), y: s.wy - 1.5 + rand(0, 4), vx: 0, vy: 0 });
+  }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Cava un camino para el agua', deco: ['💧', '🛁', '🦆', '🪨', '🐊', '🚿'], font: 'comic', bg: ['#6b4423', '#4a2f1b'],
+    music: { mode: 'mixo', bpm: 100, wave: 'triangle', style: 'chill', root: 60 }, voice: { wave: 'triangle', mul: 1.2, echo: 0.3 },
+    en: { title: 'Water', tag: 'Dig a path for the water', help: '<b>Drag</b> your finger over the dirt to dig tunnels. The 💧 water falls and flows along them: guide it down to the 🚿 drain at the bottom to fill the bath. The grey rock cannot be dug. Pass the water by the 🦆 ducks to collect them. Fill the bath to the line to finish; 🔄 restarts the level.', tvHelp: 'OK and arrows: the cursor digs where it moves.', dict: { 'Bañera: ': 'Bath: ' } },
+    tvHelp: 'Mueve el cursor con las flechas: va cavando por donde pasa.',
+    tv: { mode: 'tap', follow: true, targets: (g) => { const s = g.s, o = []; if (!s.b) return o; for (let y = 0; y < R; y += 2) for (let x = 0; x < C; x += 2) o.push({ x: s.ox + x * s.cs, y: s.oy + y * s.cs, w: s.cs * 2, h: s.cs * 2 }); o.push(s.btn); return o; } },
+    id: 'agua', title: 'Agua', emoji: '💧', color: '#4dabf7', origin: "Where's My Water? (Disney)",
+    help: '<b>Arrastra</b> el dedo sobre la tierra para cavar túneles. El agua 💧 cae y corre por ellos: llévala hasta el desagüe 🚿 del fondo para llenar la bañera. La roca gris no se puede cavar. Haz pasar el agua por los patitos 🦆 para recogerlos. Llena la bañera hasta la marca para terminar; 🔄 reinicia el nivel.',
+    lives: 0, levels: 0, cap: 25,
+    setup(g) {
+      const L = g.lv, lv = gen(L); g.s = { ...lv, orig: lv.b.slice(), np: 160, dug: 0 };
+      const s = g.s; s.need = Math.round(s.np * clamp(0.45 + L * 0.015, 0.45, 0.7)); geo(g); reset(g);
+    },
+    layout(g) { if (g.s.b) geo(g); },
+    down(g, p) { const s = g.s, b = s.btn; if (p.x >= b.x && p.x <= b.x + b.w && p.y >= b.y && p.y <= b.y + b.h) { reset(g); Arcade.sfx.whoosh(); return; } s.digging = true; dig(g, p.x, p.y); s.lp = [p.x, p.y]; },
+    move(g, p) { const s = g.s; if (!s.digging) return; const [lx, ly] = s.lp, d = Math.hypot(p.x - lx, p.y - ly), n = Math.ceil(d / (s.cs * 0.8)); for (let i = 1; i <= n; i++) dig(g, lx + (p.x - lx) * i / n, ly + (p.y - ly) * i / n); s.lp = [p.x, p.y]; },
+    up(g) { g.s.digging = false; },
+    hover(g, x, y) { /* en TV el cursor cava al moverse */ if (Arcade.tv) dig(g, x, y); },
+    update(g, dt) {
+      const s = g.s; if (s.done) return;
+      const N = 3, h = Math.min(dt, 1 / 30) / N, P = s.parts, rad = 0.38;
+      // rejilla espacial para separación
+      for (let it = 0; it < N; it++) {
+        const grid = new Map(); P.forEach((p, i) => { const k = (Math.floor(p.x) << 8) | Math.floor(p.y); (grid.get(k) || grid.set(k, []).get(k)).push(i); });
+        for (const p of P) {
+          p.vy += 60 * h;
+          // repulsión
+          const cx = Math.floor(p.x), cy = Math.floor(p.y);
+          for (let yy = cy - 1; yy <= cy + 1; yy++) for (let xx = cx - 1; xx <= cx + 1; xx++) { const l = grid.get((xx << 8) | yy); if (!l) continue; for (const j of l) { const q = P[j]; if (q === p) continue; const dx = p.x - q.x, dy = p.y - q.y, d2 = dx * dx + dy * dy; if (d2 < 0.64 && d2 > 1e-6) { const d = Math.sqrt(d2), f = (0.8 - d) * 9; p.vx += dx / d * f * h * 6; p.vy += dy / d * f * h * 6; } } }
+          p.vx *= 0.985; p.vy *= 0.995; p.vx = clamp(p.vx, -18, 18); p.vy = clamp(p.vy, -18, 22);
+          let nx = p.x + p.vx * h; if (solid(s, nx + Math.sign(p.vx) * rad, p.y)) { p.vx *= -0.2; nx = p.x; } p.x = nx;
+          let ny = p.y + p.vy * h; if (solid(s, p.x, ny + Math.sign(p.vy) * rad)) { if (p.vy > 0) { p.vx += (Math.random() - 0.5) * 2; } p.vy *= -0.1; ny = p.y; } p.y = ny;
+        }
+      }
+      // patos y desagüe
+      for (const d of s.ducks) if (!d.got && P.some((p) => Math.abs(p.x - d.x - 0.5) < 1.2 && Math.abs(p.y - d.y - 0.5) < 1.2)) { d.got = true; Arcade.sfx.coin(); g.addScore(100 * g.lv, s.ox + (d.x + 0.5) * s.cs, s.oy + d.y * s.cs); g.ring(s.ox + (d.x + 0.5) * s.cs, s.oy + (d.y + 0.5) * s.cs, '#ffd43b', 30); }
+      for (let i = P.length - 1; i >= 0; i--) if (P[i].y > R - 0.2) { P.splice(i, 1); s.got++; if (s.got % 4 === 0) Arcade.tone(500 + s.got * 4, 0.04, 'sine', 0.04); g.addScore(g.lv); }
+      if (s.got >= s.need) { s.done = true; Arcade.sfx.win(); g.confetti(70); const dk = s.ducks.filter((d) => d.got).length; setTimeout(() => { if (g.state === 'play') g.win(Math.max(1, dk)); }, 800); }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      ctx.fillStyle = '#4a2f1b'; ctx.fillRect(0, 0, W, H);
+      if (!s.b) return;
+      const cs = s.cs;
+      for (let y = 0; y < R; y++) for (let x = 0; x < C; x++) {
+        const v = s.b[y * C + x], px = s.ox + x * cs, py = s.oy + y * cs;
+        if (v === DIRT) { ctx.fillStyle = (x * 7 + y * 13) % 5 ? '#a0703c' : '#94673a'; ctx.fillRect(px, py, cs + 0.6, cs + 0.6); }
+        else if (v === ROCK) { ctx.fillStyle = '#6c757d'; ctx.fillRect(px, py, cs + 0.6, cs + 0.6); ctx.fillStyle = 'rgba(255,255,255,.12)'; ctx.fillRect(px, py, cs, cs * 0.25); }
+        else { ctx.fillStyle = '#3d2615'; ctx.fillRect(px, py, cs + 0.6, cs + 0.6); }
+      }
+      for (const d of s.ducks) if (!d.got) Arcade.emoji(ctx, '🦆', s.ox + (d.x + 0.5) * cs, s.oy + (d.y + 0.2) * cs, cs * 2);
+      // agua
+      ctx.fillStyle = 'rgba(77,171,247,.9)';
+      for (const p of s.parts) { ctx.beginPath(); ctx.arc(s.ox + p.x * cs, s.oy + p.y * cs, cs * 0.55, 0, 6.3); ctx.fill(); }
+      ctx.fillStyle = 'rgba(165,216,255,.8)'; for (const p of s.parts) { ctx.beginPath(); ctx.arc(s.ox + p.x * cs - cs * 0.15, s.oy + p.y * cs - cs * 0.15, cs * 0.18, 0, 6.3); ctx.fill(); }
+      // desagüe y bañera
+      const dx = s.ox + (s.drx + 0.5) * cs, dy = s.oy + R * cs;
+      Arcade.emoji(ctx, '🚿', dx, dy - cs * 0.6, cs * 2.2, { rot: Math.PI });
+      const bw = Math.min(160, W * 0.4), bx = W / 2 - bw / 2, by = g.top + 6, fill = clamp(s.got / s.need, 0, 1);
+      Arcade.emoji(ctx, '🛁', bx - 22, by + 18, 36);
+      ctx.fillStyle = 'rgba(0,0,0,.35)'; Arcade.rr(ctx, bx, by + 10, bw, 16, 8); ctx.fill();
+      ctx.fillStyle = '#4dabf7'; Arcade.rr(ctx, bx, by + 10, bw * fill, 16, 8); ctx.fill();
+      Arcade.txt(ctx, s.ducks.map((d) => (d.got ? '🦆' : '·')).join(' '), bx + bw + 46, by + 18, 14, '#ffd43b', 'center', 900);
+      const b = s.btn; ctx.fillStyle = 'rgba(255,255,255,.2)'; Arcade.rr(ctx, b.x, b.y, b.w, b.h, 10); ctx.fill(); Arcade.txt(ctx, '🔄', b.x + b.w / 2, b.y + b.h / 2, 18, '#fff');
+    },
+  });
+})();
+</script>
+</body>
+</html>

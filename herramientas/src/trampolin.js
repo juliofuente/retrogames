@@ -1,0 +1,148 @@
+// Trampolín|#1c1030
+(function () {
+  const { rand, ri, pick, clamp } = Arcade;
+  const LOOT = ['📺', '📻', '💻', '🖼️', '💰', '🎁'];
+  const TCOL = ['#69db7c', '#ffd43b', '#ff922b', '#ff6b6b'];
+
+  function geo(g) {
+    const s = g.s, Ha = g.bot - g.top - 70;
+    s.fy = []; for (let f = 0; f < s.F; f++) s.fy.push(g.top + 60 + f * Ha / (s.F - 0.4));
+    s.tramp = g.bot - 20;
+    s.sw = 44;
+    s.sx = []; for (let k = 0; k < s.S; k++) s.sx.push(g.W * (k + 0.5) / s.S);
+    s.v0 = Math.sqrt(2 * 1300 * (s.tramp - s.fy[0] + 30));
+  }
+  const inShaft = (s, x) => s.sx.findIndex(c => Math.abs(x - c) < s.sw / 2);
+  function blocked(s, f, x0, x1) { return s.doors.find(d => d.f === f && !d.open && ((x0 < d.x && x1 >= d.x) || (x0 > d.x && x1 <= d.x))); }
+  function walk(g, a, dt, sp) {
+    const s = g.s, nx = clamp(a.x + a.dir * sp * dt, 12, g.W - 12);
+    const d = blocked(s, a.f, a.x, nx);
+    if (d) { a.x = d.x - a.dir * 14; if (!a.isP) a.dir *= -1; else a.moving = false; return; }
+    a.x = nx;
+    if ((a.x <= 12 || a.x >= g.W - 12) && !a.isP) a.dir *= -1;
+    const k = inShaft(s, a.x);
+    if (k >= 0 && (a.isP ? true : Math.abs(a.x - s.sx[k]) < 6)) { a.st = 'bounce'; a.k = k; a.x = s.sx[k]; a.y = s.fy[a.f]; a.vy = 0; a.lastF = a.f; }
+  }
+  function bounce(g, a, dt) {
+    const s = g.s, py = a.y;
+    a.vy += 1300 * dt; a.y += a.vy * dt;
+    if (a.y >= s.tramp) {
+      a.y = s.tramp;
+      if (a.isP) { a.hits = (a.hits || 0) + 1; if (a.hits >= 4) { a.broken = true; return; } Arcade.tone(300 + a.hits * 60, 0.08, 'triangle', 0.08, 200); }
+      a.vy = -s.v0;
+    }
+    // salida a un piso
+    for (let f = 0; f < s.F; f++) {
+      const y = s.fy[f];
+      if ((py - y) * (a.y - y) <= 0 && a.vy < 0 && f !== a.lastF) {
+        const want = a.isP ? a.exit : (f === s.pl.f || Math.random() < 0.15 ? (s.pl.x < a.x ? -1 : 1) : 0);
+        if (want) { a.st = 'floor'; a.f = f; a.y = y; a.dir = want; a.x = s.sx[a.k] + want * (s.sw / 2 + 4); a.moving = true; if (a.isP) { a.exit = 0; a.hits = 0; } return; }
+      }
+    }
+    if (a.y >= s.tramp - 5) a.lastF = -1;
+  }
+
+  Arcade.game({
+    id: 'trampolin', title: 'Trampolín', emoji: '🤸', color: '#da77f2', origin: 'Mappy (Namco, 1983)',
+    help: 'Eres un ratón policía recuperando objetos robados. <b>Desliza</b> a izquierda o derecha para correr. Al caer por un hueco rebotas en el <b>trampolín</b>; desliza mientras rebotas para salir en un piso. ¡El trampolín se rompe al 4º bote seguido! <b>Toca una puerta</b> para abrirla o cerrarla: si la abres con gatos 🐱 delante, salen volando. En los huecos los gatos no te pueden coger.',
+    lives: 3, levels: 10,
+    setup(g) {
+      g.s = { inv: 1.5, doors: [], loot: [], cats: [] };
+      const s = g.s; s.F = 5; s.S = g.W < g.H ? 3 : 4;
+      geo(g);
+      for (let f = 0; f < s.F; f++) for (let k = 0; k < s.S - 1; k++) if (Math.random() < 0.6) s.doors.push({ f, x: (s.sx[k] + s.sx[k + 1]) / 2 + rand(-20, 20), open: Math.random() < 0.5, fx: 0 });
+      for (let f = 0; f < s.F; f++) for (let i = 0; i < 2; i++) {
+        for (let t = 0; t < 20; t++) { const x = rand(24, g.W - 24); if (inShaft(s, x) < 0 && !s.doors.some(d => d.f === f && Math.abs(d.x - x) < 30) && !s.loot.some(l => l.f === f && Math.abs(l.x - x) < 40)) { s.loot.push({ f, x, e: pick(LOOT) }); break; } }
+      }
+      s.pl = { isP: true, st: 'floor', f: s.F - 1, x: 24, dir: 1, moving: false, exit: 0 };
+      s.loot = s.loot.filter(l => !(l.f === s.pl.f && Math.abs(l.x - s.pl.x) < 40));
+      const n = Math.min(5, 2 + Math.floor(g.level / 2));
+      for (let i = 0; i < n; i++) s.cats.push({ st: 'floor', f: i % (s.F - 1), x: g.W - 30 - i * 20, dir: -1, moving: true, sp: 70 + g.level * 8 + i * 6, out: 0 });
+    },
+    layout(g) {
+      const s = g.s; if (!s.fy) return;
+      const ow = s.sx.length ? s.sx[s.S - 1] / ((s.S - 0.5) / s.S) : g.W;
+      const k = g.W / ow; geo(g);
+      for (const a of [s.pl, ...s.cats]) { a.x *= k; if (a.st === 'floor') a.y = s.fy[a.f]; }
+      for (const d of s.doors) d.x *= k; for (const l of s.loot) l.x *= k;
+    },
+    swipe(g, dir) {
+      const p = g.s.pl;
+      if (dir !== 'left' && dir !== 'right') return;
+      const d = dir === 'left' ? -1 : 1;
+      if (p.st === 'bounce') p.exit = d; else { p.dir = d; p.moving = true; }
+    },
+    tap(g, pt) {
+      const s = g.s; let best = null, bd = 50;
+      for (const d of s.doors) { const dd = Math.hypot(pt.x - d.x, pt.y - (s.fy[d.f] - 24)); if (dd < bd) { bd = dd; best = d; } }
+      if (!best) { const p = s.pl; if (p.st === 'floor') p.moving = !p.moving; return; }
+      best.open = !best.open; best.fx = 0.3; Arcade.tone(best.open ? 500 : 250, 0.06, 'square', 0.08);
+      if (best.open) for (const c of s.cats) if (c.st === 'floor' && c.f === best.f && Math.abs(c.x - best.x) < 60 && !c.out) { c.out = 3.5; g.addScore(300, c.x, s.fy[c.f] - 40); Arcade.sfx.pop(); g.burst(c.x, s.fy[c.f] - 20, { n: 10, emoji: '⭐', size: 12, speed: 160 }); }
+    },
+    key(g, k, d) { if (!d) return; if (k === 'ArrowLeft') this.swipe(g, 'left'); else if (k === 'ArrowRight') this.swipe(g, 'right'); else if (k === ' ') { const s = g.s; let best = null, bd = 1e9; for (const dr of s.doors) if (dr.f === s.pl.f) { const dd = Math.abs(dr.x - s.pl.x); if (dd < bd) { bd = dd; best = dr; } } if (best && bd < 70) this.tap(g, { x: best.x, y: s.fy[best.f] - 24 }); } },
+    update(g, dt) {
+      const s = g.s, p = s.pl;
+      s.inv = Math.max(0, s.inv - dt);
+      for (const d of s.doors) d.fx = Math.max(0, d.fx - dt);
+      if (p.st === 'floor') { if (p.moving) walk(g, p, dt, 150); }
+      else { bounce(g, p, dt); if (p.broken) { p.broken = false; g.burst(p.x, s.tramp, { n: 16, color: ['#ff6b6b', '#fff'], speed: 200 }); if (g.die()) { Object.assign(p, { st: 'floor', f: s.F - 1, x: 24, moving: false, hits: 0, exit: 0 }); s.inv = 2; } return; } }
+      if (p.st === 'floor') {
+        const li = s.loot.findIndex(l => l.f === p.f && Math.abs(l.x - p.x) < 20);
+        if (li >= 0) { const l = s.loot.splice(li, 1)[0]; g.addScore(200 * g.level, l.x, s.fy[l.f] - 40); Arcade.sfx.coin(); if (!s.loot.length) { g.addScore(1000 * g.level, g.W / 2, g.H / 2); g.win(); return; } }
+      }
+      for (const c of s.cats) {
+        if (c.out > 0) { c.out -= dt; continue; }
+        if (c.st === 'floor') {
+          if (c.f === p.f && p.st === 'floor' && Math.random() < dt * 2) c.dir = p.x < c.x ? -1 : 1;
+          walk(g, c, dt, c.sp);
+          if (p.st === 'floor' && c.st === 'floor' && c.f === p.f && Math.abs(c.x - p.x) < 22 && s.inv <= 0) {
+            g.burst(p.x, s.fy[p.f] - 20, { n: 16, color: ['#fff', '#da77f2'], speed: 200 });
+            if (g.die()) { Object.assign(p, { st: 'floor', f: s.F - 1, x: 24, moving: false, hits: 0 }); s.inv = 2; for (const q of s.cats) q.out = 1; }
+            return;
+          }
+        } else bounce(g, c, dt);
+      }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      const bg = ctx.createLinearGradient(0, 0, 0, H);
+      bg.addColorStop(0, '#3b1f5c'); bg.addColorStop(1, '#1c1030');
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      if (!s.fy) return;
+      // pisos
+      for (let f = 0; f < s.F; f++) {
+        const y = s.fy[f];
+        let x = 0;
+        for (const cx of [...s.sx, W + s.sw]) {
+          const x1 = cx - s.sw / 2;
+          ctx.fillStyle = '#e599f7'; ctx.fillRect(x, y, Math.max(0, x1 - x), 8);
+          ctx.fillStyle = '#9c36b5'; ctx.fillRect(x, y + 8, Math.max(0, x1 - x), 6);
+          x = cx + s.sw / 2;
+        }
+        ctx.fillStyle = 'rgba(255,255,255,.04)'; ctx.fillRect(0, y - (s.fy[1] - s.fy[0]) + 14, W, (s.fy[1] - s.fy[0]) - 14);
+      }
+      // trampolines
+      s.sx.forEach((x, k) => {
+        const hits = s.pl.st === 'bounce' && s.pl.k === k ? s.pl.hits || 0 : 0;
+        ctx.strokeStyle = TCOL[Math.min(3, hits)]; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(x - s.sw / 2, s.tramp); ctx.lineTo(x + s.sw / 2, s.tramp); ctx.stroke();
+        ctx.fillStyle = '#495057'; ctx.fillRect(x - s.sw / 2 - 2, s.tramp, 4, 14); ctx.fillRect(x + s.sw / 2 - 2, s.tramp, 4, 14);
+      });
+      for (const d of s.doors) {
+        const y = s.fy[d.f];
+        if (d.open) { ctx.fillStyle = '#c0a16b'; ctx.fillRect(d.x - 3, y - 44, 18, 44); ctx.fillStyle = '#7f5539'; ctx.fillRect(d.x - 3, y - 44, 4, 44); }
+        else { ctx.fillStyle = '#e8b04b'; ctx.fillRect(d.x - 5, y - 44, 10, 44); ctx.fillStyle = '#7f5539'; ctx.beginPath(); ctx.arc(d.x + 2, y - 22, 2, 0, 6.28); ctx.fill(); }
+        if (d.fx) { ctx.strokeStyle = 'rgba(255,255,255,' + d.fx * 3 + ')'; ctx.lineWidth = 2; ctx.strokeRect(d.x - 12, y - 50, 24, 50); }
+      }
+      for (const l of s.loot) Arcade.emoji(ctx, l.e, l.x, s.fy[l.f] - 16, 28);
+      for (const c of s.cats) {
+        const y = c.st === 'floor' ? s.fy[c.f] : c.y;
+        if (c.out > 0) { Arcade.emoji(ctx, '😵', c.x, y - 18, 28, { alpha: 0.6 }); continue; }
+        Arcade.emoji(ctx, '🐱', c.x, y - 18, 32, { flip: c.dir > 0 });
+      }
+      const p = s.pl, py = p.st === 'floor' ? s.fy[p.f] : p.y;
+      if (!(s.inv > 0 && Math.floor(g.t * 10) % 2)) Arcade.emoji(ctx, '🐭', p.x, py - 18, 34, { flip: p.dir > 0, rot: p.st === 'bounce' ? Math.sin(g.t * 10) * 0.3 : 0 });
+      if (p.st === 'floor' && !p.moving) Arcade.txt(ctx, '↔', p.x, py - 46, 14, 'rgba(255,255,255,.6)', 'center', 900);
+      Arcade.txt(ctx, '🎒 ' + s.loot.length, W / 2, g.top + 18, 15, '#fff', 'center', 800);
+    },
+  });
+})();

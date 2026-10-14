@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Candado · Arcade Perdido</title>
+<meta name="theme-color" content="#1a0f2e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css">
+</head>
+<body class="game">
+<script src="config.js"></script>
+<script src="common.js"></script>
+<script>
+(function () {
+  const { rand } = Arcade;
+  const TAU = Math.PI * 2;
+  const GEMS = ['💎', '⭐', '🍀', '💰', '🔮', '🌟'];
+  const norm = (a) => ((a % TAU) + TAU) % TAU;
+  const adiff = (a, b) => { let d = norm(a - b); return d > Math.PI ? d - TAU : d; };
+
+  function geo(g) { const s = g.s; s.cx = g.W / 2; s.cy = g.top + (g.bot - g.top) * 0.55; s.R = Math.min(g.W * 0.36, (g.bot - g.top) * 0.3, 170); }
+  function newDot(g) {
+    const s = g.s;
+    s.dot = norm(s.ang + s.dir * rand(0.9, 2.6 + Math.min(g.lv, 10) * 0.08));
+    s.gem = Arcade.pick(GEMS); s.passed = false; s.dotT = 0;
+  }
+  function fail(g, why) {
+    const s = g.s; if (s.lock) return;
+    s.lock = 0.8; g.shake(0.4, 10); Arcade.sfx.hit();
+    g.message(why, 1);
+    setTimeout(() => { if (g.state !== 'play') return; if (g.die()) { s.left = s.need; s.lock = 0; s.ang = -Math.PI / 2; s.dir = 1; newDot(g); } }, 700);
+  }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Toca justo a tiempo', deco: ['🔒', '🔓', '💎', '🗝️', '⭐', '💰'], font: 'impact', bg: ['#3a1f63', '#1a0f2e'],
+    music: { mode: 'harm', bpm: 128, wave: 'triangle', style: 'drive', root: 57 }, voice: { wave: 'square', mul: 1.15, echo: 0.2 },
+    ambient: { e: ['✨'], n: 10, vy: 0, sway: 0, twinkle: 1, alpha: 0.3, size: [6, 12] },
+    en: { title: 'Padlock', tag: 'Tap right on time', help: 'The needle spins around the lock. <b>Tap</b> exactly when it passes over the gem: the needle turns around and another gem appears. If you tap too early or let it pass, you fail. Pick all the lock\'s pins to open it 🔓. Each level the needle is faster and there are more pins.', tvHelp: 'OK when the needle is over the gem.', dict: { '¡Antes de tiempo!': 'Too early!', '¡Se pasó!': 'Missed it!' } },
+    tvHelp: 'OK cuando la aguja esté sobre la gema.',
+    id: 'candado', title: 'Candado', emoji: '🔒', color: '#cc5de8', origin: 'Pop the Lock (Simple Machine)',
+    help: 'La aguja gira alrededor del candado. <b>Toca</b> justo cuando pase por encima de la gema: la aguja cambia de sentido y aparece otra. Si tocas antes o dejas que se pase, fallas. Saca todas las clavijas para abrirlo 🔓. En cada nivel la aguja va más rápida y hay más clavijas.',
+    lives: 3, levels: 0, cap: 25,
+    setup(g) {
+      g.s = { ang: -Math.PI / 2, dir: 1, lock: 0, open: 0 };
+      const s = g.s; s.need = 6 + Math.min(g.lv, 25); s.left = s.need; s.speed = 1.9 + Math.min(g.lv, 25) * 0.12;
+      geo(g); newDot(g);
+    },
+    layout(g) { if (g.s.need) geo(g); },
+    down(g) {
+      const s = g.s; if (s.lock || s.open) return;
+      const d = Math.abs(adiff(s.ang, s.dot));
+      if (d < 0.2) {
+        s.left--; s.dir *= -1; Arcade.sfx.coin(); g.addScore(10 + (d < 0.07 ? 15 : 0));
+        const px = s.cx + Math.cos(s.dot) * s.R, py = s.cy + Math.sin(s.dot) * s.R;
+        g.burst(px, py, { n: 10, emoji: '✨', size: 12, speed: 160, grav: 40 }); g.ring(px, py, '#ffd43b', 40);
+        if (d < 0.07) g.float('PERFECT', px, py - 26, '#ffd43b', 18);
+        if (s.left <= 0) { s.open = 0.001; Arcade.sfx.win(); return; }
+        newDot(g);
+      } else fail(g, Arcade.T('¡Antes de tiempo!', 'Too early!'));
+    },
+    key(g, k, d) { if (d && k === ' ') this.down(g); },
+    update(g, dt) {
+      const s = g.s;
+      if (s.open) { s.open += dt; if (s.open > 1.2) { g.addScore(100 * g.lv, g.W / 2, g.H / 2); g.win(); } return; }
+      if (s.lock) { s.lock = Math.max(0, s.lock - dt); return; }
+      s.ang = norm(s.ang + s.dir * s.speed * dt); s.dotT += dt;
+      const d = adiff(s.ang, s.dot) * s.dir;
+      if (d > 0.22) fail(g, Arcade.T('¡Se pasó!', 'Missed it!'));
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      const bg = ctx.createRadialGradient(W / 2, H * 0.55, 20, W / 2, H * 0.55, Math.max(W, H) * 0.7);
+      bg.addColorStop(0, s.lock ? '#5c1a2e' : '#3a1f63'); bg.addColorStop(1, '#120a20');
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      if (!s.need) return;
+      const R = s.R, lift = s.open ? Math.min(1, s.open * 3) * R * 0.35 : 0;
+      // arco del candado
+      ctx.lineCap = 'round'; ctx.strokeStyle = '#adb5bd'; ctx.lineWidth = R * 0.16;
+      ctx.beginPath(); ctx.arc(s.cx, s.cy - R * 0.95 - lift, R * 0.55, Math.PI, 0); ctx.lineTo(s.cx + R * 0.55, s.cy - R * 0.6 - lift); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(s.cx - R * 0.55, s.cy - R * 0.95 - lift); ctx.lineTo(s.cx - R * 0.55, s.cy - R * 0.6); ctx.stroke();
+      // cuerpo
+      const body = ctx.createLinearGradient(0, s.cy - R, 0, s.cy + R);
+      body.addColorStop(0, '#ffd43b'); body.addColorStop(1, '#e67700');
+      ctx.fillStyle = body; ctx.beginPath(); ctx.arc(s.cx, s.cy, R * 1.12, 0, TAU); ctx.fill();
+      ctx.fillStyle = '#2b1a4a'; ctx.beginPath(); ctx.arc(s.cx, s.cy, R * 0.98, 0, TAU); ctx.fill();
+      ctx.strokeStyle = 'rgba(255,255,255,.08)'; ctx.lineWidth = R * 0.22; ctx.beginPath(); ctx.arc(s.cx, s.cy, R, 0, TAU); ctx.stroke();
+      Arcade.txt(ctx, s.left, s.cx, s.cy, R * 0.6, '#fff', 'center', 900, null, Arcade.TFONT);
+      if (!s.open) {
+        const px = s.cx + Math.cos(s.dot) * R, py = s.cy + Math.sin(s.dot) * R;
+        Arcade.emoji(ctx, s.gem, px, py, R * 0.24 * (1 + Math.sin(g.rt * 10) * 0.08));
+        ctx.save(); ctx.translate(s.cx, s.cy); ctx.rotate(s.ang);
+        ctx.fillStyle = s.lock ? '#ff6b6b' : '#ff4d6d'; Arcade.rr(ctx, R * 0.82, -R * 0.06, R * 0.36, R * 0.12, R * 0.05); ctx.fill();
+        ctx.restore();
+      } else Arcade.emoji(ctx, '🔓', s.cx, s.cy - R * 1.6, 40);
+    },
+  });
+})();
+</script>
+</body>
+</html>

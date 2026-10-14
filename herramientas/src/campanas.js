@@ -1,0 +1,103 @@
+// Campanas|#4dabf7
+(function () {
+  const { rand, ri, pick, clamp, dist } = Arcade;
+  const BC = [{ c: '#ffd43b', n: 'Puntos' }, { c: '#f8f9fa', n: 'Doble disparo' }, { c: '#4dabf7', n: 'Velocidad' }, { c: '#69db7c', n: 'Escudo' }, { c: '#ff6b6b', n: 'Bomba' }];
+  const EN = ['🐞', '🦋', '🐙', '🛸', '👾', '🐝'];
+
+  Arcade.game({
+    id: 'campanas', title: 'Campanas', emoji: '🔔', color: '#ffd43b', origin: 'TwinBee (Konami, 1985)',
+    help: '<b>Arrastra</b> para mover la nave; dispara sola. Dispara a las <b>nubes</b> ☁️ para sacar campanas 🔔 y sigue disparando a la campana para <b>cambiarle el color</b>. Luego cógela: 🟡 puntos (cada vez más), ⚪ doble disparo, 🔵 velocidad, 🟢 escudo, 🔴 bomba que limpia la pantalla.',
+    lives: 3, levels: null,
+    setup(g) {
+      g.s = { x: g.W / 2, y: g.bot - 90, shots: [], eb: [], en: [], clouds: [], bells: [], fireT: 0, twin: false, speed: 1, shield: 0, inv: 2, waveT: 2, cloudT: 0.5, lvT: 0, yBonus: 500 };
+    },
+    layout(g) { const s = g.s; if (s.x != null) { s.x = clamp(s.x, 20, g.W - 20); s.y = clamp(s.y, g.top + 60, g.bot - 30); } },
+    down(g, p) { const s = g.s; s.drag = { id: p.id, x: p.x, y: p.y, sx: s.x, sy: s.y }; },
+    move(g, p) { const s = g.s, d = s.drag; if (!d || d.id !== p.id) return; const k = 1.1 + (s.speed - 1) * 0.2; s.x = clamp(d.sx + (p.x - d.x) * k, 20, g.W - 20); s.y = clamp(d.sy + (p.y - d.y) * k, g.top + 60, g.bot - 30); },
+    hover(g, x, y) { const s = g.s; s.x = clamp(x, 20, g.W - 20); s.y = clamp(y, g.top + 60, g.bot - 30); },
+    key(g, k, d) { const s = g.s; s.keys = s.keys || {}; s.keys[k] = d; },
+    update(g, dt) {
+      const s = g.s;
+      s.inv = Math.max(0, s.inv - dt); s.shield = Math.max(0, s.shield - dt);
+      if (s.keys) { const v = 240 * (1 + (s.speed - 1) * 0.25) * dt; if (s.keys.ArrowLeft) s.x -= v; if (s.keys.ArrowRight) s.x += v; if (s.keys.ArrowUp) s.y -= v; if (s.keys.ArrowDown) s.y += v; s.x = clamp(s.x, 20, g.W - 20); s.y = clamp(s.y, g.top + 60, g.bot - 30); }
+      s.lvT += dt; if (s.lvT > 40) { s.lvT = 0; g.level++; g.hud(); g.message('Nivel ' + g.level, 1.1); Arcade.sfx.up(); }
+      // disparo
+      s.fireT -= dt;
+      if (s.fireT <= 0) {
+        s.fireT = 0.17;
+        if (s.twin) s.shots.push({ x: s.x - 10, y: s.y - 20 }, { x: s.x + 10, y: s.y - 20 }); else s.shots.push({ x: s.x, y: s.y - 20 });
+      }
+      for (const b of s.shots) b.y -= 620 * dt;
+      // nubes
+      s.cloudT -= dt;
+      if (s.cloudT <= 0) { s.cloudT = rand(1.6, 3); s.clouds.push({ x: rand(30, g.W - 30), y: g.top - 20, hp: 3, v: rand(40, 60) }); }
+      for (const c of s.clouds) c.y += c.v * dt;
+      // enemigos en oleadas
+      s.waveT -= dt;
+      if (s.waveT <= 0) {
+        s.waveT = Math.max(1.6, 4 - g.level * 0.25);
+        const e = pick(EN), n = ri(4, 6), x0 = rand(50, g.W - 50), amp = rand(40, 100), sp = 90 + g.level * 12;
+        for (let i = 0; i < n; i++) s.en.push({ e, x0, amp, y: g.top - 20 - i * 40, ph: i * 0.6, sp, fireT: rand(1, 3), hp: 1 + Math.floor(g.level / 4) });
+      }
+      for (const e of s.en) {
+        e.y += e.sp * dt; e.ph += dt * 2.2; e.x = e.x0 + Math.sin(e.ph) * e.amp;
+        e.fireT -= dt;
+        if (e.fireT <= 0 && e.y > g.top && e.y < s.y - 80) { e.fireT = rand(1.8, 3.5) / (1 + g.level * 0.1); const a = Math.atan2(s.y - e.y, s.x - e.x), v = 170 + g.level * 10; s.eb.push({ x: e.x, y: e.y, vx: Math.cos(a) * v, vy: Math.sin(a) * v }); }
+      }
+      for (const b of s.eb) { b.x += b.vx * dt; b.y += b.vy * dt; }
+      // campanas
+      for (const b of s.bells) { b.vy += 140 * dt; b.vy = Math.min(b.vy, 90); b.y += b.vy * dt; b.x += Math.sin(g.t * 2 + b.ph) * 20 * dt; b.flash = Math.max(0, b.flash - dt); }
+      // colisiones de disparos
+      for (const sh of s.shots) {
+        if (sh.dead) continue;
+        for (const c of s.clouds) if (!c.dead && Math.abs(sh.x - c.x) < 30 && Math.abs(sh.y - c.y) < 18) { sh.dead = true; c.hp--; if (c.hp <= 0) { c.dead = true; s.bells.push({ x: c.x, y: c.y, vy: -150, col: 0, hits: 0, ph: rand(0, 6), flash: 0 }); Arcade.tone(900, 0.1, 'triangle', 0.08); } break; }
+        if (sh.dead) continue;
+        for (const b of s.bells) if (dist(sh.x, sh.y, b.x, b.y) < 18) { sh.dead = true; b.vy = -150; b.hits++; b.flash = 0.08; if (b.hits % 5 === 0) { b.col = (b.col + 1) % BC.length; Arcade.tone(1200, 0.06, 'square', 0.05); } else Arcade.tone(1500, 0.02, 'square', 0.03); break; }
+        if (sh.dead) continue;
+        for (const e of s.en) if (!e.dead && dist(sh.x, sh.y, e.x, e.y) < 18) { sh.dead = true; e.hp--; if (e.hp <= 0) { e.dead = true; g.addScore(100); g.burst(e.x, e.y, { n: 8, color: ['#fff', '#ffd43b'], speed: 140, size: 3 }); Arcade.sfx.pop(); } break; }
+      }
+      // recoger campanas
+      for (const b of s.bells) if (!b.dead && dist(b.x, b.y, s.x, s.y) < 28) {
+        b.dead = true; Arcade.sfx.coin();
+        if (b.col === 0) { g.addScore(s.yBonus, b.x, b.y - 20); s.yBonus = Math.min(10000, s.yBonus * 2); }
+        else if (b.col === 1) { s.twin = true; g.float('¡Doble!', b.x, b.y - 20, '#fff', 20); }
+        else if (b.col === 2) { s.speed = Math.min(4, s.speed + 1); g.float('Velocidad ' + s.speed, b.x, b.y - 20, '#4dabf7', 20); }
+        else if (b.col === 3) { s.shield = 12; g.float('¡Escudo!', b.x, b.y - 20, '#69db7c', 20); }
+        else { for (const e of s.en) if (e.y > g.top - 10) { e.dead = true; g.addScore(100); g.burst(e.x, e.y, { n: 8, emoji: '💥', size: 14, speed: 120 }); } s.eb = []; Arcade.sfx.boom(); g.shake(0.3, 8); }
+      }
+      // daño
+      if (s.inv <= 0) {
+        const hit = s.eb.find(b => dist(b.x, b.y, s.x, s.y) < 14) || s.en.find(e => !e.dead && dist(e.x, e.y, s.x, s.y) < 24);
+        if (hit) {
+          hit.dead = true;
+          if (s.shield > 0) { s.shield = 0; s.inv = 1; Arcade.tone(400, 0.2, 'sine', 0.1, -200); }
+          else { g.burst(s.x, s.y, { n: 20, color: ['#4dabf7', '#fff', '#ff6b6b'], speed: 220 }); s.twin = false; s.speed = 1; s.yBonus = 500; if (g.die()) s.inv = 2.5; }
+        }
+      }
+      const off = (o) => o.dead || o.y > g.bot + 40 || o.y < g.top - 300 || o.x < -40 || o.x > g.W + 40;
+      s.shots = s.shots.filter(b => !b.dead && b.y > g.top - 20); s.eb = s.eb.filter(b => !off(b)); s.en = s.en.filter(e => !off(e)); s.clouds = s.clouds.filter(c => !off(c)); s.bells = s.bells.filter(b => !off(b));
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      const bg = ctx.createLinearGradient(0, 0, 0, H);
+      bg.addColorStop(0, '#4dabf7'); bg.addColorStop(1, '#a5d8ff');
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      for (let i = 0; i < 8; i++) { const y = ((g.t * 30 + i * 140) % (H + 100)) - 50; ctx.fillStyle = 'rgba(105,219,124,.35)'; Arcade.rr(ctx, (i * 113) % W - 40, y, 120, 50, 25); ctx.fill(); }
+      if (s.x == null) return;
+      for (const c of s.clouds) Arcade.emoji(ctx, '☁️', c.x, c.y, 58, { alpha: 0.4 + c.hp * 0.2 });
+      for (const b of s.bells) {
+        ctx.fillStyle = BC[b.col].c; ctx.beginPath(); ctx.arc(b.x, b.y, 16, 0, 6.28); ctx.fill();
+        ctx.strokeStyle = 'rgba(0,0,0,.3)'; ctx.lineWidth = 2; ctx.stroke();
+        Arcade.emoji(ctx, '🔔', b.x, b.y, 24, { alpha: b.flash ? 0.4 : 1, rot: Math.sin(g.t * 6 + b.ph) * 0.3 });
+      }
+      for (const e of s.en) Arcade.emoji(ctx, e.e, e.x, e.y, 30);
+      ctx.fillStyle = '#ff6b6b'; for (const b of s.eb) { ctx.beginPath(); ctx.arc(b.x, b.y, 4.5, 0, 6.28); ctx.fill(); }
+      ctx.fillStyle = '#fff3bf'; for (const b of s.shots) ctx.fillRect(b.x - 2, b.y - 8, 4, 12);
+      if (!(s.inv > 0 && Math.floor(g.t * 10) % 2)) {
+        Arcade.emoji(ctx, '🚀', s.x, s.y, 38, { rot: -Math.PI / 4 });
+        if (s.shield > 0) { ctx.strokeStyle = 'rgba(105,219,124,' + (0.5 + Math.sin(g.t * 8) * 0.3) + ')'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(s.x, s.y, 26, 0, 6.28); ctx.stroke(); }
+      }
+      Arcade.txt(ctx, (s.twin ? '⚪x2  ' : '') + '🔵' + s.speed + (s.shield > 0 ? '  🟢' + Math.ceil(s.shield) : '') + '   🟡' + s.yBonus, 14, g.top + 14, 13, '#1c3d5a', 'left', 900);
+    },
+  });
+})();

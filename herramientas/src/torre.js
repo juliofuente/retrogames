@@ -1,0 +1,94 @@
+// Torre|#0f1b2e
+(function () {
+  const { clamp } = Arcade;
+  const DECO = ['🪟', '🪴', '💡', '🐈', '🖼️', '🌼', '🕰️', '📦'];
+
+  function geo(g) { const s = g.s; s.bw0 = Math.min(g.W * 0.62, 300); s.bh = clamp((g.bot - g.top) / 16, 22, 40); s.cx = g.W / 2; s.base = g.bot - 40; }
+  function spawn(g) {
+    const s = g.s, top = s.blocks[s.blocks.length - 1], dir = s.blocks.length % 2 ? 1 : -1;
+    s.mov = { x: dir > 0 ? -top.w - 20 : g.W + 20, w: top.w, dir, v: (150 + Math.min(g.lv, 14) * 14 + s.blocks.length * 3) * (Math.min(g.W, 500) / 400) };
+  }
+  const hue = (s, i) => (s.h0 + i * 9) % 360;
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Apila sin que sobre nada', deco: ['🏗️', '🧱', '🏙️', '⭐', '🏢', '🧱'], font: 'wide', bg: ['#1c3557', '#0f1b2e'],
+    music: { mode: 'lydian', bpm: 112, wave: 'triangle', style: 'chill', root: 60 }, voice: { wave: 'sine', mul: 1.1, echo: 0.35 },
+    ambient: { e: ['☁️'], n: 4, vy: 0, vx: 14, sway: 3, alpha: 0.15, size: [36, 60] },
+    en: { title: 'Tower', tag: 'Stack without overhang', help: '<b>Tap</b> to drop the sliding floor onto the tower. Whatever hangs over the edge is <b>cut off</b> and the next floor will be narrower. Drop it exactly on top for a <b>perfect</b> (3 in a row make the floor grow back). Reach the height of each level; missing completely costs a life.', tvHelp: 'OK to drop the floor.', dict: { 'Pisos: ': 'Floors: ', '¡Perfecto!': 'Perfect!', '¡Crece!': 'It grows!' } },
+    tvHelp: 'OK para soltar el piso.',
+    id: 'torre', title: 'Torre', emoji: '🏗️', color: '#4dabf7', origin: 'Stack (Ketchapp)',
+    help: '<b>Toca</b> para soltar el piso que se mueve sobre la torre. Lo que sobresalga <b>se corta</b> y el siguiente piso será más estrecho. Si lo dejas justo encima es un <b>perfecto</b> (3 seguidos hacen crecer el piso). Llega a la altura de cada nivel; si fallas del todo pierdes una vida.',
+    lives: 3, levels: 0, cap: 16,
+    setup(g) {
+      g.s = { blocks: [], chunks: [], cam: 0, combo: 0, h0: (g.level * 47) % 360 };
+      const s = g.s; geo(g);
+      s.blocks.push({ x: s.cx - s.bw0 / 2, w: s.bw0, d: '🚪' });
+      s.need = 10 + Math.min(g.lv, 12) * 2;
+      spawn(g);
+    },
+    layout(g) { if (g.s.blocks) geo(g); },
+    tap(g) {
+      const s = g.s, m = s.mov; if (!m) return;
+      const top = s.blocks[s.blocks.length - 1], l = Math.max(m.x, top.x), r = Math.min(m.x + m.w, top.x + top.w);
+      const yTop = s.base - s.blocks.length * s.bh + s.cam;
+      if (r - l <= 2) {
+        s.chunks.push({ x: m.x, w: m.w, y: yTop, vy: 0, i: s.blocks.length, rot: 0 });
+        s.mov = null; Arcade.sfx.boom(); s.combo = 0;
+        if (g.die()) spawn(g);
+        return;
+      }
+      if (Math.abs(m.x - top.x) < 5) {
+        s.combo++; m.x = top.x;
+        let w = top.w; if (s.combo >= 3) { w = Math.min(s.bw0, w + 14); g.float(Arcade.T('¡Crece!', 'It grows!'), s.cx, yTop - 30, '#69db7c', 20); }
+        s.blocks.push({ x: top.x - (w - top.w) / 2, w, d: Math.random() < 0.4 ? Arcade.pick(DECO) : null });
+        g.ring(s.cx, yTop + s.bh / 2, '#fff', s.bw0 * 0.6, 3); Arcade.sfx.combo(s.combo); g.addScore(2 + s.combo, s.cx, yTop - 10);
+        if (s.combo === 1) g.float(Arcade.T('¡Perfecto!', 'Perfect!'), s.cx, yTop - 30, '#ffe066', 20);
+      } else {
+        s.combo = 0;
+        const cutL = m.x < l ? { x: m.x, w: l - m.x } : null, cutR = m.x + m.w > r ? { x: r, w: m.x + m.w - r } : null;
+        for (const c of [cutL, cutR]) if (c) s.chunks.push({ x: c.x, w: c.w, y: yTop, vy: 0, i: s.blocks.length, rot: 0, dir: c === cutL ? -1 : 1 });
+        s.blocks.push({ x: l, w: r - l, d: Math.random() < 0.35 ? Arcade.pick(DECO) : null });
+        Arcade.tone(260, 0.08, 'square', 0.08); g.addScore(1, s.cx, yTop - 10);
+      }
+      g.burst(s.cx, yTop + s.bh, { n: 6, color: '#fff', speed: 90, size: 2, grav: 60 });
+      if (s.blocks.length - 1 >= s.need) { s.mov = null; g.addScore(20 * g.lv, g.W / 2, g.H / 2); g.win(); return; }
+      spawn(g);
+    },
+    key(g, k, d) { if (d && k === ' ') this.tap(g); },
+    update(g, dt) {
+      const s = g.s, m = s.mov;
+      if (m) { m.x += m.dir * m.v * dt; if (m.x > g.W + 30 && m.dir > 0) m.dir = -1; if (m.x + m.w < -30 && m.dir < 0) m.dir = 1; }
+      const want = Math.max(0, (s.blocks.length - 8) * s.bh);
+      s.cam += (want - s.cam) * Math.min(1, dt * 4);
+      for (const c of s.chunks) { c.vy += 900 * dt; c.y += c.vy * dt; c.rot += (c.dir || 1) * dt * 3; }
+      s.chunks = s.chunks.filter((c) => c.y < g.H + 100);
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      const k = s.blocks ? clamp(s.blocks.length / (s.need || 20), 0, 1) : 0;
+      const bg = ctx.createLinearGradient(0, 0, 0, H);
+      bg.addColorStop(0, `hsl(${220 - k * 40},60%,${18 + k * 4}%)`); bg.addColorStop(1, `hsl(${200 - k * 60},65%,${55 - k * 20}%)`);
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      if (!s.blocks) return;
+      g.scenery(['🏢', '🏬', '🏨', '🏛️'], 7, { y0: s.base - 40 + s.cam * 0.3, y1: s.base + 10 + s.cam * 0.3, alpha: 0.25, size: [40, 70] });
+      ctx.fillStyle = '#1b2a1b'; ctx.fillRect(0, s.base + s.bh + s.cam, W, H);
+      const slab = (x, y, w, i, rot) => {
+        const h = hue(s, i);
+        ctx.save(); if (rot) { ctx.translate(x + w / 2, y + s.bh / 2); ctx.rotate(rot); ctx.translate(-x - w / 2, -y - s.bh / 2); }
+        ctx.fillStyle = `hsl(${h},60%,38%)`; ctx.fillRect(x, y + s.bh * 0.7, w, s.bh * 0.3);
+        ctx.fillStyle = `hsl(${h},70%,58%)`; ctx.fillRect(x, y, w, s.bh * 0.72);
+        ctx.fillStyle = 'rgba(255,255,255,.25)'; ctx.fillRect(x, y, w, 3);
+        ctx.restore();
+      };
+      s.blocks.forEach((b, i) => {
+        const y = s.base - i * s.bh + s.cam; if (y > H + 40 || y < -40) return;
+        slab(b.x, y, b.w, i);
+        if (b.d && b.w > 30) Arcade.emoji(ctx, b.d, b.x + b.w / 2, y + s.bh * 0.38, s.bh * 0.6);
+      });
+      for (const c of s.chunks) slab(c.x, c.y, c.w, c.i, c.rot);
+      if (s.mov) { const y = s.base - s.blocks.length * s.bh + s.cam; slab(s.mov.x, y, s.mov.w, s.blocks.length); }
+      Arcade.txt(ctx, 'Pisos: ' + (s.blocks.length - 1) + '/' + s.need, W / 2, g.top + 16, 16, '#fff', 'center', 900, 'rgba(0,0,0,.4)');
+      if (s.combo >= 2) Arcade.txt(ctx, '🔥 x' + s.combo, W / 2, g.top + 40, 15, '#ffd43b', 'center', 900, 'rgba(0,0,0,.4)');
+    },
+  });
+})();

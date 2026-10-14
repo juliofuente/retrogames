@@ -1,0 +1,116 @@
+// Torres|#2f4a2a
+(function () {
+  const { ri, rand, clamp, pick } = Arcade;
+  const TW = [
+    { k: 'arrow', e: '🏹', cost: 50, rng: 2.6, rate: 0.6, dmg: 10, col: '#ffd43b' },
+    { k: 'cannon', e: '💣', cost: 90, rng: 2.2, rate: 1.4, dmg: 26, splash: 1.1, col: '#ff922b' },
+    { k: 'ice', e: '❄️', cost: 70, rng: 2.2, rate: 1.0, dmg: 4, slow: 1.6, col: '#74c0fc' },
+  ];
+  const EN = [{ e: '🐀', hp: 30, sp: 1.6, gold: 5 }, { e: '🐗', hp: 70, sp: 1.1, gold: 9 }, { e: '🦇', hp: 25, sp: 2.4, gold: 7 }, { e: '🐻', hp: 180, sp: 0.8, gold: 20 }, { e: '🐉', hp: 600, sp: 0.6, gold: 60 }];
+
+  function makePath(C, R) {
+    for (let at = 0; at < 200; at++) {
+      const p = [[0, ri(1, R - 2)]], seen = new Set([p[0].join()]);
+      let ok = true;
+      while (p[p.length - 1][0] < C - 1) {
+        const [x, y] = p[p.length - 1];
+        const opts = [[x + 1, y]]; if (y > 1) opts.push([x, y - 1]); if (y < R - 2) opts.push([x, y + 1]);
+        const cand = opts.filter((q) => !seen.has(q.join()));
+        let n = pick(cand.length ? cand : opts); if (Math.random() < 0.45) n = [x + 1, y];
+        if (seen.has(n.join())) { ok = false; break; }
+        // dar varias vueltas: avanzar en vertical tramos
+        p.push(n); seen.add(n.join());
+        if (p.length > C * R) { ok = false; break; }
+      }
+      if (ok && p.length >= C + R / 2) return p;
+    }
+    const y = Math.floor(R / 2); return [...Array(C)].map((_, x) => [x, y]);
+  }
+  function geo(g) { const s = g.s, Ha = g.bot - g.top - 70; s.cs = Math.min((g.W - 10) / s.C, Ha / s.R); s.ox = (g.W - s.cs * s.C) / 2; s.oy = g.top + 60 + (Ha - s.cs * s.R) / 2; }
+  const pos = (s, d) => { const i = clamp(Math.floor(d), 0, s.path.length - 1), j = Math.min(i + 1, s.path.length - 1), t = clamp(d - i, 0, 1); const [x0, y0] = s.path[i], [x1, y1] = s.path[j]; return [x0 + (x1 - x0) * t + 0.5, y0 + (y1 - y0) * t + 0.5]; };
+  function wave(g) {
+    const s = g.s, L = g.lv, w = s.wave, n = 6 + w * 2 + Math.floor(L / 4);
+    const kinds = [0].concat(w >= 1 ? [1] : [], w >= 2 || L >= 3 ? [2] : [], w >= 3 && L >= 2 ? [3] : []);
+    for (let i = 0; i < n; i++) s.spawnQ.push({ t: i * Math.max(0.35, 0.9 - L * 0.02), k: pick(kinds) });
+    if (w === s.waves - 1 && L >= 4) s.spawnQ.push({ t: n * 0.9 + 1, k: 4 });
+  }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Que no lleguen al castillo', deco: ['🏰', '🏹', '💣', '❄️', '🐀', '🐉'], font: 'serif', bg: ['#4a6b3a', '#2f4a2a'],
+    music: { mode: 'dorian', bpm: 108, wave: 'triangle', style: 'arcade', root: 55 }, voice: { wave: 'triangle', mul: 1.1, echo: 0.3 },
+    en: { title: 'Towers', tag: 'Keep them out of the castle', help: 'Creatures march along the path towards your 🏰. <b>Tap a grass square</b> to choose a tower: 🏹 fast arrows, 💣 cannon that hits groups and ❄️ ice that slows them. <b>Tap a tower</b> to upgrade it. Every creature you stop gives 🪙 coins. Each one that reaches the castle costs a heart. Survive all the waves; press ▶️ to call the next wave early for bonus coins.', tvHelp: 'D-pad over the squares · OK to build or upgrade.', dict: { 'Oleada ': 'Wave ', 'Mejorar': 'Upgrade' } },
+    tvHelp: 'Cruceta por las casillas · OK para construir o mejorar.',
+    tv: { mode: 'tap', targets: (g) => { const s = g.s, o = []; if (!s.path) return o; if (s.menu) return s.menu.btns; o.push(s.nextBtn); for (let y = 0; y < s.R; y++) for (let x = 0; x < s.C; x++) if (!s.onPath.has(x + ',' + y)) o.push({ x: s.ox + x * s.cs, y: s.oy + y * s.cs, w: s.cs, h: s.cs }); return o; } },
+    id: 'torres', title: 'Torres', emoji: '🏰', color: '#94d82d', origin: 'Tower Defense / InkTd',
+    help: 'Las criaturas avanzan por el camino hacia tu 🏰. <b>Toca una casilla de hierba</b> para elegir torre: 🏹 flechas rápidas, 💣 cañón que golpea a grupos y ❄️ hielo que las frena. <b>Toca una torre</b> para mejorarla. Cada criatura que paras da 🪙 monedas. Cada una que llega al castillo te quita un corazón. Aguanta todas las oleadas; pulsa ▶️ para adelantar la siguiente y ganar monedas extra.',
+    lives: 0, levels: 0, cap: 25,
+    setup(g) {
+      const L = g.lv, land = g.W > g.H, C = land ? 14 : 9, R = land ? 8 : 13;
+      g.s = { C, R, towers: [], ens: [], bolts: [], gold: 120 + L * 10, hearts: 10, wave: 0, waves: 4 + Math.min(Math.floor(L / 2), 8), spawnQ: [], wt: 6, menu: null, fx: [] };
+      const s = g.s; s.path = makePath(C, R); s.onPath = new Set(s.path.map((p) => p.join())); geo(g);
+      s.nextBtn = { x: g.W - 60, y: g.top + 8, w: 50, h: 40 };
+    },
+    layout(g) { const s = g.s; if (s.path) { geo(g); s.nextBtn = { x: g.W - 60, y: g.top + 8, w: 50, h: 40 }; s.menu = null; } },
+    tap(g, p) {
+      const s = g.s;
+      if (s.menu) { for (const b of s.menu.btns) if (p.x >= b.x && p.x <= b.x + b.w && p.y >= b.y && p.y <= b.y + b.h) { b.act(); s.menu = null; return; } s.menu = null; return; }
+      const nb = s.nextBtn; if (p.x >= nb.x && p.x <= nb.x + nb.w && p.y >= nb.y && p.y <= nb.y + nb.h) { if (!s.spawnQ.length && s.wave < s.waves) { s.gold += Math.round(s.wt * 4); s.wt = 0; } return; }
+      const x = Math.floor((p.x - s.ox) / s.cs), y = Math.floor((p.y - s.oy) / s.cs);
+      if (x < 0 || y < 0 || x >= s.C || y >= s.R || s.onPath.has(x + ',' + y)) return;
+      const t = s.towers.find((q) => q.x === x && q.y === y), cx = s.ox + (x + 0.5) * s.cs, cy = s.oy + (y + 0.5) * s.cs, bw = 64, bh = 64;
+      if (t) { const cost = Math.round(TW[t.k].cost * 0.8 * t.lv); s.menu = { btns: [{ x: cx - bw / 2, y: cy - bh - s.cs / 2, w: bw, h: bh, e: '⬆️', cost, ok: s.gold >= cost && t.lv < 4, act: () => { if (s.gold >= cost && t.lv < 4) { s.gold -= cost; t.lv++; Arcade.sfx.up(); g.ring(cx, cy, '#ffd43b', s.cs); } } }] }; return; }
+      const bx0 = clamp(cx - (bw * 3 + 12) / 2, 4, g.W - bw * 3 - 16), by = cy - bh - s.cs / 2 < g.top + 10 ? cy + s.cs / 2 + 4 : cy - bh - s.cs / 2;
+      s.menu = { btns: TW.map((T, i) => ({ x: bx0 + i * (bw + 6), y: by, w: bw, h: bh, e: T.e, cost: T.cost, ok: s.gold >= T.cost, act: () => { if (s.gold >= T.cost) { s.gold -= T.cost; s.towers.push({ x, y, k: i, lv: 1, cd: 0, ang: 0, pop: 1 }); Arcade.tone(300, 0.08, 'square', 0.07); } else Arcade.sfx.bad(); } })) };
+    },
+    update(g, dt) {
+      const s = g.s; if (s.done) return;
+      if (!s.spawnQ.length && !s.ens.length) { if (s.wave >= s.waves) { s.done = true; g.addScore((s.hearts * 50 + s.gold) * g.lv, g.W / 2, g.H / 2); g.confetti(70); setTimeout(() => { if (g.state === 'play') g.win(s.hearts >= 9 ? 3 : s.hearts >= 5 ? 2 : 1); }, 700); return; } s.wt -= dt; if (s.wt <= 0) { wave(g); s.wave++; s.wt = 7; Arcade.sfx.whoosh(); } }
+      for (const q of s.spawnQ) { q.t -= dt; if (q.t <= 0) { const E = EN[q.k], m = 1 + g.lv * 0.08 + s.wave * 0.09; s.ens.push({ ...E, d: 0, hpNow: E.hp * m, max: E.hp * m, slow: 0, gold: Math.round(E.gold * Math.sqrt(m)) }); q.dead = true; } }
+      s.spawnQ = s.spawnQ.filter((q) => !q.dead);
+      for (const e of s.ens) { e.slow = Math.max(0, e.slow - dt); e.d += e.sp * (e.slow ? 0.5 : 1) * dt; if (e.d >= s.path.length - 1) { e.dead = true; e.leaked = true; s.hearts--; Arcade.sfx.bad(); g.shake(0.2, 5); if (s.hearts <= 0) { s.done = true; g.message(Arcade.T('¡Han tomado el castillo!', 'The castle has fallen!'), 1.4); setTimeout(() => { if (g.state === 'play') Arcade.current.def.setup(g); }, 1500); return; } } }
+      for (const t of s.towers) {
+        const T = TW[t.k], rng = T.rng * (1 + (t.lv - 1) * 0.12); t.cd -= dt; t.pop = Math.max(0, (t.pop || 0) - dt * 3);
+        if (t.cd > 0) continue;
+        let best = null; for (const e of s.ens) { if (e.dead) continue; const [ex, ey] = pos(s, e.d); if (Math.hypot(ex - t.x - 0.5, ey - t.y - 0.5) <= rng && (!best || e.d > best.d)) best = e; }
+        if (!best) continue;
+        t.cd = T.rate / (1 + (t.lv - 1) * 0.25); const [ex, ey] = pos(s, best.d); t.ang = Math.atan2(ey - t.y - 0.5, ex - t.x - 0.5);
+        s.bolts.push({ x: t.x + 0.5, y: t.y + 0.5, tg: best, k: t.k, dmg: T.dmg * (1 + (t.lv - 1) * 0.6), sp: t.k === 1 ? 6 : 12 });
+        Arcade.tone(t.k === 1 ? 140 : t.k === 2 ? 1100 : 800, 0.03, 'square', 0.03);
+      }
+      for (const b of s.bolts) {
+        if (b.tg.dead) { b.dead = true; continue; }
+        const [tx, ty] = pos(s, b.tg.d), dx = tx - b.x, dy = ty - b.y, d = Math.hypot(dx, dy);
+        if (d < 0.25) {
+          b.dead = true; const T = TW[b.k];
+          const hit = (e, k) => { e.hpNow -= b.dmg * k; if (T.slow) e.slow = T.slow; if (e.hpNow <= 0 && !e.dead) { e.dead = true; s.gold += e.gold; const [x, y] = pos(s, e.d); g.addScore(e.gold * g.lv, s.ox + x * s.cs, s.oy + y * s.cs); g.burst(s.ox + x * s.cs, s.oy + y * s.cs, { n: 8, color: ['#fff', '#ffd43b'], speed: 120, size: 3 }); } };
+          if (T.splash) { for (const e of s.ens) { const [x, y] = pos(s, e.d); if (Math.hypot(x - tx, y - ty) < T.splash) hit(e, 1); } s.fx.push({ x: tx, y: ty, t: 0.3 }); } else hit(b.tg, 1);
+        } else { b.x += dx / d * b.sp * dt; b.y += dy / d * b.sp * dt; }
+      }
+      s.bolts = s.bolts.filter((b) => !b.dead); s.ens = s.ens.filter((e) => !e.dead);
+      for (const f of s.fx) f.t -= dt; s.fx = s.fx.filter((f) => f.t > 0);
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      ctx.fillStyle = '#2f4a2a'; ctx.fillRect(0, 0, W, H);
+      if (!s.path) return;
+      const cs = s.cs;
+      for (let y = 0; y < s.R; y++) for (let x = 0; x < s.C; x++) { const on = s.onPath.has(x + ',' + y); ctx.fillStyle = on ? '#d9b779' : (x + y) % 2 ? '#69a84f' : '#5c9944'; ctx.fillRect(s.ox + x * cs, s.oy + y * cs, cs + 0.5, cs + 0.5); if (!on && (x * 7 + y * 3) % 11 === 0) Arcade.emoji(ctx, '🌿', s.ox + (x + 0.5) * cs, s.oy + (y + 0.5) * cs, cs * 0.4, { alpha: 0.5 }); }
+      const [sx, sy] = s.path[0], [ex, ey] = s.path[s.path.length - 1];
+      Arcade.emoji(ctx, '🕳️', s.ox + (sx + 0.5) * cs, s.oy + (sy + 0.5) * cs, cs * 0.9);
+      Arcade.emoji(ctx, '🏰', s.ox + (ex + 0.5) * cs, s.oy + (ey + 0.5) * cs, cs * 1.1);
+      for (const t of s.towers) {
+        const x = s.ox + (t.x + 0.5) * cs, y = s.oy + (t.y + 0.5) * cs;
+        ctx.fillStyle = '#6c757d'; ctx.beginPath(); ctx.arc(x, y, cs * 0.42, 0, 6.3); ctx.fill(); ctx.fillStyle = TW[t.k].col; ctx.beginPath(); ctx.arc(x, y, cs * 0.34, 0, 6.3); ctx.fill();
+        Arcade.emoji(ctx, TW[t.k].e, x, y, cs * 0.55 * (1 + t.pop * 0.3), { rot: t.k === 0 ? t.ang + Math.PI / 4 : 0 });
+        for (let k = 1; k < t.lv; k++) Arcade.emoji(ctx, '⭐', x - cs * 0.3 + (k - 1) * cs * 0.2, y - cs * 0.38, cs * 0.2);
+      }
+      for (const e of s.ens) { const [x, y] = pos(s, e.d), px = s.ox + x * cs, py = s.oy + y * cs; Arcade.emoji(ctx, e.e, px, py - Math.abs(Math.sin(g.rt * 8 + e.d)) * 3, cs * (e.e === '🐉' ? 0.95 : 0.7), { flip: true, alpha: e.slow ? 0.75 : 1 }); ctx.fillStyle = 'rgba(0,0,0,.5)'; ctx.fillRect(px - cs * 0.3, py - cs * 0.45, cs * 0.6, 3); ctx.fillStyle = '#51cf66'; ctx.fillRect(px - cs * 0.3, py - cs * 0.45, cs * 0.6 * Math.max(0, e.hpNow / e.max), 3); }
+      for (const b of s.bolts) { const x = s.ox + b.x * cs, y = s.oy + b.y * cs; ctx.fillStyle = TW[b.k].col; ctx.beginPath(); ctx.arc(x, y, b.k === 1 ? 5 : 3, 0, 6.3); ctx.fill(); }
+      for (const f of s.fx) { ctx.fillStyle = `rgba(255,146,43,${f.t * 2})`; ctx.beginPath(); ctx.arc(s.ox + f.x * cs, s.oy + f.y * cs, cs * TW[1].splash * (1.2 - f.t), 0, 6.3); ctx.fill(); }
+      if (s.menu) for (const b of s.menu.btns) { ctx.fillStyle = b.ok ? 'rgba(255,255,255,.95)' : 'rgba(200,200,200,.8)'; Arcade.rr(ctx, b.x, b.y, b.w, b.h, 10); ctx.fill(); Arcade.emoji(ctx, b.e, b.x + b.w / 2, b.y + b.h * 0.4, b.w * 0.42, { alpha: b.ok ? 1 : 0.5 }); Arcade.txt(ctx, '🪙' + b.cost, b.x + b.w / 2, b.y + b.h - 10, 12, '#5c3d1e', 'center', 900); }
+      ctx.fillStyle = 'rgba(0,0,0,.35)'; Arcade.rr(ctx, 8, g.top + 8, Math.min(W - 80, 260), 40, 20); ctx.fill();
+      Arcade.txt(ctx, '🪙 ' + s.gold + '   ❤️ ' + s.hearts + '   ' + 'Oleada ' + s.wave + '/' + s.waves, 20, g.top + 28, 14, '#fff', 'left', 900);
+      const nb = s.nextBtn, can = !s.spawnQ.length && s.wave < s.waves && !s.ens.length; ctx.fillStyle = can ? '#fab005' : 'rgba(255,255,255,.2)'; Arcade.rr(ctx, nb.x, nb.y, nb.w, nb.h, 10); ctx.fill(); Arcade.txt(ctx, '▶️', nb.x + nb.w / 2, nb.y + nb.h / 2, 18, '#fff');
+    },
+  });
+})();

@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Dados · Arcade Perdido</title>
+<meta name="theme-color" content="#16213e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css">
+</head>
+<body class="game">
+<script src="config.js"></script>
+<script src="common.js"></script>
+<script>
+(function () {
+  const { ri, pick, clamp } = Arcade;
+  const DIRS = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
+  const PIPS = { 1: [[0, 0]], 2: [[-1, -1], [1, 1]], 3: [[-1, -1], [0, 0], [1, 1]], 4: [[-1, -1], [1, -1], [-1, 1], [1, 1]], 5: [[-1, -1], [1, -1], [0, 0], [-1, 1], [1, 1]], 6: [[-1, -1], [1, -1], [-1, 0], [1, 0], [-1, 1], [1, 1]] };
+  const DCOL = { 1: '#ff6b6b', 2: '#ffa94d', 3: '#ffd43b', 4: '#69db7c', 5: '#4dabf7', 6: '#b197fc' };
+
+  function geo(g) {
+    const s = g.s, Wa = g.W - 24, Ha = g.bot - g.top - 50;
+    s.cs = Math.min(Wa / s.C, Ha / s.R);
+    s.ox = (g.W - s.cs * s.C) / 2; s.oy = g.top + 40 + (Ha - s.cs * s.R) / 2;
+  }
+  function newDie() {
+    // orientación aleatoria válida
+    const top = ri(1, 6); let north; do { north = ri(1, 6); } while (north === top || north === 7 - top);
+    // east según regla de la mano derecha (dado estándar)
+    const east = eastOf(top, north);
+    return { top, north, east, sink: 0, ax: 0, ay: 0, pop: 1 };
+  }
+  function eastOf(top, north) {
+    // vectores: top=+z, north=+y, east=+x ; caras estándar 1-2-3 en sentido antihorario
+    const V = { 1: [0, 0, 1], 6: [0, 0, -1], 2: [0, 1, 0], 5: [0, -1, 0], 3: [1, 0, 0], 4: [-1, 0, 0] };
+    const t = V[top], n = V[north];
+    const e = [n[1] * t[2] - n[2] * t[1], n[2] * t[0] - n[0] * t[2], n[0] * t[1] - n[1] * t[0]];
+    for (const k in V) if (V[k][0] === e[0] && V[k][1] === e[1] && V[k][2] === e[2]) return +k;
+    return 3;
+  }
+  function roll(d, dir) {
+    const t = d.top, n = d.north, e = d.east;
+    if (dir === 'right') { d.top = 7 - e; d.east = t; }
+    else if (dir === 'left') { d.top = e; d.east = 7 - t; }
+    else if (dir === 'up') { d.top = 7 - n; d.north = t; }
+    else { d.top = n; d.north = 7 - t; }
+  }
+  const inside = (s, c, r) => c >= 0 && c < s.C && r >= 0 && r < s.R;
+  function push(g, dir) {
+    const s = g.s, [dx, dy] = DIRS[dir], c = s.pc + dx, r = s.pr + dy;
+    if (!inside(s, c, r)) return false;
+    const d = s.b[r][c];
+    if (!d) { s.pc = c; s.pr = r; s.walkAnim = 1; return true; }
+    if (d.sink) return false;
+    const nc = c + dx, nr = r + dy;
+    if (!inside(s, nc, nr) || s.b[nr][nc]) { Arcade.sfx.bad(); return false; }
+    s.b[r][c] = null; s.b[nr][nc] = d; roll(d, dir); d.ax = -dx; d.ay = -dy;
+    s.pc = c; s.pr = r; s.walkAnim = 1;
+    Arcade.tone(260, 0.06, 'square', 0.07, -60);
+    check(g);
+    return true;
+  }
+  function check(g) {
+    const s = g.s, seen = new Set();
+    for (let r = 0; r < s.R; r++) for (let c = 0; c < s.C; c++) {
+      const d = s.b[r][c]; if (!d || d.sink || seen.has(r * 99 + c) || d.top === 1) continue;
+      const v = d.top, grp = [], st = [[c, r]];
+      while (st.length) {
+        const [x, y] = st.pop(), k = y * 99 + x;
+        if (!inside(s, x, y) || seen.has(k)) continue;
+        const o = s.b[y][x]; if (!o || o.sink || o.top !== v) continue;
+        seen.add(k); grp.push([x, y]); st.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]);
+      }
+      if (grp.length >= v) {
+        const ones = [];
+        for (const [x, y] of grp) {
+          s.b[y][x].sink = 0.9;
+          for (const [dx, dy] of Object.values(DIRS)) { const o = inside(s, x + dx, y + dy) && s.b[y + dy][x + dx]; if (o && !o.sink && o.top === 1) { o.sink = 0.9; ones.push(o); } }
+        }
+        const n = grp.length + ones.length, pts = v * n * 10 * g.level;
+        g.addScore(pts, s.ox + (grp[0][0] + 0.5) * s.cs, s.oy + (grp[0][1] + 0.5) * s.cs);
+        Arcade.sfx.coin(); Arcade.buzz(30);
+        s.sinks++;
+        if (s.sinks % 8 === 0) { g.level++; g.hud(); g.message('Nivel ' + g.level, 1.1, 'Caen más dados'); Arcade.sfx.up(); }
+      }
+    }
+  }
+  function spawn(g) {
+    const s = g.s, free = [];
+    for (let r = 0; r < s.R; r++) for (let c = 0; c < s.C; c++) if (!s.b[r][c] && !(c === s.pc && r === s.pr)) free.push([c, r]);
+    if (free.length <= 1) { Arcade.sfx.lose(); g.state = 'dying'; setTimeout(g.over, 700); return; }
+    const [c, r] = pick(free); s.b[r][c] = newDie();
+    check(g);
+  }
+  function bfs(s, tc, tr) {
+    const q = [[s.pc, s.pr]], prev = new Map([[s.pc + ',' + s.pr, null]]);
+    while (q.length) {
+      const [c, r] = q.shift();
+      if (c === tc && r === tr) { const path = []; let k = c + ',' + r; while (prev.get(k)) { path.unshift(k.split(',').map(Number)); k = prev.get(k); } return path; }
+      for (const [dx, dy] of Object.values(DIRS)) {
+        const nc = c + dx, nr = r + dy, k = nc + ',' + nr;
+        if (!inside(s, nc, nr) || s.b[nr][nc] || prev.has(k)) continue;
+        prev.set(k, c + ',' + r); q.push([nc, nr]);
+      }
+    }
+    return null;
+  }
+
+  Arcade.game({
+    /*THEME*/ tag: "El diablillo que hunde los dados", deco: ["🎲", "😈", "🔥", "🎲", "♦️", "🎲"], font: "impact", bg: ["#1a1a40", "#0b0b1f"], music: {"mode": "harm", "bpm": 124, "wave": "sawtooth", "style": "drive", "root": 57}, voice: {"wave": "sawtooth", "mul": 0.9, "echo": 0.2}, ambient: {"e": ["🔥"], "n": 8, "vy": -24, "sway": 8, "alpha": 0.1, "size": [8, 14]},
+    /*EN*/ en: {"title": "Dice", "tag": "The little devil who sinks dice", "help": "<b>Tap a cell</b> to walk there or <b>tap a die next to you</b> (or swipe) to roll it. Rolling changes the top face. Join <b>as many equal dice as their number</b> (two 2s, three 3s, four 4s…) and they sink. 1s touching a sinking group go down with it. The sides show which face comes next. Don't let the board fill up.", "tvHelp": "D-pad: walk and push dice.", "dict": {"Caen más dados": "More dice falling", "🔳 Libres: ": "🔳 Free: "}},
+    /*TV*/ tvHelp: "Cruceta: caminar y empujar los dados.",
+    id: 'dados', title: 'Dados', emoji: '🎲', color: '#b197fc', origin: 'Devil Dice (Shift/SCEI, 1998)',
+    help: '<b>Toca una casilla</b> para andar hasta ella o <b>toca un dado pegado a ti</b> (o desliza) para hacerlo rodar. Al rodar cambia la cara de arriba. Junta <b>tantos dados iguales como su número</b> (dos 2, tres 3, cuatro 4…) y se hunden. Los 1 pegados a un grupo que se hunde se van con él. Los laterales muestran qué cara saldrá. No dejes que el tablero se llene.',
+    lives: 0, levels: null,
+    setup(g) {
+      g.s = { b: [], pc: 0, pr: 0, spawnT: 4, sinks: 0, path: null, pathT: 0, walkAnim: 0 };
+      const s = g.s;
+      if (g.W < g.H) { s.C = 6; s.R = 7; } else { s.C = 9; s.R = 5; }
+      for (let r = 0; r < s.R; r++) s.b.push(new Array(s.C).fill(null));
+      s.pc = Math.floor(s.C / 2); s.pr = s.R - 1;
+      for (let i = 0; i < 12; i++) { let c, r; do { c = ri(0, s.C - 1); r = ri(0, s.R - 1); } while (s.b[r][c] || (c === s.pc && r === s.pr)); s.b[r][c] = newDie(); }
+      const muted = Arcade.muted; Arcade.muted = true;
+      check(g); for (const row of s.b) for (let c = 0; c < row.length; c++) if (row[c] && row[c].sink) row[c] = newDie();
+      Arcade.muted = muted; g.score = 0; s.sinks = 0; g.floats = [];
+      geo(g);
+    },
+    layout(g) { if (g.s.b) geo(g); },
+    tap(g, p) {
+      const s = g.s, c = Math.floor((p.x - s.ox) / s.cs), r = Math.floor((p.y - s.oy) / s.cs);
+      if (!inside(s, c, r)) return;
+      const dc = c - s.pc, dr = r - s.pr;
+      if (Math.abs(dc) + Math.abs(dr) === 1) { s.path = null; push(g, dc > 0 ? 'right' : dc < 0 ? 'left' : dr > 0 ? 'down' : 'up'); return; }
+      if (!s.b[r][c]) { s.path = bfs(s, c, r); s.pathT = 0; }
+    },
+    swipe(g, dir) { g.s.path = null; push(g, dir); },
+    key(g, k, d) { if (!d) return; const m = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right' }[k]; if (m) { g.s.path = null; push(g, m); } },
+    update(g, dt) {
+      const s = g.s;
+      s.walkAnim = Math.max(0, s.walkAnim - dt * 6);
+      if (s.path && s.path.length) {
+        s.pathT -= dt;
+        if (s.pathT <= 0) { s.pathT = 0.09; const [c, r] = s.path.shift(); if (!s.b[r][c]) { s.pc = c; s.pr = r; Arcade.sfx.tick(); } else s.path = null; }
+      }
+      for (let r = 0; r < s.R; r++) for (let c = 0; c < s.C; c++) {
+        const d = s.b[r][c]; if (!d) continue;
+        d.ax *= Math.pow(1e-6, dt); d.ay *= Math.pow(1e-6, dt); d.pop = Math.max(0, d.pop - dt * 3);
+        if (d.sink) { d.sink -= dt; if (d.sink <= 0) { s.b[r][c] = null; g.burst(s.ox + (c + 0.5) * s.cs, s.oy + (r + 0.5) * s.cs, { n: 6, color: DCOL[d.top], speed: 120, size: 3 }); } }
+      }
+      s.spawnT -= dt;
+      if (s.spawnT <= 0) { s.spawnT = Math.max(1.6, 5 - g.level * 0.35); spawn(g); }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      const bg = ctx.createLinearGradient(0, 0, 0, H);
+      bg.addColorStop(0, '#1a1a40'); bg.addColorStop(1, '#0b0b1f');
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      g.scenery(['♠️','♥️','♦️','♣️','🃏'], 10, { alpha: 0.12, size: [24, 40] }); /*SC*/
+      if (!s.b.length) return;
+      const cs = s.cs;
+      for (let r = 0; r < s.R; r++) for (let c = 0; c < s.C; c++) {
+        ctx.fillStyle = (r + c) % 2 ? '#2b2d64' : '#25275a'; ctx.fillRect(s.ox + c * cs, s.oy + r * cs, cs, cs);
+      }
+      for (let r = 0; r < s.R; r++) for (let c = 0; c < s.C; c++) {
+        const d = s.b[r][c]; if (!d) continue;
+        const sk = d.sink ? d.sink / 0.9 : 1;
+        const z = (cs - 8) * (0.55 + 0.45 * sk) * (1 + d.pop * 0.15);
+        const x = s.ox + (c + d.ax + 0.5) * cs, y = s.oy + (r + d.ay + 0.5) * cs;
+        ctx.globalAlpha = 0.4 + 0.6 * sk;
+        const side = z * 0.16;
+        ctx.fillStyle = '#adb5bd'; Arcade.rr(ctx, x - z / 2, y - z / 2, z + side, z + side, z * 0.18); ctx.fill();
+        ctx.fillStyle = d.sink ? '#ffe3e3' : '#fff'; Arcade.rr(ctx, x - z / 2, y - z / 2, z, z, z * 0.18); ctx.fill();
+        ctx.strokeStyle = DCOL[d.top]; ctx.lineWidth = 3; ctx.stroke();
+        ctx.fillStyle = d.top === 1 ? '#e03131' : '#212529';
+        for (const [px, py] of PIPS[d.top]) { ctx.beginPath(); ctx.arc(x + px * z * 0.26, y + py * z * 0.26, z * 0.085, 0, 6.28); ctx.fill(); }
+        Arcade.txt(ctx, 7 - d.north, x + side * 0.2, y + z / 2 + side * 0.5, side * 0.9, '#495057', 'center', 900);
+        Arcade.txt(ctx, d.east, x + z / 2 + side * 0.5, y + side * 0.2, side * 0.9, '#495057', 'center', 900);
+        ctx.globalAlpha = 1;
+      }
+      if (s.path) for (const [c, r] of s.path) { ctx.fillStyle = 'rgba(177,151,252,.35)'; ctx.beginPath(); ctx.arc(s.ox + (c + 0.5) * cs, s.oy + (r + 0.5) * cs, cs * 0.08, 0, 6.28); ctx.fill(); }
+      Arcade.emoji(ctx, '😈', s.ox + (s.pc + 0.5) * cs, s.oy + (s.pr + 0.5) * cs - s.walkAnim * 6, cs * 0.66);
+      const free = s.b.flat().filter(v => !v).length - 1;
+      Arcade.txt(ctx, '🔳 Libres: ' + free, W / 2, s.oy - 20, 15, free < 6 ? '#ff6b6b' : '#d0bfff', 'center', 800);
+    },
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,151 @@
+// Cruce|#2f6b2f
+(function () {
+  const { ri, rand, clamp, pick } = Arcade;
+  const C = 9;
+  const HEROES = ['🐔', '🐸', '🐰', '🦆', '🐱', '🐶'];
+  const CARS = ['🚗', '🚕', '🚙', '🚓'], LONG = ['🚌', '🚚'];
+
+  function makeRow(g, i) {
+    const s = g.s, L = g.lv;
+    if (i < 3 || i >= s.need) return { t: 'grass', trees: i === 0 ? new Set() : treesFor(i, i >= s.need) };
+    // segmentos
+    if (!s.seg || s.seg.left <= 0) {
+      const r = Math.random(), opts = L < 2 ? ['road', 'grass'] : L < 4 ? ['road', 'river', 'grass'] : ['road', 'river', 'grass', 'rail'];
+      let t = pick(opts); if (s.seg && s.seg.t === t) t = 'grass';
+      s.seg = { t, left: t === 'grass' ? ri(1, 2) : t === 'rail' ? ri(1, 2) : ri(1, Math.min(2 + Math.floor(L / 3), 5)) };
+    }
+    s.seg.left--;
+    const t = s.seg.t, mul = 1 + Math.min(L, 20) * 0.06;
+    if (t === 'grass') return { t, trees: treesFor(i), coin: Math.random() < 0.3 ? ri(0, C - 1) : -1 };
+    const dir = Math.random() < 0.5 ? 1 : -1;
+    if (t === 'road') {
+      const sp = rand(1.2, 2.6) * mul, objs = [], long = Math.random() < 0.3;
+      let x = rand(0, 3); while (x < C + 4) { const w = long ? 2 : 1; objs.push({ x, w, e: long ? pick(LONG) : pick(CARS) }); x += w + rand(2.2, 4.5) - Math.min(L, 10) * 0.08; }
+      return { t, dir, sp, objs, span: x };
+    }
+    if (t === 'river') {
+      const sp = rand(0.9, 1.9) * mul, objs = [];
+      let x = rand(0, 2); while (x < C + 4) { const w = ri(2, Math.max(2, 4 - Math.floor(L / 6))); objs.push({ x, w }); x += w + rand(1.3, 2.4 + L * 0.04); }
+      return { t, dir, sp, objs, span: x };
+    }
+    return { t: 'rail', dir, timer: rand(1, 4), train: null };
+  }
+  function treesFor(i, finish) {
+    const set = new Set(); if (finish) return set;
+    const n = ri(0, 3); for (let k = 0; k < n; k++) set.add(ri(0, C - 1));
+    return set;
+  }
+  function row(g, i) { const s = g.s; while (s.rows.length <= i + 1) s.rows.push(makeRow(g, s.rows.length)); return s.rows[i]; }
+  function geo(g) { const s = g.s; s.cs = Math.min(g.W / C, (g.bot - g.top) / 11); s.ox = (g.W - s.cs * C) / 2; }
+  function hop(g, dc, dr) {
+    const s = g.s, p = s.p; if (s.dead || p.anim > 0 || s.won) return;
+    const nr = p.r + dr; if (nr < 0) return;
+    let nc = Math.round(p.c) + dc; if (nc < 0 || nc >= C) return;
+    const R = row(g, nr);
+    if (R.t === 'grass' && R.trees.has(nc)) { Arcade.sfx.bad(); return; }
+    p.fr = p.r; p.fc = p.c; p.r = nr; p.c = nc; p.anim = 1; p.face = dc ? dc : p.face;
+    Arcade.tone(500 + dr * 80, 0.04, 'square', 0.05);
+    if (nr > s.best) { s.best = nr; g.addScore(g.lv, s.ox + (nc + 0.5) * s.cs, 0); }
+  }
+  function die(g, how) {
+    const s = g.s; if (s.dead) return; s.dead = how;
+    const x = s.ox + (s.p.c + 0.5) * s.cs, y = rowY(g, s.p.r);
+    if (how === 'water') { g.burst(x, y, { n: 14, color: ['#4dabf7', '#a5d8ff'], speed: 150, size: 4 }); Arcade.tone(600, 0.4, 'sine', 0.1, -450); }
+    else { g.burst(x, y, { n: 14, emoji: '🪶', size: 12, speed: 160 }); Arcade.sfx.hit(); g.shake(0.25, 6); }
+    setTimeout(() => {
+      if (g.state === 'play' && g.die()) { const p = s.p; let r = Math.max(0, Math.floor(s.cam)); while (row(g, r).t !== 'grass') r--; p.r = r; p.c = 4; row(g, r).trees.delete(4); p.anim = 0; s.dead = null; s.cam = Math.min(s.cam, r); }
+    }, 900);
+  }
+  const rowY = (g, r) => g.s.base - (r - g.s.cam) * g.s.cs;
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: '¿Por qué cruzó el pollo?', deco: ['🐔', '🚗', '🪵', '🌳', '🚂', '🌊'], font: 'comic', bg: ['#4c9a4c', '#2f6b2f'],
+    music: { mode: 'major', bpm: 128, wave: 'square', style: 'arcade', root: 62 }, voice: { wave: 'square', mul: 1, echo: 0.2 },
+    en: { title: 'Crossing', tag: 'Why did the chicken cross?', help: '<b>Tap</b> to hop forward and <b>swipe</b> left, right or down to dodge. Cross roads without being run over, jump on the <b>logs</b> 🪵 to cross rivers (the water is deadly) and watch the 🚨 lights before the train. Trees block the way. Reach the 🏁 line to finish the level. Do not dawdle: the screen moves forward on its own!', tvHelp: '▲ ▼ ◀ ▶ to hop.', dict: { 'Meta: ': 'Goal: ' } },
+    tvHelp: '▲ ▼ ◀ ▶ para saltar.',
+    id: 'cruce', title: 'Cruce', emoji: '🐔', color: '#ffd43b', origin: 'Crossy Road (Hipster Whale)',
+    help: '<b>Toca</b> para saltar hacia delante y <b>desliza</b> a izquierda, derecha o atrás para esquivar. Cruza las carreteras sin que te pillen, salta sobre los <b>troncos</b> 🪵 para cruzar los ríos (el agua mata) y atento a las luces 🚨 antes del tren. Los árboles cortan el paso. Llega a la línea 🏁 para pasar de nivel. No te entretengas: ¡la pantalla avanza sola!',
+    lives: 3, levels: 0, cap: 20,
+    setup(g) {
+      g.s = { rows: [], seg: null, best: 0, cam: 0, hero: HEROES[(g.level - 1) % HEROES.length] };
+      const s = g.s; s.need = 22 + Math.min(g.lv, 20) * 3;
+      s.p = { r: 0, c: 4, fr: 0, fc: 4, anim: 0, face: -1 };
+      geo(g); s.base = g.bot - s.cs * 2.2; row(g, 20);
+    },
+    layout(g) { if (g.s.p) { geo(g); g.s.base = g.bot - g.s.cs * 2.2; } },
+    tap(g) { hop(g, 0, 1); },
+    swipe(g, d) { hop(g, d === 'left' ? -1 : d === 'right' ? 1 : 0, d === 'up' ? 1 : d === 'down' ? -1 : 0); },
+    key(g, k, d) { if (!d) return; if (k === 'ArrowUp' || k === ' ') hop(g, 0, 1); else if (k === 'ArrowDown') hop(g, 0, -1); else if (k === 'ArrowLeft') hop(g, -1, 0); else if (k === 'ArrowRight') hop(g, 1, 0); },
+    update(g, dt) {
+      const s = g.s, p = s.p;
+      // movimiento de filas visibles
+      const r0 = Math.max(0, Math.floor(s.cam) - 3), r1 = Math.floor(s.cam) + 14;
+      for (let i = r0; i <= r1; i++) {
+        const R = row(g, i);
+        if (R.objs) for (const o of R.objs) { o.x += R.dir * R.sp * dt; if (R.dir > 0 && o.x > C + 1) o.x -= R.span; if (R.dir < 0 && o.x + o.w < -1) o.x += R.span; }
+        if (R.t === 'rail') {
+          if (R.train) { R.train.x += R.dir * 22 * dt; if ((R.dir > 0 && R.train.x > C + 2) || (R.dir < 0 && R.train.x + 10 < -2)) { R.train = null; R.timer = rand(2.5, 6 - Math.min(g.lv, 10) * 0.2); } }
+          else { R.timer -= dt; if (R.timer <= 0) { R.train = { x: R.dir > 0 ? -12 : C + 2 }; if (Math.abs(i - p.r) < 6) Arcade.tone(180, 0.4, 'sawtooth', 0.06); } }
+        }
+      }
+      if (p.anim > 0) { p.anim = Math.max(0, p.anim - dt * 8); }
+      // cámara
+      const want = Math.max(s.cam, p.r - 2);
+      s.cam += (want - s.cam) * Math.min(1, dt * 5);
+      if (g.lv >= 2 && !s.dead && !s.won && s.best > 2) s.cam += dt * (0.12 + Math.min(g.lv, 20) * 0.025);
+      if (s.dead || s.won) return;
+      if (p.r < s.cam - 1.6) { g.message('🦅', 0.8); return die(g, 'eagle'); }
+      if (p.anim > 0.5) return;
+      const R = row(g, p.r);
+      if (R.t === 'road') { for (const o of R.objs) if (p.c + 0.7 > o.x && p.c + 0.3 < o.x + o.w) return die(g, 'car'); }
+      else if (R.t === 'rail') { if (R.train && p.c + 0.7 > R.train.x && p.c + 0.3 < R.train.x + 10) return die(g, 'car'); }
+      else if (R.t === 'river' && p.anim === 0) {
+        const log = R.objs.find((o) => p.c + 0.5 > o.x && p.c + 0.5 < o.x + o.w);
+        if (!log) return die(g, 'water');
+        p.c += R.dir * R.sp * dt; if (p.c < -0.4 || p.c > C - 0.6) return die(g, 'water');
+      } else if (R.t === 'grass') {
+        if (R.coin === Math.round(p.c)) { R.coin = -1; Arcade.sfx.coin(); g.addScore(10 * g.lv, s.ox + (p.c + 0.5) * s.cs, rowY(g, p.r) - 20); }
+      }
+      if (p.r >= s.need) { s.won = true; Arcade.sfx.win(); g.confetti(60); g.addScore(100 * g.lv, g.W / 2, g.H / 2); setTimeout(() => { if (g.state === 'play') g.win(); }, 800); }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      ctx.fillStyle = '#2f6b2f'; ctx.fillRect(0, 0, W, H);
+      if (!s.p) return;
+      const cs = s.cs, ox = s.ox;
+      const r0 = Math.max(0, Math.floor(s.cam) - 3), r1 = Math.floor(s.cam) + Math.ceil((s.base - g.top) / cs) + 2;
+      for (let i = r1; i >= r0; i--) {
+        const R = row(g, i), y = rowY(g, i) - cs / 2;
+        if (y > H || y + cs < 0) continue;
+        if (R.t === 'grass') {
+          ctx.fillStyle = i >= s.need ? (i % 2 ? '#fff' : '#212529') : i % 2 ? '#8ce99a' : '#69db7c'; ctx.fillRect(0, y, W, cs + 1);
+          if (i === s.need) { for (let c = 0; c < C * 2; c++) { ctx.fillStyle = c % 2 ? '#fff' : '#212529'; ctx.fillRect(ox + c * cs / 2, y, cs / 2, cs / 2); ctx.fillStyle = c % 2 ? '#212529' : '#fff'; ctx.fillRect(ox + c * cs / 2, y + cs / 2, cs / 2, cs / 2); } Arcade.emoji(ctx, '🏁', ox - cs * 0.1 + cs, y + cs / 2, cs * 0.8); }
+          for (const c of R.trees) Arcade.emoji(ctx, (c + i) % 3 ? '🌳' : '🌲', ox + (c + 0.5) * cs, y + cs * 0.45, cs * 0.9);
+          if (R.coin >= 0) Arcade.emoji(ctx, '🪙', ox + (R.coin + 0.5) * cs, y + cs / 2 + Math.sin(g.rt * 4) * 3, cs * 0.5);
+        } else if (R.t === 'road') {
+          ctx.fillStyle = '#495057'; ctx.fillRect(0, y, W, cs + 1);
+          ctx.fillStyle = 'rgba(255,255,255,.5)'; for (let x = 0; x < W; x += cs) ctx.fillRect(x, y + cs - 2, cs * 0.5, 3);
+          for (const o of R.objs) Arcade.emoji(ctx, o.e, ox + (o.x + o.w / 2) * cs, y + cs / 2, cs * (o.w > 1 ? 1.5 : 0.9), { flip: R.dir > 0 });
+        } else if (R.t === 'river') {
+          ctx.fillStyle = '#339af0'; ctx.fillRect(0, y, W, cs + 1);
+          ctx.strokeStyle = 'rgba(255,255,255,.35)'; ctx.lineWidth = 2; for (let x = ((g.rt * 30 * R.dir) % 40) - 40; x < W; x += 40) { ctx.beginPath(); ctx.moveTo(x, y + cs * 0.3); ctx.quadraticCurveTo(x + 10, y + cs * 0.2, x + 20, y + cs * 0.3); ctx.stroke(); }
+          for (const o of R.objs) { ctx.fillStyle = '#8d5524'; Arcade.rr(ctx, ox + o.x * cs + 2, y + cs * 0.18, o.w * cs - 4, cs * 0.64, cs * 0.3); ctx.fill(); ctx.fillStyle = '#a9713b'; Arcade.rr(ctx, ox + o.x * cs + 6, y + cs * 0.26, o.w * cs - 12, cs * 0.2, cs * 0.1); ctx.fill(); }
+        } else {
+          ctx.fillStyle = '#868e96'; ctx.fillRect(0, y, W, cs + 1);
+          ctx.fillStyle = '#5c3d1e'; for (let x = 0; x < W; x += cs * 0.4) ctx.fillRect(x, y + cs * 0.15, cs * 0.15, cs * 0.7);
+          ctx.fillStyle = '#ced4da'; ctx.fillRect(0, y + cs * 0.3, W, 3); ctx.fillRect(0, y + cs * 0.7, W, 3);
+          const warn = R.train || R.timer < 1;
+          Arcade.emoji(ctx, warn && Math.floor(g.rt * 8) % 2 ? '🚨' : '🚦', ox - cs * 0.1 + cs * 0.3, y + cs / 2, cs * 0.6);
+          if (R.train) for (let k = 0; k < 5; k++) Arcade.emoji(ctx, k === (R.dir > 0 ? 4 : 0) ? '🚂' : '🚃', ox + (R.train.x + k * 2 + 1) * cs, y + cs / 2, cs * 1.6, { flip: R.dir > 0 });
+        }
+        // jugador en su fila
+        if (i === s.p.r && s.dead !== 'water' && s.dead !== 'car') {
+          const p = s.p, k = p.anim, cx = ox + ((p.c * (1 - k) + p.fc * k) + 0.5) * cs, cy = rowY(g, p.r * (1 - k) + p.fr * k) - Math.sin(k * Math.PI) * cs * 0.4;
+          ctx.fillStyle = 'rgba(0,0,0,.2)'; ctx.beginPath(); ctx.ellipse(cx, rowY(g, p.r) + cs * 0.3, cs * 0.3, cs * 0.1, 0, 0, Math.PI * 2); ctx.fill();
+          Arcade.emoji(ctx, s.hero, cx, cy, cs * 0.85, { flip: p.face > 0 });
+        }
+      }
+      Arcade.txt(ctx, 'Meta: ' + Math.min(s.best, s.need) + '/' + s.need, W / 2, g.top + 18, 16, '#fff', 'center', 900, 'rgba(0,0,0,.5)');
+    },
+  });
+})();

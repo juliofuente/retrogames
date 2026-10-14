@@ -1,0 +1,174 @@
+ARCADE PERDIDO + ARCADE PRO — LO QUE ESTÁ HECHO
+================================================
+Fecha: 14-10-2026 · Versión de la PWA (games.js → ARCADE_VERSION): 2.4.0
+Total: 41 juegos en la colección principal + 80 en la colección Pro = 121 juegos.
+
+CONTENIDO DEL ZIP
+-----------------
+pwa/          Proyecto PWA completo (para subir a un servidor). Cada juego es un .html pequeño que carga:
+              config.js → common.js → (phys.js solo si el juego usa física) → código del juego.
+              · index.html     portada táctil de la colección principal (Arcade Perdido)
+              · indexpro.html  portada táctil de la colección Pro
+              · indextv.html   portada para TV (mando/cruceta), con pestañas Arcade Perdido / Arcade Pro
+              · games.js       lista de juegos: GAMES (principal) y GAMES_PRO (Pro) + ARCADE_VERSION
+              · config.js      ARCADE_CONFIG: modo ('modonormal'|'modotv'|'seleccionable'|'automatico'),
+                               idioma ('auto'|'es'|'en'), jugadoresMax, rondasMultijugador
+              · common.js      motor (lienzo, emojis, audio procedural, niveles, vidas, menús, modo TV,
+                               multijugador por turnos en TV, traducción es/en)
+              · common.css     estilos comunes · phys.js  motor de física 2D (cajas y círculos con rotación)
+              · sw.js          service worker (offline) · manifest.webmanifest · icons/
+              · build.py       genera ../autonomos/ (versiones de un solo archivo con todo incrustado)
+              · README.md      documentación del motor/API
+autonomos/    Los mismos juegos y portadas pero AUTÓNOMOS (un .html que se abre solo, sin servidor).
+herramientas/ Para seguir desarrollando:
+              · src/<id>.js    código fuente de cada juego Pro (y de Cinta) — 1.ª línea: "// Título|#colortema"
+                               y "// @phys" en la 2.ª si usa phys.js
+              · mk.py          src/<id>.js → pwa/<id>.html   (python3 mk.py id1 id2 …)
+              · mkgames.py     regenera el bloque GAMES_PRO de pwa/games.js (diccionario D + lista PRO)
+              · mock.js        motor falso para simular juegos en Node (pruebas de balance/solubilidad)
+              · tall.py / ttv.py / t8n.py  pruebas Playwright: táctil, TV (1 y 2 jugadores), textos en inglés
+
+CARACTERÍSTICAS COMUNES A TODOS LOS JUEGOS
+------------------------------------------
+· Táctil sin cruceta en pantalla, responsive (vertical y horizontal), emojis + efectos + música procedural.
+· Niveles infinitos (levels: 0) con dificultad creciente y tope (cap); estrellas al pasar nivel; récord guardado.
+· Español/inglés con detección automática (ES/CA/GL/EU → español) y botón para cambiar; ?lang=en fuerza idioma.
+· Modo TV (Android TV / Fire TV): cursor o cruceta según el juego; multijugador por turnos (1–4).
+· PWA instalable y offline. Los juegos Pro vuelven a indexpro.html (def.home).
+
+COLECCIÓN PRINCIPAL (pwa/index.html) — 41 juegos (archivo | título ES / EN | origen | TV)
+lazo.html | Lazo / Lasso | Libble Rabble (Namco, 1983) | TV:false
+pivote.html | Pivote / Pivot | Clu Clu Land (Nintendo, 1984) | TV:cruceta
+tuberia.html | Tubería / Pipeline | Oil's Well (Sierra, 1983) | TV:cruceta
+vias.html | Vías / Tracks | Locomotion (Konami, 1982) | TV:cruceta
+barra.html | Barra / Tilt | Ice Cold Beer (Taito, 1983) | TV:false
+escalador.html | Escalador / Climber | Crazy Climber (Nichibutsu, 1980) | TV:cruceta
+balancin.html | Balancín / Seesaw | Circus (Exidy, 1977) | TV:cruceta
+cubos.html | Cubos / Buckets | Kaboom! (Activision, 1981) | TV:cruceta
+camarero.html | Camarero / Bartender | Tapper (Bally Midway, 1983) | TV:cruceta
+cambio.html | Cambio / Change | Money Idol Exchanger (Face, 1997) | TV:cruceta
+bumeran.html | Bumerán / Boomerang | Plotting / Flipull (Taito, 1989) | TV:cruceta
+cuadra.html | Cuadra / Squared | Quarth (Konami, 1989) | TV:cruceta
+galletas.html | Galletas / Cookies | Yoshi's Cookie (Nintendo, 1992) | TV:cursor
+centro.html | Centro / Center | Zoop (Hookstone, 1995) | TV:cursor
+dados.html | Dados / Dice | Devil Dice (SCEI, 1998) | TV:cruceta
+mariquita.html | Mariquita / Ladybug | Lady Bug (Universal, 1981) | TV:cruceta
+piramide.html | Pirámide / Pyramid | Q*bert (Gottlieb, 1982) | TV:cruceta
+pinguino.html | Pingüino / Penguin | Pengo (Sega, 1982) | TV:cruceta
+murallas.html | Murallas / Ramparts | Rampart (Atari, 1990) | TV:cursor
+castillos.html | Castillos / Castles | Warlords (Atari, 1980) | TV:cruceta
+parejas.html | Parejas / Pairs | Puzznic (Taito, 1989) | TV:cursor
+fantasma.html | Fantasma / Ghost | Bubble Ghost (ERE, 1987) | TV:cruceta
+sombreros.html | Sombreros / Hats | Hatris (Bullet-Proof, 1990) | TV:cruceta
+domino.html | Dominó / Domino | Pushover (Ocean, 1992) | TV:cursor
+ishido.html | Ishido / Ishido | Ishido (Accolade, 1990) | TV:cursor
+hamburguesa.html | Hamburguesa / Burger | BurgerTime (Data East, 1982) | TV:cruceta
+hielo.html | Hielo / Ice | Kickle Cubicle (Irem, 1988) | TV:cruceta
+fontanero.html | Fontanero / Plumber | Frisky Tom (Nichibutsu, 1981) | TV:false
+cerditos.html | Cerditos / Piglets | Pooyan (Konami, 1982) | TV:cruceta
+justa.html | Justa / Joust | Joust (Williams, 1982) | TV:cruceta
+avalancha.html | Avalancha / Avalanche | Intelligent Qube (Sony, 1997) | TV:cursor
+ratonera.html | Ratonera / Mousetrap | Mouse Trap (Exidy, 1981) | TV:cruceta
+trampolin.html | Trampolín / Trampoline | Mappy (Namco, 1983) | TV:cruceta
+agujeros.html | Agujeros / Holes | Space Panic (Universal, 1980) | TV:cruceta
+desplazado.html | Desplazado / Scroller | Splat! (Incentive, 1983) | TV:cruceta
+campanas.html | Campanas / Bells | TwinBee (Konami, 1985) | TV:cruceta
+tunel.html | Túnel / Tunnel | Tempest (Atari, 1981) | TV:cruceta
+monociclo.html | Monociclo / Unicycle | Kick Man (Midway, 1981) | TV:cruceta
+centinela.html | Centinela / Sentinel | The Sentinel (Firebird, 1986) | TV:cursor
+burbujas.html | Burbujas / Bubbles | Magical Drop (Data East, 1995) | TV:cruceta
+cinta.html | Cinta / Conveyor | Klax (Atari Games, 1990) | TV:cruceta
+
+COLECCIÓN PRO (pwa/indexpro.html) — 80 juegos (mecánicas de los juegos que cubre emanueleferonato.com)
+esquiva.html | Esquiva / Dodge | Eskiv / Avoider / String Avoider | TV:cruceta
+astro.html | Astro / Astro | Astro-PANIC! / Pang / Pixel Purge | TV:cruceta
+dardos.html | Dardos / Darts | Bloons / Balloon Invasion / Pop to Save | TV:cursor
+gloton.html | Glotón / Glutton | Hungry Hero / Hop Hop Hop Underwater | TV:cruceta
+trepamuros.html | Trepamuros / Wall Climber | Dashy Panda / Dash N Blast | TV:cruceta
+carrera.html | Carrera / Run | Endless Runner / Castle Ramble / Roly Poly | TV:cruceta
+planetita.html | Planetita / Little Planet | Circular endless runner / Run Around / Globe | TV:cruceta
+globo.html | Globo / Balloon | Rise Above / Rise Up | TV:cruceta
+carretera.html | Carretera / Risky Road | Risky Road / Crossy Road | TV:cruceta
+torreta.html | Torreta / Turret | Spinny Gun / TwinSpin | TV:cruceta
+reaccion.html | Reacción / Chain | Circle Chain / Boomshine | TV:cursor
+estallido.html | Estallido / Blast | Cirplosion / Astro-PANIC! | TV:cruceta
+punteria.html | Puntería / Aim | Boom Dots / Click when Red | TV:cruceta
+reflejos.html | Reflejos / Reflexes | Click when Red | TV:cruceta
+relojes.html | Relojes / Clocks | CLOCKS - The Game | TV:cursor
+golpecolor.html | Golpe de color / Color Shot | Color Hit / Color Switch | TV:cruceta
+encaje.html | Encaje / Perfect Fit | Perfect Square! / Shrink it / Biggification | TV:cruceta
+pezgordo.html | Pez gordo / Big Fish | Biggification / Hungry Hero / Feeding Frenzy | TV:cruceta
+sumas.html | Sumas / Sums | 1+2=3 / Math Game / zNumbers | TV:cursor
+destellos.html | Destellos / Flashes | Memdot / Simon | TV:cursor
+saltarin.html | Saltarín / Jumper | Platformer / Super Mario Bros / Jet Set Willy / Mike Dangers / Lep's World | TV:cruceta
+volteo.html | Volteo / Flip | VVVVVV (Terry Cavanagh) | TV:cruceta
+resorte.html | Resorte / Spring | Spring Ninja (Ketchapp) | TV:cruceta
+escaleras.html | Escaleras / Stairs | Stairs / Infinite Stairs | TV:cruceta
+tambaleante.html | Tambaleante / Wobbly | Tipsy Tower / Stabilize! / Toony | TV:cruceta
+balanza.html | Balanza / Balance | Mass Attack / Teeter | TV:cruceta
+montana.html | Montaña / Mountain | Down The Mountain / Dudeski | TV:cruceta
+esqui.html | Esquí / Ski | Dudeski / Slalom / Goat Rider | TV:cruceta
+teeter.html | Teeter / Teeter | Teeter Up / Ice Cold Beer | TV:cruceta
+circuito.html | Circuito / Circuit | Circle Race / Racing | TV:cruceta
+tirachinas.html | Tirachinas / Slingshot | Angry Birds (Rovio) / Crush the Castle | TV:cruceta
+derribo.html | Derribo / Topple | Totem Destroyer / Erase Box / Tipsy Tower | TV:cursor
+gravedad.html | Gravedad / Gravity | Angry Birds Space / Planet Revenge | TV:cruceta
+artilleria.html | Artillería / Artillery | Artillery / Worms / Scorched Earth | TV:cruceta
+alas.html | Alas / Wings | Tiny Wings (Andreas Illiger) | TV:cruceta
+agua.html | Agua / Water | Where's My Water? (Disney) | TV:cursor
+huerto.html | Huerto / Garden | Plants vs. Zombies / Tower Defense | TV:cursor
+torres.html | Torres / Towers | Tower Defense / InkTd | TV:cursor
+supervivientes.html | Supervivientes / Survivors | Vampire Survivors / BoxHead / Survival Horror | TV:cruceta
+celulas.html | Células / Cells | Nano War / Cirplosion / State.io | TV:cursor
+helicoptero.html | Helicóptero / Chopper | Helicopter Game / Metro Siberia Underground | TV:cruceta
+treses.html | Treses / Threes | Threes! (Sirvo) | TV:cruceta
+palabra.html | Palabra / Word | Wordle (Josh Wardle) / Word Game | TV:cursor
+almacen.html | Almacén / Warehouse | Sokoban (Thinking Rabbit) / Pushori / A Blocky Christmas | TV:cruceta
+buscaminas.html | Buscaminas / Minesweeper | Minesweeper / Gem Sweeper | TV:cursor
+billar.html | Billar / Pool | Pool / Trick Shot | TV:cruceta
+poker.html | Póker / Poker | Video Poker / Card Game | TV:cursor
+enraya.html | En raya / In a Row | Tic Tac Toe / Renju | TV:cursor
+laberinto.html | Laberinto / Maze | Maze / Run Around | TV:cruceta
+puzle.html | Puzle / Jigsaw | Jigsaw Game | TV:cursor
+aleteo.html | Aleteo / Flutter | Flappy Bird (dotGEARS) | TV:cruceta
+cruce.html | Cruce / Crossing | Crossy Road (Hipster Whale) | TV:cruceta
+ladrillos.html | Ladrillos / Bricks | Breakout (Atari) / Bricks | TV:cruceta
+gemas.html | Gemas / Gems | Bejeweled (PopCap) / Diamond Digger · Farm Heroes | TV:cursor
+bloques.html | Bloques / Blocks | Tetris (Pajitnov, 1984) | TV:cruceta
+rosario.html | Rosario / Rosary | Zuma (PopCap) | TV:cruceta
+helice.html | Hélice / Helix | Helix Jump (Voodoo) | TV:cruceta
+inundacion.html | Inundación / Flood | Flood-It / Filler / ColorFill | TV:cursor
+minero.html | Minero / Miner | Gold Miner | TV:cruceta
+doscoches.html | Dos coches / Two Cars | 2 Cars (Ketchapp) | TV:cruceta
+salto.html | Salto / Leap | Geometry Dash (RobTop) | TV:cruceta
+sandia.html | Sandía / Melon Drop | Watermelon Game / Suika | TV:cruceta
+fusion.html | Fusión / Merge | 2048 (Gabriele Cirulli) | TV:cruceta
+puente.html | Puente / Bridge | Stick Hero (Ketchapp) | TV:cruceta
+torre.html | Torre / Tower | Stack (Ketchapp) | TV:cruceta
+lenador.html | Leñador / Lumberjack | Timberman (Digital Melody) | TV:cruceta
+saltacolor.html | Saltacolor / Hue Hop | Color Switch (Fortafy) | TV:cruceta
+pinchos.html | Pinchos / Spikes | Don't Touch the Spikes (Ketchapp) | TV:cruceta
+orbita.html | Órbita / Orbit | Circle Path | TV:cruceta
+candado.html | Candado / Padlock | Pop the Lock (Simple Machine) | TV:cruceta
+rebotes.html | Rebotes / Bounces | Ballz (Ketchapp) | TV:cruceta
+arquero.html | Arquero / Archer | Mini Archer | TV:cruceta
+minigolf.html | Minigolf / Mini Golf | Golf Dash / Mini Golf | TV:cruceta
+grupos.html | Grupos / Clusters | SameGame | TV:cursor
+columnas.html | Columnas / Columns | Columns (Sega, 1990) | TV:cruceta
+puntos.html | Puntos / Dots | Dots / Two Dots | TV:false
+cientos.html | Cientos / Hundreds | Hundreds (Semi Secret, 2013) | TV:false
+atasco.html | Atasco / Traffic Jam | Rush Hour (ThinkFun) | TV:cursor
+memoria.html | Memoria / Memory | Concentration | TV:cursor
+emojidoku.html | Emojidoku / Emojidoku | Sudoku | TV:cursor
+
+NOTAS TÉCNICAS DE LO HECHO
+--------------------------
+· Generadores con solución garantizada: Atasco (BFS), Emojidoku (solución única), Almacén/Sokoban (generación
+  inversa tirando de cajas), Derribo (simula la estrategia de arriba abajo y regenera si falla), Gravedad (barrido de
+  disparos), Relojes (presupuesto de toques calculado con búsqueda voraz), Salto (simulado: 300 niveles resolubles),
+  Volteo (bot), Agua (BFS de camino sin roca), Montaña (camino garantizado).
+· Balance comprobado con bots en Node (mock.js): Gemas, Póker (EV ~1,7 con tabla "arcade"), Alas, Torres, Huerto,
+  Supervivientes, Reacción, Tirachinas, Derribo, Treses.
+· phys.js: impactos por velocidad de aproximación (onImpact(a,b,v)); estable con torres de 8 cajas.
+· Pruebas pasadas en todos: táctil nivel 1 y forzado a nivel 4, TV 1 y 2 jugadores, escaneo de textos en inglés,
+  sin errores de JavaScript.

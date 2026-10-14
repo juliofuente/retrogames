@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Hielo · Arcade Perdido</title>
+<meta name="theme-color" content="#0b3a5a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css">
+</head>
+<body class="game">
+<script src="config.js"></script>
+<script src="common.js"></script>
+<script>
+(function () {
+  const { ri, pick, shuffle } = Arcade;
+  const D = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
+  const W_ = 0, L_ = 1; // agua, tierra
+
+  function geo(g) {
+    const s = g.s, Wa = g.W - 12, Ha = g.bot - g.top - 40;
+    s.cs = Math.min(Wa / s.C, Ha / s.R);
+    s.ox = (g.W - s.cs * s.C) / 2; s.oy = g.top + 32 + (Ha - s.cs * s.R) / 2;
+  }
+  const inB = (s, c, r) => c >= 0 && c < s.C && r >= 0 && r < s.R;
+  const cubeAt = (s, c, r) => s.cubes.find(q => q.c === c && q.r === r);
+  const enemyAt = (s, c, r) => s.en.find(e => !e.dead && e.c === c && e.r === r);
+  const walkable = (s, c, r) => inB(s, c, r) && s.m[r][c] === L_ && !cubeAt(s, c, r);
+  function gen(g) {
+    const s = g.s, C = s.C, R = s.R, L = g.lv;
+    s.m = []; for (let r = 0; r < R; r++) s.m.push(new Array(C).fill(L_));
+    for (let r = 0; r < R; r++) { s.m[r][0] = W_; s.m[r][C - 1] = W_; }
+    for (let c = 0; c < C; c++) { s.m[0][c] = W_; s.m[R - 1][c] = W_; }
+    let kmax = 1; while (Math.floor((R - 2 - (kmax + 1)) / (kmax + 2)) >= 2) kmax++;
+    const K = Math.min(kmax, 1 + Math.floor(L / 3)), hb = Math.floor((R - 2 - K) / (K + 1));
+    s.rivers = [];
+    for (let k = 1; k <= K; k++) {
+      const r = 1 + k * hb + (k - 1);
+      for (let c = 1; c < C - 1; c++) s.m[r][c] = W_;
+      s.rivers.push({ r, th: 1 });
+    }
+    // bandas de tierra
+    const bands = []; let cur = null;
+    for (let r = 1; r < R - 1; r++) { if (s.m[r][1] === L_) { if (!cur) { cur = { r0: r, r1: r }; bands.push(cur); } else cur.r1 = r; } else cur = null; }
+    s.cubes = []; s.bags = [];
+    bands.forEach((b, i) => {
+      if (i < bands.length - 1) {
+        const need = s.rivers[i].th + 1, cols = shuffle([...Array(C - 4).keys()].map(x => x + 2));
+        let n = 0;
+        for (const c of cols) { if (n >= need) break; const r = b.r1 - ri(0, Math.max(0, Math.min(1, b.r1 - b.r0 - 1))); if (r - 1 >= b.r0 && !cubeAt(s, c, r)) { s.cubes.push({ c, r, ax: 0, ay: 0 }); n++; } }
+      }
+      if (i > 0) {
+        const nb = i === bands.length - 1 ? 2 : 1;
+        for (let k = 0; k < nb; k++) { for (let t = 0; t < 20; t++) { const c = ri(1, C - 2), r = ri(b.r0, b.r1); if (!cubeAt(s, c, r) && !s.bags.some(q => q.c === c && q.r === r)) { s.bags.push({ c, r }); break; } } }
+      }
+    });
+    s.bands = bands;
+    s.start = { c: Math.floor(C / 2), r: bands[0].r0 };
+    s.cubes = s.cubes.filter(q => !(q.c === s.start.c && q.r === s.start.r));
+    s.en = [];
+    const ne = Math.min(5, 1 + Math.floor(L / 2));
+    for (let i = 0; i < ne; i++) {
+      const b = bands[i % bands.length];
+      for (let t = 0; t < 30; t++) { const c = ri(1, C - 2), r = ri(b.r0, b.r1); if (walkable(s, c, r) && Math.abs(c - s.start.c) + Math.abs(r - s.start.r) > 3) { s.en.push({ c, r, dir: 'left', p: 0, moving: false, sp: 1.3 + L * 0.08 }); break; } }
+    }
+  }
+  const pos = (s, m) => ({ x: s.ox + (m.c + 0.5 + (m.moving ? D[m.dir][0] * m.p : 0)) * s.cs, y: s.oy + (m.r + 0.5 + (m.moving ? D[m.dir][1] * m.p : 0)) * s.cs });
+  function face(g, d) { g.s.pl.face = d; }
+  function act(g) {
+    const s = g.s, pl = s.pl, [dx, dy] = D[pl.face], c = pl.c + dx, r = pl.r + dy;
+    if (pl.moving || s.slide) return;
+    const q = cubeAt(s, c, r);
+    if (q) { // patada
+      s.cubes.splice(s.cubes.indexOf(q), 1);
+      s.slide = { c, r, dir: pl.face, p: 0, kills: 0, thaw: q.thaw };
+      Arcade.tone(250, 0.08, 'triangle', 0.1, 250); return;
+    }
+    // aliento helado: hasta 3 casillas
+    s.breath = { c: pl.c, r: pl.r, dir: pl.face, t: 0.3 };
+    Arcade.noise(0.2, 0.08);
+    for (let k = 1; k <= 3; k++) {
+      const x = pl.c + dx * k, y = pl.r + dy * k;
+      if (!inB(s, x, y) || cubeAt(s, x, y)) break;
+      const e = s.en.find(o => !o.dead && Math.round(pos(s, o).x / s.cs - s.ox / s.cs - 0.5) === x && Math.round(pos(s, o).y / s.cs - s.oy / s.cs - 0.5) === y);
+      if (e) { e.dead = true; s.cubes.push({ c: x, r: y, thaw: 7, ax: 0, ay: 0 }); Arcade.sfx.pop(); g.addScore(50, pos(s, e).x, pos(s, e).y - 14); break; }
+    }
+  }
+  function bfs(s, tc, tr) {
+    const q = [[s.pl.c, s.pl.r]], prev = new Map([[s.pl.c + ',' + s.pl.r, null]]);
+    while (q.length) {
+      const [c, r] = q.shift();
+      if (c === tc && r === tr) { const path = []; let k = c + ',' + r; while (prev.get(k)) { path.unshift(k.split(',').map(Number)); k = prev.get(k); } return path; }
+      for (const [dx, dy] of Object.values(D)) { const nc = c + dx, nr = r + dy, k = nc + ',' + nr; if (!walkable(s, nc, nr) || prev.has(k)) continue; prev.set(k, c + ',' + r); q.push([nc, nr]); }
+    }
+    return null;
+  }
+  function stepTo(g, d) {
+    const s = g.s, pl = s.pl; face(g, d);
+    if (pl.moving) return false;
+    const nc = pl.c + D[d][0], nr = pl.r + D[d][1];
+    if (!walkable(s, nc, nr)) return false;
+    pl.dir = d; pl.moving = true; pl.p = 0; return true;
+  }
+
+  Arcade.game({
+    /*THEME*/ tag: "Congela, patea y cruza el río", deco: ["⛄", "❄️", "🧊", "💰", "👾", "❄️"], font: "round", bg: ["#145a86", "#0b3a5a"], music: {"mode": "lydian", "bpm": 120, "wave": "triangle", "style": "arcade", "root": 62}, voice: {"wave": "triangle", "mul": 1.2, "echo": 0.25}, ambient: {"e": ["❄️"], "n": 14, "vy": 28, "sway": 20, "spin": 1, "alpha": 0.25, "size": [8, 16]},
+    /*EN*/ en: {"title": "Ice", "tag": "Freeze, kick and cross the river", "help": "Collect every bag 💰 by crossing the rivers. <b>Tap a cell</b> to walk there or <b>swipe</b> to take a step. <b>Tap a cube next to you</b> to kick it: it slides and, if it falls into the water, <b>makes a bridge</b>. <b>Tap yourself</b> to blow icy breath and <b>freeze</b> an enemy into a new cube (it thaws after a few seconds).", "tvHelp": "D-pad to move · OK kick a cube or blow icy breath where you face.", "dict": {}},
+    /*TV*/ tvHelp: "Cruceta para moverte · OK patada al cubo o aliento helado hacia donde miras.",
+    id: 'hielo', title: 'Hielo', emoji: '❄️', color: '#74c0fc', origin: 'Kickle Cubicle (Irem, 1988)',
+    help: 'Recoge todas las bolsas 💰 cruzando los ríos. <b>Toca una casilla</b> para ir andando o <b>desliza</b> para dar un paso. <b>Toca un cubo pegado a ti</b> para darle una patada: se desliza y, si cae al agua, <b>hace un puente</b>. <b>Tócate a ti mismo</b> para soplar aire helado y <b>congelar</b> a un enemigo en un cubo nuevo (se descongela en unos segundos).',
+    lives: 3, levels: 0, cap: 18,
+    setup(g) {
+      g.s = { slide: null, breath: null, inv: 1.5, path: null, pathT: 0 };
+      const s = g.s;
+      if (g.W < g.H) { s.C = 9; s.R = 13; } else { s.C = 15; s.R = 9; }
+      gen(g); geo(g);
+      s.pl = { c: s.start.c, r: s.start.r, dir: 'down', face: 'down', p: 0, moving: false };
+    },
+    layout(g) { if (g.s.m) geo(g); },
+    tap(g, p) {
+      const s = g.s, c = Math.floor((p.x - s.ox) / s.cs), r = Math.floor((p.y - s.oy) / s.cs), pl = s.pl;
+      if (!inB(s, c, r)) return;
+      if (c === pl.c && r === pl.r) { s.path = null; act(g); return; }
+      const dc = c - pl.c, dr = r - pl.r;
+      if (Math.abs(dc) + Math.abs(dr) === 1) {
+        const d = dc > 0 ? 'right' : dc < 0 ? 'left' : dr > 0 ? 'down' : 'up';
+        s.path = null;
+        if (cubeAt(s, c, r) || enemyAt(s, c, r)) { face(g, d); act(g); } else stepTo(g, d);
+        return;
+      }
+      s.path = bfs(s, c, r); s.pathT = 0;
+    },
+    swipe(g, d) { g.s.path = null; if (!stepTo(g, d)) Arcade.sfx.tick(); },
+    key(g, k, d) { if (!d) return; const m = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right' }[k]; if (m) { g.s.path = null; stepTo(g, m); } else if (k === ' ') act(g); },
+    update(g, dt) {
+      const s = g.s, pl = s.pl;
+      s.inv = Math.max(0, s.inv - dt);
+      if (s.breath) { s.breath.t -= dt; if (s.breath.t <= 0) s.breath = null; }
+      if (pl.moving) {
+        pl.p += 5 * dt;
+        if (pl.p >= 1) {
+          pl.c += D[pl.dir][0]; pl.r += D[pl.dir][1]; pl.p = 0; pl.moving = false;
+          const bi = s.bags.findIndex(b => b.c === pl.c && b.r === pl.r);
+          if (bi >= 0) { s.bags.splice(bi, 1); g.addScore(200, pos(s, pl).x, pos(s, pl).y - 16); Arcade.sfx.coin(); if (!s.bags.length) { g.addScore(1000 * g.lv, g.W / 2, g.H / 2); g.win(); return; } }
+        }
+      } else if (s.path && s.path.length) {
+        const [c, r] = s.path[0];
+        const d = c > pl.c ? 'right' : c < pl.c ? 'left' : r > pl.r ? 'down' : 'up';
+        if (stepTo(g, d)) s.path.shift(); else s.path = null;
+      }
+      // cubo deslizándose
+      const sl = s.slide;
+      if (sl) {
+        sl.p += 13 * dt;
+        while (sl.p >= 1 && s.slide) {
+          const nc = sl.c + D[sl.dir][0], nr = sl.r + D[sl.dir][1];
+          if (!inB(s, nc, nr) || cubeAt(s, nc, nr)) { s.cubes.push({ c: sl.c, r: sl.r, ax: 0, ay: 0, thaw: sl.thaw }); s.slide = null; Arcade.tone(120, 0.06, 'square', 0.07); break; }
+          sl.c = nc; sl.r = nr; sl.p -= 1;
+          const e = s.en.find(o => !o.dead && o.c === nc && o.r === nr);
+          if (e) { e.dead = true; sl.kills++; g.addScore(300 * sl.kills, pos(s, e).x, pos(s, e).y); g.burst(pos(s, e).x, pos(s, e).y, { n: 10, emoji: '💥', size: 14, speed: 140 }); Arcade.sfx.pop(); }
+          if (s.m[nr][nc] === W_) {
+            s.m[nr][nc] = L_; s.slide = null; g.addScore(100);
+            g.burst(s.ox + (nc + 0.5) * s.cs, s.oy + (nr + 0.5) * s.cs, { n: 14, color: ['#a5d8ff', '#fff'], speed: 160, size: 3 });
+            Arcade.noise(0.3, 0.15); break;
+          }
+          if (pl.c === nc && pl.r === nr) { s.cubes.push({ c: nc - D[sl.dir][0], r: nr - D[sl.dir][1], ax: 0, ay: 0 }); s.slide = null; break; }
+        }
+      }
+      // cubos de enemigos que se descongelan
+      for (const q of s.cubes) if (q.thaw != null) {
+        q.thaw -= dt;
+        if (q.thaw <= 0 && !(pl.c === q.c && pl.r === q.r)) { q.gone = true; s.en.push({ c: q.c, r: q.r, dir: 'left', p: 0, moving: false, sp: 1.3 + g.lv * 0.08 }); }
+      }
+      s.cubes = s.cubes.filter(q => !q.gone);
+      s.en = s.en.filter(e => !e.dead);
+      const pp = pos(s, pl);
+      for (const e of s.en) {
+        if (!e.moving) {
+          const opts = Object.keys(D).filter(d => walkable(s, e.c + D[d][0], e.r + D[d][1]) && !s.bags.some(b => b.c === e.c + D[d][0] && b.r === e.r + D[d][1] && false));
+          if (opts.length) {
+            if (Math.random() < 0.5) opts.sort((a, b) => Math.hypot(e.c + D[a][0] - pl.c, e.r + D[a][1] - pl.r) - Math.hypot(e.c + D[b][0] - pl.c, e.r + D[b][1] - pl.r));
+            else shuffle(opts);
+            e.dir = opts[0]; e.moving = true; e.p = 0;
+          }
+        } else {
+          e.p += e.sp * dt;
+          if (e.p >= 1) { e.c += D[e.dir][0]; e.r += D[e.dir][1]; e.p = 0; e.moving = false; }
+        }
+        const ep = pos(s, e);
+        if (s.inv <= 0 && Math.hypot(ep.x - pp.x, ep.y - pp.y) < s.cs * 0.6) {
+          g.burst(pp.x, pp.y, { n: 16, color: ['#fff', '#74c0fc'], speed: 200 });
+          if (g.die()) { pl.c = s.start.c; pl.r = s.start.r; pl.moving = false; s.path = null; s.inv = 2; }
+          return;
+        }
+      }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      ctx.fillStyle = '#0b3a5a'; ctx.fillRect(0, 0, W, H);
+      if (!s.m) return;
+      const cs = s.cs;
+      for (let r = 0; r < s.R; r++) for (let c = 0; c < s.C; c++) {
+        const x = s.ox + c * cs, y = s.oy + r * cs;
+        if (s.m[r][c] === W_) {
+          ctx.fillStyle = '#1864ab'; ctx.fillRect(x, y, cs + 0.5, cs + 0.5);
+          ctx.strokeStyle = 'rgba(255,255,255,.18)'; ctx.lineWidth = 1.5; ctx.beginPath();
+          const o = Math.sin(g.t * 2 + c + r) * 3; ctx.moveTo(x + 4, y + cs * 0.5 + o); ctx.quadraticCurveTo(x + cs / 2, y + cs * 0.35 + o, x + cs - 4, y + cs * 0.5 + o); ctx.stroke();
+        } else {
+          ctx.fillStyle = (r + c) % 2 ? '#e7f5ff' : '#d0ebff'; ctx.fillRect(x, y, cs + 0.5, cs + 0.5);
+        }
+      }
+      for (const b of s.bags) Arcade.emoji(ctx, '💰', s.ox + (b.c + 0.5) * cs, s.oy + (b.r + 0.5) * cs + Math.sin(g.t * 4 + b.c) * 2, cs * 0.7);
+      const cube = (x, y, thaw) => {
+        ctx.fillStyle = thaw != null && thaw < 2 && Math.floor(g.t * 8) % 2 ? '#ffe3e3' : '#a5d8ff';
+        Arcade.rr(ctx, x + 3, y + 3, cs - 6, cs - 6, cs * 0.14); ctx.fill();
+        ctx.strokeStyle = '#4dabf7'; ctx.lineWidth = 2; ctx.stroke();
+        ctx.fillStyle = 'rgba(255,255,255,.7)'; ctx.fillRect(x + cs * 0.22, y + cs * 0.2, cs * 0.25, cs * 0.08);
+        if (thaw != null) Arcade.emoji(ctx, '👾', x + cs / 2, y + cs / 2, cs * 0.4, { alpha: 0.45 });
+      };
+      for (const q of s.cubes) cube(s.ox + q.c * cs, s.oy + q.r * cs, q.thaw);
+      if (s.slide) { const sl = s.slide; cube(s.ox + (sl.c + D[sl.dir][0] * Math.min(1, sl.p)) * cs, s.oy + (sl.r + D[sl.dir][1] * Math.min(1, sl.p)) * cs, sl.thaw); }
+      if (s.path) for (const [c, r] of s.path) { ctx.fillStyle = 'rgba(77,171,247,.5)'; ctx.beginPath(); ctx.arc(s.ox + (c + 0.5) * cs, s.oy + (r + 0.5) * cs, cs * 0.08, 0, 6.28); ctx.fill(); }
+      for (const e of s.en) { const p = pos(s, e); Arcade.emoji(ctx, '👾', p.x, p.y, cs * 0.7, { flip: e.dir === 'right' }); }
+      if (s.breath) {
+        const b = s.breath, [dx, dy] = D[b.dir];
+        for (let k = 1; k <= 3; k++) Arcade.emoji(ctx, '❄️', s.ox + (b.c + dx * k + 0.5) * cs, s.oy + (b.r + dy * k + 0.5) * cs, cs * 0.45 * (1 - k * 0.15), { alpha: b.t * 3, rot: g.t * 5 });
+      }
+      const p = pos(s, s.pl);
+      if (!(s.inv > 0 && Math.floor(g.t * 10) % 2)) Arcade.emoji(ctx, '⛄', p.x, p.y, cs * 0.8, { flip: s.pl.face === 'right' });
+      const [fx, fy] = D[s.pl.face];
+      ctx.fillStyle = '#ff922b'; ctx.beginPath(); ctx.arc(p.x + fx * cs * 0.42, p.y + fy * cs * 0.42, 3.5, 0, 6.28); ctx.fill();
+      Arcade.txt(ctx, '💰 ' + s.bags.length, W / 2, s.oy - 16, 15, '#fff', 'center', 800);
+    },
+  });
+})();
+</script>
+</body>
+</html>

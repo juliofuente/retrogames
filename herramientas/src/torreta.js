@@ -1,0 +1,49 @@
+// Torreta|#1b1b1b
+(function () {
+  const { ri, rand, clamp, pick } = Arcade;
+  const FOES = ['👾', '🦇', '👻', '🐙', '🤖'];
+
+  function geo(g) { const s = g.s; s.cx = g.W / 2; s.cy = (g.top + g.bot) / 2 + 10; s.R = Math.hypot(g.W, g.bot - g.top) * 0.55; }
+  function spawn(g) { const s = g.s, a = rand(0, 6.28), L = g.lv; s.foes.push({ a, d: s.R, sp: rand(35, 55) + Math.min(L, 25) * 2.5, e: pick(FOES.slice(0, 2 + Math.floor(L / 4))), hp: L >= 6 && Math.random() < 0.25 ? 2 : 1, wob: rand(0, 6) }); }
+  function fire(g) { const s = g.s; if (s.cd > 0 || s.done) return; s.cd = 0.18; s.bul.push({ a: s.ang, d: 30 }); Arcade.tone(800, 0.03, 'square', 0.04, -300); s.kick = 1; }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'El cañón gira solo: tú eliges cuándo disparar', deco: ['🔫', '👾', '🦇', '💥', '🌀', '🎯'], font: 'impact', bg: ['#2b2b2b', '#1b1b1b'],
+    music: { mode: 'harm', bpm: 136, wave: 'sawtooth', style: 'arcade', root: 52 }, voice: { wave: 'square', mul: 1, echo: 0.2 },
+    en: { title: 'Turret', tag: 'The cannon spins by itself: you choose when to fire', help: 'Your cannon in the middle spins non-stop. <b>Tap</b> to fire in the direction it is pointing at that moment. Monsters close in from every side: shoot them before they reach you. Some need two hits. Every few kills, the cannon changes its spin direction. Destroy the monsters each level asks for.', tvHelp: 'OK to fire.', dict: { 'Derribados: ': 'Downed: ' } },
+    tvHelp: 'OK para disparar.',
+    id: 'torreta', title: 'Torreta', emoji: '🎯', color: '#fa5252', origin: 'Spinny Gun / TwinSpin',
+    help: 'Tu cañón del centro gira sin parar. <b>Toca</b> para disparar en la dirección a la que apunta en ese momento. Los monstruos se acercan desde todos lados: dispárales antes de que te alcancen. Algunos necesitan dos impactos. Cada pocas bajas el cañón cambia de sentido. Derriba los monstruos que pide cada nivel.',
+    lives: 3, levels: 0, cap: 25,
+    setup(g) { const L = g.lv; g.s = { ang: 0, spin: 2.4 + Math.min(L, 25) * 0.05, dir: 1, foes: [], bul: [], cd: 0, t: 1, kills: 0, need: 15 + Math.min(L, 25) * 2, kick: 0 }; geo(g); },
+    layout(g) { if (g.s.foes) geo(g); },
+    down(g) { fire(g); },
+    key(g, k, d) { if (d && k === ' ') fire(g); },
+    update(g, dt) {
+      const s = g.s; if (s.done) return;
+      s.ang += s.spin * s.dir * dt; s.cd -= dt; s.kick = Math.max(0, s.kick - dt * 8);
+      s.t -= dt; if (s.t <= 0) { s.t = Math.max(0.45, 1.6 - g.lv * 0.05 - s.kills * 0.01); spawn(g); }
+      for (const b of s.bul) b.d += 700 * dt; s.bul = s.bul.filter((b) => b.d < s.R && !b.dead);
+      for (const f of s.foes) {
+        f.d -= f.sp * dt; f.wob += dt * 3;
+        for (const b of s.bul) { if (b.dead) continue; const bx = Math.cos(b.a) * b.d, by = Math.sin(b.a) * b.d, fx = Math.cos(f.a) * f.d, fy = Math.sin(f.a) * f.d; if (Math.hypot(bx - fx, by - fy) < 22) { b.dead = true; f.hp--; f.hit = 0.1; if (f.hp <= 0) { f.dead = true; s.kills++; g.addScore(10 * g.lv, s.cx + fx, s.cy + fy); g.burst(s.cx + fx, s.cy + fy, { n: 10, color: ['#fa5252', '#ffd43b', '#fff'], speed: 160, size: 3 }); Arcade.sfx.pop(); if (s.kills % 6 === 0) { s.dir *= -1; g.message('🔄', 0.4); } } else Arcade.tone(300, 0.03, 'square', 0.04); } }
+        if (f.d < 28 && !f.dead) { f.dead = true; Arcade.sfx.hit(); g.shake(0.3, 8); g.flash('#ff6b6b', 0.2); if (!g.die()) return; }
+      }
+      s.foes = s.foes.filter((f) => !f.dead);
+      if (s.kills >= s.need) { s.done = true; g.confetti(60); setTimeout(() => { if (g.state === 'play') g.win(); }, 500); }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      const bg = ctx.createRadialGradient(s.cx || W / 2, s.cy || H / 2, 10, W / 2, H / 2, Math.max(W, H) * 0.7); bg.addColorStop(0, '#3a3a3a'); bg.addColorStop(1, '#0d0d0d');
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      if (!s.foes) return;
+      for (let r = 60; r < s.R; r += 60) { ctx.strokeStyle = 'rgba(255,255,255,.05)'; ctx.beginPath(); ctx.arc(s.cx, s.cy, r, 0, 6.3); ctx.stroke(); }
+      ctx.strokeStyle = 'rgba(250,82,82,.25)'; ctx.lineWidth = 2; ctx.setLineDash([6, 8]); ctx.beginPath(); ctx.moveTo(s.cx, s.cy); ctx.lineTo(s.cx + Math.cos(s.ang) * s.R, s.cy + Math.sin(s.ang) * s.R); ctx.stroke(); ctx.setLineDash([]);
+      for (const b of s.bul) { ctx.fillStyle = '#ffd43b'; ctx.beginPath(); ctx.arc(s.cx + Math.cos(b.a) * b.d, s.cy + Math.sin(b.a) * b.d, 5, 0, 6.3); ctx.fill(); }
+      for (const f of s.foes) Arcade.emoji(ctx, f.e, s.cx + Math.cos(f.a) * f.d + Math.sin(f.wob) * 4, s.cy + Math.sin(f.a) * f.d, f.hp > 1 ? 36 : 30, { alpha: f.hit > 0 ? 0.5 : 1 });
+      ctx.save(); ctx.translate(s.cx, s.cy); ctx.rotate(s.ang); ctx.fillStyle = '#868e96'; ctx.fillRect(4 - s.kick * 6, -7, 34, 14); ctx.fillStyle = '#495057'; ctx.fillRect(30 - s.kick * 6, -9, 8, 18); ctx.restore();
+      ctx.fillStyle = '#fa5252'; ctx.beginPath(); ctx.arc(s.cx, s.cy, 20, 0, 6.3); ctx.fill(); ctx.fillStyle = '#ffa8a8'; ctx.beginPath(); ctx.arc(s.cx - 5, s.cy - 5, 6, 0, 6.3); ctx.fill();
+      Arcade.txt(ctx, 'Derribados: ' + s.kills + '/' + s.need, W / 2, g.top + 20, 15, '#ffc9c9', 'center', 900);
+    },
+  });
+})();

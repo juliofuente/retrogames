@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Parejas · Arcade Perdido</title>
+<meta name="theme-color" content="#1a1b3a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css">
+</head>
+<body class="game">
+<script src="config.js"></script>
+<script src="common.js"></script>
+<script>
+(function () {
+  const { ri, pick, shuffle } = Arcade;
+  const C = 8, R = 9;
+  const TY = ['', '💎', '🍀', '🔥', '⭐', '🌙'];
+  const TC = ['', '#74c0fc', '#69db7c', '#ff8787', '#ffd43b', '#b197fc'];
+
+  function fallPass(a) {
+    let moved = false;
+    for (let r = R - 2; r >= 0; r--) for (let c = 0; c < C; c++) {
+      const i = r * C + c, j = i + C;
+      if (a[i] > 0 && a[j] === 0) { a[j] = a[i]; a[i] = 0; moved = true; }
+    }
+    return moved;
+  }
+  function matches(a) {
+    const m = [];
+    for (let i = 0; i < a.length; i++) {
+      if (a[i] <= 0) continue;
+      const c = i % C;
+      if ((c > 0 && a[i - 1] === a[i]) || (c < C - 1 && a[i + 1] === a[i]) || a[i - C] === a[i] || a[i + C] === a[i]) m.push(i);
+    }
+    return m;
+  }
+  function settle(a) { for (;;) { while (fallPass(a)); const m = matches(a); if (!m.length) return; for (const i of m) a[i] = 0; } }
+  function dead(a) { const cnt = {}; for (const v of a) if (v > 0) cnt[v] = (cnt[v] || 0) + 1; return Object.values(cnt).some(n => n === 1); }
+  function empty(a) { return !a.some(v => v > 0); }
+  function solve(start, maxStates) {
+    const key = (a) => a.join(',');
+    const seen = new Set([key(start)]);
+    let frontier = [start], depth = 0;
+    while (frontier.length && seen.size < maxStates) {
+      depth++;
+      const next = [];
+      for (const a of frontier) {
+        for (let i = 0; i < a.length; i++) {
+          if (a[i] <= 0) continue;
+          for (const d of [-1, 1]) {
+            const c = i % C; if ((d < 0 && c === 0) || (d > 0 && c === C - 1) || a[i + d] !== 0) continue;
+            const b = a.slice(); b[i + d] = b[i]; b[i] = 0; settle(b);
+            if (empty(b)) return depth;
+            if (dead(b)) continue;
+            const k = key(b); if (seen.has(k)) continue;
+            seen.add(k); next.push(b);
+          }
+        }
+      }
+      frontier = next;
+    }
+    return -1;
+  }
+  function genLevel(lv) {
+    const t0 = performance.now(), want = Math.min(1 + Math.floor(lv / 2), 7);
+    let best = null;
+    for (let at = 0; at < 300 && performance.now() - t0 < 1400; at++) {
+      const a = new Array(C * R).fill(0);
+      for (let r = 0; r < R; r++) for (let c = 0; c < C; c++) if (r === 0 || r === R - 1 || c === 0 || c === C - 1) a[r * C + c] = -1;
+      const plats = 1 + Math.floor(lv / 4) + ri(0, 1);
+      for (let k = 0; k < plats; k++) { const r = ri(3, R - 3), c = ri(1, C - 3), L = ri(1, 3); for (let x = c; x < Math.min(C - 1, c + L); x++) a[r * C + x] = -1; }
+      const nt = Math.min(5, 2 + Math.floor((lv - 1) / 3));
+      const blocks = [];
+      for (let t = 1; t <= nt; t++) { const n = lv >= 5 && Math.random() < 0.3 ? 3 : 2; for (let k = 0; k < n; k++) blocks.push(t); }
+      shuffle(blocks);
+      let ok = true;
+      for (const t of blocks) {
+        const cols = []; for (let c = 1; c < C - 1; c++) if (a[C + c] === 0) cols.push(c);
+        if (!cols.length) { ok = false; break; }
+        const c = pick(cols); let r = 1; while (a[(r + 1) * C + c] === 0) r++;
+        a[r * C + c] = t;
+      }
+      if (!ok || matches(a).length) continue;
+      const m = solve(a, 25000);
+      if (m < 0) continue;
+      if (!best || Math.abs(m - want) < Math.abs(best.m - want)) best = { a, m };
+      if (m >= want) break;
+    }
+    if (best) return best;
+    const a = new Array(C * R).fill(0);
+    for (let r = 0; r < R; r++) for (let c = 0; c < C; c++) if (r === 0 || r === R - 1 || c === 0 || c === C - 1) a[r * C + c] = -1;
+    a[(R - 2) * C + 2] = 1; a[(R - 2) * C + 5] = 1;
+    return { a, m: 2 };
+  }
+  function geo(g) {
+    const s = g.s, Wa = g.W - 24, Ha = g.bot - g.top - 120;
+    s.cs = Math.min(Wa / C, Ha / R);
+    s.ox = (g.W - s.cs * C) / 2; s.oy = g.top + 40 + (Ha - s.cs * R) / 2;
+    s.btnY = s.oy + s.cs * R + 40;
+  }
+  function doMove(g, i, d) {
+    const s = g.s, a = s.a, c = i % C;
+    if (s.phase || a[i] <= 0 || (d < 0 && c === 0) || (d > 0 && c === C - 1) || a[i + d] !== 0) { Arcade.sfx.bad(); return; }
+    s.hist.push(a.slice());
+    a[i + d] = a[i]; a[i] = 0; s.sel = i + d; s.moves++;
+    s.phase = 'fall'; s.t = 0; Arcade.sfx.move();
+  }
+  const cellOf = (s, x, y) => { const c = Math.floor((x - s.ox) / s.cs), r = Math.floor((y - s.oy) / s.cs); return c >= 0 && c < C && r >= 0 && r < R ? r * C + c : -1; };
+
+  Arcade.game({
+    /*THEME*/ tag: "Gemas gemelas con gravedad", deco: ["💎", "🍀", "🔥", "⭐", "🌙", "💎"], font: "fancy", bg: ["#22244a", "#101127"], music: {"mode": "lydian", "bpm": 100, "wave": "triangle", "style": "chill", "root": 62}, voice: {"wave": "sine", "mul": 1.2, "echo": 0.3}, ambient: {"e": ["✨"], "n": 10, "vy": 0, "sway": 0, "twinkle": 1, "alpha": 0.28, "size": [8, 14]},
+    /*EN*/ en: {"title": "Pairs", "tag": "Twin gems with gravity", "help": "Each level is a puzzle. <b>Swipe</b> a block left or right (or tap it and tap the gap next to it). Blocks fall with gravity, and when two or more <b>matching ones touch</b>, they vanish. Clear the whole board. If a lone block of one type remains, you're stuck: <b>undo</b> ↩️ or <b>restart</b> 🔄.", "tvHelp": "D-pad to move · OK on a block to grab it ✋ and ◀ ▶ to move it · Undo and Restart are below the board.", "dict": {"Movimientos: ": "Moves: ", "   ·   Mejor solución: ": "   ·   Best solution: ", "Atascado": "Stuck", "Deshaz ↩️ o reinicia 🔄": "Undo ↩️ or restart 🔄", "↩️ Deshacer": "↩️ Undo", "🔄 Reiniciar": "🔄 Restart"}},
+    /*TV*/ tvHelp: "Cruceta para moverte · OK sobre un bloque para agarrarlo ✋ y ◀ ▶ para moverlo · Deshacer y Reiniciar están debajo del tablero.", tv: { mode: 'swipe', canArm: (g, t) => t.i != null && g.s.a[t.i] > 0, targets: (g) => { const s = g.s, o = []; if (!s.a) return o; for (let i = 0; i < s.a.length; i++) if (s.a[i] !== -1) o.push({ x: s.ox + (i % C) * s.cs, y: s.oy + Math.floor(i / C) * s.cs, w: s.cs, h: s.cs, i }); o.push({ x: g.W * 0.27 - 70, y: s.btnY - 20, w: 140, h: 40, instant: true }, { x: g.W * 0.73 - 70, y: s.btnY - 20, w: 140, h: 40, instant: true }); return o; } },
+    id: 'parejas', title: 'Parejas', emoji: '🧩', color: '#74c0fc', origin: 'Puzznic (Taito, 1989)',
+    help: 'Cada nivel es un puzle. <b>Desliza</b> un bloque a la izquierda o la derecha (o tócalo y toca el hueco de al lado). Los bloques caen por gravedad y, cuando dos o más <b>iguales se tocan</b>, desaparecen. Limpia el tablero entero. Si te queda un bloque solo de un tipo, estás atascado: <b>deshaz</b> ↩️ o <b>reinicia</b> 🔄.',
+    lives: 0, levels: 0, cap: 24,
+    setup(g) {
+      const lv = genLevel(g.lv);
+      g.s = { a: lv.a.slice(), start: lv.a.slice(), par: lv.m, moves: 0, hist: [], sel: -1, phase: null, t: 0, flash: null };
+      geo(g);
+    },
+    layout(g) { if (g.s.a) geo(g); },
+    tap(g, p) {
+      const s = g.s;
+      if (p.y > s.btnY - 24 && p.y < s.btnY + 24) {
+        if (p.x < g.W / 2) { if (s.hist.length && !s.phase) { s.a = s.hist.pop(); s.moves++; s.sel = -1; Arcade.sfx.tick(); } }
+        else if (!s.phase) { s.a = s.start.slice(); s.hist = []; s.moves = 0; s.sel = -1; Arcade.sfx.tick(); }
+        return;
+      }
+      const i = cellOf(s, p.x, p.y); if (i < 0) return;
+      if (s.a[i] > 0) { s.sel = i; Arcade.sfx.tick(); return; }
+      if (s.sel >= 0 && s.a[i] === 0 && Math.floor(i / C) === Math.floor(s.sel / C) && Math.abs(i - s.sel) === 1) doMove(g, s.sel, i - s.sel);
+    },
+    swipe(g, dir, p) {
+      const s = g.s, i = cellOf(s, p.sx, p.sy);
+      if (i < 0 || s.a[i] <= 0) return;
+      if (dir === 'left') doMove(g, i, -1); else if (dir === 'right') doMove(g, i, 1);
+    },
+    key(g, k, d) {
+      if (!d) return; const s = g.s;
+      if (k === 'ArrowLeft' && s.sel >= 0) doMove(g, s.sel, -1); else if (k === 'ArrowRight' && s.sel >= 0) doMove(g, s.sel, 1);
+      else if (k === 'z' && s.hist.length && !s.phase) { s.a = s.hist.pop(); s.moves++; }
+    },
+    update(g, dt) {
+      const s = g.s;
+      if (!s.phase) return;
+      s.t += dt;
+      if (s.phase === 'fall' && s.t > 0.055) {
+        s.t = 0;
+        const before = s.a.slice();
+        if (!fallPass(s.a)) {
+          const m = matches(s.a);
+          if (m.length) { s.phase = 'flash'; s.flash = m; Arcade.sfx.coin(); }
+          else {
+            s.phase = null; s.sel = -1;
+            if (empty(s.a)) { const bonus = Math.max(0, s.par * 2 - s.moves) * 60; g.addScore(500 + bonus + g.lv * 50, g.W / 2, g.H / 2); g.win(); }
+            else if (dead(s.a)) g.message('Atascado', 1.6, 'Deshaz ↩️ o reinicia 🔄');
+          }
+        } else if (s.sel >= 0 && before[s.sel] > 0 && s.a[s.sel] === 0) s.sel += C;
+      } else if (s.phase === 'flash' && s.t > 0.35) {
+        for (const i of s.flash) { g.burst(s.ox + (i % C + 0.5) * s.cs, s.oy + (Math.floor(i / C) + 0.5) * s.cs, { n: 8, color: TC[s.a[i]], speed: 150, size: 3 }); s.a[i] = 0; }
+        g.addScore(20 * s.flash.length);
+        s.flash = null; s.phase = 'fall'; s.t = 0; s.sel = -1;
+      }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      const bg = ctx.createLinearGradient(0, 0, 0, H);
+      bg.addColorStop(0, '#22244a'); bg.addColorStop(1, '#101127');
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      g.scenery(['💎','🔮','✨'], 6, { alpha: 0.12, size: [24, 40], bob: 3 }); /*SC*/
+      if (!s.a) return;
+      const cs = s.cs;
+      for (let i = 0; i < s.a.length; i++) {
+        const c = i % C, r = Math.floor(i / C), x = s.ox + c * cs, y = s.oy + r * cs, v = s.a[i];
+        if (v === -1) {
+          ctx.fillStyle = '#495057'; ctx.fillRect(x, y, cs + 0.5, cs + 0.5);
+          ctx.fillStyle = '#5c636a'; ctx.fillRect(x + 2, y + 2, cs - 4, cs * 0.4);
+          ctx.strokeStyle = 'rgba(0,0,0,.25)'; ctx.strokeRect(x + 0.5, y + 0.5, cs - 1, cs - 1);
+          continue;
+        }
+        ctx.fillStyle = (r + c) % 2 ? '#1f2147' : '#23254f'; ctx.fillRect(x, y, cs + 0.5, cs + 0.5);
+        if (v > 0) {
+          const fl = s.flash && s.flash.includes(i) && Math.floor(s.t * 20) % 2;
+          ctx.fillStyle = fl ? '#fff' : TC[v]; Arcade.rr(ctx, x + 3, y + 3, cs - 6, cs - 6, cs * 0.18); ctx.fill();
+          ctx.fillStyle = 'rgba(255,255,255,.35)'; Arcade.rr(ctx, x + 6, y + 5, cs - 12, cs * 0.22, cs * 0.1); ctx.fill();
+          Arcade.emoji(ctx, TY[v], x + cs / 2, y + cs / 2 + 1, cs * 0.55);
+          if (i === s.sel) { ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; Arcade.rr(ctx, x + 2, y + 2, cs - 4, cs - 4, cs * 0.2); ctx.stroke(); Arcade.txt(ctx, '◀   ▶', x + cs / 2, y - 8, 12, '#fff', 'center', 900); }
+        }
+      }
+      Arcade.txt(ctx, 'Movimientos: ' + s.moves + '   ·   Mejor solución: ' + s.par, W / 2, s.oy - 20, 14, '#d0ebff', 'center', 800);
+      [['↩️ Deshacer', W * 0.27], ['🔄 Reiniciar', W * 0.73]].forEach(([t, x]) => {
+        ctx.fillStyle = 'rgba(255,255,255,.1)'; Arcade.rr(ctx, x - 70, s.btnY - 20, 140, 40, 14); ctx.fill();
+        Arcade.txt(ctx, t, x, s.btnY, 15, '#fff', 'center', 800);
+      });
+    },
+  });
+})();
+</script>
+</body>
+</html>

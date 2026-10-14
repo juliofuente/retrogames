@@ -1,0 +1,145 @@
+// Rosario|#2b3a1a
+(function () {
+  const { ri, rand, clamp, pick } = Arcade;
+  const BALL = ['🔴', '🟡', '🟢', '🔵', '🟣', '🟠'];
+  const FROGS = ['🐸', '🐢', '🦎', '🐊'];
+
+  function buildPath(g) {
+    const s = g.s, cx = g.W / 2, cy = (g.top + g.bot) / 2 + 10, Rmax = Math.min(g.W, g.bot - g.top) * 0.46, turns = 1.6 + (g.level % 3) * 0.25, Rmin = Math.max(s.r * 5.5, Rmax * 0.3);
+    const pts = []; const a0 = (g.level * 1.3) % (Math.PI * 2);
+    for (let i = 0; i <= 600; i++) { const t = i / 600, a = a0 + t * turns * Math.PI * 2, rr = Rmax - (Rmax - Rmin) * t; pts.push([cx + Math.cos(a) * rr * (g.W > g.H ? 1.25 : 1), cy + Math.sin(a) * rr]); }
+    // entrada desde fuera
+    const [x0, y0] = pts[0], dir = Math.atan2(y0 - cy, x0 - cx); for (let k = 1; k <= 6; k++) pts.unshift([x0 + Math.cos(dir) * k * 12, y0 + Math.sin(dir) * k * 12]);
+    s.path = pts; s.cum = [0]; for (let i = 1; i < pts.length; i++) s.cum.push(s.cum[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
+    s.len = s.cum[s.cum.length - 1]; s.cx = cx; s.cy = cy;
+  }
+  function pos(s, d) {
+    if (d <= 0) return s.path[0];
+    let lo = 0, hi = s.cum.length - 1; while (hi - lo > 1) { const m = (lo + hi) >> 1; if (s.cum[m] < d) lo = m; else hi = m; }
+    const t = (d - s.cum[lo]) / (s.cum[hi] - s.cum[lo] || 1), a = s.path[lo], b = s.path[hi];
+    return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
+  }
+  const colorsLeft = (s) => { const set = new Set(s.chain.map((b) => b.c)); if (s.toSpawn > 0) for (let i = 0; i < s.nt; i++) set.add(i); return [...set]; };
+  function newShot(s) { const cl = colorsLeft(s); return cl.length ? pick(cl) : 0; }
+  function shoot(g) {
+    const s = g.s; if (s.shot || s.cool > 0 || s.done) return;
+    const sp = 900; s.shot = { x: s.cx + Math.cos(s.aim) * s.r * 2, y: s.cy + Math.sin(s.aim) * s.r * 2, vx: Math.cos(s.aim) * sp, vy: Math.sin(s.aim) * sp, c: s.cur };
+    s.cur = s.nxt; s.nxt = newShot(s); s.cool = 0.18; Arcade.tone(700, 0.05, 'square', 0.05, -300);
+  }
+  function swap(g) { const s = g.s; [s.cur, s.nxt] = [s.nxt, s.cur]; Arcade.sfx.tick(); }
+  function spread(s, from) { for (let j = Math.max(1, from); j < s.chain.length; j++) if (s.chain[j].d < s.chain[j - 1].d + s.D) s.chain[j].d = s.chain[j - 1].d + s.D; }
+  function insert(g, hitIdx, shot) {
+    const s = g.s, h = s.chain[hitIdx];
+    const pa = pos(s, h.d + 1), pb = pos(s, h.d - 1), tx = pa[0] - pb[0], ty = pa[1] - pb[1];
+    const ahead = (shot.x - pos(s, h.d)[0]) * tx + (shot.y - pos(s, h.d)[1]) * ty > 0;
+    const idx = ahead ? hitIdx + 1 : hitIdx;
+    const nb = { c: shot.c, d: ahead ? h.d + s.D : h.d, pop: 1 };
+    s.chain.splice(idx, 0, nb);
+    if (!ahead) { /* empuja el golpeado y siguientes */ }
+    spread(s, idx);
+    Arcade.tone(400, 0.04, 'triangle', 0.06);
+    check(g, idx, 1);
+  }
+  function check(g, idx, chainLv) {
+    const s = g.s, A = s.chain; if (!A[idx]) return false;
+    const c = A[idx].c; let a = idx, b = idx;
+    while (a > 0 && A[a - 1].c === c && A[a].d - A[a - 1].d <= s.D * 1.05) a--;
+    while (b < A.length - 1 && A[b + 1].c === c && A[b + 1].d - A[b].d <= s.D * 1.05) b++;
+    const n = b - a + 1; if (n < 3) return false;
+    for (let k = a; k <= b; k++) { const [x, y] = pos(s, A[k].d); g.burst(x, y, { n: 5, emoji: '✨', size: 10, speed: 140, life: 0.5 }); }
+    const [mx, my] = pos(s, A[Math.floor((a + b) / 2)].d);
+    A.splice(a, n); s.combo = chainLv;
+    g.addScore(n * 10 * chainLv * g.lv, mx, my); Arcade.sfx.combo(Math.min(12, n + chainLv * 2));
+    if (chainLv > 1) g.float('x' + chainLv, mx, my - 30, '#ffd43b', 24);
+    if (n >= 5) g.shake(0.15, 4);
+    // ¿el hueco atrae?
+    if (a > 0 && a < A.length && A[a].c === A[a - 1].c) s.pull = { idx: a, lv: chainLv + 1 };
+    if (s.cur != null && !colorsLeft(s).includes(s.cur)) s.cur = newShot(s);
+    if (!colorsLeft(s).includes(s.nxt)) s.nxt = newShot(s);
+    return true;
+  }
+  function restartChain(g) { const s = g.s; s.chain = []; s.toSpawn = s.total; s.intro = 1; s.pull = null; }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Que no llegue al agujero', deco: ['🐸', '🔴', '🟡', '🟢', '🔵', '💀'], font: 'serif', bg: ['#4a6b2a', '#2b3a1a'],
+    music: { mode: 'phryg', bpm: 116, wave: 'triangle', style: 'arcade', root: 57 }, voice: { wave: 'triangle', mul: 1.1, echo: 0.3 },
+    ambient: { e: ['🍃'], n: 6, vy: 14, sway: 24, spin: 1, alpha: 0.15 },
+    en: { title: 'Rosary', tag: 'Keep it out of the hole', help: 'A chain of balls crawls along the spiral towards the 💀. <b>Tap</b> where you want to shoot: the ball joins the chain, and <b>3 or more</b> of the same colour burst. If the gap left behind has equal colours at both ends, they snap together and can trigger a chain reaction. <b>Tap the frog</b> to swap the current ball with the next one. Clear the whole chain before it reaches the hole.', tvHelp: '◀ ▶ aim · OK shoot · ▲ swap ball.', dict: { 'Bolas: ': 'Balls: ' } },
+    tvHelp: '◀ ▶ apuntar · OK disparar · ▲ cambiar bola.',
+    id: 'rosario', title: 'Rosario', emoji: '🐸', color: '#94d82d', origin: 'Zuma (PopCap)',
+    help: 'Una cadena de bolas avanza por la espiral hacia la 💀. <b>Toca</b> donde quieras disparar: la bola se mete en la cadena y si juntas <b>3 o más</b> del mismo color, explotan. Si el hueco que queda tiene el mismo color a los dos lados, se atraen y pueden encadenar explosiones. <b>Toca la rana</b> para cambiar la bola actual por la siguiente. Vacía la cadena antes de que llegue al agujero.',
+    lives: 3, levels: 0, cap: 25,
+    setup(g) {
+      g.s = { chain: [], shot: null, cool: 0, aim: -Math.PI / 2, frog: FROGS[(g.level - 1) % FROGS.length], combo: 0 };
+      const s = g.s, L = g.lv; s.r = clamp(Math.min(g.W, g.bot - g.top) / 42, 9, 18); s.D = s.r * 2;
+      s.nt = clamp(3 + Math.floor((L + 1) / 3), 4, 6); s.total = 30 + Math.min(L, 25) * 3; s.speed = 26 + Math.min(L, 25) * 1.6;
+      buildPath(g); restartChain(g); s.cur = ri(0, s.nt - 1); s.nxt = ri(0, s.nt - 1);
+    },
+    layout(g) { if (g.s.path) { const s = g.s, k = s.len; buildPath(g); const f = s.len / k; for (const b of s.chain) b.d *= f; } },
+    tap(g, p) { const s = g.s; if (Math.hypot(p.x - s.cx, p.y - s.cy) < s.r * 2.6) return swap(g); s.aim = Math.atan2(p.y - s.cy, p.x - s.cx); shoot(g); },
+    hover(g, x, y) { const s = g.s; s.aim = Math.atan2(y - s.cy, x - s.cx); },
+    move(g, p) { const s = g.s; s.aim = Math.atan2(p.y - s.cy, p.x - s.cx); },
+    key(g, k, d) { const s = g.s; if (k === 'ArrowLeft' || k === 'ArrowRight') s.kd = d ? (k === 'ArrowLeft' ? -1 : 1) : 0; if (!d) return; if (k === ' ') shoot(g); if (k === 'ArrowUp' || k === 'ArrowDown') swap(g); },
+    update(g, dt) {
+      const s = g.s; if (s.done) return;
+      s.cool -= dt; if (s.kd) s.aim += s.kd * dt * 2.6;
+      for (const b of s.chain) b.pop = Math.max(0, (b.pop || 0) - dt * 4);
+      // spawn por detrás
+      if (s.toSpawn > 0 && (!s.chain.length || s.chain[0].d >= s.D)) { s.chain.unshift({ c: ri(0, s.nt - 1), d: s.chain.length ? s.chain[0].d - s.D : 0 }); s.toSpawn--; }
+      // avance
+      const intro = s.chain.length && s.chain[s.chain.length - 1].d < s.len * 0.28 && s.intro;
+      if (!intro) s.intro = 0;
+      const danger = s.chain.length ? s.chain[s.chain.length - 1].d / s.len : 0;
+      const v = intro ? 260 : s.speed * (danger > 0.85 ? 0.6 : 1);
+      if (s.chain.length && !s.pull) { s.chain[0].d += v * dt; spread(s, 1); }
+      // atracción de huecos
+      if (s.pull) {
+        const A = s.chain, i = s.pull.idx;
+        if (!A[i] || !A[i - 1] || A[i].c !== A[i - 1].c) s.pull = null;
+        else {
+          let j = i + 1; while (j < A.length && A[j].d - A[j - 1].d <= s.D * 1.05) j++; for (let k = i; k < j; k++) A[k].d -= 420 * dt;
+          if (A[i].d - A[i - 1].d <= s.D) { const shift = A[i - 1].d + s.D - A[i].d; for (let k = i; k < j; k++) A[k].d += shift; const lv = s.pull.lv; s.pull = null; if (!check(g, i, lv)) Arcade.tone(300, 0.04, 'triangle', 0.05); }
+        }
+      }
+      // disparo
+      const sh = s.shot;
+      if (sh) {
+        sh.x += sh.vx * dt; sh.y += sh.vy * dt;
+        let hit = -1, bd = 1e9;
+        s.chain.forEach((b, i) => { const [x, y] = pos(s, b.d), dd = Math.hypot(x - sh.x, y - sh.y); if (dd < s.D * 0.95 && dd < bd) { bd = dd; hit = i; } });
+        if (hit >= 0) { s.shot = null; insert(g, hit, sh); }
+        else if (sh.x < -40 || sh.x > g.W + 40 || sh.y < -40 || sh.y > g.H + 40) s.shot = null;
+      }
+      // derrota / victoria
+      if (s.chain.length && s.chain[s.chain.length - 1].d >= s.len) {
+        g.message('💀', 1); Arcade.tone(200, 0.8, 'sawtooth', 0.1, -150);
+        if (g.die()) restartChain(g);
+        return;
+      }
+      if (!s.chain.length && s.toSpawn <= 0 && !s.done) { s.done = true; g.addScore(300 * g.lv, s.cx, s.cy); g.confetti(70); setTimeout(() => { if (g.state === 'play') g.win(); }, 700); }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      const bg = ctx.createRadialGradient(W / 2, H / 2, 20, W / 2, H / 2, Math.max(W, H) * 0.7); bg.addColorStop(0, '#6b8f3a'); bg.addColorStop(1, '#1f2b12');
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      g.scenery(['🌿', '🍄', '🪨', '🌺', '🌴'], 14, { alpha: 0.3, size: [20, 36] });
+      if (!s.path) return;
+      // camino
+      ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+      ctx.strokeStyle = 'rgba(60,40,20,.55)'; ctx.lineWidth = s.D + 8; ctx.beginPath(); s.path.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y))); ctx.stroke();
+      ctx.strokeStyle = 'rgba(210,180,120,.35)'; ctx.lineWidth = s.D - 2; ctx.stroke(); ctx.lineCap = 'butt';
+      const end = s.path[s.path.length - 1];
+      ctx.fillStyle = '#000'; ctx.beginPath(); ctx.arc(end[0], end[1], s.r * 1.6, 0, Math.PI * 2); ctx.fill();
+      Arcade.emoji(ctx, '💀', end[0], end[1], s.r * 2.2, { rot: Math.sin(g.rt * 3) * 0.2 });
+      for (const b of s.chain) { if (b.d < 0) continue; const [x, y] = pos(s, b.d); Arcade.emoji(ctx, BALL[b.c], x, y, s.D * 1.05 * (1 + (b.pop || 0) * 0.3), { rot: b.d / s.r }); }
+      // rana
+      ctx.strokeStyle = 'rgba(255,255,255,.18)'; ctx.setLineDash([6, 8]); ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(s.cx, s.cy); ctx.lineTo(s.cx + Math.cos(s.aim) * 220, s.cy + Math.sin(s.aim) * 220); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle = '#2f9e44'; ctx.beginPath(); ctx.arc(s.cx, s.cy, s.r * 2.6, 0, Math.PI * 2); ctx.fill(); ctx.strokeStyle = '#8ce99a'; ctx.lineWidth = 3; ctx.stroke();
+      Arcade.emoji(ctx, s.frog, s.cx, s.cy, s.r * 4.2, { rot: s.aim + Math.PI / 2 });
+      if (s.cur != null) Arcade.emoji(ctx, BALL[s.cur], s.cx + Math.cos(s.aim) * s.r * 1.9, s.cy + Math.sin(s.aim) * s.r * 1.9, s.D);
+      Arcade.emoji(ctx, BALL[s.nxt], s.cx - Math.cos(s.aim) * s.r * 1.2, s.cy - Math.sin(s.aim) * s.r * 1.2, s.r * 1.1);
+      if (s.shot) Arcade.emoji(ctx, BALL[s.shot.c], s.shot.x, s.shot.y, s.D);
+      Arcade.txt(ctx, 'Bolas: ' + (s.chain.length + s.toSpawn), W / 2, g.top + 18, 15, '#fff', 'center', 900, 'rgba(0,0,0,.5)');
+    },
+  });
+})();

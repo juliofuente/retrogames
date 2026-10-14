@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Mariquita · Arcade Perdido</title>
+<meta name="theme-color" content="#132a13">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css">
+</head>
+<body class="game">
+<script src="config.js"></script>
+<script src="common.js"></script>
+<script>
+(function () {
+  const { ri, pick, shuffle, dist } = Arcade;
+  const D = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
+  const OPP = { up: 'down', down: 'up', left: 'right', right: 'left' };
+  const ROT = { up: 0, right: Math.PI / 2, down: Math.PI, left: -Math.PI / 2 };
+  const BUGS = ['🪲', '🐜', '🦗', '🦂', '🕷️'];
+
+  function geo(g) {
+    const s = g.s, Wa = g.W - 20, Ha = g.bot - g.top - 44;
+    s.cs = Math.min(Wa / s.C, Ha / s.R);
+    s.ox = (g.W - s.cs * s.C) / 2; s.oy = g.top + 36 + (Ha - s.cs * s.R) / 2;
+  }
+  function gen(g) {
+    const s = g.s, C = s.C, R = s.R;
+    s.E = []; s.S = [];
+    for (let c = 0; c < C; c++) { s.E.push(new Array(R).fill(true)); s.S.push(new Array(R).fill(true)); }
+    const seen = new Set(), st = [[ri(0, C - 1), ri(0, R - 1)]];
+    seen.add(st[0].join());
+    while (st.length) {
+      const [c, r] = st[st.length - 1];
+      const opts = shuffle(Object.entries(D)).filter(([, [dx, dy]]) => { const nc = c + dx, nr = r + dy; return nc >= 0 && nc < C && nr >= 0 && nr < R && !seen.has(nc + ',' + nr); });
+      if (!opts.length) { st.pop(); continue; }
+      const [d, [dx, dy]] = opts[0], nc = c + dx, nr = r + dy;
+      openEdge(s, c, r, d); seen.add(nc + ',' + nr); st.push([nc, nr]);
+    }
+    // quitar paredes para crear bucles
+    for (let c = 0; c < C; c++) for (let r = 0; r < R; r++) {
+      if (c < C - 1 && s.E[c][r] && Math.random() < 0.32) s.E[c][r] = false;
+      if (r < R - 1 && s.S[c][r] && Math.random() < 0.32) s.S[c][r] = false;
+    }
+    // torniquetes
+    s.gates = []; s.gmap = {};
+    const verts = []; for (let i = 1; i < C; i++) for (let j = 1; j < R; j++) verts.push([i, j]);
+    shuffle(verts);
+    const want = Math.round(C * R / 12);
+    for (const [i, j] of verts) {
+      if (s.gates.length >= want) break;
+      if (s.gates.some(q => Math.abs(q.i - i) + Math.abs(q.j - j) < 3)) continue;
+      const gt = { i, j, o: Math.random() < 0.5 ? 'v' : 'h', spin: 0 };
+      s.E[i - 1][j - 1] = s.E[i - 1][j] = s.S[i - 1][j - 1] = s.S[i][j - 1] = false;
+      s.gmap['E' + (i - 1) + ',' + (j - 1)] = gt; s.gmap['E' + (i - 1) + ',' + j] = gt;
+      s.gmap['S' + (i - 1) + ',' + (j - 1)] = gt; s.gmap['S' + i + ',' + (j - 1)] = gt;
+      s.gates.push(gt);
+    }
+  }
+  function openEdge(s, c, r, d) {
+    if (d === 'right') s.E[c][r] = false; else if (d === 'left') s.E[c - 1][r] = false;
+    else if (d === 'down') s.S[c][r] = false; else s.S[c][r - 1] = false;
+  }
+  function edgeKey(c, r, d) { return d === 'right' ? 'E' + c + ',' + r : d === 'left' ? 'E' + (c - 1) + ',' + r : d === 'down' ? 'S' + c + ',' + r : 'S' + c + ',' + (r - 1); }
+  // devuelve: 0 = no se puede, 1 = libre, 2 = torniquete que hay que girar
+  function pass(s, c, r, d) {
+    const nc = c + D[d][0], nr = r + D[d][1];
+    if (nc < 0 || nc >= s.C || nr < 0 || nr >= s.R) return 0;
+    if (d === 'right' && s.E[c][r]) return 0; if (d === 'left' && s.E[c - 1][r]) return 0;
+    if (d === 'down' && s.S[c][r]) return 0; if (d === 'up' && s.S[c][r - 1]) return 0;
+    const k = edgeKey(c, r, d), gt = s.gmap[k];
+    if (gt && ((k[0] === 'E' && gt.o === 'v') || (k[0] === 'S' && gt.o === 'h'))) return 2;
+    return 1;
+  }
+  function tryStart(g, m, d) {
+    const s = g.s, p = pass(s, m.c, m.r, d);
+    if (!p) return false;
+    if (p === 2) { const gt = s.gmap[edgeKey(m.c, m.r, d)]; gt.o = gt.o === 'v' ? 'h' : 'v'; gt.spin = 1; Arcade.tone(420, 0.05, 'triangle', 0.08); }
+    m.dir = d; m.moving = true; return true;
+  }
+  const pos = (s, m) => ({ x: s.ox + (m.c + 0.5 + (m.moving ? D[m.dir][0] * m.p : 0)) * s.cs, y: s.oy + (m.r + 0.5 + (m.moving ? D[m.dir][1] * m.p : 0)) * s.cs });
+  function arrivePlayer(g) {
+    const s = g.s, m = s.pl;
+    m.c += D[m.dir][0]; m.r += D[m.dir][1]; m.p = 0;
+    const k = m.c + ',' + m.r;
+    if (s.skulls.has(k) && s.inv <= 0) { die(g); return; }
+    if (s.dots.has(k)) { s.dots.delete(k); g.addScore(10 * s.mult); if (s.dots.size % 3 === 0) Arcade.sfx.tick(); }
+    if (s.hearts.has(k)) { s.hearts.delete(k); s.mult = s.mult === 1 ? 2 : s.mult === 2 ? 3 : 5; g.addScore(100, pos(s, m).x, pos(s, m).y - 16); g.float('x' + s.mult, pos(s, m).x, pos(s, m).y - 40, '#ff8fab', 24); Arcade.sfx.coin(); }
+    if (!s.dots.size) { g.addScore(500 * g.lv, g.W / 2, g.H / 2); g.win(); return; }
+    if (m.q && tryStart(g, m, m.q)) m.q = null;
+    else if (!tryStart(g, m, m.dir)) m.moving = false;
+  }
+  function arriveEnemy(g, e) {
+    const s = g.s;
+    e.c += D[e.dir][0]; e.r += D[e.dir][1]; e.p = 0;
+    let opts = Object.keys(D).filter(d => pass(s, e.c, e.r, d) === 1 && d !== OPP[e.dir]);
+    if (!opts.length) opts = pass(s, e.c, e.r, OPP[e.dir]) === 1 ? [OPP[e.dir]] : [];
+    if (!opts.length) { e.moving = false; return; }
+    if (Math.random() < 0.5) opts.sort((a, b) => dist(e.c + D[a][0], e.r + D[a][1], s.pl.c, s.pl.r) - dist(e.c + D[b][0], e.r + D[b][1], s.pl.c, s.pl.r));
+    else shuffle(opts);
+    e.dir = opts[0]; e.moving = true;
+  }
+  function placeActors(g) {
+    const s = g.s;
+    s.pl = { c: Math.floor(s.C / 2), r: s.R - 1, dir: 'up', p: 0, moving: false, q: null };
+    s.en = []; s.relT = 2.5; s.toRelease = Math.min(5, 2 + Math.floor(g.lv / 2));
+  }
+  function die(g) {
+    const s = g.s, p = pos(s, s.pl);
+    g.burst(p.x, p.y, { n: 18, color: ['#ff6b6b', '#fff', '#000'], speed: 220 });
+    if (g.die()) { placeActors(g); s.inv = 2; }
+  }
+
+  Arcade.game({
+    /*THEME*/ tag: "El jardín de los torniquetes", deco: ["🌸", "💖", "🪲", "🌼", "🐜", "🌷"], font: "comic", bg: ["#1d3a1e", "#0f1f10"], music: {"mode": "major", "bpm": 120, "wave": "square", "style": "arcade", "root": 62}, voice: {"wave": "square", "mul": 1.1, "echo": 0.18}, ambient: {"e": ["🌸"], "n": 8, "vy": 20, "sway": 28, "spin": 1, "alpha": 0.18},
+    /*EN*/ en: {"title": "Ladybug", "tag": "The garden of turnstiles", "help": "<b>Swipe</b> to move through the maze and eat every dot. The green bars are <b>turnstiles</b>: you can go through them and they <b>spin</b>, changing the maze. Bugs can't pass them, so use them to trap bugs or cut them off. Hearts 💖 multiply your points. Avoid the skulls 💀.", "tvHelp": "D-pad to move through the maze.", "dict": {}},
+    /*TV*/ tvHelp: "Cruceta para moverte por el laberinto.",
+    id: 'mariquita', title: 'Mariquita', emoji: '🐞', color: '#ff6b6b', origin: 'Lady Bug (Universal, 1981)',
+    help: '<b>Desliza</b> para moverte por el laberinto y cómete todos los puntos. Las barras verdes son <b>torniquetes</b>: tú puedes atravesarlos y al hacerlo <b>giran</b>, cambiando el laberinto. Los bichos no pueden atravesarlos, así que úsalos para encerrarlos o cortarles el paso. Los corazones 💖 multiplican los puntos. Evita las calaveras 💀.',
+    lives: 3, levels: 0, cap: 16,
+    setup(g) {
+      g.s = { inv: 1.5, mult: 1 };
+      const s = g.s;
+      if (g.W < g.H) { s.C = 9; s.R = 11; } else { s.C = 13; s.R = 7; }
+      gen(g); geo(g);
+      s.nest = { c: Math.floor(s.C / 2), r: Math.floor(s.R / 2) };
+      placeActors(g);
+      s.dots = new Set(); s.hearts = new Set(); s.skulls = new Set();
+      const cells = []; for (let c = 0; c < s.C; c++) for (let r = 0; r < s.R; r++) { const k = c + ',' + r; if (k !== s.nest.c + ',' + s.nest.r) cells.push(k); }
+      shuffle(cells);
+      const startK = s.pl.c + ',' + s.pl.r;
+      const free = cells.filter(k => k !== startK);
+      for (let i = 0; i < 3; i++) s.hearts.add(free.pop());
+      const nsk = g.lv >= 2 ? Math.min(5, g.lv - 1) : 0;
+      for (let i = 0; i < nsk; i++) s.skulls.add(free.pop());
+      for (const k of cells) if (!s.hearts.has(k) && !s.skulls.has(k)) s.dots.add(k);
+      s.dots.delete(startK);
+    },
+    layout(g) { if (g.s.E) geo(g); },
+    swipe(g, d) {
+      const m = g.s.pl;
+      if (m.moving && d === OPP[m.dir]) { m.c += D[m.dir][0]; m.r += D[m.dir][1]; m.dir = d; m.p = 1 - m.p; m.q = null; return; }
+      if (!m.moving) { if (!tryStart(g, m, d)) m.q = d; }
+      else m.q = d;
+    },
+    key(g, k, d) { if (!d) return; const m = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right' }[k]; if (m) this.swipe(g, m); },
+    update(g, dt) {
+      const s = g.s, m = s.pl;
+      s.inv = Math.max(0, s.inv - dt);
+      for (const gt of s.gates) gt.spin = Math.max(0, gt.spin - dt * 6);
+      if (m.moving) { m.p += 4.4 * dt; if (m.p >= 1) { arrivePlayer(g); if (g.state !== 'play') return; } }
+      else if (m.q && tryStart(g, m, m.q)) m.q = null;
+      s.relT -= dt;
+      if (s.toRelease > 0 && s.relT <= 0) {
+        s.relT = Math.max(3, 7 - g.lv * 0.4); s.toRelease--;
+        const e = { c: s.nest.c, r: s.nest.r, dir: 'up', p: 0, moving: false, e: BUGS[s.en.length % BUGS.length], sp: 2.4 + g.lv * 0.14 + Math.random() * 0.3 };
+        s.en.push(e); arriveEnemy(g, Object.assign(e, { c: e.c - D[e.dir][0], r: e.r - D[e.dir][1] }));
+        Arcade.tone(200, 0.15, 'square', 0.05, 200);
+      }
+      const pp = pos(s, m);
+      for (const e of s.en) {
+        if (e.moving) { e.p += e.sp * dt; if (e.p >= 1) arriveEnemy(g, e); }
+        else { e.wait = (e.wait || 0) + dt; if (e.wait > 0.5) { e.wait = 0; e.dir = OPP[e.dir]; arriveEnemy(g, Object.assign(e, { c: e.c - D[e.dir][0], r: e.r - D[e.dir][1] })); } }
+        const ep = pos(s, e);
+        if (s.inv <= 0 && Math.hypot(ep.x - pp.x, ep.y - pp.y) < s.cs * 0.55) { die(g); return; }
+      }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      ctx.fillStyle = '#0f1f10'; ctx.fillRect(0, 0, W, H);
+      if (!s.E) return;
+      const cs = s.cs, ox = s.ox, oy = s.oy;
+      ctx.fillStyle = '#1d3a1e'; ctx.fillRect(ox, oy, cs * s.C, cs * s.R);
+      // puntos y objetos
+      ctx.fillStyle = '#f8f9fa';
+      for (const k of s.dots) { const [c, r] = k.split(',').map(Number); ctx.beginPath(); ctx.arc(ox + (c + 0.5) * cs, oy + (r + 0.5) * cs, cs * 0.07, 0, 6.28); ctx.fill(); }
+      for (const k of s.hearts) { const [c, r] = k.split(',').map(Number); Arcade.emoji(ctx, '💖', ox + (c + 0.5) * cs, oy + (r + 0.5) * cs, cs * 0.5 * (1 + Math.sin(g.t * 5) * 0.08)); }
+      for (const k of s.skulls) { const [c, r] = k.split(',').map(Number); Arcade.emoji(ctx, '💀', ox + (c + 0.5) * cs, oy + (r + 0.5) * cs, cs * 0.5); }
+      Arcade.emoji(ctx, '🕳️', ox + (s.nest.c + 0.5) * cs, oy + (s.nest.r + 0.5) * cs, cs * 0.6);
+      // paredes
+      ctx.strokeStyle = '#ffb3c1'; ctx.lineCap = 'round'; ctx.lineWidth = Math.max(3, cs * 0.12);
+      ctx.beginPath();
+      ctx.rect(ox, oy, cs * s.C, cs * s.R);
+      for (let c = 0; c < s.C; c++) for (let r = 0; r < s.R; r++) {
+        if (c < s.C - 1 && s.E[c][r]) { ctx.moveTo(ox + (c + 1) * cs, oy + r * cs); ctx.lineTo(ox + (c + 1) * cs, oy + (r + 1) * cs); }
+        if (r < s.R - 1 && s.S[c][r]) { ctx.moveTo(ox + c * cs, oy + (r + 1) * cs); ctx.lineTo(ox + (c + 1) * cs, oy + (r + 1) * cs); }
+      }
+      ctx.stroke();
+      // torniquetes
+      for (const gt of s.gates) {
+        const x = ox + gt.i * cs, y = oy + gt.j * cs;
+        const a = (gt.o === 'v' ? Math.PI / 2 : 0) + gt.spin * Math.PI / 2;
+        ctx.strokeStyle = '#51cf66'; ctx.lineWidth = Math.max(4, cs * 0.16);
+        ctx.beginPath(); ctx.moveTo(x - Math.cos(a) * cs, y - Math.sin(a) * cs); ctx.lineTo(x + Math.cos(a) * cs, y + Math.sin(a) * cs); ctx.stroke();
+        ctx.fillStyle = '#2b8a3e'; ctx.beginPath(); ctx.arc(x, y, cs * 0.16, 0, 6.28); ctx.fill();
+      }
+      for (const e of s.en) { const p = pos(s, e); Arcade.emoji(ctx, e.e, p.x, p.y, cs * 0.66, { rot: ROT[e.dir] }); }
+      const p = pos(s, s.pl);
+      if (!(s.inv > 0 && Math.floor(g.t * 10) % 2)) Arcade.emoji(ctx, '🐞', p.x, p.y, cs * 0.72, { rot: ROT[s.pl.dir] });
+      Arcade.txt(ctx, (s.mult > 1 ? '💖 x' + s.mult + '   ' : '') + '⚪ ' + s.dots.size, W / 2, oy - 18, 15, '#ffd6e0', 'center', 800);
+    },
+  });
+})();
+</script>
+</body>
+</html>

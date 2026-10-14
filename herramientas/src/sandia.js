@@ -1,0 +1,120 @@
+// Sandía|#3b2a1a
+(function () {
+  const { rand, clamp } = Arcade;
+  const F = ['🍒', '🍓', '🍇', '🍊', '🍋', '🍎', '🍐', '🍑', '🍍', '🍈', '🍉'];
+  const FC = ['#e03131', '#f03e3e', '#9c36b5', '#fd7e14', '#fcc419', '#e8590c', '#94d82d', '#ffa8a8', '#fab005', '#a9e34b', '#2f9e44'];
+
+  function geo(g) {
+    const s = g.s, w = Math.min(g.W - 30, (g.bot - g.top - 70) * 0.78, 440);
+    const old = s.x0;
+    s.x0 = (g.W - w) / 2; s.x1 = s.x0 + w; s.y1 = g.bot - 14; s.y0 = s.y1 - w / 0.78; s.line = s.y0 + w * 0.2;
+    s.rb = w * 0.042;
+    if (old != null && s.balls) { /* reescala posiciones */ }
+    if (s.dx == null) s.dx = (s.x0 + s.x1) / 2;
+  }
+  const rad = (s, t) => s.rb * Math.pow(1.27, t);
+  function nextFruit(g) { const r = Math.random(); return r < 0.32 ? 0 : r < 0.6 ? 1 : r < 0.82 ? 2 : r < 0.95 ? 3 : 4; }
+  function drop(g) {
+    const s = g.s; if (s.cool > 0 || s.lose) return;
+    const r = rad(s, s.cur);
+    s.balls.push({ x: clamp(s.dx, s.x0 + r, s.x1 - r), y: s.line - r - 6, vx: 0, vy: 0, t: s.cur, r, age: 0, pop: 0 });
+    s.cur = s.nxt; s.nxt = nextFruit(g); s.cool = 0.45;
+    Arcade.tone(300, 0.07, 'triangle', 0.08, -80);
+  }
+  function step(g, h) {
+    const s = g.s, B = s.balls;
+    for (const b of B) { b.vy += 1500 * h; b.x += b.vx * h; b.y += b.vy * h; b.age += h; }
+    for (let it = 0; it < 3; it++) {
+      for (let i = 0; i < B.length; i++) {
+        const a = B[i]; if (a.dead) continue;
+        if (a.x - a.r < s.x0) { a.x = s.x0 + a.r; a.vx = Math.abs(a.vx) * 0.3; }
+        if (a.x + a.r > s.x1) { a.x = s.x1 - a.r; a.vx = -Math.abs(a.vx) * 0.3; }
+        if (a.y + a.r > s.y1) { a.y = s.y1 - a.r; a.vy = -Math.abs(a.vy) * 0.2; a.vx *= 0.96; }
+        for (let j = i + 1; j < B.length; j++) {
+          const b = B[j]; if (b.dead) continue;
+          const dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy), m = a.r + b.r;
+          if (d >= m || d === 0) continue;
+          if (a.t === b.t && !a.dead && !b.dead) { merge(g, a, b); continue; }
+          const nx = dx / d, ny = dy / d, ov = m - d, ma = a.r * a.r, mb = b.r * b.r, tot = ma + mb;
+          a.x -= nx * ov * (mb / tot); a.y -= ny * ov * (mb / tot); b.x += nx * ov * (ma / tot); b.y += ny * ov * (ma / tot);
+          const rv = (b.vx - a.vx) * nx + (b.vy - a.vy) * ny;
+          if (rv < 0) { const imp = -(1.15) * rv / (1 / ma + 1 / mb); a.vx -= imp * nx / ma; a.vy -= imp * ny / ma; b.vx += imp * nx / mb; b.vy += imp * ny / mb; }
+        }
+      }
+    }
+    s.balls = B.filter((b) => !b.dead);
+    for (const b of s.balls) { b.vx *= 0.995; b.vy *= 0.998; }
+  }
+  function merge(g, a, b) {
+    const s = g.s; a.dead = b.dead = true;
+    const x = (a.x + b.x) / 2, y = (a.y + b.y) / 2;
+    g.burst(x, y, { n: 10, color: FC[a.t], speed: 160, size: 4 });
+    if (a.t >= F.length - 1) { g.addScore(500, x, y); g.confetti(40); Arcade.sfx.win(); return; }
+    const t = a.t + 1, r = rad(s, t);
+    s.balls.push({ x, y, vx: (a.vx + b.vx) / 2, vy: -60, t, r, age: 1, pop: 1 });
+    g.addScore((t + 1) * (t + 2) / 2 * 5, x, y - r);
+    Arcade.sfx.combo(t);
+    if (t > s.best) s.best = t;
+    if (t >= s.goal && !s.won) { s.won = true; setTimeout(() => { if (g.state === 'play') { g.addScore(150 * g.lv, g.W / 2, g.H / 2); g.win(); } }, 600); }
+  }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Junta frutas iguales hasta la sandía', deco: ['🍒', '🍓', '🍊', '🍎', '🍍', '🍉'], font: 'round', bg: ['#6b4b2a', '#3b2a1a'],
+    music: { mode: 'major', bpm: 108, wave: 'triangle', style: 'chill', root: 64 }, voice: { wave: 'sine', mul: 1.1, echo: 0.3 },
+    ambient: { e: ['🍃'], n: 6, vy: 18, sway: 26, spin: 1, alpha: 0.15 },
+    en: { title: 'Melon Drop', tag: 'Merge matching fruit up to the melon', help: '<b>Drag</b> to choose where to drop the fruit and <b>release</b> to let it fall. Two <b>equal</b> fruits that touch merge into the next one: 🍒→🍓→🍇→🍊→🍋→🍎→🍐→🍑→🍍→🍈→🍉. Make each level\'s target fruit. If the fruit pile stays above the dotted line, you lose a life.', tvHelp: 'Hold ◀ ▶ to move · OK to drop the fruit.', dict: { 'Objetivo': 'Target', 'Siguiente': 'Next', '¡Demasiado alto!': 'Too high!' } },
+    tvHelp: 'Mantén ◀ ▶ para moverte · OK para soltar la fruta.',
+    id: 'sandia', title: 'Sandía', emoji: '🍉', color: '#51cf66', origin: 'Watermelon Game / Suika',
+    help: '<b>Arrastra</b> para elegir dónde soltar la fruta y <b>suelta</b> para dejarla caer. Dos frutas <b>iguales</b> que se tocan se fusionan en la siguiente: 🍒→🍓→🍇→🍊→🍋→🍎→🍐→🍑→🍍→🍈→🍉. Consigue la fruta objetivo de cada nivel. Si el montón se queda por encima de la línea de puntos, pierdes una vida.',
+    lives: 3, levels: 0, cap: 12,
+    setup(g) {
+      g.s = { balls: [], cool: 0, over: 0, best: 0, won: false };
+      const s = g.s; geo(g);
+      s.goal = clamp(4 + Math.floor((g.lv + 1) / 2), 5, 10);
+      s.cur = nextFruit(g); s.nxt = nextFruit(g);
+    },
+    layout(g) { if (g.s.balls) { const s = g.s, ox0 = s.x0, ow = s.x1 - s.x0, oy1 = s.y1; s.x0 = null; geo(g); const k = (s.x1 - s.x0) / ow; for (const b of s.balls) { b.x = s.x0 + (b.x - ox0) * k; b.y = s.y1 - (oy1 - b.y) * k; b.r = rad(s, b.t); } } },
+    down(g, p) { g.s.dx = p.x; },
+    move(g, p) { g.s.dx = p.x; },
+    up(g) { drop(g); },
+    key(g, k, d) { const s = g.s; if (k === 'ArrowLeft' || k === 'ArrowRight') s.kd = d ? (k === 'ArrowLeft' ? -1 : 1) : 0; if (d && k === ' ') drop(g); },
+    update(g, dt) {
+      const s = g.s;
+      s.cool -= dt;
+      if (s.kd) s.dx = clamp(s.dx + s.kd * 260 * dt, s.x0, s.x1);
+      for (let i = 0; i < 4; i++) step(g, dt / 4);
+      for (const b of s.balls) b.pop = Math.max(0, b.pop - dt * 4);
+      const high = s.balls.some((b) => b.age > 1.2 && b.y - b.r < s.line && Math.abs(b.vy) < 80);
+      s.over = high ? s.over + dt : 0;
+      if (s.over > 2) {
+        s.over = 0; g.message(Arcade.T('¡Demasiado alto!', 'Too high!'), 1.2);
+        for (const b of s.balls) g.burst(b.x, b.y, { n: 3, color: FC[b.t], speed: 140, size: 3 });
+        s.balls = []; s.won = false; g.die();
+      }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      const bg = ctx.createLinearGradient(0, 0, 0, H);
+      bg.addColorStop(0, '#ffe8cc'); bg.addColorStop(1, '#d9a066');
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      g.scenery(['🌿', '🌻', '🧺', '🌾'], 8, { alpha: 0.18, size: [24, 40] });
+      if (!s.balls) return;
+      ctx.fillStyle = 'rgba(255,255,255,.35)'; ctx.fillRect(s.x0, s.y0, s.x1 - s.x0, s.y1 - s.y0);
+      ctx.strokeStyle = '#8d5524'; ctx.lineWidth = 8; ctx.lineJoin = 'round';
+      ctx.beginPath(); ctx.moveTo(s.x0 - 4, s.y0); ctx.lineTo(s.x0 - 4, s.y1 + 4); ctx.lineTo(s.x1 + 4, s.y1 + 4); ctx.lineTo(s.x1 + 4, s.y0); ctx.stroke();
+      ctx.setLineDash([8, 8]); ctx.strokeStyle = s.over > 0 ? `rgba(255,60,60,${0.5 + Math.sin(g.rt * 16) * 0.4})` : 'rgba(141,85,36,.5)'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(s.x0, s.line); ctx.lineTo(s.x1, s.line); ctx.stroke(); ctx.setLineDash([]);
+      // guía y fruta actual
+      const r = rad(s, s.cur), x = clamp(s.dx, s.x0 + r, s.x1 - r);
+      ctx.strokeStyle = 'rgba(255,255,255,.6)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x, s.line - r - 6); ctx.lineTo(x, s.y1); ctx.stroke();
+      if (s.cool <= 0) Arcade.emoji(ctx, F[s.cur], x, s.line - r - 6, r * 2.2);
+      for (const b of s.balls) Arcade.emoji(ctx, F[b.t], b.x, b.y, b.r * 2.25 * (1 + b.pop * 0.2), { rot: b.x / b.r * 0.3 });
+      // panel
+      Arcade.txt(ctx, 'Siguiente', s.x0 + 30, s.y0 - 34, 12, '#6b4b2a', 'center', 800);
+      Arcade.emoji(ctx, F[s.nxt], s.x0 + 30, s.y0 - 14, 26);
+      Arcade.txt(ctx, 'Objetivo', s.x1 - 34, s.y0 - 34, 12, '#6b4b2a', 'center', 800);
+      Arcade.emoji(ctx, F[s.goal], s.x1 - 34, s.y0 - 12, 30, { alpha: s.won ? 1 : 0.85 });
+      for (let i = 0; i <= s.goal; i++) Arcade.emoji(ctx, F[i], W / 2 - s.goal * 10 + i * 20, s.y0 - 20, 15, { alpha: i <= s.best ? 1 : 0.3 });
+    },
+  });
+})();

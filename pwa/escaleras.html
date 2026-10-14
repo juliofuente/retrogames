@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Escaleras · Arcade Perdido</title>
+<meta name="theme-color" content="#2b2d42">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css">
+</head>
+<body class="game">
+<script src="config.js"></script>
+<script src="common.js"></script>
+<script>
+(function () {
+  const { ri, rand, clamp } = Arcade;
+  const CLIMBERS = ['🧗', '🐒', '🦸', '🧑‍🚒', '🐈', '🤖'];
+
+  function extend(s, n) {
+    while (s.st.length < n) { const l = s.st[s.st.length - 1]; let d = l.d; if (s.run >= 2 && Math.random() < s.turnP) { d = -d; s.run = 0; } else s.run++; s.st.push({ x: l.x + d, d, coin: Math.random() < 0.08 }); }
+  }
+  function step(g, turn) {
+    const s = g.s; if (s.dead || s.won) return;
+    const dir = turn ? -s.dir : s.dir, nx = s.st[s.i].x + dir, nxt = s.st[s.i + 1];
+    s.dir = dir;
+    if (nxt.x !== nx) { s.dead = true; s.fall = 0; Arcade.sfx.hit(); g.shake(0.25, 6); setTimeout(() => { if (g.state === 'play' && g.die()) { s.dead = false; s.time = 1; s.dir = s.st[s.i + 1].x - s.st[s.i].x; } }, 900); return; }
+    s.i++; s.anim = 1; s.time = Math.min(1, s.time + 0.08); g.addScore(g.lv); Arcade.tone(400 + (s.i % 8) * 40, 0.04, 'triangle', 0.05);
+    if (nxt.coin) { nxt.coin = false; Arcade.sfx.coin(); g.addScore(10 * g.lv); }
+    extend(s, s.i + 30);
+    if (s.i >= s.need) { s.won = true; Arcade.sfx.win(); g.confetti(60); g.addScore(100 * g.lv, g.W / 2, g.H / 2); setTimeout(() => { if (g.state === 'play') g.win(); }, 600); }
+  }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Sube, gira, no mires abajo', deco: ['🧗', '🪜', '⏱️', '🪙', '🌆', '⭐'], font: 'impact', bg: ['#3d405b', '#2b2d42'],
+    music: { mode: 'minor', bpm: 136, wave: 'square', style: 'arcade', root: 57 }, voice: { wave: 'square', mul: 1, echo: 0.2 },
+    en: { title: 'Stairs', tag: 'Climb, turn, do not look down', help: 'The staircase zigzags upwards. <b>Tap the right half</b> of the screen to climb a step in the direction you are facing and the <b>left half</b> to turn around and climb. If you step into the void, you fall! The time bar drains: every step refills it a little. Climb the steps each level asks for.', tvHelp: '▶ climb · ◀ turn and climb.', dict: { 'Escalones: ': 'Steps: ', 'GIRAR': 'TURN', 'SUBIR': 'CLIMB' } },
+    tvHelp: '▶ subir · ◀ girar y subir.',
+    id: 'escaleras', title: 'Escaleras', emoji: '🪜', color: '#e07a5f', origin: 'Stairs / Infinite Stairs',
+    help: 'La escalera zigzaguea hacia arriba. <b>Toca la mitad derecha</b> de la pantalla para subir un escalón en la dirección en la que miras y la <b>mitad izquierda</b> para darte la vuelta y subir. Si pisas el vacío, ¡caes! La barra de tiempo se vacía: cada escalón la recarga un poco. Sube los escalones que pide cada nivel.',
+    lives: 3, levels: 0, cap: 25,
+    setup(g) {
+      const L = g.lv; g.s = { st: [{ x: 0, d: 1 }], i: 0, dir: 1, run: 0, turnP: clamp(0.35 + L * 0.015, 0.35, 0.6), time: 1, drain: 0.18 + Math.min(L, 25) * 0.012, need: 40 + Math.min(L, 25) * 8, anim: 0, who: CLIMBERS[(g.level - 1) % CLIMBERS.length] };
+      extend(g.s, 40);
+    },
+    down(g, p) { step(g, p.x < g.W / 2); },
+    key(g, k, d) { if (!d) return; if (k === 'ArrowRight' || k === ' ') step(g, false); else if (k === 'ArrowLeft') step(g, true); },
+    update(g, dt) {
+      const s = g.s; s.anim = Math.max(0, s.anim - dt * 10);
+      if (s.dead) { s.fall += dt; return; }
+      if (s.won || s.i === 0) return;
+      s.time -= s.drain * dt;
+      if (s.time <= 0) { s.dead = true; s.fall = 0; g.message('⏱️', 0.8); Arcade.sfx.bad(); setTimeout(() => { if (g.state === 'play' && g.die()) { s.dead = false; s.time = 1; } }, 900); }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      const bg = ctx.createLinearGradient(0, 0, 0, H); const hue = (s.i * 0.6 + g.level * 40) % 360; bg.addColorStop(0, `hsl(${hue},40%,22%)`); bg.addColorStop(1, `hsl(${(hue + 40) % 360},45%,40%)`);
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      g.scenery(['🏢', '🏬', '🏙️', '🌙'], 8, { alpha: 0.18, size: [40, 70] });
+      if (!s.st) return;
+      const sw = Math.min(W / 7, 64), sh = sw * 0.55, cx = W / 2, cy = g.bot - (g.bot - g.top) * 0.35;
+      const cur = s.st[s.i], k = s.anim;
+      const ox = cx - (cur.x - s.dir * k) * sw, oy = cy + (s.i - k) * sh * 1;
+      for (let j = Math.max(0, s.i - 10); j < Math.min(s.st.length, s.i + 16); j++) {
+        const t = s.st[j], x = ox + t.x * sw, y = oy - j * sh;
+        ctx.fillStyle = j < s.i ? 'rgba(255,255,255,.35)' : '#f4f1de'; Arcade.rr(ctx, x - sw / 2, y, sw, sh * 0.7, 5); ctx.fill();
+        ctx.fillStyle = '#e07a5f'; ctx.fillRect(x - sw / 2, y + sh * 0.55, sw, sh * 0.15);
+        if (t.coin) Arcade.emoji(ctx, '🪙', x, y - sh * 0.6, sw * 0.4);
+      }
+      const px = ox + cur.x * sw + s.dir * k * sw * 0 , py = oy - s.i * sh - sh * 0.6 - Math.sin(k * Math.PI) * sh * 0.8 + (s.dead ? s.fall * s.fall * 900 : 0);
+      Arcade.emoji(ctx, s.who, cx, py, sw * 0.9, { flip: s.dir > 0, rot: s.dead ? s.fall * 8 : 0 });
+      // botones guía
+      ctx.fillStyle = 'rgba(255,255,255,.08)'; ctx.fillRect(0, g.bot - 70, W / 2 - 2, 70); ctx.fillRect(W / 2 + 2, g.bot - 70, W / 2 - 2, 70);
+      Arcade.txt(ctx, '🔄 GIRAR', W / 4, g.bot - 35, 16, '#fff', 'center', 900); Arcade.txt(ctx, 'SUBIR ⬆️', W * 0.75, g.bot - 35, 16, '#fff', 'center', 900);
+      const bw = Math.min(W - 60, 300); ctx.fillStyle = 'rgba(0,0,0,.3)'; Arcade.rr(ctx, (W - bw) / 2, g.top + 8, bw, 12, 6); ctx.fill();
+      ctx.fillStyle = s.time > 0.3 ? '#81b29a' : '#e07a5f'; Arcade.rr(ctx, (W - bw) / 2, g.top + 8, bw * Math.max(0, s.time), 12, 6); ctx.fill();
+      Arcade.txt(ctx, 'Escalones: ' + s.i + '/' + s.need, W / 2, g.top + 36, 15, '#fff', 'center', 900);
+    },
+  });
+})();
+</script>
+</body>
+</html>

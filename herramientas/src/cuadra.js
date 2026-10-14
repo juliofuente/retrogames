@@ -1,0 +1,126 @@
+// Cuadra|#0c0c1e
+(function () {
+  const { ri, pick, clamp } = Arcade;
+  const COLS = 8, ROWS = 15;
+  const PAL = ['#ff6b6b', '#ffd43b', '#69db7c', '#4dabf7', '#da77f2', '#ff922b', '#3bc9db'];
+
+  function geo(g) {
+    const s = g.s, availW = g.W - 24, availH = g.bot - g.top - 30;
+    s.cs = Math.min(availW / COLS, availH / (ROWS + 1.6));
+    s.ox = (g.W - s.cs * COLS) / 2; s.oy = g.top + 14 + (availH - s.cs * (ROWS + 1.6)) / 2;
+  }
+  function spawn(g) {
+    const s = g.s, w = ri(2, Math.min(4, 2 + Math.floor(g.level / 2))), h = ri(2, 3);
+    const d = []; for (let i = 0; i < w; i++) d.push(ri(1, h));
+    if (Math.min(...d) === h) d[ri(0, w - 1)] = ri(1, h - 1);
+    for (let t = 0; t < 12; t++) {
+      const x = ri(0, COLS - w);
+      let ok = true;
+      for (let i = 0; i < w && ok; i++) for (let j = 0; j < h; j++) if (s.grid[j][x + i]) ok = false;
+      if (!ok) continue;
+      const col = PAL[s.pid++ % PAL.length];
+      for (let i = 0; i < w; i++) for (let j = 0; j < d[i]; j++) s.grid[j][x + i] = { col, pop: 0 };
+      return;
+    }
+  }
+  function scroll(g) {
+    const s = g.s;
+    if (s.grid[ROWS - 1].some(Boolean)) {
+      Arcade.sfx.boom(); g.shake(0.5, 12); g.lives = 0; g.state = 'dying'; setTimeout(g.over, 900); return;
+    }
+    s.grid.pop(); s.grid.unshift(new Array(COLS).fill(null));
+    s.since++;
+    if (s.since >= s.gap) { s.since = 0; s.gap = ri(3, 5); spawn(g); }
+  }
+  function fire(g, c) {
+    const s = g.s; if (s.cool > 0) return;
+    s.cool = 0.07; s.sc = c;
+    let r = -1; for (let k = ROWS - 1; k >= 0; k--) if (s.grid[k][c]) { r = k; break; }
+    const shipY = s.oy + (ROWS + 0.8) * s.cs;
+    if (r < 0 || r + 1 >= ROWS) { s.trail = { c, y: s.oy, t: 0.12 }; Arcade.tone(900, 0.03, 'square', 0.03); return; }
+    const nr = r + 1;
+    s.grid[nr][c] = { col: s.grid[r][c].col, pop: 1 };
+    s.trail = { c, y: s.oy + (nr + 1) * s.cs, t: 0.12 };
+    Arcade.tone(700, 0.04, 'square', 0.05, 200);
+    check(g, nr, c);
+  }
+  function check(g, r0, c0) {
+    const s = g.s, seen = new Set(), st = [[r0, c0]], cells = [];
+    while (st.length) {
+      const [r, c] = st.pop(), k = r * 100 + c;
+      if (seen.has(k) || r < 0 || r >= ROWS || c < 0 || c >= COLS || !s.grid[r][c]) continue;
+      seen.add(k); cells.push([r, c]);
+      st.push([r + 1, c], [r - 1, c], [r, c + 1], [r, c - 1]);
+    }
+    let r1 = 99, r2 = -1, c1 = 99, c2 = -1;
+    for (const [r, c] of cells) { r1 = Math.min(r1, r); r2 = Math.max(r2, r); c1 = Math.min(c1, c); c2 = Math.max(c2, c); }
+    const w = c2 - c1 + 1, h = r2 - r1 + 1;
+    if (w >= 2 && h >= 2 && cells.length === w * h) {
+      for (const [r, c] of cells) { g.burst(s.ox + (c + 0.5) * s.cs, s.oy + (r + 0.5) * s.cs, { n: 4, color: s.grid[r][c].col, speed: 160, size: 3 }); s.grid[r][c] = null; }
+      const pts = w * h * 10 * g.level;
+      g.addScore(pts, s.ox + (c1 + w / 2) * s.cs, s.oy + (r1 + h / 2) * s.cs);
+      if (w * h >= 9) g.float('¡Grande!', s.ox + (c1 + w / 2) * s.cs, s.oy + r1 * s.cs - 10, '#ffd43b', 22);
+      Arcade.sfx.coin(); Arcade.buzz(25); g.ring(s.ox + (c1 + w / 2) * s.cs, s.oy + (r1 + h / 2) * s.cs, { color: '#4dabf7', r: Math.max(w, h) * s.cs, w: 6 }); if (w * h >= 9) g.flash('#4dabf7', 0.2);
+      s.done++;
+      if (s.done % 10 === 0) { g.level++; g.hud(); g.message('Nivel ' + g.level, 1.2); Arcade.sfx.level(); }
+    }
+  }
+  const colAt = (s, x) => clamp(Math.floor((x - s.ox) / s.cs), 0, COLS - 1);
+
+  Arcade.game({
+    id: 'cuadra', title: 'Cuadra', emoji: '🟦', color: '#4dabf7', origin: 'Quarth (Konami, 1989)',
+    help: 'Las piezas bajan poco a poco. <b>Toca una columna</b> para disparar un bloque hacia arriba: se pega debajo de lo que haya. Cuando una figura forma un <b>rectángulo perfecto</b>, desaparece. Arrastra para mover la nave. Si un bloque llega abajo, se acaba.',
+    lives: 0, levels: null,
+    theme: { font: 'Orbitron', music: { tempo: 132, scale: 'minor', root: 196, wave: 'sawtooth', lead: 'square' }, sfx: { wave: 'square', pitch: 1.3 } },
+    setup(g) {
+      g.s = { grid: [], pid: 0, since: 0, gap: 3, sc: 3, cool: 0, done: 0, scT: 1.5 };
+      const s = g.s;
+      for (let r = 0; r < ROWS; r++) s.grid.push(new Array(COLS).fill(null));
+      geo(g);
+      spawn(g); for (let i = 0; i < 4; i++) { s.grid.pop(); s.grid.unshift(new Array(COLS).fill(null)); } spawn(g);
+    },
+    layout(g) { if (g.s.grid) geo(g); },
+    tap(g, p) { fire(g, colAt(g.s, p.x)); },
+    move(g, p) { g.s.sc = colAt(g.s, p.x); },
+    up(g, p) { if (Math.hypot(p.x - p.sx, p.y - p.sy) >= 16) fire(g, colAt(g.s, p.x)); },
+    key(g, k, d) {
+      if (!d) return; const s = g.s;
+      if (k === 'ArrowLeft') s.sc = Math.max(0, s.sc - 1); else if (k === 'ArrowRight') s.sc = Math.min(COLS - 1, s.sc + 1);
+      else if (k === ' ' || k === 'ArrowUp') fire(g, s.sc);
+    },
+    update(g, dt) {
+      const s = g.s;
+      s.cool -= dt;
+      if (s.trail) { s.trail.t -= dt; if (s.trail.t <= 0) s.trail = null; }
+      for (const row of s.grid) for (const b of row) if (b && b.pop) b.pop = Math.max(0, b.pop - dt * 5);
+      s.scT -= dt;
+      if (s.scT <= 0) { s.scT = Math.max(0.5, 1.6 - g.level * 0.09); scroll(g); }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      Arcade.bg(ctx, W, H, '#1a0f3a', '#0c0c1e', '#050510');
+      Arcade.glow(ctx, W * 0.2, H * 0.3, W * 0.6, 'rgba(120,60,200,.35)', 0.8); Arcade.glow(ctx, W * 0.85, H * 0.75, W * 0.5, 'rgba(40,120,220,.3)', 0.8);
+      Arcade.emoji(ctx, '🪐', W - 34, g.top + 40, 40, { alpha: 0.7, rot: Math.sin(g.t * 0.3) * 0.1 });
+      for (let i = 0; i < 40; i++) { ctx.fillStyle = 'rgba(255,255,255,' + (0.2 + (i % 3) * 0.2) + ')'; ctx.fillRect((i * 97) % W, ((i * 53) + g.t * (10 + i % 4 * 10)) % H, 2, 2); }
+      if (!s.grid) return;
+      const cs = s.cs;
+      ctx.fillStyle = 'rgba(255,255,255,.04)'; ctx.fillRect(s.ox, s.oy, cs * COLS, cs * ROWS);
+      ctx.fillStyle = 'rgba(77,171,247,.08)'; ctx.fillRect(s.ox + s.sc * cs, s.oy, cs, cs * ROWS);
+      ctx.fillStyle = 'rgba(255,60,60,.18)'; ctx.fillRect(s.ox, s.oy + (ROWS - 2) * cs, cs * COLS, cs * 2);
+      for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
+        const b = s.grid[r][c]; if (!b) continue;
+        const k = 1 + b.pop * 0.2, x = s.ox + c * cs + cs / 2, y = s.oy + r * cs + cs / 2, z = (cs - 3) * k;
+        ctx.fillStyle = b.col; Arcade.rr(ctx, x - z / 2, y - z / 2, z, z, cs * 0.18); ctx.fill();
+        ctx.fillStyle = 'rgba(255,255,255,.35)'; Arcade.rr(ctx, x - z / 2 + 3, y - z / 2 + 3, z - 6, z * 0.25, cs * 0.1); ctx.fill();
+        ctx.fillStyle = 'rgba(0,0,0,.18)'; ctx.fillRect(x - z / 2 + 3, y + z / 2 - 5, z - 6, 3);
+      }
+      const shipY = s.oy + (ROWS + 0.8) * cs, sx = s.ox + (s.sc + 0.5) * cs;
+      if (s.trail) {
+        const tx = s.ox + (s.trail.c + 0.5) * cs;
+        ctx.strokeStyle = 'rgba(255,255,255,' + (s.trail.t * 6) + ')'; ctx.lineWidth = cs * 0.3;
+        ctx.beginPath(); ctx.moveTo(tx, shipY - cs * 0.4); ctx.lineTo(tx, s.trail.y); ctx.stroke();
+      }
+      Arcade.emoji(ctx, '🚀', sx, shipY, cs * 0.95, { rot: -Math.PI / 4 });
+    },
+  });
+})();

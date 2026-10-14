@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Reacción · Arcade Perdido</title>
+<meta name="theme-color" content="#10101e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css">
+</head>
+<body class="game">
+<script src="config.js"></script>
+<script src="common.js"></script>
+<script>
+(function () {
+  const { ri, rand, clamp, pick } = Arcade;
+  const EM = ['🫧', '🔮', '🟣', '🔵', '🟢', '🟡', '🟠', '🔴'];
+
+  function geo(g) { const s = g.s; s.A = { x0: 8, y0: g.top + 40, x1: g.W - 8, y1: g.bot - 8 }; }
+  function build(g) {
+    const s = g.s, L = g.lv, A = s.A; s.balls = []; s.booms = [];
+    const n = clamp(8 + L * 2, 10, 50); s.R = Math.sqrt((A.x1 - A.x0) * (A.y1 - A.y0)) * clamp(0.088 - L * 0.0006, 0.074, 0.088); s.need = Math.min(n - 1, Math.round(n * clamp(0.15 + L * 0.03, 0.15, 0.84)));
+    const sp = 40 + Math.min(L, 20) * 3;
+    for (let i = 0; i < n; i++) { const a = rand(0, 6.28); s.balls.push({ x: rand(A.x0 + 20, A.x1 - 20), y: rand(A.y0 + 20, A.y1 - 20), vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, e: EM[i % EM.length], hue: (i * 47) % 360 }); }
+  }
+  function boom(g, x, y, chain, hue) {
+    const s = g.s; s.booms.push({ x, y, r: 0, t: 0, max: s.R, chain, hue });
+    if (chain > 0) { s.hits++; g.addScore(chain * 10 * g.lv, x, y - 20); Arcade.sfx.combo(Math.min(12, chain)); }
+  }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Un toque, una reacción en cadena', deco: ['💥', '🫧', '🔮', '✨', '🟣', '🔵'], font: 'round', bg: ['#1c1c33', '#10101e'],
+    music: { mode: 'lydian', bpm: 90, wave: 'sine', style: 'chill', root: 60 }, voice: { wave: 'sine', mul: 1.3, echo: 0.45 },
+    en: { title: 'Chain', tag: 'One tap, a chain reaction', help: 'You only get <b>one tap</b> per level. Tap anywhere to start an explosion: every bubble it touches explodes too, and so on in a chain. Pick the right moment and place to blow up the number of bubbles each level asks for. If you fall short, you lose a life and try again.', tvHelp: 'D-pad to aim · OK to explode.', dict: { 'Objetivo: ': 'Target: ' } },
+    tvHelp: 'Cruceta para apuntar · OK para explotar.',
+    tv: { mode: 'tap', targets: (g) => { const s = g.s, o = []; if (!s.A) return o; const A = s.A, n = 6; for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) o.push({ x: A.x0 + (A.x1 - A.x0) * x / n, y: A.y0 + (A.y1 - A.y0) * y / n, w: (A.x1 - A.x0) / n, h: (A.y1 - A.y0) / n }); return o; } },
+    id: 'reaccion', title: 'Reacción', emoji: '💥', color: '#da77f2', origin: 'Circle Chain / Boomshine',
+    help: 'Solo tienes <b>un toque</b> por nivel. Toca en cualquier sitio para provocar una explosión: cada burbuja que toque también explota, y así en cadena. Elige bien el momento y el lugar para reventar las burbujas que pide cada nivel. Si no llegas, pierdes una vida y lo vuelves a intentar.',
+    lives: 3, levels: 0, cap: 25,
+    setup(g) { g.s = { used: false, hits: 0 }; geo(g); build(g); },
+    layout(g) { if (g.s.balls) geo(g); },
+    tap(g, p) { const s = g.s; if (s.used) return; s.used = true; boom(g, p.x, p.y, 0, 50); Arcade.sfx.pop(); },
+    update(g, dt) {
+      const s = g.s, A = s.A;
+      for (const b of s.balls) { b.x += b.vx * dt; b.y += b.vy * dt; if (b.x < A.x0 + 12 || b.x > A.x1 - 12) b.vx *= -1; if (b.y < A.y0 + 12 || b.y > A.y1 - 12) b.vy *= -1; b.x = clamp(b.x, A.x0 + 12, A.x1 - 12); b.y = clamp(b.y, A.y0 + 12, A.y1 - 12); }
+      for (const o of s.booms) { o.t += dt; o.r = o.t < 0.25 ? o.max * (o.t / 0.25) : o.t < 2.2 ? o.max : o.max * Math.max(0, 1 - (o.t - 2.2) / 0.4); }
+      for (const o of s.booms) if (o.r > 2) for (const b of s.balls) if (!b.dead && Math.hypot(b.x - o.x, b.y - o.y) < o.r + 10) { b.dead = true; boom(g, b.x, b.y, o.chain + 1, b.hue); }
+      s.balls = s.balls.filter((b) => !b.dead); s.booms = s.booms.filter((o) => o.t < 2.6);
+      if (s.used && !s.booms.length && !s.done) {
+        s.done = true;
+        if (s.hits >= s.need) { g.confetti(60); g.addScore((s.hits - s.need) * 20 * g.lv, g.W / 2, g.H / 2); setTimeout(() => { if (g.state === 'play') g.win(s.hits >= s.need * 1.4 || !s.balls.length ? 3 : s.hits >= s.need * 1.15 ? 2 : 1); }, 500); }
+        else { g.message(s.hits + ' / ' + s.need, 1.2); setTimeout(() => { if (g.state === 'play' && g.die()) Arcade.current.def.setup(g); }, 1300); }
+      }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      ctx.fillStyle = '#10101e'; ctx.fillRect(0, 0, W, H);
+      if (!s.balls) return;
+      for (const o of s.booms) { const gr = ctx.createRadialGradient(o.x, o.y, 0, o.x, o.y, Math.max(1, o.r)); gr.addColorStop(0, `hsla(${o.hue},90%,75%,.85)`); gr.addColorStop(1, `hsla(${o.hue},90%,55%,.25)`); ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(o.x, o.y, Math.max(0, o.r), 0, 6.3); ctx.fill(); if (o.chain > 1 && o.t < 0.6) Arcade.txt(ctx, String(o.chain), o.x, o.y, 14, '#fff', 'center', 900); }
+      for (const b of s.balls) Arcade.emoji(ctx, b.e, b.x, b.y, 22);
+      const bw = Math.min(W - 60, 300), bx = (W - bw) / 2;
+      ctx.fillStyle = 'rgba(255,255,255,.12)'; Arcade.rr(ctx, bx, g.top + 10, bw, 10, 5); ctx.fill();
+      ctx.fillStyle = s.hits >= s.need ? '#69db7c' : '#da77f2'; Arcade.rr(ctx, bx, g.top + 10, bw * clamp(s.hits / s.need, 0, 1), 10, 5); ctx.fill();
+      Arcade.txt(ctx, 'Objetivo: ' + s.hits + ' / ' + s.need, W / 2, g.top + 32, 14, '#e5dbff', 'center', 900);
+    },
+  });
+})();
+</script>
+</body>
+</html>

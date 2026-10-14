@@ -1,0 +1,211 @@
+// Murallas|#1c3d5a
+(function () {
+  const { rand, ri, pick, clamp, dist } = Arcade;
+  const SHAPES = [
+    [[0, 0]], [[0, 0], [1, 0]], [[0, 0], [1, 0], [2, 0]], [[0, 0], [1, 0], [0, 1]],
+    [[0, 0], [1, 0], [2, 0], [1, 1]], [[0, 0], [1, 0], [2, 0], [0, 1]], [[0, 0], [1, 0], [1, 1], [2, 1]],
+    [[0, 0], [1, 0], [2, 0], [3, 0]], [[0, 0], [1, 0], [0, 1], [1, 1]], [[0, 0], [2, 0], [0, 1], [1, 1], [2, 1]],
+    [[1, 0], [0, 1], [1, 1], [2, 1], [1, 2]],
+  ];
+  function rot(sh) { const r = sh.map(([x, y]) => [-y, x]); const mx = Math.min(...r.map(p => p[0])), my = Math.min(...r.map(p => p[1])); return r.map(([x, y]) => [x - mx, y - my]); }
+  function newPiece() { let sh = pick(SHAPES); for (let i = ri(0, 3); i > 0; i--) sh = rot(sh); return sh; }
+
+  function geo(g) {
+    const s = g.s, Wa = g.W - 12, Ha = g.bot - g.top - 52;
+    s.cs = Math.min(Wa / s.C, Ha / s.R);
+    s.ox = (g.W - s.cs * s.C) / 2; s.oy = g.top + 44 + (Ha - s.cs * s.R) / 2;
+  }
+  const isSea = (s, r) => r < s.sea;
+  const isCastle = (s, c, r) => c >= s.kc && c <= s.kc + 1 && r >= s.kr && r <= s.kr + 1;
+  function ring(g) {
+    const s = g.s, R = 3;
+    for (let r = s.kr - R + 1; r <= s.kr + R; r++) for (let c = s.kc - R + 1; c <= s.kc + R; c++) {
+      const edge = r === s.kr - R + 1 || r === s.kr + R || c === s.kc - R + 1 || c === s.kc + R;
+      if (edge && r >= s.sea && r < s.R && c >= 0 && c < s.C) s.w[r][c] = 1;
+    }
+  }
+  function enclosure(s) {
+    const out = []; for (let r = 0; r < s.R; r++) out.push(new Array(s.C).fill(false));
+    const st = [];
+    for (let c = 0; c < s.C; c++) { st.push([c, 0], [c, s.R - 1]); }
+    for (let r = 0; r < s.R; r++) { st.push([0, r], [s.C - 1, r]); }
+    while (st.length) {
+      const [c, r] = st.pop();
+      if (c < 0 || c >= s.C || r < 0 || r >= s.R || out[r][c] || s.w[r][c]) continue;
+      out[r][c] = true; st.push([c + 1, r], [c - 1, r], [c, r + 1], [c, r - 1]);
+    }
+    return out; // true = exterior
+  }
+  function cellAt(s, x, y) { return [Math.floor((x - s.ox) / s.cs), Math.floor((y - s.oy) / s.cs)]; }
+  function canPlace(s, pc, c0, r0) {
+    return pc.every(([dx, dy]) => { const c = c0 + dx, r = r0 + dy; return c >= 0 && c < s.C && r >= s.sea && r < s.R && !s.w[r][c] && !isCastle(s, c, r); });
+  }
+  function ghostAt(s, x, y) {
+    const w = Math.max(...s.piece.map(p => p[0])) + 1, h = Math.max(...s.piece.map(p => p[1])) + 1;
+    const [c, r] = cellAt(s, x - (w - 1) * s.cs / 2, y - (h - 1) * s.cs / 2);
+    return [c, r];
+  }
+  function startBuild(g) { const s = g.s; s.phase = 'build'; s.timer = s.round === 1 ? 20 : 15; s.piece = newPiece(); s.next = newPiece(); g.message('🧱 ¡Construye!', 1.2, 'Rodea el castillo'); }
+  function startBattle(g) {
+    const s = g.s; s.phase = 'battle'; s.timer = 16; s.balls = []; s.ships = [];
+    const n = Math.min(7, 1 + s.round);
+    for (let i = 0; i < n; i++) s.ships.push({ x: rand(1, s.C - 1), y: rand(0.8, s.sea - 1.2), vx: (Math.random() < 0.5 ? -1 : 1) * rand(0.6, 1.2), hp: 2 + Math.floor(s.round / 4), fireT: rand(1.5, 3.5) });
+    g.message('💥 ¡Fuego!', 1.2, 'Toca el mar para disparar');
+  }
+  function endBuild(g) {
+    const s = g.s, ext = enclosure(s);
+    let ok = !ext[s.kr][s.kc], terr = 0;
+    if (ok) { for (let r = s.sea; r < s.R; r++) for (let c = 0; c < s.C; c++) if (!ext[r][c] && !s.w[r][c]) terr++; g.addScore(terr * 3 * s.round, g.W / 2, g.H * 0.55); Arcade.sfx.level(); s.armed = true; g.ring(s.ox + (s.kc + 1) * s.cs, s.oy + (s.kr + 1) * s.cs, { color: '#ffd43b', r: s.cs * 6, w: 6, t: 0.6 }); g.message('¡Castillo protegido!', 1.1, '+' + terr + ' casillas de territorio'); }
+    else {
+      s.armed = false; g.message('¡Castillo sin murallas!', 1.4); Arcade.sfx.hit();
+      if (!g.die()) return;
+      ring(g); s.armed = true;
+    }
+    startBattle(g);
+  }
+
+  Arcade.game({
+    id: 'murallas', title: 'Murallas', emoji: '🏰', color: '#ffa94d', origin: 'Rampart (Atari, 1990)',
+    help: 'Dos fases que se alternan. <b>Construcción:</b> arrastra la pieza y suéltala para colocarla; toca sin arrastrar para girarla. Tienes que <b>cerrar un muro alrededor del castillo</b> antes de que acabe el tiempo. <b>Batalla:</b> toca el mar para disparar a los barcos ⛵, que intentarán romper tus murallas. Si al acabar la construcción el castillo no está cerrado, pierdes una vida.',
+    lives: 3, levels: null, levelLabel: 'Ronda',
+    theme: { font: 'MedievalSharp', ambient: 'birds', music: { tempo: 108, scale: 'dorian', root: 196, wave: 'square', lead: 'triangle' }, sfx: { wave: 'square', pitch: 0.9 } },
+    setup(g) {
+      g.s = { round: 1, balls: [], ships: [], drag: null, armed: true, reload: 0, extT: 0 };
+      const s = g.s;
+      if (g.W < g.H) { s.C = 14; s.R = 19; } else { s.C = 24; s.R = 11; }
+      s.sea = Math.floor(s.R * 0.32);
+      s.w = []; for (let r = 0; r < s.R; r++) s.w.push(new Array(s.C).fill(0));
+      s.kc = Math.floor(s.C / 2) - 1; s.kr = s.sea + Math.floor((s.R - s.sea) / 2) - 1;
+      ring(g); geo(g);
+      s.ext = enclosure(s);
+      s.phase = 'battle'; s.timer = 0; // empieza construyendo tras un primer bombardeo vacío
+      startBuild(g);
+    },
+    layout(g) { if (g.s.w) geo(g); },
+    down(g, p) {
+      const s = g.s;
+      if (s.phase === 'build') { s.drag = { x: p.x, y: p.y - (p.type === 'touch' ? 70 : 0), id: p.id, touch: p.type === 'touch' }; }
+      else if (s.phase === 'battle' && s.armed && s.reload <= 0) {
+        const tx = (p.x - s.ox) / s.cs, ty = (p.y - s.oy) / s.cs;
+        if (ty < s.sea + 0.5) { s.reload = 0.45; s.balls.push({ from: [s.kc + 1, s.kr + 1], to: [tx, ty], t: 0, d: 0.75, mine: true }); Arcade.tone(160, 0.12, 'square', 0.1, -60); Arcade.noise(0.15, 0.1); g.burst(s.ox + (s.kc + 1) * s.cs, s.oy + s.kr * s.cs, { n: 6, emoji: '💨', size: 14, speed: 60, grav: -40, life: 0.6 }); }
+      }
+    },
+    hover(g, x, y) { const s = g.s; if (s.phase === 'build') s.drag = { x, y, hover: true }; },
+    move(g, p) { const s = g.s; if (s.drag && s.drag.id === p.id) { s.drag.x = p.x; s.drag.y = p.y - (s.drag.touch ? 70 : 0); } },
+    up(g, p) {
+      const s = g.s; if (s.phase !== 'build' || !s.drag || s.drag.id !== p.id) return;
+      const moved = Math.hypot(p.x - p.sx, p.y - p.sy) > 14;
+      if (s.drag.touch && !moved) { s.piece = rot(s.piece); Arcade.sfx.move(); s.drag = null; return; }
+      const [c, r] = ghostAt(s, s.drag.x, s.drag.y);
+      if (canPlace(s, s.piece, c, r)) {
+        for (const [dx, dy] of s.piece) s.w[r + dy][c + dx] = 1;
+        s.piece = s.next; s.next = newPiece(); Arcade.tone(240, 0.06, 'square', 0.08); g.addScore(5);
+        s.ext = enclosure(s);
+      } else Arcade.sfx.bad();
+      s.drag = s.drag.touch ? null : { x: s.drag.x, y: s.drag.y, hover: true };
+    },
+    key(g, k, d) { if (d && (k === 'r' || k === ' ')) { g.s.piece = rot(g.s.piece); Arcade.sfx.move(); } },
+    update(g, dt) {
+      const s = g.s;
+      s.reload -= dt; s.timer -= dt;
+      s.extT -= dt; if (s.extT <= 0) { s.extT = 0.25; s.ext = enclosure(s); }
+      if (s.phase === 'build') { if (s.timer <= 0) endBuild(g); return; }
+      // batalla
+      for (const sh of s.ships) {
+        if (sh.dead) continue;
+        sh.x += sh.vx * dt; if (sh.x < 0.8 || sh.x > s.C - 0.8) sh.vx *= -1;
+        sh.fireT -= dt;
+        if (sh.fireT <= 0) {
+          sh.fireT = rand(2.2, 4) - Math.min(1.2, s.round * 0.1);
+          const walls = []; for (let r = s.sea; r < s.R; r++) for (let c = 0; c < s.C; c++) if (s.w[r][c]) walls.push([c, r]);
+          walls.sort((a, b) => dist(a[0], a[1], s.kc, s.kr) - dist(b[0], b[1], s.kc, s.kr));
+          const tgt = walls.length ? walls[ri(0, Math.min(walls.length - 1, 14))] : [s.kc, s.kr];
+          s.balls.push({ from: [sh.x, sh.y], to: [tgt[0] + 0.5, tgt[1] + 0.5], t: 0, d: 1.3, mine: false });
+          Arcade.tone(110, 0.1, 'square', 0.06);
+        }
+      }
+      for (const b of s.balls) {
+        b.t += dt / b.d;
+        if (b.t >= 1) {
+          b.dead = true;
+          const [x, y] = b.to, px = s.ox + x * s.cs, py = s.oy + y * s.cs;
+          g.burst(px, py, { n: 10, color: ['#ff922b', '#ffd43b', '#495057'], speed: 130, size: 3 });
+          if (b.mine) {
+            Arcade.noise(0.2, 0.15);
+            for (const sh of s.ships) if (!sh.dead && Math.hypot(sh.x - x, sh.y - y) < 0.95) {
+              sh.hp--; Arcade.sfx.pop();
+              if (sh.hp <= 0) { sh.dead = true; g.addScore(200 * s.round, s.ox + sh.x * s.cs, s.oy + sh.y * s.cs); g.burst(s.ox + sh.x * s.cs, s.oy + sh.y * s.cs, { n: 14, emoji: ['💥', '🌊', '🪵'], size: 18, speed: 160 }); g.ring(s.ox + sh.x * s.cs, s.oy + sh.y * s.cs, { color: '#a5d8ff', r: s.cs * 3, w: 5 }); Arcade.sfx.boom(); Arcade.sfx.splash(); }
+            }
+          } else {
+            const c = Math.floor(x), r = Math.floor(y);
+            if (r >= 0 && r < s.R && c >= 0 && c < s.C && s.w[r][c]) { s.w[r][c] = 0; g.shake(0.15, 5); Arcade.sfx.boom(); }
+          }
+        }
+      }
+      s.balls = s.balls.filter(b => !b.dead);
+      const alive = s.ships.filter(sh => !sh.dead).length;
+      if ((s.timer <= 0 && !s.balls.some(b => !b.mine)) || (alive === 0 && !s.balls.length)) {
+        if (alive === 0) { g.addScore(300 * s.round, g.W / 2, g.H / 2); Arcade.sfx.win(); }
+        s.round++; g.level = s.round; g.hud(); s.balls = [];
+        startBuild(g);
+      }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      ctx.fillStyle = '#16324f'; ctx.fillRect(0, 0, W, H);
+      if (!s.w) return;
+      const cs = s.cs, ox = s.ox, oy = s.oy;
+      const sg = ctx.createLinearGradient(0, oy, 0, oy + s.sea * cs);
+      sg.addColorStop(0, '#1971c2'); sg.addColorStop(1, '#339af0');
+      ctx.fillStyle = sg; ctx.fillRect(ox, oy, cs * s.C, cs * s.sea);
+      ctx.strokeStyle = 'rgba(255,255,255,.25)'; ctx.lineWidth = 1.5;
+      for (let i = 0; i < 12; i++) { const x = ox + ((i * 53 + g.t * 14) % (cs * s.C)), y = oy + (i * 37 % (cs * s.sea)); ctx.beginPath(); ctx.arc(x, y, 6, Math.PI * 1.1, Math.PI * 1.9); ctx.stroke(); }
+      for (let r = s.sea; r < s.R; r++) for (let c = 0; c < s.C; c++) {
+        const inT = s.ext && !s.ext[r][c];
+        ctx.fillStyle = inT ? ((r + c) % 2 ? '#c0a16b' : '#b8975f') : ((r + c) % 2 ? '#5c940d' : '#66a80f');
+        ctx.fillRect(ox + c * cs, oy + r * cs, cs + 0.5, cs + 0.5);
+      }
+      ctx.fillStyle = '#e9c46a'; ctx.fillRect(ox, oy + s.sea * cs - 3, cs * s.C, 4);
+      for (let r = 0; r < s.R; r++) for (let c = 0; c < s.C; c++) if (s.w[r][c]) {
+        const x = ox + c * cs, y = oy + r * cs;
+        ctx.fillStyle = '#495057'; ctx.fillRect(x, y, cs, cs);
+        ctx.fillStyle = '#adb5bd'; ctx.fillRect(x + 1, y + 1, cs - 2, cs * 0.55);
+        ctx.fillStyle = '#868e96'; ctx.fillRect(x + 1, y + cs * 0.6, cs - 2, cs * 0.35);
+      }
+      Arcade.emoji(ctx, '🏰', ox + (s.kc + 1) * cs, oy + (s.kr + 1) * cs, cs * 1.9);
+      Arcade.emoji(ctx, '🚩', ox + (s.kc + 1.5) * cs, oy + (s.kr - 0.2) * cs, cs * 0.9, { rot: Math.sin(g.t * 4) * 0.12 });
+      Arcade.amb(g, ctx);
+      for (const sh of s.ships) if (!sh.dead) {
+        Arcade.emoji(ctx, sh.hp > 1 ? '⛵' : '🛶', ox + sh.x * cs, oy + sh.y * cs + Math.sin(g.t * 3 + sh.x) * 2, cs * 1.3, { flip: sh.vx > 0 });
+      }
+      for (const b of s.balls) {
+        const x = ox + (b.from[0] + (b.to[0] - b.from[0]) * b.t) * cs, y = oy + (b.from[1] + (b.to[1] - b.from[1]) * b.t) * cs - Math.sin(b.t * Math.PI) * cs * 3;
+        ctx.fillStyle = 'rgba(0,0,0,.3)'; ctx.beginPath(); ctx.arc(ox + (b.from[0] + (b.to[0] - b.from[0]) * b.t) * cs, oy + (b.from[1] + (b.to[1] - b.from[1]) * b.t) * cs, cs * 0.18, 0, 6.28); ctx.fill();
+        ctx.fillStyle = b.mine ? '#212529' : '#c92a2a'; ctx.beginPath(); ctx.arc(x, y, cs * 0.24, 0, 6.28); ctx.fill();
+      }
+      // pieza fantasma
+      if (s.phase === 'build' && s.drag && s.piece) {
+        const [c, r] = ghostAt(s, s.drag.x, s.drag.y), ok = canPlace(s, s.piece, c, r);
+        ctx.fillStyle = ok ? 'rgba(173,181,189,.85)' : 'rgba(255,107,107,.6)';
+        for (const [dx, dy] of s.piece) ctx.fillRect(ox + (c + dx) * cs + 1, oy + (r + dy) * cs + 1, cs - 2, cs - 2);
+      }
+      if (s.phase === 'build' && !s.drag && s.piece) {
+        ctx.globalAlpha = 0.55 + Math.sin(g.t * 5) * 0.2; ctx.fillStyle = '#dee2e6';
+        const bc = Math.floor(s.C / 2) - 1, br = s.R - 3;
+        for (const [dx, dy] of s.piece) ctx.fillRect(ox + (bc + dx) * cs + 1, oy + (br + dy) * cs + 1, cs - 2, cs - 2);
+        ctx.globalAlpha = 1;
+      }
+      // cabecera de fase
+      const total = s.phase === 'build' ? (s.round === 1 ? 20 : 15) : 16, k = clamp(s.timer / total, 0, 1);
+      ctx.fillStyle = 'rgba(0,0,0,.35)'; Arcade.rr(ctx, ox, oy - 36, cs * s.C, 26, 13); ctx.fill();
+      ctx.fillStyle = s.phase === 'build' ? '#ffa94d' : '#ff6b6b'; Arcade.rr(ctx, ox, oy - 36, cs * s.C * k, 26, 13); ctx.fill();
+      Arcade.txt(ctx, (s.phase === 'build' ? '🧱 Construye  ' : '💥 Batalla  ') + Math.max(0, Math.ceil(s.timer)) + 's', ox + 12, oy - 23, 14, '#fff', 'left', 900);
+      if (s.phase === 'build' && s.next) {
+        const nx = ox + cs * s.C - 14;
+        Arcade.txt(ctx, 'Sig.', nx - 40, oy - 23, 11, '#fff', 'right', 700);
+        const z = 6; for (const [dx, dy] of s.next) { ctx.fillStyle = '#dee2e6'; ctx.fillRect(nx - 34 + dx * z, oy - 32 + dy * z, z - 1, z - 1); }
+        if (!s.drag) { Arcade.txt(ctx, 'Arrastra la pieza ↓', W / 2, oy + s.sea * cs + 18, 13, 'rgba(255,255,255,.8)', 'center', 800, 'rgba(0,0,0,.4)'); }
+      }
+    },
+  });
+})();

@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Estallido · Arcade Perdido</title>
+<meta name="theme-color" content="#140b1f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css">
+</head>
+<body class="game">
+<script src="config.js"></script>
+<script src="common.js"></script>
+<script>
+(function () {
+  const { ri, rand, clamp, pick } = Arcade;
+  const FOES = ['👾', '🦠', '👻', '🪲', '🕷️'];
+
+  function geo(g) { const s = g.s; s.cx = g.W / 2; s.cy = (g.top + g.bot) / 2 + 10; s.Rmax = Math.min(g.W, g.bot - g.top) * 0.42; }
+  function spawn(g) {
+    const s = g.s, a = rand(0, 6.28), R = Math.hypot(g.W, g.H) * 0.6, sp = rand(30, 50) + Math.min(g.lv, 20) * 3;
+    const tang = Math.random() < 0.5 ? 1 : -1;
+    s.foes.push({ x: s.cx + Math.cos(a) * R, y: s.cy + Math.sin(a) * R, sp, tang: tang * rand(0.3, 0.9), e: pick(FOES.slice(0, 2 + Math.floor(g.lv / 4))), ph: rand(0, 6) });
+  }
+  function blast(g) {
+    const s = g.s; if (!s.charging) return; s.charging = false;
+    const r = s.r; if (r < 12) { s.r = 0; return; }
+    let n = 0; for (const f of s.foes) if (Math.hypot(f.x - s.cx, f.y - s.cy) < r) { f.dead = true; n++; g.burst(f.x, f.y, { n: 6, color: ['#da77f2', '#fff'], speed: 140, size: 3 }); }
+    s.foes = s.foes.filter((f) => !f.dead); s.killed += n;
+    s.wave = { r, t: 0.4 }; s.r = 0; s.cool = 0.5;
+    Arcade.sfx.boom(); g.shake(0.1 + n * 0.02, 3 + n);
+    if (n) { const pts = n * n * 5 * g.lv; g.addScore(pts, s.cx, s.cy - r - 10); if (n >= 3) g.float('x' + n, s.cx, s.cy - 40, '#ffd43b', 26); }
+    if (s.killed >= s.need && !s.done) { s.done = true; g.confetti(60); setTimeout(() => { if (g.state === 'play') g.win(); }, 600); }
+  }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Carga la explosión y suéltala a tiempo', deco: ['💥', '👾', '🦠', '⭕', '⚡', '🌀'], font: 'wide', bg: ['#26143a', '#140b1f'],
+    music: { mode: 'phryg', bpm: 124, wave: 'sawtooth', style: 'arcade', root: 52 }, voice: { wave: 'square', mul: 1, echo: 0.3 },
+    en: { title: 'Blast', tag: 'Charge the blast and let it go in time', help: 'Bugs swarm in towards your core. <b>Hold</b> your finger to charge a circular explosion that grows and grows; <b>release</b> to detonate it and destroy every bug inside. The more you catch in one blast, the more points (squared!). But if a bug reaches the centre, you lose a life. Destroy the bugs each level asks for.', tvHelp: 'Hold OK to charge and release to explode.', dict: { 'Destruidos: ': 'Destroyed: ' } },
+    tvHelp: 'Mantén OK para cargar y suelta para explotar.',
+    id: 'estallido', title: 'Estallido', emoji: '⭕', color: '#da77f2', origin: 'Cirplosion / Astro-PANIC!',
+    help: 'Los bichos se acercan hacia tu núcleo. <b>Mantén el dedo</b> para cargar una explosión circular que crece y crece; <b>suelta</b> para detonarla y destruir a todos los que estén dentro. Cuantos más pilles de golpe, más puntos (¡al cuadrado!). Pero si un bicho llega al centro, pierdes una vida. Destruye los que pide cada nivel.',
+    lives: 3, levels: 0, cap: 25,
+    setup(g) { const L = g.lv; g.s = { foes: [], r: 0, killed: 0, need: 20 + Math.min(L, 25) * 6, spawnT: 0, cool: 0, wave: null }; geo(g); },
+    layout(g) { if (g.s.foes) geo(g); },
+    down(g) { const s = g.s; if (s.cool > 0 || s.done) return; s.charging = true; s.r = 0; },
+    up(g) { blast(g); },
+    key(g, k, d) { if (k === ' ') d ? this.down(g) : blast(g); },
+    update(g, dt) {
+      const s = g.s; if (s.done) return;
+      s.cool -= dt; if (s.wave) { s.wave.t -= dt; if (s.wave.t <= 0) s.wave = null; }
+      if (s.charging) { s.r += (90 + s.r * 0.6) * dt; if (s.r > s.Rmax) { s.charging = false; s.r = 0; s.cool = 1; g.message(Arcade.T('¡Demasiado!', 'Too much!'), 0.6); Arcade.sfx.bad(); } }
+      s.spawnT -= dt; if (s.spawnT <= 0) { s.spawnT = Math.max(0.25, 1.1 - g.lv * 0.03 - s.killed * 0.004); spawn(g); }
+      for (const f of s.foes) {
+        const dx = s.cx - f.x, dy = s.cy - f.y, d = Math.hypot(dx, dy) || 1; f.ph += dt;
+        f.x += (dx / d * f.sp - dy / d * f.sp * f.tang) * dt; f.y += (dy / d * f.sp + dx / d * f.sp * f.tang) * dt;
+        if (d < 22) { f.dead = true; s.charging = false; s.r = 0; Arcade.sfx.hit(); g.flash('#ff6b6b', 0.2); if (!g.die()) return; for (const o of s.foes) if (Math.hypot(o.x - s.cx, o.y - s.cy) < 120) o.dead = true; }
+      }
+      s.foes = s.foes.filter((f) => !f.dead);
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      const bg = ctx.createRadialGradient(s.cx || W / 2, s.cy || H / 2, 10, W / 2, H / 2, Math.max(W, H) * 0.7); bg.addColorStop(0, '#3a1f55'); bg.addColorStop(1, '#0b0612');
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      if (!s.foes) return;
+      ctx.strokeStyle = 'rgba(218,119,242,.15)'; ctx.setLineDash([4, 10]); ctx.beginPath(); ctx.arc(s.cx, s.cy, s.Rmax, 0, 6.3); ctx.stroke(); ctx.setLineDash([]);
+      if (s.charging) { const k = s.r / s.Rmax; ctx.fillStyle = `rgba(${200 + k * 55},${120 - k * 80},242,${0.15 + k * 0.15})`; ctx.beginPath(); ctx.arc(s.cx, s.cy, s.r, 0, 6.3); ctx.fill(); ctx.strokeStyle = k > 0.8 ? '#ff6b6b' : '#da77f2'; ctx.lineWidth = 3; ctx.stroke(); }
+      if (s.wave) { ctx.strokeStyle = `rgba(255,255,255,${s.wave.t * 2})`; ctx.lineWidth = 8; ctx.beginPath(); ctx.arc(s.cx, s.cy, s.wave.r * (1.4 - s.wave.t), 0, 6.3); ctx.stroke(); }
+      for (const f of s.foes) { const inside = s.charging && Math.hypot(f.x - s.cx, f.y - s.cy) < s.r; Arcade.emoji(ctx, f.e, f.x, f.y, 26 * (inside ? 1.15 : 1), { rot: Math.sin(f.ph * 5) * 0.2, alpha: inside ? 1 : 0.9 }); if (inside) { ctx.strokeStyle = '#ffd43b'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(f.x, f.y, 16, 0, 6.3); ctx.stroke(); } }
+      Arcade.emoji(ctx, '🔮', s.cx, s.cy, 40 + Math.sin(g.rt * 4) * 3);
+      const bw = Math.min(W - 60, 300), bx = (W - bw) / 2;
+      ctx.fillStyle = 'rgba(255,255,255,.12)'; Arcade.rr(ctx, bx, g.top + 10, bw, 10, 5); ctx.fill(); ctx.fillStyle = '#da77f2'; Arcade.rr(ctx, bx, g.top + 10, bw * clamp(s.killed / s.need, 0, 1), 10, 5); ctx.fill();
+      Arcade.txt(ctx, 'Destruidos: ' + s.killed + '/' + s.need, W / 2, g.top + 32, 14, '#e5dbff', 'center', 900);
+    },
+  });
+})();
+</script>
+</body>
+</html>

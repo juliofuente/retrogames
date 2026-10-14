@@ -1,0 +1,124 @@
+// Burbujas|#0c1f33
+(function () {
+  const { ri, clamp } = Arcade;
+  const COLS = 7, ROWS = 12;
+  const PAL = ['#ff6b6b', '#ffd43b', '#69db7c', '#4dabf7', '#da77f2', '#ff922b'];
+  const FACE = ['😊', '😮', '😎', '🥰', '😜', '🤩'];
+
+  function geo(g) {
+    const s = g.s, Wa = g.W - 20, Ha = g.bot - g.top - 30;
+    s.cs = Math.min(Wa / COLS, Ha / (ROWS + 1.8));
+    s.ox = (g.W - s.cs * COLS) / 2; s.oy = g.top + 20 + (Ha - s.cs * (ROWS + 1.8)) / 2;
+  }
+  const rc = (g) => ri(0, Math.min(PAL.length, 3 + Math.floor((g.level + 1) / 3)) - 1);
+  function addRow(g) {
+    const s = g.s;
+    if (s.cols.some(c => c.length >= ROWS)) { Arcade.sfx.boom(); g.state = 'dying'; setTimeout(g.over, 900); return; }
+    for (const c of s.cols) c.unshift({ v: rc(g), pop: 1 });
+    Arcade.tone(140, 0.1, 'sawtooth', 0.05);
+  }
+  function grab(g, c, more) {
+    const s = g.s, col = s.cols[c]; if (!col.length) return;
+    const v = col[col.length - 1].v;
+    if (s.hand && (s.hand.v !== v || !more)) return;
+    let n = 0; while (col.length && col[col.length - 1].v === v) { col.pop(); n++; }
+    s.hand = { v, n: (s.hand ? s.hand.n : 0) + n };
+    Arcade.tone(300, 0.06, 'square', 0.06, -100);
+  }
+  function at(s, c, r) { return c >= 0 && c < COLS ? s.cols[c][r] : undefined; }
+  function clearFrom(g, seeds) {
+    const s = g.s, kill = new Set();
+    for (const [c, r] of seeds) {
+      const st = [[c, r]], v = at(s, c, r).v;
+      while (st.length) {
+        const [x, y] = st.pop(), k = x + ',' + y;
+        if (kill.has(k)) continue; const o = at(s, x, y); if (!o || o.v !== v) continue;
+        kill.add(k); st.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]);
+      }
+    }
+    for (const k of kill) { const [x, y] = k.split(',').map(Number); g.burst(s.ox + (x + 0.5) * s.cs, s.oy + (y + 0.5) * s.cs, { n: 3, color: PAL[s.cols[x][y].v], speed: 140, size: 3 }); s.cols[x][y] = null; }
+    for (let c = 0; c < COLS; c++) s.cols[c] = s.cols[c].filter(Boolean);
+    return kill.size;
+  }
+  function runs(s) {
+    const seeds = [];
+    for (let c = 0; c < COLS; c++) {
+      const col = s.cols[c];
+      for (let r = 0; r < col.length;) { let e = r; while (e + 1 < col.length && col[e + 1].v === col[r].v) e++; if (e - r + 1 >= 3 && col.slice(r, e + 1).some(o => o.fresh)) seeds.push([c, r]); r = e + 1; }
+    }
+    return seeds;
+  }
+  function toss(g, c) {
+    const s = g.s; if (!s.hand) return;
+    const col = s.cols[c];
+    if (col.length + s.hand.n > ROWS) { Arcade.sfx.bad(); return; }
+    for (const row of s.cols) for (const o of row) o.fresh = false;
+    for (let i = 0; i < s.hand.n; i++) col.push({ v: s.hand.v, pop: 1, fresh: true });
+    s.hand = null; Arcade.tone(500, 0.06, 'square', 0.06, 200);
+    let chain = 0, seeds = runs(s);
+    while (seeds.length) {
+      chain++;
+      // las burbujas que quedan junto a un hueco pasan a ser "nuevas" para la cadena
+      const n = clearFrom(g, seeds);
+      g.addScore(n * 10 * chain * g.level, s.ox + (c + 0.5) * s.cs, s.oy + col.length * s.cs);
+      if (chain > 1) g.float('¡Cadena x' + chain + '!', g.W / 2, s.oy + 40, '#ffd43b', 24);
+      Arcade.tone(600 + chain * 150, 0.1, 'triangle', 0.09);
+      for (const row of s.cols) for (const o of row) o.fresh = true;
+      seeds = runs(s);
+      s.cleared += n;
+    }
+    if (s.cleared >= s.nextLv) { s.nextLv += 60; g.level++; g.hud(); g.message('Nivel ' + g.level, 1.1); Arcade.sfx.up(); }
+  }
+
+  Arcade.game({
+    id: 'burbujas', title: 'Burbujas', emoji: '🫧', color: '#4dabf7', origin: 'Magical Drop (Data East, 1995)',
+    help: 'Las burbujas cuelgan del techo y bajan. <b>Toca una columna</b> para <b>tirar</b> de las burbujas de abajo del mismo color y <b>toca otra</b> para <b>lanzarlas</b> hacia arriba. Si quedan <b>3 o más iguales en vertical</b>, explotan junto con todas las del mismo color que estén pegadas. ¡Encadena explosiones! Desliza ↓ para coger más del mismo color.',
+    lives: 0, levels: null,
+    setup(g) {
+      g.s = { cols: [], hand: null, pc: 3, pushT: 6, cleared: 0, nextLv: 60 };
+      for (let c = 0; c < COLS; c++) { const col = []; for (let r = 0; r < 5; r++) col.push({ v: rc(g), pop: 0 }); g.s.cols.push(col); }
+      geo(g);
+    },
+    layout(g) { if (g.s.cols) geo(g); },
+    tap(g, p) { const s = g.s, c = clamp(Math.floor((p.x - s.ox) / s.cs), 0, COLS - 1); s.pc = c; if (s.hand) toss(g, c); else grab(g, c, false); },
+    swipe(g, d, p) {
+      const s = g.s, c = clamp(Math.floor((p.sx - s.ox) / s.cs), 0, COLS - 1); s.pc = c;
+      if (d === 'down') grab(g, c, true); else if (d === 'up') toss(g, c); else this.tap(g, { x: p.sx });
+    },
+    key(g, k, d) {
+      if (!d) return; const s = g.s;
+      if (k === 'ArrowLeft') s.pc = Math.max(0, s.pc - 1); else if (k === 'ArrowRight') s.pc = Math.min(COLS - 1, s.pc + 1);
+      else if (k === 'ArrowDown') grab(g, s.pc, true); else if (k === 'ArrowUp' || k === ' ') { if (s.hand) toss(g, s.pc); else grab(g, s.pc, false); }
+    },
+    update(g, dt) {
+      const s = g.s;
+      for (const col of s.cols) for (const o of col) o.pop = Math.max(0, o.pop - dt * 4);
+      s.pushT -= dt;
+      if (s.pushT <= 0) { s.pushT = Math.max(2.4, 7 - g.level * 0.45); addRow(g); }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      const bg = ctx.createLinearGradient(0, 0, 0, H);
+      bg.addColorStop(0, '#12355b'); bg.addColorStop(1, '#081625');
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      if (!s.cols.length) return;
+      const cs = s.cs;
+      for (let c = 0; c < COLS; c++) { ctx.fillStyle = c === s.pc ? 'rgba(77,171,247,.12)' : 'rgba(255,255,255,.03)'; ctx.fillRect(s.ox + c * cs + 1, s.oy, cs - 2, cs * ROWS); }
+      ctx.fillStyle = 'rgba(255,80,80,.4)'; ctx.fillRect(s.ox, s.oy + cs * ROWS, cs * COLS, 3);
+      const mx = Math.max(6, 7 - g.level * 0.45), k = clamp(s.pushT / Math.max(2.4, mx), 0, 1);
+      ctx.fillStyle = 'rgba(255,255,255,.1)'; ctx.fillRect(s.ox, s.oy - 10, cs * COLS, 5);
+      ctx.fillStyle = k < 0.3 ? '#ff6b6b' : '#74c0fc'; ctx.fillRect(s.ox, s.oy - 10, cs * COLS * k, 5);
+      const ball = (x, y, v, z) => {
+        const r = cs * 0.44 * z;
+        const gr = ctx.createRadialGradient(x - r * 0.35, y - r * 0.4, 1, x, y, r);
+        gr.addColorStop(0, '#fff'); gr.addColorStop(0.35, PAL[v]); gr.addColorStop(1, PAL[v]);
+        ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(x, y, r, 0, 6.28); ctx.fill();
+        Arcade.emoji(ctx, FACE[v], x, y + r * 0.05, r * 0.95, { alpha: 0.55 });
+      };
+      s.cols.forEach((col, c) => col.forEach((o, r) => ball(s.ox + (c + 0.5) * cs, s.oy + (r + 0.5) * cs, o.v, 1 + o.pop * 0.2)));
+      const px = s.ox + (s.pc + 0.5) * cs, py = s.oy + cs * (ROWS + 0.95);
+      Arcade.emoji(ctx, '🧚', px, py, cs * 0.9);
+      if (s.hand) { ball(px, py - cs * 0.85, s.hand.v, 0.7); Arcade.txt(ctx, '×' + s.hand.n, px + cs * 0.42, py - cs * 0.95, cs * 0.3, '#fff', 'left', 900, 'rgba(0,0,0,.6)'); }
+    },
+  });
+})();

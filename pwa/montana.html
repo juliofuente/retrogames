@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Montaña · Arcade Perdido</title>
+<meta name="theme-color" content="#c3e6ff">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css">
+</head>
+<body class="game">
+<script src="config.js"></script>
+<script src="common.js"></script>
+<script>
+(function () {
+  const { ri, rand, clamp, pick } = Arcade;
+  const N = 7; // columnas
+  const HEROES = ['⛷️', '🐐', '🐧', '🦙', '🧙', '🐻'];
+
+  function addRow(s, L) {
+    const r = s.rows.length, prev = s.path[r - 1] ?? 3;
+    // camino garantizado: en filas pares/impares las casillas se desplazan medio paso
+    let p = prev + (Math.random() < 0.5 ? 0 : 1) * (r % 2 ? 1 : -1) * 0; p = clamp(r % 2 ? prev + (Math.random() < 0.5 ? 0 : 1) : prev - (Math.random() < 0.5 ? 0 : 1), 0, N - 1);
+    // si se sale, ajustar
+    s.path.push(p);
+    const row = new Array(N).fill(0);
+    const dens = clamp(0.18 + L * 0.02, 0.18, 0.5);
+    for (let c = 0; c < N; c++) if (c !== p && Math.random() < dens) row[c] = Math.random() < 0.75 ? 1 : 2; // 1 árbol, 2 agujero
+    if (Math.random() < 0.12) { const c = ri(0, N - 1); if (!row[c]) row[c] = 3; } // gema
+    s.rows.push(row);
+  }
+  // vecinos: desde (c, r) se baja a la fila r+1 en c (izq) o c+1 (dcha) si r es par; en c-1 / c si es impar
+  const below = (r, c, dir) => (r % 2 === 0 ? (dir < 0 ? c : c + 1) : (dir < 0 ? c - 1 : c));
+  function hop(g, dir) {
+    const s = g.s; if (s.dead || s.won || s.anim > 0) return;
+    const nr = s.r + 1, nc = below(s.r, s.c, dir);
+    s.fr = s.r; s.fc = s.c; s.r = nr; s.c = nc; s.anim = 1; s.face = dir;
+    Arcade.tone(500 - (s.r % 6) * 30, 0.05, 'triangle', 0.05);
+    while (s.rows.length < s.r + 14) addRow(s, g.lv);
+  }
+  function land(g) {
+    const s = g.s, v = s.c < 0 || s.c >= N ? 2 : s.rows[s.r][s.c];
+    if (v === 1 || v === 2) { s.dead = 1; Arcade.sfx.hit(); g.shake(0.25, 6); setTimeout(() => { if (g.state === 'play' && g.die()) { s.r = s.fr; s.c = s.fc; s.dead = 0; s.crumble = Math.min(s.crumble, s.r - 3); } }, 900); return; }
+    if (v === 3) { s.rows[s.r][s.c] = 0; Arcade.sfx.coin(); g.addScore(25 * g.lv); }
+    g.addScore(g.lv);
+    if (s.r >= s.need) { s.won = true; Arcade.sfx.win(); g.confetti(60); setTimeout(() => { if (g.state === 'play') g.win(); }, 600); }
+  }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Baja la montaña antes de que se derrumbe', deco: ['⛰️', '🌲', '⛷️', '💎', '❄️', '🏔️'], font: 'round', bg: ['#e7f5ff', '#c3e6ff'],
+    music: { mode: 'dorian', bpm: 120, wave: 'triangle', style: 'arcade', root: 60 }, voice: { wave: 'triangle', mul: 1.1, echo: 0.25 },
+    en: { title: 'Mountain', tag: 'Get down before it crumbles', help: 'Hop down the mountain one tile at a time: <b>tap the left half</b> to hop down-left and the <b>right half</b> to hop down-right. Do not land on a 🌲 tree or a hole. The mountain <b>crumbles from the top</b>: if it catches you, you fall! Grab the 💎 and reach the bottom of each level.', tvHelp: '◀ down-left · ▶ down-right.', dict: { 'Metros: ': 'Metres: ' } },
+    tvHelp: '◀ abajo-izquierda · ▶ abajo-derecha.',
+    id: 'montana', title: 'Montaña', emoji: '⛰️', color: '#4dabf7', origin: 'Down The Mountain / Dudeski',
+    help: 'Baja la montaña de casilla en casilla: <b>toca la mitad izquierda</b> para saltar abajo a la izquierda y la <b>mitad derecha</b> para abajo a la derecha. No caigas en un 🌲 árbol ni en un agujero. La montaña <b>se derrumba desde arriba</b>: si te alcanza, ¡caes! Coge los 💎 y llega abajo en cada nivel.',
+    lives: 3, levels: 0, cap: 25,
+    setup(g) {
+      g.s = { rows: [new Array(N).fill(0)], path: [3], r: 0, c: 3, fr: 0, fc: 3, anim: 0, crumble: -4, face: 1, hero: HEROES[(g.level - 1) % HEROES.length] };
+      const s = g.s; for (let i = 0; i < 16; i++) addRow(s, g.lv); s.need = 40 + Math.min(g.lv, 25) * 6; s.speed = 1.3 + Math.min(g.lv, 25) * 0.07;
+    },
+    down(g, p) { hop(g, p.x < g.W / 2 ? -1 : 1); },
+    key(g, k, d) { if (!d) return; if (k === 'ArrowLeft') hop(g, -1); else if (k === 'ArrowRight') hop(g, 1); },
+    update(g, dt) {
+      const s = g.s;
+      if (s.anim > 0) { s.anim = Math.max(0, s.anim - dt * 9); if (s.anim === 0) land(g); }
+      if (s.dead || s.won) return;
+      if (s.r > 2) s.crumble += s.speed * dt;
+      if (s.crumble > s.r + 0.4) { s.dead = 1; Arcade.sfx.boom(); g.message('🪨', 0.8); setTimeout(() => { if (g.state === 'play' && g.die()) { s.dead = 0; s.crumble = s.r - 4; } }, 900); }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      const bg = ctx.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, '#74c0fc'); bg.addColorStop(1, '#e7f5ff');
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      if (!s.rows) return;
+      const tw = Math.min(W / (N + 0.5), 80), th = tw * 0.55, ox = (W - tw * (N + 0.5)) / 2;
+      const k = s.anim, camR = s.r - k * 1;
+      const Y = (r) => g.top + (g.bot - g.top) * 0.32 + (r - camR) * th;
+      const X = (r, c) => ox + (c + (r % 2 ? 0.5 : 0) + 0.5) * tw;
+      for (let r = Math.max(0, Math.floor(camR) - 6); r < Math.min(s.rows.length, camR + (g.bot - g.top) / th); r++) {
+        const y = Y(r); if (y < g.top - 40) continue;
+        const gone = r < s.crumble;
+        for (let c = 0; c < N; c++) {
+          const v = s.rows[r][c], x = X(r, c); if (v === 2) continue;
+          const fallY = gone ? (s.crumble - r) * 200 : 0;
+          ctx.globalAlpha = gone ? Math.max(0, 1 - (s.crumble - r)) : 1;
+          ctx.fillStyle = (r + c) % 2 ? '#f8f9fa' : '#e9ecef'; ctx.beginPath(); ctx.moveTo(x, y - th / 2 + fallY); ctx.lineTo(x + tw / 2, y + fallY); ctx.lineTo(x, y + th / 2 + fallY); ctx.lineTo(x - tw / 2, y + fallY); ctx.fill();
+          ctx.fillStyle = '#adb5bd'; ctx.beginPath(); ctx.moveTo(x - tw / 2, y + fallY); ctx.lineTo(x, y + th / 2 + fallY); ctx.lineTo(x, y + th / 2 + 10 + fallY); ctx.lineTo(x - tw / 2, y + 10 + fallY); ctx.fill();
+          ctx.fillStyle = '#868e96'; ctx.beginPath(); ctx.moveTo(x + tw / 2, y + fallY); ctx.lineTo(x, y + th / 2 + fallY); ctx.lineTo(x, y + th / 2 + 10 + fallY); ctx.lineTo(x + tw / 2, y + 10 + fallY); ctx.fill();
+          if (v === 1) Arcade.emoji(ctx, '🌲', x, y - th * 0.5 + fallY, tw * 0.75);
+          if (v === 3) Arcade.emoji(ctx, '💎', x, y - th * 0.3 + fallY, tw * 0.4);
+          ctx.globalAlpha = 1;
+        }
+        if (r === s.need) Arcade.emoji(ctx, '🏁', W / 2, y - th, tw);
+      }
+      const px = X(s.r, s.c) * (1 - k) + X(s.fr, s.fc) * k, py = Y(s.r) * (1 - k) + Y(s.fr) * k - Math.sin(k * Math.PI) * th * 1.2 - th * 0.4 + (s.dead ? 30 : 0);
+      if (s.c >= 0 && s.c < N || k > 0) Arcade.emoji(ctx, s.hero, px, py, tw * 0.7, { flip: s.face > 0, rot: s.dead ? 0.8 : 0 });
+      ctx.fillStyle = 'rgba(0,0,0,.08)'; ctx.fillRect(0, g.bot - 60, W / 2 - 1, 60); ctx.fillRect(W / 2 + 1, g.bot - 60, W / 2, 60);
+      Arcade.txt(ctx, '↙️', W / 4, g.bot - 30, 26); Arcade.txt(ctx, '↘️', W * 0.75, g.bot - 30, 26);
+      Arcade.txt(ctx, 'Metros: ' + s.r + '/' + s.need, W / 2, g.top + 20, 15, '#1864ab', 'center', 900);
+    },
+  });
+})();
+</script>
+</body>
+</html>

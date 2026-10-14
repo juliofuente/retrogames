@@ -1,0 +1,116 @@
+// Puntos|#1c2a6b
+(function () {
+  const { ri, clamp, shuffle } = Arcade;
+  const DOT = ['🔴', '🟡', '🟢', '🔵', '🟣', '🟠'];
+  const COL = ['#fa5252', '#fcc419', '#40c057', '#339af0', '#9775fa', '#fd7e14'];
+  const N = 6;
+
+  function geo(g) { const s = g.s, Ha = g.bot - g.top - 110; s.cs = Math.min((g.W - 30) / N, Ha / N, 80); s.ox = (g.W - s.cs * N) / 2; s.oy = g.top + 96 + (Ha - s.cs * N) / 2; }
+  const key = (c, r) => c * 10 + r;
+  function rndDot(s) { return { t: ri(0, s.nt - 1), fall: 0, pop: 0 }; }
+  function cellAt(s, x, y) {
+    const c = Math.floor((x - s.ox) / s.cs), r = Math.floor((y - s.oy) / s.cs);
+    if (c < 0 || c >= N || r < 0 || r >= N) return null;
+    const cx = s.ox + (c + 0.5) * s.cs, cy = s.oy + (r + 0.5) * s.cs;
+    return Math.hypot(x - cx, y - cy) < s.cs * 0.42 ? [c, r] : null;
+  }
+  const isLoop = (p) => new Set(p.map(([c, r]) => key(c, r))).size < p.length;
+  function commit(g) {
+    const s = g.s, p = s.path; s.path = [];
+    if (p.length < 2) return;
+    const t = s.b[p[0][0]][p[0][1]].t, loop = isLoop(p);
+    const kill = new Set(p.map(([c, r]) => key(c, r)));
+    if (loop) { for (let c = 0; c < N; c++) for (let r = 0; r < N; r++) if (s.b[c][r].t === t) kill.add(key(c, r)); g.flash(COL[t], 0.2); g.shake(0.15, 4); Arcade.sfx.win(); g.float(Arcade.T('¡Cuadrado!', 'Square!'), g.W / 2, s.oy - 10, COL[t], 26); }
+    else Arcade.sfx.combo(Math.min(12, p.length));
+    s.moves--;
+    let n = 0;
+    for (const k of kill) {
+      const c = Math.floor(k / 10), r = k % 10;
+      g.burst(s.ox + (c + 0.5) * s.cs, s.oy + (r + 0.5) * s.cs, { n: 5, color: COL[t], speed: 150, size: 4 });
+      s.b[c][r] = null; n++;
+    }
+    if (s.goal[t] != null) s.got[t] = Math.min(s.goal[t], s.got[t] + n);
+    g.addScore(n * (loop ? 3 : 1) * 5 * g.lv, s.ox + (p[p.length - 1][0] + 0.5) * s.cs, s.oy + (p[p.length - 1][1] + 0.5) * s.cs);
+    for (let c = 0; c < N; c++) {
+      const col = s.b[c].map((d, r) => d && { d, r }).filter(Boolean), miss = N - col.length;
+      const fresh = []; for (let i = 0; i < miss; i++) { const d = rndDot(s); if (loop && d.t === t) d.t = (t + 1 + ri(0, s.nt - 2)) % s.nt; d.fall = miss + 0.5; fresh.push(d); }
+      col.forEach((o, i) => { o.d.fall = miss + i - o.r; });
+      s.b[c] = fresh.concat(col.map((o) => o.d));
+    }
+    const done = Object.keys(s.goal).every((k) => s.got[k] >= s.goal[k]);
+    if (done) { g.addScore(s.moves * 20 * g.lv, g.W / 2, g.H / 2); setTimeout(() => { if (g.state === 'play') g.win(s.moves >= s.moves0 * 0.4 ? 3 : s.moves >= s.moves0 * 0.15 ? 2 : 1); }, 500); s.over = true; }
+    else if (s.moves <= 0) { s.over = true; g.message(Arcade.T('Sin movimientos', 'Out of moves'), 1.2); setTimeout(() => { if (g.state === 'play' && g.die()) Arcade.current.def.setup(g); }, 1000); }
+  }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tv: false, tag: 'Une puntos, cierra cuadrados', deco: ['🔴', '🟡', '🟢', '🔵', '🟣', '⬜'], font: 'round', bg: ['#364fc7', '#1c2a6b'],
+    music: { mode: 'major', bpm: 104, wave: 'sine', style: 'chill', root: 65 }, voice: { wave: 'sine', mul: 1.3, echo: 0.35 },
+    en: { title: 'Dots', tag: 'Join dots, close squares', help: '<b>Drag</b> to join dots of the <b>same colour</b> in horizontal or vertical lines (at least 2); release to clear them. If you go back on yourself the line shrinks. Close a <b>square or loop</b> and every dot of that colour disappears! Collect the dots each level asks for before you run out of <b>moves</b>.', dict: { 'Movimientos': 'Moves', '¡Cuadrado!': 'Square!', 'Sin movimientos': 'Out of moves' } },
+    id: 'puntos', title: 'Puntos', emoji: '🔵', color: '#339af0', origin: 'Dots / Two Dots',
+    help: '<b>Arrastra</b> para unir puntos del <b>mismo color</b> en horizontal o vertical (mínimo 2); suelta para quitarlos. Si vuelves atrás, la línea se acorta. Si cierras un <b>cuadrado o bucle</b>, ¡desaparecen todos los puntos de ese color! Recoge los puntos que pide cada nivel antes de quedarte sin <b>movimientos</b>.',
+    lives: 3, levels: 0, cap: 25,
+    setup(g) {
+      g.s = { path: [], b: [], over: false };
+      const s = g.s, L = g.lv; s.nt = clamp(4 + Math.floor(L / 5), 4, 6);
+      for (let c = 0; c < N; c++) { const col = []; for (let r = 0; r < N; r++) col.push(rndDot(s)); s.b.push(col); }
+      const cols = shuffle([...Array(s.nt).keys()]).slice(0, clamp(1 + Math.floor((L + 1) / 3), 2, 4));
+      s.goal = {}; s.got = {};
+      for (const t of cols) { s.goal[t] = 8 + Math.min(L, 20) * 2 + ri(0, 4); s.got[t] = 0; }
+      s.moves = s.moves0 = clamp(26 - Math.floor(L / 3), 16, 26);
+      geo(g);
+    },
+    layout(g) { if (g.s.b && g.s.b.length) geo(g); },
+    down(g, p) { const s = g.s; if (s.over) return; s.px = p.x; s.py = p.y; const c = cellAt(s, p.x, p.y); s.path = c ? [c] : []; if (c) Arcade.tone(400, 0.04, 'sine', 0.06); },
+    move(g, p) {
+      const s = g.s; if (!s.path.length || s.over) return;
+      s.px = p.x; s.py = p.y;
+      const c = cellAt(s, p.x, p.y); if (!c) return;
+      const P = s.path, last = P[P.length - 1];
+      if (c[0] === last[0] && c[1] === last[1]) return;
+      if (P.length > 1 && c[0] === P[P.length - 2][0] && c[1] === P[P.length - 2][1]) { P.pop(); Arcade.tone(300, 0.03, 'sine', 0.04); return; }
+      if (Math.abs(c[0] - last[0]) + Math.abs(c[1] - last[1]) !== 1) return;
+      if (s.b[c[0]][c[1]].t !== s.b[last[0]][last[1]].t) return;
+      if (isLoop(P)) return;
+      const seen = P.some(([a, b]) => a === c[0] && b === c[1]);
+      P.push(c);
+      Arcade.tone(400 + P.length * 40, 0.05, 'sine', 0.06);
+      if (seen) { Arcade.sfx.coin(); }
+    },
+    up(g) { if (g.s.path.length) commit(g); },
+    update(g, dt) { const s = g.s; for (const col of s.b) for (const d of col) if (d && d.fall > 0) d.fall = Math.max(0, d.fall - dt * 9); },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      const bgr = ctx.createLinearGradient(0, 0, 0, H); bgr.addColorStop(0, '#3b5bdb'); bgr.addColorStop(1, '#1c2a6b'); ctx.fillStyle = bgr; ctx.fillRect(0, 0, W, H);
+      g.scenery(['⚪', '◽'], 10, { alpha: 0.06, size: [20, 40] });
+      if (!s.b || !s.b.length) return;
+      const cs = s.cs, P = s.path, loop = isLoop(P);
+      const t0 = P.length ? s.b[P[0][0]][P[0][1]].t : -1;
+      if (loop) { ctx.fillStyle = COL[t0]; ctx.globalAlpha = 0.12; ctx.fillRect(0, 0, W, H); ctx.globalAlpha = 1; }
+      // objetivos
+      const ks = Object.keys(s.goal), gw = 74;
+      ks.forEach((k, i) => {
+        const x = W / 2 - (ks.length - 1) * gw / 2 + i * gw, y = g.top + 30, ok = s.got[k] >= s.goal[k];
+        Arcade.emoji(ctx, DOT[k], x - 16, y, 24);
+        Arcade.txt(ctx, ok ? '✓' : String(s.goal[k] - s.got[k]), x + 14, y + 1, 18, ok ? '#8ce99a' : '#fff', 'center', 900);
+      });
+      Arcade.txt(ctx, 'Movimientos', W / 2, g.top + 62, 12, '#bac8ff', 'center', 800);
+      Arcade.txt(ctx, String(s.moves), W / 2, g.top + 80, 20, s.moves <= 5 ? '#ff8787' : '#fff', 'center', 900);
+      // línea
+      if (P.length) {
+        ctx.strokeStyle = COL[t0]; ctx.lineWidth = cs * 0.14; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+        ctx.beginPath(); P.forEach(([c, r], i) => { const x = s.ox + (c + 0.5) * cs, y = s.oy + (r + 0.5) * cs; i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); });
+        if (s.px != null && !loop) ctx.lineTo(s.px, s.py);
+        ctx.stroke(); ctx.lineCap = 'butt';
+      }
+      const inP = new Set(P.map(([c, r]) => key(c, r)));
+      for (let c = 0; c < N; c++) for (let r = 0; r < N; r++) {
+        const d = s.b[c][r]; if (!d) continue;
+        const x = s.ox + (c + 0.5) * cs, y = s.oy + (r + 0.5 - d.fall) * cs;
+        const on = inP.has(key(c, r)) || (loop && d.t === t0);
+        const sz = cs * (on ? 0.62 + Math.sin(g.rt * 12) * 0.04 : 0.5);
+        if (on) { ctx.fillStyle = COL[d.t]; ctx.globalAlpha = 0.45; ctx.beginPath(); ctx.arc(x, y, sz * 0.75, 0, Math.PI * 2); ctx.fill(); ctx.globalAlpha = 1; }
+        Arcade.emoji(ctx, DOT[d.t], x, y, sz);
+      }
+    },
+  });
+})();

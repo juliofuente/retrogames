@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Billar · Arcade Perdido</title>
+<meta name="theme-color" content="#0b3d2e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css">
+</head>
+<body class="game">
+<script src="config.js"></script>
+<script src="common.js"></script>
+<script>
+(function () {
+  const { rand, clamp } = Arcade;
+  const BC = ['#fff', '#fcc419', '#1c7ed6', '#e03131', '#7048e8', '#fd7e14', '#2b8a3e', '#862e2e', '#111', '#fcc419', '#1c7ed6', '#e03131', '#7048e8', '#fd7e14', '#2b8a3e', '#862e2e'];
+
+  function geo(g) {
+    const s = g.s, land = g.W > g.H, Ha = g.bot - g.top - 60;
+    // mesa 1:2, orientada al lado largo
+    let tw, th; if (land) { th = Math.min(Ha, (g.W - 40) / 2); tw = th * 2; } else { tw = Math.min(g.W - 40, Ha / 2); th = tw * 2; }
+    const old = s.T;
+    s.T = { x: (g.W - tw) / 2, y: g.top + 50 + (Ha - th) / 2, w: tw, h: th, land };
+    s.r = Math.min(tw, th) * 0.042; s.pr = s.r * 1.75;
+    const T = s.T; s.pockets = land ? [[0, 0], [0.5, 0], [1, 0], [0, 1], [0.5, 1], [1, 1]] : [[0, 0], [1, 0], [0, 0.5], [1, 0.5], [0, 1], [1, 1]];
+    s.pockets = s.pockets.map(([a, b]) => [T.x + a * T.w, T.y + b * T.h]);
+    if (old && s.balls) for (const b of s.balls) { const u = (b.x - old.x) / old.w, v = (b.y - old.y) / old.h; if (old.land === land) { b.x = T.x + u * T.w; b.y = T.y + v * T.h; } else { b.x = T.x + v * T.w; b.y = T.y + u * T.h; } }
+  }
+  function rack(g) {
+    const s = g.s, T = s.T, n = s.n, along = T.land ? [1, 0] : [0, -1], perp = T.land ? [0, 1] : [1, 0];
+    const fx = T.x + T.w * (T.land ? 0.68 : 0.5), fy = T.y + T.h * (T.land ? 0.5 : 0.32), d = s.r * 2.04;
+    s.balls = [{ id: 0, x: T.x + T.w * (T.land ? 0.25 : 0.5), y: T.y + T.h * (T.land ? 0.5 : 0.75), vx: 0, vy: 0 }];
+    let k = 1;
+    for (let row = 0; k <= n; row++) for (let j = 0; j <= row && k <= n; j++, k++) {
+      const a = row * d * 0.87, b = (j - row / 2) * d;
+      s.balls.push({ id: k, x: fx + along[0] * a + perp[0] * b, y: fy + along[1] * a + perp[1] * b, vx: 0, vy: 0 });
+    }
+  }
+  const cue = (s) => s.balls.find((b) => b.id === 0);
+  const moving = (s) => s.balls.some((b) => Math.hypot(b.vx, b.vy) > 3);
+  function shoot(g, pow) {
+    const s = g.s, c = cue(s); if (!c || moving(s) || s.done) return;
+    const v = pow * s.T.w * (s.T.land ? 1.4 : 2.6) * 1.2;
+    c.vx = Math.cos(s.aim) * v; c.vy = Math.sin(s.aim) * v; s.shots--; s.pottedThis = 0; s.shooting = true;
+    Arcade.tone(200 + pow * 300, 0.06, 'square', 0.08); g.shake(0.05 + pow * 0.1, 2 + pow * 3);
+  }
+  function endShot(g) {
+    const s = g.s; s.shooting = false;
+    if (!cue(s)) { const T = s.T; let x = T.x + T.w * (T.land ? 0.25 : 0.5), y = T.y + T.h * (T.land ? 0.5 : 0.75); while (s.balls.some((b) => Math.hypot(b.x - x, b.y - y) < s.r * 2.2)) y += s.r * 2.2; s.balls.unshift({ id: 0, x, y, vx: 0, vy: 0 }); }
+    if (!s.pottedThis) s.combo = 0;
+    if (s.balls.length === 1) { s.done = true; g.confetti(70); g.addScore(s.shots * 40 * g.lv, g.W / 2, g.H / 2); setTimeout(() => { if (g.state === 'play') g.win(s.shots >= s.shots0 * 0.4 ? 3 : s.shots >= s.shots0 * 0.2 ? 2 : 1); }, 700); return; }
+    if (s.shots <= 0) { s.done = true; g.message(Arcade.T('Sin tiros', 'Out of shots'), 1.2); setTimeout(() => { if (g.state === 'play' && g.die()) Arcade.current.def.setup(g); }, 1100); }
+  }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Mete todas las bolas', deco: ['🎱', '🟢', '🪵', '⚪', '🔴', '🔵'], font: 'serif', bg: ['#14573f', '#0b3d2e'],
+    music: { mode: 'dorian', bpm: 88, wave: 'triangle', style: 'chill', root: 55 }, voice: { wave: 'triangle', mul: 1.1, echo: 0.3 },
+    en: { title: 'Pool', tag: 'Pot every ball', help: '<b>Drag backwards</b> from anywhere like pulling a cue: the direction aims and the length sets the power. <b>Release</b> to hit the white ball. Pot every coloured ball into the pockets before you run out of shots. If the white ball falls in, it comes back to its spot. Potting several balls in one shot gives bonus points.', tvHelp: '◀ ▶ aim · hold OK to charge and release to hit.', dict: { 'Tiros: ': 'Shots: ', 'Sin tiros': 'Out of shots' } },
+    tvHelp: '◀ ▶ apuntar · mantén OK para cargar y suelta para tirar.',
+    id: 'billar', title: 'Billar', emoji: '🎱', color: '#2b8a3e', origin: 'Pool / Trick Shot',
+    help: '<b>Arrastra hacia atrás</b> desde cualquier sitio como si tirases del taco: la dirección apunta y la distancia marca la fuerza. <b>Suelta</b> para golpear la bola blanca. Mete todas las bolas de color en las troneras antes de quedarte sin tiros. Si la blanca cae, vuelve a su sitio. Meter varias en un mismo tiro da puntos extra.',
+    lives: 3, levels: 0, cap: 25,
+    setup(g) {
+      const L = g.lv; g.s = { n: clamp(2 + L, 3, 15), aim: 0, pow: 0, combo: 0 };
+      const s = g.s; geo(g); s.aim = s.T.land ? 0 : -Math.PI / 2; rack(g);
+      s.shots = s.shots0 = Math.ceil(s.n * clamp(1.9 - L * 0.04, 1.1, 1.9)) + 2;
+    },
+    layout(g) { if (g.s.balls) geo(g); },
+    down(g, p) { const s = g.s; if (moving(s)) return; s.drag = { x: p.x, y: p.y }; },
+    move(g, p) { const s = g.s; if (!s.drag) return; const dx = s.drag.x - p.x, dy = s.drag.y - p.y, d = Math.hypot(dx, dy); if (d > 6) { s.aim = Math.atan2(dy, dx); s.pow = clamp(d / (s.T.w * 0.5), 0, 1); } },
+    up(g) { const s = g.s; if (!s.drag) return; s.drag = null; if (s.pow > 0.05) shoot(g, s.pow); s.pow = 0; },
+    key(g, k, d) { const s = g.s; if (k === 'ArrowLeft' || k === 'ArrowRight') s.kd = d ? (k === 'ArrowLeft' ? -1 : 1) : 0; if (k === ' ') { if (d) { if (!moving(s)) s.charging = true; } else if (s.charging) { s.charging = false; if (s.pow > 0.05) shoot(g, s.pow); s.pow = 0; } } },
+    hover(g, x, y) { const s = g.s, c = cue(s); if (!c || s.drag || moving(s)) return; s.aim = Math.atan2(y - c.y, x - c.x); },
+    update(g, dt) {
+      const s = g.s, T = s.T, r = s.r;
+      if (s.kd) s.aim += s.kd * dt * 1.4;
+      if (s.charging) s.pow = Math.min(1, s.pow + dt * 0.8);
+      const N = 8, h = dt / N;
+      for (let it = 0; it < N; it++) {
+        for (const b of s.balls) { b.x += b.vx * h; b.y += b.vy * h; }
+        for (let i = 0; i < s.balls.length; i++) for (let j = i + 1; j < s.balls.length; j++) {
+          const a = s.balls[i], b = s.balls[j], dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy);
+          if (d >= 2 * r || d === 0) continue;
+          const nx = dx / d, ny = dy / d, ov = (2 * r - d) / 2; a.x -= nx * ov; a.y -= ny * ov; b.x += nx * ov; b.y += ny * ov;
+          const rv = (b.vx - a.vx) * nx + (b.vy - a.vy) * ny; if (rv < 0) { const imp = -rv * 0.96; a.vx -= imp * nx; a.vy -= imp * ny; b.vx += imp * nx; b.vy += imp * ny; if (-rv > 40) Arcade.tone(900, 0.02, 'triangle', Math.min(0.08, -rv / 4000)); }
+        }
+        for (const b of s.balls) {
+          // troneras
+          for (const [px, py] of s.pockets) if (Math.hypot(b.x - px, b.y - py) < s.pr) { b.pot = true; }
+          if (b.pot) continue;
+          if (b.x < T.x + r) { b.x = T.x + r; b.vx = Math.abs(b.vx) * 0.8; }
+          if (b.x > T.x + T.w - r) { b.x = T.x + T.w - r; b.vx = -Math.abs(b.vx) * 0.8; }
+          if (b.y < T.y + r) { b.y = T.y + r; b.vy = Math.abs(b.vy) * 0.8; }
+          if (b.y > T.y + T.h - r) { b.y = T.y + T.h - r; b.vy = -Math.abs(b.vy) * 0.8; }
+        }
+        for (const b of s.balls.filter((q) => q.pot)) {
+          s.balls.splice(s.balls.indexOf(b), 1);
+          g.burst(b.x, b.y, { n: 8, color: BC[b.id], speed: 90, size: 3 });
+          if (b.id === 0) { g.message(Arcade.T('¡Blanca dentro!', 'Scratch!'), 0.9); Arcade.sfx.bad(); }
+          else { s.pottedThis++; s.combo++; Arcade.sfx.coin(); g.addScore(10 * g.lv * s.pottedThis, b.x, b.y - 20); if (s.pottedThis > 1) g.float('x' + s.pottedThis, b.x, b.y - 46, '#ffd43b', 22); }
+        }
+      }
+      const fr = Math.pow(0.42, dt);
+      for (const b of s.balls) { b.vx *= fr; b.vy *= fr; if (Math.hypot(b.vx, b.vy) < 6) b.vx = b.vy = 0; }
+      if (s.shooting && !moving(s)) endShot(g);
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      ctx.fillStyle = '#2b1a10'; ctx.fillRect(0, 0, W, H);
+      if (!s.balls) return;
+      const T = s.T, r = s.r, rim = r * 1.6;
+      ctx.fillStyle = '#5c3317'; Arcade.rr(ctx, T.x - rim, T.y - rim, T.w + rim * 2, T.h + rim * 2, rim); ctx.fill();
+      const fl = ctx.createRadialGradient(T.x + T.w / 2, T.y + T.h / 2, 10, T.x + T.w / 2, T.y + T.h / 2, Math.max(T.w, T.h) * 0.7); fl.addColorStop(0, '#2fae6b'); fl.addColorStop(1, '#1b6b42');
+      ctx.fillStyle = fl; ctx.fillRect(T.x, T.y, T.w, T.h);
+      for (const [px, py] of s.pockets) { ctx.fillStyle = '#000'; ctx.beginPath(); ctx.arc(px, py, s.pr, 0, 6.3); ctx.fill(); }
+      const c = cue(s);
+      if (c && !moving(s) && !s.done) {
+        const len = Math.max(T.w, T.h);
+        // guía con rebote simple
+        ctx.setLineDash([5, 7]); ctx.strokeStyle = 'rgba(255,255,255,.5)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(c.x, c.y); ctx.lineTo(c.x + Math.cos(s.aim) * len * 0.5, c.y + Math.sin(s.aim) * len * 0.5); ctx.stroke(); ctx.setLineDash([]);
+        const back = r * 2 + s.pow * r * 8;
+        ctx.strokeStyle = '#c8a165'; ctx.lineWidth = r * 0.7; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(c.x - Math.cos(s.aim) * back, c.y - Math.sin(s.aim) * back); ctx.lineTo(c.x - Math.cos(s.aim) * (back + len * 0.45), c.y - Math.sin(s.aim) * (back + len * 0.45)); ctx.stroke(); ctx.lineCap = 'butt';
+      }
+      for (const b of s.balls) {
+        ctx.fillStyle = 'rgba(0,0,0,.3)'; ctx.beginPath(); ctx.arc(b.x + 2, b.y + 3, r, 0, 6.3); ctx.fill();
+        const stripe = b.id > 8, col = BC[b.id];
+        ctx.fillStyle = stripe ? '#fff' : col; ctx.beginPath(); ctx.arc(b.x, b.y, r, 0, 6.3); ctx.fill();
+        if (stripe) { ctx.save(); ctx.beginPath(); ctx.arc(b.x, b.y, r, 0, 6.3); ctx.clip(); ctx.fillStyle = col; ctx.fillRect(b.x - r, b.y - r * 0.55, r * 2, r * 1.1); ctx.restore(); }
+        if (b.id) { ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(b.x, b.y, r * 0.48, 0, 6.3); ctx.fill(); Arcade.txt(ctx, String(b.id), b.x, b.y + 0.5, r * 0.62, '#111', 'center', 900); }
+        ctx.fillStyle = 'rgba(255,255,255,.5)'; ctx.beginPath(); ctx.arc(b.x - r * 0.35, b.y - r * 0.4, r * 0.22, 0, 6.3); ctx.fill();
+      }
+      Arcade.txt(ctx, 'Tiros: ' + s.shots + '   ·   🎱 ' + (s.balls.length - (c ? 1 : 0)), W / 2, g.top + 22, 16, '#fff', 'center', 900);
+      if (s.pow > 0) { ctx.fillStyle = 'rgba(0,0,0,.4)'; Arcade.rr(ctx, W / 2 - 80, g.top + 36, 160, 8, 4); ctx.fill(); ctx.fillStyle = `hsl(${120 - s.pow * 120},90%,55%)`; Arcade.rr(ctx, W / 2 - 80, g.top + 36, 160 * s.pow, 8, 4); ctx.fill(); }
+    },
+  });
+})();
+</script>
+</body>
+</html>

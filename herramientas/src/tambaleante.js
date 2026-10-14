@@ -1,0 +1,77 @@
+// Tambaleante|#cfe8ff
+// @phys
+(function () {
+  const { ri, rand, clamp, pick } = Arcade;
+  const SHAPES = [[80, 40], [60, 60], [110, 30], [50, 80], [90, 50], [40, 40]];
+  const COLS = ['#ff6b6b', '#ffd43b', '#69db7c', '#4dabf7', '#da77f2', '#ff922b'];
+  const FACES = ['😀', '😬', '😎', '🙂', '😅', '🤗'];
+  const WW = 500, GY = 640;
+
+  function build(g) {
+    const s = g.s, L = g.lv, w = new Arcade.Phys.World({ gy: 800, iterations: 14, substeps: 3 });
+    s.w = w; s.blocks = [];
+    const pw = clamp(220 - L * 6, 120, 220);
+    s.plat = w.box(WW / 2, GY, pw, 24, { static: true, friction: 0.9 });
+    s.goalY = GY - 12 - clamp(160 + L * 22, 160, 480);
+    if (L >= 6) { s.wind = 0; }
+  }
+  function geo(g) { const s = g.s; s.sc = Math.min(g.W / WW, (g.bot - g.top - 20) / 720); s.ox = (g.W - WW * s.sc) / 2; s.oy = g.top + 20 + (g.bot - g.top - 20 - 720 * s.sc) / 2; }
+  function nextBlock(s) { const i = ri(0, SHAPES.length - 1); return { i, w: SHAPES[i][0], h: SHAPES[i][1], c: ri(0, COLS.length - 1) }; }
+  function drop(g) {
+    const s = g.s; if (s.cool > 0 || s.over) return;
+    const b = s.cur, x = WW / 2 + Math.sin(s.ang) * s.arm, y = s.craneY + 40 + b.h / 2;
+    const body = s.w.box(x, y, b.w, b.h, { density: 1, friction: 0.8, angle: 0, data: { c: b.c, f: FACES[b.c] } });
+    body.v.x = Math.cos(s.ang) * s.angV * s.arm * 0.6; s.blocks.push(body);
+    s.cur = s.next; s.next = nextBlock(s); s.cool = 1; s.dropped++; Arcade.sfx.whoosh();
+  }
+  function towerTop(s) { let t = GY; for (const b of s.blocks) { if (b.removed || Math.hypot(b.v.x, b.v.y) > 30) continue; const [, y0] = s.w.aabb(b); if (y0 < t) t = y0; } return t; }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Apila sin que se caiga', deco: ['🏗️', '🧱', '😬', '📦', '🎯', '☁️'], font: 'round', bg: ['#e7f5ff', '#cfe8ff'],
+    music: { mode: 'major', bpm: 100, wave: 'triangle', style: 'chill', root: 62 }, voice: { wave: 'triangle', mul: 1.2, echo: 0.35 },
+    en: { title: 'Wobbly', tag: 'Stack it without toppling', help: 'The crane swings a block from side to side. <b>Tap</b> to drop it onto the platform. Build a tower up to the dotted 🎯 line and keep it standing for 3 seconds. Every block that falls off the platform costs a life. Pieces have different shapes, and later the platform gets smaller and the goal higher.', tvHelp: 'OK to drop the block.', dict: { 'Meta': 'Goal' } },
+    tvHelp: 'OK para soltar el bloque.',
+    id: 'tambaleante', title: 'Tambaleante', emoji: '🏗️', color: '#4dabf7', origin: 'Tipsy Tower / Stabilize! / Toony',
+    help: 'La grúa balancea un bloque de lado a lado. <b>Toca</b> para soltarlo sobre la plataforma. Construye una torre hasta la línea 🎯 punteada y mantenla en pie 3 segundos. Cada bloque que cae fuera de la plataforma te quita una vida. Las piezas tienen formas distintas y luego la plataforma es más pequeña y la meta más alta.',
+    lives: 3, levels: 0, cap: 20,
+    setup(g) { g.s = { ang: 0, angV: 1.4 + Math.min(g.lv, 20) * 0.05, arm: 105, craneY: 40, cool: 0, dropped: 0, hold: 0 }; const s = g.s; build(g); s.cur = nextBlock(s); s.next = nextBlock(s); geo(g); },
+    layout(g) { if (g.s.w) geo(g); },
+    tap(g) { drop(g); },
+    key(g, k, d) { if (d && (k === ' ' || k === 'ArrowDown')) drop(g); },
+    update(g, dt) {
+      const s = g.s; s.cool -= dt; s.t = (s.t || 0) + dt;
+      s.ang = Math.sin(s.t * s.angV) * 1.0;
+      s.w.step(dt);
+      for (const b of s.blocks.slice()) if (b.p.y > GY + 120) { s.w.remove(b); s.blocks.splice(s.blocks.indexOf(b), 1); g.message('💥', 0.6); Arcade.sfx.bad(); if (!g.die()) return; }
+      const top = towerTop(s);
+      // la grúa sube con la torre
+      s.craneY += (Math.min(40, top - 260) - s.craneY) * Math.min(1, dt * 2);
+      s.camY = Math.min(0, s.craneY - 40);
+      if (!s.over && top <= s.goalY && s.cool < 0.2) { s.hold += dt; if (s.hold >= 3) { s.over = true; g.addScore((200 + Math.max(0, 30 - s.dropped) * 10) * g.lv, g.W / 2, g.H / 2); g.confetti(70); setTimeout(() => { if (g.state === 'play') g.win(g.lives >= 3 ? 3 : 2); }, 600); } } else s.hold = 0;
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      const bg = ctx.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, '#a5d8ff'); bg.addColorStop(1, '#e7f5ff');
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      if (!s.w) return;
+      ctx.save(); ctx.translate(s.ox, s.oy - (s.camY || 0) * s.sc); ctx.scale(s.sc, s.sc);
+      for (let i = 0; i < 4; i++) Arcade.emoji(ctx, '☁️', ((i * 170 + s.t * 10) % (WW + 200)) - 100, 100 + i * 120, 60, { alpha: 0.7 });
+      ctx.fillStyle = '#868e96'; ctx.fillRect(-500, GY + 12, WW + 1000, 400);
+      Arcade.Phys.drawBox(ctx, s.plat, '#495057', '#212529');
+      // meta
+      ctx.setLineDash([10, 8]); ctx.strokeStyle = s.hold > 0 ? '#2b8a3e' : '#e03131'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(0, s.goalY); ctx.lineTo(WW, s.goalY); ctx.stroke(); ctx.setLineDash([]);
+      Arcade.emoji(ctx, '🎯', 20, s.goalY - 16, 26);
+      if (s.hold > 0) Arcade.txt(ctx, (3 - s.hold).toFixed(1), WW - 30, s.goalY - 16, 20, '#2b8a3e', 'center', 900);
+      for (const b of s.blocks) { Arcade.Phys.drawBox(ctx, b, COLS[b.data.c], 'rgba(0,0,0,.25)'); Arcade.emoji(ctx, Math.hypot(b.v.x, b.v.y) > 120 ? '😱' : b.data.f, b.p.x, b.p.y, Math.min(b.hw, b.hh) * 1.3, { rot: b.a }); }
+      // grúa
+      const cx = WW / 2, cy = s.craneY;
+      ctx.strokeStyle = '#495057'; ctx.lineWidth = 6; ctx.beginPath(); ctx.moveTo(cx - 200, cy - 30); ctx.lineTo(cx + 200, cy - 30); ctx.stroke();
+      const hx = cx + Math.sin(s.ang) * s.arm, hy = cy + 40;
+      ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(hx, cy - 30); ctx.lineTo(hx, hy); ctx.stroke();
+      if (s.cool <= 0 && !s.over) { const b = s.cur; ctx.fillStyle = COLS[b.c]; ctx.fillRect(hx - b.w / 2, hy, b.w, b.h); ctx.strokeStyle = 'rgba(0,0,0,.25)'; ctx.strokeRect(hx - b.w / 2, hy, b.w, b.h); Arcade.emoji(ctx, FACES[b.c], hx, hy + b.h / 2, Math.min(b.w, b.h) * 0.65); }
+      Arcade.emoji(ctx, '🏗️', cx - 200, cy - 40, 50);
+      ctx.restore();
+      const b = s.next; Arcade.txt(ctx, Arcade.T('Siguiente', 'Next'), W - 50, g.top + 16, 12, '#1864ab', 'center', 800); ctx.fillStyle = COLS[b.c]; ctx.fillRect(W - 50 - b.w * 0.2, g.top + 28, b.w * 0.4, b.h * 0.4);
+    },
+  });
+})();
