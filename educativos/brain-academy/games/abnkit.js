@@ -6,15 +6,15 @@ const H=window.parent&&window.parent!==window?window.parent.Hub:null;if(!H)retur
 const {ri,pick,shuf,intChoices}=H.U;
 const NS='http://www.w3.org/2000/svg';
 const CSS=`
-.abn{width:100%;max-width:460px;margin:0 auto;border-collapse:separate;border-spacing:0;font-family:'Fredoka One',ui-rounded,'Nunito',system-ui,sans-serif;font-size:clamp(1rem,4.4vmin,1.3rem);background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 4px 12px rgba(45,42,74,.08)}
-.abn th{background:#FF6B9D;color:#fff;font-size:.78rem;padding:6px 4px;font-family:'Nunito',sans-serif;font-weight:900}
-.abn td{text-align:center;padding:5px 4px;border-top:2px solid #f1eef8}.abn td.q{color:var(--purple);background:#f3edff}.abn tr.new td{animation:kpop .35s}
-.ask{text-align:center;font-weight:900;font-size:clamp(.95rem,4.1vmin,1.12rem);line-height:1.3}
-.big{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:8px;font-family:'Fredoka One',ui-rounded,'Nunito',system-ui,sans-serif;font-size:clamp(1.7rem,8.5vmin,2.6rem)}
+.abn{width:100%;max-width:460px;margin:0 auto;border-collapse:separate;border-spacing:0;font-family:'Fredoka One',ui-rounded,'Nunito',system-ui,sans-serif;font-size:clamp(1.15rem,5.2vmin,1.55rem);background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 4px 12px rgba(45,42,74,.08)}
+.abn th{background:#FF6B9D;color:#fff;font-size:.9rem;padding:8px 4px;font-family:'Nunito',sans-serif;font-weight:900}
+.abn td{text-align:center;padding:9px 4px;border-top:2px solid #f1eef8}.abn td.q{color:var(--purple);background:#f3edff}.abn tr.new td{animation:kpop .35s}
+.ask{text-align:center;font-weight:900;font-size:clamp(1.05rem,4.7vmin,1.35rem);line-height:1.3}
+.big{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:8px;font-family:'Fredoka One',ui-rounded,'Nunito',system-ui,sans-serif;font-size:clamp(2.1rem,10.5vmin,3.3rem)}
 .big b{background:#ffd93d;border-radius:14px;padding:0 12px;font-weight:400}.big i{font-style:normal;color:var(--purple);background:#f3edff;border-radius:14px;padding:0 12px;border:3px dashed var(--lilac)}
-.story{background:#fff;border-radius:16px;padding:10px 14px;font-weight:800;font-size:clamp(1rem,4.3vmin,1.2rem);line-height:1.4;text-align:center;box-shadow:0 4px 12px rgba(45,42,74,.08);max-width:520px;margin:0 auto}
-.emo{display:flex;flex-wrap:wrap;justify-content:center;gap:2px;font-size:clamp(1.2rem,5.4vmin,1.7rem);line-height:1.15;max-width:480px;margin:0 auto}
-.emo.sm{font-size:clamp(.95rem,4.2vmin,1.3rem)}
+.story{background:#fff;border-radius:16px;padding:14px 16px;font-weight:800;font-size:clamp(1.1rem,4.9vmin,1.4rem);line-height:1.4;text-align:center;box-shadow:0 4px 12px rgba(45,42,74,.08);max-width:520px;margin:0 auto}
+.emo{display:flex;flex-wrap:wrap;justify-content:center;gap:3px;font-size:clamp(1.6rem,7.5vmin,2.5rem);line-height:1.15;max-width:480px;margin:0 auto}
+.emo.sm{font-size:clamp(1.2rem,5.6vmin,1.8rem)}
 .nline{width:100%;max-width:660px;margin:0 auto;display:block;overflow:visible}
 .nline text{font-family:'Fredoka One',ui-rounded,'Nunito',system-ui,sans-serif;font-size:46px;fill:#2d2a4a;text-anchor:middle}
 .nline .jl{font-size:42px}
@@ -78,14 +78,16 @@ const ABN={CSS,ri,pick,shuf,
   scale(a,b){let lo=Math.min(a,b),hi=Math.max(a,b);const u=hi-lo<=30?10:hi-lo<=250?50:100;
     lo=Math.max(0,Math.floor(lo/u)*u);hi=Math.ceil(hi/u)*u;if(hi===lo)hi+=u;const span=hi-lo;
     return{lo,hi,step:span<=40?1:span<=300?10:50,label:span<=40?(v=>v%10===0):span<=300?(v=>v%50===0):(v=>v%100===0)};},
-  // ABN jumps on the empty number line: first to the round ten, then hundreds, tens and units
+  // ABN jumps on the number line: first the hundreds and tens of b, then the units that take us to a round number,
+  // then the rest. 97 − 39 → −30 (67), −7 (60), −2 (58) · 38 + 25 → +20 (58), +2 (60), +3 (63)
   jumpPlan(a,b,sign,D){
     if(D<1.5)return Array(b).fill(1);
-    const J=[];let cur=a,left=b;const toR=sign>0?(10-cur%10)%10:cur%10;
-    if(D>=2.5&&toR&&toR<left){J.push(toR);left-=toR;cur+=sign*toR;}
-    const h=Math.floor(left/100)*100;if(h){J.push(h);left-=h;}
-    const t=Math.floor(left/10)*10;if(t){J.push(t);left-=t;}
-    if(left)J.push(left);return J;},
+    const J=[];let cur=a,left=b;
+    const h=Math.floor(left/100)*100;if(h){J.push(h);left-=h;cur+=sign*h;}
+    const t=Math.floor(left/10)*10;if(t){J.push(t);left-=t;cur+=sign*t;}
+    if(left){const toR=sign>0?(10-cur%10)%10:cur%10;
+      if(toR&&toR<left){J.push(toR,left-toR);}else J.push(left);}
+    return J;},
   fmt(n){return String(n);}
 };
 window.ABN=ABN;

@@ -9,7 +9,7 @@ if(H){
 const {ri,pick}=ABN;
 const TX={es:{q:(d,n)=>`📦 ¿Cuántas veces cabe el <b>${d}</b> en el <b>${n}</b>?`,left:'¿Y cuánto sobra?',done:(n,d,q,s)=>`✅ ${n} = ${d} × ${q}`+(s?` + ${s}`:'')},
           en:{q:(d,n)=>`📦 How many times does <b>${d}</b> fit in <b>${n}</b>?`,left:'And how much is left over?',done:(n,d,q,s)=>`✅ ${n} = ${d} × ${q}`+(s?` + ${s}`:'')}};
-const css=ABN.CSS+`.groups{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;max-width:540px;margin:0 auto}.groups span{background:#fff;border-radius:10px;padding:2px 5px;font-size:clamp(.9rem,3.8vmin,1.2rem);box-shadow:0 2px 6px rgba(45,42,74,.08)}.groups span.rest{background:#ffe3ec}`;
+const css=ABN.CSS+`.groups{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;max-width:540px;margin:0 auto}.groups span{background:#fff;border-radius:12px;padding:4px 7px;font-size:clamp(1.3rem,6vmin,1.9rem);box-shadow:0 2px 6px rgba(45,42,74,.08)}.groups span.rest{background:#ffe3ec}`;
 H.start(window,{id:'cabe',mode:'rounds',css,
   timer:D=>Math.max(20,Math.round(60*Math.pow(.93,D))),
   round(g){

@@ -10,8 +10,8 @@ const {ri,pick}=ABN;
 const ITEMS=['🍪','🍓','🍬','🧁','🍇','🥕','⚽','🖍️'],KIDS=['🧒','👧','👦','🧒🏽','👧🏻','👦🏾'];
 const TX={es:{p:(n,k)=>`🍽️ Reparte ${n} entre ${k} amigos a partes iguales`,each:'¿Cuántos le tocan a cada uno?',left:'¿Y cuántos sobran?',done:(n,k,q,s)=>`✅ ${n} entre ${k} = ${q} cada uno`+(s?` y sobran ${s}`:'')},
           en:{p:(n,k)=>`🍽️ Share ${n} equally between ${k} friends`,each:'How many does each friend get?',left:'And how many are left over?',done:(n,k,q,s)=>`✅ ${n} shared by ${k} = ${q} each`+(s?`, ${s} left over`:'')}};
-const css=ABN.CSS+`.plates{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;max-width:540px;margin:0 auto}.plates div{background:#fff;border-radius:14px;padding:4px 6px;text-align:center;min-width:52px;box-shadow:0 3px 8px rgba(45,42,74,.08)}
-.plates b{display:block;font-size:1.5rem}.plates span{font-size:.95rem;letter-spacing:-1px}`;
+const css=ABN.CSS+`.plates{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;max-width:540px;margin:0 auto}.plates div{background:#fff;border-radius:14px;padding:4px 6px;text-align:center;min-width:64px;box-shadow:0 3px 8px rgba(45,42,74,.08)}
+.plates b{display:block;font-size:2.2rem}.plates span{font-size:1.3rem;letter-spacing:-1px}`;
 H.start(window,{id:'reparto',mode:'rounds',css,
   timer:D=>Math.max(20,Math.round(60*Math.pow(.93,D))),
   round(g){

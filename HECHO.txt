@@ -7,6 +7,9 @@ Fecha: 14-10-2026 · Versión de la PWA (games.js → ARCADE_VERSION): 2.9.0
   palillos, vecinos, hasta el redondo, número escondido, problemas de cambio/combinación y de comparación/igualación,
   por 10/100, reparto, formas de un número, fracciones de una cantidad, cuántas decenas tiene, cálculo relámpago y
   cuántas veces cabe. Comparten games/abnkit.js (rejilla de pasos, recta numérica SVG, ráfagas de preguntas).
+  Saltos en la recta al estilo ABN: primero centenas y decenas, luego las unidades hasta el número redondo y luego el
+  resto (97 − 39: −30 → 67, −7 → 60, −2 → 58). En todos los juegos el contenido se reparte en vertical (sin huecos en
+  blanco abajo) y los botones de respuesta crecen con la pantalla.
 · v2.8.1: PWA DESACTIVADA de momento (mezclaba versiones viejas y nuevas de .js/.html en caché). sw.js ahora
   solo borra las cachés y se da de baja; ninguna página lo registra. Para reactivarla, ver el comentario de pwa/sw.js.
 Total: 41 juegos en la colección principal + 90 en la colección Pro = 131 juegos arcade,

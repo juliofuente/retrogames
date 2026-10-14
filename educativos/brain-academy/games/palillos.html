@@ -10,11 +10,11 @@ const {ri,pick,shuf}=ABN;
 const TX={es:{count:'🥢 ¿Cuántos palillos hay en total?',make:n=>`🥢 ¿Cómo formamos el <b>${n}</b> con haces y palillos sueltos?`,opt:(c,h,s)=>(c?`${c} caja${c>1?'s':''}, `:'')+`${h} ${h===1?'haz':'haces'} y ${s} suelto${s===1?'':'s'}`,tip:'Cada haz tiene 10 palillos · cada caja, 100'},
           en:{count:'🥢 How many sticks are there altogether?',make:n=>`🥢 How do we make <b>${n}</b> with bundles and loose sticks?`,opt:(c,h,s)=>(c?`${c} box${c>1?'es':''}, `:'')+`${h} bundle${h===1?'':'s'} and ${s} loose`,tip:'Each bundle has 10 sticks · each box, 100'}};
 const css=ABN.CSS+`
-.sticks{display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-end;gap:8px;min-height:60px;max-width:520px;margin:0 auto}
-.haz{display:inline-flex;gap:1px;position:relative;padding:0 1px}.haz i,.st{display:inline-block;width:4px;height:48px;background:#d8a35d;border-radius:2px;box-shadow:inset -1px 0 #b07b38}
-.haz:after{content:'';position:absolute;left:-2px;right:-2px;top:44%;height:7px;background:#FF6B9D;border-radius:4px}
-.caja{display:inline-grid;grid-template-columns:repeat(10,4px);gap:1px;padding:4px;border:3px solid #9B5CFF;border-radius:6px;background:#f3edff;position:relative}
-.caja i{height:42px;background:#d8a35d;border-radius:1px}.loose{display:inline-flex;gap:4px}
+.sticks{display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-end;gap:12px;min-height:80px;max-width:540px;margin:0 auto}
+.haz{display:inline-flex;gap:1px;position:relative;padding:0 1px}.haz i,.st{display:inline-block;width:6px;height:74px;background:#d8a35d;border-radius:2px;box-shadow:inset -1px 0 #b07b38}
+.haz:after{content:'';position:absolute;left:-2px;right:-2px;top:44%;height:9px;background:#FF6B9D;border-radius:4px}
+.caja{display:inline-grid;grid-template-columns:repeat(10,5px);gap:1px;padding:4px;border:3px solid #9B5CFF;border-radius:6px;background:#f3edff;position:relative}
+.caja i{height:66px;background:#d8a35d;border-radius:1px}.loose{display:inline-flex;gap:4px}
 .hint{text-align:center;color:var(--mid);font-weight:800;font-size:.85rem}`;
 function draw(g,n,p){const w=g.el('div','sticks',null,p);const c=Math.floor(n/100),h=Math.floor(n%100/10),s=n%10;
   for(let i=0;i<c;i++)g.el('span','caja','<i></i>'.repeat(10),w);

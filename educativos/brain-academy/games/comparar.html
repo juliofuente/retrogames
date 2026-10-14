@@ -23,7 +23,7 @@ const TX={es:{type:{m:'Comparación · ¿cuántos más?',l:'Comparación · ¿cu
             bm:(x,y,a,b,it)=>`${y} has ${b} ${it}. ${x} has ${a-b} more than ${y}. How many ${it} does ${x} have?`,
             bl:(x,y,a,b,it)=>`${x} has ${a} ${it}. ${y} has ${a-b} fewer than ${x}. How many ${it} does ${y} have?`,
             e:(x,y,a,b,it)=>`${x} has ${a} ${it}. If ${y} got ${a-b} more, ${y} would have as many as ${x}. How many does ${y} have?`,p:'⚖️ Compare and equalise'}};
-const css=ABN.CSS+`.rows{display:grid;gap:4px;max-width:520px;margin:0 auto}.rows div{display:flex;align-items:center;gap:6px;font-weight:900}.rows span{font-size:clamp(.95rem,4.2vmin,1.25rem);letter-spacing:1px}`;
+const css=ABN.CSS+`.rows{display:grid;gap:4px;max-width:520px;margin:0 auto}.rows div{display:flex;align-items:center;gap:6px;font-weight:900}.rows span{font-size:clamp(1.25rem,5.6vmin,1.75rem);letter-spacing:1px}`;
 H.start(window,{id:'comparar',mode:'rounds',css,
   timer:D=>Math.max(25,Math.round(70*Math.pow(.94,D))),
   round(g){

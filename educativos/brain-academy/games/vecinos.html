@@ -9,8 +9,8 @@ if(H){
 const {ri,pick}=ABN;
 const TX={es:{q:(st,d)=>st===1?(d<0?'🏠 ¿Qué número vive justo <b>antes</b>?':'🏠 ¿Qué número vive justo <b>después</b>?'):`🏠 ¿Qué número está <b>${st} ${d<0?'antes':'después'}</b>?`},
           en:{q:(st,d)=>st===1?(d<0?'🏠 Which number lives just <b>before</b>?':'🏠 Which number lives just <b>after</b>?'):`🏠 Which number is <b>${st} ${d<0?'before':'after'}</b>?`}};
-const css=ABN.CSS+`.houses{display:flex;justify-content:center;gap:8px}.houses div{display:flex;flex-direction:column;align-items:center;font-family:'Fredoka One',ui-rounded,sans-serif;font-size:clamp(1.4rem,6.5vmin,2.1rem)}
-.houses span{font-size:clamp(2rem,9vmin,3rem);line-height:1}.houses b{background:#ffd93d;border-radius:12px;padding:0 10px;font-weight:400}.houses i{font-style:normal;color:var(--purple);background:#f3edff;border-radius:12px;padding:0 10px;border:3px dashed var(--lilac)}`;
+const css=ABN.CSS+`.houses{display:flex;justify-content:center;gap:14px}.houses div{display:flex;flex-direction:column;align-items:center;font-family:'Fredoka One',ui-rounded,sans-serif;font-size:clamp(1.9rem,8.5vmin,2.8rem)}
+.houses span{font-size:clamp(3rem,14vmin,4.6rem);line-height:1}.houses b{background:#ffd93d;border-radius:12px;padding:0 10px;font-weight:400}.houses i{font-style:normal;color:var(--purple);background:#f3edff;border-radius:12px;padding:0 10px;border:3px dashed var(--lilac)}`;
 function item(r,D){
   const st=D<2?1:D<4?pick(r,[1,10]):D<6?pick(r,[1,10,100]):pick(r,[10,100,1000]),d=r()<.5?-1:1;
   const max=D<1?10:D<2?20:D<3?50:D<4?100:D<6?999:9999;const n=ri(r,st+1,max-st);return{n,st,d,ans:n+d*st};
