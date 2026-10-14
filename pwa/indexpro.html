@@ -106,7 +106,7 @@
   const ios = /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.navigator.standalone;
   if (ios) ib.style.display = 'inline-flex';
   window.addEventListener('pageshow', () => render(document.querySelector('[data-f].on').dataset.f));
-  if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+  try { /* PWA desactivada (v2.8.1): quita el service worker y las cachés viejas */ if ('serviceWorker' in navigator) navigator.serviceWorker.getRegistrations().then((rs) => rs.forEach((r) => r.unregister())).catch(() => {}); if (window.caches) caches.keys().then((ks) => ks.filter((k) => /^arcade-perdido-/.test(k)).forEach((k) => caches.delete(k))).catch(() => {}); } catch (e) {}
 })();
 </script>
 </body>

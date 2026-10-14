@@ -1,6 +1,8 @@
 ARCADE PERDIDO + ARCADE PRO — LO QUE ESTÁ HECHO
 ================================================
-Fecha: 14-10-2026 · Versión de la PWA (games.js → ARCADE_VERSION): 2.8.0
+Fecha: 14-10-2026 · Versión de la PWA (games.js → ARCADE_VERSION): 2.8.1
+· v2.8.1: PWA DESACTIVADA de momento (mezclaba versiones viejas y nuevas de .js/.html en caché). sw.js ahora
+  solo borra las cachés y se da de baja; ninguna página lo registra. Para reactivarla, ver el comentario de pwa/sw.js.
 Total: 41 juegos en la colección principal + 90 en la colección Pro = 131 juegos arcade,
 más 49 juegos educativos (apps hechas aparte, ver EDUCATIVOS).
 

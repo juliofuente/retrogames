@@ -612,7 +612,7 @@ function arcadeElegirIdioma(l) {
   };
 
   /* ---------- PWA ---------- */
-  try { if ('serviceWorker' in navigator && /^https?:/.test(location.protocol)) window.addEventListener('load', () => { try { navigator.serviceWorker.register('sw.js').catch(() => {}); } catch (e) {} }); } catch (e) {}
+  try { /* PWA desactivada (v2.8.1): quita el service worker y las cachés viejas */ if ('serviceWorker' in navigator) navigator.serviceWorker.getRegistrations().then((rs) => rs.forEach((r) => r.unregister())).catch(() => {}); if (window.caches) caches.keys().then((ks) => ks.filter((k) => /^arcade-perdido-/.test(k)).forEach((k) => caches.delete(k))).catch(() => {}); } catch (e) {}
 
   function el(tag, cls, html) { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; }
 

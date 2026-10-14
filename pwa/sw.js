@@ -1,21 +1,14 @@
-/* Arcade Perdido · service worker (funciona sin conexión) */
-importScripts('games.js');
-const CACHE = 'arcade-perdido-' + ARCADE_VERSION;
-const CORE = ['./', 'index.html', 'common.css', 'common.js', 'phys.js', 'games.js', 'config.js', 'indextv.html', 'indexpro.html', 'manifest.webmanifest',
-  'icons/icon-192.png', 'icons/icon-512.png', 'icons/maskable-512.png', 'icons/icon.svg'];
-const FILES = CORE.concat(GAMES.map((g) => g.file), (self.GAMES_PRO || []).map((g) => g.file));
-
-self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(CACHE).then((c) => Promise.all(FILES.map((f) => c.add(f).catch(() => null)))).then(() => self.skipWaiting()));
-});
+/* Arcade Perdido · service worker DESACTIVADO (v2.8.1)
+   Antes cacheaba los juegos para jugar sin conexión, pero mezclaba versiones viejas y nuevas de los .js y .html.
+   Este worker solo existe para que los navegadores que tenían el antiguo lo sustituyan: borra todas las cachés,
+   se da de baja y recarga las pestañas abiertas para que carguen todo de la red.
+   Para volver a activar la PWA: recuperar el sw.js anterior (git log -- pwa/sw.js) y el register('sw.js')
+   de common.js, index.html, indexpro.html e indextv.html. */
+self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', (e) => {
-  e.waitUntil(caches.keys().then((ks) => Promise.all(ks.filter((k) => k !== CACHE).map((k) => caches.delete(k)))).then(() => self.clients.claim()));
-});
-self.addEventListener('fetch', (e) => {
-  const req = e.request;
-  if (req.method !== 'GET' || new URL(req.url).origin !== location.origin) return;
-  e.respondWith(caches.open(CACHE).then((c) => c.match(req, { ignoreSearch: true }).then((hit) => {
-    const net = fetch(req).then((res) => { if (res && res.ok) c.put(req, res.clone()); return res; }).catch(() => hit);
-    return hit || net;
-  })));
+  e.waitUntil(caches.keys()
+    .then((ks) => Promise.all(ks.map((k) => caches.delete(k))))
+    .then(() => self.registration.unregister())
+    .then(() => self.clients.matchAll({ type: 'window' }))
+    .then((cs) => cs.forEach((c) => c.navigate(c.url).catch(() => {}))));
 });
