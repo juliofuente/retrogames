@@ -90,6 +90,26 @@
     id: 'deslizaheroes', title: 'Deslizahéroes', emoji: '🥷', color: '#69db7c', origin: 'Hero Slide (Tuesday Quest) / 2048',
     help: '<b>Desliza</b> para mover a todos los héroes. Dos héroes <b>iguales</b> que chocan se fusionan en uno más fuerte (🐣→🧒→🧑‍🌾→🥷→🧝→🧙→🦸→🤴→👑; cada uno pega el doble). Los monstruos no se mueven: desliza un héroe <b>contra</b> ellos para golpearlos con su fuerza. Cada monstruo muestra cuántos movimientos faltan para que <b>ataque</b> y te quite una vida. Derrota los monstruos que pide cada nivel. Si el tablero se llena sin movimientos, pierdes una vida.',
     lives: 3, levels: 0, cap: 20,
+    demo(g) {
+      const s = g.s; if (s.done || s.busy || s.anim > 0) return { wait: 0.25 };
+      const N = s.N; let best = null;
+      for (const dir of ['up', 'down', 'left', 'right']) {
+        const D = { left: [0, -1], right: [0, 1], up: [-1, 0], down: [1, 0] }[dir];
+        const b = s.b.map((row) => row.map((t) => (t ? { t: t.t, m: t.m, hp: t.hp, merged: false } : null)));
+        let moved = false, sc = 0; const ord = [...Array(N).keys()], rs = D[0] > 0 ? ord.slice().reverse() : ord, cs = D[1] > 0 ? ord.slice().reverse() : ord;
+        for (const r of rs) for (const c of cs) { const t = b[r][c]; if (!t || t.m) continue; let nr = r, nc = c;
+          for (;;) { const tr = nr + D[0], tc = nc + D[1]; if (tr < 0 || tr >= N || tc < 0 || tc >= N) break; const o = b[tr][tc];
+            if (!o) { b[tr][tc] = t; b[nr][nc] = null; nr = tr; nc = tc; moved = true; continue; }
+            if (o.m && o.hp > 0) { o.hp -= Math.pow(2, t.t); moved = true; sc += o.hp <= 0 ? 1000 : 60; if (o.hp <= 0) b[tr][tc] = null; break; }
+            if (!o.m && o.t === t.t && !o.merged && !t.merged) { o.t++; o.merged = true; b[nr][nc] = null; moved = true; sc += 20 * (o.t + 1); }
+            break; } }
+        if (!moved) continue; sc += Math.random() * 5;
+        if (!best || sc > best.sc) best = { sc, dir };
+      }
+      if (!best) return { wait: 0.4 };
+      const cx = s.ox + s.cs * N / 2, cy = s.oy + s.cs * N / 2;
+      return { swipe: [cx, cy, best.dir], len: s.cs * 1.4, after: 0.45, say: best.sc >= 1000 ? Arcade.T('¡Héroe contra monstruo!', 'Hero hits the monster!') : best.sc >= 40 ? Arcade.T('Dos héroes iguales se fusionan', 'Two equal heroes merge') : null };
+    },
     setup(g) {
       g.s = { N: g.lv >= 8 ? 5 : 4, kills: 0, moves: 0, anim: 0, done: false, busy: false };
       const s = g.s; s.b = [...Array(s.N)].map(() => new Array(s.N).fill(null));

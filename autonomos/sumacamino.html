@@ -763,6 +763,7 @@ function arcadeElegirIdioma(l) {
       return true;
     };
     function saveBest() {
+      if (g.demoOn) return false;
       if (g.score > g.best) { g.best = g.score; A.set('best_' + def.id, g.best); return true; }
       return false;
     }
@@ -771,6 +772,7 @@ function arcadeElegirIdioma(l) {
       if (g.state === 'over') return;
       g.state = 'over'; M.stop(); A.sfx.lose(); g.fc.t = 0; g.mood('sad', 99);
       if (g.mp) return mpOver();
+      if (g.demoOn) { setTimeout(() => endDemo(), 1600); return; }
       const rec = saveBest();
       show(`<div class="big">💥</div><h2>${T('Fin de la partida', 'Game over')}</h2>
         <div class="score">${g.score}</div>${rec ? `<div class="rec">🏆 ${T('¡Nuevo récord!', 'New record!')}</div>` : `<p class="sub">${T('Récord', 'Best')}: <b>${g.best}</b></p>`}
@@ -782,6 +784,7 @@ function arcadeElegirIdioma(l) {
       g.state = 'win'; M.stop(); A.sfx.win(); A.buzz([40, 60, 40]); g.fc.t = 0; g.mood('win', 99);
       if (stars == null) { const lost = g.lvLives - g.lives; stars = def.lives === 0 ? 3 : lost <= 0 ? 3 : lost === 1 ? 2 : 1; }
       const total = infinite ? Infinity : def.levels;
+      if (g.demoOn) { g.confetti(70); setTimeout(() => endDemo(), 2200); return; }
       if (g.level + 1 > g.unlocked && g.level < total) { g.unlocked = g.level + 1; A.set('lv_' + def.id, g.unlocked); }
       saveBest();
       g.confetti(70); g.flash('#ffffff', 0.25);
@@ -868,7 +871,7 @@ function arcadeElegirIdioma(l) {
     const toggles = () => `<button class="b sm" data-act="mute">${A.muted ? '🔇' : '🔊'} ${T('Sonido', 'Sound')}</button><button class="b sm" data-act="music">${A.musicOn ? '🎵' : '🚫'} ${T('Música', 'Music')}</button>`;
     const modeBtn = () => A.config.modo === 'seleccionable' ? `<button class="b sm ghost" data-act="tvmode">${TV ? T('📱 Modo móvil', '📱 Mobile mode') : T('📺 Modo TV', '📺 TV mode')}</button>` : '';
     function menu() {
-      g.state = 'menu'; M.stop(); g.mp = null; g.hud();
+      g.state = 'menu'; M.stop(); g.mp = null; g.demoOn = false; g.hud();
       if (TV && !tvdef) {
         show(`<div class="mcol ml"><div class="logo"><div class="halo"></div><span class="mascot">${def.emoji}</span></div><h1 class="ttl">${def.title}</h1></div>
           <div class="mcol mr"><p class="sub">✋ ${T('Este juego necesita pantalla táctil y no se puede jugar con el mando.', 'This game needs a touch screen and can\'t be played with a remote.')}</p>
@@ -894,6 +897,7 @@ function arcadeElegirIdioma(l) {
         <p class="origin">${T('Mecánica de', 'Based on')} ${def.origin}</p>${help}</div>
         <div class="mcol mr"><div class="bests"><span>🏆 ${g.best}</span>${hasLevels ? `<span>🚩 ${LV} ${g.unlocked}${infinite ? ' · ∞' : ''}</span>` : `<span>♾️ ${T('Infinito', 'Endless')}</span>`}</div>
         <button class="b pri wide" data-act="play" data-lv="${hasLevels ? g.unlocked : 1}">${playLabel}</button>
+        <button class="b wide" data-act="demo">👀 ${T('Ver demo', 'Watch demo')}</button>
         ${players}${lv}
         <div class="row">${toggles()}</div>
         <div class="row"><a class="b sm ghost" href="${HOMEQ()}">🏠 ${T('Todos los juegos', 'All games')}</a>${modeBtn()}${langBtn()}</div></div>`, 'menu');
@@ -922,7 +926,91 @@ function arcadeElegirIdioma(l) {
     }
     function start(level) {
       if (nPlayers > 1) { mpStart(level); return; }
+      g.demoOn = false;
       g.mp = null; g.level = level || 1; g.score = 0; g.lives = def.lives ?? 3; g.t = 0; begin(); if (def.onStart) def.onStart(g);
+    }
+    /* --- demo: partida automática con un dedo virtual ---
+       Cada juego puede definir demo(g) → paso | [pasos] | null. Pasos:
+         { tap: [x, y] }   { drag: [[x, y], …], dur }   { swipe: [x, y, 'left'|'right'|'up'|'down'], len }
+         { hold: [x, y], dur }   { key: 'ArrowLeft'|' ', dur }   { wait: s }   y en cualquiera say: 'texto'
+       Si no lo define, se usa una demo genérica según sus controles. */
+    const DM = { q: [], cur: null, fx: 0, fy: 0, press: 0, say: null, sayT: 0, t: 0, p: null };
+    function startDemo() {
+      g.mp = null; g.level = 1; g.score = 0; g.lives = def.lives ?? 3; g.t = 0; g.demoOn = true;
+      Object.assign(DM, { end: false, q: [], cur: null, fx: g.W / 2, fy: g.bot - 40, press: 0, say: null, sayT: 0, t: 0, p: null });
+      begin(); if (def.onStart) def.onStart(g);
+    }
+    function endDemo() { if (!g.demoOn) return; g.demoOn = false; if (DM.p) { g.pointers.delete(DM.p.id); DM.p = null; } menu(); }
+    g.demoSay = (txt, t = 2.6) => { DM.say = A.L(String(txt)); DM.sayT = t; };
+    function genericDemo() {
+      const ts = tvTargets() || (rdef && rdef.targets ? rdef.targets(g) : null);
+      if (ts && ts.length) {
+        const a = A.pick(ts), c = tc(a), mode = (rdef && rdef.mode) || 'tap';
+        if (mode === 'swipe') return { swipe: [c.x, c.y, A.pick(['left', 'right', 'up', 'down'])] };
+        if (mode === 'drag') { const b = A.pick(ts), d = tc(b); return { drag: [[c.x, c.y], [d.x, d.y]], dur: 0.6 }; }
+        return { tap: [c.x, c.y] };
+      }
+      const cx = g.W / 2, cy = (g.top + g.bot) / 2, r = Math.min(g.W, g.bot - g.top) * 0.3;
+      const k = Math.random();
+      if (k < 0.35) return { tap: [cx + A.rand(-r, r), cy + A.rand(-r, r)] };
+      if (k < 0.6) return { swipe: [cx + A.rand(-r, r) * 0.5, cy + A.rand(-r, r) * 0.5, A.pick(['left', 'right', 'up', 'down'])] };
+      if (k < 0.8) return { drag: [[cx + A.rand(-r, r), cy + A.rand(-r, r)], [cx + A.rand(-r, r), cy + A.rand(-r, r)], [cx + A.rand(-r, r), cy + A.rand(-r, r)]], dur: 1 };
+      return { hold: [cx + A.rand(-r, r), cy + A.rand(-r, r)], dur: A.rand(0.3, 1) };
+    }
+    const dPtr = (x, y) => ({ id: -9, x, y, sx: x, sy: y, t0: performance.now(), type: 'demo' });
+    function dDown(x, y) { const p = dPtr(x, y); DM.p = p; g.pointers.set(p.id, p); g.tapFx = { x, y, t: 0.25 }; if (def.down) def.down(g, p); DM.press = 1; }
+    function dMove(x, y) { const p = DM.p; if (!p) return; p.x = x; p.y = y; if (def.move && g.state === 'play') def.move(g, p); }
+    function dUp(tapOK) {
+      const p = DM.p; if (!p) return; DM.p = null; g.pointers.delete(p.id); DM.press = 0;
+      if (g.state !== 'play') return;
+      if (def.up) def.up(g, p);
+      const dx = p.x - p.sx, dy = p.y - p.sy, d = Math.hypot(dx, dy), dt = performance.now() - p.t0;
+      if (d < 16 && (dt < 400 || tapOK)) { if (def.tap && g.state === 'play') def.tap(g, p); }
+      else if (d > 28 && dt < 700 && def.swipe) { const dir = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : (dy > 0 ? 'down' : 'up'); g.swipeFx = { x0: p.sx, y0: p.sy, x1: p.x, y1: p.y, t: 0.2 }; def.swipe(g, dir, p); }
+    }
+    function padFlash(k) { const b = pad.querySelector(`[data-k="${k === ' ' ? 'OK' : k}"]`); if (b) { b.classList.add('on'); setTimeout(() => b.classList.remove('on'), 160); } }
+    function demoNext() {
+      let st = def.demo ? def.demo(g) : genericDemo();
+      if (st === undefined) st = genericDemo();
+      if (!st) st = { wait: 0.25 };
+      DM.q = Array.isArray(st) ? st.slice() : [st];
+    }
+    function updDemo(dt) {
+      if (g.state !== 'play') return;
+      DM.press = Math.max(0, DM.press - (DM.p ? 0 : dt * 4)); if (DM.sayT > 0) DM.sayT -= dt;
+      DM.t += dt; if (!DM.end && DM.t > (def.demoTime || 45)) { DM.end = true; if (DM.p) dUp(false); g.message(T('Fin de la demo', 'End of demo'), 1.2); setTimeout(() => endDemo(), 1300); }
+      if (DM.end) return;
+      if (!DM.cur) { if (!DM.q.length) demoNext(); DM.cur = DM.q.shift(); if (!DM.cur) return; const c = DM.cur; c.ph = 'go'; c.t = 0; if (c.say) g.demoSay(c.say);
+        if (c.swipe) { const [x, y, dir] = c.swipe, L = c.len || 90, D = { left: [-1, 0], right: [1, 0], up: [0, -1], down: [0, 1] }[dir]; c.drag = [[x, y], [x + D[0] * L, y + D[1] * L]]; c.dur = 0.22; }
+        c.at = c.tap || c.hold || (c.drag && c.drag[0]) || null; }
+      const c = DM.cur; c.t += dt;
+      if (c.ph === 'go') {
+        if (c.at) { const [tx, ty] = c.at, dx = tx - DM.fx, dy = ty - DM.fy, d = Math.hypot(dx, dy), sp = Math.max(500, d * 4) * dt;
+          if (d > sp) { DM.fx += dx / d * sp; DM.fy += dy / d * sp; return; } DM.fx = tx; DM.fy = ty; }
+        c.ph = 'act'; c.t = 0;
+        if (c.tap) { dDown(c.tap[0], c.tap[1]); dUp(true); c.ph = 'rest'; c.rest = c.after ?? 0.45; DM.press = 1; return; }
+        if (c.hold || c.drag) { dDown(c.at[0], c.at[1]); return; }
+        if (c.key) { padFlash(c.key); if (def.key) def.key(g, c.key, true); return; }
+        c.ph = 'rest'; c.rest = c.wait ?? 0.3; return;
+      }
+      if (c.ph === 'act') {
+        if (c.hold) { if (c.t >= (c.dur || 0.6)) { dUp(false); c.ph = 'rest'; c.rest = 0.35; } return; }
+        if (c.drag) { const pts = c.drag, k = Math.min(1, c.t / (c.dur || 0.5)), segs = pts.length - 1, f = k * segs, i = Math.min(segs - 1, Math.floor(f)), u = f - i;
+          DM.fx = pts[i][0] + (pts[i + 1][0] - pts[i][0]) * u; DM.fy = pts[i][1] + (pts[i + 1][1] - pts[i][1]) * u; dMove(DM.fx, DM.fy);
+          if (k >= 1) { dUp(false); c.ph = 'rest'; c.rest = c.after ?? 0.4; } return; }
+        if (c.key) { if (c.t >= (c.dur || 0.12)) { if (def.key && g.state === 'play') def.key(g, c.key, false); c.ph = 'rest'; c.rest = c.after ?? 0.25; } return; }
+      }
+      if (c.ph === 'rest' && c.t >= c.rest) DM.cur = null;
+    }
+    function drawDemo() {
+      const sz = 46, pr = DM.press;
+      if (pr > 0) { ctx.globalAlpha = 0.5 * pr; ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(DM.fx, DM.fy, 14 + (1 - pr) * 18, 0, TAU); ctx.stroke(); ctx.globalAlpha = 1; }
+      A.emoji(ctx, '👆', DM.fx + 4, DM.fy + sz * 0.42, sz * (1 - pr * 0.12), { rot: -0.15 });
+      const y = g.top + 4;
+      ctx.fillStyle = 'rgba(0,0,0,.55)'; A.rr(ctx, g.W / 2 - 120, y, 240, 26, 13); ctx.fill();
+      A.txt(ctx, T('👀 DEMO · toca para jugar tú', '👀 DEMO · tap to play yourself'), g.W / 2, y + 13, 13, '#ffd43b', 'center', 900);
+      if (DM.say && DM.sayT > 0) { const a = Math.min(1, DM.sayT * 3); ctx.globalAlpha = a; ctx.font = '800 15px ' + A.FONT; const w = Math.min(g.W - 24, ctx.measureText(DM.say).width + 30), yy = g.bot - 54;
+        ctx.fillStyle = 'rgba(0,0,0,.72)'; A.rr(ctx, g.W / 2 - w / 2, yy, w, 34, 17); ctx.fill(); A.txt(ctx, DM.say, g.W / 2, yy + 17, 15, '#fff', 'center', 800); ctx.globalAlpha = 1; }
     }
     function next() { g.level++; begin(); }
     g.restart = () => start(hasLevels ? g.level : 1);
@@ -937,6 +1025,7 @@ function arcadeElegirIdioma(l) {
       else if (act === 'menu') menu();
       else if (act === 'next') next();
       else if (act === 'turn') loadPlayer();
+      else if (act === 'demo') startDemo();
       else if (act === 'nextturn') nextTurn();
       else if (act === 'gact') { const a = tvdef.actions[+b.dataset.i]; resume(); a.run(g); }
       else if (act === 'players') { nPlayers = +b.dataset.n; A.set('players', nPlayers); ov.querySelectorAll('.pbtn').forEach((x) => x.classList.toggle('on', x === b)); }
@@ -945,7 +1034,7 @@ function arcadeElegirIdioma(l) {
       else if (act === 'music') { A.musicOn = !A.musicOn; A.set('music', A.musicOn); b.innerHTML = (A.musicOn ? '🎵' : '🚫') + ' ' + T('Música', 'Music'); }
       else if (act === 'lang') { const nl = EN ? 'es' : 'en'; if (window.arcadeElegirIdioma) arcadeElegirIdioma(nl); try { const u = new URLSearchParams(location.search); u.set('lang', nl); location.search = '?' + u.toString(); } catch (_) { location.reload(); } }
     });
-    $('hP').addEventListener('click', () => { actx(); if (g.state === 'play') pause(); else if (g.state === 'pause') resume(); });
+    $('hP').addEventListener('click', () => { actx(); if (g.demoOn) { endDemo(); return; } if (g.state === 'play') pause(); else if (g.state === 'pause') resume(); });
 
     /* --- tamaño --- */
     let vign = null;
@@ -968,6 +1057,7 @@ function arcadeElegirIdioma(l) {
     /* --- entrada táctil --- */
     canvas.addEventListener('pointerdown', (e) => {
       actx(); e.preventDefault();
+      if (g.demoOn) { endDemo(); return; }
       try { canvas.setPointerCapture(e.pointerId); } catch (_) {}
       const p = { id: e.pointerId, x: e.clientX, y: e.clientY, sx: e.clientX, sy: e.clientY, t0: performance.now(), type: e.pointerType };
       g.pointers.set(e.pointerId, p);
@@ -1125,6 +1215,7 @@ function arcadeElegirIdioma(l) {
     }
     const held = new Set();
     window.addEventListener('keydown', (e) => {
+      if (g.demoOn && g.state === 'play') { e.preventDefault(); endDemo(); return; }
       const k = keyName(e);
       if (TV) {
         const nav = k.startsWith('Arrow') || k === 'OK' || k === 'BACK' || k === ' ';
@@ -1217,6 +1308,7 @@ function arcadeElegirIdioma(l) {
       if (dt > 0.05) dt = 0.05; if (dt < 0) dt = 0;
       g.rt += dt;
       if (g.state === 'play') updFace(dt);
+      if (g.demoOn) updDemo(dt);
       const live = g.state === 'play' || g.state === 'dying';
       if (g.state === 'play') { g.t += dt; def.update(g, dt); }
       updAmbient(dt);
@@ -1236,7 +1328,7 @@ function arcadeElegirIdioma(l) {
       if (g.shakeT > 0) { g.shakeT -= dt; ctx.translate((Math.random() - 0.5) * g.shakeA, (Math.random() - 0.5) * g.shakeA); }
       def.draw(g, ctx);
       drawAmbient();
-      if (tvdef && tvdef.targets && g.state === 'play') drawCursor();
+      if (tvdef && tvdef.targets && g.state === 'play' && !g.demoOn) drawCursor();
       for (const r of g.rings) { ctx.globalAlpha = 1 - r.t; ctx.strokeStyle = r.color; ctx.lineWidth = r.w * (1 - r.t) + 1; ctx.beginPath(); ctx.arc(r.x, r.y, r.r * (0.2 + r.t * 0.8), 0, TAU); ctx.stroke(); }
       ctx.globalAlpha = 1;
       for (const p of g.parts) {
@@ -1264,6 +1356,7 @@ function arcadeElegirIdioma(l) {
         if (b.sub) A.txt(ctx, b.sub, 0, fs * 0.95, 18, '#fff', 'center', 800, 'rgba(0,0,0,.6)');
         ctx.restore(); ctx.globalAlpha = 1;
       }
+      if (g.demoOn && g.state !== 'menu') drawDemo();
       if (g.flashT > 0) { ctx.globalAlpha = Math.max(0, g.flashT / g.flashMax) * 0.45; ctx.fillStyle = g.flashC; ctx.fillRect(0, 0, g.W, g.H); ctx.globalAlpha = 1; }
       if (g.iris > 0) {
         const r = Math.hypot(g.W, g.H) * 0.6 * Math.pow(g.iris, 1.4);
@@ -1340,6 +1433,15 @@ function arcadeElegirIdioma(l) {
     id: 'sumacamino', title: 'Sumacamino', emoji: '➕', color: '#4dabf7', origin: 'Plus+Plus / zNumbers / Draw and Sum',
     help: '<b>Arrastra</b> por números vecinos (también en diagonal) para dibujar un camino. Suelta cuando sumen <b>exactamente</b> el objetivo: desaparecen y caen números nuevos. Los caminos largos dan más puntos y más tiempo. Haz las sumas que pide cada nivel antes de que se acabe la barra o pierdes una vida.',
     lives: 3, levels: 0, cap: 25,
+    demo(g) {
+      const s = g.s; if (s.won || s.path.length) return { wait: 0.2 };
+      let best = null, nodes = 0;
+      const dfs = (p, sum) => { if (++nodes > 20000) return; if (sum === s.T && p.length >= 2) { if (!best || p.length > best.length) best = p.slice(); return; } if (sum >= s.T) return;
+        const [x, y] = p[p.length - 1]; for (const [dx, dy] of NB8) { const nx = x + dx, ny = y + dy; if (nx < 0 || ny < 0 || nx >= s.C || ny >= s.R || p.some((q) => q[0] === nx && q[1] === ny)) continue; p.push([nx, ny]); dfs(p, sum + s.b[ny][nx].v); p.pop(); } };
+      for (let y = 0; y < s.R && !best; y++) for (let x = 0; x < s.C; x++) dfs([[x, y]], s.b[y][x].v);
+      if (!best) return { wait: 0.5 };
+      return { drag: best.map(([x, y]) => [s.ox + (x + 0.5) * s.cs, s.oy + (y + 0.5) * s.cs]), dur: 0.35 * best.length, after: 0.6, say: Arcade.T('Une números vecinos que sumen ', 'Join neighbours adding up to ') + s.T };
+    },
     setup(g) {
       g.s = { C: 5, R: 6, path: [], done: 0, tpop: 0, wrong: 0, T: 0 };
       const s = g.s; s.b = [...Array(s.R)].map(() => [...Array(s.C)].map(() => ({ v: val(g), fall: 0 })));

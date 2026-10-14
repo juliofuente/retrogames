@@ -91,6 +91,14 @@
     id: 'losas', title: 'Losas', emoji: '🔺', color: '#e8a54b', origin: 'Pyramids of Ra (Game Boy, 1991)',
     help: '<b>Desliza</b> para avanzar una losa. Cada losa que dejas atrás se <b>hunde</b> en el vacío (las agrietadas necesitan dos pasos). Haz caer todas las losas y termina en la salida 🚪. Si pisas el vacío, te quedas atrapado o llegas a la salida con losas de sobra, pierdes una vida. Cada nivel sale de un camino real, así que siempre tiene solución.',
     lives: 3, levels: 0, cap: 30,
+    demo(g) {
+      const s = g.s; if (s.dead || s.done || s.anim) return { wait: 0.2 };
+      const d = s.path[s.moves]; if (!d) return { wait: 0.3 };
+      const st = { swipe: [s.ox + (s.p[0] + 0.5) * s.cs, s.oy + (s.p[1] + 0.5) * s.cs, d], len: s.cs * 0.9, after: 0.35 };
+      if (!s.moves) st.say = Arcade.T('Desliza: cada losa que dejas se hunde', 'Swipe: every tile you leave crumbles');
+      else if (s.moves === s.path.length - 1) st.say = Arcade.T('¡Todas hundidas! A la salida 🚪', 'All gone! To the exit 🚪');
+      return st;
+    },
     setup(g) {
       const lv = generate(g.lv);
       g.s = { ...lv, orig: lv.hp.map((r) => r.slice()), face: -1, hero: HEROES[(g.level - 1) % HEROES.length], done: false };

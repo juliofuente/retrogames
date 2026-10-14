@@ -53,6 +53,16 @@
     id: 'cientos', title: 'Cientos', emoji: '💯', color: '#ff6b6b', origin: 'Hundreds (Semi Secret, 2013)',
     help: '<b>Mantén pulsado</b> un círculo para que crezca: su número sube. Si un círculo <b>toca algo mientras crece</b>, choca, vuelve a 0 y pierdes una vida. Cuando no crece, solo rebota. Suma <b>100</b> entre todos para completar el nivel. Más adelante los círculos van más rápido y aparecen minas con pinchos 🌵.',
     lives: 3, levels: 0, cap: 20,
+    demo(g) {
+      const s = g.s; if (s.done || s.hold) return { wait: 0.3 };
+      const A = area(g), all = [...s.balls, ...s.spikes]; let best = null;
+      for (const b of s.balls) { let gap = Math.min(b.x - b.r - A.x0, A.x1 - b.x - b.r, b.y - b.r - A.y0, A.y1 - b.y - b.r);
+        for (const o of all) if (o !== b) gap = Math.min(gap, Math.hypot(o.x - b.x, o.y - b.y) - o.r - b.r);
+        if (!best || gap > best.gap) best = { gap, b }; }
+      if (!best || best.gap < 14) return { wait: 0.25 };
+      const dur = Math.max(0.2, Math.min(1.4, (best.gap - 10) / (60 * s.u)));
+      return { hold: [best.b.x, best.b.y], dur, say: Arcade.T('Mantén un círculo para que crezca… sin que toque nada', 'Hold a circle to grow it… without touching anything') };
+    },
     setup(g) { g.s = { u: clamp(Math.min(g.W, g.bot - g.top) / 420, 0.7, 1.6) }; build(g); },
     layout(g) { if (g.s.balls) { const A = area(g); for (const b of [...g.s.balls, ...g.s.spikes]) { b.x = clamp(b.x, A.x0 + b.r, A.x1 - b.r); b.y = clamp(b.y, A.y0 + b.r, A.y1 - b.r); } } },
     down(g, p) {

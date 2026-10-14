@@ -82,6 +82,34 @@
     id: 'lumina', title: 'Lumina', emoji: '🟧', color: '#ff922b', origin: 'Lumines (Q Entertainment, 2004)',
     help: 'Caen bloques de 2×2 cuadritos de dos colores. <b>Arrastra</b> a los lados para moverlos, <b>toca</b> para girarlos, <b>desliza hacia abajo</b> para soltarlos. Al caer, cada cuadrito baja por su cuenta. Forma <b>cuadrados de 2×2 de un color</b>: se iluminan y la <b>barra de luz</b> que barre el tablero los borra. Borra los cuadrados que pide cada nivel. Si los bloques llegan arriba, pierdes una vida.',
     lives: 3, levels: 0, cap: 25,
+    demo(g) {
+      const s = g.s; if (!s.p || s.won) return { wait: 0.2 };
+      if (s.p.y < -1) return { wait: 0.15 };
+      if (s.plan && s.plan.id === s.p) {
+        const pl = s.plan;
+        if (pl.rot > 0) { pl.rot--; return { tap: [g.W / 2, s.oy + s.cs * 3], after: 0.18 }; }
+        const dx = pl.x - s.p.x;
+        if (dx) { const x0 = g.W / 2; return { drag: [[x0, s.oy + s.cs * 4], [x0 + dx * s.cs * 0.95 + Math.sign(dx) * 6, s.oy + s.cs * 4]], dur: 0.25 + Math.abs(dx) * 0.08, after: 0.1 }; }
+        s.plan = null; return { swipe: [g.W / 2, s.oy + s.cs * 3, 'down'], len: 120, after: 0.4, say: Arcade.T('Suelta: forma cuadrados de un color', 'Drop it: make single-colour squares') };
+      }
+      // elige columna y giro que más cuadrados forman
+      let best = null; let k = s.p.k;
+      for (let rot = 0; rot < 4; rot++) {
+        for (let x = 0; x < s.C - 1; x++) {
+          let y = -2; while (fits(s, x, y + 1)) y++; if (!fits(s, x, y)) continue;
+          const b = s.b.map((row) => row.map((v) => (v ? { k: v.k } : null)));
+          for (let dy = 0; dy < 2; dy++) for (let dx = 0; dx < 2; dx++) if (y + dy >= 0) b[y + dy][x + dx] = { k: k[dy][dx] };
+          const f = { b, R: s.R, C: s.C }; gravity(f); const sq = mark(f);
+          let hgt = 0; for (let c = 0; c < s.C; c++) { let r = 0; while (r < s.R && !b[r][c]) r++; hgt = Math.max(hgt, s.R - r); }
+          const sc = sq * 10 - hgt * 1.5 - Math.abs(x - s.C / 2) * 0.05 + Math.random() * 0.5;
+          if (!best || sc > best.sc) best = { sc, x, rot };
+        }
+        const [[a, b2], [c, d]] = k; k = [[c, a], [d, b2]];
+      }
+      if (!best) return { wait: 0.2 };
+      s.plan = { id: s.p, x: best.x, rot: best.rot };
+      return { wait: 0.05 };
+    },
     setup(g) {
       const wide = g.W > g.H;
       g.s = { C: wide ? 16 : 10, R: wide ? 10 : 12, next: [rnd(), rnd()], squares: 0, tl: 0, pal: (g.level - 1) % PAL.length };

@@ -57,6 +57,12 @@
     id: 'puzle', title: 'Puzle', emoji: '🧩', color: '#ffa94d', origin: 'Jigsaw Game',
     help: '<b>Arrastra</b> cada pieza de la bandeja a su sitio en el dibujo. Cuando está cerca del lugar correcto, encaja sola con un clic. El dibujo tenue del marco te ayuda al principio; en niveles altos hay más piezas y sin ayuda. Termina rápido para más estrellas.',
     lives: 0, levels: 0, cap: 30,
+    demo(g) {
+      const s = g.s; if (s.done || s.drag) return { wait: 0.3 };
+      const q = s.pieces.filter((x) => !x.ok).pop(); if (!q) return { wait: 0.3 };
+      const tx = s.bx + q.c * s.pcw + s.pcw / 2, ty = s.by + q.r * s.pch + s.pch / 2;
+      return { drag: [[q.x + s.pcw / 2, q.y + s.pch / 2], [tx, ty]], dur: 0.7, after: 0.3, say: Arcade.T('Arrastra cada pieza a su sitio', 'Drag each piece into place') };
+    },
     setup(g) {
       const L = g.lv, land = g.W > g.H, a = clamp(2 + Math.floor(L / 2), 2, 7), b = clamp(3 + Math.floor(L / 2), 3, 9);
       g.s = { cols: land ? b : a, rows: land ? a : b, pieces: [], t: 0, hint: L <= 8 };

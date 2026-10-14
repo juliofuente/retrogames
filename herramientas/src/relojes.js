@@ -45,6 +45,13 @@
     id: 'relojes', title: 'Relojes', emoji: '⏰', color: '#ffd43b', origin: 'CLOCKS - The Game',
     help: 'Las agujas de cada reloj giran sin parar. <b>Toca un reloj</b> para dispararlo: lanza un pulso en la dirección de su aguja y el primer reloj que alcance se dispara también, en su propia dirección… Elige el momento justo para encadenarlos todos. Solo tienes unos pocos toques por nivel.',
     lives: 3, levels: 0, cap: 25,
+    demo(g) {
+      const s = g.s; if (s.done || s.pulses.length || s.taps >= s.maxTaps) return { wait: 0.3 };
+      const alive = s.clocks.filter((c) => !c.dead && !c.fired); if (!alive.length) return { wait: 0.3 };
+      let best = null;
+      for (const c of alive) for (let d = 0.5; d < 0.5 + 6.3 / Math.abs(c.sp); d += 0.05) { const [k] = simChain(s, alive, c, d); if (!best || k.size > best.n || (k.size === best.n && d < best.d)) best = { n: k.size, d, c }; }
+      return [{ wait: Math.max(0, best.d - 0.4) }, { tap: cpos(s, best.c), after: 1.2, say: best.n > 1 ? Arcade.T('Toca cuando la aguja apunte a otro reloj: ¡cadena!', 'Tap when the hand points at another clock: chain!') : Arcade.T('Toca un reloj para dispararlo', 'Tap a clock to set it off') }];
+    },
     setup(g) {
       const L = g.lv, land = g.W > g.H, C = land ? clamp(4 + Math.floor(L / 3), 4, 8) : clamp(3 + Math.floor(L / 4), 3, 5), R = land ? clamp(3 + Math.floor(L / 4), 3, 5) : clamp(4 + Math.floor(L / 3), 4, 8);
       g.s = { C, R, clocks: [], pulses: [], taps: 0 };

@@ -45,17 +45,17 @@
       const tiles = [], taken = new Set();
       while (tiles.length < n) { const x = ri(0, S - 1), y = ri(0, S - 1); if (taken.has(y * S + x)) continue; taken.add(y * S + x); tiles.push({ x, y, n: ri(1, vmax) }); }
       const fill = blank(S, tiles), order = shuffle(tiles.map((_, i) => i));
-      let goal = -1, chain = 0;
+      let goal = -1, chain = 0; const sol = [];
       for (const i of order) {
-        const t = tiles[i], opts = shuffle(DIRS.slice()).map((d) => expand(S, fill, t.x, t.y, d, t.n)).filter((c) => c.length === t.n);
+        const t = tiles[i], opts = shuffle(DIRS.slice()).map((d) => ({ d, c: expand(S, fill, t.x, t.y, d, t.n) })).filter((o) => o.c.length === t.n);
         if (!opts.length) break;
-        const c = pick(opts); for (const q of c) fill[q] = 1; goal = c[c.length - 1]; chain++;
+        const o = pick(opts), c = o.c; for (const q of c) fill[q] = 1; goal = c[c.length - 1]; chain++; sol.push({ i, d: o.d });
       }
       if (chain !== n) continue;
       const gx = goal % S, gy = Math.floor(goal / S);
       if (gx === 0 && gy === 0) continue;
       if (need > 1 && solvable(S, tiles, goal, need - 1)) continue;
-      return { S, tiles: tiles.map((t, i) => ({ ...t, c: COL[i % COL.length] })), goal };
+      return { S, tiles: tiles.map((t, i) => ({ ...t, c: COL[i % COL.length] })), goal, sol };
     }
     return generate(Math.max(1, L - 1));
   }
@@ -104,6 +104,14 @@
     id: 'expande', title: 'Expande', emoji: '➡️', color: '#4dabf7', origin: 'Zhed (Ground Control)',
     help: 'Cada ficha tiene un número. <b>Desliza</b> desde una ficha (o tócala y luego toca una casilla de su fila o columna) para <b>estirarla</b> tantas casillas como indica en esa dirección. Las casillas que ya están llenas se saltan y no cuentan. Cada ficha se usa una sola vez. ¡Llega a la meta ⭐ con cualquier estiramiento! Usa ↩️ para deshacer y 🔄 para empezar de nuevo. Cada nivel se genera y siempre tiene solución.',
     lives: 0, levels: 0, cap: 30,
+    demo(g) {
+      const s = g.s; if (s.done || !s.sol) return { wait: 0.3 };
+      const k = s.used.filter(Boolean).length; if (k === 0 && s.hist.length) return { wait: 0.3 };
+      const st = s.sol[k]; if (!st || s.used[st.i]) { reset(g); return { wait: 0.4 }; }
+      const t = s.tiles[st.i];
+      return { swipe: [s.ox + (t.x + 0.5) * s.cs, s.oy + (t.y + 0.5) * s.cs, st.d], len: s.cs * 1.2, after: 0.8,
+        say: k === 0 ? Arcade.T('Desliza un número: se estira esas casillas', 'Swipe a number: it stretches that many squares') : k === s.sol.length - 1 ? Arcade.T('Este llega a la ⭐', 'This one reaches the ⭐') : Arcade.T('Las casillas llenas se saltan', 'Full squares are skipped') };
+    },
     setup(g) {
       const lv = generate(g.lv);
       g.s = { ...lv, used: lv.tiles.map(() => false), hist: [], undos: 0, resets: 0, sel: -1, done: false, goalE: GOALS[(g.level - 1) % GOALS.length] };

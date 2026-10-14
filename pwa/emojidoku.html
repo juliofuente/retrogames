@@ -112,6 +112,15 @@
     id: 'emojidoku', title: 'Emojidoku', emoji: '🧩', color: '#9775fa', origin: 'Sudoku',
     help: 'Rellena la cuadrícula para que cada <b>fila</b>, <b>columna</b> y <b>caja</b> tenga todos los emojis una sola vez. <b>Toca una casilla</b> y luego un <b>emoji</b> de la paleta. Un emoji equivocado te cuesta una vida. Empieza en 4×4, luego 6×6 y al final 9×9, con menos pistas en cada nivel. Cada puzle tiene una única solución.',
     lives: 3, levels: 0, cap: 30,
+    demo(g) {
+      const s = g.s; if (s.bad) return { wait: 0.3 };
+      const empty = []; for (let i = 0; i < s.cur.length; i++) if (s.cur[i] !== s.sol[i]) empty.push(i);
+      if (!empty.length) return { wait: 0.5 };
+      // la casilla con menos candidatos (como haría una persona)
+      const n = s.n, cand = (i) => { const r = (i / n) | 0, c = i % n, used = new Set(); for (let k = 0; k < n; k++) { used.add(s.cur[r * n + k]); used.add(s.cur[k * n + c]); } const br = Math.floor(r / s.bh) * s.bh, bc = Math.floor(c / s.bw) * s.bw; for (let a = 0; a < s.bh; a++) for (let b = 0; b < s.bw; b++) used.add(s.cur[(br + a) * n + bc + b]); return n - [...used].filter((v) => v >= 0).length; };
+      const i = empty.sort((a, b) => cand(a) - cand(b))[0], r = (i / n) | 0, c = i % n, q = s.pal[s.sol[i]];
+      return [{ tap: [s.ox + (c + 0.5) * s.cs, s.oy + (r + 0.5) * s.cs], after: 0.25, say: Arcade.T('Elige casilla y luego el emoji que falta', 'Pick a square, then the missing emoji') }, { tap: [q.x + q.w / 2, q.y + q.h / 2], after: 0.35 }];
+    },
     setup(g) {
       const [n, bh, bw] = dims(g.lv), L = g.lv;
       const frac = n === 4 ? 0.4 + L * 0.05 : n === 6 ? 0.42 + (L - 4) * 0.03 : clamp(0.48 + (L - 9) * 0.012, 0.48, 0.66);

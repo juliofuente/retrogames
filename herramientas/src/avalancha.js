@@ -49,6 +49,19 @@
     id: 'avalancha', title: 'Avalancha', emoji: '🧊', color: '#91a7ff', origin: 'Intelligent Qube (Sony, 1997)',
     help: 'Filas de cubos ruedan hacia el borde. <b>Toca una casilla</b> para poner una trampa 🟥 y <b>vuelve a tocarla</b> cuando un cubo esté encima para atraparlo. <b>No atrapes los negros</b> ☠️: déjalos caer. Los verdes dejan una marca 🟩 que, al tocarla, atrapa un área de 3×3. Cada cubo gris que se cae por el borde <b>acorta la plataforma</b>.',
     lives: 0, levels: null, levelLabel: 'Oleada',
+    demo(g) {
+      const s = g.s; if (!s.cubes) return { wait: 0.3 };
+      const P = (c, r) => [s.ox + (c + 0.5) * s.cs, s.oy + (r + 0.5) * s.cs];
+      if (s.mark) { const on = s.cubes.find((q) => q.c === s.mark.c && Math.round(q.r) === s.mark.r && !q.roll); if (on) {
+        if (on.t !== 2) return { tap: P(s.mark.c, s.mark.r), after: 0.25, say: Arcade.T('¡Cubo encima! Toca otra vez para atraparlo', 'Cube on it! Tap again to catch it') }; } }
+      for (const m of s.green) { const area = s.cubes.filter((q) => Math.abs(q.c - m.c) <= 1 && Math.abs(Math.round(q.r) - m.r) <= 1); if (area.length >= 2 && !area.some((q) => q.t === 2)) return { tap: P(m.c, m.r), after: 0.3, say: Arcade.T('La marca verde atrapa un 3×3', 'The green mark catches a 3×3') }; }
+      const coming = s.mark && s.cubes.some((q) => q.c === s.mark.c && q.r < s.mark.r && q.t !== 2 && !s.cubes.some((o) => o.c === q.c && o.r > q.r && o.r <= s.mark.r));
+      if (coming) return { wait: 0.15 };
+      const front = s.cubes.filter((q) => q.t !== 2 && Math.round(q.r) + 1 >= 0 && Math.round(q.r) + 1 < s.L).sort((a, b) => b.r - a.r)[0];
+      if (!front) return { wait: 0.3 };
+      const r = Math.round(front.r) + 1;
+      return { tap: P(front.c, r), after: 0.2, say: Arcade.T('Pon una trampa delante de un cubo (no de los ☠️)', 'Set a trap in front of a cube (not the ☠️)') };
+    },
     setup(g) {
       g.s = { wave: 0, green: [], mark: null };
       const s = g.s;

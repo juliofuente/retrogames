@@ -73,6 +73,22 @@
     id: 'laberinto', title: 'Laberinto', emoji: '🐭', color: '#da77f2', origin: 'Maze / Run Around',
     help: '<b>Arrastra</b> el dedo en cualquier sitio: el animalito anda en esa dirección y se desliza por las paredes. Llega hasta el premio al otro lado del laberinto. Recoge las ⭐ del camino para puntos extra y termina rápido para más estrellas. Cada nivel es un laberinto nuevo y más grande.',
     lives: 0, levels: 0, cap: 30,
+    demo(g) {
+      const s = g.s; if (s.done) return { wait: 0.4 };
+      const cx = Math.floor((s.b.x - s.ox) / s.cs), cy = Math.floor((s.b.y - s.oy) / s.cs);
+      const ok = (x, y, dx, dy) => { if (dx === 1) return x < s.mc - 1 && !s.M.right[y][x]; if (dx === -1) return x > 0 && !s.M.right[y][x - 1]; if (dy === 1) return y < s.mr - 1 && !s.M.down[y][x]; return y > 0 && !s.M.down[y - 1][x]; };
+      const prev = new Map([[cx + ',' + cy, null]]), q = [[cx, cy]];
+      while (q.length) { const [x, y] = q.shift(); if (x === s.end[0] && y === s.end[1]) break; for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const k = (x + dx) + ',' + (y + dy); if (prev.has(k) || !ok(x, y, dx, dy)) continue; prev.set(k, [x, y]); q.push([x + dx, y + dy]); } }
+      let k = s.end.join(), path = []; while (prev.get(k)) { path.unshift(k.split(',').map(Number)); k = prev.get(k).join(); }
+      let tgt = path[0] || s.end; // apunta al centro de la siguiente casilla (o a la actual si aún no está centrada)
+      const tx = s.ox + (tgt[0] + 0.5) * s.cs, ty = s.oy + (tgt[1] + 0.5) * s.cs, ccx = s.ox + (cx + 0.5) * s.cs, ccy = s.oy + (cy + 0.5) * s.cs;
+      // si aún no está centrado en su casilla, primero se centra en el eje por el que va a salir
+      let vx = tx - s.b.x, vy = ty - s.b.y;
+      if (path[0] && path[0][0] !== cx && Math.abs(s.b.y - ccy) > s.cs * 0.22) vx *= 0.25;
+      if (path[0] && path[0][1] !== cy && Math.abs(s.b.x - ccx) > s.cs * 0.22) vy *= 0.25;
+      const d = Math.hypot(vx, vy) || 1, L = Math.max(8, Math.min(40, d * 0.45)), x0 = g.W / 2, y0 = g.bot - 120;
+      return { drag: [[x0, y0], [x0 + vx / d * L, y0 + vy / d * L], [x0 + vx / d * L, y0 + vy / d * L]], dur: 0.22, after: 0.02, say: path.length > 3 ? Arcade.T('Arrastra hacia donde quieras rodar', 'Drag towards where you want to roll') : null };
+    },
     setup(g) {
       const L = g.lv, land = g.W > g.H, a = clamp(5 + Math.floor(L / 2), 5, 16), b = clamp(7 + Math.floor(L * 0.7), 7, 24);
       g.s = { mc: land ? b : a, mr: land ? a : b, t: 0, hero: HEROES[(g.level - 1) % HEROES.length], goal: GOALS[(g.level - 1) % GOALS.length], vx: 0, vy: 0 };

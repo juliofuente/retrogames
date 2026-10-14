@@ -96,6 +96,24 @@
     id: 'hielo', title: 'Hielo', emoji: '❄️', color: '#74c0fc', origin: 'Kickle Cubicle (Irem, 1988)',
     help: 'Recoge todas las bolsas 💰 cruzando los ríos. <b>Toca una casilla</b> para ir andando o <b>desliza</b> para dar un paso. <b>Toca un cubo pegado a ti</b> para darle una patada: se desliza y, si cae al agua, <b>hace un puente</b>. <b>Tócate a ti mismo</b> para soplar aire helado y <b>congelar</b> a un enemigo en un cubo nuevo (se descongela en unos segundos).',
     lives: 3, levels: 0, cap: 18,
+    demo(g) {
+      const s = g.s, pl = s.pl; if (pl.moving || s.slide || (s.path && s.path.length)) return { wait: 0.2 };
+      const P = (c, r) => [s.ox + (c + 0.5) * s.cs, s.oy + (r + 0.5) * s.cs];
+      if (s.dplan && pl.c === s.dplan.sx && pl.r === s.dplan.sy) { const t = s.dplan; s.dplan = null; return { tap: P(t.cx, t.cy), after: 0.6, say: Arcade.T('Patea el bloque: hace un puente en el agua', 'Kick the block: it makes a bridge over the water') }; }
+      // enemigo en línea a 3 casillas o menos: aliento helado
+      for (const [d, [dx, dy]] of Object.entries(D)) for (let k = 1; k <= 3; k++) { const x = pl.c + dx * k, y = pl.r + dy * k; if (!inB(s, x, y) || cubeAt(s, x, y)) break;
+        if (enemyAt(s, x, y)) { if (pl.face !== d) return [{ swipe: [...P(pl.c, pl.r), d], len: 30 }, { tap: P(pl.c, pl.r), after: 0.4, say: Arcade.T('Toca tu cara: aliento helado congela bichos', 'Tap your face: icy breath freezes bugs') }]; return { tap: P(pl.c, pl.r), after: 0.4 }; } }
+      let best = null;
+      for (const b of s.bags) { const path = bfs(s, b.c, b.r); if (path && (!best || path.length < best.len)) best = { len: path.length, tap: P(b.c, b.r) }; }
+      if (best) return { tap: best.tap, after: 0.3, say: Arcade.T('Toca una casilla para ir a por el 💰', 'Tap a square to go for the 💰') };
+      for (const q of s.cubes) for (const [d, [dx, dy]] of Object.entries(D)) { const sx = q.c - dx, sy = q.r - dy; if (!walkable(s, sx, sy)) continue;
+        let x = q.c, y = q.r; while (inB(s, x + dx, y + dy) && s.m[y + dy][x + dx] === L_ && !cubeAt(s, x + dx, y + dy)) { x += dx; y += dy; } if (!inB(s, x + dx, y + dy) || s.m[y + dy][x + dx] !== W_ || y + dy === 0 || y + dy === s.R - 1 || x + dx === 0 || x + dx === s.C - 1) continue;
+        const path = sx === pl.c && sy === pl.r ? [] : bfs(s, sx, sy); if (!path) continue;
+        if (!best || path.length < best.len) best = { len: path.length, sx, sy, cx: q.c, cy: q.r }; }
+      if (!best) return { wait: 0.6 };
+      s.dplan = best; if (best.sx === pl.c && best.sy === pl.r) return { wait: 0.05 };
+      return { tap: P(best.sx, best.sy), after: 0.3 };
+    },
     setup(g) {
       g.s = { slide: null, breath: null, inv: 1.5, path: null, pathT: 0 };
       const s = g.s;

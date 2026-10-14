@@ -38,6 +38,11 @@
     id: 'destellos', title: 'Destellos', emoji: '✨', color: '#9775fa', origin: 'Memdot / Simon',
     help: 'Se iluminan algunas casillas: <b>recuérdalas</b> y tócalas cuando sea tu turno. En los niveles impares importa el <b>orden</b> (como el Simón); en los pares solo tienes que recordar <b>cuáles</b> se encendieron. Cada ronda añade una más. Un error te cuesta una vida.',
     lives: 3, levels: 0, cap: 25,
+    demo(g) {
+      const s = g.s; if (s.phase !== 'input') return { wait: 0.25 };
+      const want = s.mode === 'seq' ? s.seq[s.input.length] : s.seq.find((i) => !s.input.includes(i)); if (want == null) return { wait: 0.3 };
+      return { tap: [s.ox + (want % s.n + 0.5) * s.cs, s.oy + (Math.floor(want / s.n) + 0.5) * s.cs], after: 0.25, say: s.input.length ? null : s.mode === 'seq' ? Arcade.T('Repite los destellos en el mismo orden', 'Repeat the flashes in the same order') : Arcade.T('Toca las casillas que se iluminaron', 'Tap the squares that lit up') };
+    },
     setup(g) {
       const L = g.lv; g.s = { n: clamp(3 + Math.floor(L / 4), 3, 6), mode: g.level % 2 ? 'seq' : 'set', rounds: 0, need: 4 + Math.min(Math.floor(L / 3), 5) };
       const s = g.s; s.len = (s.mode === 'seq' ? 2 : 3) + Math.floor(L / 5); s.flash = new Array(s.n * s.n).fill(0); s.em = EM[(g.level - 1) % EM.length]; geo(g); newRound(g);

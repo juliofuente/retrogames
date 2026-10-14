@@ -89,6 +89,29 @@
     id: 'almacen', title: 'Almacén', emoji: '📦', color: '#e8a54b', origin: 'Sokoban (Thinking Rabbit) / Pushori / A Blocky Christmas',
     help: '<b>Desliza</b> para andar un paso o <b>toca</b> una casilla libre para ir hasta ella. Camina contra una caja para <b>empujarla</b> (nunca puedes tirar de ella). Lleva todas las cajas a las dianas 🎯. Ojo: ¡una caja en una esquina ya no sale! Usa ↩️ para deshacer y 🔄 para empezar el nivel de nuevo. Cada nivel se genera y siempre tiene solución.',
     lives: 0, levels: 0, cap: 30,
+    demo(g) {
+      const s = g.s; if (s.done || s.queue.length || s.anim) return { wait: 0.2 };
+      const D4 = Object.entries(D);
+      const reach = (p, boxes) => { const seen = new Set([p.join()]), q = [p]; while (q.length) { const [x, y] = q.shift(); for (const [, [dx, dy]] of D4) { const nx = x + dx, ny = y + dy, k = nx + ',' + ny; if (seen.has(k) || s.wall[ny][nx] || boxes.some((b) => b[0] === nx && b[1] === ny)) continue; seen.add(k); q.push([nx, ny]); } } return seen; };
+      const keyOf = (p, boxes) => { const r = reach(p, boxes); return [...r].sort()[0] + '|' + boxes.map((b) => b.join()).sort().join(';'); };
+      if (!s.dplan) {
+        const start = { p: s.p.slice(), boxes: s.boxes.map((b) => b.slice()) }, seen = new Map([[keyOf(start.p, start.boxes), null]]); let fr = [start], found = null;
+        while (fr.length && seen.size < 30000 && !found) { const nx = [];
+          for (const st of fr) { const r = reach(st.p, st.boxes);
+            st.boxes.forEach((b, bi) => { for (const [d, [dx, dy]] of D4) { if (found) return; const bx = b[0] - dx, by = b[1] - dy, tx = b[0] + dx, ty = b[1] + dy;
+              if (!r.has(bx + ',' + by) || s.wall[ty][tx] || st.boxes.some((o) => o[0] === tx && o[1] === ty)) continue;
+              const boxes = st.boxes.map((o) => o.slice()); boxes[bi] = [tx, ty]; const p = [b[0], b[1]], k = keyOf(p, boxes); if (seen.has(k)) continue;
+              const ns = { p, boxes, from: st, push: { at: [bx, by], d } }; seen.set(k, 1); if (boxes.every((o) => isGoal(s, o[0], o[1]))) { found = ns; return; } nx.push(ns); } }); if (found) break; }
+          fr = nx; }
+        if (!found) return { wait: 1 };
+        const pushes = []; for (let n = found; n.from; n = n.from) pushes.unshift(n.push); s.dplan = pushes;
+      }
+      const pu = s.dplan[0]; if (!pu) return { wait: 0.5 };
+      const P = (x, y) => [s.ox + (x + 0.5) * s.cs, s.oy + (y + 0.5) * s.cs];
+      if (s.p[0] !== pu.at[0] || s.p[1] !== pu.at[1]) return { tap: P(pu.at[0], pu.at[1]), after: 0.2, say: Arcade.T('Toca una casilla para ir andando', 'Tap a square to walk there') };
+      s.dplan.shift();
+      return { swipe: [...P(s.p[0], s.p[1]), pu.d], len: s.cs * 0.9, after: 0.35, say: Arcade.T('Desliza contra la caja para empujarla a la 🎯', 'Swipe into the box to push it onto the 🎯') };
+    },
     setup(g) {
       const lv = generate(g.lv);
       g.s = { ...lv, hist: [], moves: 0, pushes: 0, undos: 0, resets: 0, done: false, queue: [], qt: 0, face: -1, worker: WORKERS[(g.level - 1) % WORKERS.length], box: BOXES[(g.level - 1) % BOXES.length] };

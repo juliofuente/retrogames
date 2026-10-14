@@ -29,6 +29,11 @@
     id: 'sumas', title: 'Sumas', emoji: '🧮', color: '#fab005', origin: '1+2=3 / Math Game / zNumbers',
     help: 'Aparece una operación con el resultado en blanco. <b>Toca el resultado correcto</b> entre las tres opciones antes de que se acabe la barra de tiempo. Cuanto más rápido y más racha, más puntos. Cada nivel pide unos aciertos y añade restas, multiplicaciones y divisiones.',
     lives: 3, levels: 0, cap: 25,
+    demo(g) {
+      const s = g.s; if (s.fb || !s.q) return { wait: 0.2 };
+      const i = s.q.opts.indexOf(s.q.res), b = s.btns[i];
+      return [{ wait: 0.7 }, { tap: [b.x + b.w / 2, b.y + b.h / 2], after: 0.3, say: Arcade.T('Toca el resultado correcto antes de que acabe el tiempo', 'Tap the right answer before time runs out') }];
+    },
     setup(g) { const L = g.lv; g.s = { ok: 0, need: 10 + Math.min(L, 25), combo: 0, qmax: clamp(6 - L * 0.15, 2.4, 6) }; geo(g); question(g); },
     layout(g) { if (g.s.q) geo(g); },
     tap(g, p) { const s = g.s; for (const b of s.btns) if (p.x >= b.x && p.x <= b.x + b.w && p.y >= b.y && p.y <= b.y + b.h) return answer(g, s.q.opts[b.i]); },

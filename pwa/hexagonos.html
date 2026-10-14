@@ -114,6 +114,17 @@
     id: 'hexagonos', title: 'Hexágonos', emoji: '⬢', color: '#9775fa', origin: 'Hex FRVR / Hexagonal Tiles',
     help: '<b>Arrastra</b> las piezas de abajo al tablero hexagonal. Cuando una línea se llena (en cualquiera de sus <b>tres direcciones</b>) desaparece. Varias líneas a la vez o seguidas dan combos. Haz las líneas que pide cada nivel; en los niveles altos empiezas con 🪨 rocas. Si no cabe ninguna de tus piezas, pierdes una vida y se vacía el tablero.',
     lives: 3, levels: 0, cap: 25,
+    demo(g) {
+      const s = g.s; if (s.done || s.stuck || s.drag) return { wait: 0.3 };
+      let best = null;
+      s.tray.forEach((p, i) => { if (!p) return; for (const [q, r] of ALL) { if (!fits(s, p.sh, q, r)) continue;
+        const add = new Set(p.sh.map(([a, b]) => key(q + a, r + b))); let sc = Math.random();
+        for (const ln of LINES) { const full = ln.every(([a, b]) => s.b.has(key(a, b)) || add.has(key(a, b))); if (full) sc += 100; else sc += ln.filter(([a, b]) => s.b.has(key(a, b)) || add.has(key(a, b))).length * 0.3; }
+        if (!best || sc > best.sc) best = { sc, i, q, r }; } });
+      if (!best) return { wait: 0.5 };
+      const [x, y] = pos(s, best.q, best.r);
+      return { drag: [[slotX(s, best.i), s.ty], [x, y + s.hs * 2.6]], dur: 0.9, after: 0.5, say: best.sc >= 100 ? Arcade.T('¡Línea completa: desaparece!', 'Full line: it vanishes!') : Arcade.T('Arrastra una pieza al tablero', 'Drag a piece onto the board') };
+    },
     setup(g) {
       g0 = g;
       g.s = { b: new Map(), lines: 0, combo: 0, drag: null, trayPop: 1, sel: -1, hov: null };

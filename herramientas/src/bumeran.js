@@ -62,6 +62,14 @@
     id: 'bumeran', title: 'Bumerán', emoji: '🪃', color: '#74c0fc', origin: 'Plotting / Flipull (Taito, 1989)',
     help: '<b>Toca una fila</b> para lanzar tu pieza hacia la izquierda. Rompe todas las piezas <b>iguales</b> seguidas que encuentre; al chocar con una distinta, <b>se la queda</b> y esa vuelve a tu mano. Si llega a la pared, cae por la primera columna. Deja menos piezas que el objetivo para pasar de nivel. Un lanzamiento que no rompe nada te cuesta una vida. ⭐ vale por cualquiera.',
     lives: 3, levels: 0, cap: 16,
+    demo(g) {
+      const s = g.s; if (s.shot || !s.held) return { wait: 0.3 };
+      const sim = (r) => { const f = s.f.map((row) => row.slice()); let c = COLS, rr = r, dir = 'L', t = s.held, n = 0;
+        for (let k = 0; k < 200; k++) { let nc = c, nr = rr; if (dir === 'L') nc--; else nr++; if (dir === 'L' && nc < 0) { dir = 'D'; continue; } if (nr >= ROWS) return n;
+          const b = f[nr][nc]; if (!b) { c = nc; rr = nr; continue; } if (b === t || b === WILD || t === WILD) { if (t === WILD && b !== WILD) t = b; f[nr][nc] = null; n++; c = nc; rr = nr; continue; } return n; } return n; };
+      let best = 0, bn = -1; for (let r = 0; r < ROWS; r++) { const n = sim(r) + Math.random() * 0.5; if (n > bn) { bn = n; best = r; } }
+      return { tap: [s.ox + (COLS + 0.6) * s.cs, s.oy + (best + 0.5) * s.cs], after: 1, say: Arcade.T('Toca la fila donde rompe más piezas iguales', 'Tap the row where it breaks the most matching pieces') };
+    },
     setup(g) {
       g.s = { f: [], shot: null, acc: 0, prow: ROWS - 1 };
       const s = g.s, nt = Math.min(ALL.length, 3 + Math.floor((g.lv - 1) / 4));

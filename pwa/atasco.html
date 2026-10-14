@@ -103,6 +103,24 @@
     id: 'atasco', title: 'Atasco', emoji: '🚗', color: '#ff6b6b', origin: 'Rush Hour (ThinkFun)',
     help: 'Desliza los vehículos (<b>arrástralos</b> en su dirección: los coches solo van hacia delante o hacia atrás) para dejar paso al <b>coche rojo</b> 🚗 hasta la salida de la derecha. Cada nivel es un puzle distinto y más difícil. Menos movimientos, más estrellas.',
     lives: 0, levels: 0, cap: 22,
+    demo(g) {
+      const s = g.s; if (s.exit || s.drag) return { wait: 0.3 };
+      const key = (p) => p.join(',');
+      if (!s.dplan || key(s.pos) !== s.dplan.at) {
+        const seen = new Map([[key(s.pos), null]]); let fr = [s.pos], found = null;
+        while (fr.length && !found && seen.size < 40000) { const nx = [];
+          for (const p of fr) { if (p[0] + s.vs[0].len === N) { found = key(p); break; } const gr = grid(s.vs, p);
+            s.vs.forEach((v, i) => { for (const dir of [-1, 1]) for (let st = 1; st < N; st++) { const np = p[i] + dir * st; if (np < 0 || np + v.len > N) break; const cell = dir > 0 ? np + v.len - 1 : np, r = v.h ? v.fix : cell, c = v.h ? cell : v.fix; if (gr[r * N + c] !== -1) break;
+              const q = p.slice(); q[i] = np; const k = key(q); if (!seen.has(k)) { seen.set(k, { from: key(p), i, np }); nx.push(q); } } }); }
+          fr = nx; }
+        if (!found) return { wait: 1 };
+        const moves = []; for (let k = found; seen.get(k); k = seen.get(k).from) moves.unshift(seen.get(k)); moves.push({ i: 0, np: N - s.vs[0].len + 3 }); s.dplan = { moves, at: key(s.pos) };
+      }
+      const m = s.dplan.moves.shift(); if (!m) return { wait: 0.5 };
+      const v = s.vs[m.i], p = s.pos[m.i], q = s.pos.slice(); q[m.i] = Math.min(m.np, N - v.len); s.dplan.at = key(q);
+      const cx = (k) => v.h ? s.ox + (k + v.len / 2) * s.cs : s.ox + (v.fix + 0.5) * s.cs, cy = (k) => v.h ? s.oy + (v.fix + 0.5) * s.cs : s.oy + (k + v.len / 2) * s.cs;
+      return { drag: [[cx(p), cy(p)], [cx(m.np), cy(m.np)]], dur: 0.45, after: 0.4, say: v.red ? Arcade.T('¡Vía libre para el coche rojo!', 'The red car can get out!') : Arcade.T('Arrastra un coche para abrir paso', 'Drag a car to clear the way') };
+    },
     setup(g) {
       const lv = gen(g.lv);
       g.s = { vs: lv.vs, pos: lv.pos.slice(), start: lv.pos.slice(), min: lv.m, moves: 0, drag: null, exit: 0, look: [] };

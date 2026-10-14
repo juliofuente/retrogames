@@ -80,6 +80,21 @@
     id: 'mazmorra', title: 'Mazmorra', emoji: '⚔️', color: '#ff922b', origin: 'Dungeon Raid / Drag and Match / 10000000 / Hero Emblems',
     help: '<b>Arrastra</b> por 3 o más fichas iguales vecinas (también en diagonal) para encadenarlas. Las ⚔️ <b>espadas</b> se encadenan con los monstruos: cada monstruo de la cadena recibe 1 de daño por espada más la fuerza de tu espada. Los 🛡️ escudos dan armadura, las 🧪 pociones te curan y las 🪙 monedas mejoran tu espada o tu vida. Tras cada turno atacan todos los monstruos (la armadura para primero). Derrota los monstruos que pide cada nivel. Si te quedas sin vida, pierdes una vida.',
     lives: 3, levels: 0, cap: 20,
+    demo(g) {
+      const s = g.s; if (s.busy || s.won || s.path.length) return { wait: 0.3 };
+      let best = null, bv = -1e9, nodes = 0;
+      const val = (p) => { const k = grp(s.b[p[0][1]][p[0][0]].k); let v = p.length;
+        if (k === 'sw') { const d = p.filter(([x, y]) => s.b[y][x].k === 'sw').length + s.pow; for (const [x, y] of p) { const t = s.b[y][x]; if (t.k === 'mo') v += t.hp <= d ? 25 : 4; } }
+        if (k === 'po') v += s.maxHp - s.hp > 3 ? 8 : -2; if (k === 'sh') v += s.arm < 3 ? 5 : 0; return v; };
+      const dfs = (p) => { if (++nodes > 15000) return; if (p.length >= 3) { const v = val(p); if (v > bv) { bv = v; best = p.slice(); } } if (p.length >= 8) return;
+        const [x, y] = p[p.length - 1], k = grp(s.b[p[0][1]][p[0][0]].k);
+        for (const [dx, dy] of NB8) { const nx = x + dx, ny = y + dy; if (nx < 0 || ny < 0 || nx >= s.C || ny >= s.R || p.some((q) => q[0] === nx && q[1] === ny) || grp(s.b[ny][nx].k) !== k) continue; p.push([nx, ny]); dfs(p); p.pop(); } };
+      for (let y = 0; y < s.R; y++) for (let x = 0; x < s.C; x++) { nodes = 0; dfs([[x, y]]); }
+      if (!best) return { wait: 0.5 };
+      const k = grp(s.b[best[0][1]][best[0][0]].k);
+      const say = { sw: Arcade.T('Espadas + monstruos: ¡ataque!', 'Swords + monsters: attack!'), sh: Arcade.T('Escudos: más armadura', 'Shields: more armour'), po: Arcade.T('Pociones: recuperas vida', 'Potions: heal up'), co: Arcade.T('Monedas: mejoras', 'Coins: upgrades') }[k];
+      return { drag: best.map(([x, y]) => [s.ox + (x + 0.5) * s.cs, s.oy + (y + 0.5) * s.cs]), dur: 0.3 * best.length, after: 0.9, say };
+    },
     setup(g) {
       g.s = { C: 6, R: 7, path: [], kills: 0, hp: 12, maxHp: 12, arm: 0, maxArm: 8, gold: 0, next: 10, pow: 1, lvUp: 0, busy: false };
       const s = g.s; s.b = [...Array(s.R)].map(() => [...Array(s.C)].map(() => tile(g)));

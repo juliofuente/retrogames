@@ -60,6 +60,20 @@
     id: 'buscaminas', title: 'Buscaminas', emoji: '💣', color: '#ff922b', origin: 'Minesweeper / Gem Sweeper',
     help: '<b>Toca</b> una casilla para descubrirla. El número indica cuántas minas la tocan (también en diagonal). <b>Mantén pulsado</b> o cambia al modo 🚩 para poner una bandera donde creas que hay una mina. Si tocas un número descubierto con todas sus banderas puestas, abre sus vecinas. Descubre todas las casillas sin mina. El primer toque siempre es seguro; cada mina que pisas cuesta una vida.',
     lives: 3, levels: 0, cap: 30,
+    demo(g) {
+      const s = g.s; if (s.done) return { wait: 0.4 };
+      const P = (c, r) => [s.ox + (c + 0.5) * s.cs, s.oy + (r + 0.5) * s.cs];
+      if (!s.planted) return { tap: P(Math.floor(s.cols / 2), Math.floor(s.rows / 2)), after: 0.6, say: Arcade.T('Toca para descubrir: el número dice cuántas minas tocan', 'Tap to uncover: the number says how many mines touch it') };
+      for (let r = 0; r < s.rows; r++) for (let c = 0; c < s.cols; c++) { const cl = s.cell[idx(s, c, r)]; if (!cl.open || !cl.n) continue;
+        const around = nb(s, c, r), hid = around.filter(([x, y]) => { const q = s.cell[idx(s, x, y)]; return !q.open && !q.flag; }), fl = around.filter(([x, y]) => s.cell[idx(s, x, y)].flag).length;
+        if (!hid.length) continue;
+        if (fl + hid.length === cl.n) { const [x, y] = hid[0]; return { hold: P(x, y), dur: 0.6, say: Arcade.T('Aquí tiene que haber mina: mantén para poner 🚩', 'There must be a mine here: hold to flag it 🚩') }; }
+        if (fl === cl.n) { const [x, y] = hid[0]; return { tap: P(x, y), after: 0.35, say: Arcade.T('Ya están todas sus minas: esta es segura', 'All its mines are found: this one is safe') }; }
+      }
+      const hid = []; for (let r = 0; r < s.rows; r++) for (let c = 0; c < s.cols; c++) { const q = s.cell[idx(s, c, r)]; if (!q.open && !q.flag && !q.mine) hid.push([c, r]); }
+      if (!hid.length) return { wait: 0.5 };
+      const [x, y] = Arcade.pick(hid); return { tap: P(x, y), after: 0.4 };
+    },
     setup(g) {
       const L = g.lv, C = clamp(7 + Math.floor(L / 3), 7, 12), R = clamp(9 + Math.floor(L / 2), 9, 18);
       g.s = { C, R, cell: [], planted: false, flagMode: false, booms: 0, done: false };

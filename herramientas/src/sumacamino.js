@@ -57,6 +57,15 @@
     id: 'sumacamino', title: 'Sumacamino', emoji: '➕', color: '#4dabf7', origin: 'Plus+Plus / zNumbers / Draw and Sum',
     help: '<b>Arrastra</b> por números vecinos (también en diagonal) para dibujar un camino. Suelta cuando sumen <b>exactamente</b> el objetivo: desaparecen y caen números nuevos. Los caminos largos dan más puntos y más tiempo. Haz las sumas que pide cada nivel antes de que se acabe la barra o pierdes una vida.',
     lives: 3, levels: 0, cap: 25,
+    demo(g) {
+      const s = g.s; if (s.won || s.path.length) return { wait: 0.2 };
+      let best = null, nodes = 0;
+      const dfs = (p, sum) => { if (++nodes > 20000) return; if (sum === s.T && p.length >= 2) { if (!best || p.length > best.length) best = p.slice(); return; } if (sum >= s.T) return;
+        const [x, y] = p[p.length - 1]; for (const [dx, dy] of NB8) { const nx = x + dx, ny = y + dy; if (nx < 0 || ny < 0 || nx >= s.C || ny >= s.R || p.some((q) => q[0] === nx && q[1] === ny)) continue; p.push([nx, ny]); dfs(p, sum + s.b[ny][nx].v); p.pop(); } };
+      for (let y = 0; y < s.R && !best; y++) for (let x = 0; x < s.C; x++) dfs([[x, y]], s.b[y][x].v);
+      if (!best) return { wait: 0.5 };
+      return { drag: best.map(([x, y]) => [s.ox + (x + 0.5) * s.cs, s.oy + (y + 0.5) * s.cs]), dur: 0.35 * best.length, after: 0.6, say: Arcade.T('Une números vecinos que sumen ', 'Join neighbours adding up to ') + s.T };
+    },
     setup(g) {
       g.s = { C: 5, R: 6, path: [], done: 0, tpop: 0, wrong: 0, T: 0 };
       const s = g.s; s.b = [...Array(s.R)].map(() => [...Array(s.C)].map(() => ({ v: val(g), fall: 0 })));

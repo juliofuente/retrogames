@@ -69,6 +69,15 @@
     id: 'domino', title: 'Dominó', emoji: '🁫', color: '#ffd43b', origin: 'Pushover (Ocean, 1992)',
     help: 'Tienes <b>un solo empujón</b> para tirar todas las fichas (menos las rojas ✋, que nunca caen). Antes puedes <b>reordenar</b>: arrastra una ficha a otro hueco para intercambiarlas (tienes un número limitado de cambios). Luego <b>toca una ficha</b> y elige ◀ o ▶ para empujarla. Las azules ↔ caen hacia los dos lados y las verdes ⟳ ruedan por los huecos hasta la siguiente.',
     lives: 3, levels: 0, cap: 24,
+    demo(g) {
+      const s = g.s; if (s.fall) return { wait: 0.4 };
+      const X = (i) => s.ox + (i + 0.5) * s.sw, Y = s.floor - s.dh * 0.5;
+      for (let i = 0; i < s.line.length; i++) if (canFall(s.line[i])) for (const d of [-1, 1]) if (wins(s.line, sim(s.line, i, d)))
+        return [{ tap: [X(i), Y], after: 0.5, say: Arcade.T('Toca una ficha y elige hacia dónde empujarla', 'Tap a domino and choose which way to push it') }, { tap: [X(i) + d * 28, s.floor - s.dh - 34], after: 0.3, say: Arcade.T('¡Tienen que caer todas!', 'They all have to fall!') }];
+      if (s.swaps > 0) for (let i = 0; i < s.line.length; i++) for (let j = i + 1; j < s.line.length; j++) { if (s.line[i] === s.line[j]) continue;
+        const b = s.line.slice(); [b[i], b[j]] = [b[j], b[i]]; if (solvableIn(b, s.swaps - 1)) return { drag: [[X(i), Y], [X(j), Y]], dur: 0.8, after: 0.6, say: Arcade.T('Arrastra para cambiar dos fichas de sitio', 'Drag to swap two dominoes') }; }
+      return { wait: 0.5 };
+    },
     setup(g) {
       const n = g.W < g.H ? 9 : 13, lv = gen(n, g.lv);
       g.s = { line: lv.line.slice(), start: lv.line.slice(), S: lv.S, swaps: lv.S, sel: -1, drag: null, fall: null, t: 0, hist: [] };

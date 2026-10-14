@@ -71,6 +71,27 @@
     id: 'vias', title: 'Vías', emoji: '🚂', color: '#90be6d', origin: 'Locomotion (Konami, 1982)',
     help: 'Es un <b>puzle deslizante</b>, pero el tren 🚂 <b>no se para nunca</b>. <b>Toca una pieza</b> en la misma fila o columna que el hueco para deslizarla. Haz que el tren siempre encuentre vía delante. Recoge las estrellas ⭐ (pasajeros) para ganar puntos extra. No puedes mover la pieza donde está el tren.',
     lives: 3, levels: null, levelLabel: 'Velocidad',
+    demo(g) {
+      const s = g.s;
+      // casillas conectadas por delante del tren y casilla donde se rompe la vía
+      const trace = (grid) => { let c = s.tr.c, r = s.tr.r, out = s.tr.outS, n = 0;
+        for (let i = 0; i < 6; i++) { const nc = c + DC[out][0], nr = r + DC[out][1]; if (nr < 0 || nr >= s.R || nc < 0 || nc >= s.C) return { n, at: null }; const tl = grid[nr][nc]; if (!tl) return { n, at: [nc, nr] }; const o = exitOf(tl.m, opp(out)); if (o < 0) return { n, at: [nc, nr] }; n++; c = nc; r = nr; out = o; } return { n, at: null }; };
+      const conn = (grid, e) => { const t = trace(grid); return t.n + (t.at ? -0.08 * (Math.abs(e.c - t.at[0]) + Math.abs(e.r - t.at[1])) : 0); };
+      const now = conn(s.grid, s.empty); let best = { v: now * 10, first: null };
+      const dfs = (grid, e, depth, first, prev) => {
+        const v = conn(grid, e) * 10 - depth * 0.3; if (first && v > best.v) best = { v, first };
+        if (depth >= 5) return;
+        for (const [dc, dr] of DC) { const c = e.c + dc, r = e.r + dr; if (c < 0 || r < 0 || c >= s.C || r >= s.R || (s.tr.c === c && s.tr.r === r) || (prev && prev.c === c && prev.r === r)) continue;
+          // las piezas por las que pasa el tren ya no se pueden mover
+          let c0 = s.tr.c, r0 = s.tr.r, o0 = s.tr.outS, used = false; for (let i = 0; i < Math.min(2, depth + 1); i++) { c0 += DC[o0][0]; r0 += DC[o0][1]; if (c0 === c && r0 === r && i === 0 && depth > 0) used = true; }
+          if (used) continue;
+          const gr = grid.map((row) => row.slice()); gr[e.r][e.c] = gr[r][c]; gr[r][c] = null;
+          dfs(gr, { c, r }, depth + 1, first || { c, r }, e); } };
+      dfs(s.grid, s.empty, 0, null, null);
+      if (!best.first || trace(s.grid).n >= 4) return { wait: 0.25 };
+      const f = best.first;
+      return { tap: [s.ox + (f.c + 0.5) * s.ts, s.oy + (f.r + 0.5) * s.ts], after: 0.12, say: Arcade.T('Toca piezas junto al hueco para darle vía al tren', 'Tap tiles next to the gap to give the train track') };
+    },
     setup(g) {
       g.s = { tiles: 0, smokeT: 0 };
       const s = g.s;
@@ -99,7 +120,7 @@
       const s = g.s;
       for (const row of s.grid) for (const t of row) if (t) { t.ax *= Math.pow(1e-6, dt); t.ay *= Math.pow(1e-6, dt); if (Math.abs(t.ax) < 0.01) t.ax = 0; if (Math.abs(t.ay) < 0.01) t.ay = 0; }
       if (s.wait > 0) { s.wait -= dt; return; }
-      const speed = Math.min(1.6, 0.42 + s.tiles * 0.014);
+      const speed = Math.min(1.6, 0.42 + s.tiles * 0.014) * (g.demoOn ? 0.55 : 1);
       const tr = s.tr;
       tr.t += speed * dt;
       s.smokeT -= dt;

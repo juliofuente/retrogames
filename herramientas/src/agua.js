@@ -48,6 +48,21 @@
     id: 'agua', title: 'Agua', emoji: '💧', color: '#4dabf7', origin: "Where's My Water? (Disney)",
     help: '<b>Arrastra</b> el dedo sobre la tierra para cavar túneles. El agua 💧 cae y corre por ellos: llévala hasta el desagüe 🚿 del fondo para llenar la bañera. La roca gris no se puede cavar. Haz pasar el agua por los patitos 🦆 para recogerlos. Llena la bañera hasta la marca para terminar; 🔄 reinicia el nivel.',
     lives: 0, levels: 0, cap: 25,
+    demo(g) {
+      const s = g.s; if (s.done || (s.dplan && g.t - s.dplan < 9)) return { wait: 0.5 };
+      // camino sin roca del agua al desagüe: cavar poco y no subir (el agua cae)
+      const N = C * R, dist = new Array(N).fill(1e9), prev = new Int32Array(N).fill(-1), done = new Uint8Array(N);
+      const start = s.wy * C + s.wx; dist[start] = 0;
+      for (;;) { let i = -1, bd = 1e9; for (let j = 0; j < N; j++) if (!done[j] && dist[j] < bd) { bd = dist[j]; i = j; } if (i < 0) break; done[i] = 1; const x = i % C, y = (i / C) | 0;
+        for (const [dx, dy] of [[0, 1], [1, 0], [-1, 0], [0, -1]]) { const nx = x + dx, ny = y + dy; if (nx < 0 || ny < 0 || nx >= C || ny >= R) continue; const j = ny * C + nx; if (s.b[j] === ROCK) continue;
+          const w = (s.b[j] === DIRT ? 1 : 0.05) + (dy < 0 ? 6 : 0) + (dx ? 0.3 : 0); if (dist[i] + w < dist[j]) { dist[j] = dist[i] + w; prev[j] = i; } } }
+      let end = -1; for (let x = 0; x < C; x++) { const j = (R - 1) * C + x; if (s.b[j] !== ROCK && dist[j] < 1e9 && (end < 0 || dist[j] < dist[end])) end = j; }
+      if (end < 0) return { wait: 1 };
+      const cells = []; for (let j = end; j >= 0; j = prev[j]) cells.unshift(j);
+      const dirt = cells.filter((j) => s.b[j] === DIRT); s.dplan = g.t; if (!dirt.length) return { wait: 1 };
+      const pts = []; for (let k = 0; k < cells.length; k += 2) { const j = cells[k]; pts.push([s.ox + (j % C + 0.5) * s.cs, s.oy + (((j / C) | 0) + 0.5) * s.cs]); }
+      return { drag: pts, dur: Math.min(6, pts.length * 0.08), after: 0.5, say: Arcade.T('Arrastra para cavar un túnel del agua a la bañera', 'Drag to dig a tunnel from the water to the bath') };
+    },
     setup(g) {
       const L = g.lv, lv = gen(L); g.s = { ...lv, orig: lv.b.slice(), np: 160, dug: 0 };
       const s = g.s; s.need = Math.round(s.np * clamp(0.45 + L * 0.015, 0.45, 0.7)); geo(g); reset(g);

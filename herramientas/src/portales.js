@@ -30,6 +30,20 @@
     }
     return -1;
   }
+  // siguiente estado del camino más corto hasta el portal (para la demo)
+  function nextStep(st, w, h, rooms, portal, cap) {
+    const seen = new Map([[skey(st), null]]); let fr = [st];
+    while (fr.length && seen.size < cap) {
+      const nx = [];
+      for (const s of fr) for (const n of neighbors(s, w, h, rooms)) {
+        const k = skey(n); if (seen.has(k)) continue; seen.set(k, s);
+        if (n.hero === portal) { let c = n, p = s; while (skey(p) !== skey(st)) { c = p; p = seen.get(skey(p)); } return c; }
+        nx.push(n);
+      }
+      fr = nx;
+    }
+    return null;
+  }
   function generate(L) {
     const w = L < 4 ? 3 : 4, h = L < 9 ? 3 : 4, n = w * h - 1;
     const minD = clamp(4 + Math.floor(L / 2), 4, 12);
@@ -92,6 +106,15 @@
     id: 'portales', title: 'Portales', emoji: '🌀', color: '#da77f2', origin: 'Warp Shift (FISHLABS)',
     help: 'Cada cuadro es una <b>sala</b> con puertas. <b>Desliza</b> una sala que esté junto al hueco para moverla allí (lo que haya dentro viaja con ella). <b>Desliza</b> o toca desde la sala del héroe hacia otra para caminar: solo si <b>las dos puertas coinciden</b>. Lleva al héroe hasta el portal 🌀. Usa ↩️ para deshacer y 🔄 para empezar de nuevo. Cada nivel sale de desordenar un puzle resuelto, así que siempre tiene solución; acaba en pocos movimientos para más estrellas.',
     lives: 0, levels: 0, cap: 24,
+    demo(g) {
+      const s = g.s; if (s.done || s.slide || s.walk) return { wait: 0.2 };
+      const nx = nextStep({ grid: s.grid, hero: s.hero }, s.w, s.h, s.rooms, s.portal, 40000); if (!nx) return { wait: 0.5 };
+      const P = (p) => [s.ox + (p % s.w + 0.5) * s.cs, s.oy + (Math.floor(p / s.w) + 0.5) * s.cs];
+      const dir = (a, b) => { const dx = b % s.w - a % s.w, dy = Math.floor(b / s.w) - Math.floor(a / s.w); return dx > 0 ? 'right' : dx < 0 ? 'left' : dy > 0 ? 'down' : 'up'; };
+      if (nx.hero !== s.hero) { const a = s.grid.indexOf(s.hero), b = s.grid.indexOf(nx.hero), [x, y] = P(a); return { swipe: [x, y, dir(a, b)], len: s.cs * 0.6, after: 0.5, say: Arcade.T('Si las puertas coinciden, el héroe cruza', 'If the doors line up, the hero walks through') }; }
+      const e = s.grid.indexOf(-1), from = nx.grid.indexOf(-1), [x, y] = P(from);
+      return { swipe: [x, y, dir(from, e)], len: s.cs * 0.6, after: 0.5, say: Arcade.T('Desliza una sala hacia el hueco', 'Slide a room into the gap') };
+    },
     setup(g) {
       const lv = generate(g.lv);
       g.s = { ...lv, hist: [], moves: 0, done: false, heroE: HEROES[(g.level - 1) % HEROES.length], slide: null, walk: null, bump: null };

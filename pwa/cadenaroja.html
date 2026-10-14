@@ -93,6 +93,17 @@
     id: 'cadenaroja', title: 'Cadena roja', emoji: '😀', color: '#ff6b6b', origin: 'Grindstone (Capybara Games)',
     help: 'Empieza en tu héroe 😀 y <b>arrastra</b> por bichos vecinos (también en diagonal) del <b>mismo color</b>: los derribas a todos y acabas en el último. Una gema 💎 te deja <b>cambiar de color</b> a mitad de cadena; las cadenas de 10 o más crean una gema nueva. Los bichos con número cuentan atrás cada turno; al llegar a 0 se enfadan ⚡ y te muerden si terminas a su lado. Derrota los bichos que pide cada nivel.',
     lives: 3, levels: 0, cap: 25,
+    demo(g) {
+      const s = g.s; if (s.busy || s.won || s.path.length) return { wait: 0.3 };
+      const hp = heroPos(s); let best = null, bv = -1e9, nodes = 0;
+      const dfs = (p) => { if (++nodes > 20000) return;
+        if (p.length > 1) { const [lx, ly] = p[p.length - 1]; let danger = 0; for (let y = 0; y < s.R; y++) for (let x = 0; x < s.C; x++) { const t = s.b[y][x]; if (t.k === 'c' && t.rage === 0 && adj([lx, ly], [x, y]) && !p.some((q) => q[0] === x && q[1] === y)) danger++; } const v = p.length - danger * 6; if (v > bv) { bv = v; best = p.slice(); } }
+        const [x, y] = p[p.length - 1]; s.path = p; const col = curColor(s); s.path = [];
+        for (const [dx, dy] of NB8) { const nx = x + dx, ny = y + dy; if (nx < 0 || ny < 0 || nx >= s.C || ny >= s.R || p.some((q) => q[0] === nx && q[1] === ny)) continue; const t = s.b[ny][nx]; if (t.k === 'gem' || (t.k === 'c' && (col < 0 || col === t.col))) { p.push([nx, ny]); dfs(p); p.pop(); } } };
+      dfs([hp]);
+      if (!best) return { wait: 0.5 };
+      return { drag: best.map(([x, y]) => [s.ox + (x + 0.5) * s.cs, s.oy + (y + 0.5) * s.cs]), dur: 0.28 * best.length, after: 0.9, say: Arcade.T('Desde tu cara, une bichos del mismo color', 'From your face, chain bugs of one colour') };
+    },
     setup(g) {
       g.s = { C: 7, R: 7, path: [], kills: 0, hp: 3, maxHp: 3, busy: false, nc: g.lv >= 8 ? 5 : 4, rageP: clamp(0.08 + g.lv * 0.01, 0.08, 0.3) };
       const s = g.s; s.b = [...Array(s.R)].map(() => [...Array(s.C)].map(() => creep(g)));

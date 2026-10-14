@@ -53,6 +53,14 @@
     id: 'fusionabolas', title: 'Fusiona bolas', emoji: '🔵', color: '#748ffc', origin: 'Fuse Ballz / Drop the Number / Ballz',
     help: '<b>Toca</b> una columna (o arrastra para apuntar y suelta) para disparar la bola hacia arriba: se pega debajo de las demás. Si toca bolas con el <b>mismo número</b>, se fusionan todas: dos hacen el doble, tres el cuádruple… ¡y el resultado puede seguir fusionándose en cadena! Consigue la bola objetivo de cada nivel. Si todas las columnas se llenan, pierdes una vida.',
     lives: 3, levels: 0, cap: 16,
+    demo(g) {
+      const s = g.s; if (s.fly || s.busy || s.done) return { wait: 0.25 };
+      let best = 0, bv = -1e9;
+      for (let c = 0; c < C; c++) { const r0 = landRow(s, c); if (r0 < 0) continue; let v = -r0;
+        for (const [y, x] of [[r0, c - 1], [r0, c + 1], [r0 - 1, c]]) if (y >= 0 && x >= 0 && x < C && s.b[y][x] && s.b[y][x].v === s.cur) v += 20;
+        if (r0 > 0 && s.b[r0 - 1][c].v > s.cur) v += 2; v += Math.random(); if (v > bv) { bv = v; best = c; } }
+      return { tap: [s.ox + (best + 0.5) * s.cs, s.ly - s.cs * 0.2], after: 0.7, say: bv >= 20 ? Arcade.T('Toca su columna: se junta con su igual', 'Tap its column: it joins its twin') : Arcade.T('Toca una columna para disparar', 'Tap a column to shoot') };
+    },
     setup(g) {
       g.s = { b: [...Array(R)].map(() => new Array(C).fill(null)), aim: 2, fly: null, busy: false, done: false, maxV: 4, shake: 0 };
       const s = g.s; s.goal = Math.pow(2, clamp(6 + Math.floor(g.lv / 2), 6, 12));

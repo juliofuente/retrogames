@@ -100,6 +100,28 @@
     id: 'dados', title: 'Dados', emoji: '🎲', color: '#b197fc', origin: 'Devil Dice (Shift/SCEI, 1998)',
     help: '<b>Toca una casilla</b> para andar hasta ella o <b>toca un dado pegado a ti</b> (o desliza) para hacerlo rodar. Al rodar cambia la cara de arriba. Junta <b>tantos dados iguales como su número</b> (dos 2, tres 3, cuatro 4…) y se hunden. Los 1 pegados a un grupo que se hunde se van con él. Los laterales muestran qué cara saldrá. No dejes que el tablero se llene.',
     lives: 0, levels: null,
+    demo(g) {
+      const s = g.s; if (s.path && s.path.length) return { wait: 0.25 };
+      if (s.plan && s.pc === s.plan.x && s.pr === s.plan.y) { const pl = s.plan; s.plan = null; return { tap: [s.ox + (pl.dx + 0.5) * s.cs, s.oy + (pl.dy + 0.5) * s.cs], after: 0.6, say: Arcade.T('Toca un dado a tu lado para hacerlo rodar', 'Tap a die next to you to roll it') }; }
+      let best = null;
+      for (let y = 0; y < s.R; y++) for (let x = 0; x < s.C; x++) {
+        if (s.b[y][x] && !(x === s.pc && y === s.pr)) continue;
+        const path = x === s.pc && y === s.pr ? [] : bfs(s, x, y); if (!path) continue;
+        for (const [dir, [ddx, ddy]] of Object.entries(DIRS)) {
+          const c = x + ddx, r = y + ddy, nc = c + ddx, nr = r + ddy; if (!inside(s, c, r) || !inside(s, nc, nr)) continue;
+          const d = s.b[r][c]; if (!d || d.sink || s.b[nr][nc]) continue;
+          const nd = { top: d.top, north: d.north, east: d.east }; roll(nd, dir);
+          const seen = new Set([nc + ',' + nr]), st = [[nc, nr]]; let size = 0;
+          while (st.length) { const [px, py] = st.pop(); size++; for (const [qx, qy] of Object.values(DIRS)) { const ax = px + qx, ay = py + qy, k = ax + ',' + ay; if (!inside(s, ax, ay) || seen.has(k) || (ax === c && ay === r)) continue; const o = s.b[ay][ax]; if (o && !o.sink && o.top === nd.top) { seen.add(k); st.push([ax, ay]); } } }
+          const v = (nd.top !== 1 && size >= nd.top ? 100 : 0) + size * 3 - path.length * 0.5 + Math.random();
+          if (!best || v > best.v) best = { v, x, y, dx: c, dy: r };
+        }
+      }
+      if (!best) return { wait: 0.5 };
+      s.plan = best;
+      if (best.x === s.pc && best.y === s.pr) return { wait: 0.05 };
+      return { tap: [s.ox + (best.x + 0.5) * s.cs, s.oy + (best.y + 0.5) * s.cs], after: 0.3, say: Arcade.T('Toca una casilla para ir allí', 'Tap a square to walk there') };
+    },
     setup(g) {
       g.s = { b: [], pc: 0, pr: 0, spawnT: 4, sinks: 0, path: null, pathT: 0, walkAnim: 0 };
       const s = g.s;

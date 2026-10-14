@@ -65,6 +65,12 @@
     id: 'inundacion', title: 'Inundación', emoji: '🌊', color: '#228be6', origin: 'Flood-It / Filler / ColorFill',
     help: 'Tu zona empieza en la <b>esquina de arriba a la izquierda</b>. Toca un <b>color</b> de la paleta: toda tu zona cambia a ese color y se traga las casillas vecinas de ese color. Consigue que todo el tablero sea de un solo color sin pasarte de movimientos. Los tableros crecen y el límite aprieta.',
     lives: 3, levels: 0, cap: 30,
+    demo(g) {
+      const s = g.s; if (s.done) return { wait: 0.4 };
+      let best = -1, bs = -1; for (let c = 0; c < s.nc; c++) { if (c === s.b[0]) continue; const t = s.b.slice(), sz = flood(t, s.n, c); if (sz > bs) { bs = sz; best = c; } }
+      const q = s.pal[best];
+      return { tap: [q.x + q.w / 2, q.y + q.h / 2], after: 0.6, say: Arcade.T('Elige el color que más casillas añade a tu zona', 'Pick the colour that adds the most squares to your area') };
+    },
     setup(g) {
       const L = g.lv, n = clamp(6 + Math.floor(L / 2), 6, 16), nc = L < 3 ? 4 : L < 8 ? 5 : 6;
       g.s = { n, nc, b: [], moves: 0, done: false };

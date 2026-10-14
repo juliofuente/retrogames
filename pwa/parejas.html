@@ -119,6 +119,25 @@
     id: 'parejas', title: 'Parejas', emoji: '🧩', color: '#74c0fc', origin: 'Puzznic (Taito, 1989)',
     help: 'Cada nivel es un puzle. <b>Desliza</b> un bloque a la izquierda o la derecha (o tócalo y toca el hueco de al lado). Los bloques caen por gravedad y, cuando dos o más <b>iguales se tocan</b>, desaparecen. Limpia el tablero entero. Si te queda un bloque solo de un tipo, estás atascado: <b>deshaz</b> ↩️ o <b>reinicia</b> 🔄.',
     lives: 0, levels: 0, cap: 24,
+    demo(g) {
+      const s = g.s; if (s.phase) return { wait: 0.2 };
+      const key = (a) => a.join(',');
+      if (!s.dplan || key(s.a) !== s.dplan.at) {
+        // BFS con camino hasta vaciar el tablero
+        const seen = new Map([[key(s.a), null]]); let fr = [s.a], found = null;
+        while (fr.length && seen.size < 60000 && !found) { const nx = [];
+          for (const a of fr) { for (let i = 0; i < a.length && !found; i++) { if (a[i] <= 0) continue; for (const d of [-1, 1]) { const c = i % C; if ((d < 0 && c === 0) || (d > 0 && c === C - 1) || a[i + d] !== 0) continue;
+            const b = a.slice(); b[i + d] = b[i]; b[i] = 0; settle(b); const k = key(b); if (seen.has(k) || dead(b)) continue; seen.set(k, { from: key(a), i, d });
+            if (empty(b)) { found = k; break; } nx.push(b); } } if (found) break; }
+          fr = nx; }
+        if (!found) return { wait: 0.5 };
+        const moves = []; let k = found; while (seen.get(k)) { const m = seen.get(k); moves.unshift(m); k = m.from; }
+        s.dplan = { moves, at: key(s.a) };
+      }
+      const m = s.dplan.moves.shift(); if (!m) return { wait: 0.4 };
+      const b = s.a.slice(); b[m.i + m.d] = b[m.i]; b[m.i] = 0; settle(b); s.dplan.at = key(b);
+      return { swipe: [s.ox + (m.i % C + 0.5) * s.cs, s.oy + (Math.floor(m.i / C) + 0.5) * s.cs, m.d < 0 ? 'left' : 'right'], len: s.cs * 0.8, after: 1.1, say: Arcade.T('Desliza un bloque: los iguales que se tocan desaparecen', 'Swipe a block: matching blocks that touch vanish') };
+    },
     setup(g) {
       const lv = genLevel(g.lv);
       g.s = { a: lv.a.slice(), start: lv.a.slice(), par: lv.m, moves: 0, hist: [], sel: -1, phase: null, t: 0, flash: null };
