@@ -266,6 +266,7 @@ const SFX={
   whoosh:()=>tone(300,'sine',.18,.1,0,900),
   laser:()=>tone(1500,'square',.15,.08,0,200),
   boom:()=>{noise(.35,.35);tone(120,'sine',.3,.25,0,40);},
+  fall:(d=1.5)=>{tone(1500,'sine',d,.09,0,240);tone(1520,'sine',d,.05,0,250);},   // silbido de bomba que cae
   pop:()=>tone(500,'sine',.09,.18,0,1100),
   slice:()=>{noise(.12,.18);tone(1800,'sine',.08,.08,0,600);}
 };
