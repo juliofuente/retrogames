@@ -43,9 +43,12 @@
   }
 
   Arcade.game({
+    /*THEME*/ tag: "El ratón policía rebota a la caza", deco: ["😀", "🧛", "💰", "📺", "🎁", "🚨"], font: "round", bg: ["#3b1f5c", "#1c1030"], music: {"mode": "major", "bpm": 140, "wave": "square", "style": "arcade", "root": 64}, voice: {"wave": "square", "mul": 1.2, "echo": 0.15}, ambient: {"e": ["⭐"], "n": 6, "vy": 0, "sway": 0, "twinkle": 1, "alpha": 0.2, "size": [8, 14]},
+    /*EN*/ en: {"title": "Trampoline", "tag": "The police hero bounces into action", "help": "You are a police hero recovering stolen goods. <b>Swipe</b> left or right to run. When you drop into a gap you bounce on the <b>trampoline</b>; swipe while bouncing to exit onto a floor. The trampoline breaks on the 4th bounce in a row! <b>Tap a door</b> to open or close it: if you open it with vampires 🧛 in front, they go flying. Vampires can't catch you in the gaps.", "tvHelp": "◀ ▶ run (and exit while bouncing) · OK open or close the nearest door.", "dict": {}},
+    /*TV*/ tvHelp: "◀ ▶ correr (y salir al rebotar) · OK abrir o cerrar la puerta más cercana.",
     id: 'trampolin', title: 'Trampolín', emoji: '🤸', color: '#da77f2', origin: 'Mappy (Namco, 1983)',
-    help: 'Eres un ratón policía recuperando objetos robados. <b>Desliza</b> a izquierda o derecha para correr. Al caer por un hueco rebotas en el <b>trampolín</b>; desliza mientras rebotas para salir en un piso. ¡El trampolín se rompe al 4º bote seguido! <b>Toca una puerta</b> para abrirla o cerrarla: si la abres con gatos 🐱 delante, salen volando. En los huecos los gatos no te pueden coger.',
-    lives: 3, levels: 10,
+    help: 'Eres un héroe policía recuperando objetos robados. <b>Desliza</b> a izquierda o derecha para correr. Al caer por un hueco rebotas en el <b>trampolín</b>; desliza mientras rebotas para salir en un piso. ¡El trampolín se rompe al 4º bote seguido! <b>Toca una puerta</b> para abrirla o cerrarla: si la abres con vampiros 🧛 delante, salen volando. En los huecos los vampiros no te pueden coger.',
+    lives: 3, levels: 0, cap: 16,
     setup(g) {
       g.s = { inv: 1.5, doors: [], loot: [], cats: [] };
       const s = g.s; s.F = 5; s.S = g.W < g.H ? 3 : 4;
@@ -56,8 +59,8 @@
       }
       s.pl = { isP: true, st: 'floor', f: s.F - 1, x: 24, dir: 1, moving: false, exit: 0 };
       s.loot = s.loot.filter(l => !(l.f === s.pl.f && Math.abs(l.x - s.pl.x) < 40));
-      const n = Math.min(5, 2 + Math.floor(g.level / 2));
-      for (let i = 0; i < n; i++) s.cats.push({ st: 'floor', f: i % (s.F - 1), x: g.W - 30 - i * 20, dir: -1, moving: true, sp: 70 + g.level * 8 + i * 6, out: 0 });
+      const n = Math.min(5, 2 + Math.floor(g.lv / 2));
+      for (let i = 0; i < n; i++) s.cats.push({ st: 'floor', f: i % (s.F - 1), x: g.W - 30 - i * 20, dir: -1, moving: true, sp: 70 + g.lv * 8 + i * 6, out: 0 });
     },
     layout(g) {
       const s = g.s; if (!s.fy) return;
@@ -88,7 +91,7 @@
       else { bounce(g, p, dt); if (p.broken) { p.broken = false; g.burst(p.x, s.tramp, { n: 16, color: ['#ff6b6b', '#fff'], speed: 200 }); if (g.die()) { Object.assign(p, { st: 'floor', f: s.F - 1, x: 24, moving: false, hits: 0, exit: 0 }); s.inv = 2; } return; } }
       if (p.st === 'floor') {
         const li = s.loot.findIndex(l => l.f === p.f && Math.abs(l.x - p.x) < 20);
-        if (li >= 0) { const l = s.loot.splice(li, 1)[0]; g.addScore(200 * g.level, l.x, s.fy[l.f] - 40); Arcade.sfx.coin(); if (!s.loot.length) { g.addScore(1000 * g.level, g.W / 2, g.H / 2); g.win(); return; } }
+        if (li >= 0) { const l = s.loot.splice(li, 1)[0]; g.addScore(200 * g.lv, l.x, s.fy[l.f] - 40); Arcade.sfx.coin(); if (!s.loot.length) { g.addScore(1000 * g.lv, g.W / 2, g.H / 2); g.win(); return; } }
       }
       for (const c of s.cats) {
         if (c.out > 0) { c.out -= dt; continue; }
@@ -108,6 +111,7 @@
       const bg = ctx.createLinearGradient(0, 0, 0, H);
       bg.addColorStop(0, '#3b1f5c'); bg.addColorStop(1, '#1c1030');
       ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      g.scenery(['🖼️','🛋️','🪴','🕰️','📚'], 10, { alpha: 0.18 }); /*SC*/
       if (!s.fy) return;
       // pisos
       for (let f = 0; f < s.F; f++) {
@@ -137,10 +141,10 @@
       for (const c of s.cats) {
         const y = c.st === 'floor' ? s.fy[c.f] : c.y;
         if (c.out > 0) { Arcade.emoji(ctx, '😵', c.x, y - 18, 28, { alpha: 0.6 }); continue; }
-        Arcade.emoji(ctx, '🐱', c.x, y - 18, 32, { flip: c.dir > 0 });
+        Arcade.emojiTo(ctx, '🧛', c.x, y - 18, 32, c.dir || 1, 0, { mode: 'flip' });
       }
       const p = s.pl, py = p.st === 'floor' ? s.fy[p.f] : p.y;
-      if (!(s.inv > 0 && Math.floor(g.t * 10) % 2)) Arcade.emoji(ctx, '🐭', p.x, py - 18, 34, { flip: p.dir > 0, rot: p.st === 'bounce' ? Math.sin(g.t * 10) * 0.3 : 0 });
+      if (!(s.inv > 0 && Math.floor(g.t * 10) % 2)) Arcade.emojiTo(ctx, p.st === 'bounce' ? '🤩' : g.face(), p.x, py - 18, 32, p.dir || 1, 0, { mode: 'flip', rot: p.st === 'bounce' ? Math.sin(g.t * 10) * 0.3 : 0 });
       if (p.st === 'floor' && !p.moving) Arcade.txt(ctx, '↔', p.x, py - 46, 14, 'rgba(255,255,255,.6)', 'center', 900);
       Arcade.txt(ctx, '🎒 ' + s.loot.length, W / 2, g.top + 18, 15, '#fff', 'center', 800);
     },

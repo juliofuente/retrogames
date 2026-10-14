@@ -86,7 +86,7 @@
       ctx.fillStyle = '#74b816'; ctx.fillRect(0, s.ground, W, 10 * s.u);
       for (let x = -(s.scroll % 24); x < W; x += 24) { ctx.fillStyle = '#5c940d'; ctx.fillRect(x, s.ground + 10 * s.u, 12, 4); }
       const rot = s.dead ? 1.4 : clamp(s.vy / 600, -0.5, 1.2);
-      Arcade.emoji(ctx, s.bird, s.bx, s.y, 36 * s.u, { rot, flip: true });
+      Arcade.emoji(ctx, rot < -0.2 ? '😤' : rot > 0.6 ? '😨' : g.face(), s.bx, s.y, 34 * s.u, { rot: rot * 0.6 }); Arcade.emoji(ctx, '🪽', s.bx - 13 * s.u, s.y - 4 * s.u, 18 * s.u, { rot: Math.sin(g.rt * 18) * 0.5, flip: true });
       if (!s.started && !s.dead) Arcade.txt(ctx, 'Toca para volar', W / 2, s.y + 60 * s.u, 20, '#fff', 'center', 900);
       Arcade.txt(ctx, 'Huecos: ' + s.passed + '/' + s.need, W / 2, g.top + 24, 18, '#fff', 'center', 900);
     },

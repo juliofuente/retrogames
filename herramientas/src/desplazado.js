@@ -28,18 +28,21 @@
   }
   function geo(g) { const s = g.s; s.cs = Math.max(34, Math.min(56, Math.min(g.W, g.bot - g.top) / 9)); s.vw = g.W; s.vh = g.bot - g.top; }
   const ppos = (s) => { const m = s.pl; return { x: (m.c + 0.5 + (m.moving ? D[m.dir][0] * m.p : 0)) * s.cs, y: (m.r + 0.5 + (m.moving ? D[m.dir][1] * m.p : 0)) * s.cs }; };
-  function newDir(g) { const s = g.s, a = rand(0, Math.PI * 2), sp = 18 + g.level * 4; s.cvx = Math.cos(a) * sp; s.cvy = Math.sin(a) * sp; s.dirT = rand(3, 6); }
+  function newDir(g) { const s = g.s, a = rand(0, Math.PI * 2), sp = 18 + g.lv * 4; s.cvx = Math.cos(a) * sp; s.cvy = Math.sin(a) * sp; s.dirT = rand(3, 6); }
 
   Arcade.game({
+    /*THEME*/ tag: "El laberinto se mueve sin ti", deco: ["😀", "🍒", "🍓", "🧱", "🍇", "🍑"], font: "comic", bg: ["#1f3f1f", "#132613"], music: {"mode": "dorian", "bpm": 124, "wave": "triangle", "style": "arcade", "root": 60}, voice: {"wave": "triangle", "mul": 1.1, "echo": 0.2}, ambient: {"e": ["🍃"], "n": 7, "vy": 24, "sway": 24, "spin": 1, "alpha": 0.18},
+    /*EN*/ en: {"title": "Scroller", "tag": "The maze moves without you", "help": "The maze is bigger than the screen and <b>the camera moves on its own</b> wherever it likes. <b>Swipe</b> to move and keep away from the edge: if you go off screen, you get squashed. Collect fruit 🍒 to clear the level. The red border warns you that you're close.", "tvHelp": "D-pad to move through the maze.", "dict": {}},
+    /*TV*/ tvHelp: "Cruceta para moverte por el laberinto.",
     id: 'desplazado', title: 'Desplazado', emoji: '🧱', color: '#94d82d', origin: 'Splat! (Incentive, 1983)',
     help: 'El laberinto es más grande que la pantalla y <b>la cámara se mueve sola</b> hacia donde quiere. <b>Desliza</b> para moverte y que no te pille el borde: si te sales de la pantalla, te aplasta. Recoge fruta 🍒 para pasar de nivel. El borde rojo avisa de que estás cerca.',
-    lives: 3, levels: 10,
+    lives: 3, levels: 0, cap: 16,
     setup(g) {
       g.s = { inv: 2 };
       const s = g.s; gen(s); geo(g);
       s.pl = { c: Math.floor(MC / 2), r: Math.floor(MR / 2), dir: 'up', p: 0, moving: false, q: null };
       s.camX = (s.pl.c + 0.5) * s.cs - s.vw / 2; s.camY = (s.pl.r + 0.5) * s.cs - s.vh / 2;
-      s.fruit = new Map(); s.need = 10 + g.level * 2; s.got = 0;
+      s.fruit = new Map(); s.need = Math.min(28, 10 + g.lv * 2); s.got = 0;
       for (let i = 0; i < 40; i++) s.fruit.set(ri(0, MC - 1) + ',' + ri(0, MR - 1), pick(FRUIT));
       newDir(g);
     },
@@ -67,9 +70,9 @@
           m.c += D[m.dir][0]; m.r += D[m.dir][1]; m.p = 0;
           const k = m.c + ',' + m.r;
           if (s.fruit.has(k)) {
-            s.fruit.delete(k); s.got++; g.addScore(50 * g.level); Arcade.sfx.coin();
+            s.fruit.delete(k); s.got++; g.addScore(50 * g.lv); Arcade.sfx.coin();
             for (let t = 0; t < 10; t++) { const nk = ri(0, MC - 1) + ',' + ri(0, MR - 1); if (!s.fruit.has(nk) && nk !== k) { s.fruit.set(nk, pick(FRUIT)); break; } }
-            if (s.got >= s.need) { g.addScore(1000 * g.level, g.W / 2, g.H / 2); g.win(); return; }
+            if (s.got >= s.need) { g.addScore(1000 * g.lv, g.W / 2, g.H / 2); g.win(); return; }
           }
           if (m.q && pass(s, m.c, m.r, m.q)) { m.dir = m.q; m.q = null; }
           else if (!pass(s, m.c, m.r, m.dir)) m.moving = false;
@@ -101,7 +104,7 @@
       }
       ctx.strokeStyle = '#5c3d1e'; ctx.lineWidth = wt; ctx.strokeRect(ox, oy, MC * cs, MR * cs);
       const p = ppos(s);
-      if (!(s.inv > 0 && Math.floor(g.t * 10) % 2)) Arcade.emoji(ctx, '🐸', ox + p.x, oy + p.y, cs * 0.7, { flip: s.pl.dir === 'right' });
+      if (!(s.inv > 0 && Math.floor(g.t * 10) % 2)) Arcade.emojiTo(ctx, g.face(), ox + p.x, oy + p.y, cs * 0.68, D[s.pl.dir][0], D[s.pl.dir][1]);
       ctx.restore();
       if (s.danger) { ctx.strokeStyle = 'rgba(255,60,60,' + (0.5 + Math.sin(g.t * 14) * 0.3) + ')'; ctx.lineWidth = 8; ctx.strokeRect(4, g.top + 4, W - 8, s.vh - 8); }
       // flecha de dirección de cámara

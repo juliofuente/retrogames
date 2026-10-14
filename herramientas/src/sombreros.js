@@ -51,6 +51,9 @@
   const colAt = (s, x) => clamp(Math.floor((x - s.ox) / s.cw - 0.5), 0, COLS - 2);
 
   Arcade.game({
+    /*THEME*/ tag: "La sombrerería más loca", deco: ["🎩", "👒", "🧢", "🎓", "👑", "⛑️"], font: "serif", bg: ["#4a2f1d", "#1d120b"], music: {"mode": "major", "bpm": 118, "wave": "square", "style": "waltz", "root": 60}, voice: {"wave": "square", "mul": 1.05, "echo": 0.2}, ambient: {"e": ["✨"], "n": 6, "vy": 10, "sway": 10, "twinkle": 1, "alpha": 0.2},
+    /*EN*/ en: {"title": "Hats", "tag": "The craziest hat shop", "help": "Hats fall two by two onto six heads. <b>Drag</b> to choose which two heads they land on, <b>tap</b> to swap them and <b>swipe down</b> to drop them. When a head has <b>5 matching hats in a row</b> on top, they vanish. If any stack reaches the ceiling, it's over.", "tvHelp": "◀ ▶ move the hats · ▲ or OK swap them · ▼ drop them.", "dict": {"Nuevo sombrero ": "New hat ", "Siguiente": "Next"}},
+    /*TV*/ tvHelp: "◀ ▶ mover los sombreros · ▲ u OK intercambiarlos · ▼ dejarlos caer.",
     id: 'sombreros', title: 'Sombreros', emoji: '🎩', color: '#e8a87c', origin: 'Hatris (Bullet-Proof, 1990)',
     help: 'Caen sombreros de dos en dos sobre seis cabezas. <b>Arrastra</b> para elegir sobre qué dos cabezas caen, <b>toca</b> para intercambiarlos y <b>desliza hacia abajo</b> para dejarlos caer. Cuando una cabeza tiene <b>5 sombreros iguales seguidos</b> arriba del todo, desaparecen. Si alguna pila llega al techo, se acaba.',
     lives: 0, levels: null,
@@ -84,6 +87,7 @@
       const bg = ctx.createLinearGradient(0, 0, 0, H);
       bg.addColorStop(0, '#4a2f1d'); bg.addColorStop(1, '#1d120b');
       ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      g.scenery(['🪞','🧥','👔','👗'], 6, { alpha: 0.12, size: [26, 40] }); /*SC*/
       if (!s.st.length) return;
       const cw = s.cw;
       // percheros

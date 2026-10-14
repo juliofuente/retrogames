@@ -89,19 +89,21 @@
   function doMove(g, i, d) {
     const s = g.s, a = s.a, c = i % C;
     if (s.phase || a[i] <= 0 || (d < 0 && c === 0) || (d > 0 && c === C - 1) || a[i + d] !== 0) { Arcade.sfx.bad(); return; }
-    s.hist.push(a.slice()); s.chain = 0;
+    s.hist.push(a.slice());
     a[i + d] = a[i]; a[i] = 0; s.sel = i + d; s.moves++;
     s.phase = 'fall'; s.t = 0; Arcade.sfx.move();
   }
   const cellOf = (s, x, y) => { const c = Math.floor((x - s.ox) / s.cs), r = Math.floor((y - s.oy) / s.cs); return c >= 0 && c < C && r >= 0 && r < R ? r * C + c : -1; };
 
   Arcade.game({
+    /*THEME*/ tag: "Gemas gemelas con gravedad", deco: ["💎", "🍀", "🔥", "⭐", "🌙", "💎"], font: "fancy", bg: ["#22244a", "#101127"], music: {"mode": "lydian", "bpm": 100, "wave": "triangle", "style": "chill", "root": 62}, voice: {"wave": "sine", "mul": 1.2, "echo": 0.3}, ambient: {"e": ["✨"], "n": 10, "vy": 0, "sway": 0, "twinkle": 1, "alpha": 0.28, "size": [8, 14]},
+    /*EN*/ en: {"title": "Pairs", "tag": "Twin gems with gravity", "help": "Each level is a puzzle. <b>Swipe</b> a block left or right (or tap it and tap the gap next to it). Blocks fall with gravity, and when two or more <b>matching ones touch</b>, they vanish. Clear the whole board. If a lone block of one type remains, you're stuck: <b>undo</b> ↩️ or <b>restart</b> 🔄.", "tvHelp": "D-pad to move · OK on a block to grab it ✋ and ◀ ▶ to move it · Undo and Restart are below the board.", "dict": {"Movimientos: ": "Moves: ", "   ·   Mejor solución: ": "   ·   Best solution: ", "Atascado": "Stuck", "Deshaz ↩️ o reinicia 🔄": "Undo ↩️ or restart 🔄", "↩️ Deshacer": "↩️ Undo", "🔄 Reiniciar": "🔄 Restart"}},
+    /*TV*/ tvHelp: "Cruceta para moverte · OK sobre un bloque para agarrarlo ✋ y ◀ ▶ para moverlo · Deshacer y Reiniciar están debajo del tablero.", tv: { mode: 'swipe', canArm: (g, t) => t.i != null && g.s.a[t.i] > 0, targets: (g) => { const s = g.s, o = []; if (!s.a) return o; for (let i = 0; i < s.a.length; i++) if (s.a[i] !== -1) o.push({ x: s.ox + (i % C) * s.cs, y: s.oy + Math.floor(i / C) * s.cs, w: s.cs, h: s.cs, i }); o.push({ x: g.W * 0.27 - 70, y: s.btnY - 20, w: 140, h: 40, instant: true }, { x: g.W * 0.73 - 70, y: s.btnY - 20, w: 140, h: 40, instant: true }); return o; } },
     id: 'parejas', title: 'Parejas', emoji: '🧩', color: '#74c0fc', origin: 'Puzznic (Taito, 1989)',
     help: 'Cada nivel es un puzle. <b>Desliza</b> un bloque a la izquierda o la derecha (o tócalo y toca el hueco de al lado). Los bloques caen por gravedad y, cuando dos o más <b>iguales se tocan</b>, desaparecen. Limpia el tablero entero. Si te queda un bloque solo de un tipo, estás atascado: <b>deshaz</b> ↩️ o <b>reinicia</b> 🔄.',
-    lives: 0, levels: Infinity,
-    theme: { font: 'Comfortaa', ambient: 'sparkles', music: { tempo: 100, scale: 'penta', root: 262, wave: 'triangle', lead: 'sine', nodrums: true }, sfx: { wave: 'triangle', pitch: 1.1 } },
+    lives: 0, levels: 0, cap: 24,
     setup(g) {
-      const lv = genLevel(g.level);
+      const lv = genLevel(g.lv);
       g.s = { a: lv.a.slice(), start: lv.a.slice(), par: lv.m, moves: 0, hist: [], sel: -1, phase: null, t: 0, flash: null };
       geo(g);
     },
@@ -139,23 +141,22 @@
           if (m.length) { s.phase = 'flash'; s.flash = m; Arcade.sfx.coin(); }
           else {
             s.phase = null; s.sel = -1;
-            if (empty(s.a)) { const bonus = Math.max(0, s.par * 2 - s.moves) * 60; g.addScore(500 + bonus + g.level * 50, g.W / 2, g.H / 2); g.win(); }
-            else if (dead(s.a)) { g.message('Atascado', 1.6, 'Deshaz ↩️ o reinicia 🔄'); Arcade.sfx.bad(); }
+            if (empty(s.a)) { const bonus = Math.max(0, s.par * 2 - s.moves) * 60; g.addScore(500 + bonus + g.lv * 50, g.W / 2, g.H / 2); g.win(); }
+            else if (dead(s.a)) g.message('Atascado', 1.6, 'Deshaz ↩️ o reinicia 🔄');
           }
         } else if (s.sel >= 0 && before[s.sel] > 0 && s.a[s.sel] === 0) s.sel += C;
       } else if (s.phase === 'flash' && s.t > 0.35) {
-        s.chain = (s.chain || 0) + 1; Arcade.sfx.combo(s.chain * 2);
-        for (const i of s.flash) { const x = s.ox + (i % C + 0.5) * s.cs, y = s.oy + (Math.floor(i / C) + 0.5) * s.cs; g.burst(x, y, { n: 10, color: [TC[s.a[i]], '#fff'], speed: 170, size: 3 }); g.burst(x, y, { n: 2, emoji: TY[s.a[i]], size: 18, speed: 120, up: 80 }); g.ring(x, y, { color: TC[s.a[i]], r: s.cs, w: 4 }); s.a[i] = 0; }
+        for (const i of s.flash) { g.burst(s.ox + (i % C + 0.5) * s.cs, s.oy + (Math.floor(i / C) + 0.5) * s.cs, { n: 8, color: TC[s.a[i]], speed: 150, size: 3 }); s.a[i] = 0; }
         g.addScore(20 * s.flash.length);
         s.flash = null; s.phase = 'fall'; s.t = 0; s.sel = -1;
       }
     },
     draw(g, ctx) {
       const s = g.s, W = g.W, H = g.H;
-      Arcade.bg(ctx, W, H, '#3b2f63', '#22244a', '#0c0d20');
-      ctx.fillStyle = 'rgba(255,255,255,.035)'; for (let x = 0; x < W; x += 70) ctx.fillRect(x + 20, 0, 22, H);
-      Arcade.decor(ctx, g.t, [{ e: '🏺', x: 22, y: H - 34, s: 34, a: 0.5 }, { e: '🏺', x: W - 22, y: H - 34, s: 34, a: 0.5 }, { e: '💎', x: W - 24, y: g.top + 22, s: 22, a: 0.5, bob: 4 }, { e: '🕯️', x: 22, y: g.top + 24, s: 22, a: 0.6 }]);
-      Arcade.amb(g, ctx);
+      const bg = ctx.createLinearGradient(0, 0, 0, H);
+      bg.addColorStop(0, '#22244a'); bg.addColorStop(1, '#101127');
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      g.scenery(['💎','🔮','✨'], 6, { alpha: 0.12, size: [24, 40], bob: 3 }); /*SC*/
       if (!s.a) return;
       const cs = s.cs;
       for (let i = 0; i < s.a.length; i++) {

@@ -34,10 +34,10 @@
 
   Arcade.game({
     /*THEME*/ tag: "Mamá cerdita contra los lobos", deco: ["🐺", "🎈", "🏹", "🐷", "🎈", "🌳"], font: "comic", bg: ["#74c0fc", "#2b6a9e"], music: {"mode": "major", "bpm": 132, "wave": "square", "style": "march", "root": 62}, voice: {"wave": "square", "mul": 1.15, "echo": 0.15}, ambient: {"e": ["☁️"], "n": 4, "vy": 0, "vx": 14, "sway": 4, "alpha": 0.2, "size": [30, 46]},
-    /*EN*/ en: {"title": "Piglets", "tag": "Mother pig versus the wolves", "help": "Mother pig goes up and down in a lift. <b>Drag up or down</b> to move her and <b>tap</b> to shoot arrows. Wolves 🐺 float down hanging from balloons: <b>pop the balloon</b> so they fall (hitting the wolf does nothing). If a wolf reaches the ground, it climbs the ladder and bites you if you pass at its height. If 4 reach the ladder, you lose a life.", "tvHelp": "Hold ▲ ▼ to go up and down · OK shoot.", "dict": {"¡Demasiados lobos!": "Too many wolves!"}},
+    /*EN*/ en: {"title": "Piglets", "tag": "Your hero versus the wolves", "help": "Your hero goes up and down in a lift. <b>Drag up or down</b> to move her and <b>tap</b> to shoot arrows. Wolves 🐺 float down hanging from balloons: <b>pop the balloon</b> so they fall (hitting the wolf does nothing). If a wolf reaches the ground, it climbs the ladder and bites you if you pass at its height. If 4 reach the ladder, you lose a life.", "tvHelp": "Hold ▲ ▼ to go up and down · OK shoot.", "dict": {"¡Demasiados lobos!": "Too many wolves!"}},
     /*TV*/ tvHelp: "Mantén ▲ ▼ para subir y bajar · OK disparar.",
     id: 'cerditos', title: 'Cerditos', emoji: '🐷', color: '#ff8fab', origin: 'Pooyan (Konami, 1982)',
-    help: 'Mamá cerdita sube y baja en un ascensor. <b>Arrastra arriba o abajo</b> para moverla y <b>toca</b> para disparar flechas. Los lobos 🐺 bajan colgados de globos: <b>revienta el globo</b> para que caigan (darle al lobo no sirve). Si un lobo llega al suelo, trepa por la escalera y te muerde si pasas a su altura. Si llegan 4 a la escalera, pierdes una vida.',
+    help: 'Tu héroe sube y baja en un ascensor. <b>Arrastra arriba o abajo</b> para moverlo y <b>toca</b> para disparar flechas. Los lobos 🐺 bajan colgados de globos: <b>revienta el globo</b> para que caigan (darle al lobo no sirve). Si un lobo llega al suelo, trepa por la escalera y te muerde si pasas a su altura. Si llegan 4 a la escalera, pierdes una vida.',
     lives: 3, levels: 0, cap: 14, levelLabel: 'Oleada',
     setup(g) {
       g.s = { wolves: [], arrows: [], spawned: 0, spawnT: 1, cool: 0, inv: 1, by: 0 };
@@ -117,7 +117,7 @@
       // cesta
       ctx.fillStyle = '#b08968'; Arcade.rr(ctx, s.ropeX - 26, s.by - 6, 52, 30, 6); ctx.fill();
       ctx.strokeStyle = '#7f5539'; ctx.lineWidth = 2; for (let x = -20; x <= 20; x += 10) { ctx.beginPath(); ctx.moveTo(s.ropeX + x, s.by - 6); ctx.lineTo(s.ropeX + x, s.by + 24); ctx.stroke(); }
-      if (!(s.inv > 0 && Math.floor(g.t * 10) % 2)) Arcade.emoji(ctx, '🐷', s.ropeX, s.by - 18, 38);
+      if (!(s.inv > 0 && Math.floor(g.t * 10) % 2)) Arcade.emoji(ctx, g.face(), s.ropeX, s.by - 18, 34);
       Arcade.emoji(ctx, '🏹', s.ropeX - 26, s.by - 6, 22, { flip: true });
       for (const a of s.arrows) { ctx.strokeStyle = '#343a40'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(a.x + 22, a.y); ctx.stroke(); ctx.fillStyle = '#343a40'; ctx.beginPath(); ctx.moveTo(a.x - 6, a.y); ctx.lineTo(a.x + 2, a.y - 4); ctx.lineTo(a.x + 2, a.y + 4); ctx.fill(); }
       for (const w of s.wolves) {

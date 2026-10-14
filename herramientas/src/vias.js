@@ -65,10 +65,12 @@
   }
 
   Arcade.game({
+    /*THEME*/ tag: "El puzle que no frena", deco: ["🛤️", "⭐", "💨", "🚃", "🌲", "⭐"], font: "wide", bg: ["#1d4436", "#0f241d"], music: {"mode": "mixo", "bpm": 140, "wave": "square", "style": "drive", "root": 57}, voice: {"wave": "square", "mul": 1, "echo": 0.15}, ambient: {"e": ["☁️"], "n": 5, "vy": 0, "vx": -16, "sway": 4, "alpha": 0.18, "size": [30, 50]},
+    /*EN*/ en: {"title": "Tracks", "tag": "The puzzle that never brakes", "help": "It is a <b>sliding puzzle</b>, but the train 🚂 <b>never stops</b>. <b>Tap a tile</b> in the same row or column as the gap to slide it. Make sure the train always finds track ahead. Pick up the stars ⭐ (passengers) for extra points. You cannot move the tile the train is on.", "tvHelp": "D-pad: slides the tile on that side into the gap.", "dict": {}},
+    /*TV*/ tvHelp: "Cruceta: desliza hacia el hueco la pieza que está en ese lado.",
     id: 'vias', title: 'Vías', emoji: '🚂', color: '#90be6d', origin: 'Locomotion (Konami, 1982)',
     help: 'Es un <b>puzle deslizante</b>, pero el tren 🚂 <b>no se para nunca</b>. <b>Toca una pieza</b> en la misma fila o columna que el hueco para deslizarla. Haz que el tren siempre encuentre vía delante. Recoge las estrellas ⭐ (pasajeros) para ganar puntos extra. No puedes mover la pieza donde está el tren.',
     lives: 3, levels: null, levelLabel: 'Velocidad',
-    theme: { font: 'Rye', ambient: 'dust', music: { tempo: 138, scale: 'mixo', root: 196, wave: 'square', bass: 'triangle', swing: 0.2 }, sfx: { wave: 'triangle', pitch: 0.95 } },
     setup(g) {
       g.s = { tiles: 0, smokeT: 0 };
       const s = g.s;
@@ -88,6 +90,11 @@
       if (c >= 0 && c < s.C && r >= 0 && r < s.R) slide(g, c, r);
     },
     swipe(g, dir, p) { this.tap(g, p); },
+    key(g, k, d) { /*TVKEY*/
+      if (!d) return; const s = g.s, e = s.empty, m = { ArrowUp: [0, 1], ArrowDown: [0, -1], ArrowLeft: [1, 0], ArrowRight: [-1, 0] }[k];
+      if (!m) return; const c = e.c + m[0], r = e.r + m[1];
+      if (c >= 0 && c < s.C && r >= 0 && r < s.R) slide(g, c, r); else Arcade.sfx.bad();
+    },
     update(g, dt) {
       const s = g.s;
       for (const row of s.grid) for (const t of row) if (t) { t.ax *= Math.pow(1e-6, dt); t.ay *= Math.pow(1e-6, dt); if (Math.abs(t.ax) < 0.01) t.ax = 0; if (Math.abs(t.ay) < 0.01) t.ay = 0; }
@@ -103,26 +110,23 @@
         const out = tl ? exitOf(tl.m, ent) : -1;
         if (!tl || out < 0) {
           const p = trainXY(s);
-          g.burst(p[0], p[1], { n: 24, color: ['#ff6b35', '#ffd166', '#555'], speed: 260 }); g.burst(p[0], p[1], { n: 6, emoji: ['💥', '🔩', '💨'], size: 22, speed: 200 }); g.ring(p[0], p[1], { color: '#ff6b35', r: 120, w: 8 }); Arcade.sfx.boom();
+          g.burst(p[0], p[1], { n: 24, color: ['#ff6b35', '#ffd166', '#555'], speed: 260 }); Arcade.sfx.boom();
           if (g.die()) spawnTrain(g);
           return;
         }
         tr.c = nc; tr.r = nr; tr.inS = ent; tr.outS = out; tr.t -= 1;
         s.tiles++; g.addScore(5);
         const lv = 1 + Math.floor(s.tiles / 12);
-        if (lv !== g.level) { g.level = lv; g.hud(); Arcade.sfx.level(); g.message('¡Más rápido!', 1.1, 'Velocidad ' + lv); Arcade.music.rate(1 + Math.min(0.3, lv * 0.03)); }
-        if (tl.star) { tl.star = false; const p = trainXY(s); g.addScore(50 * g.level, p[0], p[1] - 20); Arcade.sfx.coin(); g.burst(p[0], p[1], { n: 10, emoji: ['⭐', '🤠', '💰'], size: 16, speed: 160 }); g.ring(p[0], p[1], { color: '#ffd166', r: s.ts }); placeStar(g); }
+        if (lv !== g.level) { g.level = lv; g.hud(); Arcade.sfx.up(); }
+        if (tl.star) { tl.star = false; const p = trainXY(s); g.addScore(50 * g.level, p[0], p[1] - 20); Arcade.sfx.coin(); g.burst(p[0], p[1], { n: 10, emoji: '⭐', size: 12, speed: 140 }); placeStar(g); }
       }
     },
     draw(g, ctx) {
       const s = g.s, W = g.W, H = g.H;
-      Arcade.bg(ctx, W, H, '#ff9e5e', '#d8693f', '#5c2e1f');
-      Arcade.glow(ctx, W * 0.75, H * 0.16, 90, 'rgba(255,230,150,.9)', 0.7);
-      ctx.fillStyle = '#8f3f2a'; ctx.beginPath(); ctx.moveTo(0, H * 0.3); for (let x = 0; x <= W; x += 40) ctx.lineTo(x, H * 0.3 - 30 - Math.abs(Math.sin(x * 0.013)) * 60); ctx.lineTo(W, H * 0.3); ctx.lineTo(W, H); ctx.lineTo(0, H); ctx.fill();
-      ctx.fillStyle = '#c96f45'; ctx.fillRect(0, H * 0.3, W, H * 0.7);
-      Arcade.decor(ctx, g.t, [{ e: '🌵', x: W * 0.07, y: H * 0.36, s: 40, sway: 0.05 }, { e: '🌵', x: W * 0.93, y: H * 0.9, s: 46, sway: 0.05 }, { e: '🪨', x: W * 0.12, y: H * 0.94, s: 28 }, { e: '🦅', x: (g.t * 30) % (W + 60) - 30, y: H * 0.12, s: 22, a: 0.8, flip: true }, { e: '🌵', x: W * 0.88, y: H * 0.33, s: 30, sway: 0.05 }]);
-      Arcade.emoji(ctx, '🌾', ((g.t * 60) % (W + 80)) - 40, H * 0.97, 22, { rot: g.t * 6, alpha: 0.7 });
-      Arcade.amb(g, ctx);
+      const bg = ctx.createLinearGradient(0, 0, 0, H);
+      bg.addColorStop(0, '#1d4436'); bg.addColorStop(1, '#0f241d');
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      g.scenery(['🌲','🌳','🌾','🏡','🐄','🌻'], 16, { alpha: 0.6, size: [20, 34] }); /*SC*/
       if (!s.grid) return;
       const ts = s.ts;
       ctx.fillStyle = 'rgba(0,0,0,.35)'; Arcade.rr(ctx, s.ox - 8, s.oy - 8, ts * s.C + 16, ts * s.R + 16, 18); ctx.fill();
@@ -143,7 +147,7 @@
       }
       const p = trainXY(s);
       const p2 = trainXY(s, 0.05);
-      Arcade.emoji(ctx, '🚂', p[0], p[1] - ts * 0.08, ts * 0.42, { flip: p2[0] - p[0] > 0.01 });
+      Arcade.emojiTo(ctx, '🚂', p[0], p[1] - ts * 0.08, ts * 0.42, p2[0] - p[0], p2[1] - p[1]);
       if (s.wait > 0) Arcade.txt(ctx, s.wait > 0.6 ? Math.ceil(s.wait - 0.5) + '' : '¡Vamos!', W / 2, s.oy - 16, 22, '#fff', 'center', 900, 'rgba(0,0,0,.5)');
       else Arcade.txt(ctx, '🛤️ ' + s.tiles, W / 2, s.oy - 16, 16, '#d8f3dc', 'center', 800, 'rgba(0,0,0,.5)');
     },

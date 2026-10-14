@@ -30,7 +30,7 @@
     serve(g);
   }
   function serve(g) {
-    const s = g.s, a = rand(0, TAU), sp = s.A * (0.42 + Math.min(g.level, 12) * 0.03);
+    const s = g.s, a = rand(0, TAU), sp = s.A * (0.42 + g.lv * 0.03);
     s.ball = { x: s.ax + s.A / 2, y: s.ay + s.A / 2, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, base: sp, owner: -1, trail: [] };
     s.serveT = 1.2; s.t = 0;
   }
@@ -50,17 +50,19 @@
   function kill(g, c) {
     const s = g.s; c.alive = false;
     const [kx, ky] = kingPos(s, c);
-    g.burst(kx, ky, { n: 24, color: [COL[c.i], '#fff', '#ffd43b'], speed: 240 }); g.burst(kx, ky, { n: 6, emoji: ['👑', '💥'], size: 20, speed: 200 }); g.ring(kx, ky, { color: COL[c.i], r: s.A * 0.3, w: 8 }); g.flash(COL[c.i], 0.25); Arcade.sfx.boom(); g.shake(0.3, 8);
+    g.burst(kx, ky, { n: 24, color: [COL[c.i], '#fff', '#ffd43b'], speed: 240 }); Arcade.sfx.boom(); g.shake(0.3, 8);
     if (c.i === ME) { g.float('¡Tu rey ha caído!', g.W / 2, g.H / 2, '#ff6b6b', 26); if (g.die()) setTimeout(() => { if (g.state === 'play') build(g); }, 1200); return; }
     if (s.ball.owner === ME) g.addScore(500, kx, ky);
-    if (s.cs.filter(q => q.alive).length === 1 && s.cs[ME].alive) { g.addScore(1000 * g.level, g.W / 2, g.H / 2); setTimeout(() => g.win(), 700); }
+    if (s.cs.filter(q => q.alive).length === 1 && s.cs[ME].alive) { g.addScore(1000 * g.lv, g.W / 2, g.H / 2); setTimeout(() => g.win(), 700); }
   }
 
   Arcade.game({
+    /*THEME*/ tag: "Cuatro reyes, una bola de fuego", deco: ["👑", "🔥", "🛡️", "🏰", "⚔️", "👑"], font: "serif", bg: ["#241a3d", "#120d1f"], music: {"mode": "harm", "bpm": 140, "wave": "sawtooth", "style": "drive", "root": 55}, voice: {"wave": "square", "mul": 0.95, "echo": 0.2}, ambient: {"e": ["🔥"], "n": 8, "vy": -26, "sway": 8, "alpha": 0.1, "size": [8, 14]},
+    /*EN*/ en: {"title": "Castles", "tag": "Four kings, one fireball", "help": "You defend the <b>bottom-left</b> castle 🔵. Move your finger and your <b>shield</b> will turn to point at it. Deflect the fireball towards the other castles to break their walls and topple their king 👑. The last king standing wins. <b>Multiplayer:</b> on a tablet, each person can touch their corner and control that castle.", "tvHelp": "Hold ◀ ▶ to turn your shield. In multiplayer, each player defends the bottom castle on their turn.", "dict": {"TÚ": "YOU", "¡Tu rey ha caído!": "Your king has fallen!"}},
+    /*TV*/ tvHelp: "Mantén ◀ ▶ para girar tu escudo. En multijugador, cada uno defiende el castillo de abajo en su turno.",
     id: 'castillos', title: 'Castillos', emoji: '🛡️', color: '#ff6b6b', origin: 'Warlords (Atari, 1980)',
     help: 'Defiendes el castillo de <b>abajo a la izquierda</b> 🔵. Mueve el dedo y tu <b>escudo</b> girará apuntando hacia él. Desvía la bola de fuego hacia los demás castillos para romper sus muros y derribar a su rey 👑. Gana el último rey en pie. <b>Multijugador:</b> en una tablet, cada persona puede tocar su esquina y controlar ese castillo.',
-    lives: 3, levels: Infinity,
-    theme: { font: 'Cinzel Decorative', ambient: 'embers', music: { tempo: 120, scale: 'harmonic', root: 220, wave: 'square', lead: 'sawtooth' }, sfx: { wave: 'square', pitch: 1 } },
+    lives: 3, levels: 0, cap: 14,
     setup(g) { g.s = {}; geo(g); build(g); },
     layout(g) { if (g.s.cs) geo(g); },
     down(g, p) {
@@ -80,9 +82,9 @@
         if (!c.alive) continue;
         if (!c.human) {
           const bx = b.x - c.x, by = b.y - c.y, d = Math.hypot(bx, by), vr = (b.vx * bx + b.vy * by) / (d || 1);
-          if (vr < 0 && d < A * 0.95) { if (!c.errT || c.errT < s.t) { c.err = rand(-0.35, 0.35) / (1 + Math.min(g.level, 12) * 0.25); c.errT = s.t + 1; } control(s, c, b.x + c.err * A * 0.3, b.y - c.err * A * 0.3); }
+          if (vr < 0 && d < A * 0.95) { if (!c.errT || c.errT < s.t) { c.err = rand(-0.35, 0.35) / (1 + g.lv * 0.25); c.errT = s.t + 1; } control(s, c, b.x + c.err * A * 0.3, b.y - c.err * A * 0.3); }
           else c.target = c.a0 + Math.PI / 4;
-          const sp = (2 + Math.min(g.level, 12) * 0.35) * dt, d2 = adiff(c.target, c.th);
+          const sp = (2 + g.lv * 0.35) * dt, d2 = adiff(c.target, c.th);
           c.th += clamp(d2, -sp, sp);
         } else if (c.target != null) c.th += adiff(c.target, c.th) * Math.min(1, dt * 25);
       }
@@ -103,7 +105,7 @@
               b.vx -= 2 * vr * ux; b.vy -= 2 * vr * uy;
               const off = adiff(Math.atan2(dy, dx), c.th) / w, tx = -uy, ty = ux, spd = Math.hypot(b.vx, b.vy);
               b.vx += tx * off * spd * 0.45; b.vy += ty * off * spd * 0.45;
-              b.owner = c.i; Arcade.tone(c.i === ME ? 660 : 440, 0.05, 'square', 0.07); if (c.i === ME) Arcade.buzz(15); g.ring(b.x, b.y, { color: COL[c.i], r: 22, t: 0.25, w: 3 });
+              b.owner = c.i; Arcade.tone(c.i === ME ? 660 : 440, 0.05, 'square', 0.07); if (c.i === ME) Arcade.buzz(15);
             }
           }
           if (c.alive) {
@@ -130,15 +132,10 @@
     },
     draw(g, ctx) {
       const s = g.s, W = g.W, H = g.H;
-      Arcade.bg(ctx, W, H, '#2a0f1a', '#120d1f', '#07050c');
-      Arcade.amb(g, ctx);
+      ctx.fillStyle = '#120d1f'; ctx.fillRect(0, 0, W, H);
       if (!s.cs) return;
       const A = s.A, Rs = A * 0.3, w = 0.18;
       ctx.fillStyle = '#1d1533'; Arcade.rr(ctx, s.ax, s.ay, A, A, 12); ctx.fill();
-      ctx.strokeStyle = 'rgba(255,212,59,.35)'; ctx.lineWidth = 3; ctx.stroke();
-      Arcade.glow(ctx, s.ax + A / 2, s.ay + A / 2, A * 0.3, 'rgba(255,120,40,.5)', 0.4 + Math.sin(g.t * 2) * 0.1);
-      ctx.strokeStyle = 'rgba(255,180,80,.18)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(s.ax + A / 2, s.ay + A / 2, A * 0.16, 0, 6.28); ctx.stroke();
-      for (let i = 0; i < 6; i++) { const a = g.t * 0.3 + i * Math.PI / 3; Arcade.txt(ctx, 'ᚱᚢᚾᛖ'[i % 4], s.ax + A / 2 + Math.cos(a) * A * 0.16, s.ay + A / 2 + Math.sin(a) * A * 0.16, A * 0.03, 'rgba(255,200,120,.35)', 'center', 700); }
       ctx.strokeStyle = 'rgba(255,255,255,.05)'; ctx.lineWidth = 1;
       for (let i = 1; i < 8; i++) { ctx.beginPath(); ctx.moveTo(s.ax + i * A / 8, s.ay); ctx.lineTo(s.ax + i * A / 8, s.ay + A); ctx.moveTo(s.ax, s.ay + i * A / 8); ctx.lineTo(s.ax + A, s.ay + i * A / 8); ctx.stroke(); }
       for (const c of s.cs) {

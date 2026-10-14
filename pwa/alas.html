@@ -36,7 +36,7 @@
   Arcade.game({
     /*THEME*/ home: 'indexpro.html', tag: 'Baja en picado, vuela en la subida', deco: ['🐦', '🌄', '☀️', '🌙', '🪺', '⭐'], font: 'round', bg: ['#ffe5d9', '#ffb4a2'],
     music: { mode: 'major', bpm: 108, wave: 'sine', style: 'chill', root: 64 }, voice: { wave: 'sine', mul: 1.2, echo: 0.4 },
-    en: { title: 'Wings', tag: 'Dive down, fly on the rise', help: 'The little bird is too chubby to fly on its own. <b>Hold</b> your finger to dive and press it against the hills: pick up speed on the <b>downhill</b> and <b>let go</b> at the bottom so the slope launches you into the air. Land gently on a downhill for a <b>perfect slide</b>; three in a row gives a ⚡ boost. Reach the island ⛳ before the sun sets.', tvHelp: 'Hold OK to dive.', dict: { '¡Perfecto!': 'Perfect!', 'Isla: ': 'Island: ' } },
+    en: { title: 'Wings', tag: 'Dive down, fly on the rise', help: 'The little hero is too chubby to fly on its own. <b>Hold</b> your finger to dive and press it against the hills: pick up speed on the <b>downhill</b> and <b>let go</b> at the bottom so the slope launches you into the air. Land gently on a downhill for a <b>perfect slide</b>; three in a row gives a ⚡ boost. Reach the island ⛳ before the sun sets.', tvHelp: 'Hold OK to dive.', dict: { '¡Perfecto!': 'Perfect!', 'Isla: ': 'Island: ' } },
     tvHelp: 'Mantén OK para lanzarte en picado.',
     id: 'alas', title: 'Alas', emoji: '🐦', color: '#ff8fab', origin: 'Tiny Wings (Andreas Illiger)',
     help: 'El pajarito está demasiado gordito para volar solo. <b>Mantén el dedo</b> para lanzarte en picado y pegarte a las colinas: gana velocidad en la <b>bajada</b> y <b>suelta</b> al llegar al fondo para que la cuesta te lance por el aire. Aterriza suave en una bajada para un <b>deslizamiento perfecto</b>; tres seguidos dan un impulso ⚡. Llega a la isla ⛳ antes de que se ponga el sol.',
@@ -102,7 +102,7 @@
       s.trail.forEach((ty, i) => { ctx.fillStyle = `rgba(255,255,255,${i / s.trail.length * 0.5})`; ctx.beginPath(); ctx.arc(X(s.x) - (s.trail.length - i) * 6, Y(ty), 6 * z, 0, 6.3); ctx.fill(); });
       if (s.fever > 0) g.burst(X(s.x), Y(s.y), { n: 1, color: ['#ffd43b', '#fff'], speed: 60, size: 4, life: 0.4, grav: 0 });
       const ang = Math.atan2(s.vy, s.vx);
-      Arcade.emoji(ctx, s.hold ? '🐤' : '🐦', X(s.x), Y(s.y) - 14 * z, 40 * z, { rot: ang, flip: true, sy: s.hold ? 0.85 : 1 });
+      Arcade.emoji(ctx, s.hold ? '😤' : g.face(), X(s.x), Y(s.y) - 14 * z, 36 * z, { rot: ang * 0.6, sy: s.hold ? 0.85 : 1 }); Arcade.emoji(ctx, '🪽', X(s.x) - 14 * z, Y(s.y) - 20 * z, 20 * z, { rot: Math.sin(g.rt * 14) * 0.4 });
       // HUD
       const bw = Math.min(W - 60, 320), bx = (W - bw) / 2, pr = clamp(s.x / s.goal, 0, 1);
       ctx.fillStyle = 'rgba(0,0,0,.2)'; Arcade.rr(ctx, bx, g.top + 10, bw, 10, 5); ctx.fill();

@@ -164,7 +164,7 @@
       }
       const p = trainXY(s);
       const p2 = trainXY(s, 0.05);
-      Arcade.emoji(ctx, '🚂', p[0], p[1] - ts * 0.08, ts * 0.42, { flip: p2[0] - p[0] > 0.01 });
+      Arcade.emojiTo(ctx, '🚂', p[0], p[1] - ts * 0.08, ts * 0.42, p2[0] - p[0], p2[1] - p[1]);
       if (s.wait > 0) Arcade.txt(ctx, s.wait > 0.6 ? Math.ceil(s.wait - 0.5) + '' : '¡Vamos!', W / 2, s.oy - 16, 22, '#fff', 'center', 900, 'rgba(0,0,0,.5)');
       else Arcade.txt(ctx, '🛤️ ' + s.tiles, W / 2, s.oy - 16, 16, '#d8f3dc', 'center', 800, 'rgba(0,0,0,.5)');
     },

@@ -142,7 +142,7 @@
         } else if (R.t === 'road') {
           ctx.fillStyle = '#495057'; ctx.fillRect(0, y, W, cs + 1);
           ctx.fillStyle = 'rgba(255,255,255,.5)'; for (let x = 0; x < W; x += cs) ctx.fillRect(x, y + cs - 2, cs * 0.5, 3);
-          for (const o of R.objs) Arcade.emoji(ctx, o.e, ox + (o.x + o.w / 2) * cs, y + cs / 2, cs * (o.w > 1 ? 1.5 : 0.9), { flip: R.dir > 0 });
+          for (const o of R.objs) Arcade.emojiTo(ctx, o.e, ox + (o.x + o.w / 2) * cs, y + cs / 2, cs * (o.w > 1 ? 1.5 : 0.9), R.dir || -1, 0);
         } else if (R.t === 'river') {
           ctx.fillStyle = '#339af0'; ctx.fillRect(0, y, W, cs + 1);
           ctx.strokeStyle = 'rgba(255,255,255,.35)'; ctx.lineWidth = 2; for (let x = ((g.rt * 30 * R.dir) % 40) - 40; x < W; x += 40) { ctx.beginPath(); ctx.moveTo(x, y + cs * 0.3); ctx.quadraticCurveTo(x + 10, y + cs * 0.2, x + 20, y + cs * 0.3); ctx.stroke(); }
@@ -159,7 +159,7 @@
         if (i === s.p.r && s.dead !== 'water' && s.dead !== 'car') {
           const p = s.p, k = p.anim, cx = ox + ((p.c * (1 - k) + p.fc * k) + 0.5) * cs, cy = rowY(g, p.r * (1 - k) + p.fr * k) - Math.sin(k * Math.PI) * cs * 0.4;
           ctx.fillStyle = 'rgba(0,0,0,.2)'; ctx.beginPath(); ctx.ellipse(cx, rowY(g, p.r) + cs * 0.3, cs * 0.3, cs * 0.1, 0, 0, Math.PI * 2); ctx.fill();
-          Arcade.emoji(ctx, s.hero, cx, cy, cs * 0.85, { flip: p.face > 0 });
+          Arcade.emojiTo(ctx, g.face(), cx, cy, cs * 0.78, p.face || -1, 0, { mode: 'flip' });
         }
       }
       Arcade.txt(ctx, 'Meta: ' + Math.min(s.best, s.need) + '/' + s.need, W / 2, g.top + 18, 16, '#fff', 'center', 900, 'rgba(0,0,0,.5)');

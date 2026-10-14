@@ -80,7 +80,7 @@
       }
       for (const f of s.flying) { ctx.save(); ctx.translate(f.x, f.y); ctx.rotate(f.rot); ctx.fillStyle = '#8b5a2b'; ctx.fillRect(-s.tw / 2, -s.sh / 2, s.tw, s.sh); ctx.restore(); }
       const px = s.cx + s.side * s.tw * 1.05, py = s.base - s.sh * 0.5;
-      Arcade.emoji(ctx, s.dead ? '😵' : '🧔', px, py - 6, s.sh * 0.95, { flip: s.side < 0 });
+      Arcade.emoji(ctx, s.dead ? '😵' : s.swing > 0.1 ? '😤' : g.face(), px, py - 6, s.sh * 0.85, { rot: s.side < 0 ? -0.1 : 0.1 });
       Arcade.emoji(ctx, '🪓', px - s.side * s.sh * 0.45, py - s.sh * 0.1, s.sh * 0.7, { rot: -s.side * (0.6 - s.swing * 1.6), flip: s.side > 0 });
       // barra de tiempo
       const bw = Math.min(W - 60, 320);

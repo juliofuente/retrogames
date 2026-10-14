@@ -14,7 +14,7 @@
   const enemyAt = (s, c, r) => s.en.find(e => !e.dead && e.c === c && e.r === r);
   const walkable = (s, c, r) => inB(s, c, r) && s.m[r][c] === L_ && !cubeAt(s, c, r);
   function gen(g) {
-    const s = g.s, C = s.C, R = s.R, L = g.level;
+    const s = g.s, C = s.C, R = s.R, L = g.lv;
     s.m = []; for (let r = 0; r < R; r++) s.m.push(new Array(C).fill(L_));
     for (let r = 0; r < R; r++) { s.m[r][0] = W_; s.m[r][C - 1] = W_; }
     for (let c = 0; c < C; c++) { s.m[0][c] = W_; s.m[R - 1][c] = W_; }
@@ -90,9 +90,12 @@
   }
 
   Arcade.game({
+    /*THEME*/ tag: "Congela, patea y cruza el río", deco: ["🥶", "❄️", "🧊", "💰", "👾", "❄️"], font: "round", bg: ["#145a86", "#0b3a5a"], music: {"mode": "lydian", "bpm": 120, "wave": "triangle", "style": "arcade", "root": 62}, voice: {"wave": "triangle", "mul": 1.2, "echo": 0.25}, ambient: {"e": ["❄️"], "n": 14, "vy": 28, "sway": 20, "spin": 1, "alpha": 0.25, "size": [8, 16]},
+    /*EN*/ en: {"title": "Ice", "tag": "Freeze, kick and cross the river", "help": "Collect every bag 💰 by crossing the rivers. <b>Tap a cell</b> to walk there or <b>swipe</b> to take a step. <b>Tap a cube next to you</b> to kick it: it slides and, if it falls into the water, <b>makes a bridge</b>. <b>Tap yourself</b> to blow icy breath and <b>freeze</b> an enemy into a new cube (it thaws after a few seconds).", "tvHelp": "D-pad to move · OK kick a cube or blow icy breath where you face.", "dict": {}},
+    /*TV*/ tvHelp: "Cruceta para moverte · OK patada al cubo o aliento helado hacia donde miras.",
     id: 'hielo', title: 'Hielo', emoji: '❄️', color: '#74c0fc', origin: 'Kickle Cubicle (Irem, 1988)',
     help: 'Recoge todas las bolsas 💰 cruzando los ríos. <b>Toca una casilla</b> para ir andando o <b>desliza</b> para dar un paso. <b>Toca un cubo pegado a ti</b> para darle una patada: se desliza y, si cae al agua, <b>hace un puente</b>. <b>Tócate a ti mismo</b> para soplar aire helado y <b>congelar</b> a un enemigo en un cubo nuevo (se descongela en unos segundos).',
-    lives: 3, levels: 12,
+    lives: 3, levels: 0, cap: 18,
     setup(g) {
       g.s = { slide: null, breath: null, inv: 1.5, path: null, pathT: 0 };
       const s = g.s;
@@ -125,7 +128,7 @@
         if (pl.p >= 1) {
           pl.c += D[pl.dir][0]; pl.r += D[pl.dir][1]; pl.p = 0; pl.moving = false;
           const bi = s.bags.findIndex(b => b.c === pl.c && b.r === pl.r);
-          if (bi >= 0) { s.bags.splice(bi, 1); g.addScore(200, pos(s, pl).x, pos(s, pl).y - 16); Arcade.sfx.coin(); if (!s.bags.length) { g.addScore(1000 * g.level, g.W / 2, g.H / 2); g.win(); return; } }
+          if (bi >= 0) { s.bags.splice(bi, 1); g.addScore(200, pos(s, pl).x, pos(s, pl).y - 16); Arcade.sfx.coin(); if (!s.bags.length) { g.addScore(1000 * g.lv, g.W / 2, g.H / 2); g.win(); return; } }
         }
       } else if (s.path && s.path.length) {
         const [c, r] = s.path[0];
@@ -153,7 +156,7 @@
       // cubos de enemigos que se descongelan
       for (const q of s.cubes) if (q.thaw != null) {
         q.thaw -= dt;
-        if (q.thaw <= 0 && !(pl.c === q.c && pl.r === q.r)) { q.gone = true; s.en.push({ c: q.c, r: q.r, dir: 'left', p: 0, moving: false, sp: 1.3 + g.level * 0.08 }); }
+        if (q.thaw <= 0 && !(pl.c === q.c && pl.r === q.r)) { q.gone = true; s.en.push({ c: q.c, r: q.r, dir: 'left', p: 0, moving: false, sp: 1.3 + g.lv * 0.08 }); }
       }
       s.cubes = s.cubes.filter(q => !q.gone);
       s.en = s.en.filter(e => !e.dead);
@@ -204,13 +207,13 @@
       for (const q of s.cubes) cube(s.ox + q.c * cs, s.oy + q.r * cs, q.thaw);
       if (s.slide) { const sl = s.slide; cube(s.ox + (sl.c + D[sl.dir][0] * Math.min(1, sl.p)) * cs, s.oy + (sl.r + D[sl.dir][1] * Math.min(1, sl.p)) * cs, sl.thaw); }
       if (s.path) for (const [c, r] of s.path) { ctx.fillStyle = 'rgba(77,171,247,.5)'; ctx.beginPath(); ctx.arc(s.ox + (c + 0.5) * cs, s.oy + (r + 0.5) * cs, cs * 0.08, 0, 6.28); ctx.fill(); }
-      for (const e of s.en) { const p = pos(s, e); Arcade.emoji(ctx, '👾', p.x, p.y, cs * 0.7, { flip: e.dir === 'right' }); }
+      for (const e of s.en) { const p = pos(s, e); Arcade.emojiTo(ctx, '👾', p.x, p.y, cs * 0.7, D[e.dir] ? D[e.dir][0] : 0, D[e.dir] ? D[e.dir][1] : 1); }
       if (s.breath) {
         const b = s.breath, [dx, dy] = D[b.dir];
         for (let k = 1; k <= 3; k++) Arcade.emoji(ctx, '❄️', s.ox + (b.c + dx * k + 0.5) * cs, s.oy + (b.r + dy * k + 0.5) * cs, cs * 0.45 * (1 - k * 0.15), { alpha: b.t * 3, rot: g.t * 5 });
       }
       const p = pos(s, s.pl);
-      if (!(s.inv > 0 && Math.floor(g.t * 10) % 2)) Arcade.emoji(ctx, '⛄', p.x, p.y, cs * 0.8, { flip: s.pl.face === 'right' });
+      if (!(s.inv > 0 && Math.floor(g.t * 10) % 2)) Arcade.emojiTo(ctx, g.face(), p.x, p.y, cs * 0.74, D[s.pl.face] ? D[s.pl.face][0] : 0, D[s.pl.face] ? D[s.pl.face][1] : 1);
       const [fx, fy] = D[s.pl.face];
       ctx.fillStyle = '#ff922b'; ctx.beginPath(); ctx.arc(p.x + fx * cs * 0.42, p.y + fy * cs * 0.42, 3.5, 0, 6.28); ctx.fill();
       Arcade.txt(ctx, '💰 ' + s.bags.length, W / 2, s.oy - 16, 15, '#fff', 'center', 800);

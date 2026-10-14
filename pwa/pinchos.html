@@ -33,10 +33,10 @@
   Arcade.game({
     /*THEME*/ home: 'indexpro.html', tag: 'Rebota sin tocar los pinchos', deco: ['🐦', '🔺', '🍬', '🐤', '🔻', '🍭'], font: 'round', bg: ['#e7f5ff', '#a5d8ff'],
     music: { mode: 'major', bpm: 136, wave: 'square', style: 'arcade', root: 64 }, voice: { wave: 'square', mul: 1.25, echo: 0.15 },
-    en: { title: 'Spikes', tag: 'Bounce without touching the spikes', help: 'The bird flies from wall to wall on its own. <b>Tap</b> to flap and climb. Each time it touches a wall it bounces and the spikes on the other wall <b>change</b>. Don\'t touch any spike, not even the ceiling or floor ones! 🍬 sweets give points. Bounce the times each level asks for.', tvHelp: 'OK to flap.', dict: { 'Rebotes: ': 'Bounces: ' } },
+    en: { title: 'Spikes', tag: 'Bounce without touching the spikes', help: 'The hero flies from wall to wall on its own. <b>Tap</b> to flap and climb. Each time it touches a wall it bounces and the spikes on the other wall <b>change</b>. Don\'t touch any spike, not even the ceiling or floor ones! 🍬 sweets give points. Bounce the times each level asks for.', tvHelp: 'OK to flap.', dict: { 'Rebotes: ': 'Bounces: ' } },
     tvHelp: 'OK para aletear.',
     id: 'pinchos', title: 'Pinchos', emoji: '🐦', color: '#ff6b6b', origin: "Don't Touch the Spikes (Ketchapp)",
-    help: 'El pájaro vuela solo de pared a pared. <b>Toca</b> para aletear y subir. Cada vez que toca una pared rebota y los pinchos de la otra <b>cambian</b>. ¡No toques ningún pincho, ni los del techo ni los del suelo! Los caramelos 🍬 dan puntos. Rebota las veces que pide cada nivel.',
+    help: 'El héroe vuela solo de pared a pared. <b>Toca</b> para aletear y subir. Cada vez que toca una pared rebota y los pinchos de la otra <b>cambian</b>. ¡No toques ningún pincho, ni los del techo ni los del suelo! Los caramelos 🍬 dan puntos. Rebota las veces que pide cada nivel.',
     lives: 3, levels: 0, cap: 20,
     setup(g) {
       g.s = { sp: [[], []], spAnim: [1, 1], hits: 0, candy: null, dead: 0, bird: BIRDS[(g.level - 1) % BIRDS.length] };
@@ -92,7 +92,7 @@
         });
       }
       if (s.candy) Arcade.emoji(ctx, '🍬', s.candy.x, s.candy.y + Math.sin(g.rt * 4) * 4, 26, { rot: g.rt });
-      Arcade.emoji(ctx, s.bird, s.x, s.y, s.r * 2.1, { flip: s.vx > 0, rot: s.dead ? s.rot : clamp(s.vy / 900, -0.5, 0.6) * (s.vx > 0 ? 1 : -1) });
+      Arcade.emoji(ctx, s.dead ? '😵' : g.face(), s.x, s.y, s.r * 2, { rot: s.dead ? s.rot : clamp(s.vy / 900, -0.5, 0.6) * (s.vx > 0 ? 1 : -1) }); if (!s.dead) Arcade.emoji(ctx, '🪽', s.x - (s.vx > 0 ? 1 : -1) * s.r * 0.8, s.y - s.r * 0.2, s.r * 1.1, { flip: s.vx > 0, rot: Math.sin(g.rt * 16) * 0.4 });
       Arcade.txt(ctx, 'Rebotes: ' + s.hits + '/' + s.need, W / 2, g.top + 14, 14, sc, 'center', 900);
       if (s.wait && !s.dead) Arcade.txt(ctx, Arcade.tv ? 'OK 🎮' : '👆', W / 2, s.y + 60, 26, sc, 'center', 900);
     },

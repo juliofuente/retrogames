@@ -18,13 +18,13 @@
 <script>
 (function () {
   const { ri, rand, clamp, pick } = Arcade;
-  const RUNNERS = ['🏃', '🦖', '🐕', '🤸', '🦌'];
+  const RUNNERS = ['😀', '🦖', '🐕', '🤸', '🦌'];
 
   function geo(g) { const s = g.s; s.gy = g.bot - 90; s.px = g.W * 0.22; s.u = clamp((g.bot - g.top) / 600, 0.7, 1.4); }
   function spawn(g) {
     const s = g.s, L = g.lv, r = Math.random();
     if (r < 0.45) s.obs.push({ x: g.W + 40, t: 'low', e: pick(['🌵', '🪨', '🛢️', '🔥']) });
-    else if (r < 0.75 && L >= 2) s.obs.push({ x: g.W + 40, t: 'high', e: pick(['🦅', '🪵', '🐝']) });
+    else if (r < 0.75 && L >= 2) s.obs.push({ x: g.W + 40, t: 'high', e: pick(['🦇', '🪵', '👻']) });
     else if (r < 0.88 && L >= 4) { s.obs.push({ x: g.W + 40, t: 'low', e: '🌵' }); s.obs.push({ x: g.W + 40 + 70 * s.u, t: 'low', e: '🌵' }); }
     else s.obs.push({ x: g.W + 40, t: 'coin', e: '🪙', h: rand(30, 110) });
   }
@@ -32,12 +32,12 @@
   function slide(g) { const s = g.s; if (s.dead) return; s.slide = 0.6; if (s.y > 0) s.vy = -800; Arcade.sfx.whoosh(); }
 
   Arcade.game({
-    /*THEME*/ home: 'indexpro.html', tag: 'Salta lo bajo, agáchate de lo alto', deco: ['🏃', '🌵', '🦅', '🪙', '🏰', '☀️'], font: 'impact', bg: ['#ffd8a8', '#ffc078'],
+    /*THEME*/ home: 'indexpro.html', tag: 'Salta lo bajo, agáchate de lo alto', deco: ['😀', '🌵', '🦇', '🪙', '🏰', '☀️'], font: 'impact', bg: ['#ffd8a8', '#ffc078'],
     music: { mode: 'mixo', bpm: 140, wave: 'square', style: 'arcade', root: 60 }, voice: { wave: 'square', mul: 1, echo: 0.2 },
-    en: { title: 'Run', tag: 'Jump the low ones, duck the high ones', help: 'Your runner never stops. <b>Tap</b> to jump (tap again in the air for a double jump) and <b>swipe down</b> to slide under things. Jump over cacti and barrels and slide under birds and logs. Grab the 🪙 coins and run the distance each level asks for.', tvHelp: '▲ or OK jump · ▼ slide.', dict: {} },
+    en: { title: 'Run', tag: 'Jump the low ones, duck the high ones', help: 'Your runner never stops. <b>Tap</b> to jump (tap again in the air for a double jump) and <b>swipe down</b> to slide under things. Jump over cacti and barrels and slide under bats and logs. Grab the 🪙 coins and run the distance each level asks for.', tvHelp: '▲ or OK jump · ▼ slide.', dict: {} },
     tvHelp: '▲ u OK saltar · ▼ deslizarse.',
-    id: 'carrera', title: 'Carrera', emoji: '🏃', color: '#ff922b', origin: 'Endless Runner / Castle Ramble / Roly Poly',
-    help: 'Tu corredor no para nunca. <b>Toca</b> para saltar (vuelve a tocar en el aire para un doble salto) y <b>desliza hacia abajo</b> para agacharte. Salta cactus y barriles y agáchate bajo pájaros y troncos. Coge las monedas 🪙 y recorre la distancia que pide cada nivel.',
+    id: 'carrera', title: 'Carrera', emoji: '😀', color: '#ff922b', origin: 'Endless Runner / Castle Ramble / Roly Poly',
+    help: 'Tu corredor no para nunca. <b>Toca</b> para saltar (vuelve a tocar en el aire para un doble salto) y <b>desliza hacia abajo</b> para agacharte. Salta cactus y barriles y agáchate bajo murciélagos y troncos. Coge las monedas 🪙 y recorre la distancia que pide cada nivel.',
     lives: 3, levels: 0, cap: 25,
     setup(g) { const L = g.lv; g.s = { obs: [], y: 0, vy: 0, jumps: 0, slide: 0, dist: 0, t: 1, sp: 300 + Math.min(L, 25) * 12, need: 800 + Math.min(L, 25) * 120, inv: 0, runner: RUNNERS[(g.level - 1) % RUNNERS.length] }; geo(g); },
     layout(g) { if (g.s.obs) geo(g); },
@@ -74,7 +74,7 @@
       ctx.fillStyle = '#c68642'; ctx.fillRect(0, s.gy, W, H - s.gy); ctx.fillStyle = '#8d5524'; for (let x = -(s.dist * 10) % 40; x < W; x += 40) ctx.fillRect(x, s.gy + 10, 20, 4);
       for (const o of s.obs) { if (o.done && o.t !== 'low' && o.t !== 'high') continue; const y = o.t === 'low' ? s.gy - 20 * u : o.t === 'high' ? s.gy - 80 * u : s.gy - o.h * u; Arcade.emoji(ctx, o.e, o.x, y, (o.t === 'coin' ? 24 : 40) * u, { alpha: o.done ? 0.4 : 1 }); }
       const ph = s.slide > 0 ? 0.55 : 1;
-      Arcade.emoji(ctx, s.runner, s.px, s.gy - s.y - 26 * u * ph, 50 * u, { flip: true, sy: ph, rot: s.jumps === 2 ? -g.rt * 12 : s.slide > 0 ? -0.5 : 0, alpha: s.inv && Math.floor(g.rt * 12) % 2 ? 0.4 : 1 });
+      Arcade.emoji(ctx, s.slide > 0 ? '😬' : s.y > 10 ? (s.jumps === 2 ? '🤪' : '😲') : g.face(), s.px, s.gy - s.y - 26 * u * ph, 44 * u, { sy: ph, rot: s.jumps === 2 ? -g.rt * 12 : s.slide > 0 ? -0.5 : 0, alpha: s.inv && Math.floor(g.rt * 12) % 2 ? 0.4 : 1 });
       Arcade.txt(ctx, Math.floor(s.dist) + ' / ' + s.need + ' m', W / 2, g.top + 20, 15, '#7a3b00', 'center', 900);
     },
   });

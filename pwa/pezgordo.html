@@ -74,9 +74,9 @@
         const x = cx + (f.x - s.x) * z, y = cy + (f.y - s.y) * z; if (x < -100 || y < -100 || x > W + 100 || y > H + 100) continue;
         const big = f.r > s.r * 1.05;
         if (big) { ctx.strokeStyle = 'rgba(255,107,107,.6)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x, y, f.r * z * 1.05, 0, 6.3); ctx.stroke(); }
-        Arcade.emoji(ctx, f.e, x, y, f.r * 2.2 * z, { flip: f.vx > 0 });
+        Arcade.emojiTo(ctx, f.e, x, y, f.r * 2.2 * z, f.vx || 1, (f.vy || 0) * 0.3);
       }
-      Arcade.emoji(ctx, s.r < 30 ? '🐠' : s.r < 60 ? '🐡' : s.r < 120 ? '🦈' : '🐋', cx, cy, s.r * 2.3 * z, { flip: s.face > 0, alpha: s.inv && Math.floor(g.rt * 10) % 2 ? 0.4 : 1 });
+      Arcade.emoji(ctx, g.face(), cx, cy, s.r * 2.1 * z, { rot: s.face > 0 ? 0.12 : -0.12, alpha: s.inv && Math.floor(g.rt * 10) % 2 ? 0.4 : 1 });
       if (s.joy) { ctx.strokeStyle = 'rgba(255,255,255,.3)'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(s.joy.x, s.joy.y, 50, 0, 6.3); ctx.stroke(); ctx.fillStyle = 'rgba(255,255,255,.4)'; ctx.beginPath(); ctx.arc(s.joy.x + s.joy.dx * 50, s.joy.y + s.joy.dy * 50, 18, 0, 6.3); ctx.fill(); }
       const pr = clamp((s.r - s.r0) / (s.need - s.r0), 0, 1), bw = Math.min(W - 60, 300);
       ctx.fillStyle = 'rgba(255,255,255,.15)'; Arcade.rr(ctx, (W - bw) / 2, g.top + 10, bw, 10, 5); ctx.fill(); ctx.fillStyle = '#3bc9db'; Arcade.rr(ctx, (W - bw) / 2, g.top + 10, bw * pr, 10, 5); ctx.fill();

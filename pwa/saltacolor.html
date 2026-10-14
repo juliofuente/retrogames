@@ -109,7 +109,7 @@
       if (!s.dead) {
         const by = SY(s.y);
         ctx.fillStyle = CC[s.col]; ctx.beginPath(); ctx.arc(s.cx, by, s.r, 0, TAU); ctx.fill();
-        Arcade.emoji(ctx, FACES[s.col], s.cx, by, s.r * 1.4, { alpha: 0.9 });
+        Arcade.emoji(ctx, g.face(), s.cx, by, s.r * 1.4, { alpha: 0.9 });
         if (!s.started) Arcade.txt(ctx, Arcade.tv ? 'OK 🎮' : '👆', s.cx, by + 50, 22, '#fff', 'center', 900);
       }
       const prog = s.finish ? Math.min(1, s.cam / s.finish) : 0;

@@ -187,7 +187,7 @@
         if (a.pl) {
           if (s.inv > 0 && Math.floor(g.t * 10) % 2) continue;
           const mv = s.pl.j ? s.pl.j.mv : 'DR';
-          Arcade.emoji(ctx, '🐹', a.p.x, a.p.y - cw * 0.3, cw * 0.62, { flip: mv === 'DR' || mv === 'UR' });
+          Arcade.emojiTo(ctx, g.face(), a.p.x, a.p.y - cw * 0.3, cw * 0.58, mv === 'DR' || mv === 'UR' ? 1 : -1, mv[0] === 'U' ? -0.4 : 0.4, { mode: 'flip' });
         } else {
           const e = a.e;
           if (e.drop > 0) { ctx.globalAlpha = 1 - e.drop; }

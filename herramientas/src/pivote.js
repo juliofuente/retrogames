@@ -14,7 +14,7 @@
     return h ? 'h' + (s.NC - 2 - c) + ',' + r : 'v' + (s.NC - 1 - c) + ',' + r;
   }
   function genGold(g) {
-    const s = g.s, target = Math.min(Math.floor((s.NC - 1) * s.NR * 0.9), 8 + g.level * 2);
+    const s = g.s, target = Math.min(Math.floor((s.NC - 1) * s.NR * 0.9), 8 + g.lv * 2);
     const set = new Set();
     let tries = 0;
     while (set.size < target && tries++ < 500) {
@@ -34,8 +34,8 @@
     const s = g.s;
     s.pl = { c: Math.floor(s.NC / 2), r: s.NR - 1, dir: 'up', p: 0, q: null };
     s.en = [];
-    const n = Math.min(5, 1 + Math.floor(g.level / 2));
-    for (let i = 0; i < n; i++) s.en.push({ c: i % 2 ? s.NC - 1 : 0, r: i < 2 ? 0 : Math.floor(s.NR / 2) - 1, dir: 'down', p: 0, sp: 1.15 + Math.min(g.level, 18) * 0.07 + i * 0.05 });
+    const n = Math.min(5, 1 + Math.floor(g.lv / 2));
+    for (let i = 0; i < n; i++) s.en.push({ c: i % 2 ? s.NC - 1 : 0, r: i < 2 ? 0 : Math.floor(s.NR / 2) - 1, dir: 'down', p: 0, sp: 1.15 + g.lv * 0.07 + i * 0.05, f: Arcade.foe(i * 3 + g.level) });
   }
   function arrive(g, m, isPlayer) {
     const s = g.s, nc = m.c + D[m.dir][0], nr = m.r + D[m.dir][1];
@@ -44,9 +44,9 @@
       if (s.gold.has(k)) {
         if (s.found.has(k)) { s.found.delete(k); Arcade.sfx.bad(); g.float('¡Tapado!', p.x, p.y, '#ff6b6b', 18); g.addScore(-50); }
         else {
-          s.found.add(k); g.addScore(100, p.x, p.y); Arcade.sfx.combo(s.found.size % 12); g.ring(p.x, p.y, { color: '#ffd60a', r: s.sp * 0.8 });
+          s.found.add(k); g.addScore(100, p.x, p.y); Arcade.sfx.coin();
           g.burst(p.x, p.y, { n: 8, color: ['#ffd60a', '#fff3b0'], speed: 120, size: 3 });
-          if (s.found.size === s.gold.size) { g.addScore(500 * g.level, g.W / 2, g.H / 2); for (const kk of s.found) { const h = kk[0] === 'h', [c, r] = kk.slice(1).split(',').map(Number); g.burst(s.ox + (c + (h ? 0.5 : 0)) * s.sp, s.oy + (r + (h ? 0 : 0.5)) * s.sp, { n: 3, emoji: '✨', size: 14, speed: 100 }); } g.win(); }
+          if (s.found.size === s.gold.size) { g.addScore(500 * g.lv, g.W / 2, g.H / 2); g.win(); }
         }
       }
     }
@@ -74,10 +74,12 @@
   }
 
   Arcade.game({
+    /*THEME*/ tag: "El pez globo que nunca se para", deco: ["💰", "🫧", "👾", "🐚", "🫧", "✨"], font: "round", bg: ["#0e3a5c", "#06243a"], music: {"mode": "lydian", "bpm": 104, "wave": "triangle", "style": "chill", "root": 62}, voice: {"wave": "sine", "mul": 1.2, "echo": 0.35}, ambient: {"e": ["🫧"], "n": 14, "vy": -30, "sway": 18, "alpha": 0.25, "size": [8, 18]},
+    /*EN*/ en: {"title": "Pivot", "tag": "Your hero that never stops", "help": "Your hero <b>never stops</b>. <b>Swipe</b> to a side and it will turn at the next post. Swipe backwards to turn around. Some segments hide <b>buried gold</b>: pass over them to uncover them all. Careful! Passing again over an uncovered segment <b>covers it back</b>. Avoid the hedgehogs 👾.", "tvHelp": "D-pad: the fish turns at the next post in that direction.", "dict": {"¡Tapado!": "Covered!"}},
+    /*TV*/ tvHelp: "Cruceta: el pez gira en el siguiente poste hacia donde pulses.",
     id: 'pivote', title: 'Pivote', emoji: '🐡', color: '#4cc9f0', origin: 'Clu Clu Land (Nintendo, 1984)',
-    help: 'El pez globo <b>nunca se para</b>. <b>Desliza</b> hacia un lado y girará en el siguiente poste. Desliza hacia atrás para dar la vuelta. Bajo algunos tramos hay <b>oro escondido</b>: pasa por ellos para descubrirlos todos. ¡Ojo! Si pasas otra vez por un tramo descubierto, <b>se vuelve a tapar</b>. Evita a los erizos 🦔.',
-    lives: 3, levels: Infinity,
-    theme: { font: 'Fredoka', ambient: 'bubbles', music: { tempo: 126, scale: 'penta', root: 247, wave: 'triangle', lead: 'sine' }, sfx: { wave: 'sine', pitch: 1.2 } },
+    help: 'Tu héroe <b>nunca se para</b>. <b>Desliza</b> hacia un lado y girará en el siguiente poste. Desliza hacia atrás para dar la vuelta. Bajo algunos tramos hay <b>oro escondido</b>: pasa por ellos para descubrirlos todos. ¡Ojo! Si pasas otra vez por un tramo descubierto, <b>se vuelve a tapar</b>. Evita a los erizos 👾.',
+    lives: 3, levels: 0, cap: 25,
     setup(g) {
       g.s = { inv: 1.5 };
       const s = g.s;
@@ -95,7 +97,7 @@
       const s = g.s;
       s.inv = Math.max(0, s.inv - dt);
       const pl = s.pl;
-      pl.p += (2.3 + Math.min(g.level, 20) * 0.03) * dt;
+      pl.p += (2.3 + g.lv * 0.03) * dt;
       while (pl.p >= 1 && g.state === 'play') arrive(g, pl, true);
       if (g.state !== 'play') return;
       const pp = pos(s, pl);
@@ -112,15 +114,14 @@
     },
     draw(g, ctx) {
       const s = g.s, W = g.W, H = g.H;
-      const PAL = [['#0f4c75', '#0b3456', '#04162a'], ['#0b6e6e', '#0b4a52', '#062a2f'], ['#3c2a8c', '#251a63', '#100a33'], ['#1d6f8f', '#124463', '#081d33'], ['#5a189a', '#3c096c', '#10002b']];
-      const pal = PAL[(g.level - 1) % PAL.length];
-      Arcade.bg(ctx, W, H, pal[0], pal[1], pal[2]);
-      ctx.save(); ctx.globalCompositeOperation = 'lighter';
-      for (let i = 0; i < 4; i++) { const x = W * (0.15 + i * 0.25) + Math.sin(g.t * 0.4 + i) * 30; ctx.fillStyle = 'rgba(180,230,255,.045)'; ctx.beginPath(); ctx.moveTo(x - 20, 0); ctx.lineTo(x + 30, 0); ctx.lineTo(x + 120, H); ctx.lineTo(x + 30, H); ctx.fill(); }
-      ctx.restore();
-      for (let i = 0; i < 3; i++) { const sp = 18 + i * 9, x = ((g.t * sp + i * 300) % (W + 120)) - 60, y = g.top + 30 + (i * 0.31 % 1) * (g.bot - g.top - 60); Arcade.emoji(ctx, ['🐠', '🐟', '🦑'][i], i % 2 ? W - x : x, y + Math.sin(g.t + i) * 10, 22, { alpha: 0.35, flip: !(i % 2) }); }
-      for (let x = 10, i = 0; x < W; x += 46, i++) Arcade.emoji(ctx, ['🌿', '🪸', '🌿', '🐚'][i % 4], x, H - 14, i % 4 === 3 ? 18 : 30, { alpha: 0.6, rot: i % 4 === 3 ? 0 : Math.sin(g.t * 1.3 + i) * 0.15 });
-      Arcade.amb(g, ctx);
+      const bg = ctx.createLinearGradient(0, 0, 0, H);
+      bg.addColorStop(0, '#0b1f3a'); bg.addColorStop(1, '#06324a');
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      for (let i = 0; i < 18; i++) { // burbujas de fondo
+        const x = (i * 97 + 30) % W, y = H - ((g.t * (12 + i % 5 * 6) + i * 140) % (H + 40));
+        ctx.strokeStyle = 'rgba(255,255,255,.08)'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(x, y, 3 + i % 4 * 2, 0, 6.28); ctx.stroke();
+      }
+      g.scenery(['🪸','🐚','🌿','🪨','🦀'], 10, { y0: g.bot - 46, alpha: 0.55, size: [22, 34], bob: 2 }); /*SC*/
       if (!s.gold) return;
       const sp = s.sp;
       // tramos
@@ -135,7 +136,7 @@
         const h = k[0] === 'h', [c, r] = k.slice(1).split(',').map(Number);
         const x1 = s.ox + c * sp, y1 = s.oy + r * sp, x2 = x1 + (h ? sp : 0), y2 = y1 + (h ? 0 : sp);
         ctx.strokeStyle = '#b8860b'; ctx.lineWidth = sp * 0.24; ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
-        ctx.shadowColor = '#ffd60a'; ctx.shadowBlur = 10; ctx.strokeStyle = '#ffd60a'; ctx.lineWidth = sp * 0.17; ctx.stroke(); ctx.shadowBlur = 0;
+        ctx.strokeStyle = '#ffd60a'; ctx.lineWidth = sp * 0.17; ctx.stroke();
         ctx.strokeStyle = 'rgba(255,255,255,.6)'; ctx.lineWidth = sp * 0.04; ctx.stroke();
       }
       // postes
@@ -144,9 +145,9 @@
         ctx.fillStyle = '#1b4965'; ctx.beginPath(); ctx.arc(x, y, sp * 0.11, 0, 6.28); ctx.fill();
         ctx.fillStyle = '#9ad1d4'; ctx.beginPath(); ctx.arc(x - sp * 0.02, y - sp * 0.02, sp * 0.07, 0, 6.28); ctx.fill();
       }
-      for (const e of s.en) { const p = pos(s, e); Arcade.emoji(ctx, '🦔', p.x, p.y, sp * 0.5, { flip: e.dir === 'right' }); }
+      for (const e of s.en) { const p = pos(s, e); Arcade.emojiTo(ctx, e.f || '👾', p.x, p.y, sp * 0.5, D[e.dir][0], D[e.dir][1]); }
       const pl = s.pl, pp = pos(s, pl);
-      if (!(s.inv > 0 && Math.floor(g.t * 10) % 2)) Arcade.emoji(ctx, '🐡', pp.x, pp.y, sp * 0.56, { flip: pl.dir === 'right', rot: pl.dir === 'up' ? -0.3 : pl.dir === 'down' ? 0.3 : 0 });
+      if (!(s.inv > 0 && Math.floor(g.t * 10) % 2)) Arcade.emojiTo(ctx, g.face(), pp.x, pp.y, sp * 0.56, D[pl.dir][0], D[pl.dir][1]);
       if (pl.q) { // indicador del giro pendiente
         const nx = s.ox + (pl.c + D[pl.dir][0]) * sp, ny = s.oy + (pl.r + D[pl.dir][1]) * sp;
         ctx.strokeStyle = '#4cc9f0'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(nx, ny, sp * 0.2, 0, 6.28); ctx.stroke();

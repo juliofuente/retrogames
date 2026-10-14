@@ -48,8 +48,7 @@
         g.addScore(pts, cpx(s, p[0]), cpy(s, p[1]));
         if (combo > 1) g.float('Combo x' + combo, cpx(s, p[0]), cpy(s, p[1]) - 26, '#ff8fab', 20);
         if (nv) { const nc = { v: nv, pop: 1.4 }; s.cols[p[0]][p[1]] = nc; next.push(nc); }
-        Arcade.sfx.combo(combo * 2); g.ring(cpx(s, p[0]), cpy(s, p[1]), { color: STY[nv || 500][0], r: s.cs * 1.4, w: 5 });
-        if (nv >= 100 || !nv) { g.flash(STY[nv || 500][0], 0.2); g.burst(cpx(s, p[0]), cpy(s, p[1]), { n: 10, emoji: ['💰', '✨', '💵'], size: 16, speed: 200 }); }
+        Arcade.tone(500 + combo * 120, 0.12, 'triangle', 0.1);
       }
       for (let c = 0; c < COLS; c++) s.cols[c] = s.cols[c].filter(Boolean);
       fresh = next;
@@ -78,14 +77,16 @@
     const s = g.s;
     if (s.cols.some(c => c.length >= ROWS)) { g.burst(g.W / 2, g.H * 0.8, { n: 30, emoji: '🪙', size: 18, speed: 300 }); Arcade.sfx.boom(); g.lives = 0; g.hud(); g.state = 'dying'; setTimeout(g.over, 800); return; }
     for (let c = 0; c < COLS; c++) s.cols[c].unshift(randCoin(g));
-    Arcade.tone(150, 0.12, 'sawtooth', 0.06); g.shake(0.12, 4);
+    Arcade.tone(150, 0.12, 'sawtooth', 0.06);
   }
 
   Arcade.game({
+    /*THEME*/ tag: "Cinco de uno, dos de cinco… ¡cámbialo todo!", deco: ["💰", "💵", "🪙", "💸", "🏦", "💎"], font: "wide", bg: ["#2a1760", "#120a2b"], music: {"mode": "major", "bpm": 128, "wave": "square", "style": "arcade", "root": 62}, voice: {"wave": "square", "mul": 1.2, "echo": 0.15}, ambient: {"e": ["💸"], "n": 6, "vy": 30, "sway": 25, "spin": 1, "alpha": 0.12},
+    /*EN*/ en: {"title": "Change", "tag": "Five ones, two fives… change it all!", "help": "<b>Tap a column</b> to grab the bottom coins; tap another to <b>throw</b> them. When you gather enough equal coins they turn into a bigger one: <b>5×1 = 5</b>, <b>2×5 = 10</b>, <b>5×10 = 50</b>, <b>2×50 = 100</b>, <b>5×100 = 500</b>, and 2×500 vanish. Chain exchanges for combos. Coins keep coming down: don't let them reach you. Swipe ↓ to grab more of the same value.", "tvHelp": "◀ ▶ pick a column · OK grab / throw · ▼ grab more of the same value.", "dict": {"Más rápido": "Faster"}},
+    /*TV*/ tvHelp: "◀ ▶ elegir columna · OK coger / lanzar · ▼ coger más del mismo valor.",
     id: 'cambio', title: 'Cambio', emoji: '🪙', color: '#ffd166', origin: 'Money Idol Exchanger (Face, 1997)',
     help: '<b>Toca una columna</b> para coger las monedas de abajo; toca otra para <b>lanzarlas</b>. Cuando juntas suficientes iguales se cambian por una mayor: <b>5×1 = 5</b>, <b>2×5 = 10</b>, <b>5×10 = 50</b>, <b>2×50 = 100</b>, <b>5×100 = 500</b>, y 2×500 desaparecen. Encadena cambios para hacer combos. Las monedas bajan solas: que no lleguen hasta ti. Desliza ↓ para coger más del mismo valor.',
     lives: 0, levels: null,
-    theme: { font: 'Titan One', ambient: 'sparkles', music: { tempo: 124, scale: 'penta', root: 330, wave: 'square', lead: 'triangle' }, sfx: { wave: 'square', pitch: 1.2 } },
     setup(g) {
       g.s = { cols: [], hand: null, pc: 2, pushT: 9, lvT: 0 };
       const s = g.s;
@@ -111,7 +112,7 @@
     update(g, dt) {
       const s = g.s;
       s.lvT += dt;
-      if (s.lvT > 45) { s.lvT = 0; g.level++; g.hud(); g.message('Nivel ' + g.level, 1.2, 'Más rápido'); Arcade.sfx.level(); }
+      if (s.lvT > 45) { s.lvT = 0; g.level++; g.hud(); g.message('Nivel ' + g.level, 1.2, 'Más rápido'); Arcade.sfx.up(); }
       s.pushT -= dt;
       if (s.pushT <= 0) { s.pushT = Math.max(3.2, 9.5 - g.level * 0.7); pushRow(g); }
       for (const col of s.cols) for (const o of col) o.pop = Math.max(0, o.pop - dt * 4);
@@ -121,9 +122,6 @@
       const bg = ctx.createLinearGradient(0, 0, 0, H);
       bg.addColorStop(0, '#2a1760'); bg.addColorStop(1, '#120a2b');
       ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
-      ctx.save(); ctx.globalAlpha = 0.06; ctx.fillStyle = '#ffd166'; for (let i = -H; i < W; i += 40) { ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i + 18, 0); ctx.lineTo(i + 18 + H, H); ctx.lineTo(i + H, H); ctx.fill(); } ctx.restore();
-      Arcade.decor(ctx, g.t, [{ e: '💰', x: 22, y: H - 30, s: 34, a: 0.45 }, { e: '💵', x: W - 24, y: H - 34, s: 30, a: 0.45, sway: 0.2 }, { e: '🏦', x: W - 26, y: g.top + 20, s: 26, a: 0.35 }]);
-      Arcade.amb(g, ctx);
       if (!s.cols.length) return;
       const cs = s.cs;
       for (let c = 0; c < COLS; c++) {
@@ -141,7 +139,7 @@
       // jugador
       const py = s.oy + cs * (ROWS + 0.85);
       const px = cpx(s, s.pc);
-      Arcade.emoji(ctx, s.hand ? '🙌' : '🧑', px, py, cs * 0.85);
+      Arcade.emoji(ctx, g.face(), px, py - cs * 0.08, cs * 0.7); if (s.hand) Arcade.emoji(ctx, '🙌', px, py - cs * 0.5, cs * 0.45);
       if (s.hand) {
         drawCoin(ctx, px, py - cs * 0.85, cs * 0.32, s.hand.v);
         Arcade.txt(ctx, '×' + s.hand.n, px + cs * 0.42, py - cs * 0.95, cs * 0.3, '#fff', 'left', 900, 'rgba(0,0,0,.6)');

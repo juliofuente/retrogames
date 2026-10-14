@@ -34,15 +34,17 @@
     if (lines > 1) g.float('¡' + lines + ' líneas!', g.W / 2, s.oy + N * s.cs / 2 + 34, '#ff8fab', 22);
     s.time = Math.min(s.maxT, s.time + 3 * lines);
     s.lines += lines;
-    Arcade.sfx.combo(s.combo * 3 + lines); Arcade.buzz(30); g.ring(g.W / 2, s.oy + N * s.cs / 2, { color: '#e8a87c', r: N * s.cs * 0.7, w: 6 }); if (lines > 1 || s.combo > 1) g.flash('#ffe8cc', 0.2);
+    Arcade.sfx.coin(); Arcade.buzz(30);
     for (const k of marks) g.burst(s.ox + (k % N + 0.5) * s.cs, s.oy + (Math.floor(k / N) + 0.5) * s.cs, { n: 4, emoji: '✨', size: 12, speed: 120 });
   }
 
   Arcade.game({
+    /*THEME*/ tag: "La pastelería que gira como un cubo", deco: ["🍩", "🧁", "🍪", "🥨", "🍬", "🍫"], font: "round", bg: ["#5c3420", "#2a160c"], music: {"mode": "major", "bpm": 108, "wave": "triangle", "style": "chill", "root": 64}, voice: {"wave": "triangle", "mul": 1.15, "echo": 0.22}, ambient: {"e": ["✨"], "n": 8, "vy": 12, "sway": 10, "twinkle": 1, "alpha": 0.22, "size": [8, 14]},
+    /*EN*/ en: {"title": "Cookies", "tag": "The bakery that twists like a cube", "help": "<b>Swipe</b> a row sideways or a column up or down to rotate it (the longer the swipe, the more cells). When a whole row or column has <b>the same sweet</b>, it vanishes and you gain time. 🌟 matches anything. Don't let the clock run out!", "tvHelp": "D-pad to pick a sweet · OK to grab it ✋ and an arrow to rotate its row or column.", "dict": {"Líneas: ": "Lines: ", " líneas!": " lines!", "Nuevo dulce: ": "New sweet: "}},
+    /*TV*/ tvHelp: "Cruceta para elegir un dulce · OK para agarrarlo ✋ y una flecha para girar su fila o columna.", tv: { mode: 'swipe', targets: (g) => { const s = g.s, o = []; for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) o.push({ x: s.ox + c * s.cs, y: s.oy + r * s.cs, w: s.cs, h: s.cs, c, r }); return o; } },
     id: 'galletas', title: 'Galletas', emoji: '🍪', color: '#e8a87c', origin: "Yoshi's Cookie (Nintendo, 1992)",
     help: '<b>Desliza</b> una fila hacia los lados o una columna arriba o abajo para moverla en círculo (cuanto más largo el gesto, más casillas). Cuando una fila o columna entera tenga <b>el mismo dulce</b>, desaparece y ganas tiempo. 🌟 vale por cualquiera. ¡Que no se acabe el reloj!',
     lives: 0, levels: null,
-    theme: { font: 'Chewy', ambient: 'sparkles', music: { tempo: 118, scale: 'major', root: 262, wave: 'triangle', lead: 'square' }, sfx: { wave: 'triangle', pitch: 1.15 } },
     setup(g) {
       g.s = { nt: 3, b: [], anim: null, clear: null, combo: 0, lines: 0, time: 60, maxT: 60 };
       const s = g.s;
@@ -67,7 +69,7 @@
           for (const k of s.clear.marks) s.b[Math.floor(k / N)][k % N] = rnd(s);
           s.clear = null;
           const lv = 1 + Math.floor(s.lines / 6);
-          if (lv > g.level) { g.level = lv; g.hud(); if (s.nt < ALL.length) { s.nt++; g.message('Nivel ' + lv, 1.3, 'Nuevo dulce: ' + ALL[s.nt - 1]); } Arcade.sfx.level(); }
+          if (lv > g.level) { g.level = lv; g.hud(); if (s.nt < ALL.length) { s.nt++; g.message('Nivel ' + lv, 1.3, 'Nuevo dulce: ' + ALL[s.nt - 1]); } Arcade.sfx.up(); }
           resolve(g);
         }
         return;
@@ -82,8 +84,7 @@
       ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
       ctx.fillStyle = 'rgba(255,255,255,.04)';
       for (let y = 0; y < H; y += 40) for (let x = (y / 40) % 2 * 20; x < W; x += 40) ctx.fillRect(x, y, 20, 20);
-      Arcade.decor(ctx, g.t, [{ e: '🥐', x: 26, y: g.top + 26, s: 30, a: 0.4, sway: 0.1 }, { e: '🍰', x: W - 26, y: g.top + 26, s: 30, a: 0.4 }, { e: '🧁', x: 26, y: H - 30, s: 30, a: 0.4, bob: 3 }, { e: '🥧', x: W - 28, y: H - 30, s: 30, a: 0.4 }]);
-      Arcade.amb(g, ctx);
+      g.scenery(['🍰','🧁','🎂','🍭','🍫'], 10, { alpha: 0.15, size: [24, 40] }); /*SC*/
       if (!s.b.length) return;
       const cs = s.cs, bw = cs * N;
       // reloj

@@ -58,7 +58,7 @@
     const s = g.s, p = pos(s, e);
     e.dead = true; s.killed++;
     g.addScore(pts, p.x, p.y - 10);
-    g.burst(p.x, p.y, { n: 12, emoji: ['💥', '❄️'], size: 16, speed: 170 }); g.ring(p.x, p.y, { color: '#a5d8ff', r: s.cs * 1.6, w: 5 }); if (pts >= 800) g.flash('#e7f5ff', 0.2);
+    g.burst(p.x, p.y, { n: 12, emoji: '💥', size: 14, speed: 160 });
     Arcade.sfx.pop();
   }
   function checkDiamonds(g) {
@@ -69,7 +69,7 @@
     if (!rows && !cols) return;
     const vals = ds.map(d => rows ? d[0] : d[1]).sort((a, b) => a - b);
     if (vals[1] === vals[0] + 1 && vals[2] === vals[1] + 1) {
-      s.diaDone = true; g.addScore(5000, g.W / 2, g.H / 2); g.message('💎 ¡Diamantes en línea!', 1.6, 'Abejas aturdidas');
+      s.diaDone = true; g.addScore(5000, g.W / 2, g.H / 2); g.message('💎 ¡Diamantes en línea!', 1.6, 'Fantasmas aturdidas');
       for (const e of s.en) e.stun = 5; Arcade.sfx.win();
     }
   }
@@ -90,16 +90,18 @@
   }
 
   Arcade.game({
+    /*THEME*/ tag: "Hielo, fantasmas y patadas", deco: ["🧊", "👻", "💎", "❄️", "🥚", "🐧"], font: "round", bg: ["#13315c", "#0b2545"], music: {"mode": "lydian", "bpm": 124, "wave": "triangle", "style": "arcade", "root": 64}, voice: {"wave": "triangle", "mul": 1.15, "echo": 0.25}, ambient: {"e": ["❄️"], "n": 14, "vy": 30, "sway": 20, "spin": 1, "alpha": 0.25, "size": [8, 16]},
+    /*EN*/ en: {"title": "Penguin", "tag": "Ice, ghosts and kicks", "help": "<b>Swipe</b> to walk through the ice maze. <b>Tap</b> the screen to <b>push</b> the block in front of you: it shoots off and squashes any ghosts 👻 in its way. If the block can't move, it breaks. Defeat every ghost to clear the level. Line up the 3 diamonds 💎 for a huge bonus.", "tvHelp": "D-pad to move · OK push the block in front of you.", "dict": {"Fantasmas aturdidas": "Ghosts stunned", "💎 ¡Diamantes en línea!": "💎 Diamonds lined up!"}},
+    /*TV*/ tvHelp: "Cruceta para moverte · OK empujar el bloque que tienes delante.",
     id: 'pinguino', title: 'Pingüino', emoji: '🐧', color: '#90e0ef', origin: 'Pengo (Sega, 1982)',
-    help: '<b>Desliza</b> para caminar por el laberinto de hielo. <b>Toca</b> la pantalla para <b>empujar</b> el bloque que tienes delante: sale disparado y aplasta a las abejas 🐝 que pille. Si el bloque no puede moverse, se rompe. Elimina todas las abejas para pasar de nivel. Alinea los 3 diamantes 💎 para un bonus enorme.',
-    lives: 3, levels: Infinity,
-    theme: { font: 'Baloo 2', ambient: 'snow', music: { tempo: 130, scale: 'major', root: 330, wave: 'triangle', lead: 'square' }, sfx: { wave: 'triangle', pitch: 1.2 } },
+    help: '<b>Desliza</b> para caminar por el laberinto de hielo. <b>Toca</b> la pantalla para <b>empujar</b> el bloque que tienes delante: sale disparado y aplasta a las fantasmas 👻 que pille. Si el bloque no puede moverse, se rompe. Elimina todas las fantasmas para pasar de nivel. Alinea los 3 diamantes 💎 para un bonus enorme.',
+    lives: 3, levels: 0, cap: 16,
     setup(g) {
       g.s = { en: [], killed: 0, hatched: 0, slide: null, inv: 1.5, hatchT: 0.5, diaDone: false };
       const s = g.s;
       if (g.W < g.H) { s.C = 11; s.R = 13; } else { s.C = 17; s.R = 9; }
       gen(g); geo(g);
-      s.total = 3 + Math.min(g.level, 9);
+      s.total = Math.min(12, 3 + g.lv);
       s.pl = { c: s.start.c, r: s.start.r, dir: 'up', face: 'up', p: 0, moving: false, want: null, pushQ: false };
     },
     layout(g) { if (g.s.b) geo(g); },
@@ -139,8 +141,8 @@
         }
       }
       s.en = s.en.filter(e => !e.dead);
-      if (s.killed >= s.total) { g.addScore(1000 * g.level, g.W / 2, g.H / 2); g.win(); return; }
-      // abejas
+      if (s.killed >= s.total) { g.addScore(1000 * g.lv, g.W / 2, g.H / 2); g.win(); return; }
+      // fantasmas
       s.hatchT -= dt;
       if (s.hatchT <= 0 && s.en.length < 3 && s.hatched < s.total) { s.hatchT = 2.5; hatch(g); }
       const pp = pos(s, pl);
@@ -148,7 +150,7 @@
         if (e.hatch > 0) { e.hatch -= dt; if (e.hatch <= 0) beeArrive(g, Object.assign(e, { c: e.c - D[e.dir][0], r: e.r - D[e.dir][1] })); continue; }
         if (e.stun > 0) { e.stun -= dt; }
         else if (e.moving) {
-          e.p += (2.1 + Math.min(g.level, 14) * 0.13) * dt;
+          e.p += (2.1 + g.lv * 0.13) * dt;
           if (e.p >= 1) beeArrive(g, e);
         } else beeArrive(g, Object.assign(e, { c: e.c - D[e.dir][0], r: e.r - D[e.dir][1] }));
         const ep = pos(s, e);
@@ -164,11 +166,7 @@
     },
     draw(g, ctx) {
       const s = g.s, W = g.W, H = g.H;
-      Arcade.bg(ctx, W, H, '#0b1d3a', '#0b2545', '#13315c');
-      ctx.save(); ctx.globalCompositeOperation = 'lighter';
-      for (let b = 0; b < 3; b++) { ctx.fillStyle = ['rgba(80,255,170,.08)', 'rgba(160,100,255,.07)', 'rgba(80,200,255,.07)'][b]; ctx.beginPath(); ctx.moveTo(0, H * 0.1); for (let x = 0; x <= W; x += 20) ctx.lineTo(x, H * (0.08 + b * 0.05) + Math.sin(x * 0.012 + g.t * 0.6 + b * 2) * 30); for (let x = W; x >= 0; x -= 20) ctx.lineTo(x, H * (0.2 + b * 0.05) + Math.sin(x * 0.01 + g.t * 0.5 + b) * 40); ctx.fill(); }
-      ctx.restore();
-      Arcade.amb(g, ctx);
+      ctx.fillStyle = '#0b2545'; ctx.fillRect(0, 0, W, H);
       if (!s.b) return;
       const cs = s.cs;
       ctx.fillStyle = '#13315c'; ctx.fillRect(s.ox, s.oy, cs * s.C, cs * s.R);
@@ -185,12 +183,12 @@
       for (const e of s.en) {
         const p = pos(s, e);
         if (e.hatch > 0) { Arcade.emoji(ctx, '🥚', p.x, p.y, cs * 0.6, { rot: Math.sin(g.t * 30) * 0.2 }); continue; }
-        Arcade.emoji(ctx, '🐝', p.x, p.y + (e.stun > 0 ? 0 : Math.sin(g.t * 12 + e.c) * 2), cs * 0.68, { flip: e.dir === 'right', rot: e.stun > 0 ? g.t * 6 : 0 });
+        if (e.stun > 0) Arcade.emoji(ctx, '👻', p.x, p.y, cs * 0.68, { rot: g.t * 6 }); else Arcade.emojiTo(ctx, '👻', p.x, p.y + Math.sin(g.t * 12 + e.c) * 2, cs * 0.68, D[e.dir][0], D[e.dir][1]);
         if (e.stun > 0) Arcade.emoji(ctx, '💫', p.x, p.y - cs * 0.4, cs * 0.35);
       }
       const p = pos(s, s.pl);
-      if (!(s.inv > 0 && Math.floor(g.t * 10) % 2)) Arcade.emoji(ctx, '🐧', p.x, p.y, cs * 0.76, { flip: s.pl.face === 'right' });
-      Arcade.txt(ctx, '🐝 ' + (s.total - s.killed), W / 2, s.oy - 18, 15, '#ffe066', 'center', 800);
+      if (!(s.inv > 0 && Math.floor(g.t * 10) % 2)) Arcade.emojiTo(ctx, g.face(), p.x, p.y, cs * 0.72, D[s.pl.face] ? D[s.pl.face][0] : 0, D[s.pl.face] ? D[s.pl.face][1] : 1);
+      Arcade.txt(ctx, '👻 ' + (s.total - s.killed), W / 2, s.oy - 18, 15, '#ffe066', 'center', 800);
     },
   });
 })();

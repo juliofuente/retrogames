@@ -32,7 +32,7 @@
     let n = 0;
     while (line.length) {
       const last = line[line.length - 1];
-      if (last.bomb) { n += line.length; line.length = 0; Arcade.sfx.boom(); g.shake(0.2, 6); g.flash('#ff922b', 0.25); break; }
+      if (last.bomb) { n += line.length; line.length = 0; Arcade.sfx.boom(); g.shake(0.2, 6); break; }
       if (last.c !== s.pc) break;
       const [x, y] = cellXY(s, side, i, line.length - 1);
       g.burst(x + s.cs / 2, y + s.cs / 2, { n: 6, color: COL[last.c], speed: 160, size: 3 });
@@ -43,18 +43,20 @@
       const pts = 10 * n * (n >= 3 ? n : 1) * g.level;
       const [x, y] = cellXY(s, side, i, Math.max(0, line.length - 1));
       g.addScore(pts, x + s.cs / 2, y);
-      Arcade.sfx.combo(n); const [rx, ry] = cellXY(s, side, i, Math.max(0, line.length)); g.ring(rx + s.cs / 2, ry + s.cs / 2, { color: COL[s.pc], r: s.cs * (1 + n * 0.3), w: 4 });
+      Arcade.tone(600 + n * 80, 0.08, 'square', 0.07);
       s.cleared += n;
       const lv = 1 + Math.floor(s.cleared / 35);
-      if (lv > g.level) { g.level = lv; g.hud(); g.message('Nivel ' + lv, 1.1); Arcade.sfx.level(); }
+      if (lv > g.level) { g.level = lv; g.hud(); g.message('Nivel ' + lv, 1.1); Arcade.sfx.up(); }
     }
   }
 
   Arcade.game({
+    /*THEME*/ tag: "La rana que defiende el estanque", deco: ["🐸", "🎯", "💣", "🪷", "💧", "🐸"], font: "impact", bg: ["#1f2937", "#111827"], music: {"mode": "dorian", "bpm": 126, "wave": "square", "style": "arcade", "root": 55}, voice: {"wave": "square", "mul": 1, "echo": 0.15}, ambient: {"e": ["🪷", "💧"], "n": 6, "vy": 8, "sway": 6, "alpha": 0.1},
+    /*EN*/ en: {"title": "Center", "tag": "The frog that guards the pond", "help": "Pieces advance towards the centre from all four sides. <b>Tap a row or column</b> to shoot from the centre: you remove all consecutive pieces <b>of your colour</b>. When you hit a different colour, <b>you swap colours</b>. If a piece enters the central square, it's over. 💣 clears the whole line.", "tvHelp": "D-pad: choose a lane around the frog · OK shoot.", "dict": {}},
+    /*TV*/ tvHelp: "Cruceta: elige un carril alrededor de la rana · OK disparar.", tv: { mode: 'tap', targets: (g) => { const s = g.s, o = []; if (!s.lines) return o; for (const sd of SIDES) for (let i = 0; i < 4; i++) { const [x, y] = cellXY(s, sd, i, 0); o.push({ x, y, w: s.cs, h: s.cs }); } return o; } },
     id: 'centro', title: 'Centro', emoji: '🎯', color: '#4dabf7', origin: 'Zoop (Hookstone, 1995)',
     help: 'Las piezas avanzan hacia el centro desde los cuatro lados. <b>Toca una fila o columna</b> para disparar desde el centro: eliminas todas las piezas seguidas <b>de tu color</b>. Al chocar con otra de distinto color, <b>intercambiáis los colores</b>. Si una pieza entra en el cuadro central, se acaba. 💣 limpia toda la línea.',
     lives: 0, levels: null,
-    theme: { font: 'Teko', ambient: 'stars', music: { tempo: 140, scale: 'minor', root: 233, wave: 'sawtooth', lead: 'square' }, sfx: { wave: 'sawtooth', pitch: 1 } },
     setup(g) {
       g.s = { lines: {}, pc: 0, spawnT: 1, pieces: 0, cleared: 0, beam: null };
       const s = g.s; geo(g);
@@ -85,8 +87,8 @@
     },
     draw(g, ctx) {
       const s = g.s, W = g.W, H = g.H, cs = s.cs;
-      Arcade.bg(ctx, W, H, '#0b1026', '#111827', '#05060f');
-      Arcade.amb(g, ctx);
+      ctx.fillStyle = '#111827'; ctx.fillRect(0, 0, W, H);
+      g.scenery(['🪷','🌿','💧','🐟'], 10, { alpha: 0.25, bob: 2 }); /*SC*/
       if (!s.lines) return;
       // carriles
       for (const sd of SIDES) for (let i = 0; i < 4; i++) {
@@ -100,9 +102,8 @@
         ctx.fillStyle = 'rgba(255,80,80,.12)'; ctx.fillRect(x, y, cs, cs);
       }
       // centro
-      Arcade.glow(ctx, s.cx0 + 2 * cs, s.cy0 + 2 * cs, cs * 4, COL[s.pc], 0.25);
       ctx.fillStyle = '#1f2937'; Arcade.rr(ctx, s.cx0, s.cy0, cs * 4, cs * 4, 10); ctx.fill();
-      ctx.shadowColor = COL[s.pc]; ctx.shadowBlur = 16; ctx.strokeStyle = COL[s.pc]; ctx.lineWidth = 3; Arcade.rr(ctx, s.cx0 + 2, s.cy0 + 2, cs * 4 - 4, cs * 4 - 4, 10); ctx.stroke(); ctx.shadowBlur = 0;
+      ctx.strokeStyle = COL[s.pc]; ctx.lineWidth = 3; Arcade.rr(ctx, s.cx0 + 2, s.cy0 + 2, cs * 4 - 4, cs * 4 - 4, 10); ctx.stroke();
       if (s.beam) {
         const b = s.beam, mx = s.cx0 + 2 * cs, my = s.cy0 + 2 * cs;
         ctx.strokeStyle = COL[s.pc]; ctx.globalAlpha = b.t * 6; ctx.lineWidth = cs * 0.25; ctx.beginPath();
@@ -110,7 +111,7 @@
         else { const x = s.cx0 + (b.i + 0.5) * cs; ctx.moveTo(x, my); ctx.lineTo(x, b.side === 'T' ? 0 : H); }
         ctx.stroke(); ctx.globalAlpha = 1;
       }
-      Arcade.emoji(ctx, '🐸', s.cx0 + 2 * cs, s.cy0 + 2 * cs, cs * 1.5);
+      Arcade.emoji(ctx, g.face(), s.cx0 + 2 * cs, s.cy0 + 2 * cs, cs * 1.4);
       ctx.fillStyle = COL[s.pc]; ctx.beginPath(); ctx.arc(s.cx0 + 2 * cs, s.cy0 + 2.9 * cs, cs * 0.28, 0, 6.28); ctx.fill();
       Arcade.txt(ctx, GLY[s.pc], s.cx0 + 2 * cs, s.cy0 + 2.9 * cs, cs * 0.3, 'rgba(0,0,0,.6)');
       // piezas

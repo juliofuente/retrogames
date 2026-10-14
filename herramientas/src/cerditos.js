@@ -11,18 +11,21 @@
   }
   function spawn(g) {
     const s = g.s;
-    s.wolves.push({ x: rand(30, s.ladX - 90), y: g.top + 40, vy: rand(34, 52) + g.level * 4, ph: rand(0, 6), st: 'float', col: pick(BAL) });
+    s.wolves.push({ x: rand(30, s.ladX - 90), y: g.top + 40, vy: rand(34, 52) + g.lv * 4, ph: rand(0, 6), st: 'float', col: pick(BAL) });
     s.spawned++;
   }
 
   Arcade.game({
+    /*THEME*/ tag: "Mamá cerdita contra los lobos", deco: ["🐺", "🎈", "🏹", "🐷", "🎈", "🌳"], font: "comic", bg: ["#74c0fc", "#2b6a9e"], music: {"mode": "major", "bpm": 132, "wave": "square", "style": "march", "root": 62}, voice: {"wave": "square", "mul": 1.15, "echo": 0.15}, ambient: {"e": ["☁️"], "n": 4, "vy": 0, "vx": 14, "sway": 4, "alpha": 0.2, "size": [30, 46]},
+    /*EN*/ en: {"title": "Piglets", "tag": "Your hero versus the wolves", "help": "Your hero goes up and down in a lift. <b>Drag up or down</b> to move her and <b>tap</b> to shoot arrows. Wolves 🐺 float down hanging from balloons: <b>pop the balloon</b> so they fall (hitting the wolf does nothing). If a wolf reaches the ground, it climbs the ladder and bites you if you pass at its height. If 4 reach the ladder, you lose a life.", "tvHelp": "Hold ▲ ▼ to go up and down · OK shoot.", "dict": {"¡Demasiados lobos!": "Too many wolves!"}},
+    /*TV*/ tvHelp: "Mantén ▲ ▼ para subir y bajar · OK disparar.",
     id: 'cerditos', title: 'Cerditos', emoji: '🐷', color: '#ff8fab', origin: 'Pooyan (Konami, 1982)',
-    help: 'Mamá cerdita sube y baja en un ascensor. <b>Arrastra arriba o abajo</b> para moverla y <b>toca</b> para disparar flechas. Los lobos 🐺 bajan colgados de globos: <b>revienta el globo</b> para que caigan (darle al lobo no sirve). Si un lobo llega al suelo, trepa por la escalera y te muerde si pasas a su altura. Si llegan 4 a la escalera, pierdes una vida.',
-    lives: 3, levels: 10, levelLabel: 'Oleada',
+    help: 'Tu héroe sube y baja en un ascensor. <b>Arrastra arriba o abajo</b> para moverlo y <b>toca</b> para disparar flechas. Los lobos 🐺 bajan colgados de globos: <b>revienta el globo</b> para que caigan (darle al lobo no sirve). Si un lobo llega al suelo, trepa por la escalera y te muerde si pasas a su altura. Si llegan 4 a la escalera, pierdes una vida.',
+    lives: 3, levels: 0, cap: 14, levelLabel: 'Oleada',
     setup(g) {
       g.s = { wolves: [], arrows: [], spawned: 0, spawnT: 1, cool: 0, inv: 1, by: 0 };
       const s = g.s; geo(g);
-      s.total = 10 + g.level * 3;
+      s.total = Math.min(30, 10 + g.lv * 2);
     },
     layout(g) { if (g.s.wolves) geo(g); },
     down(g, p) { const s = g.s; if (s.dragId != null && g.pointers.has(s.dragId) && s.dragId !== p.id) return; s.dragId = p.id; s.ty = s.by; s.dragFrom = p.y; s.baseY = s.by; },
@@ -38,11 +41,11 @@
       if (s.kd) s.ty = clamp(s.by + s.kd * 40, s.yMin, s.yMax);
       if (s.ty != null) s.by += clamp(s.ty - s.by, -420 * dt, 420 * dt);
       s.spawnT -= dt;
-      if (s.spawned < s.total && s.spawnT <= 0) { s.spawnT = Math.max(0.55, 1.7 - g.level * 0.1) * rand(0.6, 1.3); spawn(g); }
+      if (s.spawned < s.total && s.spawnT <= 0) { s.spawnT = Math.max(0.55, 1.7 - g.lv * 0.1) * rand(0.6, 1.3); spawn(g); }
       for (const a of s.arrows) {
         a.x -= 560 * dt;
         for (const w of s.wolves) {
-          if (w.st === 'float' && dist(a.x, a.y, w.x, w.y - 30) < 17) { w.st = 'fall'; w.vy = 60; a.dead = true; g.addScore(50 * g.level, w.x, w.y - 40); Arcade.sfx.pop(); g.burst(w.x, w.y - 30, { n: 8, color: w.col, speed: 140, size: 3 }); break; }
+          if (w.st === 'float' && dist(a.x, a.y, w.x, w.y - 30) < 17) { w.st = 'fall'; w.vy = 60; a.dead = true; g.addScore(50 * g.lv, w.x, w.y - 40); Arcade.sfx.pop(); g.burst(w.x, w.y - 30, { n: 8, color: w.col, speed: 140, size: 3 }); break; }
           if (w.st === 'climb' && Math.abs(a.x - w.x) < 18 && Math.abs(a.y - w.y) < 20) { w.st = 'fall'; w.vy = 0; a.dead = true; g.addScore(150, w.x, w.y - 20); Arcade.sfx.pop(); break; }
           if (w.st === 'float' && dist(a.x, a.y, w.x, w.y) < 14) { a.dead = true; Arcade.tone(200, 0.04, 'square', 0.05); break; }
         }
@@ -74,7 +77,7 @@
         s.wolves = s.wolves.filter(w => w.st !== 'climb');
         g.message('¡Demasiados lobos!', 1.3); if (g.die()) s.inv = 1.5; return;
       }
-      if (s.spawned >= s.total && !s.wolves.length) { g.addScore(500 * g.level, g.W / 2, g.H / 2); g.win(); }
+      if (s.spawned >= s.total && !s.wolves.length) { g.addScore(500 * g.lv, g.W / 2, g.H / 2); g.win(); }
     },
     draw(g, ctx) {
       const s = g.s, W = g.W, H = g.H;
@@ -97,7 +100,7 @@
       // cesta
       ctx.fillStyle = '#b08968'; Arcade.rr(ctx, s.ropeX - 26, s.by - 6, 52, 30, 6); ctx.fill();
       ctx.strokeStyle = '#7f5539'; ctx.lineWidth = 2; for (let x = -20; x <= 20; x += 10) { ctx.beginPath(); ctx.moveTo(s.ropeX + x, s.by - 6); ctx.lineTo(s.ropeX + x, s.by + 24); ctx.stroke(); }
-      if (!(s.inv > 0 && Math.floor(g.t * 10) % 2)) Arcade.emoji(ctx, '🐷', s.ropeX, s.by - 18, 38);
+      if (!(s.inv > 0 && Math.floor(g.t * 10) % 2)) Arcade.emoji(ctx, g.face(), s.ropeX, s.by - 18, 34);
       Arcade.emoji(ctx, '🏹', s.ropeX - 26, s.by - 6, 22, { flip: true });
       for (const a of s.arrows) { ctx.strokeStyle = '#343a40'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(a.x + 22, a.y); ctx.stroke(); ctx.fillStyle = '#343a40'; ctx.beginPath(); ctx.moveTo(a.x - 6, a.y); ctx.lineTo(a.x + 2, a.y - 4); ctx.lineTo(a.x + 2, a.y + 4); ctx.fill(); }
       for (const w of s.wolves) {

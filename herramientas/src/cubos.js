@@ -17,10 +17,12 @@
   }
 
   Arcade.game({
+    /*THEME*/ tag: "Ni una bomba al suelo", deco: ["💣", "😈", "💦", "🪣", "💣", "🔥"], font: "impact", bg: ["#1b5f78", "#0d2b3e"], music: {"mode": "minor", "bpm": 136, "wave": "sawtooth", "style": "drive", "root": 57}, voice: {"wave": "square", "mul": 0.95, "echo": 0.12}, ambient: {"e": ["💦"], "n": 6, "vy": -20, "sway": 10, "alpha": 0.1},
+    /*EN*/ en: {"title": "Buckets", "tag": "Not a single bomb on the floor", "help": "<b>Drag</b> your finger to move your water buckets 🪣 and catch <b>every</b> bomb 💣 the troublemaker drops. Each wave is faster. If one gets past you, all falling bombs explode and you <b>lose a bucket</b>. Every 1000 points you get one back.", "tvHelp": "Hold ◀ ▶ to move the buckets.", "dict": {"¡Oleada superada!": "Wave cleared!", "Siguiente: ": "Next: "}},
+    /*TV*/ tvHelp: "Mantén ◀ ▶ para mover los cubos.",
     id: 'cubos', title: 'Cubos', emoji: '🪣', color: '#48cae4', origin: 'Kaboom! (Activision, 1981)',
     help: '<b>Arrastra</b> el dedo para mover tus cubos de agua 🪣 y atrapa <b>todas</b> las bombas 💣 que tira el gamberro. Cada oleada es más rápida. Si se te escapa una, explotan todas las que caen y <b>pierdes un cubo</b>. Cada 1000 puntos recuperas uno.',
     lives: 3, levels: null, lifeIcon: '🪣', levelLabel: 'Oleada',
-    theme: { font: 'Black Ops One', ambient: 'stars', music: { tempo: 144, scale: 'minor', root: 220, wave: 'square' }, sfx: { wave: 'square', pitch: 1 } },
     setup(g) {
       g.s = { bombs: [], wave: 1, bomberTX: g.W / 2, phase: 'play', nextLife: 1000, boomQ: [], boomT: 0 };
       geo(g); startWave(g);
@@ -63,7 +65,7 @@
           const yb = bucketY(s, i) - 8;
           if (py < yb && b.y >= yb && Math.abs(b.x - s.px) < s.bw / 2 + 4) {
             b.caught = true; g.addScore(s.wave); Arcade.tone(500 + i * 80, 0.05, 'triangle', 0.08);
-            g.burst(b.x, yb, { n: 5, emoji: '💦', size: 14, speed: 110, life: 0.5 }); g.ring(b.x, yb, { color: '#74c0fc', r: 28, t: 0.3, w: 3 });
+            g.burst(b.x, yb, { n: 5, emoji: '💦', size: 12, speed: 90, life: 0.5 });
             if (g.score >= s.nextLife) { s.nextLife += 1000; if (g.lives < 3) { g.lives++; g.hud(); g.float('+🪣', s.px, bucketY(s, 0) - 50, '#48cae4', 26); Arcade.sfx.up(); } }
             break;
           }
@@ -77,15 +79,14 @@
       }
       if (s.toDrop === 0 && !s.bombs.length) {
         g.addScore(100 * s.wave, g.W / 2, g.H / 2); s.wave++; s.phase = 'pause'; s.pauseT = 1.6;
-        g.message('¡Oleada superada!', 1.4, 'Siguiente: ' + s.wave); Arcade.sfx.win(); g.flash('#74c0fc', 0.25); g.burst(g.W / 2, g.H / 2, { n: 24, emoji: ['💧', '✨'], size: 18, speed: 260 });
+        g.message('¡Oleada superada!', 1.4, 'Siguiente: ' + s.wave); Arcade.sfx.win();
       }
     },
     draw(g, ctx) {
       const s = g.s, W = g.W, H = g.H;
-      Arcade.bg(ctx, W, H, '#0b1d3a', '#173a5e', '#1b5f78');
-      Arcade.amb(g, ctx);
-      Arcade.glow(ctx, W * 0.82, H * 0.2, 70, 'rgba(255,250,220,.5)', 0.6); Arcade.emoji(ctx, '🌕', W * 0.82, H * 0.2, 44);
-      for (let i = 0; i < 12; i++) { const bw2 = 40 + (i * 29) % 40, bh2 = 90 + (i * 61) % 150, x = i * W / 10 - 20, y = H - 20 - bh2; ctx.fillStyle = '#0a1a2e'; ctx.fillRect(x, y, bw2, bh2 + 20); ctx.fillStyle = 'rgba(255,214,102,.5)'; for (let wy = y + 8; wy < H - 30; wy += 14) for (let wx = x + 5; wx < x + bw2 - 5; wx += 10) if ((wx * 13 + wy * 7) % 9 < 3) ctx.fillRect(wx, wy, 4, 6); }
+      const bg = ctx.createLinearGradient(0, 0, 0, H);
+      bg.addColorStop(0, '#0d2b3e'); bg.addColorStop(1, '#1b5f78');
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
       if (!s.bombs) return;
       // muro
       ctx.fillStyle = '#7f4f24'; ctx.fillRect(0, s.wallY - 10, W, 22);
@@ -95,7 +96,7 @@
       // bombas
       for (const b of s.bombs) {
         Arcade.emoji(ctx, '💣', b.x, b.y, 34, { rot: Math.sin(b.sp * 8) * 0.2 });
-        Arcade.glow(ctx, b.x + 10, b.y - 15, 10 + Math.sin(b.sp * 40) * 3, 'rgba(255,200,80,.9)', 0.9);
+        if (Math.floor(b.sp * 20) % 2) { ctx.fillStyle = '#ffd166'; ctx.beginPath(); ctx.arc(b.x + 10, b.y - 15, 3, 0, 6.28); ctx.fill(); }
       }
       // suelo
       ctx.fillStyle = '#0a1f2c'; ctx.fillRect(0, s.groundY, W, H - s.groundY);

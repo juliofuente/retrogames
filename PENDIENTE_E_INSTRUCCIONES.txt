@@ -111,6 +111,10 @@ Requisitos: Python 3, Node.js, y para las pruebas: pip install playwright && pla
      Arcade.txt(ctx,txt,x,y,size,color,align,peso,trazo); Arcade.rr (rect redondeado); Arcade.sfx.{coin,pop,hit,boom,win,
      lose,tick,move,up,bad,whoosh,combo(n)}; Arcade.tone(f,dur,onda,vol,slide); Arcade.T('es','en'); Arcade.lang.
    · Todo texto que se dibuja con Arcade.txt en español debe tener su traducción en en.dict (se traduce por fragmentos).
+   · Protagonista: dibújalo con g.face() (cara que cambia sola; g.mood('scared') etc. para forzar). Enemigos: usa
+     Arcade.FOES / Arcade.foe(n). Lo que se mueva, dibújalo con Arcade.emojiTo(ctx, e, x, y, tam, dx, dy) y, si el emoji
+     es nuevo, añade hacia dónde mira en Arcade.FACING (common.js). El pad virtual 🎮 sale solo si el juego tiene key()
+     o tv.targets (pad: false para quitarlo).
    · Para reiniciar nivel tras perder vida: setTimeout(() => { if (g.state==='play' && g.die()) Arcade.current.def.setup(g); }, 1200).
 
 2) Registrar y construir

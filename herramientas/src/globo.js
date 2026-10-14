@@ -64,7 +64,7 @@
       ctx.restore();
       const bx = s.ox + s.bal.x * s.sc, byy = s.oy + s.bal.y * s.sc;
       ctx.strokeStyle = 'rgba(0,0,0,.3)'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(bx, byy + 22 * s.sc); ctx.quadraticCurveTo(bx + Math.sin(g.rt * 3) * 6, byy + 50 * s.sc, bx, byy + 80 * s.sc); ctx.stroke();
-      Arcade.emoji(ctx, '🎈', bx, byy, 48 * s.sc, { alpha: s.inv && Math.floor(g.rt * 12) % 2 ? 0.4 : 1 });
+      Arcade.emoji(ctx, '🎈', bx, byy, 48 * s.sc, { alpha: s.inv && Math.floor(g.rt * 12) % 2 ? 0.4 : 1 }); Arcade.emoji(ctx, g.face(), bx, byy - 6 * s.sc, 22 * s.sc, { alpha: s.inv && Math.floor(g.rt * 12) % 2 ? 0.4 : 1 });
       Arcade.txt(ctx, 'Altura: ' + Math.floor(s.alt / 10) + ' / ' + Math.floor(s.need / 10) + ' m', W / 2, g.top + 20, 15, '#1864ab', 'center', 900);
     },
   });

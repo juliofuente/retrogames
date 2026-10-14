@@ -135,7 +135,7 @@
       // rana
       ctx.strokeStyle = 'rgba(255,255,255,.18)'; ctx.setLineDash([6, 8]); ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(s.cx, s.cy); ctx.lineTo(s.cx + Math.cos(s.aim) * 220, s.cy + Math.sin(s.aim) * 220); ctx.stroke(); ctx.setLineDash([]);
       ctx.fillStyle = '#2f9e44'; ctx.beginPath(); ctx.arc(s.cx, s.cy, s.r * 2.6, 0, Math.PI * 2); ctx.fill(); ctx.strokeStyle = '#8ce99a'; ctx.lineWidth = 3; ctx.stroke();
-      Arcade.emoji(ctx, s.frog, s.cx, s.cy, s.r * 4.2, { rot: s.aim + Math.PI / 2 });
+      Arcade.emojiTo(ctx, g.face(), s.cx, s.cy, s.r * 3.4, Math.cos(s.aim), Math.sin(s.aim));
       if (s.cur != null) Arcade.emoji(ctx, BALL[s.cur], s.cx + Math.cos(s.aim) * s.r * 1.9, s.cy + Math.sin(s.aim) * s.r * 1.9, s.D);
       Arcade.emoji(ctx, BALL[s.nxt], s.cx - Math.cos(s.aim) * s.r * 1.2, s.cy - Math.sin(s.aim) * s.r * 1.2, s.r * 1.1);
       if (s.shot) Arcade.emoji(ctx, BALL[s.shot.c], s.shot.x, s.shot.y, s.D);

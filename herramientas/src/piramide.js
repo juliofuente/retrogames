@@ -35,9 +35,9 @@
     }
     const v = s.cubes[pl.r][pl.c];
     const nv = k.toggle ? (v ? 0 : 1) : Math.min(k.need, v + 1);
-    if (nv !== v) { s.cubes[pl.r][pl.c] = nv; if (nv > v) g.addScore(25); Arcade.tone(nv > v ? 520 + nv * 120 : 200, 0.07, 'square', 0.07); const q = cxy(s, pl.r, pl.c); g.ring(q.x, q.y, { color: k.pal[Math.min(2, nv * (k.need === 1 ? 2 : 1))], r: s.cw * 0.7, t: 0.3, w: 3 }); g.burst(q.x, q.y, { n: 5, color: k.pal[2], speed: 100, size: 2.5 }); }
+    if (nv !== v) { s.cubes[pl.r][pl.c] = nv; if (nv > v) g.addScore(25); Arcade.tone(nv > v ? 520 + nv * 120 : 200, 0.07, 'square', 0.07); }
     else Arcade.sfx.tick();
-    if (s.cubes.every(row => row.every(x => x === k.need))) { g.addScore(1000 + g.level * 250, g.W / 2, g.H / 2); g.win(); }
+    if (s.cubes.every(row => row.every(x => x === k.need))) { g.addScore(1000 + g.lv * 250, g.W / 2, g.H / 2); g.win(); }
   }
   function die(g) {
     const s = g.s;
@@ -46,8 +46,8 @@
   }
   function spawnEnemy(g) {
     const s = g.s;
-    const coily = !s.en.some(e => e.coily) && Math.random() < 0.4 + g.level * 0.04;
-    const green = !coily && g.level >= 3 && Math.random() < 0.12;
+    const coily = !s.en.some(e => e.coily) && Math.random() < 0.4 + g.lv * 0.04;
+    const green = !coily && g.lv >= 3 && Math.random() < 0.12;
     s.en.push({ r: 1, c: ri(0, 1), j: null, hopT: 0.7, coily, snake: false, green, drop: 1 });
   }
   function enemyHop(g, e) {
@@ -63,17 +63,19 @@
         const p = cxy(s, r, c), d = dist(p.x, p.y, tp.x, tp.y);
         if (d < bd) { bd = d; best = mv; }
       }
-      if (best) jump(g, e, best, 0.42 - Math.min(0.12, g.level * 0.01));
+      if (best) jump(g, e, best, 0.42 - Math.min(0.12, g.lv * 0.01));
       return;
     }
     jump(g, e, Math.random() < 0.5 ? 'DL' : 'DR', 0.36);
   }
 
   Arcade.game({
+    /*THEME*/ tag: "Salta, pinta y no mires abajo", deco: ["🔺", "🟣", "🐍", "🌈", "🔴", "⭐"], font: "impact", bg: ["#1a1a3a", "#0b0b1a"], music: {"mode": "phryg", "bpm": 130, "wave": "square", "style": "arcade", "root": 57}, voice: {"wave": "square", "mul": 1.2, "echo": 0.22}, ambient: {"e": ["⭐", "✨"], "n": 12, "vy": 0, "sway": 0, "twinkle": 1, "alpha": 0.3, "size": [6, 12]},
+    /*EN*/ en: {"title": "Pyramid", "tag": "Hop, paint and don't look down", "help": "<b>Tap</b> up-left, up-right, down-left or down-right of your character to hop diagonally. Each cube you land on <b>changes colour</b>: paint them all in the target colour. Don't jump off! Dodge the balls 🔴 and the snake 🐍. The side discs 🌈 take you back to the top, and the snake falls off if it follows you. 🟢 freezes the enemies.", "tvHelp": "▲ up-right · ◀ up-left · ▼ down-left · ▶ down-right.", "dict": {"Objetivo": "Target", "¡Ojo: vuelve atrás!": "Careful: it flips back!", "¡Serpiente fuera!": "Snake down!"}},
+    /*TV*/ tvHelp: "▲ arriba-derecha · ◀ arriba-izquierda · ▼ abajo-izquierda · ▶ abajo-derecha.",
     id: 'piramide', title: 'Pirámide', emoji: '🔺', color: '#ffa94d', origin: 'Q*bert (Gottlieb, 1982)',
     help: '<b>Toca</b> arriba-izquierda, arriba-derecha, abajo-izquierda o abajo-derecha de tu personaje para saltar en diagonal. Cada cubo que pisas <b>cambia de color</b>: píntalos todos del color objetivo. ¡No saltes fuera! Esquiva las bolas 🔴 y la serpiente 🐍. Los discos 🌈 de los lados te devuelven arriba y la serpiente se cae si te sigue. 🟢 congela a los enemigos.',
-    lives: 3, levels: Infinity,
-    theme: { font: 'Press Start 2P', music: { tempo: 136, scale: 'penta', root: 262, wave: 'square' }, sfx: { wave: 'square', pitch: 1.1 } },
+    lives: 3, levels: 0, cap: 18,
     setup(g) {
       g.s = { cubes: [], en: [], spawnT: 2.5, inv: 1, freeze: 0 };
       const s = g.s;
@@ -110,7 +112,7 @@
       }
       // enemigos
       s.spawnT -= dt;
-      if (s.spawnT <= 0 && s.en.length < Math.min(6, 2 + Math.floor(g.level / 3))) { s.spawnT = Math.max(1.4, 3.6 - g.level * 0.18); spawnEnemy(g); }
+      if (s.spawnT <= 0 && s.en.length < 2 + Math.floor(g.lv / 3)) { s.spawnT = Math.max(1.4, 3.6 - g.lv * 0.18); spawnEnemy(g); }
       if (!s.freeze) for (const e of s.en) {
         if (e.drop > 0) { e.drop -= dt * 2; continue; }
         if (e.fall) { e.fall += dt; if (e.fall > 1) e.dead = true; continue; }
@@ -138,10 +140,9 @@
     },
     draw(g, ctx) {
       const s = g.s, W = g.W, H = g.H;
-      Arcade.bg(ctx, W, H, '#1b1040', '#0b0b1a', '#05050d');
-      Arcade.glow(ctx, W * 0.8, H * 0.25, W * 0.5, 'rgba(255,120,200,.25)', 1); Arcade.glow(ctx, W * 0.15, H * 0.8, W * 0.5, 'rgba(80,160,255,.25)', 1);
-      Arcade.amb(g, ctx, 'stars');
-      Arcade.emoji(ctx, '🌙', W - 30, g.top + 70, 30, { alpha: 0.8 });
+      ctx.fillStyle = '#0b0b1a'; ctx.fillRect(0, 0, W, H);
+      for (let i = 0; i < 50; i++) { ctx.fillStyle = 'rgba(255,255,255,' + (0.15 + (i % 4) * 0.15) + ')'; ctx.fillRect((i * 131) % W, (i * 71) % H, 2, 2); }
+      g.scenery(['🌙','🪐','☄️'], 3, { alpha: 0.5, size: [30, 44], bob: 3 }); /*SC*/
       if (!s.cubes) return;
       const cw = s.cw, k = cfg(g.level), cols = k.need === 2 ? k.pal : [k.pal[0], k.pal[2], k.pal[2]];
       const shade = (hex, f) => { const n = parseInt(hex.slice(1), 16); const r = Math.round(((n >> 16) & 255) * f), gg = Math.round(((n >> 8) & 255) * f), b = Math.round((n & 255) * f); return `rgb(${r},${gg},${b})`; };
@@ -169,7 +170,7 @@
         if (a.pl) {
           if (s.inv > 0 && Math.floor(g.t * 10) % 2) continue;
           const mv = s.pl.j ? s.pl.j.mv : 'DR';
-          Arcade.emoji(ctx, '🐹', a.p.x, a.p.y - cw * 0.3, cw * 0.62, { flip: mv === 'DR' || mv === 'UR' });
+          Arcade.emojiTo(ctx, g.face(), a.p.x, a.p.y - cw * 0.3, cw * 0.58, mv === 'DR' || mv === 'UR' ? 1 : -1, mv[0] === 'U' ? -0.4 : 0.4, { mode: 'flip' });
         } else {
           const e = a.e;
           if (e.drop > 0) { ctx.globalAlpha = 1 - e.drop; }

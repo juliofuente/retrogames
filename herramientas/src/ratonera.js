@@ -51,14 +51,17 @@
     const s = g.s;
     s.pl = { c: Math.floor(s.C / 2), r: s.R - 1, dir: 'up', p: 0, moving: false, q: null };
     s.cats = [];
-    const n = Math.min(5, 2 + Math.floor(g.level / 2));
-    for (let i = 0; i < n; i++) s.cats.push({ c: i % 2 ? s.C - 1 : 0, r: Math.floor(i / 2) % s.R, dir: 'down', p: 0, moving: false, sp: 2.4 + g.level * 0.12 + i * 0.08, dead: 0 });
+    const n = Math.min(5, 2 + Math.floor(g.lv / 2));
+    for (let i = 0; i < n; i++) s.cats.push({ c: i % 2 ? s.C - 1 : 0, r: Math.floor(i / 2) % s.R, dir: 'down', p: 0, moving: false, sp: 2.4 + g.lv * 0.12 + i * 0.08, dead: 0 });
   }
 
   Arcade.game({
-    id: 'ratonera', title: 'Ratonera', emoji: '🐭', color: '#ffd43b', origin: 'Mouse Trap (Exidy, 1981)',
-    help: '<b>Desliza</b> para mover al ratón y cómete todo el queso. Las <b>puertas de colores</b> se abren y cierran todas a la vez con los <b>botones</b> de abajo: úsalas para cortar el paso a los gatos 🐱. Los huesos 🦴 se guardan: pulsa 🦴 para convertirte en <b>perro</b> unos segundos y comerte a los gatos.',
-    lives: 3, levels: 10,
+    /*THEME*/ tag: "Puertas de colores contra gatos", deco: ["🧀", "👻", "🦴", "🐶", "🧀", "🚪"], font: "comic", bg: ["#2a1f3a", "#1a1325"], music: {"mode": "mixo", "bpm": 132, "wave": "square", "style": "arcade", "root": 60}, voice: {"wave": "square", "mul": 1.2, "echo": 0.15}, ambient: {"e": ["🧀"], "n": 5, "vy": 16, "sway": 10, "spin": 1, "alpha": 0.08},
+    /*EN*/ en: {"title": "Mousetrap", "tag": "Coloured doors versus ghosts", "help": "<b>Swipe</b> to move the hero and eat all the cheese. The <b>coloured doors</b> all open and close at once with the <b>buttons</b> below: use them to block the ghosts 👻. Bones 🦴 are stored: press 🦴 to become a <b>dog</b> for a few seconds and eat the ghosts.", "tvHelp": "D-pad to move · OK opens or closes the doors of the nearest colour · bones 🦴 are used automatically when a ghost gets close.", "dict": {"abierta": "open", "cerrada": "closed", "🐶 ¡Perro!": "🐶 Dog!"}},
+    /*TV*/ tvHelp: "Cruceta para moverte · OK abre o cierra las puertas del color más cercano · los huesos 🦴 se usan solos cuando un gato se acerca.",
+    id: 'ratonera', title: 'Ratonera', emoji: '😀', color: '#ffd43b', origin: 'Mouse Trap (Exidy, 1981)',
+    help: '<b>Desliza</b> para mover al héroe y cómete todo el queso. Las <b>puertas de colores</b> se abren y cierran todas a la vez con los <b>botones</b> de abajo: úsalas para cortar el paso a los fantasmas 👻. Los huesos 🦴 se guardan: pulsa 🦴 para convertirte en <b>perro</b> unos segundos y comerte a los fantasmas.',
+    lives: 3, levels: 0, cap: 16,
     setup(g) {
       g.s = { inv: 1.5, bones: 0, dog: 0 };
       const s = g.s;
@@ -88,11 +91,17 @@
     },
     key(g, k, d) {
       if (!d) return; const m = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right' }[k];
-      if (m) this.swipe(g, m); else if ('123'.includes(k)) { g.s.dOpen[+k - 1] = !g.s.dOpen[+k - 1]; } else if (k === ' ' && g.s.bones > 0 && g.s.dog <= 0) { g.s.bones--; g.s.dog = 6; }
+      if (m) this.swipe(g, m); else if ('123'.includes(k)) { g.s.dOpen[+k - 1] = !g.s.dOpen[+k - 1]; } else if (k === ' ' && Arcade.tv) { /*TVKEY*/
+        const s = g.s, pp = pos(s, s.pl); let best = null, bd = 1e9;
+        for (const key in s.doors) { const [c, r] = key.slice(1).split(',').map(Number), x = s.ox + (c + (key[0] === 'E' ? 1 : 0.5)) * s.cs, y = s.oy + (r + (key[0] === 'S' ? 1 : 0.5)) * s.cs, d2 = (x - pp.x) ** 2 + (y - pp.y) ** 2; if (d2 < bd) { bd = d2; best = s.doors[key]; } }
+        if (best != null) { s.dOpen[best] = !s.dOpen[best]; Arcade.tone(s.dOpen[best] ? 600 : 300, 0.06, 'square', 0.08); }
+      }
+      else if (k === ' ' && g.s.bones > 0 && g.s.dog <= 0) { g.s.bones--; g.s.dog = 6; }
     },
     update(g, dt) {
       const s = g.s, m = s.pl;
       s.inv = Math.max(0, s.inv - dt); s.dog = Math.max(0, s.dog - dt);
+      if (Arcade.tv && s.bones > 0 && s.dog <= 0 && s.cats.some(c => !(c.dead > 0) && Math.abs(c.c - m.c) + Math.abs(c.r - m.r) <= 2)) { s.bones--; s.dog = 6; Arcade.sfx.up(); g.float('🐶 ¡Perro!', pos(s, m).x, pos(s, m).y - 20, '#e599f7', 20); } /*TVKEY*/
       if (!m.moving) {
         if (m.q && pass(s, m.c, m.r, m.q)) { m.dir = m.q; m.q = null; m.moving = true; }
         else if (pass(s, m.c, m.r, m.dir) && m.wasMoving) m.moving = true;
@@ -104,7 +113,7 @@
           const k = m.c + ',' + m.r;
           if (s.cheese.has(k)) { s.cheese.delete(k); g.addScore(10); if (s.cheese.size % 4 === 0) Arcade.sfx.tick(); }
           if (s.boneSet.has(k)) { s.boneSet.delete(k); s.bones++; g.float('+🦴', pos(s, m).x, pos(s, m).y - 16, '#fff', 20); Arcade.sfx.coin(); }
-          if (!s.cheese.size) { g.addScore(800 * g.level, g.W / 2, g.H / 2); g.win(); return; }
+          if (!s.cheese.size) { g.addScore(800 * g.lv, g.W / 2, g.H / 2); g.win(); return; }
           if (m.q && pass(s, m.c, m.r, m.q)) { m.dir = m.q; m.q = null; m.moving = true; }
           else if (pass(s, m.c, m.r, m.dir)) m.moving = true;
           else m.wasMoving = false;
@@ -156,9 +165,9 @@
         else { ctx.moveTo(ox + c * cs + 3, oy + (r + 1) * cs); ctx.lineTo(ox + (c + 1) * cs - 3, oy + (r + 1) * cs); }
         ctx.stroke(); ctx.setLineDash([]); ctx.globalAlpha = 1;
       }
-      for (const c of s.cats) { if (c.dead > 0) continue; const p = pos(s, c); Arcade.emoji(ctx, s.dog > 0 ? '🙀' : '🐱', p.x, p.y, cs * 0.72, { flip: c.dir === 'right' }); }
+      for (const c of s.cats) { if (c.dead > 0) continue; const p = pos(s, c); Arcade.emojiTo(ctx, s.dog > 0 ? '🫥' : '👻', p.x, p.y, cs * 0.72, D[c.dir] ? D[c.dir][0] : 0, D[c.dir] ? D[c.dir][1] : 1); }
       const p = pos(s, s.pl);
-      if (!(s.inv > 0 && Math.floor(g.t * 10) % 2)) Arcade.emoji(ctx, s.dog > 0 ? '🐶' : '🐭', p.x, p.y, cs * 0.75, { flip: s.pl.dir === 'right' });
+      if (!(s.inv > 0 && Math.floor(g.t * 10) % 2)) Arcade.emojiTo(ctx, s.dog > 0 ? '🐶' : g.face(), p.x, p.y, cs * 0.72, D[s.pl.dir] ? D[s.pl.dir][0] : 0, D[s.pl.dir] ? D[s.pl.dir][1] : 1);
       // botones
       const bw = Math.min(70, (W - 40) / 4), x0 = W / 2 - bw * 2;
       for (let i = 0; i < 4; i++) {

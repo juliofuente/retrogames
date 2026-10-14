@@ -197,3 +197,18 @@ html.tv .tvf { outline: 4px solid #fff !important; outline-offset: 3px; transfor
   box-shadow: 0 0 0 9px color-mix(in srgb, var(--accent) 45%, transparent), 0 0 34px var(--accent) !important; transition: transform .12s; }
 html.tv summary.tvf { transform: none; border-radius: 10px; }
 html.tv .howto summary { font-size: 16px; }
+
+/* ---------- pad virtual (opcional, botón 🎮 del HUD) ---------- */
+.hb.active { background: color-mix(in srgb, var(--accent) 55%, rgba(0,0,0,.4)); }
+.vpad { position: fixed; left: 0; right: 0; bottom: 0; z-index: 4; display: none; align-items: center; justify-content: space-between;
+  padding: 8px max(16px, env(safe-area-inset-left)) calc(10px + env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-right));
+  background: linear-gradient(to top, rgba(0,0,0,.55), rgba(0,0,0,.25)); touch-action: none; user-select: none; -webkit-user-select: none; }
+.vpad.on { display: flex; }
+.ov.on ~ .vpad { visibility: hidden; }
+.vpad .dpad { position: relative; width: 150px; height: 150px; }
+.vpad button { position: absolute; width: 52px; height: 52px; border-radius: 14px; border: 1.5px solid rgba(255,255,255,.28); background: rgba(255,255,255,.13);
+  color: #fff; font-size: 20px; display: grid; place-items: center; touch-action: none; -webkit-tap-highlight-color: transparent; padding: 0; }
+.vpad button.on { background: color-mix(in srgb, var(--accent) 70%, transparent); transform: scale(.94); }
+.vpad .up { left: 49px; top: 0; } .vpad .down { left: 49px; bottom: 0; } .vpad .left { left: 0; top: 49px; } .vpad .right { right: 0; top: 49px; }
+.vpad .ok { position: static; width: 84px; height: 84px; border-radius: 50%; font-size: 30px; background: color-mix(in srgb, var(--accent) 40%, rgba(255,255,255,.1)); }
+@media (max-height: 520px) { .vpad { background: none; pointer-events: none; } .vpad button { pointer-events: auto; } .vpad .dpad { width: 126px; height: 126px; } .vpad button { width: 44px; height: 44px; } .vpad .up, .vpad .down { left: 41px; } .vpad .left, .vpad .right { top: 41px; } .vpad .ok { width: 70px; height: 70px; } }

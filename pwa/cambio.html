@@ -156,7 +156,7 @@
       // jugador
       const py = s.oy + cs * (ROWS + 0.85);
       const px = cpx(s, s.pc);
-      Arcade.emoji(ctx, s.hand ? '🙌' : '🧑', px, py, cs * 0.85);
+      Arcade.emoji(ctx, g.face(), px, py - cs * 0.08, cs * 0.7); if (s.hand) Arcade.emoji(ctx, '🙌', px, py - cs * 0.5, cs * 0.45);
       if (s.hand) {
         drawCoin(ctx, px, py - cs * 0.85, cs * 0.32, s.hand.v);
         Arcade.txt(ctx, '×' + s.hand.n, px + cs * 0.42, py - cs * 0.95, cs * 0.3, '#fff', 'left', 900, 'rgba(0,0,0,.6)');

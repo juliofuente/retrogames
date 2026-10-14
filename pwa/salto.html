@@ -160,7 +160,7 @@
         ctx.fillStyle = s.col; ctx.shadowColor = s.col; ctx.shadowBlur = 16; ctx.fillRect(-sz / 2, -sz / 2, sz, sz); ctx.shadowBlur = 0;
         ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.strokeRect(-sz / 2 + 2, -sz / 2 + 2, sz - 4, sz - 4);
         ctx.restore();
-        Arcade.emoji(ctx, s.face, cx, cy, sz * 0.7, { rot: s.rot });
+        Arcade.emoji(ctx, g.face(), cx, cy, sz * 0.7, { rot: s.rot });
       }
       // progreso
       const bw = Math.min(W - 60, 360), bx = (W - bw) / 2, by = g.top + 14, pr = clamp(s.x / s.len, 0, 1);

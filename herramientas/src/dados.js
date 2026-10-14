@@ -66,9 +66,9 @@
         }
         const n = grp.length + ones.length, pts = v * n * 10 * g.level;
         g.addScore(pts, s.ox + (grp[0][0] + 0.5) * s.cs, s.oy + (grp[0][1] + 0.5) * s.cs);
-        Arcade.sfx.combo(v * 2); Arcade.buzz(30); g.ring(s.ox + (grp[0][0] + 0.5) * s.cs, s.oy + (grp[0][1] + 0.5) * s.cs, { color: DCOL[v], r: s.cs * 2.2, w: 6 }); for (const [x, y] of grp) g.burst(s.ox + (x + 0.5) * s.cs, s.oy + (y + 0.5) * s.cs, { n: 5, emoji: '🔥', size: 14, speed: 80, up: 60 });
+        Arcade.sfx.coin(); Arcade.buzz(30);
         s.sinks++;
-        if (s.sinks % 8 === 0) { g.level++; g.hud(); g.message('Nivel ' + g.level, 1.1, 'Caen más dados'); Arcade.sfx.level(); }
+        if (s.sinks % 8 === 0) { g.level++; g.hud(); g.message('Nivel ' + g.level, 1.1, 'Caen más dados'); Arcade.sfx.up(); }
       }
     }
   }
@@ -94,10 +94,12 @@
   }
 
   Arcade.game({
+    /*THEME*/ tag: "El diablillo que hunde los dados", deco: ["🎲", "😀", "🔥", "🎲", "♦️", "🎲"], font: "impact", bg: ["#1a1a40", "#0b0b1f"], music: {"mode": "harm", "bpm": 124, "wave": "sawtooth", "style": "drive", "root": 57}, voice: {"wave": "sawtooth", "mul": 0.9, "echo": 0.2}, ambient: {"e": ["🔥"], "n": 8, "vy": -24, "sway": 8, "alpha": 0.1, "size": [8, 14]},
+    /*EN*/ en: {"title": "Dice", "tag": "The little devil who sinks dice", "help": "<b>Tap a cell</b> to walk there or <b>tap a die next to you</b> (or swipe) to roll it. Rolling changes the top face. Join <b>as many equal dice as their number</b> (two 2s, three 3s, four 4s…) and they sink. 1s touching a sinking group go down with it. The sides show which face comes next. Don't let the board fill up.", "tvHelp": "D-pad: walk and push dice.", "dict": {"Caen más dados": "More dice falling", "🔳 Libres: ": "🔳 Free: "}},
+    /*TV*/ tvHelp: "Cruceta: caminar y empujar los dados.",
     id: 'dados', title: 'Dados', emoji: '🎲', color: '#b197fc', origin: 'Devil Dice (Shift/SCEI, 1998)',
     help: '<b>Toca una casilla</b> para andar hasta ella o <b>toca un dado pegado a ti</b> (o desliza) para hacerlo rodar. Al rodar cambia la cara de arriba. Junta <b>tantos dados iguales como su número</b> (dos 2, tres 3, cuatro 4…) y se hunden. Los 1 pegados a un grupo que se hunde se van con él. Los laterales muestran qué cara saldrá. No dejes que el tablero se llene.',
     lives: 0, levels: null,
-    theme: { font: 'Metal Mania', ambient: 'embers', music: { tempo: 108, scale: 'harmonic', root: 196, wave: 'square', lead: 'sawtooth' }, sfx: { wave: 'square', pitch: 0.85 } },
     setup(g) {
       g.s = { b: [], pc: 0, pr: 0, spawnT: 4, sinks: 0, path: null, pathT: 0, walkAnim: 0 };
       const s = g.s;
@@ -139,14 +141,12 @@
       const s = g.s, W = g.W, H = g.H;
       const bg = ctx.createLinearGradient(0, 0, 0, H);
       bg.addColorStop(0, '#1a1a40'); bg.addColorStop(1, '#0b0b1f');
-      Arcade.bg(ctx, W, H, '#3b0a1f', '#1f0716', '#07020a');
-      Arcade.glow(ctx, W / 2, H + 40, W * 0.9, 'rgba(255,90,30,.55)', 0.8 + Math.sin(g.t * 2) * 0.1);
-      for (let x = 10, i = 0; x < W; x += 34, i++) Arcade.emoji(ctx, '🔥', x, H - 12 - Math.abs(Math.sin(g.t * 3 + i)) * 6, 26, { alpha: 0.75 });
-      Arcade.amb(g, ctx);
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      g.scenery(['♠️','♥️','♦️','♣️','🃏'], 10, { alpha: 0.12, size: [24, 40] }); /*SC*/
       if (!s.b.length) return;
       const cs = s.cs;
       for (let r = 0; r < s.R; r++) for (let c = 0; c < s.C; c++) {
-        ctx.fillStyle = (r + c) % 2 ? '#43203a' : '#3a1a31'; ctx.fillRect(s.ox + c * cs, s.oy + r * cs, cs, cs);
+        ctx.fillStyle = (r + c) % 2 ? '#2b2d64' : '#25275a'; ctx.fillRect(s.ox + c * cs, s.oy + r * cs, cs, cs);
       }
       for (let r = 0; r < s.R; r++) for (let c = 0; c < s.C; c++) {
         const d = s.b[r][c]; if (!d) continue;
@@ -165,7 +165,7 @@
         ctx.globalAlpha = 1;
       }
       if (s.path) for (const [c, r] of s.path) { ctx.fillStyle = 'rgba(177,151,252,.35)'; ctx.beginPath(); ctx.arc(s.ox + (c + 0.5) * cs, s.oy + (r + 0.5) * cs, cs * 0.08, 0, 6.28); ctx.fill(); }
-      Arcade.emoji(ctx, '😈', s.ox + (s.pc + 0.5) * cs, s.oy + (s.pr + 0.5) * cs - s.walkAnim * 6, cs * 0.66);
+      Arcade.emoji(ctx, g.face(), s.ox + (s.pc + 0.5) * cs, s.oy + (s.pr + 0.5) * cs - s.walkAnim * 6, cs * 0.66);
       const free = s.b.flat().filter(v => !v).length - 1;
       Arcade.txt(ctx, '🔳 Libres: ' + free, W / 2, s.oy - 20, 15, free < 6 ? '#ff6b6b' : '#d0bfff', 'center', 800);
     },

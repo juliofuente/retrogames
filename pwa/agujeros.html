@@ -42,7 +42,7 @@
   const epos = (s, m) => ({ x: s.ox + (m.c + 0.5 + (m.moving ? D[m.dir][0] * m.p : 0)) * s.cs, y: s.oy + (m.r + (m.moving ? D[m.dir][1] * m.p : 0)) * s.cs });
 
   Arcade.game({
-    /*THEME*/ tag: "Cava, atrapa, entierra", deco: ["👽", "⛏️", "🕳️", "👨‍🚀", "🛸", "⭐"], font: "mono", bg: ["#0d1020", "#05070f"], music: {"mode": "phryg", "bpm": 128, "wave": "square", "style": "drive", "root": 55}, voice: {"wave": "square", "mul": 0.95, "echo": 0.25}, ambient: {"e": ["⭐", "✨"], "n": 10, "vy": 0, "sway": 0, "twinkle": 1, "alpha": 0.3, "size": [6, 12]},
+    /*THEME*/ tag: "Cava, atrapa, entierra", deco: ["👽", "⛏️", "🕳️", "😀", "🛸", "⭐"], font: "mono", bg: ["#0d1020", "#05070f"], music: {"mode": "phryg", "bpm": 128, "wave": "square", "style": "drive", "root": 55}, voice: {"wave": "square", "mul": 0.95, "echo": 0.25}, ambient: {"e": ["⭐", "✨"], "n": 10, "vy": 0, "sway": 0, "twinkle": 1, "alpha": 0.3, "size": [6, 12]},
     /*EN*/ en: {"title": "Holes", "tag": "Dig, trap, bury", "help": "<b>Swipe</b> to move along the floors and ladders. <b>Tap</b> to <b>dig a hole</b> in front of you (several taps). When an alien 👽 falls in, <b>tap again</b> to fill it in before it escapes. Defeat them all before you run out of oxygen. You can't cross open holes.", "tvHelp": "D-pad to move · OK dig or fill the hole in front of you.", "dict": {"¡Sin oxígeno!": "Out of oxygen!"}},
     /*TV*/ tvHelp: "Cruceta para moverte · OK cavar o tapar el agujero que tienes delante.",
     id: 'agujeros', title: 'Agujeros', emoji: '🕳️', color: '#63e6be', origin: 'Space Panic (Universal, 1980)',
@@ -159,7 +159,7 @@
         Arcade.emoji(ctx, '👽', p.x, p.y - cs * 0.5, cs * 0.85);
       }
       const p = epos(s, s.pl);
-      if (!(s.inv > 0 && Math.floor(g.t * 10) % 2)) Arcade.emoji(ctx, '👨‍🚀', p.x, p.y - cs * 0.55, cs * 0.95, { flip: s.pl.face === 'right' });
+      if (!(s.inv > 0 && Math.floor(g.t * 10) % 2)) Arcade.emojiTo(ctx, g.face(), p.x, p.y - cs * 0.5, cs * 0.8, s.pl.face === 'right' ? 1 : -1, 0, { mode: 'flip' });
       if (!s.pl.moving && s.pl.r % 3 === 0) { const fx = s.ox + (s.pl.c + (s.pl.face === 'left' ? -0.5 : 1.5)) * cs; Arcade.emoji(ctx, '⛏️', fx, p.y - cs * 0.3, cs * 0.4, { alpha: 0.5 }); }
       // oxígeno
       const k = Math.max(0, s.oxy / 100);

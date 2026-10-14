@@ -101,7 +101,7 @@
       ctx.strokeStyle = '#333'; ctx.lineWidth = 1; ctx.beginPath(); ctx.ellipse(s.tx, yT, r * 0.35, r, 0, 0, Math.PI * 2); ctx.stroke();
       for (const st of s.stuck.slice(-3)) { ctx.save(); ctx.translate(s.tx, yT + st.dy); ctx.rotate(st.ang); ctx.strokeStyle = '#6b4b2a'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(-26, 0); ctx.lineTo(0, 0); ctx.stroke(); ctx.restore(); }
       // arquero y guía
-      Arcade.emoji(ctx, s.who, s.ax - 6, s.ay + 6, 46 * s.u);
+      Arcade.emoji(ctx, g.face(), s.ax - 6, s.ay + 4, 40 * s.u);
       Arcade.emoji(ctx, '🏹', s.ax + 18, s.ay - 8, 34 * s.u, { rot: -s.ang + Math.PI / 4 * 0 });
       if (!s.arrow) {
         const p = s.pow * 900 * s.u + 200 * s.u;

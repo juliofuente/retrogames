@@ -80,7 +80,7 @@
         if (r === s.need) Arcade.emoji(ctx, '🏁', W / 2, y - th, tw);
       }
       const px = X(s.r, s.c) * (1 - k) + X(s.fr, s.fc) * k, py = Y(s.r) * (1 - k) + Y(s.fr) * k - Math.sin(k * Math.PI) * th * 1.2 - th * 0.4 + (s.dead ? 30 : 0);
-      if (s.c >= 0 && s.c < N || k > 0) Arcade.emoji(ctx, s.hero, px, py, tw * 0.7, { flip: s.face > 0, rot: s.dead ? 0.8 : 0 });
+      if (s.c >= 0 && s.c < N || k > 0) Arcade.emojiTo(ctx, s.dead ? '😱' : g.face(), px, py, tw * 0.64, s.face > 0 ? 1 : -1, 0.5, { mode: 'flip', rot: s.dead ? 0.8 : 0 });
       ctx.fillStyle = 'rgba(0,0,0,.08)'; ctx.fillRect(0, g.bot - 60, W / 2 - 1, 60); ctx.fillRect(W / 2 + 1, g.bot - 60, W / 2, 60);
       Arcade.txt(ctx, '↙️', W / 4, g.bot - 30, 26); Arcade.txt(ctx, '↘️', W * 0.75, g.bot - 30, 26);
       Arcade.txt(ctx, 'Metros: ' + s.r + '/' + s.need, W / 2, g.top + 20, 15, '#1864ab', 'center', 900);

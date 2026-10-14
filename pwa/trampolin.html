@@ -60,11 +60,11 @@
   }
 
   Arcade.game({
-    /*THEME*/ tag: "El ratón policía rebota a la caza", deco: ["🐭", "🐱", "💰", "📺", "🎁", "🚨"], font: "round", bg: ["#3b1f5c", "#1c1030"], music: {"mode": "major", "bpm": 140, "wave": "square", "style": "arcade", "root": 64}, voice: {"wave": "square", "mul": 1.2, "echo": 0.15}, ambient: {"e": ["⭐"], "n": 6, "vy": 0, "sway": 0, "twinkle": 1, "alpha": 0.2, "size": [8, 14]},
-    /*EN*/ en: {"title": "Trampoline", "tag": "The police mouse bounces into action", "help": "You are a police mouse recovering stolen goods. <b>Swipe</b> left or right to run. When you drop into a gap you bounce on the <b>trampoline</b>; swipe while bouncing to exit onto a floor. The trampoline breaks on the 4th bounce in a row! <b>Tap a door</b> to open or close it: if you open it with cats 🐱 in front, they go flying. Cats can't catch you in the gaps.", "tvHelp": "◀ ▶ run (and exit while bouncing) · OK open or close the nearest door.", "dict": {}},
+    /*THEME*/ tag: "El ratón policía rebota a la caza", deco: ["😀", "🧛", "💰", "📺", "🎁", "🚨"], font: "round", bg: ["#3b1f5c", "#1c1030"], music: {"mode": "major", "bpm": 140, "wave": "square", "style": "arcade", "root": 64}, voice: {"wave": "square", "mul": 1.2, "echo": 0.15}, ambient: {"e": ["⭐"], "n": 6, "vy": 0, "sway": 0, "twinkle": 1, "alpha": 0.2, "size": [8, 14]},
+    /*EN*/ en: {"title": "Trampoline", "tag": "The police hero bounces into action", "help": "You are a police hero recovering stolen goods. <b>Swipe</b> left or right to run. When you drop into a gap you bounce on the <b>trampoline</b>; swipe while bouncing to exit onto a floor. The trampoline breaks on the 4th bounce in a row! <b>Tap a door</b> to open or close it: if you open it with vampires 🧛 in front, they go flying. Vampires can't catch you in the gaps.", "tvHelp": "◀ ▶ run (and exit while bouncing) · OK open or close the nearest door.", "dict": {}},
     /*TV*/ tvHelp: "◀ ▶ correr (y salir al rebotar) · OK abrir o cerrar la puerta más cercana.",
     id: 'trampolin', title: 'Trampolín', emoji: '🤸', color: '#da77f2', origin: 'Mappy (Namco, 1983)',
-    help: 'Eres un ratón policía recuperando objetos robados. <b>Desliza</b> a izquierda o derecha para correr. Al caer por un hueco rebotas en el <b>trampolín</b>; desliza mientras rebotas para salir en un piso. ¡El trampolín se rompe al 4º bote seguido! <b>Toca una puerta</b> para abrirla o cerrarla: si la abres con gatos 🐱 delante, salen volando. En los huecos los gatos no te pueden coger.',
+    help: 'Eres un héroe policía recuperando objetos robados. <b>Desliza</b> a izquierda o derecha para correr. Al caer por un hueco rebotas en el <b>trampolín</b>; desliza mientras rebotas para salir en un piso. ¡El trampolín se rompe al 4º bote seguido! <b>Toca una puerta</b> para abrirla o cerrarla: si la abres con vampiros 🧛 delante, salen volando. En los huecos los vampiros no te pueden coger.',
     lives: 3, levels: 0, cap: 16,
     setup(g) {
       g.s = { inv: 1.5, doors: [], loot: [], cats: [] };
@@ -158,10 +158,10 @@
       for (const c of s.cats) {
         const y = c.st === 'floor' ? s.fy[c.f] : c.y;
         if (c.out > 0) { Arcade.emoji(ctx, '😵', c.x, y - 18, 28, { alpha: 0.6 }); continue; }
-        Arcade.emoji(ctx, '🐱', c.x, y - 18, 32, { flip: c.dir > 0 });
+        Arcade.emojiTo(ctx, '🧛', c.x, y - 18, 32, c.dir || 1, 0, { mode: 'flip' });
       }
       const p = s.pl, py = p.st === 'floor' ? s.fy[p.f] : p.y;
-      if (!(s.inv > 0 && Math.floor(g.t * 10) % 2)) Arcade.emoji(ctx, '🐭', p.x, py - 18, 34, { flip: p.dir > 0, rot: p.st === 'bounce' ? Math.sin(g.t * 10) * 0.3 : 0 });
+      if (!(s.inv > 0 && Math.floor(g.t * 10) % 2)) Arcade.emojiTo(ctx, p.st === 'bounce' ? '🤩' : g.face(), p.x, py - 18, 32, p.dir || 1, 0, { mode: 'flip', rot: p.st === 'bounce' ? Math.sin(g.t * 10) * 0.3 : 0 });
       if (p.st === 'floor' && !p.moving) Arcade.txt(ctx, '↔', p.x, py - 46, 14, 'rgba(255,255,255,.6)', 'center', 900);
       Arcade.txt(ctx, '🎒 ' + s.loot.length, W / 2, g.top + 18, 15, '#fff', 'center', 800);
     },

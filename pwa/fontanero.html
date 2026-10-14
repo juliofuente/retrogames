@@ -35,11 +35,11 @@
   function firstBreak(s) { for (let j = 1; j < s.N - 1; j++) if (s.broken[j]) return j; return s.N - 1; }
 
   Arcade.game({
-    /*THEME*/ tag: "Ratones, juntas y una bañera", deco: ["🔧", "🐭", "💧", "🛁", "💣", "🧀"], font: "wide", bg: ["#34343f", "#1f1f28"], music: {"mode": "dorian", "bpm": 118, "wave": "square", "style": "arcade", "root": 57}, voice: {"wave": "square", "mul": 1, "echo": 0.18}, ambient: {"e": ["💧"], "n": 6, "vy": 45, "sway": 2, "alpha": 0.12, "size": [8, 14]},
-    /*EN*/ en: {"title": "Plumber", "tag": "Mice, joints and a bathtub", "help": "Water flows from the tank 🛢️ to the bathtub 🛁 through the pipe. Mice 🐭 <b>gnaw the joints</b> and the water leaks. <b>Tap a broken joint</b> to fix it and <b>tap a mouse</b> to scare it off before it bites. Some leave bombs 💣: tap them to defuse them. Fill the bathtub before the tank runs dry.", "dict": {"¡Se acabó el agua!": "Out of water!"}},
+    /*THEME*/ tag: "Ratas, juntas y una bañera", deco: ["🔧", "🐀", "💧", "🛁", "💣", "🧀"], font: "wide", bg: ["#34343f", "#1f1f28"], music: {"mode": "dorian", "bpm": 118, "wave": "square", "style": "arcade", "root": 57}, voice: {"wave": "square", "mul": 1, "echo": 0.18}, ambient: {"e": ["💧"], "n": 6, "vy": 45, "sway": 2, "alpha": 0.12, "size": [8, 14]},
+    /*EN*/ en: {"title": "Plumber", "tag": "Rats, joints and a bathtub", "help": "Water flows from the tank 🛢️ to the bathtub 🛁 through the pipe. Mice 🐀 <b>gnaw the joints</b> and the water leaks. <b>Tap a broken joint</b> to fix it and <b>tap a rat</b> to scare it off before it bites. Some leave bombs 💣: tap them to defuse them. Fill the bathtub before the tank runs dry.", "dict": {"¡Se acabó el agua!": "Out of water!"}},
     /*TV*/ tv: false,
     id: 'fontanero', title: 'Fontanero', emoji: '🔧', color: '#4dabf7', origin: 'Frisky Tom (Nichibutsu, 1981)',
-    help: 'El agua va del depósito 🛢️ a la bañera 🛁 por la tubería. Los ratones 🐭 <b>roen las juntas</b> y el agua se escapa. <b>Toca una junta rota</b> para arreglarla y <b>toca un ratón</b> para espantarlo antes de que muerda. Algunos dejan bombas 💣: tócalas para desactivarlas. Llena la bañera antes de que se vacíe el depósito.',
+    help: 'El agua va del depósito 🛢️ a la bañera 🛁 por la tubería. Los ratas 🐀 <b>roen las juntas</b> y el agua se escapa. <b>Toca una junta rota</b> para arreglarla y <b>toca un rata</b> para espantarlo antes de que muerda. Algunos dejan bombas 💣: tócalas para desactivarlas. Llena la bañera antes de que se vacíe el depósito.',
     lives: 3, levels: 0, cap: 16,
     setup(g) {
       g.s = { mice: [], bombs: [], spawnT: 1.5, tank: 100, tub: 0, wf: 0, wrench: null, flowT: 0 };
@@ -152,7 +152,7 @@
       for (const b of s.bombs) { const q = nodeXY(s, b.j); Arcade.emoji(ctx, '💣', q.x, q.y - 14, 30, { sx: 1 + Math.sin(g.t * 20) * 0.08 }); Arcade.txt(ctx, Math.ceil(b.t), q.x + 16, q.y - 28, 13, '#ff6b6b', 'center', 900, '#000'); }
       for (const m of s.mice) {
         const q = ptAt(s, m.pos);
-        Arcade.emoji(ctx, '🐭', q.x, q.y - 4 + (m.st === 'gnaw' ? Math.sin(g.t * 40) * 2 : 0), 30, { flip: m.dir > 0 });
+        Arcade.emojiTo(ctx, '🐀', q.x, q.y - 4 + (m.st === 'gnaw' ? Math.sin(g.t * 40) * 2 : 0), 30, m.dir || -1, 0);
         if (m.bomb) Arcade.emoji(ctx, '💣', q.x + 10, q.y - 16, 14);
       }
       if (s.wrench) Arcade.emoji(ctx, '🔧', s.wrench.x + 14, s.wrench.y - 14, 28, { rot: s.wrench.t * 8 });

@@ -37,6 +37,16 @@ Cada juego Pro lleva `home: 'indexpro.html'` en su definición para que «Todos 
 La portada de TV tiene dos secciones (🕹️ Arcade Perdido / ✨ Arcade Pro); los juegos con `tv: false` (Cientos, Puntos) no aparecen en ella.
 Para añadir un juego Pro: crea su `.html` y añade una línea a `GAMES_PRO`.
 
+## Protagonista, enemigos y orientación (v2.6)
+
+- **Caras del protagonista**: dibuja al héroe con `g.face()` en vez de un emoji fijo. La cara cambia sola: al azar cada pocos segundos (`A.FACES.idle`), se ríe al sumar puntos (`addScore`), se asusta o llora al perder una vida (`die`), celebra al ganar (`win`) y se entristece al acabar (`over`). Para forzar un estado: `g.mood('scared' | 'hurt' | 'laugh' | 'happy' | 'money' | 'win' | 'sad' | 'angry' | 'sick' | 'hot' | 'cold' | 'surprise' | 'effort', segundos)`. Los estados con más prioridad (daño, victoria) no se pisan con otros menores.
+- **Enemigos comunes**: `Arcade.FOES` (calaveras, escorpiones, fantasmas, tiburones, zombis, vampiros, alienígenas…), `Arcade.FOES_SMALL`, `Arcade.FOES_BIG`; `Arcade.foe(n)` devuelve el enésimo y `Arcade.foeSet(k, semilla)` k distintos. Así los mismos enemigos se repiten entre juegos.
+- **Orientación**: `Arcade.FACING` dice hacia dónde mira cada emoji tal cual se dibuja (las caras miran abajo, los animales y vehículos de perfil a la izquierda, 🚀/✈️ arriba a la derecha…). `Arcade.emojiTo(ctx, e, x, y, tamaño, dx, dy, opciones)` lo dibuja girado hacia su movimiento: los de perfil se voltean al ir de lado y giran al subir o bajar; las caras giran hacia donde van. Con `{ mode: 'flip' }` solo se voltea (las caras se inclinan), útil en plataformas. Si añades un emoji nuevo que se mueva, añádelo a `FACING` en `common.js`.
+
+## Pad virtual (táctil)
+
+En el HUD aparece el botón 🎮 en todos los juegos que se pueden jugar con mando (`tv` no es `false`). Muestra una cruceta y un botón OK abajo, sin quitar el control táctil normal; se recuerda en el dispositivo. En juegos con `tv.targets` el pad mueve el cursor de casillas igual que el mando de la tele; en el resto envía flechas y espacio a `key()`. Para quitarlo de un juego: `pad: false`.
+
 ## Modo TV (Fire TV, Android TV…)
 
 `config.js` tiene la variable `modo`:

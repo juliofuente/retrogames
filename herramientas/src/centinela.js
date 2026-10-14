@@ -40,20 +40,23 @@
     const flat = h.flat(), mn = Math.min(...flat), mx = Math.max(...flat);
     s.t = h.map(row => row.map(v => ({ h: Math.round((v - mn) / (mx - mn || 1) * 3), rocks: 0, tree: false, bot: false })));
     let best = null; for (let r = 0; r < R; r++) for (let c = 0; c < C; c++) if (!best || s.t[r][c].h > s.t[best[1]][best[0]].h) best = [c, r];
-    s.sc = best[0]; s.sr = best[1]; s.sH = s.t[s.sr][s.sc].h + 2 + Math.floor(g.level / 4);
+    s.sc = best[0]; s.sr = best[1]; s.sH = s.t[s.sr][s.sc].h + 2 + Math.floor(g.lv / 4);
     let low = null, ld = -1;
     for (let r = 0; r < R; r++) for (let c = 0; c < C; c++) { const d = Math.hypot(c - s.sc, r - s.sr) - s.t[r][c].h * 2; if (d > ld) { ld = d; low = [c, r]; } }
     s.pc = low[0]; s.pr = low[1];
     const cells = []; for (let r = 0; r < R; r++) for (let c = 0; c < C; c++) if (!(c === s.sc && r === s.sr) && !(c === s.pc && r === s.pr)) cells.push([c, r]);
     shuffle(cells);
-    const nt = Math.max(8, 16 - g.level);
+    const nt = Math.max(8, 16 - g.lv);
     for (let i = 0; i < nt; i++) s.t[cells[i][1]][cells[i][0]].tree = true;
   }
 
   Arcade.game({
+    /*THEME*/ tag: "Sube sin que te vea", deco: ["🗿", "🌳", "🪨", "🤖", "👁️", "🌳"], font: "serif", bg: ["#12263a", "#0b1a2a"], music: {"mode": "phryg", "bpm": 80, "wave": "sine", "style": "chill", "root": 50, "sparse": 0.5}, voice: {"wave": "sine", "mul": 0.85, "echo": 0.4}, ambient: {"e": ["✨"], "n": 6, "vy": -8, "sway": 6, "twinkle": 1, "alpha": 0.14},
+    /*EN*/ en: {"title": "Sentinel", "tag": "Rise without being seen", "help": "You can't walk: you can only <b>look and absorb</b>. Pick an action below and <b>tap a cell you can see</b> (highlighted). Absorb trees 🌳 (+1 energy) and rocks (+2); create <b>rocks</b> 🪨 to stack them and a <b>robot</b> 🤖 on top; then <b>jump</b> into it to stand higher. When you are <b>above the Sentinel</b> 🗿 and can see it, absorb it. If its red gaze catches you, it drains your energy.", "tvHelp": "D-pad to move the cursor (go down to the buttons to change action) · OK to use.", "dict": {"altura ": "height ", " (¡por encima!)": " (above!)", " para ganar": " to win", "No lo ves": "You can't see it", "Sin energía": "No energy", "Toca un robot 🤖": "Pick a robot 🤖", "⚠️ ¡Te está mirando!": "⚠️ It's watching you!", "🌀 Absorber": "🌀 Absorb", "🪨 Roca −2": "🪨 Rock −2", "🔄 Saltar": "🔄 Jump"}},
+    /*TV*/ tvHelp: "Cruceta mover el cursor (baja hasta los botones para cambiar de acción) · OK usar.", tv: { mode: 'tap', targets: (g) => { const s = g.s, o = []; if (!s.t) return o; for (let r = 0; r < s.R; r++) for (let c = 0; c < s.C; c++) o.push({ x: s.ox + c * s.cs, y: s.oy + r * s.cs, w: s.cs, h: s.cs }); const bw = (g.W - 20) / 4; for (let i = 0; i < 4; i++) o.push({ x: 10 + i * bw + 3, y: s.by - 22, w: bw - 6, h: 44, instant: true }); return o; } },
     id: 'centinela', title: 'Centinela', emoji: '🗿', color: '#66d9e8', origin: 'The Sentinel (Firebird, 1986)',
     help: 'No puedes andar: solo <b>ver y absorber</b>. Elige una acción abajo y <b>toca una casilla que veas</b> (marcadas). Absorbe árboles 🌳 (+1 de energía) y rocas (+2); crea <b>rocas</b> 🪨 para apilarlas y un <b>robot</b> 🤖 encima; luego <b>salta</b> a él para estar más alto. Cuando estés <b>por encima del Centinela</b> 🗿 y lo veas, absórbelo. Si su mirada roja te pilla, te roba energía.',
-    lives: 3, levels: 12,
+    lives: 3, levels: 0, cap: 14,
     setup(g) {
       g.s = { act: 0, en: 10, gaze: rand(0, 6.28), gazeT: 4, drainT: 0, msg: null };
       const s = g.s;
@@ -69,7 +72,7 @@
       if (!visible(s, c, r)) { g.float('No lo ves', p.x, p.y - 20, '#ff8787', 16); Arcade.sfx.bad(); return; }
       const t = T(s, c, r), a = ACT[s.act].k, x = s.ox + (c + 0.5) * s.cs, y = s.oy + (r + 0.5) * s.cs;
       if (c === s.sc && r === s.sr) {
-        if (a === 'abs') { g.addScore(2000 * g.level + s.en * 100, x, y); g.burst(x, y, { n: 30, emoji: '✨', size: 16, speed: 240 }); g.win(); }
+        if (a === 'abs') { g.addScore(2000 * g.lv + s.en * 100, x, y); g.burst(x, y, { n: 30, emoji: '✨', size: 16, speed: 240 }); g.win(); }
         return;
       }
       if (a === 'abs') {
@@ -94,7 +97,7 @@
     update(g, dt) {
       const s = g.s;
       s.gazeT -= dt;
-      if (s.gazeT <= 0) { s.gazeT = Math.max(1.6, 4 - g.level * 0.2); s.gaze += Math.PI / 4; Arcade.tone(110, 0.15, 'sine', 0.05); }
+      if (s.gazeT <= 0) { s.gazeT = Math.max(1.6, 4 - g.lv * 0.2); s.gaze += Math.PI / 4; Arcade.tone(110, 0.15, 'sine', 0.05); }
       s.seen = seenBySentinel(s);
       if (s.seen) {
         s.drainT += dt;
@@ -132,7 +135,7 @@
       // jugador
       const px = s.ox + (s.pc + 0.5) * cs, py = s.oy + (s.pr + 0.5) * cs - T(s, s.pc, s.pr).rocks * cs * 0.16;
       ctx.strokeStyle = '#ffd43b'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(px, py, cs * 0.36, 0, 6.28); ctx.stroke();
-      Arcade.emoji(ctx, '🤖', px, py, cs * 0.55);
+      Arcade.emoji(ctx, g.face(), px, py, cs * 0.52);
       Arcade.txt(ctx, '⚡ ' + s.en + '   👁️ altura ' + E + (E > s.sH ? ' (¡por encima!)' : ' / ' + (s.sH + 1) + ' para ganar'), W / 2, s.oy - 18, 14, E > s.sH ? '#69db7c' : '#c5f6fa', 'center', 800);
       if (s.seen) Arcade.txt(ctx, '⚠️ ¡Te está mirando!', W / 2, g.top + 12, 14, '#ff6b6b', 'center', 900);
       const bw = (W - 20) / 4;

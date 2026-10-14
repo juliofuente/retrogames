@@ -55,7 +55,7 @@
         if (it.t === 'gate') { for (const sg of [-1, 1]) { const x = it.x + sg * it.w / 2; ctx.strokeStyle = '#495057'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y - 34); ctx.stroke(); ctx.fillStyle = it.miss ? '#adb5bd' : it.col; ctx.beginPath(); ctx.moveTo(x, y - 34); ctx.lineTo(x + 18 * -sg, y - 28); ctx.lineTo(x, y - 22); ctx.fill(); } if (!it.done) { ctx.strokeStyle = 'rgba(0,0,0,.08)'; ctx.setLineDash([6, 6]); ctx.beginPath(); ctx.moveTo(it.x - it.w / 2, y); ctx.lineTo(it.x + it.w / 2, y); ctx.stroke(); ctx.setLineDash([]); } }
         else Arcade.emoji(ctx, it.t, it.x, y - 16, it.t === '⭐' ? 22 : 40);
       }
-      Arcade.emoji(ctx, '⛷️', s.x, s.py - 14, 40, { rot: s.lean * 0.5, flip: s.lean > 0, alpha: s.inv && Math.floor(g.rt * 12) % 2 ? 0.4 : 1 });
+      Arcade.emoji(ctx, '🎿', s.x, s.py + 2, 30, { rot: s.lean * 0.5 + 0.8, alpha: s.inv && Math.floor(g.rt * 12) % 2 ? 0.4 : 1 }); Arcade.emoji(ctx, Math.abs(s.lean) > 0.8 ? '🥶' : g.face(), s.x, s.py - 16, 32, { rot: s.lean * 0.5, alpha: s.inv && Math.floor(g.rt * 12) % 2 ? 0.4 : 1 });
       Arcade.txt(ctx, 'Puertas: ' + s.passed + '/' + s.need, W / 2, g.top + 20, 15, '#1864ab', 'center', 900);
     },
   });

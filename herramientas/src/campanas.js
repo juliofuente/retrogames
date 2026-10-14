@@ -2,9 +2,12 @@
 (function () {
   const { rand, ri, pick, clamp, dist } = Arcade;
   const BC = [{ c: '#ffd43b', n: 'Puntos' }, { c: '#f8f9fa', n: 'Doble disparo' }, { c: '#4dabf7', n: 'Velocidad' }, { c: '#69db7c', n: 'Escudo' }, { c: '#ff6b6b', n: 'Bomba' }];
-  const EN = ['🐞', '🦋', '🐙', '🛸', '👾', '🐝'];
+  const EN = ['👾', '🦇', '🐙', '🛸', '👽', '👻'];
 
   Arcade.game({
+    /*THEME*/ tag: "Dispara a las campanas, elige el poder", deco: ["🔔", "☁️", "🚀", "👽", "🦇", "🔔"], font: "round", bg: ["#4dabf7", "#1c5d99"], music: {"mode": "major", "bpm": 150, "wave": "square", "style": "drive", "root": 64}, voice: {"wave": "square", "mul": 1.25, "echo": 0.15}, ambient: {"e": ["☁️"], "n": 4, "vy": 60, "sway": 4, "alpha": 0.18, "size": [34, 56]},
+    /*EN*/ en: {"title": "Bells", "tag": "Shoot the bells, pick your power", "help": "<b>Drag</b> to move the ship; it fires on its own. Shoot the <b>clouds</b> ☁️ to release bells 🔔 and keep shooting a bell to <b>change its colour</b>. Then catch it: 🟡 points (more each time), ⚪ double shot, 🔵 speed, 🟢 shield, 🔴 bomb that clears the screen.", "tvHelp": "D-pad to move the ship (it fires on its own).", "dict": {"¡Doble!": "Double!", "¡Escudo!": "Shield!"}},
+    /*TV*/ tvHelp: "Cruceta para mover la nave (dispara sola).",
     id: 'campanas', title: 'Campanas', emoji: '🔔', color: '#ffd43b', origin: 'TwinBee (Konami, 1985)',
     help: '<b>Arrastra</b> para mover la nave; dispara sola. Dispara a las <b>nubes</b> ☁️ para sacar campanas 🔔 y sigue disparando a la campana para <b>cambiarle el color</b>. Luego cógela: 🟡 puntos (cada vez más), ⚪ doble disparo, 🔵 velocidad, 🟢 escudo, 🔴 bomba que limpia la pantalla.',
     lives: 3, levels: null,

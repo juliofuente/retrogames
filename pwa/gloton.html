@@ -18,7 +18,7 @@
 <script>
 (function () {
   const { ri, rand, clamp, pick } = Arcade;
-  const FOOD = ['🍩', '🍪', '🍓', '🍔', '🍕', '🧁', '🍌', '🍉'], BAD = ['🌩️', '🐝', '🦅', '☄️'];
+  const FOOD = ['🍩', '🍪', '🍓', '🍔', '🍕', '🧁', '🍌', '🍉'], BAD = ['🌩️', '🦇', '👻', '☄️', '🦈'];
 
   function geo(g) { const s = g.s; s.px = g.W * 0.25; s.y0 = g.top + 40; s.y1 = g.bot - 20; }
   function spawn(g) {
@@ -28,12 +28,12 @@
   }
 
   Arcade.game({
-    /*THEME*/ home: 'indexpro.html', tag: 'Vuela, come y no pares', deco: ['🦸', '🍩', '🍓', '🐝', '🌩️', '⭐'], font: 'comic', bg: ['#74c0fc', '#4dabf7'],
+    /*THEME*/ home: 'indexpro.html', tag: 'Vuela, come y no pares', deco: ['😋', '🍩', '🍓', '🦇', '🌩️', '⭐'], font: 'comic', bg: ['#74c0fc', '#4dabf7'],
     music: { mode: 'major', bpm: 130, wave: 'square', style: 'arcade', root: 62 }, voice: { wave: 'square', mul: 1, echo: 0.2 },
-    en: { title: 'Glutton', tag: 'Fly, eat and never stop', help: 'Our hero flies on their own and gets hungrier by the second. <b>Drag</b> your finger up and down (anywhere) to move them and gobble up all the food 🍩 to refill the energy bar. Avoid bees, eagles and storms: they take a big bite out of your energy. If the bar empties, you lose a life. Fly the distance each level asks for.', tvHelp: 'Hold ▲ ▼ to move.', dict: { 'Energía': 'Energy' } },
+    en: { title: 'Glutton', tag: 'Fly, eat and never stop', help: 'Our hero flies on their own and gets hungrier by the second. <b>Drag</b> your finger up and down (anywhere) to move them and gobble up all the food 🍩 to refill the energy bar. Avoid bats, ghosts and storms: they take a big bite out of your energy. If the bar empties, you lose a life. Fly the distance each level asks for.', tvHelp: 'Hold ▲ ▼ to move.', dict: { 'Energía': 'Energy' } },
     tvHelp: 'Mantén ▲ ▼ para moverte.',
     id: 'gloton', title: 'Glotón', emoji: '🍩', color: '#ff8787', origin: 'Hungry Hero / Hop Hop Hop Underwater',
-    help: 'Nuestro héroe vuela solo y cada segundo tiene más hambre. <b>Arrastra</b> el dedo arriba y abajo (en cualquier sitio) para moverlo y zámpate toda la comida 🍩 para recargar la barra de energía. Esquiva abejas, águilas y tormentas: te quitan un buen mordisco de energía. Si la barra se vacía, pierdes una vida. Vuela la distancia que pide cada nivel.',
+    help: 'Nuestro héroe vuela solo y cada segundo tiene más hambre. <b>Arrastra</b> el dedo arriba y abajo (en cualquier sitio) para moverlo y zámpate toda la comida 🍩 para recargar la barra de energía. Esquiva murciélagos, fantasmas y tormentas: te quitan un buen mordisco de energía. Si la barra se vacía, pierdes una vida. Vuela la distancia que pide cada nivel.',
     lives: 3, levels: 0, cap: 25,
     setup(g) { const L = g.lv; g.s = { y: (g.top + g.bot) / 2, ty: null, items: [], energy: 1, dist: 0, need: 600 + Math.min(L, 25) * 90, t: 0, speed: 240 + Math.min(L, 25) * 8, inv: 0, mouth: 0 }; geo(g); },
     layout(g) { if (g.s.items) geo(g); },
@@ -66,8 +66,8 @@
       if (!s.items) return;
       for (let i = 0; i < 6; i++) Arcade.emoji(ctx, '☁️', ((i * 190 - s.dist * 3) % (W + 200) + W + 200) % (W + 200) - 100, g.top + 60 + (i * 97) % (H - g.top - 120), 60 + (i % 3) * 20, { alpha: 0.7 });
       ctx.fillStyle = 'rgba(64,192,87,.5)'; ctx.beginPath(); ctx.moveTo(0, H); for (let x = 0; x <= W; x += 20) ctx.lineTo(x, H - 30 - Math.abs(Math.sin((x + s.dist * 6) / 80)) * 30); ctx.lineTo(W, H); ctx.fill();
-      for (const it of s.items) Arcade.emoji(ctx, it.e, it.x, it.y, it.food ? 26 : 34, { flip: it.e === '🦅' });
-      Arcade.emoji(ctx, s.mouth > 0.5 ? '😋' : '🦸', s.px, s.y, 44, { flip: true, alpha: s.inv && Math.floor(g.rt * 12) % 2 ? 0.4 : 1, rot: clamp(((s.ty ?? s.y) - s.y) / 200, -0.4, 0.4) });
+      for (const it of s.items) if (it.food) Arcade.emoji(ctx, it.e, it.x, it.y, 26); else Arcade.emojiTo(ctx, it.e, it.x, it.y, 34, -1, 0);
+      Arcade.emoji(ctx, s.mouth > 0.5 ? '😋' : g.face(), s.px, s.y, 40, { alpha: s.inv && Math.floor(g.rt * 12) % 2 ? 0.4 : 1, rot: clamp(((s.ty ?? s.y) - s.y) / 200, -0.4, 0.4) });
       const bw = Math.min(W - 80, 300); ctx.fillStyle = 'rgba(0,0,0,.25)'; Arcade.rr(ctx, (W - bw) / 2, g.top + 10, bw, 14, 7); ctx.fill();
       ctx.fillStyle = s.energy > 0.3 ? '#ffd43b' : '#ff6b6b'; Arcade.rr(ctx, (W - bw) / 2, g.top + 10, bw * clamp(s.energy, 0, 1), 14, 7); ctx.fill();
       Arcade.txt(ctx, Math.floor(s.dist) + ' / ' + s.need + ' m', W / 2, g.top + 38, 14, '#1864ab', 'center', 900);

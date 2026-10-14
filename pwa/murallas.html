@@ -194,7 +194,7 @@
       }
       Arcade.emoji(ctx, '🏰', ox + (s.kc + 1) * cs, oy + (s.kr + 1) * cs, cs * 1.9);
       for (const sh of s.ships) if (!sh.dead) {
-        Arcade.emoji(ctx, sh.hp > 1 ? '⛵' : '🛶', ox + sh.x * cs, oy + sh.y * cs + Math.sin(g.t * 3 + sh.x) * 2, cs * 1.3, { flip: sh.vx > 0 });
+        Arcade.emoji(ctx, sh.hp > 1 ? '⛵' : '🛶', ox + sh.x * cs, oy + sh.y * cs + Math.sin(g.t * 3 + sh.x) * 2, cs * 1.3, { flip: sh.vx > 0 }); Arcade.emoji(ctx, '☠️', ox + sh.x * cs, oy + sh.y * cs - cs * 0.55, cs * 0.45);
       }
       for (const b of s.balls) {
         const x = ox + (b.from[0] + (b.to[0] - b.from[0]) * b.t) * cs, y = oy + (b.from[1] + (b.to[1] - b.from[1]) * b.t) * cs - Math.sin(b.t * Math.PI) * cs * 3;

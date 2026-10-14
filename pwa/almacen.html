@@ -19,7 +19,7 @@
 (function () {
   const { ri, clamp, pick } = Arcade;
   const D = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
-  const WORKERS = ['👷', '🧑‍🔧', '🦺', '🐻', '🤖'];
+  const WORKERS = ['😀'];
   const BOXES = ['📦', '🎁', '🧺', '🛢️'];
 
   function generate(L) {
@@ -131,7 +131,7 @@
         if (ok) Arcade.emoji(ctx, '✅', px + cs * 0.28, py - cs * 0.28, cs * 0.3);
       });
       let wx = s.ox + (s.p[0] + 0.5) * cs, wy = s.oy + (s.p[1] + 0.5) * cs; if (an) { wx -= an.dx * cs * off; wy -= an.dy * cs * off; }
-      Arcade.emoji(ctx, s.worker, wx, wy - Math.abs(Math.sin(off * Math.PI)) * 4, cs * 0.85, { flip: s.face > 0 });
+      Arcade.emojiTo(ctx, g.face(), wx, wy - Math.abs(Math.sin(off * Math.PI)) * 4, cs * 0.78, an ? an.dx : 0, an ? an.dy : 1);
       for (const b of s.btn) { ctx.fillStyle = 'rgba(255,255,255,.14)'; Arcade.rr(ctx, b.x, b.y, b.w, b.h, 10); ctx.fill(); Arcade.txt(ctx, b.k === 'undo' ? '↩️ Deshacer' : '🔄 Reiniciar', b.x + b.w / 2, b.y + b.h / 2 + 1, 14, '#fff', 'center', 800); }
       const on = s.boxes.filter((b) => isGoal(s, b[0], b[1])).length;
       Arcade.txt(ctx, '🎯 ' + on + '/' + s.boxes.length + '   ·   Movimientos: ' + s.moves, W / 2, s.oy - 14, 13, '#e9d8b9', 'center', 800);

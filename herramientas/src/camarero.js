@@ -24,10 +24,12 @@
   }
 
   Arcade.game({
+    /*THEME*/ tag: "La barra más sedienta del Oeste", deco: ["🤠", "🍻", "🌵", "🍺", "🎻", "🥃"], font: "serif", bg: ["#4a2511", "#2a1408"], music: {"mode": "mixo", "bpm": 112, "wave": "triangle", "style": "arcade", "root": 60}, voice: {"wave": "triangle", "mul": 1, "echo": 0.2}, ambient: {"e": ["🫧"], "n": 10, "vy": -25, "sway": 8, "alpha": 0.13, "size": [6, 12]},
+    /*EN*/ en: {"title": "Bartender", "tag": "The thirstiest bar in the West", "help": "<b>Tap a bar</b> to move there and slide a mug 🍺. Each customer who gets one is pushed back; if they reach the door, they leave happy. Then they send the empty mug back: you must be on that bar to catch it. You lose a life if a mug breaks or a customer reaches you.", "tvHelp": "▲ ▼ change bar · OK slide a mug.", "dict": {"¡Ronda ": "Round "}},
+    /*TV*/ tvHelp: "▲ ▼ cambiar de barra · OK lanzar una jarra.",
     id: 'camarero', title: 'Camarero', emoji: '🍺', color: '#f9c74f', origin: 'Tapper (Bally Midway, 1983)',
     help: '<b>Toca una barra</b> para ir a ella y lanzar una jarra 🍺. Cada cliente que la recibe retrocede; si sale por la puerta, se va contento. Luego te devuelve la jarra vacía: tienes que estar en esa barra para recogerla. Pierdes una vida si una jarra se rompe o si un cliente llega hasta ti.',
     lives: 3, levels: null, levelLabel: 'Ronda',
-    theme: { font: 'Sancreek', ambient: 'dust', music: { tempo: 128, scale: 'major', root: 220, wave: 'square', swing: 0.33, bass: 'triangle' }, sfx: { wave: 'triangle', pitch: 1 } },
     setup(g) {
       g.s = { lane: 0, cool: 0, cust: [], mugs: [], served: 0 };
       geo(g); startWave(g);
@@ -63,7 +65,7 @@
           if (c.x >= s.x1 - 18) { lose(g, c.x, c.lane, '😡'); return; }
         } else if (c.st === 'push') {
           c.x -= s.len * 0.7 * dt;
-          if (c.x < s.x0 - 30) { c.gone = true; g.addScore(50, s.x0 + 10, s.ly(c.lane) - 20); s.served++; Arcade.sfx.coin(); g.burst(s.x0 + 10, s.ly(c.lane) - 26, { n: 4, emoji: ['💛', '😄'], size: 14, speed: 90, up: 80 }); }
+          if (c.x < s.x0 - 30) { c.gone = true; g.addScore(50, s.x0 + 10, s.ly(c.lane) - 20); s.served++; Arcade.sfx.coin(); }
           else if (c.x <= c.tx) { c.x = c.tx; c.st = 'drink'; c.t = 0.9; }
         } else if (c.st === 'drink') {
           c.t -= dt;
@@ -76,7 +78,7 @@
           m.x -= beerV * dt;
           let tgt = null;
           for (const c of s.cust) if (c.lane === m.lane && c.st === 'walk' && c.x + 16 >= m.x && (!tgt || c.x > tgt.x)) tgt = c;
-          if (tgt) { m.dead = true; tgt.st = 'push'; tgt.tx = tgt.x - s.len * 0.34; g.addScore(25); Arcade.sfx.pop(); g.burst(m.x, s.ly(m.lane) - 14, { n: 8, color: ['#fff', '#ffe8a3'], speed: 110, size: 3 }); continue; }
+          if (tgt) { m.dead = true; tgt.st = 'push'; tgt.tx = tgt.x - s.len * 0.34; g.addScore(25); Arcade.sfx.pop(); continue; }
           if (m.x < s.x0 - 6) { lose(g, s.x0, m.lane, '💥'); return; }
         } else {
           m.x += mugV * dt;
@@ -89,7 +91,7 @@
       s.mugs = s.mugs.filter(m => !m.dead);
       if (s.spawned >= s.total && !s.cust.length && !s.mugs.length) {
         g.addScore(200 * g.level, g.W / 2, g.H / 2); Arcade.sfx.win();
-        g.level++; g.hud(); g.message('¡Ronda ' + g.level + '!', 1.4); startWave(g); s.spawnT = 1.8; g.flash('#f9c74f', 0.25); g.burst(g.W / 2, g.H / 2, { n: 20, emoji: ['🍺', '🎉', '⭐'], size: 18, speed: 240 });
+        g.level++; g.hud(); g.message('¡Ronda ' + g.level + '!', 1.4); startWave(g); s.spawnT = 1.8;
       }
     },
     draw(g, ctx) {
@@ -98,13 +100,6 @@
       ctx.fillStyle = 'rgba(255,255,255,.035)';
       for (let x = 0; x < W; x += 26) ctx.fillRect(x, 0, 12, H);
       if (!s.cust) return;
-      for (let i = 0; i < NL; i++) {
-        const y = s.ly(i) - s.lh * 0.6;
-        ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.fillRect(0, y + 14, W, 4);
-        for (let x = 60, k = 0; x < W - 70; x += 36, k++) Arcade.emoji(ctx, ['🍾', '🍷', '🥃', '🍶', '🧉'][(k + i) % 5], x, y + 2, 18, { alpha: 0.3 });
-        Arcade.glow(ctx, W * 0.5, s.ly(i) - s.lh * 0.45, s.lh * 0.7, 'rgba(255,200,120,.35)', 0.5 + Math.sin(g.t * 3 + i) * 0.05);
-      }
-      Arcade.amb(g, ctx);
       for (let i = 0; i < NL; i++) {
         const y = s.ly(i), sel = s.lane === i;
         Arcade.emoji(ctx, '🚪', 20, y - 14, 34);
@@ -131,7 +126,7 @@
           ctx.fillStyle = 'rgba(255,255,255,.2)'; ctx.fillRect(m.x - 6, y + 2, 11, 5);
         }
       }
-      Arcade.emoji(ctx, '🤵', s.x1 + 22, s.ly(s.lane) - 24, 40);
+      Arcade.emoji(ctx, g.face(), s.x1 + 22, s.ly(s.lane) - 30, 34); Arcade.emoji(ctx, '👔', s.x1 + 22, s.ly(s.lane) - 6, 22);
       Arcade.txt(ctx, '🧍 ' + Math.max(0, s.total - s.spawned + s.cust.length), W / 2, g.top + 8, 13, '#ffe8c2', 'center', 800, 'rgba(0,0,0,.4)');
     },
   });

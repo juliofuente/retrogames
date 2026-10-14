@@ -19,7 +19,7 @@
 (function () {
   const { ri, clamp, pick } = Arcade;
   const NB8 = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]];
-  const CR = ['🐞', '🐸', '🐳', '🐥', '🦄'];
+  const CR = ['🦂', '🧟', '🦈', '👻', '😈'];
   const CC = ['#ff6b6b', '#69db7c', '#4dabf7', '#ffd43b', '#da77f2'];
 
   function geo(g) { const s = g.s, Ha = g.bot - g.top - 100; s.cs = Math.min((g.W - 16) / s.C, Ha / s.R, 70); s.ox = (g.W - s.cs * s.C) / 2; s.oy = g.top + 88 + (Ha - s.cs * s.R) / 2; }
@@ -77,21 +77,21 @@
       s.busy = true;
       setTimeout(() => {
         s.busy = false; if (g.state !== 'play') return;
-        s.hp -= hits; Arcade.sfx.bad(); g.flash('#ff3b3b', 0.15); g.shake(0.2, 6);
+        s.hp -= hits; g.mood(s.hp <= 1 ? 'scared' : 'hurt', 1.4); Arcade.sfx.bad(); g.flash('#ff3b3b', 0.15); g.shake(0.2, 6);
         if (s.hp <= 0) { g.message(Arcade.T('¡Te han pillado!', 'They got you!'), 1.2); if (g.die()) { s.hp = s.maxHp; for (const row of s.b) for (const t of row) if (t && t.k === 'c' && t.rage === 0) t.rage = ri(2, 4); } }
       }, 350);
     }
   }
 
   Arcade.game({
-    /*THEME*/ home: 'indexpro.html', tag: 'Encadena bichos del mismo color', deco: ['🧝', '🐞', '🐸', '🐳', '💎', '⚔️'], font: 'comic', bg: ['#4a1d3a', '#2a1020'],
+    /*THEME*/ home: 'indexpro.html', tag: 'Encadena bichos del mismo color', deco: ['😀', '🦂', '🧟', '🦈', '💎', '⚔️'], font: 'comic', bg: ['#4a1d3a', '#2a1020'],
     music: { mode: 'minor', bpm: 120, wave: 'square', style: 'arcade', root: 57 }, voice: { wave: 'square', mul: 1, echo: 0.25 },
     ambient: { e: ['🍂'], n: 6, vy: 16, sway: 28, spin: 1, alpha: 0.14 },
-    en: { title: 'Red Chain', tag: 'Chain bugs of one colour', help: 'Start on your hero 🧝 and <b>drag</b> through neighbouring bugs (diagonals too) of the <b>same colour</b>: you cut them all down and end up on the last one. A 💎 gem lets you <b>switch colour</b> in the middle of the chain; chains of 10 or more create a new gem. Bugs with a number count down every turn; at 0 they get angry ⚡ and bite you if you finish next to them. Defeat the bugs each level asks for.', tvHelp: 'D-pad to move · OK on the hero starts · OK adds bugs · OK on the last one to attack.', dict: { 'Bichos: ': 'Bugs: ', '¡Masacre!': 'Massacre!', '¡Cadena!': 'Chain!', '¡Te han pillado!': 'They got you!' } },
+    en: { title: 'Red Chain', tag: 'Chain bugs of one colour', help: 'Start on your hero 😀 and <b>drag</b> through neighbouring bugs (diagonals too) of the <b>same colour</b>: you cut them all down and end up on the last one. A 💎 gem lets you <b>switch colour</b> in the middle of the chain; chains of 10 or more create a new gem. Bugs with a number count down every turn; at 0 they get angry ⚡ and bite you if you finish next to them. Defeat the bugs each level asks for.', tvHelp: 'D-pad to move · OK on the hero starts · OK adds bugs · OK on the last one to attack.', dict: { 'Bichos: ': 'Bugs: ', '¡Masacre!': 'Massacre!', '¡Cadena!': 'Chain!', '¡Te han pillado!': 'They got you!' } },
     tvHelp: 'Cruceta para moverte · OK en el héroe empieza · OK añade bichos · OK en el último para atacar.',
     tv: { mode: 'tap', targets: (g) => { const s = g.s, o = []; if (!s.b) return o; for (let y = 0; y < s.R; y++) for (let x = 0; x < s.C; x++) o.push({ x: s.ox + x * s.cs, y: s.oy + y * s.cs, w: s.cs, h: s.cs }); return o; }, start: (g, ts) => { const h = heroPos(g.s); return ts[h[1] * g.s.C + h[0]] || ts[0]; } },
-    id: 'cadenaroja', title: 'Cadena roja', emoji: '🧝', color: '#ff6b6b', origin: 'Grindstone (Capybara Games)',
-    help: 'Empieza en tu héroe 🧝 y <b>arrastra</b> por bichos vecinos (también en diagonal) del <b>mismo color</b>: los derribas a todos y acabas en el último. Una gema 💎 te deja <b>cambiar de color</b> a mitad de cadena; las cadenas de 10 o más crean una gema nueva. Los bichos con número cuentan atrás cada turno; al llegar a 0 se enfadan ⚡ y te muerden si terminas a su lado. Derrota los bichos que pide cada nivel.',
+    id: 'cadenaroja', title: 'Cadena roja', emoji: '😀', color: '#ff6b6b', origin: 'Grindstone (Capybara Games)',
+    help: 'Empieza en tu héroe 😀 y <b>arrastra</b> por bichos vecinos (también en diagonal) del <b>mismo color</b>: los derribas a todos y acabas en el último. Una gema 💎 te deja <b>cambiar de color</b> a mitad de cadena; las cadenas de 10 o más crean una gema nueva. Los bichos con número cuentan atrás cada turno; al llegar a 0 se enfadan ⚡ y te muerden si terminas a su lado. Derrota los bichos que pide cada nivel.',
     lives: 3, levels: 0, cap: 25,
     setup(g) {
       g.s = { C: 7, R: 7, path: [], kills: 0, hp: 3, maxHp: 3, busy: false, nc: g.lv >= 8 ? 5 : 4, rageP: clamp(0.08 + g.lv * 0.01, 0.08, 0.3) };
@@ -142,7 +142,7 @@
       for (let y = 0; y < s.R; y++) for (let x = 0; x < s.C; x++) {
         const t = s.b[y][x]; if (!t) continue;
         const px = s.ox + (x + 0.5) * cs, py = s.oy + (y + 0.5) * cs - (t.fall || 0) * cs * 0.8, on = onp.has(x + ',' + y);
-        if (t.k === 'h') { ctx.fillStyle = 'rgba(255,255,255,.25)'; ctx.beginPath(); ctx.arc(px, py, cs * 0.44, 0, 6.3); ctx.fill(); Arcade.emoji(ctx, '🧝', px, py - Math.abs(Math.sin(g.rt * 4)) * 3, cs * 0.7); continue; }
+        if (t.k === 'h') { ctx.fillStyle = 'rgba(255,255,255,.25)'; ctx.beginPath(); ctx.arc(px, py, cs * 0.44, 0, 6.3); ctx.fill(); Arcade.emoji(ctx, g.face(), px, py - Math.abs(Math.sin(g.rt * 4)) * 3, cs * 0.66); continue; }
         if (t.k === 'gem') { Arcade.emoji(ctx, '💎', px, py, cs * (0.6 + Math.sin(g.rt * 5) * 0.05 + (t.pop || 0) * 0.3), { rot: Math.sin(g.rt * 2) * 0.2 }); if (on) { ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(px, py, cs * 0.42, 0, 6.3); ctx.stroke(); } continue; }
         const dim = col != null && col >= 0 && !on && t.col !== col;
         const angry = t.rage === 0, near = angry && adj(hp, [x, y]);

@@ -143,7 +143,7 @@
           ctx.fillStyle = 'rgba(255,255,255,.2)'; ctx.fillRect(m.x - 6, y + 2, 11, 5);
         }
       }
-      Arcade.emoji(ctx, '🤵', s.x1 + 22, s.ly(s.lane) - 24, 40);
+      Arcade.emoji(ctx, g.face(), s.x1 + 22, s.ly(s.lane) - 30, 34); Arcade.emoji(ctx, '👔', s.x1 + 22, s.ly(s.lane) - 6, 22);
       Arcade.txt(ctx, '🧍 ' + Math.max(0, s.total - s.spawned + s.cust.length), W / 2, g.top + 8, 13, '#ffe8c2', 'center', 800, 'rgba(0,0,0,.4)');
     },
   });

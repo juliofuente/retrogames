@@ -5,7 +5,7 @@
 
   function area(g) { return { x0: 10, y0: g.top + 34, x1: g.W - 10, y1: g.bot - 10 }; }
   function build(g) {
-    const s = g.s, A = area(g), L = g.level, aw = A.x1 - A.x0, ah = A.y1 - A.y0;
+    const s = g.s, A = area(g), L = g.lv, aw = A.x1 - A.x0, ah = A.y1 - A.y0;
     s.A = A; s.walls = []; s.haz = []; s.fans = []; s.fires = [];
     const th = 14;
     const gapH = Math.max(80, 130 - L * 3), gy = rand(A.y0 + gapH, A.y1 - gapH);
@@ -18,7 +18,7 @@
       const gc = rand(A.y0 + gap * 0.7 + th, A.y1 - gap * 0.7 - th);
       s.walls.push({ x, y: A.y0, w: bw, h: gc - gap / 2 - A.y0, bar: true }, { x, y: gc + gap / 2, w: bw, h: A.y1 - (gc + gap / 2), bar: true });
       if (L >= 2 && k % 2 === 0) s.haz.push({ x: x + bw / 2, y: gc + gap / 2 - 14, r: 16, e: '🕯️', flame: true });
-      if (L >= 6 && k % 2 === 1) s.fires.push({ x: x + bw / 2, cy: gc, amp: gap * 0.32, ph: rand(0, 6), sp: 1.2 + Math.min(L, 18) * 0.05, r: 13 });
+      if (L >= 6 && k % 2 === 1) s.fires.push({ x: x + bw / 2, cy: gc, amp: gap * 0.32, ph: rand(0, 6), sp: 1.2 + L * 0.05, r: 13 });
       if (L >= 4 && k === K - 1 && K > 1) {
         const fx = x - aw * 0.31 / Math.max(1, K - 1) * 0.8;
         s.fans.push({ x: Math.max(A.x0 + 60, fx), y0: A.y0 + th, y1: A.y1 - th, w: 34, dir: Math.random() < 0.5 ? -1 : 1 });
@@ -39,15 +39,17 @@
   function pop(g) {
     const s = g.s, b = s.b; if (b.pop) return;
     b.pop = 0.001;
-    g.burst(b.x, b.y, { n: 18, color: ['#c5f6fa', '#e599f7', '#fff'], speed: 220, size: 3 }); g.ring(b.x, b.y, { color: '#c5f6fa', r: 50, w: 3 }); g.burst(b.x, b.y, { n: 4, emoji: '💧', size: 12, speed: 120 });
+    g.burst(b.x, b.y, { n: 18, color: ['#c5f6fa', '#e599f7', '#fff'], speed: 220, size: 3 });
     Arcade.tone(900, 0.12, 'sine', 0.12, -600);
   }
 
   Arcade.game({
+    /*THEME*/ tag: "Un soplo, una pompa, un castillo", deco: ["🫧", "🕯️", "🦇", "🌵", "🔥", "🫧"], font: "serif", bg: ["#2b1748", "#140a24"], music: {"mode": "harm", "bpm": 96, "wave": "triangle", "style": "waltz", "root": 57}, voice: {"wave": "sine", "mul": 1.1, "echo": 0.4}, ambient: {"e": ["🫧"], "n": 8, "vy": -18, "sway": 14, "alpha": 0.15, "size": [8, 16]},
+    /*EN*/ en: {"title": "Ghost", "tag": "One breath, one bubble, one castle", "help": "You are a ghost who must carry a <b>soap bubble</b> to the exit on the right. <b>Hold your finger</b> on the screen: the ghost moves towards it and <b>blows</b> at the bubble. The closer, the stronger. The bubble pops if it touches a wall, a candle 🕯️, a cactus 🌵, fire 🔥… or the ghost itself. Fans 🌀 push it.", "tvHelp": "D-pad to move the ghost · hold OK to blow.", "dict": {"Mantén OK para soplar 🎮": "Hold OK to blow 🎮", "Mantén el dedo para soplar 👆": "Hold your finger to blow 👆"}},
+    /*TV*/ tvHelp: "Cruceta para mover el fantasma · mantén OK para soplar.",
     id: 'fantasma', title: 'Fantasma', emoji: '👻', color: '#e599f7', origin: 'Bubble Ghost (ERE, 1987)',
     help: 'Eres un fantasma que tiene que llevar una <b>pompa de jabón</b> hasta la salida de la derecha. <b>Mantén el dedo</b> en pantalla: el fantasma va hacia él y <b>sopla</b> hacia la pompa. Cuanto más cerca, más fuerte. La pompa explota si toca una pared, una vela 🕯️, un cactus 🌵, el fuego 🔥… o al propio fantasma. Los ventiladores 🌀 la empujan.',
-    lives: 3, levels: Infinity,
-    theme: { font: 'Creepster', ambient: 'bats', music: { tempo: 92, scale: 'harmonic', root: 196, wave: 'triangle', lead: 'sine' }, sfx: { wave: 'sine', pitch: 1 } },
+    lives: 3, levels: 0, cap: 18,
     setup(g) { g.s = {}; build(g); },
     layout(g) {
       const s = g.s; if (!s.A) return;
@@ -65,12 +67,14 @@
     move(g, p) { g.s.ptr = p; },
     hover(g, x, y) { g.s.hov = { x, y }; },
     up(g, p) { if (g.s.ptr && g.s.ptr.id === p.id) g.s.ptr = null; },
+    key(g, k, d) { /*TVKEY*/ const s = g.s; s.keys = s.keys || {}; s.keys[k] = d; },
     update(g, dt) {
       const s = g.s, b = s.b, gh = s.gh;
       const p = s.ptr && g.pointers.has(s.ptr.id) ? s.ptr : null;
       const tgt = p ? { x: p.x, y: p.y - (p.type === 'touch' ? 55 : 0) } : s.hov;
       if (tgt) { const dx = tgt.x - gh.x, dy = tgt.y - gh.y, d = Math.hypot(dx, dy), m = Math.min(d, 650 * dt); if (d > 0.5) { gh.x += dx / d * m; gh.y += dy / d * m; } }
-      s.blow = !!p;
+      if (s.keys) { const kx = (s.keys.ArrowRight ? 1 : 0) - (s.keys.ArrowLeft ? 1 : 0), ky = (s.keys.ArrowDown ? 1 : 0) - (s.keys.ArrowUp ? 1 : 0); gh.x = Arcade.clamp(gh.x + kx * 270 * dt, s.A.x0, s.A.x1); gh.y = Arcade.clamp(gh.y + ky * 270 * dt, s.A.y0, s.A.y1); }
+      s.blow = !!p || !!(s.keys && s.keys[' ']);
       if (b.pop) { b.pop += dt; if (b.pop > 0.7) { if (g.die()) resetBubble(s); else b.pop = 0; } return; }
       if (s.ready > 0) { s.ready -= dt; }
       let ax = 0, ay = -14;
@@ -85,7 +89,7 @@
       b.vx *= 1 - 1.5 * dt; b.vy *= 1 - 1.5 * dt;
       const sp = Math.hypot(b.vx, b.vy); if (sp > 280) { b.vx *= 280 / sp; b.vy *= 280 / sp; }
       b.x += b.vx * dt; b.y += b.vy * dt;
-      if (b.x > s.A.x1 - 8) { g.addScore(1000 + g.level * 200, g.W / 2, g.H / 2); g.burst(b.x, b.y, { n: 20, emoji: ['👻', '✨', '🫧'], size: 18, speed: 220 }); g.win(); return; }
+      if (b.x > s.A.x1 - 8) { g.addScore(1000 + g.lv * 200, g.W / 2, g.H / 2); g.win(); return; }
       if (s.ready > 0) return;
       if (dg < b.r + 14) { pop(g); return; }
       for (const w of s.walls) if (circRect(b.x, b.y, b.r - 2, w)) { pop(g); return; }
@@ -98,14 +102,10 @@
       const bg = ctx.createLinearGradient(0, 0, 0, H);
       bg.addColorStop(0, '#2b1748'); bg.addColorStop(1, '#140a24');
       ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      g.scenery(['🖼️','🕸️','🦇','🕯️'], 8, { alpha: 0.2, bob: 2 }); /*SC*/
       if (!s.A) return;
       ctx.fillStyle = 'rgba(255,255,255,.03)';
       for (let y = s.A.y0; y < s.A.y1; y += 30) for (let x = s.A.x0 + ((y / 30) % 2) * 25; x < s.A.x1; x += 50) ctx.fillRect(x, y, 46, 26);
-      const wx = s.A.x0 + (s.A.x1 - s.A.x0) * 0.5, wy = s.A.y0 + 50;
-      Arcade.glow(ctx, wx, wy, 60, 'rgba(200,220,255,.35)', 1); ctx.fillStyle = '#0d0a1f'; Arcade.rr(ctx, wx - 26, wy - 30, 52, 60, 26); ctx.fill(); Arcade.emoji(ctx, '🌕', wx, wy - 4, 28, { alpha: 0.9 });
-      ctx.strokeStyle = '#4c2a85'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(wx, wy - 30); ctx.lineTo(wx, wy + 30); ctx.moveTo(wx - 26, wy); ctx.lineTo(wx + 26, wy); ctx.stroke();
-      Arcade.decor(ctx, g.t, [{ e: '🕸️', x: s.A.x0 + 26, y: s.A.y0 + 26, s: 40, a: 0.35 }, { e: '🕸️', x: s.A.x1 - 26, y: s.A.y1 - 26, s: 40, a: 0.3, flip: true }, { e: '🖼️', x: s.A.x0 + (s.A.x1 - s.A.x0) * 0.25, y: s.A.y1 - 70, s: 34, a: 0.3 }]);
-      Arcade.amb(g, ctx);
       // salida
       ctx.fillStyle = 'rgba(105,219,124,.25)'; ctx.fillRect(s.A.x1 - 30, s.exit.y0, 30, s.exit.y1 - s.exit.y0);
       Arcade.emoji(ctx, '🚪', s.A.x1 - 22, (s.exit.y0 + s.exit.y1) / 2, 30);
@@ -129,10 +129,10 @@
       }
       const gh = s.gh, ang = Math.atan2(b.y - gh.y, b.x - gh.x);
       ctx.globalAlpha = 0.85;
-      Arcade.emoji(ctx, '👻', gh.x, gh.y + Math.sin(g.t * 4) * 3, 40, { flip: b.x > gh.x });
+      Arcade.emoji(ctx, g.face(), gh.x, gh.y + Math.sin(g.t * 4) * 3, 38, { rot: (b.x > gh.x ? 0.15 : -0.15) }); Arcade.emoji(ctx, '💨', gh.x + (b.x > gh.x ? 22 : -22), gh.y + 4, 16, { flip: b.x < gh.x });
       ctx.globalAlpha = 1;
       if (s.blow) { ctx.strokeStyle = 'rgba(255,255,255,.12)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(gh.x, gh.y, RANGE, ang - 0.5, ang + 0.5); ctx.stroke(); }
-      if (!s.ptr && g.t < 3) Arcade.txt(ctx, 'Mantén el dedo para soplar 👆', W / 2, s.A.y0 - 16, 14, '#e5dbff', 'center', 800);
+      if (!s.ptr && !(s.keys && s.keys[' ']) && g.t < 3) Arcade.txt(ctx, (Arcade.tv ? 'Mantén OK para soplar 🎮' : 'Mantén el dedo para soplar 👆'), W / 2, s.A.y0 - 16, 14, '#e5dbff', 'center', 800);
     },
   });
 })();

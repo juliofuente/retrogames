@@ -61,10 +61,12 @@
   }
 
   Arcade.game({
+    /*THEME*/ tag: "Come petróleo, protege tu tubería", deco: ["🛢️", "🦂", "🔥", "🟠", "🦂", "⛏️"], font: "impact", bg: ["#5a3a22", "#2b1a10"], music: {"mode": "dorian", "bpm": 126, "wave": "square", "style": "drive", "root": 55}, voice: {"wave": "square", "mul": 0.8, "echo": 0.25}, ambient: {"e": ["💧"], "n": 8, "vy": 40, "sway": 2, "alpha": 0.14, "size": [8, 14]},
+    /*EN*/ en: {"title": "Pipeline", "tag": "Eat the oil, protect your pipe", "help": "<b>Hold your finger</b> where you want to go: the head 😀 moves through the tunnels leaving a <b>pipe</b> behind. Eat every oil drop. The head eats scorpions 🦂, but if a bug touches the <b>pipe</b> you lose a life. <b>Lift your finger</b> to reel the pipe back at full speed. Fire 🔥 burns the head too.", "tvHelp": "Hold an arrow to advance through the tunnels · release it to reel the pipe in.", "dict": {}},
+    /*TV*/ tvHelp: "Mantén una flecha para avanzar por los túneles · suelta para recoger la tubería.",
     id: 'tuberia', title: 'Tubería', emoji: '🛢️', color: '#f4a261', origin: "Oil's Well (Sierra, 1983)",
-    help: '<b>Mantén el dedo</b> donde quieras ir: la cabeza 😋 avanza por los túneles y deja detrás una <b>tubería</b>. Come todas las gotas de petróleo. La cabeza se come a los gusanos 🐛, pero si un bicho toca la <b>tubería</b> pierdes una vida. <b>Suelta el dedo</b> para recoger la tubería a toda velocidad. El fuego 🔥 quema también la cabeza.',
-    lives: 3, levels: Infinity,
-    theme: { font: 'Bungee', ambient: 'dust', music: { tempo: 104, scale: 'blues', root: 196, wave: 'square', swing: 0.3 }, sfx: { wave: 'square', pitch: 0.9 } },
+    help: '<b>Mantén el dedo</b> donde quieras ir: la cabeza 😀 avanza por los túneles y deja detrás una <b>tubería</b>. Come todas las gotas de petróleo. La cabeza se come a los escorpiones 🦂, pero si un bicho toca la <b>tubería</b> pierdes una vida. <b>Suelta el dedo</b> para recoger la tubería a toda velocidad. El fuego 🔥 quema también la cabeza.',
+    lives: 3, levels: 0, cap: 22,
     setup(g) {
       g.s = { en: [], inv: 1, stepT: 0, spawnT: 2, touch: null };
       const s = g.s;
@@ -74,17 +76,22 @@
       s.NR = nr;
       geo(g); genMaze(g);
       s.pipe = [s.base]; s.hx = cx(s, s.base.c); s.hy = cy(s, s.base.r);
-      s.fos = []; for (let r = 1; r < s.NR; r++) for (let c = 0; c < NC; c++) if (!s.w[r][c] && Math.random() < 0.12) s.fos.push({ c, r, e: pick(['🦴', '🪨', '💎', '🐚', '🦕', '🪨']), rot: rand(-1, 1) });
     },
     layout(g) { if (g.s.NR) geo(g); },
     down(g, p) { g.s.touch = p; },
     move(g, p) { g.s.touch = p; },
     up(g, p) { if (g.s.touch && g.s.touch.id === p.id) g.s.touch = null; },
+    key(g, k, d) { /*TVKEY*/ const s = g.s; if (k.startsWith('Arrow')) { if (d) s.kdir = k; else if (s.kdir === k) s.kdir = null; } },
     update(g, dt) {
       const s = g.s;
       s.inv = Math.max(0, s.inv - dt);
       s.stepT += dt;
-      const touch = s.touch && g.pointers.has(s.touch.id) ? s.touch : null;
+      let touch = s.touch && g.pointers.has(s.touch.id) ? s.touch : null;
+      if (!touch && s.kdir) {
+        const h = s.pipe[s.pipe.length - 1], dv = { ArrowUp: [0, -1], ArrowDown: [0, 1], ArrowLeft: [-1, 0], ArrowRight: [1, 0] }[s.kdir];
+        let c = h.c, r = h.r; while (walk(s, c + dv[0], r + dv[1])) { c += dv[0]; r += dv[1]; }
+        touch = { x: cx(s, c), y: cy(s, r), type: 'key' };
+      }
       if (touch) {
         const tgt = nearestCell(s, touch.x, touch.y - (touch.type === 'touch' ? 30 : 0));
         while (s.stepT >= 0.075) {
@@ -98,8 +105,8 @@
           else {
             s.pipe.push(n);
             if (s.dots[n.r][n.c]) {
-              s.dots[n.r][n.c] = false; s.left--; g.addScore(10); Arcade.tone(500 + (s.pipe.length % 12) * 40, 0.04, 'square', 0.05); g.burst(cx(s, n.c), cy(s, n.r), { n: 3, color: '#ffb703', speed: 60, size: 2, grav: 0, life: 0.3 });
-              if (s.left <= 0) { g.addScore(300 + g.level * 100, g.W / 2, g.H / 2); g.win(); return; }
+              s.dots[n.r][n.c] = false; s.left--; g.addScore(10); Arcade.sfx.tick();
+              if (s.left <= 0) { g.addScore(300 + g.lv * 100, g.W / 2, g.H / 2); g.win(); return; }
             }
           }
         }
@@ -113,18 +120,18 @@
       // enemigos
       s.spawnT -= dt;
       if (s.spawnT <= 0) {
-        s.spawnT = Math.max(0.7, 2.3 - g.level * 0.11) * rand(0.7, 1.3);
+        s.spawnT = Math.max(0.7, 2.3 - g.lv * 0.11) * rand(0.7, 1.3);
         const rows = []; for (let r = 1; r < s.NR; r += 2) rows.push(r);
         const r = pick(rows), dir = Math.random() < 0.5 ? 1 : -1;
-        const fire = g.level >= 2 && Math.random() < Math.min(0.45, 0.12 + g.level * 0.02);
-        s.en.push({ r, x: dir > 0 ? -1 : NC, dir, v: (1.4 + Math.min(g.level, 14) * 0.13) * rand(0.85, 1.2), fire });
+        const fire = g.lv >= 2 && Math.random() < 0.12 + g.lv * 0.02;
+        s.en.push({ r, x: dir > 0 ? -1 : NC, dir, v: (1.4 + g.lv * 0.13) * rand(0.85, 1.2), fire });
       }
       for (const e of s.en) e.x += e.dir * e.v * dt;
       s.en = s.en.filter(e => e.x > -1.5 && e.x < NC + 0.5);
       for (const e of s.en) {
         if (e.r === head.r && Math.abs(e.x - head.c) < 0.6) {
           if (e.fire) { if (s.inv <= 0) { lose(g); return; } }
-          else { e.dead = true; g.addScore(100, cx(s, head.c), cy(s, head.r) - 20); Arcade.sfx.pop(); g.burst(cx(s, head.c), cy(s, head.r), { n: 10, color: ['#90be6d', '#d8f3dc'], speed: 140 }); g.ring(cx(s, head.c), cy(s, head.r), { color: '#90be6d', r: s.cs }); }
+          else { e.dead = true; g.addScore(100, cx(s, head.c), cy(s, head.r) - 20); Arcade.sfx.pop(); g.burst(cx(s, head.c), cy(s, head.r), { n: 8, color: '#90be6d', speed: 120 }); }
           continue;
         }
         if (s.inv > 0) continue;
@@ -137,22 +144,14 @@
     },
     draw(g, ctx) {
       const s = g.s, W = g.W, H = g.H;
-      const PAL = [['#8a5a34', '#5a3a22', '#21130a'], ['#7a6a52', '#4f4234', '#1c1610'], ['#8c4a3c', '#5c2a22', '#220d0a'], ['#5b5a7a', '#3b3a52', '#14131f']];
-      const pal = PAL[(g.level - 1) % PAL.length];
-      Arcade.bg(ctx, W, H, pal[0], pal[1], pal[2]);
+      const bg = ctx.createLinearGradient(0, 0, 0, H);
+      bg.addColorStop(0, '#5a3a22'); bg.addColorStop(1, '#2b1a10');
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      g.scenery(['🪨','🦴','💎','🐚','🪱'], 16, { alpha: 0.22 }); /*SC*/
       if (!s.w) return;
       const cs = s.cs;
-      // cielo y torre de petróleo sobre el pozo
-      const skyH = s.oy + cs * 0.9;
-      Arcade.bg(ctx, W, skyH, '#4dabf7', '#a5d8ff');
-      Arcade.emoji(ctx, '☀️', W - 40, skyH * 0.35, 30);
-      Arcade.emoji(ctx, '☁️', (g.t * 12) % (W + 80) - 40, skyH * 0.45, 30, { alpha: 0.8 });
-      ctx.fillStyle = '#6b8e23'; ctx.fillRect(0, skyH - 6, W, 6);
-      // estratos
-      ctx.fillStyle = 'rgba(0,0,0,.1)';
-      for (let i = 1; i < 6; i++) { const y = skyH + (H - skyH) * i / 6; ctx.beginPath(); ctx.moveTo(0, y); for (let x = 0; x <= W; x += 30) ctx.lineTo(x, y + Math.sin(x * 0.03 + i) * 6); ctx.lineTo(W, y + 14); ctx.lineTo(0, y + 14); ctx.fill(); }
-      for (const f of s.fos) Arcade.emoji(ctx, f.e, cx(s, f.c), cy(s, f.r), cs * 0.6, { alpha: 0.28, rot: f.rot });
-      Arcade.amb(g, ctx);
+      ctx.fillStyle = 'rgba(0,0,0,.12)';
+      for (let i = 0; i < 60; i++) { ctx.beginPath(); ctx.arc((i * 137) % W, (i * 211) % H, 2 + (i % 3), 0, 6.28); ctx.fill(); }
       // túneles
       for (let r = 0; r < s.NR; r++) for (let c = 0; c < NC; c++) {
         if (!s.w[r][c]) continue;
@@ -163,7 +162,6 @@
       }
       // gotas
       for (let r = 0; r < s.NR; r++) for (let c = 0; c < NC; c++) if (s.dots[r][c]) {
-        ctx.fillStyle = 'rgba(255,183,3,.25)'; ctx.beginPath(); ctx.arc(cx(s, c), cy(s, r), cs * 0.2, 0, 6.28); ctx.fill();
         ctx.fillStyle = '#ffb703'; ctx.beginPath(); ctx.arc(cx(s, c), cy(s, r), cs * 0.1, 0, 6.28); ctx.fill();
       }
       // tubería
@@ -174,8 +172,8 @@
       ctx.strokeStyle = '#adb5bd'; ctx.lineWidth = cs * 0.26; ctx.stroke();
       ctx.strokeStyle = 'rgba(255,255,255,.45)'; ctx.lineWidth = cs * 0.07; ctx.stroke();
       Arcade.emoji(ctx, '🛢️', cx(s, s.base.c), cy(s, s.base.r) - cs * 0.1, cs * 0.75);
-      for (const e of s.en) Arcade.emoji(ctx, e.fire ? '🔥' : '🐛', s.ox + (e.x + 0.5) * cs, cy(s, e.r), cs * 0.7, { flip: !e.fire && e.dir > 0 });
-      if (!(s.inv > 0 && Math.floor(g.t * 10) % 2)) Arcade.emoji(ctx, s.pipe.length > 1 ? '😋' : '😴', s.hx, s.hy, cs * 0.82);
+      for (const e of s.en) Arcade.emojiTo(ctx, e.fire ? '🔥' : '🦂', s.ox + (e.x + 0.5) * cs, cy(s, e.r), cs * 0.7, e.fire ? 0 : e.dir, 0);
+      if (!(s.inv > 0 && Math.floor(g.t * 10) % 2)) Arcade.emoji(ctx, s.pipe.length > 1 ? g.face() : '😴', s.hx, s.hy, cs * 0.82);
       Arcade.txt(ctx, '🟠 ' + s.left, W - 14, s.oy + cs * 0.5, 15, '#ffb703', 'right', 800, 'rgba(0,0,0,.5)');
     },
   });

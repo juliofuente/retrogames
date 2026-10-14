@@ -78,11 +78,11 @@
   }
 
   Arcade.game({
-    /*THEME*/ tag: "Come petróleo, protege tu tubería", deco: ["🛢️", "🐛", "🔥", "🟠", "🐛", "⛏️"], font: "impact", bg: ["#5a3a22", "#2b1a10"], music: {"mode": "dorian", "bpm": 126, "wave": "square", "style": "drive", "root": 55}, voice: {"wave": "square", "mul": 0.8, "echo": 0.25}, ambient: {"e": ["💧"], "n": 8, "vy": 40, "sway": 2, "alpha": 0.14, "size": [8, 14]},
-    /*EN*/ en: {"title": "Pipeline", "tag": "Eat the oil, protect your pipe", "help": "<b>Hold your finger</b> where you want to go: the head 😋 moves through the tunnels leaving a <b>pipe</b> behind. Eat every oil drop. The head eats worms 🐛, but if a bug touches the <b>pipe</b> you lose a life. <b>Lift your finger</b> to reel the pipe back at full speed. Fire 🔥 burns the head too.", "tvHelp": "Hold an arrow to advance through the tunnels · release it to reel the pipe in.", "dict": {}},
+    /*THEME*/ tag: "Come petróleo, protege tu tubería", deco: ["🛢️", "🦂", "🔥", "🟠", "🦂", "⛏️"], font: "impact", bg: ["#5a3a22", "#2b1a10"], music: {"mode": "dorian", "bpm": 126, "wave": "square", "style": "drive", "root": 55}, voice: {"wave": "square", "mul": 0.8, "echo": 0.25}, ambient: {"e": ["💧"], "n": 8, "vy": 40, "sway": 2, "alpha": 0.14, "size": [8, 14]},
+    /*EN*/ en: {"title": "Pipeline", "tag": "Eat the oil, protect your pipe", "help": "<b>Hold your finger</b> where you want to go: the head 😀 moves through the tunnels leaving a <b>pipe</b> behind. Eat every oil drop. The head eats scorpions 🦂, but if a bug touches the <b>pipe</b> you lose a life. <b>Lift your finger</b> to reel the pipe back at full speed. Fire 🔥 burns the head too.", "tvHelp": "Hold an arrow to advance through the tunnels · release it to reel the pipe in.", "dict": {}},
     /*TV*/ tvHelp: "Mantén una flecha para avanzar por los túneles · suelta para recoger la tubería.",
     id: 'tuberia', title: 'Tubería', emoji: '🛢️', color: '#f4a261', origin: "Oil's Well (Sierra, 1983)",
-    help: '<b>Mantén el dedo</b> donde quieras ir: la cabeza 😋 avanza por los túneles y deja detrás una <b>tubería</b>. Come todas las gotas de petróleo. La cabeza se come a los gusanos 🐛, pero si un bicho toca la <b>tubería</b> pierdes una vida. <b>Suelta el dedo</b> para recoger la tubería a toda velocidad. El fuego 🔥 quema también la cabeza.',
+    help: '<b>Mantén el dedo</b> donde quieras ir: la cabeza 😀 avanza por los túneles y deja detrás una <b>tubería</b>. Come todas las gotas de petróleo. La cabeza se come a los escorpiones 🦂, pero si un bicho toca la <b>tubería</b> pierdes una vida. <b>Suelta el dedo</b> para recoger la tubería a toda velocidad. El fuego 🔥 quema también la cabeza.',
     lives: 3, levels: 0, cap: 22,
     setup(g) {
       g.s = { en: [], inv: 1, stepT: 0, spawnT: 2, touch: null };
@@ -189,8 +189,8 @@
       ctx.strokeStyle = '#adb5bd'; ctx.lineWidth = cs * 0.26; ctx.stroke();
       ctx.strokeStyle = 'rgba(255,255,255,.45)'; ctx.lineWidth = cs * 0.07; ctx.stroke();
       Arcade.emoji(ctx, '🛢️', cx(s, s.base.c), cy(s, s.base.r) - cs * 0.1, cs * 0.75);
-      for (const e of s.en) Arcade.emoji(ctx, e.fire ? '🔥' : '🐛', s.ox + (e.x + 0.5) * cs, cy(s, e.r), cs * 0.7, { flip: !e.fire && e.dir > 0 });
-      if (!(s.inv > 0 && Math.floor(g.t * 10) % 2)) Arcade.emoji(ctx, s.pipe.length > 1 ? '😋' : '😴', s.hx, s.hy, cs * 0.82);
+      for (const e of s.en) Arcade.emojiTo(ctx, e.fire ? '🔥' : '🦂', s.ox + (e.x + 0.5) * cs, cy(s, e.r), cs * 0.7, e.fire ? 0 : e.dir, 0);
+      if (!(s.inv > 0 && Math.floor(g.t * 10) % 2)) Arcade.emoji(ctx, s.pipe.length > 1 ? g.face() : '😴', s.hx, s.hy, cs * 0.82);
       Arcade.txt(ctx, '🟠 ' + s.left, W - 14, s.oy + cs * 0.5, 15, '#ffb703', 'right', 800, 'rgba(0,0,0,.5)');
     },
   });

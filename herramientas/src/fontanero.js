@@ -18,15 +18,18 @@
   function firstBreak(s) { for (let j = 1; j < s.N - 1; j++) if (s.broken[j]) return j; return s.N - 1; }
 
   Arcade.game({
+    /*THEME*/ tag: "Ratas, juntas y una bañera", deco: ["🔧", "🐀", "💧", "🛁", "💣", "🧀"], font: "wide", bg: ["#34343f", "#1f1f28"], music: {"mode": "dorian", "bpm": 118, "wave": "square", "style": "arcade", "root": 57}, voice: {"wave": "square", "mul": 1, "echo": 0.18}, ambient: {"e": ["💧"], "n": 6, "vy": 45, "sway": 2, "alpha": 0.12, "size": [8, 14]},
+    /*EN*/ en: {"title": "Plumber", "tag": "Rats, joints and a bathtub", "help": "Water flows from the tank 🛢️ to the bathtub 🛁 through the pipe. Mice 🐀 <b>gnaw the joints</b> and the water leaks. <b>Tap a broken joint</b> to fix it and <b>tap a rat</b> to scare it off before it bites. Some leave bombs 💣: tap them to defuse them. Fill the bathtub before the tank runs dry.", "dict": {"¡Se acabó el agua!": "Out of water!"}},
+    /*TV*/ tv: false,
     id: 'fontanero', title: 'Fontanero', emoji: '🔧', color: '#4dabf7', origin: 'Frisky Tom (Nichibutsu, 1981)',
-    help: 'El agua va del depósito 🛢️ a la bañera 🛁 por la tubería. Los ratones 🐭 <b>roen las juntas</b> y el agua se escapa. <b>Toca una junta rota</b> para arreglarla y <b>toca un ratón</b> para espantarlo antes de que muerda. Algunos dejan bombas 💣: tócalas para desactivarlas. Llena la bañera antes de que se vacíe el depósito.',
-    lives: 3, levels: 10,
+    help: 'El agua va del depósito 🛢️ a la bañera 🛁 por la tubería. Los ratas 🐀 <b>roen las juntas</b> y el agua se escapa. <b>Toca una junta rota</b> para arreglarla y <b>toca un rata</b> para espantarlo antes de que muerda. Algunos dejan bombas 💣: tócalas para desactivarlas. Llena la bañera antes de que se vacíe el depósito.',
+    lives: 3, levels: 0, cap: 16,
     setup(g) {
       g.s = { mice: [], bombs: [], spawnT: 1.5, tank: 100, tub: 0, wf: 0, wrench: null, flowT: 0 };
       const s = g.s;
       if (g.W < g.H) { s.NC = 4; s.NR = 6; } else { s.NC = 7; s.NR = 3; }
       s.N = s.NC * s.NR; s.broken = new Array(s.N).fill(false);
-      const pre = Math.min(4, Math.floor(g.level / 2));
+      const pre = Math.min(4, Math.floor(g.lv / 2));
       for (let k = 0; k < pre; k++) s.broken[ri(1, s.N - 2)] = true;
       geo(g);
     },
@@ -48,7 +51,7 @@
       if (s.wrench) { s.wrench.t -= dt; if (s.wrench.t <= 0) s.wrench = null; }
       const fb = firstBreak(s);
       if (s.wf < fb) s.wf = Math.min(fb, s.wf + 4 * dt); else s.wf = fb;
-      s.tank -= (2.6 + g.level * 0.12) * dt;
+      s.tank -= (2.6 + g.lv * 0.12) * dt;
       if (s.wf >= s.N - 1) { s.tub += 7 * dt; s.flowT -= dt; if (s.flowT <= 0) { s.flowT = 0.25; g.addScore(2); } }
       else if (Math.random() < 0.5) { const q = nodeXY(s, fb); g.parts.push({ x: q.x, y: q.y, vx: rand(-90, 90), vy: rand(-140, -30), life: 0.6, max: 0.6, color: '#74c0fc', size: 3, grav: 500, rot: 0 }); }
       if (s.tub >= 100) { g.addScore(500 + Math.floor(s.tank) * 10, g.W / 2, g.H / 2); g.win(); return; }
@@ -56,9 +59,9 @@
       // ratones
       s.spawnT -= dt;
       if (s.spawnT <= 0) {
-        s.spawnT = Math.max(0.7, 2.6 - g.level * 0.18) * rand(0.7, 1.3);
+        s.spawnT = Math.max(0.7, 2.6 - g.lv * 0.18) * rand(0.7, 1.3);
         const fromEnd = Math.random() < 0.5;
-        s.mice.push({ pos: fromEnd ? s.N - 1.01 : 0.01, dir: fromEnd ? -1 : 1, sp: 0.9 + g.level * 0.1, st: 'walk', t: 0, last: -1, bomb: g.level >= 3 && Math.random() < 0.15 + g.level * 0.02 });
+        s.mice.push({ pos: fromEnd ? s.N - 1.01 : 0.01, dir: fromEnd ? -1 : 1, sp: 0.9 + g.lv * 0.1, st: 'walk', t: 0, last: -1, bomb: g.lv >= 3 && Math.random() < 0.15 + g.lv * 0.02 });
       }
       for (const m of s.mice) {
         if (m.st === 'gnaw') {
@@ -76,7 +79,7 @@
         const j = m.dir > 0 ? Math.floor(m.pos) : Math.ceil(m.pos);
         if (j !== m.last && j >= 1 && j <= s.N - 2 && ((m.dir > 0 && prev < j && m.pos >= j) || (m.dir < 0 && prev > j && m.pos <= j))) {
           m.last = j;
-          if (!s.broken[j] && Math.random() < 0.38) { m.st = 'gnaw'; m.t = Math.max(0.9, 1.8 - g.level * 0.07); m.gj = j; m.pos = j; }
+          if (!s.broken[j] && Math.random() < 0.38) { m.st = 'gnaw'; m.t = Math.max(0.9, 1.8 - g.lv * 0.07); m.gj = j; m.pos = j; }
         }
       }
       s.mice = s.mice.filter(m => !m.dead);
@@ -97,6 +100,7 @@
       ctx.fillStyle = '#2a2a35'; ctx.fillRect(0, 0, W, H);
       ctx.strokeStyle = 'rgba(255,255,255,.04)'; ctx.lineWidth = 1;
       for (let y = 0; y < H; y += 28) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+      g.scenery(['🧰','🪛','🔩','🪚','🧽'], 10, { alpha: 0.25 }); /*SC*/
       if (!s.N) return;
       // tubería
       ctx.lineCap = 'round'; ctx.lineJoin = 'round';
@@ -131,7 +135,7 @@
       for (const b of s.bombs) { const q = nodeXY(s, b.j); Arcade.emoji(ctx, '💣', q.x, q.y - 14, 30, { sx: 1 + Math.sin(g.t * 20) * 0.08 }); Arcade.txt(ctx, Math.ceil(b.t), q.x + 16, q.y - 28, 13, '#ff6b6b', 'center', 900, '#000'); }
       for (const m of s.mice) {
         const q = ptAt(s, m.pos);
-        Arcade.emoji(ctx, '🐭', q.x, q.y - 4 + (m.st === 'gnaw' ? Math.sin(g.t * 40) * 2 : 0), 30, { flip: m.dir > 0 });
+        Arcade.emojiTo(ctx, '🐀', q.x, q.y - 4 + (m.st === 'gnaw' ? Math.sin(g.t * 40) * 2 : 0), 30, m.dir || -1, 0);
         if (m.bomb) Arcade.emoji(ctx, '💣', q.x + 10, q.y - 16, 14);
       }
       if (s.wrench) Arcade.emoji(ctx, '🔧', s.wrench.x + 14, s.wrench.y - 14, 28, { rot: s.wrench.t * 8 });

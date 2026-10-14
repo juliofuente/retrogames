@@ -1,7 +1,7 @@
 // Estallido|#140b1f
 (function () {
   const { ri, rand, clamp, pick } = Arcade;
-  const FOES = ['👾', '🦠', '👻', '🪲', '🕷️'];
+  const FOES = ['👾', '🦠', '👻', '💀', '🕷️'];
 
   function geo(g) { const s = g.s; s.cx = g.W / 2; s.cy = (g.top + g.bot) / 2 + 10; s.Rmax = Math.min(g.W, g.bot - g.top) * 0.42; }
   function spawn(g) {

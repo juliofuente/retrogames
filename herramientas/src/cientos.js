@@ -77,7 +77,7 @@
         s.done = true; s.hold = null; Arcade.sfx.win(); g.confetti(60); g.message(Arcade.T('¡Cien!', 'A hundred!'), 1);
         const big = Math.max(...s.balls.map((b) => b.v));
         g.addScore((100 + (t - 100) * 5) * g.lv, g.W / 2, g.H / 2);
-        setTimeout(() => { if (g.state === 'play') g.win(); }, 900);
+        setTimeout(() => { if (g.state === 'play') g.win(g.lives >= 3 ? 3 : g.lives === 2 ? 2 : 1); }, 900);
       }
     },
     draw(g, ctx) {

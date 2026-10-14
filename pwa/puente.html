@@ -108,7 +108,7 @@
         ctx.restore();
       }
       const hy = s.ground - 20 * s.u + (s.state === 'fall' ? s.fallY : 0) - (s.state === 'walk' ? Math.abs(Math.sin(g.rt * 18)) * 4 : 0);
-      Arcade.emoji(ctx, s.hero, s.hx - s.cam, hy, 36 * s.u, { flip: true });
+      Arcade.emoji(ctx, g.face(), s.hx - s.cam, hy, 32 * s.u, { rot: 0.1 });
       Arcade.txt(ctx, 'Pilares: ' + s.done + '/' + s.need, W / 2, g.top + 16, 15, '#fff', 'center', 900, 'rgba(0,0,0,.4)');
       if (s.state === 'idle' && g.t < 4) Arcade.txt(ctx, Arcade.tv ? Arcade.T('Mantén OK 🎮', 'Hold OK 🎮') : Arcade.T('Mantén el dedo 👆', 'Hold your finger 👆'), W / 2, s.ground + 60, 18, '#fff', 'center', 900, 'rgba(0,0,0,.4)');
     },

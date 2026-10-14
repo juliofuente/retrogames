@@ -135,7 +135,7 @@
       // jugador
       const px = s.ox + (COLS + 0.6) * cs, py = s.oy + (s.prow + 0.5) * cs;
       if (s.held) tile(s.ox + (COLS + 0.05) * cs, py - cs * 0.5, s.held, 0.95);
-      Arcade.emoji(ctx, '🧙', s.ox + (COLS + 0.95) * cs, py + cs * 0.1, cs * 0.62);
+      Arcade.emoji(ctx, g.face(), s.ox + (COLS + 0.95) * cs, py + cs * 0.12, cs * 0.56); Arcade.emoji(ctx, '🎩', s.ox + (COLS + 0.95) * cs, py - cs * 0.24, cs * 0.34);
       const left = count(s);
       Arcade.txt(ctx, 'Quedan ' + left + '  ·  objetivo ≤ ' + s.target, W / 2, s.oy - 24, 15, left <= s.target ? '#69db7c' : '#dbe4ff', 'center', 800, 'rgba(0,0,0,.4)');
     },

@@ -1,7 +1,7 @@
 // Escaleras|#2b2d42
 (function () {
   const { ri, rand, clamp } = Arcade;
-  const CLIMBERS = ['🧗', '🐒', '🦸', '🧑‍🚒', '🐈', '🤖'];
+  const CLIMBERS = ['😀', '🐒', '🦸', '🧑‍🚒', '🐈', '🤖'];
 
   function extend(s, n) {
     while (s.st.length < n) { const l = s.st[s.st.length - 1]; let d = l.d; if (s.run >= 2 && Math.random() < s.turnP) { d = -d; s.run = 0; } else s.run++; s.st.push({ x: l.x + d, d, coin: Math.random() < 0.08 }); }
@@ -18,7 +18,7 @@
   }
 
   Arcade.game({
-    /*THEME*/ home: 'indexpro.html', tag: 'Sube, gira, no mires abajo', deco: ['🧗', '🪜', '⏱️', '🪙', '🌆', '⭐'], font: 'impact', bg: ['#3d405b', '#2b2d42'],
+    /*THEME*/ home: 'indexpro.html', tag: 'Sube, gira, no mires abajo', deco: ['😀', '🪜', '⏱️', '🪙', '🌆', '⭐'], font: 'impact', bg: ['#3d405b', '#2b2d42'],
     music: { mode: 'minor', bpm: 136, wave: 'square', style: 'arcade', root: 57 }, voice: { wave: 'square', mul: 1, echo: 0.2 },
     en: { title: 'Stairs', tag: 'Climb, turn, do not look down', help: 'The staircase zigzags upwards. <b>Tap the right half</b> of the screen to climb a step in the direction you are facing and the <b>left half</b> to turn around and climb. If you step into the void, you fall! The time bar drains: every step refills it a little. Climb the steps each level asks for.', tvHelp: '▶ climb · ◀ turn and climb.', dict: { 'Escalones: ': 'Steps: ', 'GIRAR': 'TURN', 'SUBIR': 'CLIMB' } },
     tvHelp: '▶ subir · ◀ girar y subir.',
@@ -54,7 +54,7 @@
         if (t.coin) Arcade.emoji(ctx, '🪙', x, y - sh * 0.6, sw * 0.4);
       }
       const px = ox + cur.x * sw + s.dir * k * sw * 0 , py = oy - s.i * sh - sh * 0.6 - Math.sin(k * Math.PI) * sh * 0.8 + (s.dead ? s.fall * s.fall * 900 : 0);
-      Arcade.emoji(ctx, s.who, cx, py, sw * 0.9, { flip: s.dir > 0, rot: s.dead ? s.fall * 8 : 0 });
+      Arcade.emoji(ctx, s.dead ? '😱' : g.face(), cx, py, sw * 0.82, { rot: s.dead ? s.fall * 8 : (s.dir > 0 ? 0.12 : -0.12) });
       // botones guía
       ctx.fillStyle = 'rgba(255,255,255,.08)'; ctx.fillRect(0, g.bot - 70, W / 2 - 2, 70); ctx.fillRect(W / 2 + 2, g.bot - 70, W / 2 - 2, 70);
       Arcade.txt(ctx, '🔄 GIRAR', W / 4, g.bot - 35, 16, '#fff', 'center', 900); Arcade.txt(ctx, 'SUBIR ⬆️', W * 0.75, g.bot - 35, 16, '#fff', 'center', 900);

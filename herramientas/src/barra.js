@@ -21,9 +21,9 @@
       }
       return null;
     };
-    const T = 3 + (g.level >= 6 ? 1 : 0) + (g.level >= 14 ? 1 : 0);
-    for (let k = 1; k <= T; k++) { const v1 = 0.8 - (k - 1) * (0.66 / T); tries(Math.max(0.06, v1 - 0.6 / T), v1, k); }
-    const decoys = 6 + Math.min(g.level, 12) * 3;
+    const T = 3;
+    for (let k = 1; k <= T; k++) { const v1 = 0.78 - (k - 1) * 0.2; tries(Math.max(0.06, v1 - 0.28), v1, k); }
+    const decoys = Math.min(26, 6 + g.lv * 2);
     for (let i = 0; i < decoys; i++) tries(0.05, 0.84, 0);
     s.holes = holes; s.T = T; s.k = 1;
   }
@@ -31,10 +31,12 @@
   function barY(s, u) { return s.by0 + (s.yL + (s.yR - s.yL) * u) * s.bh; }
 
   Arcade.game({
+    /*THEME*/ tag: "Dos dedos, una bola, un agujero", deco: ["🕳️", "🍺", "🎯", "⚪", "🍻", "✨"], font: "serif", bg: ["#2a1b4a", "#120a22"], music: {"mode": "mixo", "bpm": 92, "wave": "triangle", "style": "waltz", "root": 55}, voice: {"wave": "triangle", "mul": 0.9, "echo": 0.3}, ambient: {"e": ["✨"], "n": 10, "vy": 0, "sway": 0, "twinkle": 1, "alpha": 0.3, "size": [8, 14]},
+    /*EN*/ en: {"title": "Tilt", "tag": "Two fingers, one ball, one hole", "help": "Use <b>one finger on each half</b> of the screen: each finger raises or lowers its end of the bar. Tilt it so the ball rolls and lift it into the <b>glowing</b> hole, in order 1, 2, 3. If it falls into any other hole you lose the ball.", "dict": {"Agujero ": "Hole ", " de ": " of "}},
+    /*TV*/ tv: false,
     id: 'barra', title: 'Barra', emoji: '⚪', color: '#c77dff', origin: 'Ice Cold Beer (Taito, 1983)',
     help: 'Usa <b>un dedo en cada mitad</b> de la pantalla: cada dedo sube o baja su extremo de la barra. Inclínala para que la bola ruede y súbela hasta meterla en el agujero <b>que brilla</b>, en orden 1, 2, 3. Si cae en cualquier otro agujero pierdes la bola.',
-    lives: 3, levels: Infinity,
-    theme: { font: 'Righteous', ambient: 'sparkles', music: { tempo: 96, scale: 'minor', root: 220, wave: 'square', lead: 'triangle' }, sfx: { wave: 'sine', pitch: 1 } },
+    lives: 3, levels: 0, cap: 14,
     setup(g) {
       g.s = { ptr: {} };
       geo(g); genHoles(g); resetBar(g.s);
@@ -62,8 +64,7 @@
         if (f.t > 0.55) {
           if (f.h.n === s.k) {
             f.h.done = true; const bonus = Math.max(50, 500 - Math.floor(s.clock) * 10);
-            g.ring(hx(s, f.h), hy(s, f.h), { color: '#ffd60a', r: 90, w: 6 }); g.burst(hx(s, f.h), hy(s, f.h), { n: 16, color: ['#ffd60a', '#c77dff', '#fff'], speed: 200 }); Arcade.sfx.level();
-            g.addScore(100 * s.k * g.level + bonus, hx(s, f.h), hy(s, f.h) - 20);
+            g.addScore(100 * s.k * g.lv + bonus, hx(s, f.h), hy(s, f.h) - 20);
             s.k++; resetBar(s);
             if (s.k > s.T) { g.win(); return; }
           } else {
@@ -102,15 +103,15 @@
     },
     draw(g, ctx) {
       const s = g.s, W = g.W, H = g.H;
-      Arcade.bg(ctx, W, H, '#2a1150', '#160a2e', '#07030f');
-      Arcade.amb(g, ctx);
+      const bg = ctx.createLinearGradient(0, 0, 0, H);
+      bg.addColorStop(0, '#2a1b4a'); bg.addColorStop(1, '#120a22');
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      g.scenery(['🍺','🎱','🃏','🎯'], 8, { alpha: 0.07, size: [30, 50] }); /*SC*/
       if (!s.holes) return;
       // tablero
       const pg = ctx.createLinearGradient(s.bx0, 0, s.bx1, 0);
       pg.addColorStop(0, '#3d2b6b'); pg.addColorStop(0.5, '#4b3786'); pg.addColorStop(1, '#3d2b6b');
       ctx.fillStyle = pg; Arcade.rr(ctx, s.bx0 - 6, s.by0 - 10, s.bw + 12, s.bh + 20, 16); ctx.fill();
-      ctx.shadowColor = '#e599f7'; ctx.shadowBlur = 18; ctx.strokeStyle = '#e599f7'; ctx.lineWidth = 3; ctx.stroke(); ctx.shadowBlur = 0;
-      ctx.strokeStyle = 'rgba(255,255,255,.5)'; ctx.lineWidth = 1; ctx.stroke();
       ctx.strokeStyle = 'rgba(255,255,255,.08)'; ctx.lineWidth = 1;
       for (let x = s.bx0 + 20; x < s.bx1; x += 28) { ctx.beginPath(); ctx.moveTo(x, s.by0); ctx.lineTo(x, s.by1); ctx.stroke(); }
       // agujeros
@@ -120,8 +121,7 @@
         const cur = h.n === s.k;
         if (cur) {
           const pu = 1 + Math.sin(g.t * 6) * 0.12;
-          Arcade.glow(ctx, x, y, s.R * 3 * pu, 'rgba(255,214,10,.8)', 0.6);
-          ctx.strokeStyle = 'rgba(255,214,10,.8)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x, y, s.R * 1.6 * pu, 0, 6.28); ctx.stroke();
+          ctx.fillStyle = 'rgba(255,214,10,.25)'; ctx.beginPath(); ctx.arc(x, y, s.R * 1.9 * pu, 0, 6.28); ctx.fill();
         }
         ctx.fillStyle = cur ? '#ffd60a' : h.n ? '#9d7bff' : '#6c5a9c'; ctx.beginPath(); ctx.arc(x, y, s.R * 1.12, 0, 6.28); ctx.fill();
         const hg = ctx.createRadialGradient(x, y - s.R * 0.3, 1, x, y, s.R);

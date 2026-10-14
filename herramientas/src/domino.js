@@ -63,11 +63,14 @@
   const slotAt = (s, x, y) => { const i = Math.floor((x - s.ox) / s.sw); return i >= 0 && i < s.line.length && y > s.floor - s.dh - 70 && y < s.floor + 40 ? i : -1; };
 
   Arcade.game({
+    /*THEME*/ tag: "Un solo empujón", deco: ["🁫", "🁣", "✋", "↔️", "⟳", "🁩"], font: "mono", bg: ["#1c3144", "#0b1620"], music: {"mode": "major", "bpm": 92, "wave": "triangle", "style": "chill", "root": 60}, voice: {"wave": "triangle", "mul": 1, "echo": 0.25}, ambient: {"e": ["✨"], "n": 6, "vy": 0, "sway": 0, "twinkle": 1, "alpha": 0.2},
+    /*EN*/ en: {"title": "Domino", "tag": "One single push", "help": "You have <b>a single push</b> to knock down every domino (except the red ones ✋, which never fall). First you can <b>rearrange</b>: drag a domino to another slot to swap them (you have a limited number of swaps). Then <b>tap a domino</b> and choose ◀ or ▶ to push it. Blue ones ↔ fall both ways and green ones ⟳ roll across gaps to the next one.", "tvHelp": "◀ ▶ move the cursor · OK on a domino ✋ and OK on another slot to swap them · OK twice on the same domino shows ◀ ▶: move onto an arrow and press OK to push.", "dict": {"Cambios: ": "Swaps: ", "Quedaron fichas en pie": "Some dominoes are still standing", "Sin cambios": "No swaps left", "¡Casi!": "So close!", "↩️ Deshacer": "↩️ Undo", "Tope (no cae)": "Stopper (never falls)", "Divide": "Splitter", "Rueda": "Roller"}},
+    /*TV*/ tvHelp: "◀ ▶ mover el cursor · OK en una ficha ✋ y OK en otro hueco para intercambiarlas · OK dos veces en la misma ficha muestra ◀ ▶: muévete a una flecha y pulsa OK para empujar.", tv: { mode: 'drag', canArm: (g, t) => t.i != null && g.s.line[t.i] > 0 && !g.s.fall, targets: (g) => { const s = g.s, o = []; if (!s.line || s.fall) return o; const n = s.line.length; for (let i = 0; i < n; i++) o.push({ x: s.ox + i * s.sw, y: s.floor - s.dh, w: s.sw, h: s.dh, i }); if (s.sel >= 0) { const x = s.ox + (s.sel + 0.5) * s.sw, y = s.floor - s.dh - 34; o.push({ x: x - 50, y: y - 22, w: 44, h: 44, instant: true }, { x: x + 6, y: y - 22, w: 44, h: 44, instant: true }); } if (s.hist.length) o.push({ x: g.W / 2 - 80, y: g.bot - 62, w: 160, h: 42, instant: true }); return o; } },
     id: 'domino', title: 'Dominó', emoji: '🁫', color: '#ffd43b', origin: 'Pushover (Ocean, 1992)',
     help: 'Tienes <b>un solo empujón</b> para tirar todas las fichas (menos las rojas ✋, que nunca caen). Antes puedes <b>reordenar</b>: arrastra una ficha a otro hueco para intercambiarlas (tienes un número limitado de cambios). Luego <b>toca una ficha</b> y elige ◀ o ▶ para empujarla. Las azules ↔ caen hacia los dos lados y las verdes ⟳ ruedan por los huecos hasta la siguiente.',
-    lives: 3, levels: 20,
+    lives: 3, levels: 0, cap: 24,
     setup(g) {
-      const n = g.W < g.H ? 9 : 13, lv = gen(n, g.level);
+      const n = g.W < g.H ? 9 : 13, lv = gen(n, g.lv);
       g.s = { line: lv.line.slice(), start: lv.line.slice(), S: lv.S, swaps: lv.S, sel: -1, drag: null, fall: null, t: 0, hist: [] };
       geo(g);
     },
@@ -103,7 +106,7 @@
       s.t += dt;
       if (s.t > s.endT && !s.done) {
         s.done = true;
-        if (wins(s.line, s.fall)) { g.addScore(500 + g.level * 100 + s.swaps * 200, g.W / 2, g.H / 3); g.win(); }
+        if (wins(s.line, s.fall)) { g.addScore(500 + g.lv * 100 + s.swaps * 200, g.W / 2, g.H / 3); g.win(); }
         else {
           g.message('¡Casi!', 1.3, 'Quedaron fichas en pie');
           setTimeout(() => { if (g.state !== 'play') return; if (g.die()) { s.line = s.start.slice(); s.swaps = s.S; s.fall = null; s.hist = []; s.sel = -1; } }, 1300);
@@ -115,6 +118,7 @@
       const bg = ctx.createLinearGradient(0, 0, 0, H);
       bg.addColorStop(0, '#1c3144'); bg.addColorStop(1, '#0b1620');
       ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      g.scenery(['🀄','🎴','🁫'], 6, { alpha: 0.1, size: [26, 40] }); /*SC*/
       if (!s.line) return;
       const sw = s.sw, dh = s.dh, dw = Math.min(sw * 0.42, dh * 0.4);
       ctx.fillStyle = '#5c4033'; ctx.fillRect(s.ox - 10, s.floor, sw * s.line.length + 20, 14);

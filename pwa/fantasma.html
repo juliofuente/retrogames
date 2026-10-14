@@ -146,7 +146,7 @@
       }
       const gh = s.gh, ang = Math.atan2(b.y - gh.y, b.x - gh.x);
       ctx.globalAlpha = 0.85;
-      Arcade.emoji(ctx, '👻', gh.x, gh.y + Math.sin(g.t * 4) * 3, 40, { flip: b.x > gh.x });
+      Arcade.emoji(ctx, g.face(), gh.x, gh.y + Math.sin(g.t * 4) * 3, 38, { rot: (b.x > gh.x ? 0.15 : -0.15) }); Arcade.emoji(ctx, '💨', gh.x + (b.x > gh.x ? 22 : -22), gh.y + 4, 16, { flip: b.x < gh.x });
       ctx.globalAlpha = 1;
       if (s.blow) { ctx.strokeStyle = 'rgba(255,255,255,.12)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(gh.x, gh.y, RANGE, ang - 0.5, ang + 0.5); ctx.stroke(); }
       if (!s.ptr && !(s.keys && s.keys[' ']) && g.t < 3) Arcade.txt(ctx, (Arcade.tv ? 'Mantén OK para soplar 🎮' : 'Mantén el dedo para soplar 👆'), W / 2, s.A.y0 - 16, 14, '#e5dbff', 'center', 800);

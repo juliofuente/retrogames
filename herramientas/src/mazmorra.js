@@ -63,7 +63,7 @@
       s.busy = true;
       setTimeout(() => {
         s.busy = false; if (g.state !== 'play') return;
-        const blk = Math.min(s.arm, atk); s.arm -= blk; const hurt = atk - blk; s.hp -= hurt;
+        const blk = Math.min(s.arm, atk); s.arm -= blk; const hurt = atk - blk; s.hp -= hurt; g.mood(hurt ? (s.hp <= 3 ? 'scared' : 'hurt') : 'angry', 1.2);
         if (hurt) { Arcade.sfx.bad(); g.flash('#ff3b3b', 0.12); g.float('-' + hurt + '❤️', g.W / 2, s.oy - 30, '#ff6b6b', 24); } else Arcade.tone(900, 0.06, 'square', 0.05);
         if (s.hp <= 0) { g.message(Arcade.T('¡Derrotado!', 'Defeated!'), 1.2); if (g.die()) { s.hp = s.maxHp; s.arm = Math.floor(s.maxArm / 2); for (const row of s.b) for (let x = 0; x < s.C; x++) if (row[x] && row[x].k === 'mo') row[x] = tile(g, 0); } }
       }, 380);
@@ -116,7 +116,7 @@
       const x0 = (W - bw) / 2;
       ctx.fillStyle = 'rgba(0,0,0,.4)'; Arcade.rr(ctx, x0, y0 - 8, bw, 16, 8); ctx.fill();
       ctx.fillStyle = '#fa5252'; Arcade.rr(ctx, x0, y0 - 8, bw * clamp(s.hp / s.maxHp, 0, 1), 16, 8); ctx.fill();
-      Arcade.txt(ctx, '❤️ ' + Math.max(0, s.hp) + '/' + s.maxHp, W / 2, y0, 12, '#fff', 'center', 900, 'rgba(0,0,0,.5)');
+      Arcade.txt(ctx, '❤️ ' + Math.max(0, s.hp) + '/' + s.maxHp, W / 2, y0, 12, '#fff', 'center', 900, 'rgba(0,0,0,.5)'); Arcade.emoji(ctx, g.face(), x0 - 4, y0 + 2, 34);
       Arcade.txt(ctx, '🛡️ ' + s.arm + '/' + s.maxArm + '    ⚔️ +' + s.pow + '    🪙 ' + s.gold + '/' + s.next, W / 2, y0 + 26, 14, '#e9ecef', 'center', 800);
       Arcade.txt(ctx, 'Monstruos: ' + Math.min(s.kills, s.need) + ' / ' + s.need, W / 2, y0 + 52, 14, '#ffd8a8', 'center', 900);
       if (s.path.length && grp(s.b[s.path[0][1]][s.path[0][0]].k) === 'sw') Arcade.txt(ctx, '💥 daño ' + chainDamage(s), W / 2, s.oy - 10, 13, '#ff8787', 'center', 900);

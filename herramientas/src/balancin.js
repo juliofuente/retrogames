@@ -28,10 +28,12 @@
   }
 
   Arcade.game({
+    /*THEME*/ tag: "¡Pasen y vean el circo volador!", deco: ["🎪", "🎈", "🎉", "🎈", "🎺", "🎈"], font: "comic", bg: ["#7a1a47", "#3d0c2b"], music: {"mode": "major", "bpm": 150, "wave": "square", "style": "waltz", "root": 64}, voice: {"wave": "square", "mul": 1.15, "echo": 0.2}, ambient: {"e": ["✨", "🎉"], "n": 8, "vy": 0, "sway": 0, "twinkle": 1, "alpha": 0.25},
+    /*EN*/ en: {"title": "Seesaw", "tag": "Roll up for the flying circus!", "help": "<b>Drag</b> your finger to move the seesaw. The falling acrobat must land on the <b>raised end</b>: that launches the other acrobat up to pop balloons 🎈. Higher rows are worth more. Clear a row and it refills faster. Don't let either clown hit the floor!", "tvHelp": "Hold ◀ ▶ to move the seesaw.", "dict": {}},
+    /*TV*/ tvHelp: "Mantén ◀ ▶ para mover el balancín.",
     id: 'balancin', title: 'Balancín', emoji: '🤡', color: '#ff8fab', origin: 'Circus (Exidy, 1977)',
-    help: '<b>Arrastra</b> el dedo para mover el balancín. El payaso que cae debe aterrizar en el <b>extremo levantado</b>: así lanza al otro payaso hacia arriba a reventar globos 🎈. Arriba valen más. Si vacías una fila, se rellena más rápida. ¡No dejes que ninguno toque el suelo!',
+    help: '<b>Arrastra</b> el dedo para mover el balancín. El acróbata que cae debe aterrizar en el <b>extremo levantado</b>: así lanza al otro acróbata hacia arriba a reventar globos 🎈. Arriba valen más. Si vacías una fila, se rellena más rápida. ¡No dejes que ninguno toque el suelo!',
     lives: 5, levels: null, lifeIcon: '🤡',
-    theme: { font: 'Luckiest Guy', ambient: 'confetti', music: { tempo: 150, scale: 'major', root: 294, wave: 'square', swing: 0.15 }, sfx: { wave: 'square', pitch: 1.15 } },
     setup(g) {
       g.s = { rows: [], up: 'L', sx: g.W / 2, vx: 0, tx: g.W / 2, wait: 1.2, cleared: 0 };
       geo(g);
@@ -41,9 +43,10 @@
     layout(g) { if (g.s.rows) geo(g); },
     down(g, p) { g.s.tx = p.x; },
     move(g, p) { g.s.tx = p.x; },
-    key(g, k, d) { const s = g.s; if (d && k === 'ArrowLeft') s.tx = s.sx - 120; if (d && k === 'ArrowRight') s.tx = s.sx + 120; },
+    key(g, k, d) { /*TVKEY*/ const s = g.s; if (k === 'ArrowLeft') s.kd = d ? -1 : (s.kd === -1 ? 0 : s.kd); if (k === 'ArrowRight') s.kd = d ? 1 : (s.kd === 1 ? 0 : s.kd); },
     update(g, dt) {
       const s = g.s;
+      if (s.kd) s.tx = s.sx + s.kd * 90;
       const nx = clamp(s.sx + clamp(s.tx - s.sx, -1400 * dt, 1400 * dt), s.L + 8, g.W - s.L - 8);
       s.vx = (nx - s.sx) / Math.max(dt, 0.001); s.sx = nx;
       for (const r of s.rows) r.off = (r.off + r.v * dt) % g.W;
@@ -62,11 +65,10 @@
           const x = ((k * r.gap + r.off) % g.W + g.W) % g.W;
           if (Math.abs(f.x - x) < 22) {
             r.b[k] = false; g.addScore(PTS[i], x, y); Arcade.sfx.pop();
-            g.burst(x, y, { n: 10, color: [COLS[i][0], '#fff'], speed: 170, size: 3 }); g.ring(x, y, { color: COLS[i][0], r: 30, t: 0.3, w: 3 });
+            g.burst(x, y, { n: 8, color: COLS[i][0], speed: 150, size: 3 });
             if (r.b.every(v => !v)) {
               g.addScore(300 * g.level, g.W / 2, y + 30, '#ff8fab'); Arcade.sfx.win();
               s.cleared++; g.level = 1 + Math.floor(s.cleared / 2); g.hud(); fillRow(g, i);
-              g.flash('#ffd166', 0.25); g.message('¡Fila completa!', 1.1); g.burst(g.W / 2, y, { n: 20, emoji: ['🎈', '🎉', '⭐'], size: 18, speed: 260 });
             }
           }
         }
@@ -80,7 +82,7 @@
           const h = s.floor - s.rowY[0] + 20;
           const v = Math.sqrt(2 * s.G * h) * rand(0.88, 1.06);
           s.fly = { x: lx, y: ly - 22, vx: rand(-70, 70) + s.vx * 0.15, vy: -v, rot: 0 };
-          Arcade.sfx.up(); Arcade.sfx.whoosh(); Arcade.buzz(20); g.addScore(5); g.burst(lx, ly, { n: 6, emoji: '💨', size: 14, speed: 90, grav: 0, life: 0.4 });
+          Arcade.sfx.up(); Arcade.buzz(20); g.addScore(5);
           return;
         }
       }
@@ -97,18 +99,7 @@
       const vg = ctx.createRadialGradient(W / 2, H * 0.6, 40, W / 2, H * 0.6, Math.max(W, H) * 0.8);
       vg.addColorStop(0, 'rgba(255,220,150,.18)'); vg.addColorStop(1, 'rgba(10,0,20,.7)');
       ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
-      // focos que barren el escenario
-      ctx.save(); ctx.globalCompositeOperation = 'lighter';
-      for (const [ox, ph, c] of [[0, 0, 'rgba(255,240,180,.07)'], [W, 2, 'rgba(255,180,220,.07)']]) {
-        const tx = W / 2 + Math.sin(g.t * 0.7 + ph) * W * 0.4;
-        ctx.fillStyle = c; ctx.beginPath(); ctx.moveTo(ox, g.top - 20); ctx.lineTo(tx - 70, H); ctx.lineTo(tx + 70, H); ctx.fill();
-      }
-      ctx.restore();
-      // banderines
-      const bt = g.top - 4;
-      ctx.strokeStyle = 'rgba(255,255,255,.4)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(0, bt); ctx.quadraticCurveTo(W / 2, bt + 18, W, bt); ctx.stroke();
-      for (let i = 0; i < W / 26; i++) { const x = i * 26 + 13, y = bt + Math.sin(x / W * Math.PI) * 9; ctx.fillStyle = ['#ff6b6b', '#ffd43b', '#4dabf7', '#69db7c'][i % 4]; ctx.beginPath(); ctx.moveTo(x - 9, y); ctx.lineTo(x + 9, y); ctx.lineTo(x, y + 16); ctx.fill(); }
-      Arcade.amb(g, ctx);
+      g.scenery(['🎪','⭐','🎠','🎡'], 6, { alpha: 0.1, size: [30, 50] }); /*SC*/
       if (!s.rows.length) return;
       // globos
       s.rows.forEach((r, i) => {
@@ -131,13 +122,13 @@
       ctx.lineCap = 'round'; ctx.strokeStyle = '#3d2314'; ctx.lineWidth = 12; ctx.beginPath(); ctx.moveTo(e.lx, e.ly); ctx.lineTo(e.rx, e.ry); ctx.stroke();
       ctx.strokeStyle = '#a0522d'; ctx.lineWidth = 7; ctx.stroke();
       const dx = s.up === 'L' ? e.rx : e.lx, dy = s.up === 'L' ? e.ry : e.ly;
-      Arcade.emoji(ctx, '🤡', dx, dy - 22, 38);
+      Arcade.emoji(ctx, g.face(), dx, dy - 22, 36);
       const ux = s.up === 'L' ? e.lx : e.rx, uy = s.up === 'L' ? e.ly : e.ry;
       ctx.strokeStyle = 'rgba(255,209,102,' + (0.4 + Math.sin(g.t * 8) * 0.3) + ')'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(ux, uy - 4, 14, 0, 6.28); ctx.stroke();
       // payaso volando
       const f = s.fly;
       if (s.wait > 0 && g.state === 'play') { ctx.globalAlpha = Math.floor(g.t * 8) % 2 ? 1 : 0.3; }
-      Arcade.emoji(ctx, '🤡', f.x, f.y, 40, { rot: f.rot });
+      Arcade.emoji(ctx, f.vy > 120 ? '😱' : g.face(), f.x, f.y, 38, { rot: f.rot });
       ctx.globalAlpha = 1;
       if (f.vy > 0 && f.y < s.floor - 60) { ctx.fillStyle = 'rgba(0,0,0,.3)'; ctx.beginPath(); ctx.ellipse(f.x, s.floor + 6, 14, 4, 0, 0, 6.28); ctx.fill(); }
     },

@@ -29,6 +29,9 @@
   function anyValid(s, t) { for (let r = 0; r < s.R; r++) for (let c = 0; c < s.C; c++) if (valid(s, c, r, t)) return true; return false; }
 
   Arcade.game({
+    /*THEME*/ tag: "El camino de las piedras", deco: ["🀄", "★", "◆", "♥", "♣", "🌸"], font: "serif", bg: ["#22392b", "#16251c"], music: {"mode": "dorian", "bpm": 84, "wave": "sine", "style": "chill", "root": 57, "sparse": 0.45}, voice: {"wave": "sine", "mul": 1, "echo": 0.35}, ambient: {"e": ["🌸"], "n": 7, "vy": 14, "sway": 24, "spin": 1, "alpha": 0.16},
+    /*EN*/ en: {"title": "Ishido", "tag": "The way of the stones", "help": "Place all 72 stones one by one by <b>tapping a cell</b>. Each stone has a colour and a symbol and must sit next to another: with <b>1 neighbour</b> it must match colour or symbol; with <b>2</b>, one by colour and one by symbol; with <b>3</b>, two by one and one by the other; with <b>4</b>, two and two. 4-way crosses score big! The game ends when the stone can't be placed.", "tvHelp": "D-pad to move the cursor · OK to place the stone.", "dict": {"Ahora": "Now", "Cruces de 4: ": "4-way: ", "No cabe la ficha": "The stone doesn't fit", "¡Bolsa vacía!": "Bag empty!", "¡Cruce de 4!": "4-way cross!"}},
+    /*TV*/ tvHelp: "Cruceta para mover el cursor · OK colocar la ficha.", tv: { mode: 'tap', targets: (g) => { const s = g.s, o = []; for (let r = 0; r < s.R; r++) for (let c = 0; c < s.C; c++) o.push({ x: s.ox + c * s.cs, y: s.oy + r * s.cs, w: s.cs, h: s.cs, c, r }); return o; } },
     id: 'ishido', title: 'Ishido', emoji: '🀄', color: '#69db7c', origin: 'Ishido: The Way of Stones (1990)',
     help: 'Coloca las 72 fichas una a una <b>tocando una casilla</b>. Cada ficha tiene un color y un símbolo y debe ir junto a otra: con <b>1 vecina</b> tiene que coincidir en color o símbolo; con <b>2</b>, una en color y otra en símbolo; con <b>3</b>, dos en una cosa y una en la otra; con <b>4</b>, dos y dos. ¡Los cruces de 4 dan muchos puntos! Se acaba cuando no puedes colocar la ficha.',
     lives: 0, levels: null,
@@ -74,6 +77,7 @@
     draw(g, ctx) {
       const s = g.s, W = g.W, H = g.H;
       ctx.fillStyle = '#16251c'; ctx.fillRect(0, 0, W, H);
+      g.scenery(['🎋','🪷','⛩️','🌸'], 6, { alpha: 0.18, size: [24, 36] }); /*SC*/
       if (!s.b.length) return;
       const cs = s.cs;
       const tile = (x, y, t, z) => {

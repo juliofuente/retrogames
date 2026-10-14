@@ -3,7 +3,7 @@
 (function () {
   const { ri, rand, clamp, pick } = Arcade;
   const MAT = { wood: { c: '#c68642', s: '#8d5524', hp: 70, d: 0.6, e: '' }, stone: { c: '#adb5bd', s: '#495057', hp: 220, d: 2, e: '' }, ice: { c: '#a5d8ff', s: '#4dabf7', hp: 30, d: 0.5, e: '' } };
-  const BIRDS = ['🐦', '🐤', '💣'];
+  const BIRDS = ['😠', '😤', '💣'];
   const GY = 500, SX = 120, SY = 410;
 
   function build(g) {
@@ -66,12 +66,12 @@
   }
 
   Arcade.game({
-    /*THEME*/ home: 'indexpro.html', tag: 'Tensa, apunta, ¡derriba!', deco: ['🐦', '🐷', '🪵', '🧱', '💣', '🐤'], font: 'impact', bg: ['#a5d8ff', '#7ec8f2'],
+    /*THEME*/ home: 'indexpro.html', tag: 'Tensa, apunta, ¡derriba!', deco: ['😠', '👹', '🪵', '🧱', '💣', '😤'], font: 'impact', bg: ['#a5d8ff', '#7ec8f2'],
     music: { mode: 'major', bpm: 116, wave: 'triangle', style: 'arcade', root: 60 }, voice: { wave: 'triangle', mul: 1, echo: 0.25 },
-    en: { title: 'Slingshot', tag: 'Pull, aim, knock it down!', help: '<b>Drag backwards</b> from anywhere to stretch the slingshot and <b>release</b> to launch the bird. Knock down the towers and squash every 🐷. Wood breaks easily, ice even more and stone is hard. While a bird flies, <b>tap</b> to use its power: 🐤 speeds up and 💣 explodes. If you run out of birds with pigs standing, you lose a life.', tvHelp: '▲ ▼ angle · hold OK to stretch and release to fire · OK in flight for the power.', dict: { 'Cerdos: ': 'Pigs: ' } },
+    en: { title: 'Slingshot', tag: 'Pull, aim, knock it down!', help: '<b>Drag backwards</b> from anywhere to stretch the slingshot and <b>release</b> to launch the shot. Knock down the towers and squash every 👹. Wood breaks easily, ice even more and stone is hard. While a shot flies, <b>tap</b> to use its power: 😤 speeds up and 💣 explodes. If you run out of shots with monsters standing, you lose a life.', tvHelp: '▲ ▼ angle · hold OK to stretch and release to fire · OK in flight for the power.', dict: { 'Monstruos: ': 'Monsters: ' } },
     tvHelp: '▲ ▼ ángulo · mantén OK para tensar y suelta para lanzar · OK en vuelo para el poder.',
-    id: 'tirachinas', title: 'Tirachinas', emoji: '🐦', color: '#ff6b6b', origin: 'Angry Birds (Rovio) / Crush the Castle',
-    help: '<b>Arrastra hacia atrás</b> desde cualquier sitio para tensar el tirachinas y <b>suelta</b> para lanzar el pájaro. Derriba las torres y aplasta a todos los 🐷. La madera se rompe fácil, el hielo aún más y la piedra es dura. Mientras vuela, <b>toca</b> para usar su poder: 🐤 acelera y 💣 explota. Si te quedas sin pájaros con cerdos en pie, pierdes una vida.',
+    id: 'tirachinas', title: 'Tirachinas', emoji: '😠', color: '#ff6b6b', origin: 'Angry Birds (Rovio) / Crush the Castle',
+    help: '<b>Arrastra hacia atrás</b> desde cualquier sitio para tensar el tirachinas y <b>suelta</b> para lanzar el proyectil. Derriba las torres y aplasta a todos los 👹. La madera se rompe fácil, el hielo aún más y la piedra es dura. Mientras vuela, <b>toca</b> para usar su poder: 😤 acelera y 💣 explota. Si te quedas sin proyectiles con monstruos en pie, pierdes una vida.',
     lives: 3, levels: 0, cap: 25,
     setup(g) {
       g.s = { fx: [], debris: [], cam: 0, intro: 2.2, ang: -0.6, pw: 0 };
@@ -135,25 +135,25 @@
       if (s.pull) { px = SX + s.pull.x; py = SY + s.pull.y; } else if (s.charging || (!s.bird && s.kang != null)) { const P = 20 + s.pw * 70; px = SX - Math.cos(s.ang) * P; py = SY - Math.sin(s.ang) * P; }
       if (!s.bird && s.queue.length && s.intro <= 0) {
         ctx.strokeStyle = '#3d2914'; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(SX - 14, SY - 6); ctx.lineTo(px, py); ctx.lineTo(SX + 14, SY - 6); ctx.stroke();
-        Arcade.emoji(ctx, BIRDS[s.queue[0]], px, py, 34, { flip: true });
+        Arcade.emoji(ctx, s.queue[0] === 2 ? '💣' : s.drag ? '😤' : g.face(), px, py, 32);
         if (s.pull || s.charging) { // guía de trayectoria
           let vx = s.pull ? -s.pull.x * 11 : Math.cos(s.ang) * (20 + s.pw * 70) * 11, vy = s.pull ? -s.pull.y * 11 : Math.sin(s.ang) * (20 + s.pw * 70) * 11, x = SX, y = SY;
           ctx.fillStyle = 'rgba(255,255,255,.7)'; for (let i = 0; i < 14; i++) { for (let k = 0; k < 4; k++) { vy += 600 / 60; x += vx / 60; y += vy / 60; } ctx.beginPath(); ctx.arc(x, y, 3, 0, 6.3); ctx.fill(); }
         }
       }
       ctx.lineCap = 'butt';
-      for (let i = 1; i < s.queue.length; i++) Arcade.emoji(ctx, BIRDS[s.queue[i]], SX - 30 - i * 30, GY - 14, 26, { flip: true });
+      for (let i = 1; i < s.queue.length; i++) Arcade.emoji(ctx, BIRDS[s.queue[i]], SX - 30 - i * 30, GY - 14, 26, {});
       for (const b of s.blocks) {
         const m = MAT[b.data.mat], dmg = 1 - b.data.hp / m.hp;
         Arcade.Phys.drawBox(ctx, b, m.c, m.s);
         if (dmg > 0.35) { ctx.save(); ctx.translate(b.p.x, b.p.y); ctx.rotate(b.a); ctx.strokeStyle = 'rgba(0,0,0,.45)'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(-b.hw * 0.6, -b.hh * 0.5); ctx.lineTo(0, 0); ctx.lineTo(b.hw * 0.4, b.hh * 0.7); ctx.stroke(); ctx.restore(); }
       }
-      for (const p of s.pigs) Arcade.emoji(ctx, p.data.hp < 20 ? '🤕' : '🐷', p.p.x, p.p.y, p.r * 2.3, { rot: p.a });
-      if (s.bird && !s.bird.removed) Arcade.emoji(ctx, BIRDS[s.bird.data.type], s.bird.p.x, s.bird.p.y, 34, { rot: s.bird.a, flip: true });
+      for (const p of s.pigs) Arcade.emoji(ctx, p.data.hp < 20 ? '😵' : '👹', p.p.x, p.p.y, p.r * 2.3, { rot: p.a });
+      if (s.bird && !s.bird.removed) Arcade.emoji(ctx, s.bird.data.type === 2 ? '💣' : '😱', s.bird.p.x, s.bird.p.y, 32, { rot: s.bird.a });
       for (const f of s.fx) Arcade.emoji(ctx, '💨', f.x, f.y, 50 * (1.4 - f.t), { alpha: f.t / 0.6 });
       for (const f of s.debris) { ctx.fillStyle = f.c; ctx.globalAlpha = f.t * 2; for (let k = 0; k < 6; k++) ctx.fillRect(f.x + Math.cos(k) * (0.5 - f.t) * 80, f.y + Math.sin(k * 2) * (0.5 - f.t) * 60 + (0.5 - f.t) * 60, 6, 6); ctx.globalAlpha = 1; }
       ctx.restore();
-      Arcade.txt(ctx, 'Cerdos: ' + s.pigs.length + '   ·   🐦 ' + (s.queue.length + (s.bird ? 1 : 0)), W / 2, g.top + 22, 16, '#1b4965', 'center', 900);
+      Arcade.txt(ctx, 'Monstruos: ' + s.pigs.length + '   ·   😠 ' + (s.queue.length + (s.bird ? 1 : 0)), W / 2, g.top + 22, 16, '#1b4965', 'center', 900);
     },
   });
 })();

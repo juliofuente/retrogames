@@ -111,7 +111,7 @@
   }
 
   Arcade.game({
-    /*THEME*/ tag: "El diablillo que hunde los dados", deco: ["🎲", "😈", "🔥", "🎲", "♦️", "🎲"], font: "impact", bg: ["#1a1a40", "#0b0b1f"], music: {"mode": "harm", "bpm": 124, "wave": "sawtooth", "style": "drive", "root": 57}, voice: {"wave": "sawtooth", "mul": 0.9, "echo": 0.2}, ambient: {"e": ["🔥"], "n": 8, "vy": -24, "sway": 8, "alpha": 0.1, "size": [8, 14]},
+    /*THEME*/ tag: "El diablillo que hunde los dados", deco: ["🎲", "😀", "🔥", "🎲", "♦️", "🎲"], font: "impact", bg: ["#1a1a40", "#0b0b1f"], music: {"mode": "harm", "bpm": 124, "wave": "sawtooth", "style": "drive", "root": 57}, voice: {"wave": "sawtooth", "mul": 0.9, "echo": 0.2}, ambient: {"e": ["🔥"], "n": 8, "vy": -24, "sway": 8, "alpha": 0.1, "size": [8, 14]},
     /*EN*/ en: {"title": "Dice", "tag": "The little devil who sinks dice", "help": "<b>Tap a cell</b> to walk there or <b>tap a die next to you</b> (or swipe) to roll it. Rolling changes the top face. Join <b>as many equal dice as their number</b> (two 2s, three 3s, four 4s…) and they sink. 1s touching a sinking group go down with it. The sides show which face comes next. Don't let the board fill up.", "tvHelp": "D-pad: walk and push dice.", "dict": {"Caen más dados": "More dice falling", "🔳 Libres: ": "🔳 Free: "}},
     /*TV*/ tvHelp: "Cruceta: caminar y empujar los dados.",
     id: 'dados', title: 'Dados', emoji: '🎲', color: '#b197fc', origin: 'Devil Dice (Shift/SCEI, 1998)',
@@ -182,7 +182,7 @@
         ctx.globalAlpha = 1;
       }
       if (s.path) for (const [c, r] of s.path) { ctx.fillStyle = 'rgba(177,151,252,.35)'; ctx.beginPath(); ctx.arc(s.ox + (c + 0.5) * cs, s.oy + (r + 0.5) * cs, cs * 0.08, 0, 6.28); ctx.fill(); }
-      Arcade.emoji(ctx, '😈', s.ox + (s.pc + 0.5) * cs, s.oy + (s.pr + 0.5) * cs - s.walkAnim * 6, cs * 0.66);
+      Arcade.emoji(ctx, g.face(), s.ox + (s.pc + 0.5) * cs, s.oy + (s.pr + 0.5) * cs - s.walkAnim * 6, cs * 0.66);
       const free = s.b.flat().filter(v => !v).length - 1;
       Arcade.txt(ctx, '🔳 Libres: ' + free, W / 2, s.oy - 20, 15, free < 6 ? '#ff6b6b' : '#d0bfff', 'center', 800);
     },

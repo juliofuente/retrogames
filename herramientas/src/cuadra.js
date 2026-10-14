@@ -60,18 +60,20 @@
       const pts = w * h * 10 * g.level;
       g.addScore(pts, s.ox + (c1 + w / 2) * s.cs, s.oy + (r1 + h / 2) * s.cs);
       if (w * h >= 9) g.float('¡Grande!', s.ox + (c1 + w / 2) * s.cs, s.oy + r1 * s.cs - 10, '#ffd43b', 22);
-      Arcade.sfx.coin(); Arcade.buzz(25); g.ring(s.ox + (c1 + w / 2) * s.cs, s.oy + (r1 + h / 2) * s.cs, { color: '#4dabf7', r: Math.max(w, h) * s.cs, w: 6 }); if (w * h >= 9) g.flash('#4dabf7', 0.2);
+      Arcade.sfx.coin(); Arcade.buzz(25);
       s.done++;
-      if (s.done % 10 === 0) { g.level++; g.hud(); g.message('Nivel ' + g.level, 1.2); Arcade.sfx.level(); }
+      if (s.done % 10 === 0) { g.level++; g.hud(); g.message('Nivel ' + g.level, 1.2); Arcade.sfx.up(); }
     }
   }
   const colAt = (s, x) => clamp(Math.floor((x - s.ox) / s.cs), 0, COLS - 1);
 
   Arcade.game({
+    /*THEME*/ tag: "Tetris al revés en el espacio", deco: ["🚀", "🟦", "🟨", "✨", "🪐", "🟥"], font: "mono", bg: ["#16163a", "#0c0c1e"], music: {"mode": "minor", "bpm": 138, "wave": "square", "style": "drive", "root": 57}, voice: {"wave": "square", "mul": 1.05, "echo": 0.2}, ambient: {"e": ["⭐", "✨"], "n": 10, "vy": 18, "sway": 0, "twinkle": 1, "alpha": 0.3, "size": [6, 12]},
+    /*EN*/ en: {"title": "Squared", "tag": "Reverse Tetris in space", "help": "The pieces creep down slowly. <b>Tap a column</b> to shoot a block upwards: it sticks under whatever is there. When a shape forms a <b>perfect rectangle</b>, it disappears. Drag to move the ship. If a block reaches the bottom, it's over.", "tvHelp": "◀ ▶ move the ship · OK shoot.", "dict": {"¡Grande!": "Big one!"}},
+    /*TV*/ tvHelp: "◀ ▶ mover la nave · OK disparar.",
     id: 'cuadra', title: 'Cuadra', emoji: '🟦', color: '#4dabf7', origin: 'Quarth (Konami, 1989)',
     help: 'Las piezas bajan poco a poco. <b>Toca una columna</b> para disparar un bloque hacia arriba: se pega debajo de lo que haya. Cuando una figura forma un <b>rectángulo perfecto</b>, desaparece. Arrastra para mover la nave. Si un bloque llega abajo, se acaba.',
     lives: 0, levels: null,
-    theme: { font: 'Orbitron', music: { tempo: 132, scale: 'minor', root: 196, wave: 'sawtooth', lead: 'square' }, sfx: { wave: 'square', pitch: 1.3 } },
     setup(g) {
       g.s = { grid: [], pid: 0, since: 0, gap: 3, sc: 3, cool: 0, done: 0, scT: 1.5 };
       const s = g.s;
@@ -98,10 +100,9 @@
     },
     draw(g, ctx) {
       const s = g.s, W = g.W, H = g.H;
-      Arcade.bg(ctx, W, H, '#1a0f3a', '#0c0c1e', '#050510');
-      Arcade.glow(ctx, W * 0.2, H * 0.3, W * 0.6, 'rgba(120,60,200,.35)', 0.8); Arcade.glow(ctx, W * 0.85, H * 0.75, W * 0.5, 'rgba(40,120,220,.3)', 0.8);
-      Arcade.emoji(ctx, '🪐', W - 34, g.top + 40, 40, { alpha: 0.7, rot: Math.sin(g.t * 0.3) * 0.1 });
+      ctx.fillStyle = '#0c0c1e'; ctx.fillRect(0, 0, W, H);
       for (let i = 0; i < 40; i++) { ctx.fillStyle = 'rgba(255,255,255,' + (0.2 + (i % 3) * 0.2) + ')'; ctx.fillRect((i * 97) % W, ((i * 53) + g.t * (10 + i % 4 * 10)) % H, 2, 2); }
+      g.scenery(['🪐','🌍','☄️','🛰️'], 4, { alpha: 0.35, size: [30, 50], bob: 4 }); /*SC*/
       if (!s.grid) return;
       const cs = s.cs;
       ctx.fillStyle = 'rgba(255,255,255,.04)'; ctx.fillRect(s.ox, s.oy, cs * COLS, cs * ROWS);

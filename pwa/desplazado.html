@@ -48,7 +48,7 @@
   function newDir(g) { const s = g.s, a = rand(0, Math.PI * 2), sp = 18 + g.lv * 4; s.cvx = Math.cos(a) * sp; s.cvy = Math.sin(a) * sp; s.dirT = rand(3, 6); }
 
   Arcade.game({
-    /*THEME*/ tag: "El laberinto se mueve sin ti", deco: ["🐸", "🍒", "🍓", "🧱", "🍇", "🍑"], font: "comic", bg: ["#1f3f1f", "#132613"], music: {"mode": "dorian", "bpm": 124, "wave": "triangle", "style": "arcade", "root": 60}, voice: {"wave": "triangle", "mul": 1.1, "echo": 0.2}, ambient: {"e": ["🍃"], "n": 7, "vy": 24, "sway": 24, "spin": 1, "alpha": 0.18},
+    /*THEME*/ tag: "El laberinto se mueve sin ti", deco: ["😀", "🍒", "🍓", "🧱", "🍇", "🍑"], font: "comic", bg: ["#1f3f1f", "#132613"], music: {"mode": "dorian", "bpm": 124, "wave": "triangle", "style": "arcade", "root": 60}, voice: {"wave": "triangle", "mul": 1.1, "echo": 0.2}, ambient: {"e": ["🍃"], "n": 7, "vy": 24, "sway": 24, "spin": 1, "alpha": 0.18},
     /*EN*/ en: {"title": "Scroller", "tag": "The maze moves without you", "help": "The maze is bigger than the screen and <b>the camera moves on its own</b> wherever it likes. <b>Swipe</b> to move and keep away from the edge: if you go off screen, you get squashed. Collect fruit 🍒 to clear the level. The red border warns you that you're close.", "tvHelp": "D-pad to move through the maze.", "dict": {}},
     /*TV*/ tvHelp: "Cruceta para moverte por el laberinto.",
     id: 'desplazado', title: 'Desplazado', emoji: '🧱', color: '#94d82d', origin: 'Splat! (Incentive, 1983)',
@@ -121,7 +121,7 @@
       }
       ctx.strokeStyle = '#5c3d1e'; ctx.lineWidth = wt; ctx.strokeRect(ox, oy, MC * cs, MR * cs);
       const p = ppos(s);
-      if (!(s.inv > 0 && Math.floor(g.t * 10) % 2)) Arcade.emoji(ctx, '🐸', ox + p.x, oy + p.y, cs * 0.7, { flip: s.pl.dir === 'right' });
+      if (!(s.inv > 0 && Math.floor(g.t * 10) % 2)) Arcade.emojiTo(ctx, g.face(), ox + p.x, oy + p.y, cs * 0.68, D[s.pl.dir][0], D[s.pl.dir][1]);
       ctx.restore();
       if (s.danger) { ctx.strokeStyle = 'rgba(255,60,60,' + (0.5 + Math.sin(g.t * 14) * 0.3) + ')'; ctx.lineWidth = 8; ctx.strokeRect(4, g.top + 4, W - 8, s.vh - 8); }
       // flecha de dirección de cámara

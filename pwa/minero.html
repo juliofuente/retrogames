@@ -39,12 +39,12 @@
   function fire(g) { const s = g.s; if (s.state !== 'swing' || s.over) return; s.state = 'out'; s.len = 30 * s.u; Arcade.tone(300, 0.08, 'sawtooth', 0.05, 200); }
 
   Arcade.game({
-    /*THEME*/ home: 'indexpro.html', tag: 'Engancha el oro antes de que acabe el tiempo', deco: ['⛏️', '💰', '💎', '🪨', '🐹', '🧨'], font: 'serif', bg: ['#6b4a26', '#3d2914'],
+    /*THEME*/ home: 'indexpro.html', tag: 'Engancha el oro antes de que acabe el tiempo', deco: ['⛏️', '💰', '💎', '🪨', '🐀', '🧨'], font: 'serif', bg: ['#6b4a26', '#3d2914'],
     music: { mode: 'mixo', bpm: 112, wave: 'square', style: 'arcade', root: 57 }, voice: { wave: 'square', mul: 1, echo: 0.2 },
-    en: { title: 'Miner', tag: 'Hook the gold before time runs out', help: 'The claw swings by itself. <b>Tap</b> to throw it: it grabs the first thing it touches and reels it in. Big gold is worth a lot but comes up slowly; 💎 diamonds are light and valuable; 🪨 rocks waste your time. 💰 bags have a surprise, 🐹 moles walk around and 🧨 dynamite blows up whatever is near. Reach the target money before the clock runs out.', tvHelp: 'OK to throw the claw.', dict: { 'Objetivo: ': 'Target: ' } },
+    en: { title: 'Miner', tag: 'Hook the gold before time runs out', help: 'The claw swings by itself. <b>Tap</b> to throw it: it grabs the first thing it touches and reels it in. Big gold is worth a lot but comes up slowly; 💎 diamonds are light and valuable; 🪨 rocks waste your time. 💰 bags have a surprise, 🐀 rats walk around and 🧨 dynamite blows up whatever is near. Reach the target money before the clock runs out.', tvHelp: 'OK to throw the claw.', dict: { 'Objetivo: ': 'Target: ' } },
     tvHelp: 'OK para lanzar la garra.',
     id: 'minero', title: 'Minero', emoji: '⛏️', color: '#fcc419', origin: 'Gold Miner',
-    help: 'La garra se balancea sola. <b>Toca</b> para lanzarla: engancha lo primero que toque y lo sube. El oro grande vale mucho pero sube despacio; los 💎 pesan poco y valen mucho; las 🪨 te hacen perder tiempo. Las 💰 tienen sorpresa, los 🐹 se mueven y la 🧨 hace explotar lo que tiene cerca. Llega al dinero objetivo antes de que se acabe el tiempo.',
+    help: 'La garra se balancea sola. <b>Toca</b> para lanzarla: engancha lo primero que toque y lo sube. El oro grande vale mucho pero sube despacio; los 💎 pesan poco y valen mucho; las 🪨 te hacen perder tiempo. Las 💰 tienen sorpresa, los 🐀 se mueven y la 🧨 hace explotar lo que tiene cerca. Llega al dinero objetivo antes de que se acabe el tiempo.',
     lives: 3, levels: 0, cap: 25,
     setup(g) {
       g.s = { ang: 0, dir: 1, state: 'swing', len: 0, grab: null, money: 0, time: 60, over: false };
@@ -111,12 +111,12 @@
           const gg = ctx.createRadialGradient(it.x - it.r * 0.3, it.y - it.r * 0.3, 2, it.x, it.y, it.r); gg.addColorStop(0, '#fff3bf'); gg.addColorStop(0.4, '#fcc419'); gg.addColorStop(1, '#e67700');
           ctx.fillStyle = gg; ctx.beginPath(); for (let k = 0; k < 10; k++) { const a = k / 10 * 6.283, rr = it.r * (0.85 + ((k * 7 + Math.round(it.r)) % 5) * 0.05); ctx.lineTo(it.x + Math.cos(a) * rr, it.y + Math.sin(a) * rr); } ctx.fill();
           if (Math.sin(g.rt * 3 + it.x) > 0.9) Arcade.emoji(ctx, '✨', it.x + it.r * 0.4, it.y - it.r * 0.4, 14);
-        } else Arcade.emoji(ctx, { rock: '🪨', gem: '💎', bag: '💰', mole: '🐹', tnt: '🧨', bone: '🦴', bits: '💨' }[it.t], it.x, it.y, it.r * 2.1, { flip: it.mole && it.vx > 0 });
+        } else if (it.mole) Arcade.emojiTo(ctx, '🐀', it.x, it.y, it.r * 2.1, it.vx || 1, 0); else Arcade.emoji(ctx, { rock: '🪨', gem: '💎', bag: '💰', mole: '🐀', tnt: '🧨', bone: '🦴', bits: '💨' }[it.t], it.x, it.y, it.r * 2.1);
         if (it.mole && it.gem) Arcade.emoji(ctx, '💎', it.x + it.r * 0.7, it.y + it.r * 0.4, it.r);
       };
       for (const it of s.items) drawItem(it);
       // minero y garra
-      Arcade.emoji(ctx, '🧑‍🌾', s.hx + 34 * u, s.hy - 24 * u, 40 * u);
+      Arcade.emoji(ctx, g.face(), s.hx + 34 * u, s.hy - 24 * u, 36 * u); Arcade.emoji(ctx, '⛑️', s.hx + 34 * u, s.hy - 40 * u, 22 * u);
       ctx.fillStyle = '#6b4a26'; Arcade.rr(ctx, s.hx - 26 * u, s.hy - 20 * u, 52 * u, 20 * u, 4); ctx.fill();
       const L = s.state === 'swing' ? 20 * u : s.len, tx = s.hx + Math.sin(s.ang) * L, ty = s.hy + Math.cos(s.ang) * L;
       ctx.strokeStyle = '#343a40'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(s.hx, s.hy); ctx.lineTo(tx, ty); ctx.stroke();

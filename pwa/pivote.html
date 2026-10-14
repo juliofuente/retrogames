@@ -52,7 +52,7 @@
     s.pl = { c: Math.floor(s.NC / 2), r: s.NR - 1, dir: 'up', p: 0, q: null };
     s.en = [];
     const n = Math.min(5, 1 + Math.floor(g.lv / 2));
-    for (let i = 0; i < n; i++) s.en.push({ c: i % 2 ? s.NC - 1 : 0, r: i < 2 ? 0 : Math.floor(s.NR / 2) - 1, dir: 'down', p: 0, sp: 1.15 + g.lv * 0.07 + i * 0.05 });
+    for (let i = 0; i < n; i++) s.en.push({ c: i % 2 ? s.NC - 1 : 0, r: i < 2 ? 0 : Math.floor(s.NR / 2) - 1, dir: 'down', p: 0, sp: 1.15 + g.lv * 0.07 + i * 0.05, f: Arcade.foe(i * 3 + g.level) });
   }
   function arrive(g, m, isPlayer) {
     const s = g.s, nc = m.c + D[m.dir][0], nr = m.r + D[m.dir][1];
@@ -91,11 +91,11 @@
   }
 
   Arcade.game({
-    /*THEME*/ tag: "El pez globo que nunca se para", deco: ["💰", "🫧", "🦔", "🐚", "🫧", "✨"], font: "round", bg: ["#0e3a5c", "#06243a"], music: {"mode": "lydian", "bpm": 104, "wave": "triangle", "style": "chill", "root": 62}, voice: {"wave": "sine", "mul": 1.2, "echo": 0.35}, ambient: {"e": ["🫧"], "n": 14, "vy": -30, "sway": 18, "alpha": 0.25, "size": [8, 18]},
-    /*EN*/ en: {"title": "Pivot", "tag": "The pufferfish that never stops", "help": "The pufferfish <b>never stops</b>. <b>Swipe</b> to a side and it will turn at the next post. Swipe backwards to turn around. Some segments hide <b>buried gold</b>: pass over them to uncover them all. Careful! Passing again over an uncovered segment <b>covers it back</b>. Avoid the hedgehogs 🦔.", "tvHelp": "D-pad: the fish turns at the next post in that direction.", "dict": {"¡Tapado!": "Covered!"}},
+    /*THEME*/ tag: "El pez globo que nunca se para", deco: ["💰", "🫧", "👾", "🐚", "🫧", "✨"], font: "round", bg: ["#0e3a5c", "#06243a"], music: {"mode": "lydian", "bpm": 104, "wave": "triangle", "style": "chill", "root": 62}, voice: {"wave": "sine", "mul": 1.2, "echo": 0.35}, ambient: {"e": ["🫧"], "n": 14, "vy": -30, "sway": 18, "alpha": 0.25, "size": [8, 18]},
+    /*EN*/ en: {"title": "Pivot", "tag": "Your hero that never stops", "help": "Your hero <b>never stops</b>. <b>Swipe</b> to a side and it will turn at the next post. Swipe backwards to turn around. Some segments hide <b>buried gold</b>: pass over them to uncover them all. Careful! Passing again over an uncovered segment <b>covers it back</b>. Avoid the hedgehogs 👾.", "tvHelp": "D-pad: the fish turns at the next post in that direction.", "dict": {"¡Tapado!": "Covered!"}},
     /*TV*/ tvHelp: "Cruceta: el pez gira en el siguiente poste hacia donde pulses.",
     id: 'pivote', title: 'Pivote', emoji: '🐡', color: '#4cc9f0', origin: 'Clu Clu Land (Nintendo, 1984)',
-    help: 'El pez globo <b>nunca se para</b>. <b>Desliza</b> hacia un lado y girará en el siguiente poste. Desliza hacia atrás para dar la vuelta. Bajo algunos tramos hay <b>oro escondido</b>: pasa por ellos para descubrirlos todos. ¡Ojo! Si pasas otra vez por un tramo descubierto, <b>se vuelve a tapar</b>. Evita a los erizos 🦔.',
+    help: 'Tu héroe <b>nunca se para</b>. <b>Desliza</b> hacia un lado y girará en el siguiente poste. Desliza hacia atrás para dar la vuelta. Bajo algunos tramos hay <b>oro escondido</b>: pasa por ellos para descubrirlos todos. ¡Ojo! Si pasas otra vez por un tramo descubierto, <b>se vuelve a tapar</b>. Evita a los erizos 👾.',
     lives: 3, levels: 0, cap: 25,
     setup(g) {
       g.s = { inv: 1.5 };
@@ -162,9 +162,9 @@
         ctx.fillStyle = '#1b4965'; ctx.beginPath(); ctx.arc(x, y, sp * 0.11, 0, 6.28); ctx.fill();
         ctx.fillStyle = '#9ad1d4'; ctx.beginPath(); ctx.arc(x - sp * 0.02, y - sp * 0.02, sp * 0.07, 0, 6.28); ctx.fill();
       }
-      for (const e of s.en) { const p = pos(s, e); Arcade.emoji(ctx, '🦔', p.x, p.y, sp * 0.5, { flip: e.dir === 'right' }); }
+      for (const e of s.en) { const p = pos(s, e); Arcade.emojiTo(ctx, e.f || '👾', p.x, p.y, sp * 0.5, D[e.dir][0], D[e.dir][1]); }
       const pl = s.pl, pp = pos(s, pl);
-      if (!(s.inv > 0 && Math.floor(g.t * 10) % 2)) Arcade.emoji(ctx, '🐡', pp.x, pp.y, sp * 0.56, { flip: pl.dir === 'right', rot: pl.dir === 'up' ? -0.3 : pl.dir === 'down' ? 0.3 : 0 });
+      if (!(s.inv > 0 && Math.floor(g.t * 10) % 2)) Arcade.emojiTo(ctx, g.face(), pp.x, pp.y, sp * 0.56, D[pl.dir][0], D[pl.dir][1]);
       if (pl.q) { // indicador del giro pendiente
         const nx = s.ox + (pl.c + D[pl.dir][0]) * sp, ny = s.oy + (pl.r + D[pl.dir][1]) * sp;
         ctx.strokeStyle = '#4cc9f0'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(nx, ny, sp * 0.2, 0, 6.28); ctx.stroke();

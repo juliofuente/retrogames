@@ -50,7 +50,7 @@
     const s = g.s, side = ri(0, 3);
     const x = side === 0 ? s.x0 + 10 : side === 1 ? s.x1 - 10 : rand(s.x0, s.x1);
     const y = side === 2 ? s.y0 + 10 : side === 3 ? s.y1 - 10 : rand(s.y0, s.y1);
-    s.en.push({ x, y, a: Math.random() * 6.28, v: 45 + g.level * 7, e: Math.random() < 0.5 ? '🐞' : '🕷️', k: 0 });
+    s.en.push({ x, y, a: Math.random() * 6.28, v: 45 + g.level * 7, e: Arcade.pick(['🕷️', '🦂', '🦠', '🐍']), k: 0 });
   }
   function close(g) {
     const s = g.s, poly = loop(s), area = polyArea(poly);
@@ -81,11 +81,11 @@
   }
 
   Arcade.game({
-    /*THEME*/ tag: "Atrapa setas con una cuerda encantada", deco: ["🍄", "🌼", "💎", "🐞", "🍄", "🕷️"], font: "comic", bg: ["#1e5a3c", "#0b2116"], music: {"mode": "major", "bpm": 118, "wave": "square", "style": "arcade", "root": 60}, voice: {"wave": "triangle", "mul": 1.1, "echo": 0.2}, ambient: {"e": ["🍃", "🍂"], "n": 10, "vy": 22, "sway": 30, "spin": 1, "alpha": 0.25},
-    /*EN*/ en: {"title": "Lasso", "tag": "Catch mushrooms with an enchanted rope", "help": "Drag both ends of the rope 🔴🔵 with <b>two fingers</b> (or one at a time). Surround mushrooms 🍄 and <b>bring both ends together</b> to close the lasso. The more you catch at once, the more points. Bugs 🐞 <b>cut the rope</b>, and if they touch an end you lose a life. You can also trap them inside the lasso!", "dict": {"¡Más bichos!": "More bugs!"}},
+    /*THEME*/ tag: "Atrapa setas con una cuerda encantada", deco: ["🍄", "🌼", "💎", "🕷️", "🍄", "🕷️"], font: "comic", bg: ["#1e5a3c", "#0b2116"], music: {"mode": "major", "bpm": 118, "wave": "square", "style": "arcade", "root": 60}, voice: {"wave": "triangle", "mul": 1.1, "echo": 0.2}, ambient: {"e": ["🍃", "🍂"], "n": 10, "vy": 22, "sway": 30, "spin": 1, "alpha": 0.25},
+    /*EN*/ en: {"title": "Lasso", "tag": "Catch mushrooms with an enchanted rope", "help": "Drag both ends of the rope 🔴🔵 with <b>two fingers</b> (or one at a time). Surround mushrooms 🍄 and <b>bring both ends together</b> to close the lasso. The more you catch at once, the more points. Bugs 🕷️ <b>cut the rope</b>, and if they touch an end you lose a life. You can also trap them inside the lasso!", "dict": {"¡Más bichos!": "More bugs!"}},
     /*TV*/ tv: false,
     id: 'lazo', title: 'Lazo', emoji: '🪢', color: '#ffb703', origin: 'Libble Rabble (Namco, 1983)',
-    help: 'Arrastra los dos extremos de la cuerda 🔴🔵 con <b>dos dedos</b> (o uno cada vez). Rodea setas 🍄 y <b>junta los dos extremos</b> para cerrar el lazo. Cuantas más atrapes a la vez, más puntos. Los bichos 🐞 <b>cortan la cuerda</b> y si tocan un extremo pierdes una vida. ¡También puedes atraparlos dentro del lazo!',
+    help: 'Arrastra los dos extremos de la cuerda 🔴🔵 con <b>dos dedos</b> (o uno cada vez). Rodea setas 🍄 y <b>junta los dos extremos</b> para cerrar el lazo. Cuantas más atrapes a la vez, más puntos. Los bichos 🕷️ <b>cortan la cuerda</b> y si tocan un extremo pierdes una vida. ¡También puedes atraparlos dentro del lazo!',
     lives: 3, levels: null,
     setup(g) {
       g.s = { A: { x: 0, y: 0, pid: null, ox: 0, oy: 0 }, B: { x: 0, y: 0, pid: null, ox: 0, oy: 0 }, items: [], en: [], inv: 0, itemT: 0, lvT: 0, enT: 0, flash: 0 };
@@ -190,7 +190,7 @@
       ctx.strokeStyle = 'rgba(0,0,0,.35)'; ctx.lineWidth = 9; ctx.stroke();
       ctx.strokeStyle = '#ffd166'; ctx.lineWidth = 5; ctx.stroke();
       ctx.strokeStyle = 'rgba(255,255,255,.5)'; ctx.lineWidth = 1.5; ctx.stroke();
-      for (const e of s.en) A_e(ctx, e.e, e.x, e.y, 30 * e.k, { rot: e.a + Math.PI / 2 });
+      for (const e of s.en) Arcade.emojiTo(ctx, e.e, e.x, e.y, 30 * e.k, Math.cos(e.a), Math.sin(e.a));
       // extremos
       const blink = s.inv > 0 && Math.floor(g.t * 10) % 2;
       [[s.A, '#ff5d73'], [s.B, '#4dabf7']].forEach(([e, c]) => {

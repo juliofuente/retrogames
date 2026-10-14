@@ -88,7 +88,7 @@
         if (s.coin[x] && !s.taken.has(x)) Arcade.emoji(ctx, '⭐', px + ts / 2, oy + (s.coin[x] === 1 ? H - 2 : 2) * ts, ts * 0.6, { rot: g.rt * 2 });
       }
       Arcade.emoji(ctx, '🏁', ox + (s.W - 4) * ts, oy + (H - 2) * ts, ts * 1.2);
-      if (!s.dead) Arcade.emoji(ctx, '🙂', ox + s.x * ts, oy + s.y * ts, ts * 0.95, { sy: s.grav > 0 ? 1 : -1 });
+      if (!s.dead) Arcade.emoji(ctx, g.face(), ox + s.x * ts, oy + s.y * ts, ts * 0.92, { sy: s.grav > 0 ? 1 : -1 });
       const pr = clamp(s.x / (s.W - 4), 0, 1), bw = Math.min(W - 60, 320);
       ctx.fillStyle = 'rgba(255,255,255,.15)'; Arcade.rr(ctx, (W - bw) / 2, g.top + 10, bw, 8, 4); ctx.fill(); ctx.fillStyle = s.col; Arcade.rr(ctx, (W - bw) / 2, g.top + 10, bw * pr, 8, 4); ctx.fill();
       Arcade.txt(ctx, '⭐ ' + s.stars, W / 2, g.top + 32, 14, '#fff', 'center', 900);

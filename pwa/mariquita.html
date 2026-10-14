@@ -21,7 +21,7 @@
   const D = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
   const OPP = { up: 'down', down: 'up', left: 'right', right: 'left' };
   const ROT = { up: 0, right: Math.PI / 2, down: Math.PI, left: -Math.PI / 2 };
-  const BUGS = ['🪲', '🐜', '🦗', '🦂', '🕷️'];
+  const BUGS = ['🕷️', '🦂', '🐍', '🦠', '🐀', '👻'];
 
   function geo(g) {
     const s = g.s, Wa = g.W - 20, Ha = g.bot - g.top - 44;
@@ -198,9 +198,9 @@
         ctx.beginPath(); ctx.moveTo(x - Math.cos(a) * cs, y - Math.sin(a) * cs); ctx.lineTo(x + Math.cos(a) * cs, y + Math.sin(a) * cs); ctx.stroke();
         ctx.fillStyle = '#2b8a3e'; ctx.beginPath(); ctx.arc(x, y, cs * 0.16, 0, 6.28); ctx.fill();
       }
-      for (const e of s.en) { const p = pos(s, e); Arcade.emoji(ctx, e.e, p.x, p.y, cs * 0.66, { rot: ROT[e.dir] }); }
+      for (const e of s.en) { const p = pos(s, e); Arcade.emojiTo(ctx, e.e, p.x, p.y, cs * 0.66, D[e.dir][0], D[e.dir][1]); }
       const p = pos(s, s.pl);
-      if (!(s.inv > 0 && Math.floor(g.t * 10) % 2)) Arcade.emoji(ctx, '🐞', p.x, p.y, cs * 0.72, { rot: ROT[s.pl.dir] });
+      if (!(s.inv > 0 && Math.floor(g.t * 10) % 2)) Arcade.emojiTo(ctx, g.face(), p.x, p.y, cs * 0.7, D[s.pl.dir][0], D[s.pl.dir][1]);
       Arcade.txt(ctx, (s.mult > 1 ? '💖 x' + s.mult + '   ' : '') + '⚪ ' + s.dots.size, W / 2, oy - 18, 15, '#ffd6e0', 'center', 800);
     },
   });

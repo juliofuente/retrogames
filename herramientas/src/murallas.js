@@ -55,7 +55,7 @@
   function endBuild(g) {
     const s = g.s, ext = enclosure(s);
     let ok = !ext[s.kr][s.kc], terr = 0;
-    if (ok) { for (let r = s.sea; r < s.R; r++) for (let c = 0; c < s.C; c++) if (!ext[r][c] && !s.w[r][c]) terr++; g.addScore(terr * 3 * s.round, g.W / 2, g.H * 0.55); Arcade.sfx.level(); s.armed = true; g.ring(s.ox + (s.kc + 1) * s.cs, s.oy + (s.kr + 1) * s.cs, { color: '#ffd43b', r: s.cs * 6, w: 6, t: 0.6 }); g.message('¡Castillo protegido!', 1.1, '+' + terr + ' casillas de territorio'); }
+    if (ok) { for (let r = s.sea; r < s.R; r++) for (let c = 0; c < s.C; c++) if (!ext[r][c] && !s.w[r][c]) terr++; g.addScore(terr * 3 * s.round, g.W / 2, g.H * 0.55); Arcade.sfx.coin(); s.armed = true; }
     else {
       s.armed = false; g.message('¡Castillo sin murallas!', 1.4); Arcade.sfx.hit();
       if (!g.die()) return;
@@ -65,10 +65,12 @@
   }
 
   Arcade.game({
+    /*THEME*/ tag: "Construye. Defiende. Repite.", deco: ["🧱", "⛵", "💥", "🏴", "🛡️", "⚓"], font: "serif", bg: ["#1c3d5a", "#0f2238"], music: {"mode": "dorian", "bpm": 104, "wave": "triangle", "style": "march", "root": 55}, voice: {"wave": "triangle", "mul": 0.85, "echo": 0.2}, ambient: {"e": ["🕊️"], "n": 3, "vy": 0, "vx": 22, "sway": 10, "alpha": 0.15},
+    /*EN*/ en: {"title": "Ramparts", "tag": "Build. Defend. Repeat.", "help": "Two alternating phases. <b>Build:</b> drag the piece and release it to place it; tap without dragging to rotate it. You must <b>close a wall around the castle</b> before time runs out. <b>Battle:</b> tap the sea to fire at the ships ⛵, which will try to break your walls. If the castle isn't enclosed when building ends, you lose a life.", "tvHelp": "D-pad move the piece · OK place it (if it doesn't fit, it rotates) · In battle: choose a target at sea and press OK to fire.", "dict": {"Arrastra la pieza ↓": "Drag the piece ↓", "OK para colocar · si no cabe, gira": "OK to place · if it doesn't fit, it rotates", "Rodea el castillo": "Enclose the castle", "Sig.": "Next", "Toca el mar para disparar": "Tap the sea to fire", "¡Castillo sin murallas!": "Castle not enclosed!", "💥 Batalla  ": "💥 Battle  ", "💥 ¡Fuego!": "💥 Fire!", "🧱 Construye  ": "🧱 Build  ", "🧱 ¡Construye!": "🧱 Build!"}},
+    /*TV*/ tvHelp: "Cruceta mover la pieza · OK colocarla (si no cabe, la gira) · En batalla: elige el blanco en el mar y OK para disparar.", tv: { mode: 'tap', start: (g, ts) => ts[Math.floor(ts.length / 2)], targets: (g) => { const s = g.s, o = []; if (!s.w) return o; const r0 = s.phase === 'build' ? s.sea : 0, r1 = s.phase === 'build' ? s.R : s.sea; for (let r = r0; r < r1; r++) for (let c = 0; c < s.C; c++) o.push({ x: s.ox + c * s.cs, y: s.oy + r * s.cs, w: s.cs, h: s.cs }); return o; } },
     id: 'murallas', title: 'Murallas', emoji: '🏰', color: '#ffa94d', origin: 'Rampart (Atari, 1990)',
     help: 'Dos fases que se alternan. <b>Construcción:</b> arrastra la pieza y suéltala para colocarla; toca sin arrastrar para girarla. Tienes que <b>cerrar un muro alrededor del castillo</b> antes de que acabe el tiempo. <b>Batalla:</b> toca el mar para disparar a los barcos ⛵, que intentarán romper tus murallas. Si al acabar la construcción el castillo no está cerrado, pierdes una vida.',
     lives: 3, levels: null, levelLabel: 'Ronda',
-    theme: { font: 'MedievalSharp', ambient: 'birds', music: { tempo: 108, scale: 'dorian', root: 196, wave: 'square', lead: 'triangle' }, sfx: { wave: 'square', pitch: 0.9 } },
     setup(g) {
       g.s = { round: 1, balls: [], ships: [], drag: null, armed: true, reload: 0, extT: 0 };
       const s = g.s;
@@ -87,7 +89,7 @@
       if (s.phase === 'build') { s.drag = { x: p.x, y: p.y - (p.type === 'touch' ? 70 : 0), id: p.id, touch: p.type === 'touch' }; }
       else if (s.phase === 'battle' && s.armed && s.reload <= 0) {
         const tx = (p.x - s.ox) / s.cs, ty = (p.y - s.oy) / s.cs;
-        if (ty < s.sea + 0.5) { s.reload = 0.45; s.balls.push({ from: [s.kc + 1, s.kr + 1], to: [tx, ty], t: 0, d: 0.75, mine: true }); Arcade.tone(160, 0.12, 'square', 0.1, -60); Arcade.noise(0.15, 0.1); g.burst(s.ox + (s.kc + 1) * s.cs, s.oy + s.kr * s.cs, { n: 6, emoji: '💨', size: 14, speed: 60, grav: -40, life: 0.6 }); }
+        if (ty < s.sea + 0.5) { s.reload = 0.45; s.balls.push({ from: [s.kc + 1, s.kr + 1], to: [tx, ty], t: 0, d: 0.75, mine: true }); Arcade.tone(160, 0.12, 'square', 0.1, -60); }
       }
     },
     hover(g, x, y) { const s = g.s; if (s.phase === 'build') s.drag = { x, y, hover: true }; },
@@ -101,7 +103,8 @@
         for (const [dx, dy] of s.piece) s.w[r + dy][c + dx] = 1;
         s.piece = s.next; s.next = newPiece(); Arcade.tone(240, 0.06, 'square', 0.08); g.addScore(5);
         s.ext = enclosure(s);
-      } else Arcade.sfx.bad();
+      } else if (p.type === 'tv') { s.piece = rot(s.piece); Arcade.sfx.move(); } /*TVKEY*/
+      else Arcade.sfx.bad();
       s.drag = s.drag.touch ? null : { x: s.drag.x, y: s.drag.y, hover: true };
     },
     key(g, k, d) { if (d && (k === 'r' || k === ' ')) { g.s.piece = rot(g.s.piece); Arcade.sfx.move(); } },
@@ -134,7 +137,7 @@
             Arcade.noise(0.2, 0.15);
             for (const sh of s.ships) if (!sh.dead && Math.hypot(sh.x - x, sh.y - y) < 0.95) {
               sh.hp--; Arcade.sfx.pop();
-              if (sh.hp <= 0) { sh.dead = true; g.addScore(200 * s.round, s.ox + sh.x * s.cs, s.oy + sh.y * s.cs); g.burst(s.ox + sh.x * s.cs, s.oy + sh.y * s.cs, { n: 14, emoji: ['💥', '🌊', '🪵'], size: 18, speed: 160 }); g.ring(s.ox + sh.x * s.cs, s.oy + sh.y * s.cs, { color: '#a5d8ff', r: s.cs * 3, w: 5 }); Arcade.sfx.boom(); Arcade.sfx.splash(); }
+              if (sh.hp <= 0) { sh.dead = true; g.addScore(200 * s.round, s.ox + sh.x * s.cs, s.oy + sh.y * s.cs); g.burst(s.ox + sh.x * s.cs, s.oy + sh.y * s.cs, { n: 14, emoji: '💥', size: 16, speed: 150 }); Arcade.sfx.boom(); }
             }
           } else {
             const c = Math.floor(x), r = Math.floor(y);
@@ -173,10 +176,8 @@
         ctx.fillStyle = '#868e96'; ctx.fillRect(x + 1, y + cs * 0.6, cs - 2, cs * 0.35);
       }
       Arcade.emoji(ctx, '🏰', ox + (s.kc + 1) * cs, oy + (s.kr + 1) * cs, cs * 1.9);
-      Arcade.emoji(ctx, '🚩', ox + (s.kc + 1.5) * cs, oy + (s.kr - 0.2) * cs, cs * 0.9, { rot: Math.sin(g.t * 4) * 0.12 });
-      Arcade.amb(g, ctx);
       for (const sh of s.ships) if (!sh.dead) {
-        Arcade.emoji(ctx, sh.hp > 1 ? '⛵' : '🛶', ox + sh.x * cs, oy + sh.y * cs + Math.sin(g.t * 3 + sh.x) * 2, cs * 1.3, { flip: sh.vx > 0 });
+        Arcade.emoji(ctx, sh.hp > 1 ? '⛵' : '🛶', ox + sh.x * cs, oy + sh.y * cs + Math.sin(g.t * 3 + sh.x) * 2, cs * 1.3, { flip: sh.vx > 0 }); Arcade.emoji(ctx, '☠️', ox + sh.x * cs, oy + sh.y * cs - cs * 0.55, cs * 0.45);
       }
       for (const b of s.balls) {
         const x = ox + (b.from[0] + (b.to[0] - b.from[0]) * b.t) * cs, y = oy + (b.from[1] + (b.to[1] - b.from[1]) * b.t) * cs - Math.sin(b.t * Math.PI) * cs * 3;
@@ -204,7 +205,7 @@
         const nx = ox + cs * s.C - 14;
         Arcade.txt(ctx, 'Sig.', nx - 40, oy - 23, 11, '#fff', 'right', 700);
         const z = 6; for (const [dx, dy] of s.next) { ctx.fillStyle = '#dee2e6'; ctx.fillRect(nx - 34 + dx * z, oy - 32 + dy * z, z - 1, z - 1); }
-        if (!s.drag) { Arcade.txt(ctx, 'Arrastra la pieza ↓', W / 2, oy + s.sea * cs + 18, 13, 'rgba(255,255,255,.8)', 'center', 800, 'rgba(0,0,0,.4)'); }
+        if (!s.drag) { Arcade.txt(ctx, Arcade.tv ? 'OK para colocar · si no cabe, gira' : 'Arrastra la pieza ↓', W / 2, oy + s.sea * cs + 18, 13, 'rgba(255,255,255,.8)', 'center', 800, 'rgba(0,0,0,.4)'); }
       }
     },
   });

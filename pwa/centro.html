@@ -128,7 +128,7 @@
         else { const x = s.cx0 + (b.i + 0.5) * cs; ctx.moveTo(x, my); ctx.lineTo(x, b.side === 'T' ? 0 : H); }
         ctx.stroke(); ctx.globalAlpha = 1;
       }
-      Arcade.emoji(ctx, '🐸', s.cx0 + 2 * cs, s.cy0 + 2 * cs, cs * 1.5);
+      Arcade.emoji(ctx, g.face(), s.cx0 + 2 * cs, s.cy0 + 2 * cs, cs * 1.4);
       ctx.fillStyle = COL[s.pc]; ctx.beginPath(); ctx.arc(s.cx0 + 2 * cs, s.cy0 + 2.9 * cs, cs * 0.28, 0, 6.28); ctx.fill();
       Arcade.txt(ctx, GLY[s.pc], s.cx0 + 2 * cs, s.cy0 + 2.9 * cs, cs * 0.3, 'rgba(0,0,0,.6)');
       // piezas

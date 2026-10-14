@@ -21,8 +21,11 @@
   }
 
   Arcade.game({
+    /*THEME*/ tag: "Una torre de globos en la cabeza", deco: ["🎈", "😀", "💣", "🎈", "🎪", "🎈"], font: "comic", bg: ["#3b1352", "#14061d"], music: {"mode": "major", "bpm": 126, "wave": "triangle", "style": "waltz", "root": 62}, voice: {"wave": "triangle", "mul": 1.15, "echo": 0.2}, ambient: {"e": ["✨"], "n": 8, "vy": 0, "sway": 0, "twinkle": 1, "alpha": 0.28, "size": [8, 14]},
+    /*EN*/ en: {"title": "Unicycle", "tag": "A tower of balloons on your head", "help": "<b>Drag</b> to move the acrobat on the unicycle. Catch the falling balloons 🎈 <b>with the top of the tower</b> on your head. If one lands on the floor, stand next to it and <b>tap</b> to kick it back up. <b>Swipe up</b> to cash in the tower: the taller it is, the more points… but if a bomb 💣 lands on it, you lose the whole tower.", "tvHelp": "Hold ◀ ▶ to move · OK kick the balloon on the floor · ▲ cash in the tower.", "dict": {"Fallos: ": "Misses: ", "¡Toca!": "Tap!", "¡Torre de ": "Tower of ", "↑ cobrar ": "↑ cash in "}},
+    /*TV*/ tvHelp: "Mantén ◀ ▶ para moverte · OK patada al globo del suelo · ▲ cobrar la torre.",
     id: 'monociclo', title: 'Monociclo', emoji: '🎈', color: '#da77f2', origin: 'Kick Man (Midway, 1981)',
-    help: '<b>Arrastra</b> para mover al payaso en monociclo. Atrapa los globos 🎈 que caen <b>con lo alto de la torre</b> que llevas en la cabeza. Si uno cae al suelo, ponte al lado y <b>toca</b> para darle una patada y mandarlo arriba. <b>Desliza hacia arriba</b> para cobrar la torre: cuanto más alta, muchísimos más puntos… pero si te cae una bomba 💣 encima, la pierdes entera.',
+    help: '<b>Arrastra</b> para mover al acróbata en monociclo. Atrapa los globos 🎈 que caen <b>con lo alto de la torre</b> que llevas en la cabeza. Si uno cae al suelo, ponte al lado y <b>toca</b> para darle una patada y mandarlo arriba. <b>Desliza hacia arriba</b> para cobrar la torre: cuanto más alta, muchísimos más puntos… pero si te cae una bomba 💣 encima, la pierdes entera.',
     lives: 3, levels: null,
     setup(g) { g.s = { stack: [], fall: [], spawnT: 1, caught: 0, miss: 0, inv: 0, wob: 0 }; geo(g); },
     layout(g) { if (g.s.stack) geo(g); },
@@ -73,6 +76,7 @@
       bg.addColorStop(0, '#3b1352'); bg.addColorStop(1, '#14061d');
       ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
       for (let i = 0; i < 30; i++) { ctx.fillStyle = 'rgba(255,255,255,' + (0.2 + (i % 3) * 0.2) + ')'; ctx.fillRect((i * 83) % W, (i * 47) % (H * 0.6), 2, 2); }
+      g.scenery(['🎪','🎠','🎡'], 3, { y0: g.bot - 90, y1: g.bot - 60, alpha: 0.25, size: [40, 60] }); /*SC*/
       if (!s.stack) return;
       ctx.fillStyle = '#5c2a7a'; ctx.fillRect(0, s.ground, W, H - s.ground); ctx.fillStyle = '#da77f2'; ctx.fillRect(0, s.ground, W, 3);
       for (const b of s.fall) {
@@ -87,7 +91,7 @@
       ctx.strokeStyle = '#ced4da'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(0, -14, 14, 0, 6.28); ctx.stroke();
       ctx.beginPath(); ctx.moveTo(0, -14); ctx.lineTo(0, -40); ctx.stroke();
       ctx.rotate(wob);
-      Arcade.emoji(ctx, '🤡', 0, -56, 40, { rot: s.kick ? -0.3 : 0 });
+      Arcade.emoji(ctx, s.kick ? '😤' : g.face(), 0, -56, 38, { rot: s.kick ? -0.3 : 0 });
       s.stack.forEach((c, i) => drawBalloon(ctx, Math.sin(i * 0.8 + s.wob * 3) * i * 0.6, -(s.ground - s.headY) - i * s.bh - 8, c));
       ctx.restore();
       Arcade.txt(ctx, '🎈 ' + s.stack.length + (s.stack.length >= 2 ? '  ·  ↑ cobrar ' + 15 * s.stack.length * s.stack.length * g.level : ''), W / 2, g.top + 14, 14, '#fff', 'center', 800);

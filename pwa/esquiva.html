@@ -18,7 +18,7 @@
 <script>
 (function () {
   const { ri, rand, clamp, pick } = Arcade;
-  const FOES = ['🔴', '🟠', '🟣', '🔺', '💣'];
+  const FOES = ['👻', '💀', '🦠', '👾', '💣'];
 
   function area(g) { return { x0: 10, y0: g.top + 40, x1: g.W - 10, y1: g.bot - 10 }; }
   function placeGem(g) { const s = g.s, A = area(g); let x, y, k = 0; do { x = rand(A.x0 + 30, A.x1 - 30); y = rand(A.y0 + 30, A.y1 - 30); } while (Math.hypot(x - s.px, y - s.py) < 120 && k++ < 30); s.gem = { x, y, t: 0 }; }
@@ -66,8 +66,8 @@
       ctx.fillStyle = '#111827'; ctx.fillRect(0, 0, W, H);
       ctx.strokeStyle = 'rgba(105,219,124,.3)'; ctx.lineWidth = 2; Arcade.rr(ctx, A.x0, A.y0, A.x1 - A.x0, A.y1 - A.y0, 10); ctx.stroke();
       if (s.gem) Arcade.emoji(ctx, '🟩', s.gem.x, s.gem.y, 26 * (1 + Math.sin(s.gem.t * 6) * 0.08), { rot: s.gem.t });
-      for (const f of s.foes) Arcade.emoji(ctx, f.e, f.x, f.y, 22, f.kind === 'chase' ? { alpha: f.life < 2 ? (Math.floor(g.rt * 10) % 2 ? 0.4 : 1) : 1 } : undefined);
-      ctx.fillStyle = '#fff'; ctx.shadowColor = '#fff'; ctx.shadowBlur = 12; ctx.globalAlpha = s.inv && Math.floor(g.rt * 12) % 2 ? 0.4 : 1; ctx.beginPath(); ctx.arc(s.px, s.py, 10, 0, 6.3); ctx.fill(); ctx.globalAlpha = 1; ctx.shadowBlur = 0;
+      for (const f of s.foes) Arcade.emojiTo(ctx, f.e, f.x, f.y, 24, f.vx, f.vy, f.kind === 'chase' ? { alpha: f.life < 2 ? (Math.floor(g.rt * 10) % 2 ? 0.4 : 1) : 1 } : undefined);
+      ctx.fillStyle = '#fff'; ctx.shadowColor = '#fff'; ctx.shadowBlur = 12; ctx.globalAlpha = s.inv && Math.floor(g.rt * 12) % 2 ? 0.4 : 1; ctx.shadowBlur = 0; Arcade.emoji(ctx, g.face(), s.px, s.py, 26); ctx.globalAlpha = 1;
       Arcade.txt(ctx, 'Cuadrados: ' + s.got + '/' + s.need, W / 2, g.top + 20, 15, '#d3f9d8', 'center', 900);
     },
   });

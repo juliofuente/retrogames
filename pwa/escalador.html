@@ -19,7 +19,7 @@
 (function () {
   const { rand, ri, pick, clamp } = Arcade;
   const NC = 5;
-  const RES = ['😠', '😤', '👵', '🧔', '😾'];
+  const RES = ['👹', '🧟', '🧛', '👻', '😈', '👽'];
 
   function geo(g) {
     const s = g.s;
@@ -172,7 +172,7 @@
       // escalador
       const wig = s.wig > 0 ? Math.sin(g.t * 60) * 4 : 0;
       const px = s.bx0 + (s.cx + 0.5) * cw + wig, py = rowY(s, s.y) - rh * 0.35;
-      if (!(s.inv > 0 && Math.floor(g.t * 10) % 2)) Arcade.emoji(ctx, '🧗', px, py, cw * 0.78, { flip: s.last === 'R', rot: (s.y % 1 ? 0.12 : -0.05) });
+      if (!(s.inv > 0 && Math.floor(g.t * 10) % 2)) Arcade.emoji(ctx, g.face(), px, py, cw * 0.7, { rot: (s.last === 'R' ? 0.15 : -0.15) * (s.y % 1 ? 1 : -0.5) }); Arcade.emoji(ctx, '✋', px - cw * 0.34, py - cw * 0.28 + (s.last === 'L' ? -6 : 4), cw * 0.3, { flip: true }); Arcade.emoji(ctx, '✋', px + cw * 0.34, py - cw * 0.28 + (s.last === 'R' ? -6 : 4), cw * 0.3);
       // manos
       const next = s.last === 'L' ? 'R' : s.last === 'R' ? 'L' : null;
       const hy = g.bot - 54;

@@ -18,7 +18,7 @@
 <script>
 (function () {
   const { ri, rand, clamp } = Arcade;
-  const NINJAS = ['🥷', '🐸', '🐰', '🦘', '🐒'];
+  const NINJAS = ['😀', '🐸', '🐰', '🦘', '🐒'];
 
   function geo(g) { const s = g.s; s.u = clamp(g.W / 420, 0.7, 1.5); s.base = g.bot - 40; }
   function addPillar(g) {
@@ -33,11 +33,11 @@
   }
 
   Arcade.game({
-    /*THEME*/ home: 'indexpro.html', tag: 'Carga el muelle y salta', deco: ['🥷', '🌀', '🏯', '⭐', '🎋', '🌸'], font: 'impact', bg: ['#ffe8cc', '#ffd8a8'],
+    /*THEME*/ home: 'indexpro.html', tag: 'Carga el muelle y salta', deco: ['😀', '🌀', '🏯', '⭐', '🎋', '🌸'], font: 'impact', bg: ['#ffe8cc', '#ffd8a8'],
     music: { mode: 'mixo', bpm: 104, wave: 'triangle', style: 'chill', root: 62 }, voice: { wave: 'triangle', mul: 1.1, echo: 0.3 },
     en: { title: 'Spring', tag: 'Charge the spring and jump', help: '<b>Hold</b> your finger to compress the spring: the longer you hold, the further you jump. <b>Release</b> to jump onto the next pillar. If you fall short or overshoot, you fall! Landing near the centre is a perfect jump worth double. Reach the number of pillars each level asks for.', tvHelp: 'Hold OK to charge and release to jump.', dict: { 'Pilares: ': 'Pillars: ', '¡Perfecto!': 'Perfect!' } },
     tvHelp: 'Mantén OK para cargar y suelta para saltar.',
-    id: 'resorte', title: 'Resorte', emoji: '🥷', color: '#ff922b', origin: 'Spring Ninja (Ketchapp)',
+    id: 'resorte', title: 'Resorte', emoji: '😀', color: '#ff922b', origin: 'Spring Ninja (Ketchapp)',
     help: '<b>Mantén el dedo</b> para comprimir el muelle: cuanto más tiempo, más lejos saltas. <b>Suelta</b> para saltar al siguiente pilar. Si te quedas corto o te pasas, ¡caes! Aterrizar cerca del centro es un salto perfecto que vale el doble. Llega a los pilares que pide cada nivel.',
     lives: 3, levels: 0, cap: 20,
     setup(g) {
@@ -83,7 +83,7 @@
       // ninja + muelle
       const nx = X(s.x), ny = s.state === 'fall' ? Y(s.y) : Y(s.y), comp = s.state === 'charge' ? s.pw : 0;
       ctx.strokeStyle = '#495057'; ctx.lineWidth = 3; ctx.beginPath(); const sh = 22 * u * (1 - comp * 0.6); for (let i = 0; i <= 8; i++) ctx.lineTo(nx + (i % 2 ? 8 : -8) * u, ny - i * sh / 8); ctx.stroke();
-      Arcade.emoji(ctx, s.ninja, nx, ny - sh - 16 * u, 36 * u, { rot: s.state === 'fly' ? clamp(s.vx / 600, -0.5, 0.5) : 0, flip: true });
+      Arcade.emoji(ctx, s.state === 'fly' ? '😲' : g.face(), nx, ny - sh - 16 * u, 34 * u, { rot: s.state === 'fly' ? clamp(s.vx / 600, -0.5, 0.5) : 0 });
       if (s.state === 'charge') { const bw = 120; ctx.fillStyle = 'rgba(0,0,0,.2)'; Arcade.rr(ctx, W / 2 - bw / 2, g.top + 40, bw, 12, 6); ctx.fill(); ctx.fillStyle = `hsl(${120 - s.pw * 120},90%,50%)`; Arcade.rr(ctx, W / 2 - bw / 2, g.top + 40, bw * s.pw, 12, 6); ctx.fill(); }
       Arcade.txt(ctx, 'Pilares: ' + s.done + '/' + s.need, W / 2, g.top + 20, 16, '#7a3b00', 'center', 900);
     },

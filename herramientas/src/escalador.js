@@ -2,7 +2,7 @@
 (function () {
   const { rand, ri, pick, clamp } = Arcade;
   const NC = 5;
-  const RES = ['😠', '😤', '👵', '🧔', '😾'];
+  const RES = ['👹', '🧟', '🧛', '👻', '😈', '👽'];
 
   function geo(g) {
     const s = g.s;
@@ -24,13 +24,15 @@
   }
 
   Arcade.game({
+    /*THEME*/ tag: "Trepa el rascacielos con tus pulgares", deco: ["🏢", "🪴", "🚁", "😠", "☁️", "🪟"], font: "impact", bg: ["#3a86c8", "#1d4e7a"], music: {"mode": "major", "bpm": 132, "wave": "square", "style": "march", "root": 60}, voice: {"wave": "square", "mul": 1, "echo": 0.15}, ambient: {"e": ["☁️"], "n": 4, "vy": 0, "vx": 12, "sway": 3, "alpha": 0.2, "size": [34, 54]},
+    /*EN*/ en: {"title": "Climber", "tag": "Climb the skyscraper with your thumbs", "help": "Climb by tapping the left and right halves of the screen <b>alternately</b>, like your two hands. Repeating the same hand does nothing. <b>Swipe</b> left or right to change column. If a window closes <b>while one of your hands is raised</b>, you fall. Dodge the flower pots 🪴 and reach the rooftop 🚁.", "tvHelp": "▲ or OK to climb (hands alternate automatically) · ◀ ▶ change column.", "dict": {"🏁 AZOTEA": "🏁 ROOFTOP"}},
+    /*TV*/ tvHelp: "▲ u OK trepar (alterna las manos solo) · ◀ ▶ cambiar de columna.",
     id: 'escalador', title: 'Escalador', emoji: '🧗', color: '#ff6b6b', origin: 'Crazy Climber (Nichibutsu, 1980)',
     help: 'Trepa tocando <b>alternando</b> la mitad izquierda y la derecha de la pantalla, como si fueran tus dos manos. Repetir la misma mano no sirve. <b>Desliza</b> a izquierda o derecha para cambiar de columna. Si una ventana se cierra <b>mientras tienes una mano levantada</b>, te caes. Esquiva las macetas 🪴 y llega a la azotea 🚁.',
-    lives: 3, levels: Infinity,
-    theme: { font: 'Bangers', ambient: 'birds', light: true, music: { tempo: 132, scale: 'major', root: 262, wave: 'square' }, sfx: { wave: 'square', pitch: 1.05 } },
+    lives: 3, levels: 0, cap: 14,
     setup(g) {
       g.s = { y: 0, c: 2, cx: 2, last: null, cam: 0, win: new Map(), pots: [], winT: 1.5, potT: 3, inv: 0, done: 0, wig: 0 };
-      const s = g.s; s.TR = 22 + Math.min(g.level, 10) * 8;
+      const s = g.s; s.TR = 24 + Math.min(g.lv, 10) * 5;
       geo(g);
     },
     layout(g) { if (g.s.win) geo(g); },
@@ -54,6 +56,7 @@
     key(g, k, d) {
       if (!d) return;
       if (k === 'ArrowLeft') this.swipe(g, 'left'); else if (k === 'ArrowRight') this.swipe(g, 'right');
+      else if (k === 'ArrowUp' || k === ' ') this.tap(g, { x: g.s.last === 'L' ? g.W : 0 }); /*TVKEY*/
       else if (k === 'z' || k === 'a') this.tap(g, { x: 0 }); else if (k === 'x' || k === 'd') this.tap(g, { x: g.W });
     },
     update(g, dt) {
@@ -63,7 +66,7 @@
       s.cam += (s.y - s.cam) * Math.min(1, dt * 6);
       if (s.done) {
         s.done += dt;
-        if (s.done > 1.6) { g.addScore(1000 * g.level, g.W / 2, g.H / 2); g.burst(g.W / 2, g.top + 60, { n: 30, emoji: ['🎉', '🎊', '⭐'], size: 20, speed: 260 }); g.win(); }
+        if (s.done > 1.6) { g.addScore(1000 * g.lv, g.W / 2, g.H / 2); g.win(); }
         return;
       }
       // ventanas
@@ -71,7 +74,7 @@
         w.t -= dt;
         if (w.t <= 0) {
           if (w.st === 'warn') {
-            w.st = 'closed'; w.t = Math.max(0.9, rand(2.2, 4.2) - Math.min(g.level, 15) * 0.1);
+            w.st = 'closed'; w.t = rand(2.2, 4.2) - g.lv * 0.1;
             const [c, r] = k.split(',').map(Number);
             if (c === s.c && r === Math.floor(s.y) + 1 && s.y % 1 !== 0 && s.inv <= 0) { fall(g, 'win'); return; }
             if (Math.abs(c - s.cx) < 0.5 && Math.abs(r - (s.y + 1)) < 2) Arcade.tone(220, 0.08, 'square', 0.06);
@@ -80,19 +83,19 @@
       }
       s.winT -= dt;
       if (s.winT <= 0) {
-        s.winT = Math.max(0.3, 1.1 - g.level * 0.09) * rand(0.6, 1.3);
+        s.winT = Math.max(0.3, 1.1 - g.lv * 0.09) * rand(0.6, 1.3);
         const c = Math.random() < 0.55 ? s.c : ri(0, NC - 1), r = Math.floor(s.y) + ri(1, 6);
-        if (r < s.TR && !s.win.has(winKey(c, r))) s.win.set(winKey(c, r), { st: 'warn', t: Math.max(0.55, 1.1 - g.level * 0.05), res: pick(RES) });
+        if (r < s.TR && !s.win.has(winKey(c, r))) s.win.set(winKey(c, r), { st: 'warn', t: Math.max(0.55, 1.1 - g.lv * 0.05), res: pick(RES) });
       }
       // macetas
       s.potT -= dt;
-      if (s.potT <= 0 && g.level >= 1) {
-        s.potT = Math.max(1.1, 3.4 - g.level * 0.25) * rand(0.7, 1.3);
+      if (s.potT <= 0 && g.lv >= 1) {
+        s.potT = Math.max(1.1, 3.4 - g.lv * 0.25) * rand(0.7, 1.3);
         s.pots.push({ c: Math.random() < 0.6 ? s.c : ri(0, NC - 1), warn: 0.9, ry: s.cam + (s.baseY - g.top) / s.rh + 1 });
       }
       for (const p of s.pots) {
         if (p.warn > 0) { p.warn -= dt; continue; }
-        p.ry -= dt * (8 + Math.min(g.level, 15) * 0.6);
+        p.ry -= dt * (8 + g.lv * 0.6);
         if (s.inv <= 0 && Math.abs(p.c - s.cx) < 0.5 && Math.abs(p.ry - (s.y + 0.6)) < 0.55) { fall(g, 'pot'); return; }
       }
       s.pots = s.pots.filter(p => p.ry > s.cam - 4);
@@ -108,20 +111,11 @@
         const x = ((i * 173 + g.t * (8 + i * 3)) % (W + 120)) - 60, y = ((i * 131 - s.cam * 8) % H + H) % H;
         Arcade.emoji(ctx, '☁️', x, y, 46 + i * 6, { alpha: 0.7 });
       }
-      const sk = s.cam * s.rh * 0.25;
-      for (let i = 0; i < 16; i++) {
-        const bw2 = 34 + (i * 37) % 36, bh2 = 110 + (i * 53) % 190, x = i * W / 13 - 24, y = g.bot - bh2 + sk;
-        if (y > H) continue;
-        ctx.fillStyle = `rgba(${40 - k * 20},${55 - k * 30},${95 - k * 40},.55)`; ctx.fillRect(x, y, bw2, H - y + 4);
-        ctx.fillStyle = k > 0.5 ? 'rgba(255,224,102,.55)' : 'rgba(255,255,255,.18)';
-        for (let wy = y + 10; wy < Math.min(H, y + bh2); wy += 16) for (let wx = x + 6; wx < x + bw2 - 6; wx += 12) if ((wx * 7 + wy * 3) % 5 < 2) ctx.fillRect(wx, wy, 5, 7);
-      }
-      Arcade.amb(g, ctx);
       const cw = s.cw, rh = s.rh;
       const r0 = Math.max(0, Math.floor(s.cam - (g.bot - s.baseY) / rh) - 1), r1 = Math.min(s.TR, Math.ceil(s.cam + (s.baseY - g.top) / rh) + 1);
       // fachada
       const yTop = rowY(s, s.TR), yBot = rowY(s, -1);
-      ctx.fillStyle = ['#b07d62', '#8d99ae', '#6d597a', '#a26769', '#5f7470'][(g.level - 1) % 5]; ctx.fillRect(s.bx0 - 10, Math.max(-10, yTop), s.bw + 20, Math.min(H + 20, yBot) - Math.max(-10, yTop));
+      ctx.fillStyle = '#b07d62'; ctx.fillRect(s.bx0 - 10, Math.max(-10, yTop), s.bw + 20, Math.min(H + 20, yBot) - Math.max(-10, yTop));
       ctx.fillStyle = 'rgba(0,0,0,.08)'; for (let c = 0; c <= NC; c++) ctx.fillRect(s.bx0 + c * cw - 3, Math.max(0, yTop), 6, H);
       for (let r = r0; r < r1; r++) {
         const y = rowY(s, r);
@@ -161,7 +155,7 @@
       // escalador
       const wig = s.wig > 0 ? Math.sin(g.t * 60) * 4 : 0;
       const px = s.bx0 + (s.cx + 0.5) * cw + wig, py = rowY(s, s.y) - rh * 0.35;
-      if (!(s.inv > 0 && Math.floor(g.t * 10) % 2)) Arcade.emoji(ctx, '🧗', px, py, cw * 0.78, { flip: s.last === 'R', rot: (s.y % 1 ? 0.12 : -0.05) });
+      if (!(s.inv > 0 && Math.floor(g.t * 10) % 2)) Arcade.emoji(ctx, g.face(), px, py, cw * 0.7, { rot: (s.last === 'R' ? 0.15 : -0.15) * (s.y % 1 ? 1 : -0.5) }); Arcade.emoji(ctx, '✋', px - cw * 0.34, py - cw * 0.28 + (s.last === 'L' ? -6 : 4), cw * 0.3, { flip: true }); Arcade.emoji(ctx, '✋', px + cw * 0.34, py - cw * 0.28 + (s.last === 'R' ? -6 : 4), cw * 0.3);
       // manos
       const next = s.last === 'L' ? 'R' : s.last === 'R' ? 'L' : null;
       const hy = g.bot - 54;

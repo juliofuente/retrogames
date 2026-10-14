@@ -50,10 +50,10 @@
   }
 
   Arcade.game({
-    /*THEME*/ /*TVKEY*/ tag: "Justa aérea sobre un mar de lava", deco: ["🦅", "🥚", "🔥", "🪶", "🦤", "🌋"], font: "impact", bg: ["#2a0f0f", "#120b0b"], music: {"mode": "phryg", "bpm": 134, "wave": "sawtooth", "style": "drive", "root": 55}, voice: {"wave": "sawtooth", "mul": 0.9, "echo": 0.2}, ambient: {"e": ["🔥"], "n": 8, "vy": -30, "sway": 10, "alpha": 0.12, "size": [8, 14]},
+    /*THEME*/ /*TVKEY*/ tag: "Justa aérea sobre un mar de lava", deco: ["🦇", "🥚", "🔥", "🪶", "😀", "🌋"], font: "impact", bg: ["#2a0f0f", "#120b0b"], music: {"mode": "phryg", "bpm": 134, "wave": "sawtooth", "style": "drive", "root": 55}, voice: {"wave": "sawtooth", "mul": 0.9, "echo": 0.2}, ambient: {"e": ["🔥"], "n": 8, "vy": -30, "sway": 10, "alpha": 0.12, "size": [8, 14]},
     /*EN*/ en: {"title": "Joust", "tag": "Aerial joust over a sea of lava", "help": "You ride a bird that flies by flapping. <b>Tap the left half</b> to flap to the left and the <b>right half</b> to go right. When you collide with an enemy, <b>the higher one wins</b>. Defeated riders drop an egg 🥚: grab it before it hatches. Beware of falling into the lava 🔥.", "tvHelp": "◀ flap to the left · ▶ flap to the right.", "dict": {}},
     /*TV*/ tvHelp: "◀ aletear hacia la izquierda · ▶ aletear hacia la derecha.",
-    id: 'justa', title: 'Justa', emoji: '🦤', color: '#ff922b', origin: 'Joust (Williams, 1982)',
+    id: 'justa', title: 'Justa', emoji: '😀', color: '#ff922b', origin: 'Joust (Williams, 1982)',
     help: 'Montas un pájaro que vuela a base de aletazos. <b>Toca la mitad izquierda</b> para aletear hacia la izquierda y la <b>derecha</b> para ir a la derecha. Cuando chocas con un enemigo <b>gana el que va más alto</b>. Los vencidos sueltan un huevo 🥚: recógelo antes de que eclosione. Cuidado con caer a la lava 🔥.',
     lives: 3, levels: null, levelLabel: 'Oleada',
     setup(g) {
@@ -125,11 +125,11 @@
       for (const eg of s.eggs) Arcade.emoji(ctx, '🥚', eg.x, eg.y - 10, 22, { rot: eg.t > 5 ? Math.sin(g.t * 30) * 0.3 : 0 });
       const rider = (r, em, col) => {
         ctx.fillStyle = col; ctx.beginPath(); ctx.ellipse(r.x, r.y - 4, 16, 5, 0, 0, 6.28); ctx.fill();
-        Arcade.emoji(ctx, em, r.x, r.y - 20, 36, { flip: r.face > 0 });
+        Arcade.emojiTo(ctx, em, r.x, r.y - 20, 36, r.face || 1, 0, { mode: 'flip' });
         if (!r.ground && Math.floor(g.t * 12) % 2) Arcade.emoji(ctx, '〰️', r.x, r.y - 30, 14, { alpha: 0.5 });
       };
-      for (const e of s.en) { if (e.spawn > 0) ctx.globalAlpha = 1 - e.spawn; rider(e, '🦅', TIER[e.tier].c); ctx.globalAlpha = 1; }
-      if (!(s.inv > 0 && Math.floor(g.t * 10) % 2)) rider(s.pl, '🦤', '#ffd43b');
+      for (const e of s.en) { if (e.spawn > 0) ctx.globalAlpha = 1 - e.spawn; rider(e, ['🦇', '👹', '👽'][e.tier] || '🦇', TIER[e.tier].c); ctx.globalAlpha = 1; }
+      if (!(s.inv > 0 && Math.floor(g.t * 10) % 2)) rider(s.pl, g.face(), '#ffd43b');
       if (!Arcade.tv) Arcade.emoji(ctx, '👆', W * 0.08, g.bot - 30, 26, { alpha: 0.25 }); if (!Arcade.tv) Arcade.emoji(ctx, '👆', W * 0.92, g.bot - 30, 26, { alpha: 0.25 });
     },
   });

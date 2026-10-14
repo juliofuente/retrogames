@@ -3,7 +3,7 @@
   const { ri, clamp } = Arcade;
   const COLS = 7, ROWS = 12;
   const PAL = ['#ff6b6b', '#ffd43b', '#69db7c', '#4dabf7', '#da77f2', '#ff922b'];
-  const FACE = ['😊', '😮', '😎', '🥰', '😜', '🤩'];
+  const FACE = ['🐠', '🦀', '🐙', '🐡', '🐳', '🪼'];
 
   function geo(g) {
     const s = g.s, Wa = g.W - 20, Ha = g.bot - g.top - 30;
@@ -71,6 +71,9 @@
   }
 
   Arcade.game({
+    /*THEME*/ tag: "El hada que revienta burbujas", deco: ["🫧", "😀", "🌟", "🫧", "✨", "🫧"], font: "fancy", bg: ["#12355b", "#081625"], music: {"mode": "lydian", "bpm": 112, "wave": "triangle", "style": "arcade", "root": 64}, voice: {"wave": "triangle", "mul": 1.2, "echo": 0.3}, ambient: {"e": ["🫧"], "n": 10, "vy": -26, "sway": 14, "alpha": 0.16, "size": [8, 18]},
+    /*EN*/ en: {"title": "Bubbles", "tag": "The fairy who pops bubbles", "help": "Bubbles hang from the ceiling and creep down. <b>Tap a column</b> to <b>pull</b> the bottom bubbles of the same colour and <b>tap another</b> to <b>throw</b> them up. If <b>3 or more match vertically</b>, they burst along with every touching bubble of that colour. Chain the bursts! Swipe ↓ to grab more of the same colour.", "tvHelp": "◀ ▶ pick a column · OK pull or throw · ▼ grab more of the same colour.", "dict": {"¡Cadena x": "Chain x"}},
+    /*TV*/ tvHelp: "◀ ▶ elegir columna · OK tirar o lanzar · ▼ coger más del mismo color.",
     id: 'burbujas', title: 'Burbujas', emoji: '🫧', color: '#4dabf7', origin: 'Magical Drop (Data East, 1995)',
     help: 'Las burbujas cuelgan del techo y bajan. <b>Toca una columna</b> para <b>tirar</b> de las burbujas de abajo del mismo color y <b>toca otra</b> para <b>lanzarlas</b> hacia arriba. Si quedan <b>3 o más iguales en vertical</b>, explotan junto con todas las del mismo color que estén pegadas. ¡Encadena explosiones! Desliza ↓ para coger más del mismo color.',
     lives: 0, levels: null,
@@ -101,6 +104,7 @@
       const bg = ctx.createLinearGradient(0, 0, 0, H);
       bg.addColorStop(0, '#12355b'); bg.addColorStop(1, '#081625');
       ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      g.scenery(['🐚','🪸','🐠'], 6, { alpha: 0.15, bob: 3 }); /*SC*/
       if (!s.cols.length) return;
       const cs = s.cs;
       for (let c = 0; c < COLS; c++) { ctx.fillStyle = c === s.pc ? 'rgba(77,171,247,.12)' : 'rgba(255,255,255,.03)'; ctx.fillRect(s.ox + c * cs + 1, s.oy, cs - 2, cs * ROWS); }
@@ -117,7 +121,7 @@
       };
       s.cols.forEach((col, c) => col.forEach((o, r) => ball(s.ox + (c + 0.5) * cs, s.oy + (r + 0.5) * cs, o.v, 1 + o.pop * 0.2)));
       const px = s.ox + (s.pc + 0.5) * cs, py = s.oy + cs * (ROWS + 0.95);
-      Arcade.emoji(ctx, '🧚', px, py, cs * 0.9);
+      Arcade.emoji(ctx, g.face(), px, py, cs * 0.8); Arcade.emoji(ctx, '🪄', px + cs * 0.36, py - cs * 0.2, cs * 0.36);
       if (s.hand) { ball(px, py - cs * 0.85, s.hand.v, 0.7); Arcade.txt(ctx, '×' + s.hand.n, px + cs * 0.42, py - cs * 0.95, cs * 0.3, '#fff', 'left', 900, 'rgba(0,0,0,.6)'); }
     },
   });

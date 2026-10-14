@@ -78,7 +78,7 @@
       const sp = s.cs * 5.5, r = s.cs * 0.3, steps = 4;
       for (let i = 0; i < steps; i++) { s.b.x += dx * sp * dt / steps; s.b.y += dy * sp * dt / steps; collide(s, s.b, r); }
       s.b.x = clamp(s.b.x, s.ox + r, s.ox + s.mc * s.cs - r); s.b.y = clamp(s.b.y, s.oy + r, s.oy + s.mr * s.cs - r);
-      if (dx || dy) { s.face = dx > 0.1 ? 1 : dx < -0.1 ? -1 : s.face; s.walk = (s.walk || 0) + dt * 12; }
+      if (dx || dy) { s.face = dx > 0.1 ? 1 : dx < -0.1 ? -1 : s.face; s.walk = (s.walk || 0) + dt * 12; s.mv = [dx, dy]; }
       const cx = Math.floor((s.b.x - s.ox) / s.cs), cy = Math.floor((s.b.y - s.oy) / s.cs);
       s.stars = s.stars.filter(([x, y]) => { if (x === cx && y === cy) { Arcade.sfx.coin(); g.addScore(20 * g.lv, s.b.x, s.b.y - 20); return false; } return true; });
       if (cx === s.end[0] && cy === s.end[1]) {
@@ -104,7 +104,7 @@
       ctx.stroke(); ctx.lineCap = 'butt';
       for (const [x, y] of s.stars) Arcade.emoji(ctx, '⭐', s.ox + (x + 0.5) * cs, s.oy + (y + 0.5) * cs, cs * 0.5, { rot: Math.sin(g.rt * 3 + x) * 0.3 });
       Arcade.emoji(ctx, s.goal, s.ox + (s.end[0] + 0.5) * cs, s.oy + (s.end[1] + 0.5) * cs + Math.sin(g.rt * 4) * 2, cs * 0.7);
-      Arcade.emoji(ctx, s.hero, s.b.x, s.b.y - Math.abs(Math.sin(s.walk || 0)) * cs * 0.06, cs * 0.66, { flip: s.face > 0 });
+      Arcade.emojiTo(ctx, g.face(), s.b.x, s.b.y - Math.abs(Math.sin(s.walk || 0)) * cs * 0.06, cs * 0.64, s.mv ? s.mv[0] : 0, s.mv ? s.mv[1] : 1);
       if (s.drag && s.dir) { ctx.strokeStyle = 'rgba(255,255,255,.35)'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(s.drag.x, s.drag.y, 40, 0, 6.3); ctx.stroke(); ctx.fillStyle = 'rgba(255,255,255,.5)'; ctx.beginPath(); ctx.arc(s.drag.x + s.dir[0] * 40 * s.mag, s.drag.y + s.dir[1] * 40 * s.mag, 14, 0, 6.3); ctx.fill(); }
       Arcade.txt(ctx, 'Tiempo: ' + s.t.toFixed(1) + ' s', W / 2, g.top + 26, 15, s.t <= s.par ? '#d0bfff' : '#ffa8a8', 'center', 900);
     },

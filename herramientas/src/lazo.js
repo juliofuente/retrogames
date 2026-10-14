@@ -33,15 +33,14 @@
     const s = g.s, side = ri(0, 3);
     const x = side === 0 ? s.x0 + 10 : side === 1 ? s.x1 - 10 : rand(s.x0, s.x1);
     const y = side === 2 ? s.y0 + 10 : side === 3 ? s.y1 - 10 : rand(s.y0, s.y1);
-    g.ring(x, y, { color: '#ff6b6b', r: 46, t: 0.6 });
-    s.en.push({ x, y, a: Math.random() * 6.28, v: 45 + g.level * 7, e: Math.random() < 0.5 ? '🐞' : '🕷️', k: 0 });
+    s.en.push({ x, y, a: Math.random() * 6.28, v: 45 + g.level * 7, e: Arcade.pick(['🕷️', '🦂', '🦠', '🐍']), k: 0 });
   }
   function close(g) {
     const s = g.s, poly = loop(s), area = polyArea(poly);
     if (area < 1200) { reset(s); return; }
     let n = 0, pts = 0, cx = 0, cy = 0;
     s.items = s.items.filter(o => {
-      if (inPoly(o.x, o.y, poly)) { n++; pts += o.v; cx += o.x; cy += o.y; g.burst(o.x, o.y, { n: 8, color: ['#ffd166', '#fff', '#ff8fab'], speed: 160, size: 3 }); g.burst(o.x, o.y, { n: 2, emoji: o.e, size: 22, speed: 120, up: 120 }); return false; }
+      if (inPoly(o.x, o.y, poly)) { n++; pts += o.v; cx += o.x; cy += o.y; g.burst(o.x, o.y, { n: 8, color: ['#ffd166', '#fff', '#ff8fab'], speed: 160, size: 3 }); return false; }
       return true;
     });
     let caught = 0;
@@ -50,9 +49,8 @@
       const total = pts * Math.max(1, n) + caught * 150;
       const fx = n ? cx / n : (s.A.x + s.B.x) / 2, fy = n ? cy / n : (s.A.y + s.B.y) / 2;
       g.addScore(total, fx, fy);
-      if (n >= 3) { g.float('¡x' + n + '!', fx, fy - 30, '#ff8fab', 30); g.flash('#ffd166', 0.2); }
-      g.ring(fx, fy, { color: '#ffd166', r: 90, w: 6 });
-      Arcade.sfx.combo(n); Arcade.buzz(30);
+      if (n >= 3) g.float('¡x' + n + '!', fx, fy - 30, '#ff8fab', 28);
+      Arcade.sfx.coin(); Arcade.buzz(30);
     } else Arcade.sfx.tick();
     s.flash = 0.35; s.flashPoly = poly;
     reset(s);
@@ -66,12 +64,14 @@
   }
 
   Arcade.game({
+    /*THEME*/ tag: "Atrapa setas con una cuerda encantada", deco: ["🍄", "🌼", "💎", "🕷️", "🍄", "🕷️"], font: "comic", bg: ["#1e5a3c", "#0b2116"], music: {"mode": "major", "bpm": 118, "wave": "square", "style": "arcade", "root": 60}, voice: {"wave": "triangle", "mul": 1.1, "echo": 0.2}, ambient: {"e": ["🍃", "🍂"], "n": 10, "vy": 22, "sway": 30, "spin": 1, "alpha": 0.25},
+    /*EN*/ en: {"title": "Lasso", "tag": "Catch mushrooms with an enchanted rope", "help": "Drag both ends of the rope 🔴🔵 with <b>two fingers</b> (or one at a time). Surround mushrooms 🍄 and <b>bring both ends together</b> to close the lasso. The more you catch at once, the more points. Bugs 🕷️ <b>cut the rope</b>, and if they touch an end you lose a life. You can also trap them inside the lasso!", "dict": {"¡Más bichos!": "More bugs!"}},
+    /*TV*/ tv: false,
     id: 'lazo', title: 'Lazo', emoji: '🪢', color: '#ffb703', origin: 'Libble Rabble (Namco, 1983)',
-    help: 'Arrastra los dos extremos de la cuerda 🔴🔵 con <b>dos dedos</b> (o uno cada vez). Rodea setas 🍄 y <b>junta los dos extremos</b> para cerrar el lazo. Cuantas más atrapes a la vez, más puntos. Los bichos 🐞 <b>cortan la cuerda</b> y si tocan un extremo pierdes una vida. ¡También puedes atraparlos dentro del lazo!',
+    help: 'Arrastra los dos extremos de la cuerda 🔴🔵 con <b>dos dedos</b> (o uno cada vez). Rodea setas 🍄 y <b>junta los dos extremos</b> para cerrar el lazo. Cuantas más atrapes a la vez, más puntos. Los bichos 🕷️ <b>cortan la cuerda</b> y si tocan un extremo pierdes una vida. ¡También puedes atraparlos dentro del lazo!',
     lives: 3, levels: null,
-    theme: { font: 'Lilita One', ambient: 'fireflies', music: { tempo: 118, scale: 'major', root: 262, wave: 'triangle', lead: 'square' }, sfx: { wave: 'triangle', pitch: 1.1 } },
     setup(g) {
-      g.s = { deco: Array.from({ length: 22 }, () => ({ u: Math.random(), v: Math.random(), e: pick(['🌱', '🌿', '🍀', '🌼', '🌾', '🪨']), s: rand(14, 24) })), A: { x: 0, y: 0, pid: null, ox: 0, oy: 0 }, B: { x: 0, y: 0, pid: null, ox: 0, oy: 0 }, items: [], en: [], inv: 0, itemT: 0, lvT: 0, enT: 0, flash: 0 };
+      g.s = { A: { x: 0, y: 0, pid: null, ox: 0, oy: 0 }, B: { x: 0, y: 0, pid: null, ox: 0, oy: 0 }, items: [], en: [], inv: 0, itemT: 0, lvT: 0, enT: 0, flash: 0 };
       const s = g.s; bounds(g);
       s.A.x = s.x0 + (s.x1 - s.x0) * 0.25; s.B.x = s.x0 + (s.x1 - s.x0) * 0.75;
       s.A.y = s.B.y = s.y1 - 70;
@@ -110,7 +110,7 @@
       s.inv = Math.max(0, s.inv - dt); s.flash = Math.max(0, s.flash - dt);
       // dificultad progresiva
       s.lvT += dt;
-      if (s.lvT > 30) { s.lvT = 0; g.level++; g.hud(); g.message('Nivel ' + g.level, 1.2, '¡Más bichos!'); Arcade.sfx.level(); g.ring(g.W / 2, g.H / 2, { r: g.W * 0.7, color: '#ffd166', w: 6 }); }
+      if (s.lvT > 30) { s.lvT = 0; g.level++; g.hud(); g.message('Nivel ' + g.level, 1.2, '¡Más bichos!'); Arcade.sfx.up(); }
       const want = Math.min(10, 1 + g.level);
       s.enT -= dt;
       if (s.en.length < want && s.enT <= 0) { spawnEnemy(g); s.enT = 2.5; }
@@ -138,12 +138,13 @@
     },
     draw(g, ctx) {
       const s = g.s, W = g.W, H = g.H;
-      Arcade.bg(ctx, W, H, '#2f7a4a', '#1d5a36', '#0e2f1d');
-      ctx.fillStyle = 'rgba(255,255,255,.04)';
-      for (let y = 20; y < H; y += 34) for (let x = (y / 34) % 2 ? 17 : 0; x < W; x += 34) { ctx.beginPath(); ctx.ellipse(x, y, 5, 2, 0.6, 0, 6.28); ctx.fill(); }
+      const bg = ctx.createRadialGradient(W / 2, H * 0.4, 20, W / 2, H / 2, Math.max(W, H));
+      bg.addColorStop(0, '#1e5a3c'); bg.addColorStop(1, '#0b2116');
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = 'rgba(255,255,255,.05)';
+      for (let y = 20; y < H; y += 34) for (let x = (y / 34) % 2 ? 17 : 0; x < W; x += 34) { ctx.beginPath(); ctx.arc(x, y, 2, 0, 6.28); ctx.fill(); }
+      g.scenery(['🌿','🌱','🌾','🍀','🌼'], 22, { alpha: 0.3, size: [14, 26] }); /*SC*/
       if (!s.A) return;
-      for (const d of s.deco) Arcade.emoji(ctx, d.e, s.x0 + d.u * (s.x1 - s.x0), s.y0 + d.v * (s.y1 - s.y0), d.s, { alpha: 0.35, rot: Math.sin(g.t + d.u * 9) * 0.15 });
-      Arcade.amb(g, ctx);
       ctx.strokeStyle = 'rgba(255,255,255,.12)'; ctx.lineWidth = 2; ctx.setLineDash([8, 8]);
       Arcade.rr(ctx, s.x0 - 8, s.y0 - 8, s.x1 - s.x0 + 16, s.y1 - s.y0 + 16, 18); ctx.stroke(); ctx.setLineDash([]);
 
@@ -160,8 +161,6 @@
       }
       for (const o of s.items) {
         const b = Math.sin(g.t * 3 + o.ph) * 2;
-        ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.beginPath(); ctx.ellipse(o.x, o.y + 14, 11 * o.k, 4 * o.k, 0, 0, 6.28); ctx.fill();
-        if (o.v >= 100) Arcade.glow(ctx, o.x, o.y, 30, 'rgba(116,192,252,.6)', 0.5 + Math.sin(g.t * 5) * 0.3);
         A_e(ctx, o.e, o.x, o.y + b, 30 * (0.4 + 0.6 * o.k));
       }
       // cierre punteado
@@ -172,10 +171,9 @@
       ctx.lineJoin = ctx.lineCap = 'round';
       ctx.beginPath(); poly.forEach((p, i) => i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y));
       ctx.strokeStyle = 'rgba(0,0,0,.35)'; ctx.lineWidth = 9; ctx.stroke();
-      if (s.armed && d < 140) { ctx.shadowColor = '#ffd166'; ctx.shadowBlur = 16 * (1 - d / 140); }
-      ctx.strokeStyle = s.armed && d < 140 ? '#fff3bf' : '#ffd166'; ctx.lineWidth = 5; ctx.stroke(); ctx.shadowBlur = 0;
+      ctx.strokeStyle = '#ffd166'; ctx.lineWidth = 5; ctx.stroke();
       ctx.strokeStyle = 'rgba(255,255,255,.5)'; ctx.lineWidth = 1.5; ctx.stroke();
-      for (const e of s.en) A_e(ctx, e.e, e.x, e.y, 30 * e.k, { rot: e.a + Math.PI / 2 });
+      for (const e of s.en) Arcade.emojiTo(ctx, e.e, e.x, e.y, 30 * e.k, Math.cos(e.a), Math.sin(e.a));
       // extremos
       const blink = s.inv > 0 && Math.floor(g.t * 10) % 2;
       [[s.A, '#ff5d73'], [s.B, '#4dabf7']].forEach(([e, c]) => {

@@ -25,13 +25,13 @@
   function hitFoe(g, f, d) { const s = g.s; f.hpNow -= d; f.hit = 0.12; if (f.hpNow <= 0 && !f.dead) { f.dead = true; s.kills++; s.gems.push({ x: f.x, y: f.y, v: f.xp }); g.addScore(f.xp * g.lv); if (Math.random() < 0.01) s.gems.push({ x: f.x + 10, y: f.y, v: 0, heal: true }); } }
 
   Arcade.game({
-    /*THEME*/ home: 'indexpro.html', tag: 'Muévete, el resto es automático', deco: ['🧙', '🦇', '🧟', '🔪', '🔥', '💎'], font: 'serif', bg: ['#2e1f42', '#1a1226'],
+    /*THEME*/ home: 'indexpro.html', tag: 'Muévete, el resto es automático', deco: ['😀', '🦇', '🧟', '🔪', '🔥', '💎'], font: 'serif', bg: ['#2e1f42', '#1a1226'],
     music: { mode: 'phryg', bpm: 132, wave: 'sawtooth', style: 'arcade', root: 52 }, voice: { wave: 'square', mul: 1, echo: 0.25 },
-    en: { title: 'Survivors', tag: 'Just move, the rest is automatic', help: '<b>Drag</b> your finger anywhere to move the wizard; your weapons fire <b>on their own</b> at the nearest monster. Pick up the 💎 gems they drop to level up and <b>choose an upgrade</b>: knives, garlic aura, fireballs, lightning, speed… Survive until the clock reaches zero. Every level the hordes are bigger.', tvHelp: 'Arrows to move · D-pad and OK to choose upgrades.', dict: { 'Elige mejora': 'Choose an upgrade', 'Nv ': 'Lv ' } },
+    en: { title: 'Survivors', tag: 'Just move, the rest is automatic', help: '<b>Drag</b> your finger anywhere to move the hero; your weapons fire <b>on their own</b> at the nearest monster. Pick up the 💎 gems they drop to level up and <b>choose an upgrade</b>: knives, garlic aura, fireballs, lightning, speed… Survive until the clock reaches zero. Every level the hordes are bigger.', tvHelp: 'Arrows to move · D-pad and OK to choose upgrades.', dict: { 'Elige mejora': 'Choose an upgrade', 'Nv ': 'Lv ' } },
     tvHelp: 'Flechas para moverte · cruceta y OK para elegir mejoras.',
     tv: { mode: 'tap', targets: (g) => (g.s.choice ? g.s.choice : []) },
-    id: 'supervivientes', title: 'Supervivientes', emoji: '🧙', color: '#b197fc', origin: 'Vampire Survivors / BoxHead / Survival Horror',
-    help: '<b>Arrastra</b> el dedo en cualquier sitio para mover al mago; tus armas disparan <b>solas</b> al monstruo más cercano. Recoge las gemas 💎 que sueltan para subir de nivel y <b>elige una mejora</b>: cuchillos, aura de ajo, bolas de fuego, rayos, velocidad… Aguanta hasta que el reloj llegue a cero. En cada nivel las hordas son mayores.',
+    id: 'supervivientes', title: 'Supervivientes', emoji: '😀', color: '#b197fc', origin: 'Vampire Survivors / BoxHead / Survival Horror',
+    help: '<b>Arrastra</b> el dedo en cualquier sitio para mover al héroe; tus armas disparan <b>solas</b> al monstruo más cercano. Recoge las gemas 💎 que sueltan para subir de nivel y <b>elige una mejora</b>: cuchillos, aura de ajo, bolas de fuego, rayos, velocidad… Aguanta hasta que el reloj llegue a cero. En cada nivel las hordas son mayores.',
     lives: 3, levels: 0, cap: 25,
     setup(g) {
       const L = g.lv; g.s = { px: 0, py: 0, foes: [], gems: [], shots: [], fx: [], hp: 100, maxhp: 100, xp: 0, need: 4, lvl: 1, w: { knife: 1 }, t: 0, dur: 60 + Math.min(L, 25) * 4, spawnT: 0, kills: 0, cds: {}, face: 1 };
@@ -89,11 +89,11 @@
       for (let i = -6; i < 12; i++) for (let j = -6; j < 12; j++) { const wx = Math.floor((s.px - W) / 200) * 200 + i * 200, wy = Math.floor((s.py - H) / 200) * 200 + j * 200, hsh = Math.abs(Math.sin(wx * 12.9898 + wy * 78.233)) * 43758 % 1; if (hsh < 0.25) Arcade.emoji(ctx, hsh < 0.1 ? '🪦' : hsh < 0.18 ? '🌿' : '🕯️', wx + ox, wy + oy, 22, { alpha: 0.35 }); }
       if (s.w.aura) { const r = 50 + s.w.aura * 12; ctx.fillStyle = 'rgba(200,255,200,.08)'; ctx.beginPath(); ctx.arc(s.cx, s.cy, r, 0, 6.3); ctx.fill(); ctx.strokeStyle = 'rgba(200,255,200,.25)'; ctx.stroke(); }
       for (const gm of s.gems) Arcade.emoji(ctx, gm.heal ? '🍗' : gm.v >= 3 ? '💎' : '🔹', gm.x + ox, gm.y + oy, gm.heal ? 20 : 12);
-      for (const f of s.foes) { Arcade.emoji(ctx, f.e, f.x + ox, f.y + oy, f.r * 2.2 * (f.boss ? 1.8 : 1), { flip: f.x < s.px, alpha: f.hit > 0 ? 0.5 : 1 }); if (f.boss) { ctx.fillStyle = '#e03131'; ctx.fillRect(f.x + ox - 30, f.y + oy - 44, 60 * f.hpNow / f.max, 5); } }
+      for (const f of s.foes) { Arcade.emojiTo(ctx, f.e, f.x + ox, f.y + oy, f.r * 2.2 * (f.boss ? 1.8 : 1), s.px - f.x, s.py - f.y, { mode: 'flip', alpha: f.hit > 0 ? 0.5 : 1 }); if (f.boss) { ctx.fillStyle = '#e03131'; ctx.fillRect(f.x + ox - 30, f.y + oy - 44, 60 * f.hpNow / f.max, 5); } }
       for (const sh of s.shots) Arcade.emoji(ctx, sh.e, sh.x + ox, sh.y + oy, 18, { rot: Math.atan2(sh.vy, sh.vx) + Math.PI * 0.75 });
       if (s.w.orb) for (let i = 0; i < s.w.orb; i++) { const a = (s.orbA || 0) + i * 6.283 / s.w.orb; Arcade.emoji(ctx, '🔥', s.cx + Math.cos(a) * 70, s.cy + Math.sin(a) * 70, 24); }
       for (const f of s.fx) { ctx.strokeStyle = `rgba(255,255,150,${f.t * 4})`; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(f.x + ox, 0); ctx.lineTo(f.x + ox + 10, (f.y + oy) / 2); ctx.lineTo(f.x + ox - 5, f.y + oy); ctx.stroke(); }
-      Arcade.emoji(ctx, '🧙', s.cx, s.cy - (s.moving ? Math.abs(Math.sin(g.rt * 10)) * 3 : 0), 34, { flip: s.face > 0, alpha: s.hurt ? 0.6 : 1 });
+      Arcade.emojiTo(ctx, s.hurt ? '😱' : g.face(), s.cx, s.cy - (s.moving ? Math.abs(Math.sin(g.rt * 10)) * 3 : 0), 32, s.face > 0 ? 1 : -1, 0, { mode: 'flip', alpha: s.hurt ? 0.6 : 1 });
       ctx.fillStyle = 'rgba(0,0,0,.5)'; ctx.fillRect(s.cx - 20, s.cy + 22, 40, 5); ctx.fillStyle = '#e03131'; ctx.fillRect(s.cx - 20, s.cy + 22, 40 * Math.max(0, s.hp / s.maxhp), 5);
       if (s.joy) { ctx.strokeStyle = 'rgba(255,255,255,.3)'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(s.joy.x, s.joy.y, 50, 0, 6.3); ctx.stroke(); ctx.fillStyle = 'rgba(255,255,255,.4)'; ctx.beginPath(); ctx.arc(s.joy.x + s.joy.dx * 50, s.joy.y + s.joy.dy * 50, 18, 0, 6.3); ctx.fill(); }
       // HUD

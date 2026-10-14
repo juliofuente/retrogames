@@ -6,7 +6,7 @@
     { k: 'cannon', e: '💣', cost: 90, rng: 2.2, rate: 1.4, dmg: 26, splash: 1.1, col: '#ff922b' },
     { k: 'ice', e: '❄️', cost: 70, rng: 2.2, rate: 1.0, dmg: 4, slow: 1.6, col: '#74c0fc' },
   ];
-  const EN = [{ e: '🐀', hp: 30, sp: 1.6, gold: 5 }, { e: '🐗', hp: 70, sp: 1.1, gold: 9 }, { e: '🦇', hp: 25, sp: 2.4, gold: 7 }, { e: '🐻', hp: 180, sp: 0.8, gold: 20 }, { e: '🐉', hp: 600, sp: 0.6, gold: 60 }];
+  const EN = [{ e: '🐀', hp: 30, sp: 1.6, gold: 5 }, { e: '🧟', hp: 70, sp: 1.1, gold: 9 }, { e: '🦇', hp: 25, sp: 2.4, gold: 7 }, { e: '👹', hp: 180, sp: 0.8, gold: 20 }, { e: '🐉', hp: 600, sp: 0.6, gold: 60 }];
 
   function makePath(C, R) {
     for (let at = 0; at < 200; at++) {
@@ -104,7 +104,7 @@
         Arcade.emoji(ctx, TW[t.k].e, x, y, cs * 0.55 * (1 + t.pop * 0.3), { rot: t.k === 0 ? t.ang + Math.PI / 4 : 0 });
         for (let k = 1; k < t.lv; k++) Arcade.emoji(ctx, '⭐', x - cs * 0.3 + (k - 1) * cs * 0.2, y - cs * 0.38, cs * 0.2);
       }
-      for (const e of s.ens) { const [x, y] = pos(s, e.d), px = s.ox + x * cs, py = s.oy + y * cs; Arcade.emoji(ctx, e.e, px, py - Math.abs(Math.sin(g.rt * 8 + e.d)) * 3, cs * (e.e === '🐉' ? 0.95 : 0.7), { flip: true, alpha: e.slow ? 0.75 : 1 }); ctx.fillStyle = 'rgba(0,0,0,.5)'; ctx.fillRect(px - cs * 0.3, py - cs * 0.45, cs * 0.6, 3); ctx.fillStyle = '#51cf66'; ctx.fillRect(px - cs * 0.3, py - cs * 0.45, cs * 0.6 * Math.max(0, e.hpNow / e.max), 3); }
+      for (const e of s.ens) { const [x, y] = pos(s, e.d), px = s.ox + x * cs, py = s.oy + y * cs; const [x2, y2] = pos(s, e.d + 0.05); Arcade.emojiTo(ctx, e.e, px, py - Math.abs(Math.sin(g.rt * 8 + e.d)) * 3, cs * (e.e === '🐉' ? 0.95 : 0.7), x2 - x, y2 - y, { mode: 'flip', alpha: e.slow ? 0.75 : 1 }); ctx.fillStyle = 'rgba(0,0,0,.5)'; ctx.fillRect(px - cs * 0.3, py - cs * 0.45, cs * 0.6, 3); ctx.fillStyle = '#51cf66'; ctx.fillRect(px - cs * 0.3, py - cs * 0.45, cs * 0.6 * Math.max(0, e.hpNow / e.max), 3); }
       for (const b of s.bolts) { const x = s.ox + b.x * cs, y = s.oy + b.y * cs; ctx.fillStyle = TW[b.k].col; ctx.beginPath(); ctx.arc(x, y, b.k === 1 ? 5 : 3, 0, 6.3); ctx.fill(); }
       for (const f of s.fx) { ctx.fillStyle = `rgba(255,146,43,${f.t * 2})`; ctx.beginPath(); ctx.arc(s.ox + f.x * cs, s.oy + f.y * cs, cs * TW[1].splash * (1.2 - f.t), 0, 6.3); ctx.fill(); }
       if (s.menu) for (const b of s.menu.btns) { ctx.fillStyle = b.ok ? 'rgba(255,255,255,.95)' : 'rgba(200,200,200,.8)'; Arcade.rr(ctx, b.x, b.y, b.w, b.h, 10); ctx.fill(); Arcade.emoji(ctx, b.e, b.x + b.w / 2, b.y + b.h * 0.4, b.w * 0.42, { alpha: b.ok ? 1 : 0.5 }); Arcade.txt(ctx, '🪙' + b.cost, b.x + b.w / 2, b.y + b.h - 10, 12, '#5c3d1e', 'center', 900); }

@@ -4,7 +4,7 @@
   const D = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
   const OPP = { up: 'down', down: 'up', left: 'right', right: 'left' };
   const ROT = { up: 0, right: Math.PI / 2, down: Math.PI, left: -Math.PI / 2 };
-  const BUGS = ['🪲', '🐜', '🦗', '🦂', '🕷️'];
+  const BUGS = ['🕷️', '🦂', '🐍', '🦠', '🐀', '👻'];
 
   function geo(g) {
     const s = g.s, Wa = g.W - 20, Ha = g.bot - g.top - 44;
@@ -62,7 +62,7 @@
   function tryStart(g, m, d) {
     const s = g.s, p = pass(s, m.c, m.r, d);
     if (!p) return false;
-    if (p === 2) { const gt = s.gmap[edgeKey(m.c, m.r, d)]; gt.o = gt.o === 'v' ? 'h' : 'v'; gt.spin = 1; Arcade.tone(420, 0.05, 'triangle', 0.08); g.ring(s.ox + gt.i * s.cs, s.oy + gt.j * s.cs, { color: '#51cf66', r: s.cs * 1.2, t: 0.3, w: 3 }); }
+    if (p === 2) { const gt = s.gmap[edgeKey(m.c, m.r, d)]; gt.o = gt.o === 'v' ? 'h' : 'v'; gt.spin = 1; Arcade.tone(420, 0.05, 'triangle', 0.08); }
     m.dir = d; m.moving = true; return true;
   }
   const pos = (s, m) => ({ x: s.ox + (m.c + 0.5 + (m.moving ? D[m.dir][0] * m.p : 0)) * s.cs, y: s.oy + (m.r + 0.5 + (m.moving ? D[m.dir][1] * m.p : 0)) * s.cs });
@@ -72,8 +72,8 @@
     const k = m.c + ',' + m.r;
     if (s.skulls.has(k) && s.inv <= 0) { die(g); return; }
     if (s.dots.has(k)) { s.dots.delete(k); g.addScore(10 * s.mult); if (s.dots.size % 3 === 0) Arcade.sfx.tick(); }
-    if (s.hearts.has(k)) { s.hearts.delete(k); s.mult = s.mult === 1 ? 2 : s.mult === 2 ? 3 : 5; g.addScore(100, pos(s, m).x, pos(s, m).y - 16); g.float('x' + s.mult, pos(s, m).x, pos(s, m).y - 40, '#ff8fab', 26); Arcade.sfx.combo(s.mult * 2); g.ring(pos(s, m).x, pos(s, m).y, { color: '#ff8fab', r: s.cs * 2 }); g.burst(pos(s, m).x, pos(s, m).y, { n: 8, emoji: '💖', size: 14, speed: 150 }); }
-    if (!s.dots.size) { g.addScore(500 * g.level, g.W / 2, g.H / 2); g.win(); return; }
+    if (s.hearts.has(k)) { s.hearts.delete(k); s.mult = s.mult === 1 ? 2 : s.mult === 2 ? 3 : 5; g.addScore(100, pos(s, m).x, pos(s, m).y - 16); g.float('x' + s.mult, pos(s, m).x, pos(s, m).y - 40, '#ff8fab', 24); Arcade.sfx.coin(); }
+    if (!s.dots.size) { g.addScore(500 * g.lv, g.W / 2, g.H / 2); g.win(); return; }
     if (m.q && tryStart(g, m, m.q)) m.q = null;
     else if (!tryStart(g, m, m.dir)) m.moving = false;
   }
@@ -90,7 +90,7 @@
   function placeActors(g) {
     const s = g.s;
     s.pl = { c: Math.floor(s.C / 2), r: s.R - 1, dir: 'up', p: 0, moving: false, q: null };
-    s.en = []; s.relT = 2.5; s.toRelease = Math.min(5, 2 + Math.floor(g.level / 2));
+    s.en = []; s.relT = 2.5; s.toRelease = Math.min(5, 2 + Math.floor(g.lv / 2));
   }
   function die(g) {
     const s = g.s, p = pos(s, s.pl);
@@ -99,10 +99,12 @@
   }
 
   Arcade.game({
+    /*THEME*/ tag: "El jardín de los torniquetes", deco: ["🌸", "💖", "🪲", "🌼", "🐜", "🌷"], font: "comic", bg: ["#1d3a1e", "#0f1f10"], music: {"mode": "major", "bpm": 120, "wave": "square", "style": "arcade", "root": 62}, voice: {"wave": "square", "mul": 1.1, "echo": 0.18}, ambient: {"e": ["🌸"], "n": 8, "vy": 20, "sway": 28, "spin": 1, "alpha": 0.18},
+    /*EN*/ en: {"title": "Ladybug", "tag": "The garden of turnstiles", "help": "<b>Swipe</b> to move through the maze and eat every dot. The green bars are <b>turnstiles</b>: you can go through them and they <b>spin</b>, changing the maze. Bugs can't pass them, so use them to trap bugs or cut them off. Hearts 💖 multiply your points. Avoid the skulls 💀.", "tvHelp": "D-pad to move through the maze.", "dict": {}},
+    /*TV*/ tvHelp: "Cruceta para moverte por el laberinto.",
     id: 'mariquita', title: 'Mariquita', emoji: '🐞', color: '#ff6b6b', origin: 'Lady Bug (Universal, 1981)',
     help: '<b>Desliza</b> para moverte por el laberinto y cómete todos los puntos. Las barras verdes son <b>torniquetes</b>: tú puedes atravesarlos y al hacerlo <b>giran</b>, cambiando el laberinto. Los bichos no pueden atravesarlos, así que úsalos para encerrarlos o cortarles el paso. Los corazones 💖 multiplican los puntos. Evita las calaveras 💀.',
-    lives: 3, levels: Infinity,
-    theme: { font: 'Sniglet', ambient: 'petals', music: { tempo: 126, scale: 'major', root: 294, wave: 'triangle', lead: 'square' }, sfx: { wave: 'triangle', pitch: 1.2 } },
+    lives: 3, levels: 0, cap: 16,
     setup(g) {
       g.s = { inv: 1.5, mult: 1 };
       const s = g.s;
@@ -116,7 +118,7 @@
       const startK = s.pl.c + ',' + s.pl.r;
       const free = cells.filter(k => k !== startK);
       for (let i = 0; i < 3; i++) s.hearts.add(free.pop());
-      const nsk = g.level >= 2 ? Math.min(5, g.level - 1) : 0;
+      const nsk = g.lv >= 2 ? Math.min(5, g.lv - 1) : 0;
       for (let i = 0; i < nsk; i++) s.skulls.add(free.pop());
       for (const k of cells) if (!s.hearts.has(k) && !s.skulls.has(k)) s.dots.add(k);
       s.dots.delete(startK);
@@ -137,8 +139,8 @@
       else if (m.q && tryStart(g, m, m.q)) m.q = null;
       s.relT -= dt;
       if (s.toRelease > 0 && s.relT <= 0) {
-        s.relT = Math.max(3, 7 - g.level * 0.4); s.toRelease--;
-        const e = { c: s.nest.c, r: s.nest.r, dir: 'up', p: 0, moving: false, e: BUGS[s.en.length % BUGS.length], sp: 2.4 + Math.min(g.level, 12) * 0.14 + Math.random() * 0.3 };
+        s.relT = Math.max(3, 7 - g.lv * 0.4); s.toRelease--;
+        const e = { c: s.nest.c, r: s.nest.r, dir: 'up', p: 0, moving: false, e: BUGS[s.en.length % BUGS.length], sp: 2.4 + g.lv * 0.14 + Math.random() * 0.3 };
         s.en.push(e); arriveEnemy(g, Object.assign(e, { c: e.c - D[e.dir][0], r: e.r - D[e.dir][1] }));
         Arcade.tone(200, 0.15, 'square', 0.05, 200);
       }
@@ -152,9 +154,7 @@
     },
     draw(g, ctx) {
       const s = g.s, W = g.W, H = g.H;
-      Arcade.bg(ctx, W, H, '#2d6a4f', '#1b4332', '#081c15');
-      for (let x = 12, i = 0; x < W; x += 38, i++) { Arcade.emoji(ctx, ['🌷', '🌻', '🌼', '🌹'][i % 4], x, H - 18, 24, { alpha: 0.6, rot: Math.sin(g.t + i) * 0.1 }); Arcade.emoji(ctx, ['🌿', '🍀'][i % 2], x + 19, g.top + 14, 20, { alpha: 0.4 }); }
-      Arcade.amb(g, ctx);
+      ctx.fillStyle = '#0f1f10'; ctx.fillRect(0, 0, W, H);
       if (!s.E) return;
       const cs = s.cs, ox = s.ox, oy = s.oy;
       ctx.fillStyle = '#1d3a1e'; ctx.fillRect(ox, oy, cs * s.C, cs * s.R);
@@ -181,9 +181,9 @@
         ctx.beginPath(); ctx.moveTo(x - Math.cos(a) * cs, y - Math.sin(a) * cs); ctx.lineTo(x + Math.cos(a) * cs, y + Math.sin(a) * cs); ctx.stroke();
         ctx.fillStyle = '#2b8a3e'; ctx.beginPath(); ctx.arc(x, y, cs * 0.16, 0, 6.28); ctx.fill();
       }
-      for (const e of s.en) { const p = pos(s, e); Arcade.emoji(ctx, e.e, p.x, p.y, cs * 0.66, { rot: ROT[e.dir] }); }
+      for (const e of s.en) { const p = pos(s, e); Arcade.emojiTo(ctx, e.e, p.x, p.y, cs * 0.66, D[e.dir][0], D[e.dir][1]); }
       const p = pos(s, s.pl);
-      if (!(s.inv > 0 && Math.floor(g.t * 10) % 2)) Arcade.emoji(ctx, '🐞', p.x, p.y, cs * 0.72, { rot: ROT[s.pl.dir] });
+      if (!(s.inv > 0 && Math.floor(g.t * 10) % 2)) Arcade.emojiTo(ctx, g.face(), p.x, p.y, cs * 0.7, D[s.pl.dir][0], D[s.pl.dir][1]);
       Arcade.txt(ctx, (s.mult > 1 ? '💖 x' + s.mult + '   ' : '') + '⚪ ' + s.dots.size, W / 2, oy - 18, 15, '#ffd6e0', 'center', 800);
     },
   });

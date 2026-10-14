@@ -140,7 +140,7 @@
           let hx = cx, hy = cy;
           if (s.walk) { hx -= s.walk.dx * cs * s.walk.t; hy -= s.walk.dy * cs * s.walk.t; }
           if (s.bump) { const k = Math.sin(s.bump.t * Math.PI) * cs * 0.12; hx += s.bump.dx * k; hy += s.bump.dy * k; }
-          Arcade.emoji(ctx, s.heroE, hx, hy - Math.abs(Math.sin(g.rt * 3)) * 4, cs * (id === s.portal ? 0.36 : 0.44));
+          Arcade.emojiTo(ctx, id === s.portal ? '🥳' : g.face(), hx, hy - Math.abs(Math.sin(g.rt * 3)) * 4, cs * (id === s.portal ? 0.36 : 0.42), s.walk ? s.walk.dx : 0, s.walk ? s.walk.dy : 0);
         }
       });
       for (const b of s.btn) { ctx.fillStyle = 'rgba(255,255,255,.14)'; Arcade.rr(ctx, b.x, b.y, b.w, b.h, 10); ctx.fill(); Arcade.txt(ctx, b.k === 'undo' ? '↩️ Deshacer' : '🔄 Reiniciar', b.x + b.w / 2, b.y + b.h / 2 + 1, 14, '#fff', 'center', 800); }

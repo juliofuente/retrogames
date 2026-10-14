@@ -29,7 +29,7 @@
   function jump(g) { const s = g.s; if (s.h > 0 || s.dead) return; s.vh = 330; Arcade.tone(520, 0.05, 'triangle', 0.05, 300); }
 
   Arcade.game({
-    /*THEME*/ home: 'indexpro.html', tag: 'Corre alrededor de un planeta diminuto', deco: ['🪐', '🏃', '🌵', '⭐', '🌍', '🚀'], font: 'round', bg: ['#1b1b4a', '#0b0b2b'],
+    /*THEME*/ home: 'indexpro.html', tag: 'Corre alrededor de un planeta diminuto', deco: ['🪐', '😀', '🌵', '⭐', '🌍', '🚀'], font: 'round', bg: ['#1b1b4a', '#0b0b2b'],
     music: { mode: 'lydian', bpm: 120, wave: 'triangle', style: 'arcade', root: 62 }, voice: { wave: 'triangle', mul: 1.1, echo: 0.3 },
     ambient: { e: ['✨'], n: 20, vy: 0, sway: 0, twinkle: 1, alpha: 0.5, size: [4, 10] },
     en: { title: 'Little Planet', tag: 'Run around a tiny planet', help: 'You run round and round a tiny planet. <b>Tap</b> to jump over the obstacles on its surface. Every lap the obstacles change place! Tall ones (two stacked) need a well-timed jump. Grab the ⭐ in the air and complete the laps each level asks for.', tvHelp: 'OK to jump.', dict: { 'Vueltas: ': 'Laps: ' } },
@@ -63,7 +63,7 @@
       for (const o of s.obs) for (let k = 0; k < o.h; k++) { const [x, y] = P(o.a, 13 + k * 24); Arcade.emoji(ctx, o.e, x, y, 28, { rot: o.a + Math.PI / 2 }); }
       for (const st of s.stars) if (!st.got) { const [x, y] = P(st.a, st.up + 14); Arcade.emoji(ctx, '⭐', x, y, 20, { rot: g.rt * 2 }); }
       const [x, y] = P(s.a, s.h + 16);
-      Arcade.emoji(ctx, '🏃', x, y, 32, { rot: s.a + Math.PI / 2, flip: true, alpha: s.inv && Math.floor(g.rt * 12) % 2 ? 0.4 : 1 });
+      Arcade.emoji(ctx, g.face(), x, y, 30, { rot: s.a + Math.PI / 2, alpha: s.inv && Math.floor(g.rt * 12) % 2 ? 0.4 : 1 });
       Arcade.txt(ctx, 'Vueltas: ' + s.laps + '/' + s.need, cx, cy, 18, '#fff', 'center', 900, 'rgba(0,0,0,.3)');
       ctx.strokeStyle = '#ffd43b'; ctx.lineWidth = 5; ctx.beginPath(); ctx.arc(cx, cy, R + 4, s.a - s.travel, s.a); ctx.globalAlpha = 0.3; ctx.stroke(); ctx.globalAlpha = 1;
     },

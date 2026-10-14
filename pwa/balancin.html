@@ -46,10 +46,10 @@
 
   Arcade.game({
     /*THEME*/ tag: "¡Pasen y vean el circo volador!", deco: ["🎪", "🎈", "🎉", "🎈", "🎺", "🎈"], font: "comic", bg: ["#7a1a47", "#3d0c2b"], music: {"mode": "major", "bpm": 150, "wave": "square", "style": "waltz", "root": 64}, voice: {"wave": "square", "mul": 1.15, "echo": 0.2}, ambient: {"e": ["✨", "🎉"], "n": 8, "vy": 0, "sway": 0, "twinkle": 1, "alpha": 0.25},
-    /*EN*/ en: {"title": "Seesaw", "tag": "Roll up for the flying circus!", "help": "<b>Drag</b> your finger to move the seesaw. The falling clown must land on the <b>raised end</b>: that launches the other clown up to pop balloons 🎈. Higher rows are worth more. Clear a row and it refills faster. Don't let either clown hit the floor!", "tvHelp": "Hold ◀ ▶ to move the seesaw.", "dict": {}},
+    /*EN*/ en: {"title": "Seesaw", "tag": "Roll up for the flying circus!", "help": "<b>Drag</b> your finger to move the seesaw. The falling acrobat must land on the <b>raised end</b>: that launches the other acrobat up to pop balloons 🎈. Higher rows are worth more. Clear a row and it refills faster. Don't let either clown hit the floor!", "tvHelp": "Hold ◀ ▶ to move the seesaw.", "dict": {}},
     /*TV*/ tvHelp: "Mantén ◀ ▶ para mover el balancín.",
     id: 'balancin', title: 'Balancín', emoji: '🤡', color: '#ff8fab', origin: 'Circus (Exidy, 1977)',
-    help: '<b>Arrastra</b> el dedo para mover el balancín. El payaso que cae debe aterrizar en el <b>extremo levantado</b>: así lanza al otro payaso hacia arriba a reventar globos 🎈. Arriba valen más. Si vacías una fila, se rellena más rápida. ¡No dejes que ninguno toque el suelo!',
+    help: '<b>Arrastra</b> el dedo para mover el balancín. El acróbata que cae debe aterrizar en el <b>extremo levantado</b>: así lanza al otro acróbata hacia arriba a reventar globos 🎈. Arriba valen más. Si vacías una fila, se rellena más rápida. ¡No dejes que ninguno toque el suelo!',
     lives: 5, levels: null, lifeIcon: '🤡',
     setup(g) {
       g.s = { rows: [], up: 'L', sx: g.W / 2, vx: 0, tx: g.W / 2, wait: 1.2, cleared: 0 };
@@ -139,13 +139,13 @@
       ctx.lineCap = 'round'; ctx.strokeStyle = '#3d2314'; ctx.lineWidth = 12; ctx.beginPath(); ctx.moveTo(e.lx, e.ly); ctx.lineTo(e.rx, e.ry); ctx.stroke();
       ctx.strokeStyle = '#a0522d'; ctx.lineWidth = 7; ctx.stroke();
       const dx = s.up === 'L' ? e.rx : e.lx, dy = s.up === 'L' ? e.ry : e.ly;
-      Arcade.emoji(ctx, '🤡', dx, dy - 22, 38);
+      Arcade.emoji(ctx, g.face(), dx, dy - 22, 36);
       const ux = s.up === 'L' ? e.lx : e.rx, uy = s.up === 'L' ? e.ly : e.ry;
       ctx.strokeStyle = 'rgba(255,209,102,' + (0.4 + Math.sin(g.t * 8) * 0.3) + ')'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(ux, uy - 4, 14, 0, 6.28); ctx.stroke();
       // payaso volando
       const f = s.fly;
       if (s.wait > 0 && g.state === 'play') { ctx.globalAlpha = Math.floor(g.t * 8) % 2 ? 1 : 0.3; }
-      Arcade.emoji(ctx, '🤡', f.x, f.y, 40, { rot: f.rot });
+      Arcade.emoji(ctx, f.vy > 120 ? '😱' : g.face(), f.x, f.y, 38, { rot: f.rot });
       ctx.globalAlpha = 1;
       if (f.vy > 0 && f.y < s.floor - 60) { ctx.fillStyle = 'rgba(0,0,0,.3)'; ctx.beginPath(); ctx.ellipse(f.x, s.floor + 6, 14, 4, 0, 0, 6.28); ctx.fill(); }
     },

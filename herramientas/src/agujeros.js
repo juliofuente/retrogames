@@ -25,9 +25,12 @@
   const epos = (s, m) => ({ x: s.ox + (m.c + 0.5 + (m.moving ? D[m.dir][0] * m.p : 0)) * s.cs, y: s.oy + (m.r + (m.moving ? D[m.dir][1] * m.p : 0)) * s.cs });
 
   Arcade.game({
+    /*THEME*/ tag: "Cava, atrapa, entierra", deco: ["👽", "⛏️", "🕳️", "😀", "🛸", "⭐"], font: "mono", bg: ["#0d1020", "#05070f"], music: {"mode": "phryg", "bpm": 128, "wave": "square", "style": "drive", "root": 55}, voice: {"wave": "square", "mul": 0.95, "echo": 0.25}, ambient: {"e": ["⭐", "✨"], "n": 10, "vy": 0, "sway": 0, "twinkle": 1, "alpha": 0.3, "size": [6, 12]},
+    /*EN*/ en: {"title": "Holes", "tag": "Dig, trap, bury", "help": "<b>Swipe</b> to move along the floors and ladders. <b>Tap</b> to <b>dig a hole</b> in front of you (several taps). When an alien 👽 falls in, <b>tap again</b> to fill it in before it escapes. Defeat them all before you run out of oxygen. You can't cross open holes.", "tvHelp": "D-pad to move · OK dig or fill the hole in front of you.", "dict": {"¡Sin oxígeno!": "Out of oxygen!"}},
+    /*TV*/ tvHelp: "Cruceta para moverte · OK cavar o tapar el agujero que tienes delante.",
     id: 'agujeros', title: 'Agujeros', emoji: '🕳️', color: '#63e6be', origin: 'Space Panic (Universal, 1980)',
     help: '<b>Desliza</b> para moverte por los pisos y escaleras. <b>Toca</b> para <b>cavar un agujero</b> delante de ti (varios toques). Cuando un alienígena 👽 caiga dentro, <b>toca otra vez</b> para taparlo antes de que escape. Elimina a todos antes de quedarte sin oxígeno. Tú no puedes cruzar los agujeros abiertos.',
-    lives: 3, levels: 10,
+    lives: 3, levels: 0, cap: 16,
     setup(g) {
       g.s = { holes: new Map(), al: [], inv: 1.5, oxy: 100 };
       const s = g.s;
@@ -40,9 +43,9 @@
       }
       geo(g);
       s.pl = { c: Math.floor(s.NC / 2), r: s.NR - 1, dir: 'left', face: 'left', p: 0, moving: false, want: null };
-      const n = Math.min(7, 3 + Math.floor(g.level / 2));
+      const n = Math.min(7, 3 + Math.floor(g.lv / 2));
       s.total = n; s.killed = 0;
-      for (let i = 0; i < n; i++) s.al.push({ c: i % 2 ? s.NC - 1 : 0, r: (i % (s.F - 1)) * 3, dir: i % 2 ? 'left' : 'right', p: 0, moving: true, sp: 1.5 + g.level * 0.1 + Math.random() * 0.3, trap: 0, delay: i * 1.5 });
+      for (let i = 0; i < n; i++) s.al.push({ c: i % 2 ? s.NC - 1 : 0, r: (i % (s.F - 1)) * 3, dir: i % 2 ? 'left' : 'right', p: 0, moving: true, sp: 1.5 + g.lv * 0.1 + Math.random() * 0.3, trap: 0, delay: i * 1.5 });
     },
     layout(g) { if (g.s.lad) geo(g); },
     swipe(g, d) {
@@ -61,7 +64,7 @@
       h.fill += h.al ? 0.5 : 1;
       Arcade.tone(300, 0.05, 'square', 0.06);
       if (h.fill >= 1) {
-        if (h.al) { h.al.dead = true; s.killed++; g.addScore(300 * g.level, x, y - 20); Arcade.sfx.coin(); g.burst(x, y, { n: 12, emoji: '💥', size: 14, speed: 150 }); }
+        if (h.al) { h.al.dead = true; s.killed++; g.addScore(300 * g.lv, x, y - 20); Arcade.sfx.coin(); g.burst(x, y, { n: 12, emoji: '💥', size: 14, speed: 150 }); }
         s.holes.delete(k);
         if (s.killed >= s.total) { g.addScore(Math.floor(s.oxy) * 20, g.W / 2, g.H / 2); g.win(); }
       }
@@ -70,7 +73,7 @@
     update(g, dt) {
       const s = g.s, m = s.pl;
       s.inv = Math.max(0, s.inv - dt);
-      s.oxy -= (1 + g.level * 0.06) * dt;
+      s.oxy -= (1 + g.lv * 0.06) * dt;
       if (s.oxy <= 0) { g.message('¡Sin oxígeno!', 1.3); if (g.die()) s.oxy = 100; return; }
       if (m.moving) {
         m.p += 4 * dt;
@@ -93,7 +96,7 @@
         if (a.p >= 1) {
           a.c += D[a.dir][0]; a.r += D[a.dir][1]; a.p = 0;
           const h = holeAt(s, a.c, a.r);
-          if (h && h.open && !h.al) { h.al = a; a.trap = Math.max(2.5, 5.5 - g.level * 0.25); a.hk = a.c + ',' + a.r / 3; Arcade.sfx.pop(); continue; }
+          if (h && h.open && !h.al) { h.al = a; a.trap = Math.max(2.5, 5.5 - g.lv * 0.25); a.hk = a.c + ',' + a.r / 3; Arcade.sfx.pop(); continue; }
           let opts = Object.keys(D).filter(d => canMove(s, a, d, false) && d !== OPP[a.dir]);
           if (!opts.length) opts = [OPP[a.dir]];
           if (Math.random() < 0.5) { const sc = (d) => Math.abs(a.r + D[d][1] - m.r) * 2 + Math.abs(a.c + D[d][0] - m.c); opts.sort((x, y) => sc(x) - sc(y)); } else shuffle(opts);
@@ -113,6 +116,7 @@
       const s = g.s, W = g.W, H = g.H;
       ctx.fillStyle = '#05070f'; ctx.fillRect(0, 0, W, H);
       for (let i = 0; i < 60; i++) { ctx.fillStyle = 'rgba(255,255,255,' + (0.1 + (i % 5) * 0.12) + ')'; ctx.fillRect((i * 97) % W, (i * 61) % H, 1.5, 1.5); }
+      g.scenery(['🪐','🌍','🛸','☄️'], 4, { alpha: 0.4, size: [26, 40], bob: 4 }); /*SC*/
       if (!s.lad) return;
       const cs = s.cs;
       for (const k of s.lad) {
@@ -138,7 +142,7 @@
         Arcade.emoji(ctx, '👽', p.x, p.y - cs * 0.5, cs * 0.85);
       }
       const p = epos(s, s.pl);
-      if (!(s.inv > 0 && Math.floor(g.t * 10) % 2)) Arcade.emoji(ctx, '👨‍🚀', p.x, p.y - cs * 0.55, cs * 0.95, { flip: s.pl.face === 'right' });
+      if (!(s.inv > 0 && Math.floor(g.t * 10) % 2)) Arcade.emojiTo(ctx, g.face(), p.x, p.y - cs * 0.5, cs * 0.8, s.pl.face === 'right' ? 1 : -1, 0, { mode: 'flip' });
       if (!s.pl.moving && s.pl.r % 3 === 0) { const fx = s.ox + (s.pl.c + (s.pl.face === 'left' ? -0.5 : 1.5)) * cs; Arcade.emoji(ctx, '⛏️', fx, p.y - cs * 0.3, cs * 0.4, { alpha: 0.5 }); }
       // oxígeno
       const k = Math.max(0, s.oxy / 100);

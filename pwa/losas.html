@@ -57,7 +57,7 @@
     const [dx, dy] = D[dir], [x, y] = s.p, nx = x + dx, ny = y + dy;
     // la losa que dejas se hunde un poco
     s.hp[y][x]--; if (!s.hp[y][x]) s.falling.push({ x, y, t: 0 }); else Arcade.tone(220, 0.06, 'square', 0.05);
-    s.anim = { fx: x, fy: y, t: 0 }; s.p = [nx, ny]; s.moves++; s.face = dx || s.face;
+    s.anim = { fx: x, fy: y, t: 0 }; s.dir = [dx, dy]; s.p = [nx, ny]; s.moves++; s.face = dx || s.face;
     const inside = nx >= 0 && ny >= 0 && nx < s.w && ny < s.h;
     if (!inside || !s.hp[ny][nx]) {
       s.dead = true; s.deadT = g.rt; Arcade.sfx.whoosh();
@@ -126,7 +126,7 @@
       let hx = s.ox + (s.p[0] + 0.5) * cs, hy = s.oy + (s.p[1] + 0.5) * cs, sc = 1;
       if (s.anim) { const k = s.anim.t; hx = s.ox + (s.anim.fx + (s.p[0] - s.anim.fx) * k + 0.5) * cs; hy = s.oy + (s.anim.fy + (s.p[1] - s.anim.fy) * k + 0.5) * cs - Math.sin(k * Math.PI) * cs * 0.2; }
       else if (s.dead && s.deadT) sc = Math.max(0.1, 1 - (g.rt - s.deadT));
-      Arcade.emoji(ctx, s.hero, hx, hy, cs * 0.66 * sc, { flip: s.face > 0 });
+      Arcade.emojiTo(ctx, s.dead ? '😱' : g.face(), hx, hy, cs * 0.62 * sc, s.dir ? s.dir[0] : 0, s.dir ? s.dir[1] : 0);
       Arcade.txt(ctx, 'Losas: ' + left(s), W / 2, s.oy - 18, 15, '#ffe8cc', 'center', 800, 'rgba(0,0,0,.4)');
     },
   });

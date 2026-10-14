@@ -22,7 +22,7 @@
   const wrap = (l) => ((l % N) + N) % N;
   function laneDir(a, b) { let d = wrap(b - a); return d === 0 ? 0 : d <= N / 2 ? 1 : -1; }
   function spawn(g) {
-    const s = g.s, L = g.level, r = Math.random();
+    const s = g.s, L = g.lv, r = Math.random();
     const type = L >= 4 && r < 0.15 ? 'S' : L >= 2 && r < 0.35 ? 'T' : 'F';
     s.en.push({ type, lane: ri(0, N - 1), z: 0, v: (0.12 + L * 0.012) * (type === 'T' ? 0.7 : 1) * rand(0.85, 1.15), crawlT: 0.4, back: false });
     s.spawned++;
@@ -32,28 +32,31 @@
     const [x, y] = lanePt(s, e.lane, e.z);
     if (pts) g.addScore(pts, x, y); g.burst(x, y, { n: 8, color: e.type === 'T' ? '#da77f2' : e.type === 'S' ? '#69db7c' : '#ff6b6b', speed: 160, size: 2.5 });
     Arcade.tone(300 + e.z * 500, 0.05, 'square', 0.05);
-    if (e.type === 'T') for (const d of [-1, 1]) s.en.push({ type: 'F', lane: wrap(e.lane + d), z: e.z, v: 0.2 + g.level * 0.015, crawlT: 0.4 });
+    if (e.type === 'T') for (const d of [-1, 1]) s.en.push({ type: 'F', lane: wrap(e.lane + d), z: e.z, v: 0.2 + g.lv * 0.015, crawlT: 0.4 });
   }
 
   Arcade.game({
+    /*THEME*/ tag: "Vectores en el borde del abismo", deco: ["🌀", "⚡", "🔺", "💠", "✳️", "⚡"], font: "mono", bg: ["#0a0a1a", "#000000"], music: {"mode": "minor", "bpm": 146, "wave": "sawtooth", "style": "drive", "root": 52}, voice: {"wave": "sawtooth", "mul": 1, "echo": 0.3},
+    /*EN*/ en: {"title": "Tunnel", "tag": "Vectors on the edge of the abyss", "help": "You are on the rim of a tunnel seen from above. <b>Move your finger around</b> the tunnel and your ship goes to that lane; it fires towards the centre on its own. Enemies come from the depths: red ones 🔺 climb the rim towards you, purple ones split in two and green ones leave <b>spikes</b>. <b>Double tap</b>: Superzapper (once per level) destroys everything.", "tvHelp": "◀ ▶ spin around the tunnel · OK superzapper (once per level).", "dict": {"¡Pinchos en tu carril!": "Spikes in your lane!", "⚡ Supercañón: doble toque": "⚡ Superzapper: double tap", "⚡ usado": "⚡ used"}},
+    /*TV*/ tvHelp: "◀ ▶ girar alrededor del túnel · OK supercañón (una vez por nivel).",
     id: 'tunel', title: 'Túnel', emoji: '🌀', color: '#4dabf7', origin: 'Tempest (Atari, 1981)',
     help: 'Estás en el borde de un túnel visto desde arriba. <b>Mueve el dedo alrededor</b> del túnel y tu nave irá a ese carril; dispara sola hacia el centro. Los enemigos salen del fondo: los rojos 🔺 trepan por el borde hacia ti, los morados se dividen en dos y los verdes dejan <b>pinchos</b>. <b>Doble toque</b>: Supercañón (una vez por nivel) que destruye todo.',
-    lives: 3, levels: 16,
+    lives: 3, levels: 0, cap: 20,
     setup(g) {
       g.s = { shape: (g.level - 1) % SHAPES.length, pl: 0, plV: 0, shots: [], en: [], spikes: new Array(N).fill(0), fireT: 0, spawnT: 1, spawned: 0, zap: 1, warp: 0, inv: 1, lastTap: 0 };
-      const s = g.s; s.total = 10 + g.level * 3; geo(g);
+      const s = g.s; s.total = Math.min(45, 10 + g.lv * 3); geo(g);
     },
     layout(g) { if (g.s.en) geo(g); },
     down(g, p) { this.move(g, p); const s = g.s, now = performance.now(); if (now - s.lastTap < 300 && s.zap > 0) { s.zap--; for (const e of s.en) if (!e.dead) kill(g, e, 50); g.shake(0.4, 10); Arcade.sfx.boom(); s.flash = 0.3; } s.lastTap = now; },
     move(g, p) { const s = g.s, a = Math.atan2(p.y - s.cy, p.x - s.cx) + Math.PI / 2; s.target = wrap(Math.floor(((a % TAU) + TAU) % TAU / TAU * N)); },
     hover(g, x, y) { this.move(g, { x, y }); },
-    key(g, k, d) { if (!d) return; const s = g.s; if (k === 'ArrowLeft') s.target = wrap((s.target ?? s.pl) - 1); else if (k === 'ArrowRight') s.target = wrap((s.target ?? s.pl) + 1); else if (k === ' ') this.down(g, { x: 0, y: 0 }); },
+    key(g, k, d) { if (!d) return; const s = g.s; if (k === 'ArrowLeft') s.target = wrap((s.target ?? s.pl) - 1); else if (k === 'ArrowRight') s.target = wrap((s.target ?? s.pl) + 1); else if (k === ' ') { /*TVKEY*/ if (s.zap > 0) { s.zap--; for (const e of s.en) if (!e.dead) kill(g, e, 50); g.shake(0.4, 10); Arcade.sfx.boom(); s.flash = 0.3; } } },
     update(g, dt) {
       const s = g.s;
       s.inv = Math.max(0, s.inv - dt); s.flash = Math.max(0, (s.flash || 0) - dt);
       if (s.warp) {
         s.warp += dt;
-        if (s.warp > 1.4) { g.addScore(1000 * g.level, g.W / 2, g.H / 2); g.win(); }
+        if (s.warp > 1.4) { g.addScore(1000 * g.lv, g.W / 2, g.H / 2); g.win(); }
         return;
       }
       if (s.target != null && s.target !== s.pl) { s.plV += dt * 18; while (s.plV >= 1 && s.target !== s.pl) { s.plV -= 1; s.pl = wrap(s.pl + laneDir(s.pl, s.target)); } } else s.plV = 0;
@@ -67,7 +70,7 @@
       }
       s.shots = s.shots.filter(x => !x.dead);
       s.spawnT -= dt;
-      if (s.spawned < s.total && s.spawnT <= 0) { s.spawnT = Math.max(0.35, 1.3 - g.level * 0.05) * rand(0.6, 1.4); spawn(g); }
+      if (s.spawned < s.total && s.spawnT <= 0) { s.spawnT = Math.max(0.35, 1.3 - g.lv * 0.05) * rand(0.6, 1.4); spawn(g); }
       for (const e of s.en) {
         if (e.dead) continue;
         if (e.type === 'S') {
@@ -78,7 +81,7 @@
         if (e.z < 1) { e.z = Math.min(1, e.z + e.v * dt); if (e.z >= 1 && e.type === 'T') { kill(g, e, 0); continue; } }
         else {
           e.crawlT -= dt;
-          if (e.crawlT <= 0) { e.crawlT = Math.max(0.2, 0.5 - g.level * 0.015); e.lane = wrap(e.lane + (laneDir(e.lane, s.pl) || 1)); }
+          if (e.crawlT <= 0) { e.crawlT = Math.max(0.2, 0.5 - g.lv * 0.015); e.lane = wrap(e.lane + (laneDir(e.lane, s.pl) || 1)); }
           if (e.lane === s.pl && s.inv <= 0) {
             const [x, y] = lanePt(s, s.pl, 1);
             g.burst(x, y, { n: 20, color: ['#ffd43b', '#fff', '#ff6b6b'], speed: 240 });

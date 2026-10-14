@@ -4,7 +4,7 @@
   const D = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
   const OPP = { up: 'down', down: 'up', left: 'right', right: 'left' };
   const TYPES = ['top', 'lettuce', 'meat', 'bottom'];
-  const ENEMY = ['🌭', '🥚', '🥒'];
+  const ENEMY = ['🧟', '👻', '👹'];
 
   function geo(g) {
     const s = g.s, Wa = g.W - 16, Ha = g.bot - g.top - 30;
@@ -56,7 +56,7 @@
   }
   function spawnEnemy(g, k) {
     const s = g.s, left = k % 2 === 0;
-    const e = { c: left ? 0 : s.NC - 1, r: 0, dir: left ? 'right' : 'left', p: 0, moving: true, e: ENEMY[k % ENEMY.length], stun: 0, sp: 2.3 + g.level * 0.15 + Math.random() * 0.3, k };
+    const e = { c: left ? 0 : s.NC - 1, r: 0, dir: left ? 'right' : 'left', p: 0, moving: true, e: ENEMY[k % ENEMY.length], stun: 0, sp: 2.3 + g.lv * 0.15 + Math.random() * 0.3, k };
     s.en.push(e);
   }
   function die(g) {
@@ -66,9 +66,12 @@
   }
 
   Arcade.game({
+    /*THEME*/ tag: "El chef que cocina pisando", deco: ["🍔", "🧟", "👻", "👹", "🌶️", "🍟"], font: "impact", bg: ["#151530", "#0b0b16"], music: {"mode": "mixo", "bpm": 144, "wave": "square", "style": "arcade", "root": 60}, voice: {"wave": "square", "mul": 1.1, "echo": 0.15}, ambient: {"e": ["🍟"], "n": 5, "vy": 18, "sway": 10, "spin": 1, "alpha": 0.07},
+    /*EN*/ en: {"title": "Burger", "tag": "The chef who cooks by stomping", "help": "<b>Swipe</b> to move along the floors and up or down the ladders. Step on all <b>four pieces</b> of an ingredient to drop it one floor; if it lands on another, it pushes it down. Bring every ingredient down to the plates to build the burgers. An ingredient landing on an enemy squashes it. <b>Tap</b> to throw pepper 🌶️ and freeze nearby enemies.", "tvHelp": "D-pad to move · OK throw pepper.", "dict": {}},
+    /*TV*/ tvHelp: "Cruceta para moverte · OK echar pimienta.",
     id: 'hamburguesa', title: 'Hamburguesa', emoji: '🍔', color: '#ffa94d', origin: 'BurgerTime (Data East, 1982)',
     help: '<b>Desliza</b> para moverte por los pisos y subir o bajar por las escaleras. Pisa los <b>cuatro trozos</b> de cada ingrediente para que caiga un piso; si cae sobre otro, lo empuja. Lleva todos los ingredientes a los platos para hacer las hamburguesas. Si un ingrediente cae sobre un enemigo, lo aplasta. <b>Toca</b> para echar pimienta 🌶️ y paralizar a los que tengas cerca.',
-    lives: 3, levels: 8,
+    lives: 3, levels: 0, cap: 16,
     setup(g) {
       g.s = { en: [], inv: 1.5, pepper: 5, spray: 0 };
       const s = g.s;
@@ -88,7 +91,7 @@
       geo(g);
       for (const ing of s.ings) ing.y = floorY(s, ing.f);
       s.pl = { c: Math.floor(s.NC / 2), r: s.NR - 1, dir: 'left', p: 0, moving: false, want: null, face: 'left' };
-      s.nEn = Math.min(5, 2 + Math.floor(g.level / 2)); s.spawnQ = s.nEn; s.spawnT = 2;
+      s.nEn = Math.min(5, 2 + Math.floor(g.lv / 2)); s.spawnQ = s.nEn; s.spawnT = 2;
     },
     layout(g) {
       const s = g.s; if (!s.ings) return;
@@ -129,7 +132,7 @@
           Arcade.tone(150, 0.08, 'square', 0.08); g.shake(0.1, 4);
           if (ing.f >= s.F) {
             ing.stack = s.plates[ing.b]++; g.addScore(100, s.ox + (ing.b * 5 + 3) * s.cs, ing.y - 20); s.pepper = Math.min(9, s.pepper + 1);
-            if (s.ings.every(i => i.f >= s.F && !i.falling)) { g.addScore(2000 * g.level, g.W / 2, g.H / 2); g.win(); return; }
+            if (s.ings.every(i => i.f >= s.F && !i.falling)) { g.addScore(2000 * g.lv, g.W / 2, g.H / 2); g.win(); return; }
           } else {
             const below = s.ings.find(o => o !== ing && o.b === ing.b && o.f === ing.f && !o.falling);
             if (below) startFall(g, below);
@@ -150,6 +153,7 @@
     draw(g, ctx) {
       const s = g.s, W = g.W, H = g.H;
       ctx.fillStyle = '#0b0b16'; ctx.fillRect(0, 0, W, H);
+      g.scenery(['🍟','🥤','🌭'], 6, { alpha: 0.1, size: [24, 36] }); /*SC*/
       if (!s.ings) return;
       const cs = s.cs;
       // escaleras
@@ -174,9 +178,9 @@
           else { ctx.fillStyle = '#d9822b'; Arcade.rr(ctx, sx, sy + h * 0.35, cs, h * 0.6, 3); ctx.fill(); }
         }
       }
-      for (const e of s.en) { const p = epos(s, e); Arcade.emoji(ctx, e.e, p.x, p.y - cs * 0.5, cs * 0.9, { rot: e.stun > 0 ? Math.sin(g.t * 20) * 0.3 : 0 }); if (e.stun > 0) Arcade.emoji(ctx, '💫', p.x, p.y - cs * 1.1, cs * 0.5); }
+      for (const e of s.en) { const p = epos(s, e); Arcade.emojiTo(ctx, e.e, p.x, p.y - cs * 0.5, cs * 0.9, e.dir && D[e.dir] ? D[e.dir][0] : 0, 0, { mode: 'flip', rot: e.stun > 0 ? Math.sin(g.t * 20) * 0.3 : 0 }); if (e.stun > 0) Arcade.emoji(ctx, '💫', p.x, p.y - cs * 1.1, cs * 0.5); }
       const p = epos(s, s.pl);
-      if (!(s.inv > 0 && Math.floor(g.t * 10) % 2)) Arcade.emoji(ctx, '👨‍🍳', p.x, p.y - cs * 0.55, cs * 1.0, { flip: s.pl.face === 'right' });
+      if (!(s.inv > 0 && Math.floor(g.t * 10) % 2)) Arcade.emojiTo(ctx, g.face(), p.x, p.y - cs * 0.55, cs * 0.85, s.pl.face === 'right' ? 1 : -1, 0, { mode: 'flip' });
       if (s.spray > 0) { ctx.fillStyle = 'rgba(255,255,255,' + s.spray + ')'; ctx.beginPath(); ctx.arc(p.x, p.y - cs * 0.5, cs * 3 * (1 - s.spray), 0, 6.28); ctx.fill(); }
       Arcade.txt(ctx, '🌶️ ' + s.pepper, 16, s.oy - cs * 1.2, 15, '#ff8787', 'left', 900);
       const done = s.ings.filter(i => i.f >= s.F).length;

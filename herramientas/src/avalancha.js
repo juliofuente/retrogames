@@ -43,6 +43,9 @@
   }
 
   Arcade.game({
+    /*THEME*/ tag: "Que no te arrastre la avalancha", deco: ["🧊", "☠️", "🟩", "🟥", "🧊", "⬜"], font: "mono", bg: ["#18203a", "#10141f"], music: {"mode": "minor", "bpm": 120, "wave": "square", "style": "drive", "root": 57}, voice: {"wave": "square", "mul": 0.95, "echo": 0.25}, ambient: {"e": ["❄️"], "n": 8, "vy": 20, "sway": 10, "alpha": 0.12},
+    /*EN*/ en: {"title": "Avalanche", "tag": "Don't get swept away", "help": "Rows of cubes roll towards the edge. <b>Tap a cell</b> to set a trap 🟥 and <b>tap it again</b> when a cube is on it to catch it. <b>Don't catch the black ones</b> ☠️: let them fall. Green ones leave a mark 🟩 that, when tapped, captures a 3×3 area. Every grey cube that falls off the edge <b>shortens the platform</b>.", "tvHelp": "D-pad to move the cursor · OK set a trap, capture, or use a green mark.", "dict": {"Plataforma: ": "Platform: ", " filas": " rows", "¡Perfecto!": "Perfect!", "¡Prohibido!": "Forbidden!"}},
+    /*TV*/ tvHelp: "Cruceta mover el cursor · OK poner trampa, atrapar o usar una marca verde.", tv: { mode: 'tap', targets: (g) => { const s = g.s, o = []; if (!s.C) return o; for (let r = 0; r < s.L; r++) for (let c = 0; c < s.C; c++) o.push({ x: s.ox + c * s.cs, y: s.oy + r * s.cs, w: s.cs, h: s.cs }); return o; } },
     id: 'avalancha', title: 'Avalancha', emoji: '🧊', color: '#91a7ff', origin: 'Intelligent Qube (Sony, 1997)',
     help: 'Filas de cubos ruedan hacia el borde. <b>Toca una casilla</b> para poner una trampa 🟥 y <b>vuelve a tocarla</b> cuando un cubo esté encima para atraparlo. <b>No atrapes los negros</b> ☠️: déjalos caer. Los verdes dejan una marca 🟩 que, al tocarla, atrapa un área de 3×3. Cada cubo gris que se cae por el borde <b>acorta la plataforma</b>.',
     lives: 0, levels: null, levelLabel: 'Oleada',
