@@ -1,0 +1,150 @@
+// Portales|#120f2b
+(function () {
+  const { ri, clamp, pick } = Arcade;
+  const DIR = { up: [0, -1, 1, 4], right: [1, 0, 2, 8], down: [0, 1, 4, 1], left: [-1, 0, 8, 2] }; // dx, dy, puerta propia, puerta vecina
+  const HEROES = ['🧙', '🧚', '🐱', '🤖', '🦊'];
+  const ROOMBG = ['#5f3dc4', '#1971c2', '#0c8599', '#2b8a3e', '#e67700', '#c2255c', '#6741d9', '#1864ab'];
+
+  // estado compacto: rejilla (id de sala o -1) + sala del héroe
+  function neighbors(st, w, h, rooms) {
+    const out = [], e = st.grid.indexOf(-1), ex = e % w, ey = Math.floor(e / w);
+    for (const [, [dx, dy]] of Object.entries(DIR)) {
+      const x = ex + dx, y = ey + dy; if (x < 0 || y < 0 || x >= w || y >= h) continue;
+      const gr = st.grid.slice(); gr[e] = gr[y * w + x]; gr[y * w + x] = -1; out.push({ grid: gr, hero: st.hero });
+    }
+    const hi = st.grid.indexOf(st.hero), hx = hi % w, hy = Math.floor(hi / w);
+    for (const [, [dx, dy, my, their]] of Object.entries(DIR)) {
+      const x = hx + dx, y = hy + dy; if (x < 0 || y < 0 || x >= w || y >= h) continue;
+      const o = st.grid[y * w + x]; if (o < 0) continue;
+      if ((rooms[st.hero].d & my) && (rooms[o].d & their)) out.push({ grid: st.grid, hero: o });
+    }
+    return out;
+  }
+  const skey = (st) => st.grid.join(',') + '|' + st.hero;
+  function bfs(st, w, h, rooms, portal, cap) {
+    const seen = new Set([skey(st)]); let fr = [st], d = 0;
+    while (fr.length && seen.size < cap) {
+      d++; const nx = [];
+      for (const s of fr) for (const n of neighbors(s, w, h, rooms)) { const k = skey(n); if (seen.has(k)) continue; if (n.hero === portal) return d; seen.add(k); nx.push(n); }
+      fr = nx;
+    }
+    return -1;
+  }
+  function generate(L) {
+    const w = L < 4 ? 3 : 4, h = L < 9 ? 3 : 4, n = w * h - 1;
+    const minD = clamp(4 + Math.floor(L / 2), 4, 12);
+    for (let attempt = 0; attempt < 80; attempt++) {
+      const rooms = [];
+      for (let i = 0; i < n; i++) { let d = 0; while ([1, 2, 4, 8].filter((b) => d & b).length < 2) d |= pick([1, 2, 4, 8]); if (Math.random() < 0.35) d |= pick([1, 2, 4, 8]); rooms.push({ d, c: ROOMBG[i % ROOMBG.length] }); }
+      const grid = [...Array(n).keys()]; grid.push(-1);
+      for (let i = grid.length - 1; i > 0; i--) { const j = ri(0, i); [grid[i], grid[j]] = [grid[j], grid[i]]; }
+      const portal = ri(0, n - 1); let hero = ri(0, n - 1); if (hero === portal) hero = (hero + 1) % n;
+      const st = { grid, hero };
+      const d = bfs(st, w, h, rooms, portal, 50000);
+      if (d < Math.max(3, minD - Math.floor(attempt / 10)) || d > minD + 6) continue;
+      return { w, h, rooms, portal, grid: st.grid, hero: st.hero, par: d };
+    }
+    return generate(Math.max(1, L - 1));
+  }
+  function geo(g) {
+    const s = g.s, Ha = g.bot - g.top - 92;
+    s.cs = Math.min((g.W - 24) / s.w, Ha / s.h, 140); s.ox = (g.W - s.cs * s.w) / 2; s.oy = g.top + 80 + (Ha - s.cs * s.h) / 2;
+    s.btn = [{ k: 'undo', x: g.W / 2 - 110, y: g.top + 8, w: 100, h: 38, instant: true }, { k: 'reset', x: g.W / 2 + 10, y: g.top + 8, w: 100, h: 38, instant: true }];
+  }
+  const posAt = (s, x, y) => { const c = Math.floor((x - s.ox) / s.cs), r = Math.floor((y - s.oy) / s.cs); return c >= 0 && r >= 0 && c < s.w && r < s.h ? r * s.w + c : -1; };
+  function snap(s) { return { grid: s.grid.slice(), hero: s.hero }; }
+  function act(g, pos, dir) {
+    const s = g.s; if (s.done || pos < 0) return;
+    const [dx, dy, my, their] = DIR[dir], x = pos % s.w + dx, y = Math.floor(pos / s.w) + dy;
+    if (x < 0 || y < 0 || x >= s.w || y >= s.h) { Arcade.sfx.bad(); return; }
+    const to = y * s.w + x, id = s.grid[pos];
+    if (id < 0) return;
+    if (s.grid[to] === -1) {
+      s.hist.push(snap(s)); s.grid[to] = id; s.grid[pos] = -1; s.moves++;
+      s.slide = { id, dx, dy, t: 1 }; Arcade.sfx.whoosh(); Arcade.tone(180, 0.1, 'triangle', 0.06, 80);
+    } else if (id === s.hero) {
+      const o = s.grid[to];
+      if (!(s.rooms[id].d & my) || !(s.rooms[o].d & their)) { Arcade.sfx.bad(); s.bump = { dx, dy, t: 1 }; return; }
+      s.hist.push(snap(s)); s.hero = o; s.moves++; s.walk = { dx, dy, t: 1 }; Arcade.sfx.tick(); Arcade.tone(500, 0.06, 'triangle', 0.06);
+    } else { Arcade.sfx.bad(); return; }
+    if (s.hero === s.portal) {
+      s.done = true;
+      setTimeout(() => {
+        if (g.state !== 'play') return;
+        const p = s.grid.indexOf(s.portal), px = s.ox + (p % s.w + 0.5) * s.cs, py = s.oy + (Math.floor(p / s.w) + 0.5) * s.cs;
+        g.burst(px, py, { n: 18, emoji: '✨', size: 16, speed: 220 }); g.ring(px, py, '#da77f2', 90, 6);
+        g.addScore(Math.max(50, 300 - s.moves * 8) * g.lv, px, py);
+        const par = s.par > 0 ? s.par : s.moves;
+        setTimeout(() => { if (g.state === 'play') g.win(s.moves <= par + 2 ? 3 : s.moves <= par * 2 + 2 ? 2 : 1); }, 700);
+      }, 250);
+    }
+  }
+  function undo(g) { const s = g.s, h = s.hist.pop(); if (!h || s.done) return; s.grid = h.grid; s.hero = h.hero; s.moves++; Arcade.sfx.whoosh(); }
+  function reset(g) { const s = g.s; if (s.done) return; s.grid = s.start.grid.slice(); s.hero = s.start.hero; s.hist = []; s.moves = 0; Arcade.sfx.whoosh(); }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Mueve las salas hasta el portal', deco: ['🌀', '🧙', '🚪', '✨', '🔮', '🌌'], font: 'fancy', bg: ['#2b2466', '#120f2b'],
+    music: { mode: 'lydian', bpm: 84, wave: 'sine', style: 'chill', root: 62 }, voice: { wave: 'sine', mul: 1.2, echo: 0.4 },
+    ambient: { e: ['✦', '✧'], n: 14, vy: 0, sway: 0, twinkle: 1, alpha: 0.3, size: [6, 12] },
+    en: { title: 'Portals', tag: 'Shift the rooms to the portal', help: 'Each square is a <b>room</b> with doors. <b>Swipe</b> a room next to the gap to slide it there (whoever is inside goes with it). <b>Swipe</b> or tap from the hero\'s room to walk into the next room: only if <b>both doors line up</b>. Get the hero to the 🌀 portal. Use ↩️ to undo and 🔄 to restart. Every level comes from scrambling a solved puzzle, so it always has a solution; finish in few moves for more stars.', tvHelp: 'D-pad to choose a room · OK to pick it up · arrow to slide it or walk.', dict: { '↩️ Deshacer': '↩️ Undo', '🔄 Reiniciar': '🔄 Restart', 'Movimientos: ': 'Moves: ', 'Mínimo: ': 'Best: ' } },
+    tvHelp: 'Cruceta para elegir sala · OK para cogerla · flecha para deslizarla o caminar.',
+    tv: { mode: 'swipe', follow: false, targets: (g) => { const s = g.s; if (!s.grid) return []; const o = []; s.grid.forEach((id, p) => { if (id >= 0) o.push({ x: s.ox + (p % s.w) * s.cs, y: s.oy + Math.floor(p / s.w) * s.cs, w: s.cs, h: s.cs }); }); return o.concat(s.btn); } },
+    id: 'portales', title: 'Portales', emoji: '🌀', color: '#da77f2', origin: 'Warp Shift (FISHLABS)',
+    help: 'Cada cuadro es una <b>sala</b> con puertas. <b>Desliza</b> una sala que esté junto al hueco para moverla allí (lo que haya dentro viaja con ella). <b>Desliza</b> o toca desde la sala del héroe hacia otra para caminar: solo si <b>las dos puertas coinciden</b>. Lleva al héroe hasta el portal 🌀. Usa ↩️ para deshacer y 🔄 para empezar de nuevo. Cada nivel sale de desordenar un puzle resuelto, así que siempre tiene solución; acaba en pocos movimientos para más estrellas.',
+    lives: 0, levels: 0, cap: 24,
+    setup(g) {
+      const lv = generate(g.lv);
+      g.s = { ...lv, hist: [], moves: 0, done: false, heroE: HEROES[(g.level - 1) % HEROES.length], slide: null, walk: null, bump: null };
+      g.s.start = { grid: lv.grid.slice(), hero: lv.hero };
+      geo(g);
+    },
+    layout(g) { if (g.s.grid) geo(g); },
+    swipe(g, d, p) { const s = g.s; act(g, posAt(s, p.sx, p.sy), d); },
+    tap(g, p) {
+      const s = g.s;
+      for (const b of s.btn) if (p.x >= b.x && p.x <= b.x + b.w && p.y >= b.y && p.y <= b.y + b.h) return b.k === 'undo' ? undo(g) : reset(g);
+      const pos = posAt(s, p.x, p.y); if (pos < 0 || s.grid[pos] < 0) return;
+      const hp = s.grid.indexOf(s.hero), e = s.grid.indexOf(-1);
+      const dirTo = (a, b) => { const dx = b % s.w - a % s.w, dy = Math.floor(b / s.w) - Math.floor(a / s.w); return Math.abs(dx) + Math.abs(dy) !== 1 ? null : dx === 1 ? 'right' : dx === -1 ? 'left' : dy === 1 ? 'down' : 'up'; };
+      const dw = dirTo(hp, pos); if (dw) return act(g, hp, dw);
+      const ds = dirTo(pos, e); if (ds) return act(g, pos, ds);
+      Arcade.sfx.bad();
+    },
+    key(g, k, d) { if (d && (k === 'z' || k === 'Backspace')) undo(g); else if (d && k === 'r') reset(g); },
+    update(g, dt) { const s = g.s; for (const k of ['slide', 'walk', 'bump']) if (s[k]) { s[k].t -= dt * 7; if (s[k].t <= 0) s[k] = null; } },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      const bg = ctx.createRadialGradient(W / 2, H / 2, 30, W / 2, H / 2, Math.max(W, H) * 0.8); bg.addColorStop(0, '#3b2f8a'); bg.addColorStop(1, '#0a0820');
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      if (!s.grid) return;
+      const cs = s.cs, wall = Math.max(5, cs * 0.08), door = cs * 0.34;
+      ctx.fillStyle = 'rgba(0,0,0,.35)'; Arcade.rr(ctx, s.ox - 6, s.oy - 6, cs * s.w + 12, cs * s.h + 12, 14); ctx.fill();
+      s.grid.forEach((id, p) => {
+        let x = s.ox + (p % s.w) * cs, y = s.oy + Math.floor(p / s.w) * cs;
+        if (id < 0) { ctx.strokeStyle = 'rgba(255,255,255,.12)'; ctx.setLineDash([6, 6]); ctx.lineWidth = 2; Arcade.rr(ctx, x + 8, y + 8, cs - 16, cs - 16, 12); ctx.stroke(); ctx.setLineDash([]); return; }
+        if (s.slide && s.slide.id === id) { x -= s.slide.dx * cs * s.slide.t; y -= s.slide.dy * cs * s.slide.t; }
+        const r = s.rooms[id], m = 4;
+        ctx.fillStyle = r.c; Arcade.rr(ctx, x + m, y + m, cs - m * 2, cs - m * 2, 10); ctx.fill();
+        ctx.fillStyle = 'rgba(255,255,255,.08)'; Arcade.rr(ctx, x + m + wall, y + m + wall, cs - (m + wall) * 2, cs - (m + wall) * 2, 6); ctx.fill();
+        // paredes con puertas
+        ctx.fillStyle = 'rgba(10,8,32,.75)';
+        const seg = (x0, y0, x1, y1) => ctx.fillRect(Math.min(x0, x1), Math.min(y0, y1), Math.abs(x1 - x0) || wall, Math.abs(y1 - y0) || wall);
+        const L0 = x + m, T0 = y + m, S = cs - m * 2, a = (S - door) / 2;
+        if (r.d & 1) { seg(L0, T0, L0 + a, T0); seg(L0 + a + door, T0, L0 + S, T0); } else seg(L0, T0, L0 + S, T0);
+        if (r.d & 4) { seg(L0, T0 + S - wall, L0 + a, T0 + S - wall); seg(L0 + a + door, T0 + S - wall, L0 + S, T0 + S - wall); } else seg(L0, T0 + S - wall, L0 + S, T0 + S - wall);
+        if (r.d & 8) { seg(L0, T0, L0, T0 + a); seg(L0, T0 + a + door, L0, T0 + S); } else seg(L0, T0, L0, T0 + S);
+        if (r.d & 2) { seg(L0 + S - wall, T0, L0 + S - wall, T0 + a); seg(L0 + S - wall, T0 + a + door, L0 + S - wall, T0 + S); } else seg(L0 + S - wall, T0, L0 + S - wall, T0 + S);
+        const cx = x + cs / 2, cy = y + cs / 2;
+        if (id === s.portal) Arcade.emoji(ctx, '🌀', cx, cy, cs * 0.5, { rot: g.rt * 2 });
+        if (id === s.hero) {
+          let hx = cx, hy = cy;
+          if (s.walk) { hx -= s.walk.dx * cs * s.walk.t; hy -= s.walk.dy * cs * s.walk.t; }
+          if (s.bump) { const k = Math.sin(s.bump.t * Math.PI) * cs * 0.12; hx += s.bump.dx * k; hy += s.bump.dy * k; }
+          Arcade.emoji(ctx, s.heroE, hx, hy - Math.abs(Math.sin(g.rt * 3)) * 4, cs * (id === s.portal ? 0.36 : 0.44));
+        }
+      });
+      for (const b of s.btn) { ctx.fillStyle = 'rgba(255,255,255,.14)'; Arcade.rr(ctx, b.x, b.y, b.w, b.h, 10); ctx.fill(); Arcade.txt(ctx, b.k === 'undo' ? '↩️ Deshacer' : '🔄 Reiniciar', b.x + b.w / 2, b.y + b.h / 2 + 1, 14, '#fff', 'center', 800); }
+      Arcade.txt(ctx, 'Movimientos: ' + s.moves + (s.par > 0 ? '   ·   Mínimo: ' + s.par : ''), W / 2, s.oy - 18, 13, '#d0bfff', 'center', 800);
+    },
+  });
+})();

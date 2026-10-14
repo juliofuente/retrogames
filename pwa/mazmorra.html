@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Mazmorra · Arcade Perdido</title>
+<meta name="theme-color" content="#1c1714">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css">
+</head>
+<body class="game">
+<script src="config.js"></script>
+<script src="common.js"></script>
+<script>
+(function () {
+  const { ri, clamp, pick } = Arcade;
+  const NB8 = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]];
+  const T = { sw: '⚔️', sh: '🛡️', po: '🧪', co: '🪙' };
+  const TBG = { sw: '#adb5bd', sh: '#74c0fc', po: '#ff8787', co: '#ffd43b', mo: '#9775fa' };
+  const MON = ['🦇', '🕷️', '💀', '👺', '👹', '🐲'];
+
+  function geo(g) { const s = g.s, Ha = g.bot - g.top - 110; s.cs = Math.min((g.W - 16) / s.C, Ha / s.R, 74); s.ox = (g.W - s.cs * s.C) / 2; s.oy = g.top + 96 + (Ha - s.cs * s.R) / 2; }
+  function tile(g, monChance) {
+    const L = g.lv;
+    if (Math.random() < (monChance ?? clamp(0.12 + L * 0.005, 0.12, 0.24))) {
+      const tier = clamp(ri(0, Math.floor(L / 5)), 0, MON.length - 1), hp = ri(1, 3) + Math.floor(L / 6) + Math.floor(tier / 2);
+      return { k: 'mo', tier, hp, max: hp, atk: 1 + Math.floor((L / 2 + tier) / 6), fall: 0 };
+    }
+    return { k: pick(['sw', 'sw', 'sh', 'po', 'co']), fall: 0 };
+  }
+  const grp = (k) => (k === 'mo' ? 'sw' : k);
+  const adj = (a, b) => a && b && Math.max(Math.abs(a[0] - b[0]), Math.abs(a[1] - b[1])) === 1;
+  function cellAt(s, px, py, strict) {
+    const x = Math.floor((px - s.ox) / s.cs), y = Math.floor((py - s.oy) / s.cs);
+    if (x < 0 || y < 0 || x >= s.C || y >= s.R) return null;
+    if (strict) { const cx = s.ox + (x + 0.5) * s.cs, cy = s.oy + (y + 0.5) * s.cs; if (Math.hypot(px - cx, py - cy) > s.cs * 0.42) return null; }
+    return [x, y];
+  }
+  function extend(s, c) {
+    if (!c || !s.path.length) return;
+    const i = s.path.findIndex((q) => q[0] === c[0] && q[1] === c[1]);
+    if (i >= 0) { if (i === s.path.length - 2) { s.path.pop(); Arcade.sfx.tick(); } return; }
+    const last = s.path[s.path.length - 1];
+    if (!adj(last, c) || grp(s.b[c[1]][c[0]].k) !== grp(s.b[s.path[0][1]][s.path[0][0]].k)) return;
+    s.path.push(c); Arcade.tone(330 + s.path.length * 40, 0.05, 'triangle', 0.06);
+  }
+  function chainDamage(s, path) { const sw = (path || s.path).filter(([x, y]) => s.b[y][x].k === 'sw').length; return sw + s.pow; }
+  function commit(g) {
+    const s = g.s, path = s.path; s.path = [];
+    if (path.length < 3 || s.busy) { if (path.length) Arcade.sfx.bad(); return; }
+    const kind = grp(s.b[path[0][1]][path[0][0]].k), n = path.length;
+    let kills = 0, mx = 0, my = 0;
+    const dmg = kind === 'sw' ? chainDamage(s, path) : 0;
+    for (const [x, y] of path) {
+      const t = s.b[y][x], px = s.ox + (x + 0.5) * s.cs, py = s.oy + (y + 0.5) * s.cs; mx += px; my += py;
+      if (t.k === 'mo') { t.hp -= dmg; t.hit = 1; g.float('-' + dmg, px, py - 20, '#ff8787', 20); if (t.hp > 0) continue; kills++; g.burst(px, py, { n: 8, emoji: '💥', size: 16, speed: 170 }); }
+      else g.burst(px, py, { n: 4, color: TBG[t.k], speed: 150, size: 4 });
+      s.b[y][x] = null;
+    }
+    mx /= n; my /= n;
+    if (kind === 'sh') { const add = n; s.arm = Math.min(s.maxArm, s.arm + add); g.float('+' + add + '🛡️', mx, my, '#74c0fc', 22); Arcade.sfx.up(); }
+    if (kind === 'po') { const add = n; s.hp = Math.min(s.maxHp, s.hp + add); g.float('+' + add + '❤️', mx, my, '#ff8787', 22); Arcade.sfx.up(); }
+    if (kind === 'co') {
+      s.gold += n; g.float('+' + n + '🪙', mx, my, '#ffd43b', 22); Arcade.sfx.coin();
+      while (s.gold >= s.next) { s.gold -= s.next; s.next += 5; s.lvUp = (s.lvUp + 1) % 2; if (s.lvUp) { s.pow++; g.message(Arcade.T('¡Espada mejor!', 'Better sword!'), 1, '⚔️ +' + s.pow); } else { s.maxHp += 3; s.hp = s.maxHp; s.maxArm += 2; g.message(Arcade.T('¡Más vida!', 'More health!'), 1, '❤️ ' + s.maxHp); } g.confetti(30); }
+    }
+    if (kind === 'sw') { Arcade.sfx.hit(); if (kills) { Arcade.sfx.boom(); g.shake(0.15, 5); } }
+    s.kills += kills;
+    g.addScore((n * 5 + kills * 40) * g.lv, mx, my);
+    // gravedad y relleno
+    for (let x = 0; x < s.C; x++) { const col = []; for (let y = s.R - 1; y >= 0; y--) if (s.b[y][x]) col.push(s.b[y][x]); for (let y = s.R - 1, i = 0; y >= 0; y--, i++) { if (col[i]) { if (s.b[y][x] !== col[i]) col[i].fall = Math.max(col[i].fall || 0, 0.6); s.b[y][x] = col[i]; } else { const t = tile(g); t.fall = 1; t.fresh = true; s.b[y][x] = t; } } }
+    if (s.kills >= s.need) { s.won = true; setTimeout(() => { if (g.state === 'play') { g.addScore(200 * g.lv, g.W / 2, g.H / 2); g.win(); } }, 600); return; }
+    // turno de los monstruos (los recién llegados no atacan)
+    let atk = 0; for (const row of s.b) for (const t of row) if (t && t.k === 'mo') { if (t.fresh) t.fresh = false; else { atk += t.atk; t.rage = 1; } }
+    if (atk) {
+      s.busy = true;
+      setTimeout(() => {
+        s.busy = false; if (g.state !== 'play') return;
+        const blk = Math.min(s.arm, atk); s.arm -= blk; const hurt = atk - blk; s.hp -= hurt;
+        if (hurt) { Arcade.sfx.bad(); g.flash('#ff3b3b', 0.12); g.float('-' + hurt + '❤️', g.W / 2, s.oy - 30, '#ff6b6b', 24); } else Arcade.tone(900, 0.06, 'square', 0.05);
+        if (s.hp <= 0) { g.message(Arcade.T('¡Derrotado!', 'Defeated!'), 1.2); if (g.die()) { s.hp = s.maxHp; s.arm = Math.floor(s.maxArm / 2); for (const row of s.b) for (let x = 0; x < s.C; x++) if (row[x] && row[x].k === 'mo') row[x] = tile(g, 0); } }
+      }, 380);
+    }
+  }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Encadena espadas contra monstruos', deco: ['⚔️', '🛡️', '🧪', '🪙', '👹', '🕯️'], font: 'serif', bg: ['#3b2f28', '#1c1714'],
+    music: { mode: 'harm', bpm: 96, wave: 'square', style: 'march', root: 55 }, voice: { wave: 'square', mul: 0.9, echo: 0.35 },
+    ambient: { e: ['🕸️', '✦'], n: 6, vy: 0, sway: 0, twinkle: 1, alpha: 0.12, size: [14, 26] },
+    en: { title: 'Dungeon', tag: 'Chain swords against monsters', help: '<b>Drag</b> across 3 or more equal neighbouring tiles (diagonals too) to chain them. ⚔️ <b>Swords</b> chain with monsters: every monster in the chain takes 1 damage per sword plus your sword\'s strength. 🛡️ shields give armour, 🧪 potions heal you and 🪙 coins upgrade your sword or your health. After each turn every monster strikes (armour blocks first). Defeat the monsters each level asks for. If your health runs out, you lose a life.', tvHelp: 'D-pad to move · OK adds a tile to the chain · OK on the last tile to finish it.', dict: { 'Monstruos: ': 'Monsters: ', '¡Espada mejor!': 'Better sword!', '¡Más vida!': 'More health!', '¡Derrotado!': 'Defeated!', 'daño ': 'damage ' } },
+    tvHelp: 'Cruceta para moverte · OK añade la ficha a la cadena · OK sobre la última para cerrarla.',
+    tv: { mode: 'tap', targets: (g) => { const s = g.s, o = []; if (!s.b) return o; for (let y = 0; y < s.R; y++) for (let x = 0; x < s.C; x++) o.push({ x: s.ox + x * s.cs, y: s.oy + y * s.cs, w: s.cs, h: s.cs }); return o; } },
+    id: 'mazmorra', title: 'Mazmorra', emoji: '⚔️', color: '#ff922b', origin: 'Dungeon Raid / Drag and Match / 10000000 / Hero Emblems',
+    help: '<b>Arrastra</b> por 3 o más fichas iguales vecinas (también en diagonal) para encadenarlas. Las ⚔️ <b>espadas</b> se encadenan con los monstruos: cada monstruo de la cadena recibe 1 de daño por espada más la fuerza de tu espada. Los 🛡️ escudos dan armadura, las 🧪 pociones te curan y las 🪙 monedas mejoran tu espada o tu vida. Tras cada turno atacan todos los monstruos (la armadura para primero). Derrota los monstruos que pide cada nivel. Si te quedas sin vida, pierdes una vida.',
+    lives: 3, levels: 0, cap: 20,
+    setup(g) {
+      g.s = { C: 6, R: 7, path: [], kills: 0, hp: 12, maxHp: 12, arm: 0, maxArm: 8, gold: 0, next: 10, pow: 1, lvUp: 0, busy: false };
+      const s = g.s; s.b = [...Array(s.R)].map(() => [...Array(s.C)].map(() => tile(g)));
+      s.need = 6 + g.lv;
+      geo(g);
+    },
+    layout(g) { if (g.s.b) geo(g); },
+    down(g, p) { if (p.type === 'tv') return; const s = g.s, c = cellAt(s, p.x, p.y); if (c && !s.busy) { s.path = [c]; Arcade.sfx.tick(); } },
+    move(g, p) { if (p.type === 'tv') return; extend(g.s, cellAt(g.s, p.x, p.y, true)); },
+    up(g, p) { if (p.type === 'tv') return; if (g.s.path.length) commit(g); },
+    tap(g, p) {
+      if (p.type !== 'tv') return;
+      const s = g.s, c = cellAt(s, p.x, p.y); if (!c || s.busy) return;
+      const last = s.path[s.path.length - 1];
+      if (last && last[0] === c[0] && last[1] === c[1]) { commit(g); return; }
+      const i = s.path.findIndex((q) => q[0] === c[0] && q[1] === c[1]);
+      if (i >= 0) { s.path = s.path.slice(0, i + 1); Arcade.sfx.tick(); return; }
+      const before = s.path.length; extend(s, c);
+      if (s.path.length === before) { s.path = [c]; Arcade.sfx.tick(); }
+    },
+    update(g, dt) {
+      const s = g.s;
+      for (const row of s.b) for (const t of row) if (t) { if (t.fall) t.fall = Math.max(0, t.fall - dt * 3); if (t.hit) t.hit = Math.max(0, t.hit - dt * 4); if (t.rage) t.rage = Math.max(0, t.rage - dt * 2); }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      const bg = ctx.createRadialGradient(W / 2, H / 2, 40, W / 2, H / 2, Math.max(W, H) * 0.8); bg.addColorStop(0, '#4a3b30'); bg.addColorStop(1, '#0e0b09');
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      g.scenery(['🕯️', '⛓️', '🦴'], 6, { alpha: 0.14, size: [18, 28], bob: 2 });
+      if (!s.b) return;
+      const cs = s.cs, onp = new Set(s.path.map((q) => q.join()));
+      // estado del héroe
+      const y0 = g.top + 18, bw = Math.min(W - 40, cs * s.C);
+      const x0 = (W - bw) / 2;
+      ctx.fillStyle = 'rgba(0,0,0,.4)'; Arcade.rr(ctx, x0, y0 - 8, bw, 16, 8); ctx.fill();
+      ctx.fillStyle = '#fa5252'; Arcade.rr(ctx, x0, y0 - 8, bw * clamp(s.hp / s.maxHp, 0, 1), 16, 8); ctx.fill();
+      Arcade.txt(ctx, '❤️ ' + Math.max(0, s.hp) + '/' + s.maxHp, W / 2, y0, 12, '#fff', 'center', 900, 'rgba(0,0,0,.5)');
+      Arcade.txt(ctx, '🛡️ ' + s.arm + '/' + s.maxArm + '    ⚔️ +' + s.pow + '    🪙 ' + s.gold + '/' + s.next, W / 2, y0 + 26, 14, '#e9ecef', 'center', 800);
+      Arcade.txt(ctx, 'Monstruos: ' + Math.min(s.kills, s.need) + ' / ' + s.need, W / 2, y0 + 52, 14, '#ffd8a8', 'center', 900);
+      if (s.path.length && grp(s.b[s.path[0][1]][s.path[0][0]].k) === 'sw') Arcade.txt(ctx, '💥 daño ' + chainDamage(s), W / 2, s.oy - 10, 13, '#ff8787', 'center', 900);
+      // cadena
+      if (s.path.length > 1) {
+        ctx.strokeStyle = s.path.length >= 3 ? 'rgba(255,236,153,.9)' : 'rgba(255,255,255,.5)'; ctx.lineWidth = cs * 0.14; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+        ctx.beginPath(); s.path.forEach(([x, y], i) => { const px = s.ox + (x + 0.5) * cs, py = s.oy + (y + 0.5) * cs; i ? ctx.lineTo(px, py) : ctx.moveTo(px, py); }); ctx.stroke();
+      }
+      const kind0 = s.path.length ? grp(s.b[s.path[0][1]][s.path[0][0]].k) : null;
+      for (let y = 0; y < s.R; y++) for (let x = 0; x < s.C; x++) {
+        const t = s.b[y][x]; if (!t) continue;
+        const on = onp.has(x + ',' + y), dim = kind0 && !on && grp(t.k) !== kind0;
+        const sh = t.hit ? (Math.random() - 0.5) * 6 : 0;
+        const px = s.ox + x * cs + sh, py = s.oy + y * cs - (t.fall || 0) * cs * 0.8, z = on ? 3 : 6;
+        ctx.globalAlpha = dim ? 0.35 : 1 - (t.fall || 0) * 0.4;
+        ctx.fillStyle = t.k === 'mo' && t.rage ? '#ff6b6b' : TBG[t.k]; Arcade.rr(ctx, px + z, py + z, cs - z * 2, cs - z * 2, cs * 0.22); ctx.fill();
+        ctx.fillStyle = 'rgba(0,0,0,.25)'; Arcade.rr(ctx, px + z, py + cs * 0.7, cs - z * 2, cs * 0.3 - z, cs * 0.2); ctx.fill();
+        if (on) { ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; Arcade.rr(ctx, px + z, py + z, cs - z * 2, cs - z * 2, cs * 0.22); ctx.stroke(); }
+        if (t.k === 'mo') {
+          Arcade.emoji(ctx, MON[t.tier], px + cs / 2, py + cs * 0.44, cs * 0.52);
+          Arcade.txt(ctx, '♥' + t.hp, px + cs * 0.27, py + cs * 0.82, cs * 0.17, '#fff', 'center', 900, 'rgba(0,0,0,.6)');
+          Arcade.txt(ctx, '⚔' + t.atk, px + cs * 0.73, py + cs * 0.82, cs * 0.17, '#ffe066', 'center', 900, 'rgba(0,0,0,.6)');
+        } else Arcade.emoji(ctx, T[t.k], px + cs / 2, py + cs / 2, cs * 0.56);
+        ctx.globalAlpha = 1;
+      }
+    },
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,143 @@
+// Cadena roja|#2a1020
+(function () {
+  const { ri, clamp, pick } = Arcade;
+  const NB8 = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]];
+  const CR = ['🐞', '🐸', '🐳', '🐥', '🦄'];
+  const CC = ['#ff6b6b', '#69db7c', '#4dabf7', '#ffd43b', '#da77f2'];
+
+  function geo(g) { const s = g.s, Ha = g.bot - g.top - 100; s.cs = Math.min((g.W - 16) / s.C, Ha / s.R, 70); s.ox = (g.W - s.cs * s.C) / 2; s.oy = g.top + 88 + (Ha - s.cs * s.R) / 2; }
+  function creep(g) {
+    const s = g.s, c = { k: 'c', col: ri(0, s.nc - 1), fall: 0 };
+    if (Math.random() < s.rageP) c.rage = ri(2, 4);
+    return c;
+  }
+  const adj = (a, b) => a && b && Math.max(Math.abs(a[0] - b[0]), Math.abs(a[1] - b[1])) === 1;
+  const at = (s, c) => s.b[c[1]][c[0]];
+  function cellAt(s, px, py, strict) {
+    const x = Math.floor((px - s.ox) / s.cs), y = Math.floor((py - s.oy) / s.cs);
+    if (x < 0 || y < 0 || x >= s.C || y >= s.R) return null;
+    if (strict) { const cx = s.ox + (x + 0.5) * s.cs, cy = s.oy + (y + 0.5) * s.cs; if (Math.hypot(px - cx, py - cy) > s.cs * 0.42) return null; }
+    return [x, y];
+  }
+  function curColor(s) { for (let i = s.path.length - 1; i > 0; i--) { const t = at(s, s.path[i]); if (t.k === 'gem') return -1; if (t.k === 'c') return t.col; } return -1; }
+  function extend(s, c) {
+    if (!c || !s.path.length) return;
+    const i = s.path.findIndex((q) => q[0] === c[0] && q[1] === c[1]);
+    if (i >= 0) { if (i === s.path.length - 2) { s.path.pop(); Arcade.sfx.tick(); } return; }
+    if (!adj(s.path[s.path.length - 1], c)) return;
+    const t = at(s, c), col = curColor(s);
+    if (t.k === 'gem' || (t.k === 'c' && (col < 0 || col === t.col))) { s.path.push(c); Arcade.tone(300 + s.path.length * 35, 0.05, 'triangle', 0.06); }
+  }
+  function heroPos(s) { for (let y = 0; y < s.R; y++) for (let x = 0; x < s.C; x++) if (s.b[y][x] && s.b[y][x].k === 'h') return [x, y]; return null; }
+  function commit(g) {
+    const s = g.s, path = s.path; s.path = [];
+    if (path.length < 2 || s.busy) return;
+    const hero = at(s, path[0]); let kills = 0;
+    for (let i = 1; i < path.length; i++) {
+      const [x, y] = path[i], t = s.b[y][x], px = s.ox + (x + 0.5) * s.cs, py = s.oy + (y + 0.5) * s.cs;
+      if (t.k === 'c') { kills++; g.burst(px, py, { n: 5, color: CC[t.col], speed: 160, size: 4 }); if (i % 3 === 0) Arcade.sfx.combo(Math.min(12, i)); }
+      else g.burst(px, py, { n: 8, emoji: '✨', size: 12, speed: 150 });
+      s.b[y][x] = null;
+    }
+    s.b[path[0][1]][path[0][0]] = null;
+    const [lx, ly] = path[path.length - 1]; s.b[ly][lx] = hero; hero.fall = 0; s.from = path.map((q) => q.slice());
+    s.kills += kills; Arcade.sfx.whoosh();
+    const pts = Math.round(Math.pow(kills, 1.5) * 10) * g.lv;
+    g.addScore(pts, s.ox + (lx + 0.5) * s.cs, s.oy + (ly + 0.5) * s.cs);
+    if (kills >= 6) g.message(kills >= 10 ? '¡Masacre!' : '¡Cadena!', 0.8);
+    // gravedad y relleno
+    for (let x = 0; x < s.C; x++) { const col = []; for (let y = s.R - 1; y >= 0; y--) if (s.b[y][x]) col.push(s.b[y][x]); for (let y = s.R - 1, i = 0; y >= 0; y--, i++) { if (col[i]) { if (s.b[y][x] !== col[i]) col[i].fall = Math.max(col[i].fall || 0, 0.6); s.b[y][x] = col[i]; } else { const t = creep(g); t.fall = 1; s.b[y][x] = t; } } }
+    if (kills >= 10) { const cs = []; for (let y = 0; y < s.R; y++) for (let x = 0; x < s.C; x++) if (s.b[y][x].k === 'c' && !s.b[y][x].rage) cs.push([x, y]); if (cs.length) { const [x, y] = pick(cs); s.b[y][x] = { k: 'gem', fall: 0, pop: 1 }; g.float('💎!', s.ox + (x + 0.5) * s.cs, s.oy + y * s.cs, '#99e9f2', 22); } }
+    if (s.kills >= s.need) { s.won = true; setTimeout(() => { if (g.state === 'play') { g.addScore(150 * g.lv, g.W / 2, g.H / 2); g.win(); } }, 600); return; }
+    // turno de los bichos
+    const hp = heroPos(s); let hits = 0;
+    for (let y = 0; y < s.R; y++) for (let x = 0; x < s.C; x++) {
+      const t = s.b[y][x]; if (!t || t.k !== 'c' || t.rage == null) continue;
+      if (t.rage > 0) { t.rage--; continue; }
+      if (adj(hp, [x, y])) { hits++; t.rage = ri(3, 5); t.bite = 1; }
+    }
+    if (hits) {
+      s.busy = true;
+      setTimeout(() => {
+        s.busy = false; if (g.state !== 'play') return;
+        s.hp -= hits; Arcade.sfx.bad(); g.flash('#ff3b3b', 0.15); g.shake(0.2, 6);
+        if (s.hp <= 0) { g.message(Arcade.T('¡Te han pillado!', 'They got you!'), 1.2); if (g.die()) { s.hp = s.maxHp; for (const row of s.b) for (const t of row) if (t && t.k === 'c' && t.rage === 0) t.rage = ri(2, 4); } }
+      }, 350);
+    }
+  }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Encadena bichos del mismo color', deco: ['🧝', '🐞', '🐸', '🐳', '💎', '⚔️'], font: 'comic', bg: ['#4a1d3a', '#2a1020'],
+    music: { mode: 'minor', bpm: 120, wave: 'square', style: 'arcade', root: 57 }, voice: { wave: 'square', mul: 1, echo: 0.25 },
+    ambient: { e: ['🍂'], n: 6, vy: 16, sway: 28, spin: 1, alpha: 0.14 },
+    en: { title: 'Red Chain', tag: 'Chain bugs of one colour', help: 'Start on your hero 🧝 and <b>drag</b> through neighbouring bugs (diagonals too) of the <b>same colour</b>: you cut them all down and end up on the last one. A 💎 gem lets you <b>switch colour</b> in the middle of the chain; chains of 10 or more create a new gem. Bugs with a number count down every turn; at 0 they get angry ⚡ and bite you if you finish next to them. Defeat the bugs each level asks for.', tvHelp: 'D-pad to move · OK on the hero starts · OK adds bugs · OK on the last one to attack.', dict: { 'Bichos: ': 'Bugs: ', '¡Masacre!': 'Massacre!', '¡Cadena!': 'Chain!', '¡Te han pillado!': 'They got you!' } },
+    tvHelp: 'Cruceta para moverte · OK en el héroe empieza · OK añade bichos · OK en el último para atacar.',
+    tv: { mode: 'tap', targets: (g) => { const s = g.s, o = []; if (!s.b) return o; for (let y = 0; y < s.R; y++) for (let x = 0; x < s.C; x++) o.push({ x: s.ox + x * s.cs, y: s.oy + y * s.cs, w: s.cs, h: s.cs }); return o; }, start: (g, ts) => { const h = heroPos(g.s); return ts[h[1] * g.s.C + h[0]] || ts[0]; } },
+    id: 'cadenaroja', title: 'Cadena roja', emoji: '🧝', color: '#ff6b6b', origin: 'Grindstone (Capybara Games)',
+    help: 'Empieza en tu héroe 🧝 y <b>arrastra</b> por bichos vecinos (también en diagonal) del <b>mismo color</b>: los derribas a todos y acabas en el último. Una gema 💎 te deja <b>cambiar de color</b> a mitad de cadena; las cadenas de 10 o más crean una gema nueva. Los bichos con número cuentan atrás cada turno; al llegar a 0 se enfadan ⚡ y te muerden si terminas a su lado. Derrota los bichos que pide cada nivel.',
+    lives: 3, levels: 0, cap: 25,
+    setup(g) {
+      g.s = { C: 7, R: 7, path: [], kills: 0, hp: 3, maxHp: 3, busy: false, nc: g.lv >= 8 ? 5 : 4, rageP: clamp(0.08 + g.lv * 0.01, 0.08, 0.3) };
+      const s = g.s; s.b = [...Array(s.R)].map(() => [...Array(s.C)].map(() => creep(g)));
+      s.b[s.R - 1][3] = { k: 'h', fall: 0 };
+      s.need = 20 + g.lv * 4;
+      geo(g);
+    },
+    layout(g) { if (g.s.b) geo(g); },
+    down(g, p) { if (p.type === 'tv') return; const s = g.s, c = cellAt(s, p.x, p.y); if (c && !s.busy && at(s, c).k === 'h') { s.path = [c]; Arcade.sfx.tick(); } },
+    move(g, p) { if (p.type === 'tv') return; extend(g.s, cellAt(g.s, p.x, p.y, true)); },
+    up(g, p) { if (p.type === 'tv') return; if (g.s.path.length) commit(g); },
+    tap(g, p) {
+      if (p.type !== 'tv') return;
+      const s = g.s, c = cellAt(s, p.x, p.y); if (!c || s.busy) return;
+      if (at(s, c).k === 'h') { s.path = [c]; Arcade.sfx.tick(); return; }
+      if (!s.path.length) { Arcade.sfx.bad(); return; }
+      const last = s.path[s.path.length - 1];
+      if (last[0] === c[0] && last[1] === c[1]) { commit(g); return; }
+      const i = s.path.findIndex((q) => q[0] === c[0] && q[1] === c[1]);
+      if (i >= 0) { s.path = s.path.slice(0, i + 1); Arcade.sfx.tick(); return; }
+      extend(s, c);
+    },
+    update(g, dt) {
+      const s = g.s;
+      for (const row of s.b) for (const t of row) if (t) { if (t.fall) t.fall = Math.max(0, t.fall - dt * 3); if (t.bite) t.bite = Math.max(0, t.bite - dt * 2); if (t.pop) t.pop = Math.max(0, t.pop - dt * 2); }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      const bg = ctx.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, '#5e2a4c'); bg.addColorStop(1, '#170812');
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      g.scenery(['🌲', '🍄', '🌿'], 8, { alpha: 0.1, size: [20, 34] });
+      if (!s.b) return;
+      const cs = s.cs, onp = new Set(s.path.map((q) => q.join()));
+      let hs = ''; for (let i = 0; i < s.maxHp; i++) hs += i < s.hp ? '🛡️' : '▫️';
+      Arcade.txt(ctx, hs, W / 2, g.top + 18, 18, '#fff', 'center', 800);
+      Arcade.txt(ctx, 'Bichos: ' + Math.min(s.kills, s.need) + ' / ' + s.need, W / 2, g.top + 46, 15, '#ffc9c9', 'center', 900);
+      const bw = Math.min(W - 40, cs * s.C); ctx.fillStyle = 'rgba(0,0,0,.35)'; Arcade.rr(ctx, (W - bw) / 2, g.top + 62, bw, 7, 4); ctx.fill();
+      ctx.fillStyle = '#ff6b6b'; Arcade.rr(ctx, (W - bw) / 2, g.top + 62, bw * clamp(s.kills / s.need, 0, 1), 7, 4); ctx.fill();
+      ctx.fillStyle = 'rgba(0,0,0,.25)'; Arcade.rr(ctx, s.ox - 5, s.oy - 5, cs * s.C + 10, cs * s.R + 10, 12); ctx.fill();
+      if (s.path.length > 1) {
+        ctx.strokeStyle = 'rgba(255,255,255,.85)'; ctx.lineWidth = cs * 0.14; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+        ctx.beginPath(); s.path.forEach(([x, y], i) => { const px = s.ox + (x + 0.5) * cs, py = s.oy + (y + 0.5) * cs; i ? ctx.lineTo(px, py) : ctx.moveTo(px, py); }); ctx.stroke();
+        Arcade.txt(ctx, '×' + (s.path.length - 1), s.ox + (s.path[s.path.length - 1][0] + 0.5) * cs, s.oy + s.path[s.path.length - 1][1] * cs - 4, 16, '#fff', 'center', 900, 'rgba(0,0,0,.6)');
+      }
+      const col = s.path.length ? curColor(s) : null;
+      const hp = heroPos(s);
+      for (let y = 0; y < s.R; y++) for (let x = 0; x < s.C; x++) {
+        const t = s.b[y][x]; if (!t) continue;
+        const px = s.ox + (x + 0.5) * cs, py = s.oy + (y + 0.5) * cs - (t.fall || 0) * cs * 0.8, on = onp.has(x + ',' + y);
+        if (t.k === 'h') { ctx.fillStyle = 'rgba(255,255,255,.25)'; ctx.beginPath(); ctx.arc(px, py, cs * 0.44, 0, 6.3); ctx.fill(); Arcade.emoji(ctx, '🧝', px, py - Math.abs(Math.sin(g.rt * 4)) * 3, cs * 0.7); continue; }
+        if (t.k === 'gem') { Arcade.emoji(ctx, '💎', px, py, cs * (0.6 + Math.sin(g.rt * 5) * 0.05 + (t.pop || 0) * 0.3), { rot: Math.sin(g.rt * 2) * 0.2 }); if (on) { ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(px, py, cs * 0.42, 0, 6.3); ctx.stroke(); } continue; }
+        const dim = col != null && col >= 0 && !on && t.col !== col;
+        const angry = t.rage === 0, near = angry && adj(hp, [x, y]);
+        ctx.globalAlpha = dim ? 0.35 : 1 - (t.fall || 0) * 0.4;
+        ctx.fillStyle = CC[t.col]; ctx.beginPath(); ctx.arc(px, py, cs * 0.42 * (on ? 1.06 : 1), 0, 6.3); ctx.fill();
+        if (on) { ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; ctx.stroke(); }
+        if (angry) { ctx.strokeStyle = near ? '#fff' : '#212529'; ctx.lineWidth = near ? 4 : 3; ctx.setLineDash([5, 4]); ctx.lineDashOffset = -g.rt * 20; ctx.beginPath(); ctx.arc(px, py, cs * 0.46, 0, 6.3); ctx.stroke(); ctx.setLineDash([]); }
+        const bite = t.bite ? Math.sin(t.bite * 20) * 4 : 0;
+        Arcade.emoji(ctx, CR[t.col], px + bite, py, cs * (angry ? 0.6 + Math.sin(g.rt * 10) * 0.04 : 0.56));
+        if (t.rage != null) Arcade.txt(ctx, angry ? '⚡' : t.rage, px + cs * 0.3, py - cs * 0.3, cs * 0.22, '#fff', 'center', 900, 'rgba(0,0,0,.7)');
+        ctx.globalAlpha = 1;
+      }
+    },
+  });
+})();

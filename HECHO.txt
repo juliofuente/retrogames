@@ -1,7 +1,7 @@
 ARCADE PERDIDO + ARCADE PRO — LO QUE ESTÁ HECHO
 ================================================
-Fecha: 14-10-2026 · Versión de la PWA (games.js → ARCADE_VERSION): 2.4.0
-Total: 41 juegos en la colección principal + 80 en la colección Pro = 121 juegos.
+Fecha: 14-10-2026 · Versión de la PWA (games.js → ARCADE_VERSION): 2.5.0
+Total: 41 juegos en la colección principal + 90 en la colección Pro = 131 juegos.
 
 CONTENIDO DEL ZIP
 -----------------
@@ -79,7 +79,19 @@ centinela.html | Centinela / Sentinel | The Sentinel (Firebird, 1986) | TV:curso
 burbujas.html | Burbujas / Bubbles | Magical Drop (Data East, 1995) | TV:cruceta
 cinta.html | Cinta / Conveyor | Klax (Atari Games, 1990) | TV:cruceta
 
-COLECCIÓN PRO (pwa/indexpro.html) — 80 juegos (mecánicas de los juegos que cubre emanueleferonato.com)
+COLECCIÓN PRO (pwa/indexpro.html) — 90 juegos (mecánicas de los juegos que cubre emanueleferonato.com)
+-- Lote 7 (puzles de tablero, v2.5.0) --
+expande.html | Expande / Expand | Zhed (Ground Control) | TV:cursor
+portales.html | Portales / Portals | Warp Shift (FISHLABS) | TV:cursor
+hexagonos.html | Hexágonos / Hexagons | Hex FRVR / Hexagonal Tiles | TV:cursor
+lumina.html | Lumina / Lumina | Lumines (Q Entertainment, 2004) | TV:cruceta
+deslizaheroes.html | Deslizahéroes / Hero Slide | Hero Slide (Tuesday Quest) / 2048 | TV:cruceta
+sumacamino.html | Sumacamino / Sum Path | Plus+Plus / zNumbers / Draw and Sum | TV:cursor
+mazmorra.html | Mazmorra / Dungeon | Dungeon Raid / Drag and Match / 10000000 / Hero Emblems | TV:cursor
+fusionabolas.html | Fusiona bolas / Fuse Balls | Fuse Ballz / Drop the Number / Ballz | TV:cruceta
+cadenaroja.html | Cadena roja / Red Chain | Grindstone (Capybara Games) | TV:cursor
+losas.html | Losas / Flagstones | Pyramids of Ra (Game Boy, 1991) | TV:cruceta
+-- Lotes 1–6 --
 esquiva.html | Esquiva / Dodge | Eskiv / Avoider / String Avoider | TV:cruceta
 astro.html | Astro / Astro | Astro-PANIC! / Pang / Pixel Purge | TV:cruceta
 dardos.html | Dardos / Darts | Bloons / Balloon Invasion / Pop to Save | TV:cursor
@@ -170,5 +182,9 @@ NOTAS TÉCNICAS DE LO HECHO
 · Balance comprobado con bots en Node (mock.js): Gemas, Póker (EV ~1,7 con tabla "arcade"), Alas, Torres, Huerto,
   Supervivientes, Reacción, Tirachinas, Derribo, Treses.
 · phys.js: impactos por velocidad de aproximación (onImpact(a,b,v)); estable con torres de 8 cajas.
+· Lote 7: Expande (generador con solver: exige un mínimo de fichas para llegar a la meta), Losas (nivel = camino real,
+  comprobado reproduciéndolo: 800/800 resueltos), Portales (BFS: solución mínima mostrada como "Mínimo" y usada para
+  las estrellas), Sumacamino (el objetivo sale de un camino real del tablero). Balance con bots en Node: Hexágonos,
+  Lumina, Deslizahéroes, Mazmorra, Fusiona bolas, Cadena roja.
 · Pruebas pasadas en todos: táctil nivel 1 y forzado a nivel 4, TV 1 y 2 jugadores, escaneo de textos en inglés,
   sin errores de JavaScript.
