@@ -1,0 +1,118 @@
+PAUTAS PARA PEDIR UN JUEGO NUEVO A CLAUDE (Arcade Perdido · retro.juegosboom.com)
+================================================================================
+
+Cómo usar este archivo
+----------------------
+1. Copia el bloque «MENSAJE PARA CLAUDE» de abajo.
+2. Rellena la parte «EL JUEGO» con tu idea: cómo se juega, cómo se gana y cómo se pierde, y en qué categoría va.
+   Si te basas en un juego que existe, di su nombre.
+3. Pégalo en Claude Code con este repositorio abierto. Claude ya tiene el código; no hace falta mandarle archivos.
+   Solo adjunta lo que sea tuyo: un PDF con ejercicios, un zip con un juego ya hecho, capturas, etc.
+
+Hay dos tipos de juego:
+  A) Juego ARCADE: usa el motor común (pwa/common.js). Es lo normal para juegos nuevos.
+  B) Juego EDUCATIVO o app hecha aparte: va en su propia carpeta dentro de educativos/ y no usa el motor.
+     Se integra en la web (fichas, rankings, favoritos y 🏠).
+
+--------------------------------------------------------------------------------
+MENSAJE PARA CLAUDE (copiar desde aquí)
+--------------------------------------------------------------------------------
+Lee primero HECHO.txt, PENDIENTE_E_INSTRUCCIONES.txt, pwa/README.md y este archivo (PAUTAS_NUEVO_JUEGO.txt).
+Trabaja directamente en main (sin ramas ni PR). Al acabar, haz commit y push.
+
+EL JUEGO
+  · Nombre (es / en): …
+  · Tipo: arcade (motor común) | educativo (carpeta propia en educativos/)
+  · Categoría: puzles | combinar | accion | untoque | plataformas | fisica | estrategia | tablero | deportes
+    (si es educativo: materia mates | lengua | logica | ingles, y edades, p. ej. 6 a 12)
+  · Cómo se juega: …
+  · Cómo se gana un nivel y cómo se pierde: …
+  · Controles: tocar | arrastrar | deslizar | mantener | teclado
+  · Qué sube con la dificultad: …
+  · Inspirado en (si lo hay): …
+
+REGLAS DEL SISTEMA (obligatorias)
+ 1. Arcade: crea herramientas/src/<id>.js copiando la estructura de un juego parecido. La primera línea es
+    «// Título|#color». Usa Arcade.game({...}) con:
+    · id, title, emoji, color, origin, help (HTML corto)
+    · en: { title, tag, help, tvHelp, dict }
+    · tvHelp y tv (o key() para teclado)
+    · lives, levels: 0 y cap
+    · setup, layout, update, draw y los controles (down, move, up, tap, swipe, key)
+    · demo(g)
+    · Comentarios /*THEME*/ /*EN*/ /*TV*/ /*SC*/ como los demás juegos.
+ 2. Idiomas: todo en español e inglés. Los textos que se dibujan en el canvas con Arcade.txt deben ir en en.dict
+    (o usar Arcade.T('es','en')).
+ 3. Niveles: finitos. Con levels: 0 el motor crea 60/80/100/120 niveles según cap. Usa g.lv para la dificultad
+    (no g.level): el motor ya lo reparte entre los modos fácil, normal y difícil. El nivel 1 en fácil debe ser
+    muy fácil. Cada nivel tiene que tener SIEMPRE solución: compruébalo con una simulación, no a ojo.
+ 4. Demo: demo(g) juega solo y con sentido (botón «👀 Ver demo») y explica la mecánica en 1–3 frases (say).
+ 5. Gráficos: solo emojis y canvas, sin imágenes ni librerías ni fuentes externas.
+    · Protagonista: g.face(). Enemigos: Arcade.FOES / Arcade.foe(n). Lo que se mueve: Arcade.emojiTo.
+    · Usa emojis de 2019 o anteriores. Si usas uno más nuevo (🫐 🪨 🥲 🪃 🫧 🟢 🟦, secuencias con ‍ …),
+      añádelo a Arcade.FALLBACK en pwa/common.js con un sustituto antiguo. Algunos móviles no los tienen y no
+      saldrían en pantalla.
+ 6. Pantalla: que se vea bien en móvil vertical (390×780) y en TV (960×540), sin huecos vacíos grandes. Lo
+    importante debe quedar en la mitad baja, cerca del dedo.
+ 7. URLs: nunca enlaces con .html ni index.html. Las fichas son /<id> y, si se fuerza el idioma, /<id>/en.
+    El 🏠 lo pone el motor (vuelve a la sección de la que vino el jugador, guardada en sessionStorage 'arc_back').
+ 8. Nada de window.withpwa ni de service workers propios: la PWA está desactivada. Con window.isSingleGame = true
+    el juego debe funcionar solo, sin 🏠, sin favoritos y sin estadísticas.
+
+CONSTRUIR Y REGISTRAR (arcade)
+  cd herramientas
+  · Añade la descripción en mkgames.py (diccionario D) y el id en la lista que toque.
+  · Añade el id a su categoría en CAT y a ADDED con la versión nueva (ambos en mkdb.py).
+  · node --check src/<id>.js
+  · python3 mk.py <id> && rm -rf sueltos_sin_config
+  · python3 mkgames.py
+  · python3 mkedu.py
+  · Sube ARCADE_VERSION en pwa/games.js.
+  · python3 stamp.py   ← SIEMPRE, después de cambiar cualquier .js/.css o .html
+  · (cd ../pwa && python3 build.py)
+  · python3 mkdb.py
+
+CONSTRUIR Y REGISTRAR (educativo o app propia)
+  · Carpeta educativos/<carpeta>/ con su index.html. Todo con rutas relativas y sin enlaces a .html.
+  · Añade la entrada a EXTRA (y, si es una app con varios juegos, a APPS) en herramientas/mkedu.py.
+    La url no lleva .html (p. ej. 'educativos/<carpeta>/').
+  · Añade la carpeta a PAGES en herramientas/stamp.py si tiene .js/.css propios.
+  · Pon el botón 🏠 flotante que vuelve a 'arc_back' (cópialo de educativos/fabrica-frases/index.html, al final).
+  · Favoritos y tiempo de juego: cópialo de educativos/problemas-primaria/index.html (busca uid, api/fav y
+    api/play). El id del juego tiene que ser el mismo que en EXTRA.
+  · Después: python3 mkedu.py && python3 stamp.py && python3 mkdb.py
+
+PROBAR ANTES DEL COMMIT
+  · Levanta la web con PHP:
+      php -S 127.0.0.1:8080 -t . herramientas/router.php
+    (el router imita el .htaccess: URLs limpias, bloqueos, redirecciones)
+  · Con Playwright (en Claude Code en la nube: executable_path='/opt/pw-browsers/chromium'), abre /<id> y /<id>/en
+    y comprueba:
+    · que no hay errores en consola
+    · que la demo funciona
+    · que se juega una partida
+    · que se pasa de nivel
+    · que el 🏠 vuelve a la categoría de la que venías
+  · Haz capturas y míralas.
+  · Prueba todos los juegos (smoke test) si has tocado pwa/common.js.
+  · Actualiza HECHO.txt (qué se ha hecho y versión).
+  · Haz commit y push a main.
+--------------------------------------------------------------------------------
+(fin del mensaje)
+
+
+Consejos para describir bien el juego
+-------------------------------------
+· Cuenta una partida paso a paso: «aparece…, el jugador toca…, si… entonces…». Es lo que mejor funciona.
+· Di qué debe ser imposible: que nunca haya un tablero sin jugadas, que no aparezcan enemigos encima del jugador…
+· Di cómo quieres la dificultad: «empieza muy fácil», «en el nivel 60 tiene que ser difícil pero justo»…
+· Para educativos: edades o curso, temario, ejemplos de ejercicios, si quieres voz o pistas, y cuántas
+  fichas o niveles.
+· Si después algo no te gusta, di el juego y la URL exacta (p. ej. https://retro.juegosboom.com/bumeran) y qué
+  ves mal. Una captura ayuda mucho.
+
+Si algo «no se ve» en la web pero en local sí
+---------------------------------------------
+· Comprueba que has subido TODOS los archivos que cambiaron (pwa/common.js, pwa/<id>.html, index.php, .htaccess…).
+· index.php pone a cada .js/.css la huella del archivo que hay en el servidor (?v=…), así que el navegador no
+  debería mezclar versiones. Si aun así falla, abre la consola del navegador (F12) y copia el error rojo.

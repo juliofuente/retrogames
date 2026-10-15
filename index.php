@@ -112,12 +112,24 @@ function serve_edu(array $g, ?string $force): void {
     . '<link rel="canonical" href="' . h(abs_url($p)) . '"><meta name="description" content="' . h($desc) . '">'
     . '<meta property="og:title" content="' . h($title) . '"><meta property="og:url" content="' . h(abs_url($p)) . '">'
     . '<script>window.ARCADE_EDU=' . json_encode(['id' => $g['id'], 'q' => http_build_query($q), 'home' => url('/')], JSON_UNESCAPED_SLASHES | JSON_HEX_TAG) . ';</script>';
+  $html = fresh_assets($html, dirname(__DIR__ . '/' . $path));
   $html = preg_replace('/<head[^>]*>/i', '$0' . "\n" . $head, $html, 1);
   $html = preg_replace('/<title>.*?<\/title>/s', '<title>' . h($title) . '</title>', $html, 1);
   header('Content-Type: text/html; charset=utf-8');
   header('Cache-Control: no-cache');
   echo $html;
   exit;
+}
+/* Pone en cada .js/.css local la huella del archivo que hay de verdad en el servidor (?v=fecha+tamaño), aunque no
+   se haya ejecutado stamp.py o se haya subido solo una parte: así el navegador nunca mezcla un HTML nuevo con un
+   common.js viejo de la caché. */
+function fresh_assets(string $html, string $dir): string {
+  return preg_replace_callback('/((?:src|href)=")([^"?#:]+\.(?:js|css))(?:\?v=[0-9a-z]*)?(")/', function ($m) use ($dir) {
+    $f = $dir . '/' . $m[2];
+    $t = @filemtime($f);
+    if ($t === false) return $m[0];
+    return $m[1] . $m[2] . '?v=' . base_convert((string)$t, 10, 36) . base_convert((string)filesize($f), 10, 36) . $m[3];
+  }, $html);
 }
 function guess_lang(): string {
   $c = $_COOKIE['arc_lang'] ?? '';
@@ -771,6 +783,7 @@ function serve_game(array $g, ?string $force): void {
     . '<meta property="og:title" content="' . h($title) . '"><meta property="og:description" content="' . h($desc) . '">'
     . '<meta property="og:url" content="' . h(abs_url($p)) . '"><meta property="og:image" content="' . h(abs_url('/pwa/icons/icon-512.png')) . '">'
     . '<script>window.ARCADE_SITE=' . json_encode($site, JSON_UNESCAPED_SLASHES | JSON_HEX_TAG) . ';</script>';
+  $html = fresh_assets($html, __DIR__ . '/pwa');
   $html = preg_replace('/<head>/i', '<head>' . "\n" . $head, $html, 1);
   $html = preg_replace('/<title>.*?<\/title>/s', '<title>' . h($title) . '</title>', $html, 1);
   if ($force) $html = preg_replace('/<html lang="[a-z]+"/i', '<html lang="' . $force . '"', $html, 1);

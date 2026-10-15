@@ -1,6 +1,18 @@
 ARCADE PERDIDO + ARCADE PRO — LO QUE ESTÁ HECHO
 ================================================
-Fecha: 14-10-2026 · Versión de la PWA (games.js → ARCADE_VERSION): 2.12.0
+Fecha: 15-10-2026 · Versión de la PWA (games.js → ARCADE_VERSION): 2.13.0
+· v2.13.0: EMOJIS QUE NO SALÍAN Y CACHÉ:
+  - common.js comprueba si el dispositivo sabe pintar cada emoji nuevo (Unicode 12+: 🫐 🪨 🥲 🪃 🙂‍↔️ 🟢 🟦…). Si no
+    puede, lo cambia por uno antiguo parecido (Arcade.FALLBACK) o dibuja a mano los círculos/cuadrados de color. Antes,
+    en móviles y PCs algo viejos esos emojis no aparecían o salían como un cuadrado.
+  - index.php pone en cada .js/.css de los juegos y educativos que sirve la huella del archivo real del servidor
+    (?v=fecha+tamaño), aunque no se haya ejecutado stamp.py o se haya subido solo una parte. .htaccess: con ?v= se
+    guardan un año; sin ?v= siempre se revalidan (antes, 30 días).
+  - Bumerán: la pared es una escalera (arriba a la izquierda). Al lanzar por encima de las pilas, la pieza rebota en
+    el escalón y cae por una columna distinta según la fila. Las pilas se adaptan a la escalera. La pieza de la mano
+    siempre tiene al menos una jugada que rompe algo (si no, se cambia por una que sí): siempre hay solución.
+  - PAUTAS_NUEVO_JUEGO.txt: qué decirle a Claude para que haga un juego nuevo integrado en el sistema.
+    herramientas/router.php: router para probar la web con php -S (imita el .htaccess).
 · v2.12.2: URLS Y VUELTA ATRÁS:
   - Ninguna URL lleva .html ni index.html: .htaccess redirige /x.html → /x y /carpeta/index.html → /carpeta/, y sirve
     x.html al pedir /x. Los educativos se juegan en /{id} (index.php sirve su HTML con <base> a su carpeta; Brain Academy

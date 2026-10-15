@@ -14,11 +14,17 @@
 </head>
 <body class="game">
 <script src="config.js?v=a2ee08541b"></script>
-<script src="common.js?v=b177312443"></script>
+<script src="common.js?v=e6a25b78a8"></script>
 <script>
 (function () {
   const { ri, pick, clamp } = Arcade;
   const COLS = 7, ROWS = 9, ALL = ['🍎', '🍋', '🍇', '🫐', '🍊'], WILD = '⭐';
+  // Pared en escalera (arriba a la izquierda): en la fila r la pared ocupa las columnas < STAIR[r]. Al lanzar por
+  // encima de las pilas, la pieza rebota en el escalón y cae por una columna distinta según la fila: así siempre se
+  // puede llegar a la cima de las columnas de la izquierda.
+  const STAIR = [4, 3, 2, 1];
+  const wallAt = (r) => (r < STAIR.length ? STAIR[r] : 0);
+  const wallRows = (c) => STAIR.filter((w) => w > c).length;
   const TINT = { '🍎': '#ff6b6b', '🍋': '#ffe066', '🍇': '#b197fc', '🫐': '#74c0fc', '🍊': '#ffa94d', '⭐': '#fff3bf' };
 
   function geo(g) {
@@ -44,7 +50,7 @@
       Arcade.sfx.coin();
     }
     const types = present(s);
-    s.held = got || (types.length ? pick(types) : WILD);
+    s.held = fair(s, got || (types.length ? pick(types) : WILD));
     const left = count(s);
     if (left <= s.target) { g.addScore(200 * g.lv + (s.target - left) * 100, g.W / 2, g.H / 2); g.win(); return; }
     if (!sh.n) {
@@ -52,11 +58,33 @@
       g.die();
     }
   }
+  // Simula un lanzamiento por la fila r con la pieza t sobre el tablero f (sin tocarlo).
+  // Devuelve { n: piezas que rompe, hit: pieza con la que choca al final (o null) }.
+  function trace(f0, r, t) {
+    const f = f0.map((row) => row.slice()); let c = COLS, rr = r, dir = 'L', n = 0;
+    for (let k = 0; k < 200; k++) {
+      let nc = c, nr = rr; if (dir === 'L') nc--; else nr++;
+      if (dir === 'L' && nc < wallAt(rr)) { dir = 'D'; continue; }
+      if (nr >= ROWS) return { n, hit: null };
+      const b = f[nr][nc]; if (!b) { c = nc; rr = nr; continue; }
+      if (b === t || b === WILD || t === WILD) { if (t === WILD && b !== WILD) t = b; f[nr][nc] = null; n++; c = nc; rr = nr; continue; }
+      return { n, hit: b };
+    }
+    return { n, hit: null };
+  }
+  // Piezas que se pueden romper con algún lanzamiento: la primera que encuentra cada fila.
+  function reachable(s) { const set = new Set(); for (let r = 0; r < ROWS; r++) { const h = trace(s.f, r, '·').hit; if (h) set.add(h); } return set; }
+  // La pieza en la mano siempre tiene al menos una jugada que rompe algo (si no, se cambia por una que sí).
+  function fair(s, t) {
+    const ok = reachable(s);
+    if (t === WILD || ok.has(t) || ok.has(WILD) || !ok.size) return t || WILD;
+    return pick([...ok]);
+  }
   function step(g) {
     const s = g.s, sh = s.shot;
     let nc = sh.c, nr = sh.r;
     if (sh.dir === 'L') nc--; else nr++;
-    if (sh.dir === 'L' && nc < 0) { sh.dir = 'D'; return; }
+    if (sh.dir === 'L' && nc < wallAt(sh.r)) { sh.dir = 'D'; return; }
     if (nr >= ROWS) { finishShot(g, null); return; }
     const b = s.f[nr][nc];
     if (!b) { sh.c = nc; sh.r = nr; return; }
@@ -74,16 +102,14 @@
 
   Arcade.game({
     /*THEME*/ tag: "El mago frutero lanza y recoge", deco: ["🍎", "🍋", "🍇", "🫐", "🍊", "⭐"], font: "fancy", bg: ["#1b2a4a", "#0d1526"], music: {"mode": "lydian", "bpm": 116, "wave": "triangle", "style": "arcade", "root": 60}, voice: {"wave": "triangle", "mul": 1.1, "echo": 0.25}, ambient: {"e": ["✨"], "n": 10, "vy": 0, "sway": 0, "twinkle": 1, "alpha": 0.28, "size": [8, 14]},
-    /*EN*/ en: {"title": "Boomerang", "tag": "The fruit wizard throws and catches", "help": "<b>Tap a row</b> to throw your piece to the left. It breaks all the <b>matching</b> pieces in a row; when it hits a different one, <b>it keeps it</b> and that one comes back to your hand. If it reaches the wall, it drops down the first column. Leave fewer pieces than the goal to clear the level. A throw that breaks nothing costs a life. ⭐ matches anything.", "tvHelp": "▲ ▼ pick a row · OK throw the piece.", "dict": {"Quedan ": "Left ", "  ·  objetivo ≤ ": "  ·  goal ≤ ", "¡Fallo!": "Miss!"}},
+    /*EN*/ en: {"title": "Boomerang", "tag": "The fruit wizard throws and catches", "help": "<b>Tap a row</b> to throw your piece to the left. It breaks all the <b>matching</b> pieces in a row; when it hits a different one, <b>it keeps it</b> and that one comes back to your hand. If it reaches the stepped wall, it drops down that column. Leave fewer pieces than the goal to clear the level. A throw that breaks nothing costs a life. ⭐ matches anything.", "tvHelp": "▲ ▼ pick a row · OK throw the piece.", "dict": {"Quedan ": "Left ", "  ·  objetivo ≤ ": "  ·  goal ≤ ", "¡Fallo!": "Miss!"}},
     /*TV*/ tvHelp: "▲ ▼ elegir fila · OK lanzar la pieza.",
     id: 'bumeran', title: 'Bumerán', emoji: '🪃', color: '#74c0fc', origin: 'Plotting / Flipull (Taito, 1989)',
-    help: '<b>Toca una fila</b> para lanzar tu pieza hacia la izquierda. Rompe todas las piezas <b>iguales</b> seguidas que encuentre; al chocar con una distinta, <b>se la queda</b> y esa vuelve a tu mano. Si llega a la pared, cae por la primera columna. Deja menos piezas que el objetivo para pasar de nivel. Un lanzamiento que no rompe nada te cuesta una vida. ⭐ vale por cualquiera.',
+    help: '<b>Toca una fila</b> para lanzar tu pieza hacia la izquierda. Rompe todas las piezas <b>iguales</b> seguidas que encuentre; al chocar con una distinta, <b>se la queda</b> y esa vuelve a tu mano. Si llega a la pared en escalera, cae por esa columna. Deja menos piezas que el objetivo para pasar de nivel. Un lanzamiento que no rompe nada te cuesta una vida. ⭐ vale por cualquiera.',
     lives: 3, levels: 0, cap: 16,
     demo(g) {
       const s = g.s; if (s.shot || !s.held) return { wait: 0.3 };
-      const sim = (r) => { const f = s.f.map((row) => row.slice()); let c = COLS, rr = r, dir = 'L', t = s.held, n = 0;
-        for (let k = 0; k < 200; k++) { let nc = c, nr = rr; if (dir === 'L') nc--; else nr++; if (dir === 'L' && nc < 0) { dir = 'D'; continue; } if (nr >= ROWS) return n;
-          const b = f[nr][nc]; if (!b) { c = nc; rr = nr; continue; } if (b === t || b === WILD || t === WILD) { if (t === WILD && b !== WILD) t = b; f[nr][nc] = null; n++; c = nc; rr = nr; continue; } return n; } return n; };
+      const sim = (r) => trace(s.f, r, s.held).n;
       let best = 0, bn = -1; for (let r = 0; r < ROWS; r++) { const n = sim(r) + Math.random() * 0.5; if (n > bn) { bn = n; best = r; } }
       return { tap: [s.ox + (COLS + 0.6) * s.cs, s.oy + (best + 0.5) * s.cs], after: 1, say: Arcade.T('Toca la fila donde rompe más piezas iguales', 'Tap the row where it breaks the most matching pieces') };
     },
@@ -94,11 +120,11 @@
       for (let r = 0; r < ROWS; r++) s.f.push(new Array(COLS).fill(null));
       const base = Math.min(ROWS - 3, 4 + Math.floor(g.lv / 4));
       for (let c = 0; c < COLS; c++) {
-        const h = clamp(base - Math.floor(c / 3) + ri(-1, 1), 2, ROWS - 2);
+        const h = clamp(base - Math.floor(c / 3) + ri(-1, 1), 2, Math.min(ROWS - 2, ROWS - wallRows(c) - 1));
         for (let r = ROWS - h; r < ROWS; r++) s.f[r][c] = Math.random() < 0.04 ? WILD : pick(types);
       }
       s.start = count(s); s.target = Math.max(2, Math.round(s.start * (0.3 - g.lv * 0.012)));
-      s.held = pick(present(s));
+      s.held = fair(s, pick(present(s)));
       geo(g);
     },
     layout(g) { if (g.s.f) geo(g); },
@@ -128,7 +154,14 @@
       if (!s.f) return;
       const cs = s.cs;
       ctx.fillStyle = 'rgba(255,255,255,.05)'; Arcade.rr(ctx, s.ox - 6, s.oy - 6, cs * COLS + 12, cs * ROWS + 12, 14); ctx.fill();
-      ctx.fillStyle = '#4c6ef5'; ctx.fillRect(s.ox - 8, s.oy - 6, 5, cs * ROWS + 12);
+      // pared en escalera: ladrillos arriba a la izquierda y una línea por debajo
+      ctx.fillStyle = '#4c6ef5'; ctx.fillRect(s.ox - 8, s.oy + STAIR.length * cs, 5, cs * (ROWS - STAIR.length) + 6);
+      for (let r = 0; r < STAIR.length; r++) for (let c = 0; c < STAIR[r]; c++) {
+        const x = s.ox + c * cs, y = s.oy + r * cs;
+        ctx.fillStyle = '#3b5bdb'; Arcade.rr(ctx, x + 1, y + 1, cs - 2, cs - 2, cs * 0.12); ctx.fill();
+        ctx.fillStyle = 'rgba(255,255,255,.14)'; ctx.fillRect(x + 3, y + cs * 0.48, cs - 6, 2); ctx.fillRect(x + cs * 0.5 - 1, y + 3, 2, cs * 0.45);
+        if (c === STAIR[r] - 1) { ctx.fillStyle = '#91a7ff'; ctx.fillRect(x + cs - 4, y + 1, 3, cs - 2); }
+      }
       // fila objetivo
       ctx.fillStyle = 'rgba(116,192,252,.08)'; ctx.fillRect(s.ox, s.oy + s.prow * cs, cs * (COLS + 1.2), cs);
       const tile = (x, y, v, a) => {

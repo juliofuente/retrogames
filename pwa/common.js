@@ -64,6 +64,44 @@
   function rng(seed) { let a = seed >>> 0; return () => { a |= 0; a = (a + 0x6d2b79f5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
 
   /* ---------- emojis cacheados ---------- */
+  // Los emojis nuevos (Unicode 12+, p. ej. 🫐 🪨 🥲 🙂‍↔️) no existen en muchos móviles y PCs: se ven como un cuadrado,
+  // dos dibujos pegados o nada. Antes de usar uno se comprueba si el sistema lo pinta en color; si no, se cambia por
+  // un parecido más antiguo (FALLBACK) o, si es un círculo/cuadrado de color, se dibuja a mano.
+  const SHAPE = { '🟢': ['o', '#40c057'], '🟡': ['o', '#fcc419'], '🟣': ['o', '#9c36b5'], '🟠': ['o', '#fd7e14'], '🟤': ['o', '#8d5524'], '🔴': ['o', '#e03131'], '🔵': ['o', '#1c7ed6'],
+    '🟦': ['s', '#1c7ed6'], '🟩': ['s', '#40c057'], '🟥': ['s', '#e03131'], '🟨': ['s', '#fcc419'], '🟪': ['s', '#9c36b5'], '🟧': ['s', '#fd7e14'], '🟫': ['s', '#8d5524'], '🪙': ['o', '#fab005'] };
+  A.FALLBACK = { '🫐': '🍇', '🪨': '🌑', '🫧': '⚪', '🪐': '🌍', '🧊': '💎', '🥲': '😢', '🥹': '🥺', '🥱': '😪', '🪴': '🌱', '🪃': '🔄', '🦩': '🦢', '🪶': '🍃',
+    '🤍': '💖', '🪵': '🌰', '🥶': '😨', '🪄': '✨', '🪞': '🔲', '🪀': '🎯', '🪁': '🎈', '🪽': '🕊️', '🪲': '🐞', '🪳': '🐜', '🛻': '🚚', '🪺': '🐣', '🪸': '🌿',
+    '🪟': '🔲', '🪷': '🌸', '🪓': '🔨', '🧌': '👹', '🪢': '➰', '🪜': '📶', '🪅': '🎉', '🪱': '🐛', '🛞': '⚙️', '🪼': '🐙', '🪛': '🔧', '🪚': '🔨', '🪦': '⚰️',
+    '🧄': '🧅', '🫥': '😶', '🟰': '=', '🧍': '🚶', '🥸': '🤓', '🪖': '⛑️', '🪣': '🥫', '🥏': '💿', '🧃': '🥤', '🪗': '🎹', '🫣': '🙈', '🪑': '💺',
+    '🦭': '🐳', '🦨': '🦝', '🦧': '🦍', '🛺': '🚗', '🦼': '♿', '🛼': '⛸️', '🦫': '🐿️', '🦽': '♿', '🦦': '🦝', '🦤': '🦃', '🦯': '🦮' };
+  const eok = new Map();
+  let etc = null;
+  function emojiOK(ch) {
+    let v = eok.get(ch);
+    if (v !== undefined) return v;
+    v = true;
+    try {
+      if (!etc) { etc = document.createElement('canvas'); etc.width = etc.height = 64; etc = etc.getContext('2d', { willReadFrequently: true }); }
+      const x = etc; x.clearRect(0, 0, 64, 64); x.font = '40px ' + EF; x.textBaseline = 'top';
+      if (x.measureText(ch).width > x.measureText('😀').width * 1.35) v = false;  // secuencia ZWJ no soportada: salen dos dibujos
+      else {
+        x.fillStyle = '#f00'; x.fillText(ch, 4, 4);
+        const d = x.getImageData(0, 0, 64, 64).data; let col = false, ink = false;
+        for (let i = 0; i < d.length; i += 4) if (d[i + 3] > 40) { ink = true; if (d[i + 1] > 30 || d[i + 2] > 30) { col = true; break; } }
+        v = ink && col;  // un emoji en color ignora el rojo; un cuadrado «tofu» o nada sale rojo o vacío
+      }
+    } catch (_) { v = true; }
+    eok.set(ch, v);
+    return v;
+  }
+  function emojiFix(ch) {
+    if (!A.FALLBACK[ch] && !SHAPE[ch] && ch.indexOf('\u200d') < 0) return ch;
+    if (emojiOK(ch)) return ch;
+    if (SHAPE[ch]) return SHAPE[ch];
+    if (A.FALLBACK[ch]) return A.FALLBACK[ch];
+    return ch.split('\u200d')[0];  // 🙂‍↔️ → 🙂
+  }
+  A.emojiFix = (ch) => { const f = emojiFix(ch); return typeof f === 'string' ? f : ch; };
   const ec = new Map();
   A.dpr = 1;
   A.emoji = (ctx, ch, x, y, size, o) => {
@@ -75,9 +113,19 @@
       const s = Math.ceil(size * 1.35 * dpr);
       c.width = c.height = s;
       const x2 = c.getContext('2d');
-      x2.font = Math.round(size * dpr) + 'px ' + EF;
-      x2.textAlign = 'center'; x2.textBaseline = 'middle';
-      x2.fillText(ch, s / 2, s / 2 + size * dpr * 0.07);
+      const fx = emojiFix(String(ch));
+      if (typeof fx !== 'string') {  // círculo o cuadrado de color dibujado a mano
+        const r = size * dpr * 0.42, m = s / 2;
+        const gr = x2.createRadialGradient(m - r * 0.35, m - r * 0.35, r * 0.1, m, m, r * 1.2);
+        gr.addColorStop(0, 'rgba(255,255,255,.55)'); gr.addColorStop(0.35, fx[1]); gr.addColorStop(1, fx[1]);
+        x2.fillStyle = gr; x2.beginPath();
+        if (fx[0] === 'o') x2.arc(m, m, r, 0, TAU); else if (x2.roundRect) x2.roundRect(m - r, m - r, 2 * r, 2 * r, r * 0.25); else x2.rect(m - r, m - r, 2 * r, 2 * r);
+        x2.fill(); x2.lineWidth = Math.max(1, r * 0.08); x2.strokeStyle = 'rgba(0,0,0,.25)'; x2.stroke();
+      } else {
+        x2.font = Math.round(size * dpr) + 'px ' + EF;
+        x2.textAlign = 'center'; x2.textBaseline = 'middle';
+        x2.fillText(fx, s / 2, s / 2 + size * dpr * 0.07);
+      }
       c.cs = s / dpr;
       if (ec.size > 900) ec.clear();
       ec.set(k, c);
