@@ -929,6 +929,10 @@ if (preg_match('#^/pwa/(index(pro|tv)?(\.html)?)?$#', $path, $m)) {
   readfile(__DIR__ . '/pwa/' . (($m[2] ?? '') !== '' ? 'index' . $m[2] : 'index') . '.html'); exit;
 }
 // páginas de listado: solo con PORTADA (las URLs antiguas /jugar/{id} siguen redirigiendo al juego)
+if (!PORTADA && count($seg) === 2 && $k === ($EN ? 'game' : 'juego')) {   // sin fichas: /juego/{id} → al juego
+  $g = $EN ? find_by($GAMES, 'slug_en', $arg) : ($GAMES[$arg] ?? null);
+  if ($g) redirect(url('/' . $g['id'] . ($EN ? '/en' : '')), 302);
+}
 if (!PORTADA && !(count($seg) === 2 && $k === ($EN ? 'play' : 'jugar'))) goto juego;
 if ($r === '/' && count($seg) === 0) { page_home(); exit; }
 if (count($seg) === 1 && $k === ($EN ? 'games' : 'juegos')) { page_all(); exit; }

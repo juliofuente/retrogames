@@ -10,7 +10,8 @@ Fecha: 15-10-2026 · Versión de la PWA (games.js → ARCADE_VERSION): 2.14.0
   - Web solo de juegos (const PORTADA = false en index.php): la portada («/», «/en/») y TODAS las páginas de listado
     (fichas /juego/…, categorías, /juegos, colecciones, asignaturas, edades, controles, TV, búsqueda y los índices
     estáticos /pwa/, /pwa/indexpro, /pwa/indextv) responden un 404 sencillo. Solo se entra a cada juego (/<id>,
-    /<id>/es, /<id>/en); las URLs antiguas siguen redirigiendo al juego. El sitemap solo lista los juegos.
+    /<id>/es, /<id>/en); las URLs antiguas siguen redirigiendo al juego, y las fichas /juego/<id> y /en/game/<slug>
+    llevan directamente al juego (302, p. ej. desde lista.html). El sitemap solo lista los juegos.
     PARA VOLVER A LA NORMALIDAD: en index.php pon «const PORTADA = true;» (portada, listados y sitemap completo) y,
     si quieres el 🏠 y los favoritos en los juegos, window.isSingleGame = false en las páginas (o cambia en
     pwa/common.js «A.single = window.isSingleGame !== false» por «=== true», como estaba antes).
