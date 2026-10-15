@@ -127,11 +127,13 @@
       for (const sd of SIDES) for (let i = 0; i < 4; i++) {
         const line = s.lines[sd][i];
         line.forEach((p, k) => {
-          const [x, y] = cellXY(s, sd, i, k);
-          if (p.bomb) { Arcade.emoji(ctx, '💣', x + cs / 2, y + cs / 2, cs * 0.75); return; }
-          ctx.fillStyle = COL[p.c]; Arcade.rr(ctx, x + 3, y + 3, cs - 6, cs - 6, cs * 0.25); ctx.fill();
-          ctx.fillStyle = 'rgba(255,255,255,.3)'; Arcade.rr(ctx, x + 6, y + 5, cs - 12, cs * 0.22, cs * 0.1); ctx.fill();
-          Arcade.txt(ctx, GLY[p.c], x + cs / 2, y + cs / 2 + 1, cs * 0.38, 'rgba(0,0,0,.45)');
+          const [x0, y0] = cellXY(s, sd, i, k), [x, y, sc] = Arcade.glide(p, x0, y0);   // avanzan deslizándose
+          Arcade.scaled(ctx, x + cs / 2, y + cs / 2, sc, () => {
+            if (p.bomb) { Arcade.emoji(ctx, '💣', x + cs / 2, y + cs / 2, cs * 0.75); return; }
+            ctx.fillStyle = COL[p.c]; Arcade.rr(ctx, x + 3, y + 3, cs - 6, cs - 6, cs * 0.25); ctx.fill();
+            ctx.fillStyle = 'rgba(255,255,255,.3)'; Arcade.rr(ctx, x + 6, y + 5, cs - 12, cs * 0.22, cs * 0.1); ctx.fill();
+            Arcade.txt(ctx, GLY[p.c], x + cs / 2, y + cs / 2 + 1, cs * 0.38, 'rgba(0,0,0,.45)');
+          });
         });
       }
     },

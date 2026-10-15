@@ -142,6 +142,31 @@
     } else ctx.drawImage(c, x - w / 2, y - w / 2, w, w);
   };
 
+  /* ---------- transiciones de casilla a casilla ---------- */
+  // Para juegos de tablero: en vez de dibujar cada pieza en su casilla de golpe, se dibuja donde devuelve
+  //   const [x, y, k] = Arcade.glide(pieza, xDestino, yDestino)
+  // La pieza (un objeto que se conserva mientras exista) se desliza suavemente hasta su casilla; al aparecer crece con
+  // un pequeño rebote (k va de 0 a 1: úsalo como escala). Si un objeto deja de dibujarse un rato y vuelve, salta sin
+  // animación. o.speed (opcional) cambia la rapidez (por defecto 16 ≈ 0,15 s).
+  A.fdt = 1 / 60; A.fno = 0;
+  A.glide = (o, x, y, speed) => {
+    if (!o || typeof o !== 'object') return [x, y, 1];
+    const gl = o.__gl || (o.__gl = { x, y, a: 0, f: -9 });
+    if (A.fno - gl.f > 20) { gl.x = x; gl.y = y; if (gl.f > -9) gl.a = 1; }   // reaparece tras no dibujarse: sin animación
+    if (gl.f !== A.fno) {
+      const k = 1 - Math.exp(-(speed || o.speed || 16) * A.fdt);
+      gl.x += (x - gl.x) * k; gl.y += (y - gl.y) * k;
+      if (Math.abs(x - gl.x) < 0.3) gl.x = x; if (Math.abs(y - gl.y) < 0.3) gl.y = y;
+      if (gl.a < 1) gl.a = Math.min(1, gl.a + A.fdt * 5.5);
+      gl.f = A.fno;
+    }
+    const t = gl.a, c = 1.70158;
+    const sc = t >= 1 ? 1 : 1 + (c + 1) * Math.pow(t - 1, 3) + c * Math.pow(t - 1, 2);   // easeOutBack
+    return [gl.x, gl.y, Math.max(0, sc)];
+  };
+  // Dibuja algo centrado en (x, y) escalado k (para usar con el k de Arcade.glide): Arcade.scaled(ctx, x, y, k, () => {...})
+  A.scaled = (ctx, x, y, k, fn) => { if (k === 1) return fn(); ctx.save(); ctx.translate(x, y); ctx.scale(k, k); ctx.translate(-x, -y); fn(); ctx.restore(); };
+
   /* ---------- caras del protagonista ---------- */
   // Repertorio de caras por estado de ánimo. g.face() devuelve la cara actual del protagonista;
   // el motor la cambia sola (al azar, al recibir daño, al sumar puntos, al ganar…) y el juego
@@ -392,11 +417,17 @@
     /* niveles finitos (v2.11): los antiguos «infinitos» pasan a 60–120 niveles según su tope de dificultad (cap), y la
        dificultad interna g.lv (1…cap) se reparte de forma homogénea por todos ellos según el modo elegido. */
     const CAP = def.cap || 20;
+    // Los juegos de niveles generados (levels: 0) se pueden jugar con niveles limitados o en modo infinito, y las dos
+    // cosas se combinan con la dificultad (fácil, normal, difícil). En infinito la dificultad sube igual que en los
+    // limitados y, al pasar del último, se queda en el máximo y los niveles siguen sin fin.
+    const CANINF = def.levels === 0;
     if (def.levels === 0) def.levels = CAP <= 16 ? 60 : CAP <= 20 ? 80 : CAP <= 25 ? 100 : 120;
-    const infinite = false, hasLevels = def.levels != null;
+    const hasLevels = def.levels != null;
     const MODES = { easy: ['😊', 'Fácil', 'Easy'], normal: ['🙂', 'Normal', 'Normal'], hard: ['😈', 'Difícil', 'Hard'] };
     let MODE = A.get('mode_' + def.id, A.get('mode', 'normal')); if (!MODES[MODE]) MODE = 'normal';
-    const KEY = (k) => k + '_' + def.id + (MODE === 'normal' ? '' : '_' + MODE);
+    let infinite = CANINF && A.get('inf_' + def.id, A.get('inf', false)) === true;
+    const KEY = (k) => k + '_' + def.id + (MODE === 'normal' ? '' : '_' + MODE) + (infinite ? '_inf' : '');
+    const unlockedOf = () => infinite ? Math.max(1, A.get(KEY('lv'), 1)) : Math.min(A.get(KEY('lv'), 1), def.levels || 1);
     // dificultad interna del nivel n: fácil 1→60 % del tope · normal 1→tope · difícil 30 %→tope (ya al 75 % de los niveles)
     const lvOf = (n) => {
       if (!hasLevels) return Math.min(n, def.cap || 1e9);
@@ -444,7 +475,7 @@
       score: 0, level: 1, lives: def.lives ?? 3, state: 'menu', s: {},
       pointers: new Map(), parts: [], floats: [], rings: [], amb: [], shakeT: 0, shakeA: 0, banner: null,
       flashT: 0, flashC: '#fff', iris: 0, lvLives: 0,
-      best: A.get(KEY('best'), 0), unlocked: Math.min(A.get(KEY('lv'), 1), def.levels || 1),
+      best: A.get(KEY('best'), 0), unlocked: unlockedOf(),
       fc: { e: '😀', kind: 'idle', t: 0, next: 3 },
     };
     /* --- cara del protagonista --- */
@@ -676,7 +707,8 @@
           <div class="lvpick"><button class="b sm" data-act="lvstep" data-d="-1" aria-label="−">−</button><input type="range" class="lvr" min="1" max="${g.unlocked}" value="${g.unlocked}" aria-label="${T('Nivel', 'Level')}"><button class="b sm" data-act="lvstep" data-d="1" aria-label="+">+</button>
           <button class="b sm lvgo" data-act="play" data-lv="${g.unlocked}">▶ ${LV} ${g.unlocked}</button></div>`;
       }
-      const modes = TV && g.mp ? '' : `<div class="modes">${Object.keys(MODES).map((m) => `<button class="b sm mbtn${m === MODE ? ' on' : ''}" data-act="mode" data-m="${m}">${MODES[m][0]} ${EN ? MODES[m][2] : MODES[m][1]}</button>`).join('')}</div>`;
+      const modes = TV && g.mp ? '' : `<div class="modes">${Object.keys(MODES).map((m) => `<button class="b sm mbtn${m === MODE ? ' on' : ''}" data-act="mode" data-m="${m}">${MODES[m][0]} ${EN ? MODES[m][2] : MODES[m][1]}</button>`).join('')}</div>`
+        + (CANINF && !(TV && g.mp) ? `<div class="modes lens"><button class="b sm mbtn${infinite ? '' : ' on'}" data-act="len" data-inf="0">🚩 ${def.levels} ${T('niveles', 'levels')}</button><button class="b sm mbtn${infinite ? ' on' : ''}" data-act="len" data-inf="1">♾️ ${T('Infinito', 'Endless')}</button></div>` : '');
       const favBtn = A.single ? '' : `<button class="b sm fav${isFav() ? ' on' : ''}" data-act="fav">${isFav() ? '❤️ ' + T('En favoritos', 'In favourites') : '🤍 ' + T('Añadir a favoritos', 'Add to favourites')}</button>`;
       const seen = A.get('seen_' + def.id, false); A.set('seen_' + def.id, true);
       const playLabel = hasLevels && g.unlocked > 1 ? T('▶ Continuar · ', '▶ Continue · ') + LV + ' ' + g.unlocked : T('▶ Jugar', '▶ Play');
@@ -687,7 +719,7 @@
         <h1 class="ttl">${def.title}</h1>
         ${def.tag ? `<div class="tag">${def.tag}</div>` : ''}
         <p class="origin">${T('Mecánica de', 'Based on')} ${def.origin}</p>${help}</div>
-        <div class="mcol mr">${modes}<div class="bests"><span>🏆 ${g.best}</span>${hasLevels ? `<span>🚩 ${LV} ${g.unlocked}/${def.levels}</span>` : `<span>♾️ ${T('Récord', 'High score')}</span>`}</div>
+        <div class="mcol mr">${modes}<div class="bests"><span>🏆 ${g.best}</span>${hasLevels ? `<span>${infinite ? '♾️' : '🚩'} ${LV} ${g.unlocked}${infinite ? '' : '/' + def.levels}</span>` : `<span>♾️ ${T('Récord', 'High score')}</span>`}</div>
         <button class="b pri wide" data-act="play" data-lv="${hasLevels ? g.unlocked : 1}">${playLabel}</button>
         <button class="b wide" data-act="demo">👀 ${T('Ver demo', 'Watch demo')}</button>
         ${players}${lv}
@@ -829,7 +861,8 @@
       else if (act === 'next') next();
       else if (act === 'turn') loadPlayer();
       else if (act === 'demo') startDemo();
-      else if (act === 'mode') { MODE = b.dataset.m; A.set('mode_' + def.id, MODE); A.set('mode', MODE); g.best = A.get(KEY('best'), 0); g.unlocked = Math.min(A.get(KEY('lv'), 1), def.levels || 1); menu(); }
+      else if (act === 'mode') { MODE = b.dataset.m; A.set('mode_' + def.id, MODE); A.set('mode', MODE); g.best = A.get(KEY('best'), 0); g.unlocked = unlockedOf(); menu(); }
+      else if (act === 'len') { infinite = b.dataset.inf === '1'; A.set('inf_' + def.id, infinite); A.set('inf', infinite); g.best = A.get(KEY('best'), 0); g.unlocked = unlockedOf(); menu(); }
       else if (act === 'lvstep') { const r = ov.querySelector('.lvr'); if (r) { r.value = Math.max(1, Math.min(+r.max, +r.value + +b.dataset.d)); r.dispatchEvent(new Event('input')); } }
       else if (act === 'fav') {
         const on = !isFav(), l = favs().filter((x) => x !== def.id); if (on) l.unshift(def.id);
@@ -1150,6 +1183,7 @@
       }
       if (g.flashT > 0) g.flashT -= dt;
       if (g.iris > 0) { g.iris += dt * 2.2; if (g.iris >= 1) g.iris = 0; }
+      A.fdt = dt; A.fno++;
       ctx.setTransform(A.dpr, 0, 0, A.dpr, 0, 0);
       ctx.save();
       if (g.shakeT > 0) { g.shakeT -= dt; ctx.translate((Math.random() - 0.5) * g.shakeA, (Math.random() - 0.5) * g.shakeA); }
