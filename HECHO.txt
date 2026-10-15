@@ -7,8 +7,13 @@ Fecha: 15-10-2026 · Versión de la PWA (games.js → ARCADE_VERSION): 2.14.0
     window.isSingleGame = false todo vuelve como antes.
   - Educativos: los 🏠 que llevaban a la web (atributo data-sitehome) se quitan salvo con isSingleGame = false. En
     Emoji Brain Academy el 🏠 de dentro de cada minijuego vuelve al menú de la app.
-  - La portada del dominio («/» y «/en/») responde 404. Para recuperarla: const PORTADA = true en index.php. Las
-    fichas, categorías y juegos (/<id>) siguen funcionando.
+  - Web solo de juegos (const PORTADA = false en index.php): la portada («/», «/en/») y TODAS las páginas de listado
+    (fichas /juego/…, categorías, /juegos, colecciones, asignaturas, edades, controles, TV, búsqueda y los índices
+    estáticos /pwa/, /pwa/indexpro, /pwa/indextv) responden un 404 sencillo. Solo se entra a cada juego (/<id>,
+    /<id>/es, /<id>/en); las URLs antiguas siguen redirigiendo al juego. El sitemap solo lista los juegos.
+    PARA VOLVER A LA NORMALIDAD: en index.php pon «const PORTADA = true;» (portada, listados y sitemap completo) y,
+    si quieres el 🏠 y los favoritos en los juegos, window.isSingleGame = false en las páginas (o cambia en
+    pwa/common.js «A.single = window.isSingleGame !== false» por «=== true», como estaba antes).
 · v2.13.0: EMOJIS QUE NO SALÍAN Y CACHÉ:
   - common.js comprueba si el dispositivo sabe pintar cada emoji nuevo (Unicode 12+: 🫐 🪨 🥲 🪃 🙂‍↔️ 🟢 🟦…). Si no
     puede, lo cambia por uno antiguo parecido (Arcade.FALLBACK) o dibuja a mano los círculos/cuadrados de color. Antes,

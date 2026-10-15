@@ -25,8 +25,10 @@ declare(strict_types=1);
 error_reporting(E_ALL);
 ini_set('display_errors', '0');
 
-/* Portada desactivada: «/» (y «/en/») responde 404 y solo se juega entrando directamente a cada juego (/<id>).
-   Para volver a tener portada, pon PORTADA en true. */
+/* PORTADA = false → web solo de juegos: la portada («/», «/en/») y todas las páginas de listado (categorías, /juegos,
+   colecciones, asignaturas, edades, controles, TV, búsqueda y los índices estáticos /pwa/, /pwa/indexpro,
+   /pwa/indextv) responden un 404 sencillo. Solo se entra directamente a cada juego (/<id>, /<id>/es, /<id>/en).
+   Para volver a la normalidad (portada y listados), pon PORTADA en true. */
 const PORTADA = false;
 
 /* ---------- base URL ---------- */
@@ -48,7 +50,7 @@ function redirect(string $to, int $code = 301): void { header('Location: ' . $to
 /* normalización de URLs */
 if ($path === '/index.php' || $path === '/index.html') redirect(url('/'));
 if ($path === '/en') redirect(url('/en/'));
-if ($path !== '/' && $path !== '/en/' && substr($path, -1) === '/') redirect(url(rtrim($path, '/')) . (isset($_SERVER['QUERY_STRING']) && $_SERVER['QUERY_STRING'] !== '' ? '?' . $_SERVER['QUERY_STRING'] : ''));
+if ($path !== '/' && $path !== '/en/' && $path !== '/pwa/' && substr($path, -1) === '/') redirect(url(rtrim($path, '/')) . (isset($_SERVER['QUERY_STRING']) && $_SERVER['QUERY_STRING'] !== '' ? '?' . $_SERVER['QUERY_STRING'] : ''));
 
 /* ---------- datos ---------- */
 $dbFile = __DIR__ . '/data/arcade.sqlite';
@@ -853,6 +855,10 @@ function api_play(): void {
 
 function page_404(): void {
   global $SITE;
+  if (!PORTADA) {   // sin portada: 404 sencillo, sin enlaces a páginas que no existen
+    http_response_code(404); header('Content-Type: text/plain; charset=utf-8'); header('Cache-Control: no-cache');
+    echo "404 Not Found\n"; exit;
+  }
   ob_start(); ?>
   <h1>👾 <?= h(T('Página no encontrada', 'Page not found')) ?></h1>
   <p class="lead"><?= h(T('Este nivel no existe. Vuelve a la portada o busca un juego.', 'This level does not exist. Go back home or search for a game.')) ?></p>
@@ -882,6 +888,10 @@ function out_sitemap(): void {
   foreach ($AGES as $c) $pairs[] = [age_path($c, 'es'), age_path($c, 'en'), '0.7'];
   foreach ($GAMES as $g) $pairs[] = [game_path($g, 'es'), game_path($g, 'en'), '0.8'];
   foreach ($GAMES as $g) if (!is_edu($g)) $pairs[] = ['/' . $g['id'] . '/es', '/' . $g['id'] . '/en', '0.7'];
+  if (!PORTADA) {   // sin portada ni listados: solo los juegos
+    $pairs = [];
+    foreach ($GAMES as $g) $pairs[] = ['/' . $g['id'] . '/es', '/' . $g['id'] . '/en', '0.8'];
+  }
   echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n" . '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">' . "\n";
   foreach ($pairs as [$es, $en, $pr]) foreach ([$es, $en] as $u) {
     echo '<url><loc>' . h(abs_url($u)) . '</loc><lastmod>' . h($LASTMOD) . '</lastmod><priority>' . $pr . '</priority>'
@@ -911,10 +921,16 @@ if ($L === 'es' && $path === '/sitemap.xml') out_sitemap();
 if ($L === 'es' && $path === '/robots.txt') out_robots();
 if ($L === 'es' && $k === 'icono' && $arg && count($seg) === 2 && preg_match('/^([a-z0-9-]+)\.svg$/', $arg, $m) && isset($GAMES[$m[1]])) out_svg($GAMES[$m[1]]);
 
-if ($r === '/' && count($seg) === 0) {
-  if (!PORTADA) { http_response_code(404); header('Content-Type: text/plain; charset=utf-8'); header('Cache-Control: no-cache'); echo "404 Not Found\n"; exit; }
-  page_home(); exit;
+// índices estáticos de la PWA (/pwa/, /pwa/indexpro, /pwa/indextv): .htaccess los pasa por aquí para poder cerrarlos
+if (preg_match('#^/pwa/(index(pro|tv)?(\.html)?)?$#', $path, $m)) {
+  if (!PORTADA) page_404();
+  if (!empty($m[3]) || ($m[1] ?? '') === 'index') redirect(url('/pwa/' . (($m[2] ?? '') !== '' ? 'index' . $m[2] : '')));
+  header('Content-Type: text/html; charset=utf-8'); header('Cache-Control: no-cache');
+  readfile(__DIR__ . '/pwa/' . (($m[2] ?? '') !== '' ? 'index' . $m[2] : 'index') . '.html'); exit;
 }
+// páginas de listado: solo con PORTADA (las URLs antiguas /jugar/{id} siguen redirigiendo al juego)
+if (!PORTADA && !(count($seg) === 2 && $k === ($EN ? 'play' : 'jugar'))) goto juego;
+if ($r === '/' && count($seg) === 0) { page_home(); exit; }
 if (count($seg) === 1 && $k === ($EN ? 'games' : 'juegos')) { page_all(); exit; }
 if (count($seg) === 1 && $k === 'tv') { page_tv(); exit; }
 if (count($seg) === 1 && $k === ($EN ? 'search' : 'buscar')) { page_search(); exit; }
@@ -931,6 +947,7 @@ if (count($seg) === 2) {
   if ($EN && $k === 'juego' && isset($GAMES[$arg])) redirect(url(game_path($GAMES[$arg], 'en')));
 }
 // el juego: /{id} (idioma automático) o /{id}/es|en (forzado). Los educativos se sirven desde su carpeta.
+juego:
 if (!$EN && (count($seg) === 1 || (count($seg) === 2 && ($arg === 'es' || $arg === 'en'))) && isset($GAMES[$k])) {
   $g = $GAMES[$k];
   if (is_edu($g)) serve_edu($g, $arg);
