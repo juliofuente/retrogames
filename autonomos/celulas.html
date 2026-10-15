@@ -232,6 +232,15 @@ html.tv .howto summary { font-size: 16px; }
 .search input:focus { border-color: #ffd166; background: rgba(255,255,255,.12); }
 .search input::placeholder { color: rgba(255,255,255,.5); }
 .grid .empty { grid-column: 1 / -1; text-align: center; opacity: .75; padding: 30px 0; }
+
+/* v2.11: modos de dificultad, selector de nivel y favorito */
+.modes { display: flex; gap: 6px; justify-content: center; margin: 0 0 10px; flex-wrap: wrap; }
+.mbtn.on { background: var(--accent); color: #1b1530; }
+.lvpick { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+.lvpick .lvr { flex: 1; min-width: 60px; accent-color: var(--accent); height: 28px; }
+.lvpick .b.sm { min-width: 40px; }
+.lvpick .lvgo { white-space: nowrap; }
+.b.fav.on { background: #ff6b9d; color: #fff; }
 </style>
 </head>
 <body class="game">
@@ -636,7 +645,37 @@ function arcadeElegirIdioma(l) {
     const STAT = { s: 0, p: 0 };               // segundos jugados y partidas empezadas (se envían a SITE.api)
     const HOMEQ = () => SITE ? (TV ? SITE.tv : SITE.home)[A.lang] : HOME + (HOME.indexOf('?') < 0 ? '?' : '&') + 'lang=' + A.lang;
     M.song = buildSong(def.music || {}, def.id);
-    const infinite = def.levels === 0, hasLevels = def.levels != null;
+    /* niveles finitos (v2.11): los antiguos «infinitos» pasan a 60–120 niveles según su tope de dificultad (cap), y la
+       dificultad interna g.lv (1…cap) se reparte de forma homogénea por todos ellos según el modo elegido. */
+    const CAP = def.cap || 20;
+    if (def.levels === 0) def.levels = CAP <= 16 ? 60 : CAP <= 20 ? 80 : CAP <= 25 ? 100 : 120;
+    const infinite = false, hasLevels = def.levels != null;
+    const MODES = { easy: ['😊', 'Fácil', 'Easy'], normal: ['🙂', 'Normal', 'Normal'], hard: ['😈', 'Difícil', 'Hard'] };
+    let MODE = A.get('mode_' + def.id, A.get('mode', 'normal')); if (!MODES[MODE]) MODE = 'normal';
+    const KEY = (k) => k + '_' + def.id + (MODE === 'normal' ? '' : '_' + MODE);
+    // dificultad interna del nivel n: fácil 1→60 % del tope · normal 1→tope · difícil 30 %→tope (ya al 75 % de los niveles)
+    const lvOf = (n) => {
+      if (!hasLevels) return Math.min(n, def.cap || 1e9);
+      const f = Math.min(1, Math.max(0, (n - 1) / Math.max(1, def.levels - 1)));
+      const [a, b, reach] = MODE === 'easy' ? [1, Math.max(2, Math.round(CAP * 0.6)), 1] : MODE === 'hard' ? [Math.max(1, Math.round(CAP * 0.3)), CAP, 0.75] : [1, CAP, 1];
+      return Math.round(a + Math.min(1, f / reach) * (b - a));
+    };
+    // velocidad del juego (escala dt): empieza más lenta y llega a la normal hacia el 30 % de los niveles (o al minuto en los de récord)
+    const spdOf = () => {
+      const [lo, hi] = MODE === 'easy' ? [0.72, 0.88] : MODE === 'hard' ? [1.04, 1.15] : [0.85, 1];
+      const f = hasLevels ? Math.min(1, (g.level - 1) / (def.levels * 0.3)) : Math.min(1, g.t / 60);
+      const warm = Math.min(1, 0.45 + 0.55 * (g.lt || 0) / 2.5);   // cada nivel arranca a medio gas y en 2,5 s va a su velocidad
+      return (lo + (hi - lo) * f) * warm;
+    };
+    // los niveles desbloqueados con la versión de niveles infinitos se convierten a la nueva escala (una vez)
+    if (hasLevels && !A.get('lvv2_' + def.id, false)) {
+      const u = A.get('lv_' + def.id, 1);
+      if (u > 1) A.set('lv_' + def.id, Math.max(1, Math.min(def.levels, 1 + Math.round((Math.min(u, CAP) - 1) / Math.max(1, CAP - 1) * (def.levels - 1)))));
+      A.set('lvv2_' + def.id, true);
+    }
+    const FAVK = 'arc_favs';
+    const favs = () => { try { const v = JSON.parse(localStorage.getItem(FAVK) || '[]'); return Array.isArray(v) ? v : []; } catch (_) { return []; } };
+    const isFav = () => favs().indexOf(def.id) >= 0;
     if (EN && def.en) { def.title = def.en.title || def.title; def.tag = def.en.tag || def.tag; def.help = def.en.help || def.help; if (def.en.tvHelp) def.tvHelp = def.en.tvHelp; A.setDict(def.en.dict); }
     try { document.title = def.title + ' · Arcade Perdido'; } catch (_) {}
     const LV = A.L(def.levelLabel || 'Nivel'), lvl = LV.toLowerCase();
@@ -661,7 +700,7 @@ function arcadeElegirIdioma(l) {
       score: 0, level: 1, lives: def.lives ?? 3, state: 'menu', s: {},
       pointers: new Map(), parts: [], floats: [], rings: [], amb: [], shakeT: 0, shakeA: 0, banner: null,
       flashT: 0, flashC: '#fff', iris: 0, lvLives: 0,
-      best: A.get('best_' + def.id, 0), unlocked: A.get('lv_' + def.id, 1),
+      best: A.get(KEY('best'), 0), unlocked: Math.min(A.get(KEY('lv'), 1), def.levels || 1),
       fc: { e: '😀', kind: 'idle', t: 0, next: 3 },
     };
     /* --- cara del protagonista --- */
@@ -677,7 +716,9 @@ function arcadeElegirIdioma(l) {
       if (f.t > 0) { f.t -= dt; if (f.t <= 0) { f.kind = 'idle'; f.e = A.pick(A.FACES.idle.slice(0, 6)); f.next = A.rand(2, 4); } return; }
       f.next -= dt; if (f.next <= 0) { f.e = A.pick(A.FACES.idle); f.next = A.rand(2.5, 6); }
     }
-    Object.defineProperty(g, 'lv', { get() { return Math.min(g.level, def.cap || 1e9); } });
+    Object.defineProperty(g, 'lv', { get() { return lvOf(g.level); } });
+    Object.defineProperty(g, 'mode', { get() { return MODE; } });
+    Object.defineProperty(g, 'speed', { get() { return g.demoOn ? 1 : spdOf(); } });
     A.current = g;
 
     /* --- HUD --- */
@@ -770,7 +811,7 @@ function arcadeElegirIdioma(l) {
     };
     function saveBest() {
       if (g.demoOn) return false;
-      if (g.score > g.best) { g.best = g.score; A.set('best_' + def.id, g.best); return true; }
+      if (g.score > g.best) { g.best = g.score; A.set(KEY('best'), g.best); return true; }
       return false;
     }
     const starsHtml = (stars) => '<div class="stars">' + [1, 2, 3].map((i) => `<span class="${i <= stars ? 'on' : ''}" style="animation-delay:${0.15 + i * 0.18}s">⭐</span>`).join('') + '</div>';
@@ -791,13 +832,13 @@ function arcadeElegirIdioma(l) {
       if (stars == null) { const lost = g.lvLives - g.lives; stars = def.lives === 0 ? 3 : lost <= 0 ? 3 : lost === 1 ? 2 : 1; }
       const total = infinite ? Infinity : def.levels;
       if (g.demoOn) { g.confetti(70); setTimeout(() => endDemo(), 2200); return; }
-      if (g.level + 1 > g.unlocked && g.level < total) { g.unlocked = g.level + 1; A.set('lv_' + def.id, g.unlocked); }
+      if (g.level + 1 > g.unlocked && g.level < total) { g.unlocked = g.level + 1; A.set(KEY('lv'), g.unlocked); }
       saveBest();
       g.confetti(70); g.flash('#ffffff', 0.25);
       if (g.mp) return mpWin(stars);
       const st = starsHtml(stars);
       if (g.level >= total) {
-        A.set('done_' + def.id, true);
+        A.set(KEY('done'), true);
         show(`<div class="big">🏆</div><h2>${T('¡Juego completado!', 'Game complete!')}</h2>${st}<div class="score">${g.score}</div>
           <p class="sub">${T('Has superado los ' + total + ' niveles.', 'You beat all ' + total + ' levels.')}</p>
           <div class="row"><button class="b pri" data-act="play" data-lv="1">🔄 ${T('Otra vez', 'Play again')}</button><button class="b" data-act="menu">☰ ${T('Menú', 'Menu')}</button></div>`, 'good');
@@ -859,7 +900,7 @@ function arcadeElegirIdioma(l) {
       g.state = 'final'; M.stop();
       const rank = g.mp.players.slice().sort((a, b) => b.score - a.score);
       const med = ['🥇', '🥈', '🥉', '🏅'];
-      if (rank[0].score > g.best) { g.best = rank[0].score; A.set('best_' + def.id, g.best); }
+      if (rank[0].score > g.best) { g.best = rank[0].score; A.set(KEY('best'), g.best); }
       A.sfx.win(); g.confetti(90);
       show(`<div class="big">🏆</div><h2>${T('¡Gana ', '')}${pname(rank[0])}${T('!', ' wins!')}</h2>
         <div class="mptable final">${rank.map((p, i) => `<div><span>${med[i]} ${p.e} ${p.name}</span><span>${hasLevels ? '🚩' + p.level : ''}</span><b>${p.score}</b></div>`).join('')}</div>
@@ -887,11 +928,12 @@ function arcadeElegirIdioma(l) {
       const deco = (def.deco || []).slice(0, 6).map((e, i) => `<span class="deco d${i}">${e}</span>`).join('');
       let lv = '';
       if (hasLevels && g.unlocked > 1) {
-        let cps;
-        if (infinite) { cps = [1]; for (let k = 5; k <= g.unlocked; k += 5) cps.push(k); if (cps[cps.length - 1] !== g.unlocked) cps.push(g.unlocked); cps = cps.slice(-12); }
-        else { cps = []; for (let i = 1; i <= def.levels; i++) cps.push(i); }
-        lv = '<div class="lvhead">' + T('Elegir nivel', 'Choose level') + '</div><div class="lvs">' + cps.map((i) => { const lock = i > g.unlocked; return `<button class="lv${lock ? ' lock' : ''}${i < g.unlocked ? ' done' : ''}" data-act="play" data-lv="${i}" ${lock ? 'disabled' : ''}>${lock ? '🔒' : i}</button>`; }).join('') + '</div>';
+        lv = `<div class="lvhead">${T('Elegir nivel', 'Choose level')} <small>(1–${g.unlocked})</small></div>
+          <div class="lvpick"><button class="b sm" data-act="lvstep" data-d="-1" aria-label="−">−</button><input type="range" class="lvr" min="1" max="${g.unlocked}" value="${g.unlocked}" aria-label="${T('Nivel', 'Level')}"><button class="b sm" data-act="lvstep" data-d="1" aria-label="+">+</button>
+          <button class="b sm lvgo" data-act="play" data-lv="${g.unlocked}">▶ ${LV} ${g.unlocked}</button></div>`;
       }
+      const modes = TV && g.mp ? '' : `<div class="modes">${Object.keys(MODES).map((m) => `<button class="b sm mbtn${m === MODE ? ' on' : ''}" data-act="mode" data-m="${m}">${MODES[m][0]} ${EN ? MODES[m][2] : MODES[m][1]}</button>`).join('')}</div>`;
+      const favBtn = `<button class="b sm fav${isFav() ? ' on' : ''}" data-act="fav">${isFav() ? '❤️ ' + T('En favoritos', 'In favourites') : '🤍 ' + T('Añadir a favoritos', 'Add to favourites')}</button>`;
       const seen = A.get('seen_' + def.id, false); A.set('seen_' + def.id, true);
       const playLabel = hasLevels && g.unlocked > 1 ? T('▶ Continuar · ', '▶ Continue · ') + LV + ' ' + g.unlocked : T('▶ Jugar', '▶ Play');
       const players = TV ? `<div class="lvhead">${T('Jugadores (por turnos)', 'Players (taking turns)')}</div><div class="players">${[1, 2, 3, 4].slice(0, MAXP).map((n) => `<button class="b sm pbtn${n === nPlayers ? ' on' : ''}" data-act="players" data-n="${n}">${n === 1 ? '👤' : AV.slice(0, n).map((a) => a.e).join('')} ${n}</button>`).join('')}</div>` : '';
@@ -901,12 +943,14 @@ function arcadeElegirIdioma(l) {
         <h1 class="ttl">${def.title}</h1>
         ${def.tag ? `<div class="tag">${def.tag}</div>` : ''}
         <p class="origin">${T('Mecánica de', 'Based on')} ${def.origin}</p>${help}</div>
-        <div class="mcol mr"><div class="bests"><span>🏆 ${g.best}</span>${hasLevels ? `<span>🚩 ${LV} ${g.unlocked}${infinite ? ' · ∞' : ''}</span>` : `<span>♾️ ${T('Infinito', 'Endless')}</span>`}</div>
+        <div class="mcol mr">${modes}<div class="bests"><span>🏆 ${g.best}</span>${hasLevels ? `<span>🚩 ${LV} ${g.unlocked}/${def.levels}</span>` : `<span>♾️ ${T('Récord', 'High score')}</span>`}</div>
         <button class="b pri wide" data-act="play" data-lv="${hasLevels ? g.unlocked : 1}">${playLabel}</button>
         <button class="b wide" data-act="demo">👀 ${T('Ver demo', 'Watch demo')}</button>
         ${players}${lv}
-        <div class="row">${toggles()}</div>
+        <div class="row">${toggles()}${favBtn}</div>
         <div class="row"><a class="b sm ghost" href="${HOMEQ()}">🏠 ${T('Todos los juegos', 'All games')}</a>${modeBtn()}${langBtn()}</div></div>`, 'menu');
+      const r = ov.querySelector('.lvr');
+      if (r) r.addEventListener('input', () => { const go = ov.querySelector('.lvgo'); go.dataset.lv = r.value; go.textContent = '▶ ' + LV + ' ' + r.value; });
     }
     function pause() {
       if (g.state !== 'play') return;
@@ -915,13 +959,14 @@ function arcadeElegirIdioma(l) {
       show(`<div class="big">⏸️</div><h2>${T('Pausa', 'Paused')}</h2>
         <button class="b pri wide" data-act="resume">▶ ${T('Continuar', 'Resume')}</button>
         ${acts ? `<div class="row">${acts}</div>` : ''}
+        <div class="row"><button class="b sm fav${isFav() ? ' on' : ''}" data-act="fav">${isFav() ? '❤️ ' + T('En favoritos', 'In favourites') : '🤍 ' + T('Añadir a favoritos', 'Add to favourites')}</button></div>
         <div class="row">${g.mp ? '' : `<button class="b" data-act="restart">🔄 ${T('Reiniciar', 'Restart')}</button>`}<button class="b" data-act="menu">☰ ${g.mp ? T('Abandonar partida', 'Quit match') : T('Menú', 'Menu')}</button></div>
         <div class="row">${toggles()}</div>
         ${TV ? `<div class="tvhelp">🎮 ${def.tvHelp || ''}</div>` : `<details class="howto"><summary>📖 ${T('Cómo se juega', 'How to play')}</summary><div class="help">${def.help}</div></details>`}`);
     }
     function resume() { g.state = 'play'; hide(); M.start(); }
     function begin() {
-      g.parts = []; g.floats = []; g.rings = []; g.banner = null; g.pointers.clear();
+      g.parts = []; g.floats = []; g.rings = []; g.banner = null; g.pointers.clear(); g.lt = 0;
       TVC.x = null; TVC.armed = null;
       g.s = {}; def.setup(g); def.layout && def.layout(g);
       g.state = 'play'; hide(); g.hud(); g.iris = 0.001; g.lvLives = g.lives; g.fc.t = 0; g.mood('happy', 1);
@@ -1040,6 +1085,15 @@ function arcadeElegirIdioma(l) {
       else if (act === 'next') next();
       else if (act === 'turn') loadPlayer();
       else if (act === 'demo') startDemo();
+      else if (act === 'mode') { MODE = b.dataset.m; A.set('mode_' + def.id, MODE); A.set('mode', MODE); g.best = A.get(KEY('best'), 0); g.unlocked = Math.min(A.get(KEY('lv'), 1), def.levels || 1); menu(); }
+      else if (act === 'lvstep') { const r = ov.querySelector('.lvr'); if (r) { r.value = Math.max(1, Math.min(+r.max, +r.value + +b.dataset.d)); r.dispatchEvent(new Event('input')); } }
+      else if (act === 'fav') {
+        const on = !isFav(), l = favs().filter((x) => x !== def.id); if (on) l.unshift(def.id);
+        try { localStorage.setItem(FAVK, JSON.stringify(l)); } catch (_) {}
+        b.classList.toggle('on', on); b.textContent = on ? '❤️ ' + T('En favoritos', 'In favourites') : '🤍 ' + T('Añadir a favoritos', 'Add to favourites');
+        if (on) { A.sfx.coin && A.sfx.coin(); }
+        if (SITE && SITE.fav) { const body = JSON.stringify({ g: SITE.id || def.id, on: on ? 1 : 0, u: statUid() }); try { fetch(SITE.fav, { method: 'POST', body, keepalive: true, headers: { 'Content-Type': 'application/json' } }).catch(() => {}); } catch (_) {} }
+      }
       else if (act === 'nextturn') nextTurn();
       else if (act === 'gact') { const a = tvdef.actions[+b.dataset.i]; resume(); a.run(g); }
       else if (act === 'players') { nPlayers = +b.dataset.n; A.set('players', nPlayers); ov.querySelectorAll('.pbtn').forEach((x) => x.classList.toggle('on', x === b)); }
@@ -1339,7 +1393,7 @@ function arcadeElegirIdioma(l) {
       if (g.state === 'play') updFace(dt);
       if (g.demoOn) updDemo(dt);
       const live = g.state === 'play' || g.state === 'dying';
-      if (g.state === 'play') { g.t += dt; def.update(g, dt); }
+      if (g.state === 'play') { g.lt = (g.lt || 0) + dt; const sdt = dt * g.speed; g.t += sdt; def.update(g, sdt); }
       updAmbient(dt);
       if (live || g.state === 'win' || g.state === 'over' || g.state === 'final') {
         for (const p of g.parts) { p.life -= dt; p.vy += p.grav * dt; p.x += p.vx * dt; p.y += p.vy * dt; p.rot += dt * 4; }
@@ -1413,13 +1467,13 @@ function arcadeElegirIdioma(l) {
     s.cells = [];
     for (let t = 0; t < 600 && s.cells.length < n; t++) {
       const r = rand(26, 46), x = rand(60, AW - 60), y = rand(60, AH - 60);
-      if (s.cells.every((c) => Math.hypot(c.x - x, c.y - y) > c.r + r + 40)) s.cells.push({ x, y, r, own: 0, n: Math.round(r * 0.4 + rand(2, 10 + L)), grow: 0 });
+      if (s.cells.every((c) => Math.hypot(c.x - x, c.y - y) > c.r + r + 40)) s.cells.push({ x, y, r, own: 0, n: Math.round(r * (0.2 + L * 0.008) + rand(2, 5 + L)), grow: 0 });
     }
     // jugador abajo-izquierda, rival arriba-derecha
     const byP = s.cells.slice().sort((a, b) => (a.x + a.y) - (b.x + b.y));
-    byP[0].own = 1; byP[0].n = 20; byP[0].r = Math.max(byP[0].r, 38);
-    const ne = clamp(1 + Math.floor(L / 4), 1, 3);
-    for (let i = 0; i < ne; i++) { const c = byP[byP.length - 1 - i]; c.own = 2; c.n = 20 + L * 2; c.r = Math.max(c.r, 36); }
+    byP[0].own = 1; byP[0].n = 24; byP[0].r = Math.max(byP[0].r, 40);
+    const ne = clamp(1 + Math.floor(L / 9), 1, 3);   // 1 rival hasta la dificultad 9, 2 hasta la 18, luego 3
+    for (let i = 0; i < ne; i++) { const c = byP[byP.length - 1 - i]; c.own = 2; c.n = Math.round(8 + L * 1.6); c.r = Math.max(c.r, 36); }
     s.AW = AW; s.AH = AH;
   }
   function geo(g) {
@@ -1436,11 +1490,11 @@ function arcadeElegirIdioma(l) {
     if (from.own === 1) Arcade.sfx.whoosh();
   }
   function ai(g, dt) {
-    const s = g.s; s.aiT -= dt; if (s.aiT > 0) return; s.aiT = Math.max(0.9, 3.2 - g.lv * 0.12);
+    const s = g.s; s.aiT -= dt; if (s.aiT > 0) return; s.aiT = Math.max(1.1, 6 - g.lv * 0.2);   // al principio piensa despacio
     const mine = s.cells.filter((c) => c.own === 2); if (!mine.length) return;
     const src = mine.reduce((a, b) => (a.n > b.n ? a : b)); if (src.n < 8) return;
     // objetivo: el más débil y cercano que no sea suyo
-    let best = null, bs = 1e9; for (const c of s.cells) { if (c.own === 2) continue; const sc = c.n * 3 + Math.hypot(c.x - src.x, c.y - src.y) * 0.04 - (c.own === 1 ? 5 : 0); if (sc < bs && c.n < src.n * 0.55) { bs = sc; best = c; } }
+    let best = null, bs = 1e9; for (const c of s.cells) { if (c.own === 2) continue; const sc = c.n * 3 + Math.hypot(c.x - src.x, c.y - src.y) * 0.04 - (c.own === 1 ? 5 : 0); if (sc < bs && c.n < src.n * (0.32 + g.lv * 0.009)) { bs = sc; best = c; } }
     if (best) send(g, src, best, 0.6);
   }
 
@@ -1453,14 +1507,14 @@ function arcadeElegirIdioma(l) {
     id: 'celulas', title: 'Células', emoji: '🦠', color: '#4dabf7', origin: 'Nano War / Cirplosion / State.io',
     help: 'Tus células son las 🔵 azules. Cada una fabrica unidades con el tiempo (las grandes, más rápido). <b>Arrastra</b> desde una célula tuya hasta otra para enviar la <b>mitad</b> de sus unidades: si llegan más de las que tiene, pasa a ser tuya. Las grises son neutrales y las 🔴 rojas del rival, que también ataca. Conquista todas las rojas para ganar.',
     lives: 3, levels: 0, cap: 25,
-    setup(g) { g.s = { units: [], aiT: 3, drag: null }; build(g); geo(g); },
+    setup(g) { g.s = { units: [], aiT: 5, drag: null }; build(g); geo(g); },
     layout(g) { if (g.s.cells) geo(g); },
     down(g, p) { const s = g.s, c = cellAt(g, p.x, p.y); if (c && c.own === 1) s.drag = { from: c, x: p.x, y: p.y }; },
     move(g, p) { const s = g.s; if (s.drag) { s.drag.x = p.x; s.drag.y = p.y; } },
     up(g, p) { const s = g.s; if (!s.drag) return; const to = cellAt(g, p.x, p.y); if (to && to !== s.drag.from) send(g, s.drag.from, to, 0.5); s.drag = null; },
     update(g, dt) {
       const s = g.s; if (s.done) return;
-      for (const c of s.cells) { if (c.own) { c.grow += dt * c.r / 40 * (c.own === 2 ? 0.85 + g.lv * 0.02 : 1); if (c.grow >= 1 && c.n < c.r * 2.2) { c.grow = 0; c.n++; } } c.pulse = Math.max(0, (c.pulse || 0) - dt * 3); }
+      for (const c of s.cells) { if (c.own) { c.grow += dt * c.r / 40 * (c.own === 2 ? 0.6 + g.lv * 0.016 : 1); if (c.grow >= 1 && c.n < c.r * 2.2) { c.grow = 0; c.n++; } } c.pulse = Math.max(0, (c.pulse || 0) - dt * 3); }
       const sp = 110;
       for (const u of s.units) {
         if (u.delay > 0) { u.delay -= dt; continue; }

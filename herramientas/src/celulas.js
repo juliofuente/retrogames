@@ -8,13 +8,13 @@
     s.cells = [];
     for (let t = 0; t < 600 && s.cells.length < n; t++) {
       const r = rand(26, 46), x = rand(60, AW - 60), y = rand(60, AH - 60);
-      if (s.cells.every((c) => Math.hypot(c.x - x, c.y - y) > c.r + r + 40)) s.cells.push({ x, y, r, own: 0, n: Math.round(r * 0.4 + rand(2, 10 + L)), grow: 0 });
+      if (s.cells.every((c) => Math.hypot(c.x - x, c.y - y) > c.r + r + 40)) s.cells.push({ x, y, r, own: 0, n: Math.round(r * (0.2 + L * 0.008) + rand(2, 5 + L)), grow: 0 });
     }
     // jugador abajo-izquierda, rival arriba-derecha
     const byP = s.cells.slice().sort((a, b) => (a.x + a.y) - (b.x + b.y));
-    byP[0].own = 1; byP[0].n = 20; byP[0].r = Math.max(byP[0].r, 38);
-    const ne = clamp(1 + Math.floor(L / 4), 1, 3);
-    for (let i = 0; i < ne; i++) { const c = byP[byP.length - 1 - i]; c.own = 2; c.n = 20 + L * 2; c.r = Math.max(c.r, 36); }
+    byP[0].own = 1; byP[0].n = 24; byP[0].r = Math.max(byP[0].r, 40);
+    const ne = clamp(1 + Math.floor(L / 9), 1, 3);   // 1 rival hasta la dificultad 9, 2 hasta la 18, luego 3
+    for (let i = 0; i < ne; i++) { const c = byP[byP.length - 1 - i]; c.own = 2; c.n = Math.round(8 + L * 1.6); c.r = Math.max(c.r, 36); }
     s.AW = AW; s.AH = AH;
   }
   function geo(g) {
@@ -31,11 +31,11 @@
     if (from.own === 1) Arcade.sfx.whoosh();
   }
   function ai(g, dt) {
-    const s = g.s; s.aiT -= dt; if (s.aiT > 0) return; s.aiT = Math.max(0.9, 3.2 - g.lv * 0.12);
+    const s = g.s; s.aiT -= dt; if (s.aiT > 0) return; s.aiT = Math.max(1.1, 6 - g.lv * 0.2);   // al principio piensa despacio
     const mine = s.cells.filter((c) => c.own === 2); if (!mine.length) return;
     const src = mine.reduce((a, b) => (a.n > b.n ? a : b)); if (src.n < 8) return;
     // objetivo: el más débil y cercano que no sea suyo
-    let best = null, bs = 1e9; for (const c of s.cells) { if (c.own === 2) continue; const sc = c.n * 3 + Math.hypot(c.x - src.x, c.y - src.y) * 0.04 - (c.own === 1 ? 5 : 0); if (sc < bs && c.n < src.n * 0.55) { bs = sc; best = c; } }
+    let best = null, bs = 1e9; for (const c of s.cells) { if (c.own === 2) continue; const sc = c.n * 3 + Math.hypot(c.x - src.x, c.y - src.y) * 0.04 - (c.own === 1 ? 5 : 0); if (sc < bs && c.n < src.n * (0.32 + g.lv * 0.009)) { bs = sc; best = c; } }
     if (best) send(g, src, best, 0.6);
   }
 
@@ -48,14 +48,14 @@
     id: 'celulas', title: 'Células', emoji: '🦠', color: '#4dabf7', origin: 'Nano War / Cirplosion / State.io',
     help: 'Tus células son las 🔵 azules. Cada una fabrica unidades con el tiempo (las grandes, más rápido). <b>Arrastra</b> desde una célula tuya hasta otra para enviar la <b>mitad</b> de sus unidades: si llegan más de las que tiene, pasa a ser tuya. Las grises son neutrales y las 🔴 rojas del rival, que también ataca. Conquista todas las rojas para ganar.',
     lives: 3, levels: 0, cap: 25,
-    setup(g) { g.s = { units: [], aiT: 3, drag: null }; build(g); geo(g); },
+    setup(g) { g.s = { units: [], aiT: 5, drag: null }; build(g); geo(g); },
     layout(g) { if (g.s.cells) geo(g); },
     down(g, p) { const s = g.s, c = cellAt(g, p.x, p.y); if (c && c.own === 1) s.drag = { from: c, x: p.x, y: p.y }; },
     move(g, p) { const s = g.s; if (s.drag) { s.drag.x = p.x; s.drag.y = p.y; } },
     up(g, p) { const s = g.s; if (!s.drag) return; const to = cellAt(g, p.x, p.y); if (to && to !== s.drag.from) send(g, s.drag.from, to, 0.5); s.drag = null; },
     update(g, dt) {
       const s = g.s; if (s.done) return;
-      for (const c of s.cells) { if (c.own) { c.grow += dt * c.r / 40 * (c.own === 2 ? 0.85 + g.lv * 0.02 : 1); if (c.grow >= 1 && c.n < c.r * 2.2) { c.grow = 0; c.n++; } } c.pulse = Math.max(0, (c.pulse || 0) - dt * 3); }
+      for (const c of s.cells) { if (c.own) { c.grow += dt * c.r / 40 * (c.own === 2 ? 0.6 + g.lv * 0.016 : 1); if (c.grow >= 1 && c.n < c.r * 2.2) { c.grow = 0; c.n++; } } c.pulse = Math.max(0, (c.pulse || 0) - dt * 3); }
       const sp = 110;
       for (const u of s.units) {
         if (u.delay > 0) { u.delay -= dt; continue; }

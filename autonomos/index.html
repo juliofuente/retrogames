@@ -234,6 +234,15 @@ html.tv .howto summary { font-size: 16px; }
 .search input:focus { border-color: #ffd166; background: rgba(255,255,255,.12); }
 .search input::placeholder { color: rgba(255,255,255,.5); }
 .grid .empty { grid-column: 1 / -1; text-align: center; opacity: .75; padding: 30px 0; }
+
+/* v2.11: modos de dificultad, selector de nivel y favorito */
+.modes { display: flex; gap: 6px; justify-content: center; margin: 0 0 10px; flex-wrap: wrap; }
+.mbtn.on { background: var(--accent); color: #1b1530; }
+.lvpick { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+.lvpick .lvr { flex: 1; min-width: 60px; accent-color: var(--accent); height: 28px; }
+.lvpick .b.sm { min-width: 40px; }
+.lvpick .lvgo { white-space: nowrap; }
+.b.fav.on { background: #ff6b9d; color: #fff; }
 </style>
 <script>
 /* Arcade Perdido · configuración
@@ -314,6 +323,7 @@ function arcadeElegirIdioma(l) {
     <button class="chip" data-f="Deslizar" data-i="swipe">↔️ Deslizar</button>
     <button class="chip" data-f="Dos" data-i="two">✌️ Dos dedos</button>
     <a class="chip link" href="indexpro.html" id="other" data-i="other" style="text-decoration:none">✨ Arcade Pro</a>
+    <button class="chip" data-f="❤" data-i="favs">❤️ Favoritos</button>
     <button class="chip" id="tvmode" style="display:none" data-i="tv">📺 Modo TV</button>
     <button class="chip" id="lang" style="display:none"></button>
     <button class="chip" id="install" data-i="install">📲 Instalar</button>
@@ -325,7 +335,7 @@ function arcadeElegirIdioma(l) {
 /* Arcade Perdido · lista de juegos.
    Para añadir un juego: crea su archivo .html y añade aquí una línea.
    Sube VERSION cada vez que cambies archivos para que el móvil descargue la versión nueva. */
-var ARCADE_VERSION = '2.10.0';
+var ARCADE_VERSION = '2.11.0';
 var GAMES = [
   { file: 'lazo.html',      id: 'lazo',      title: 'Lazo',      emoji: '🪢', color: '#ffb703', origin: 'Libble Rabble (Namco, 1983)',   desc: 'Dos dedos, una cuerda. Rodea las setas y junta los extremos para atraparlas.', ctrl: 'Dos dedos', tv: false, tag: "Atrapa setas con una cuerda encantada", en: {"title": "Lasso", "desc": "Two fingers, one rope. Surround the mushrooms and join both ends to catch them.", "tag": "Catch mushrooms with an enchanted rope", "ctrl": "Two fingers"} },
   { file: 'pivote.html',    id: 'pivote',    title: 'Pivote',    emoji: '🐡', color: '#4cc9f0', origin: 'Clu Clu Land (Nintendo, 1984)', desc: 'Nunca te paras. Gira en los postes para descubrir el oro escondido… sin pasar dos veces.', ctrl: 'Deslizar', tv: 'cruceta', tag: "El pez globo que nunca se para", en: {"title": "Pivot", "desc": "You never stop. Swing around the posts to uncover hidden gold… without passing twice.", "tag": "The pufferfish that never stops", "ctrl": "Swipe"} },
@@ -470,7 +480,7 @@ var GAMES_PRO = [
   const grid = document.getElementById('grid');
   const EN = arcadeIdioma() === 'en';
   document.documentElement.lang = EN ? 'en' : 'es';
-  const TX = { tagline: 'Arcade mechanics that were a hit and nobody used again, remade to play with your finger.', all: 'All', tap: '👆 Tap', drag: '✋ Drag', swipe: '↔️ Swipe', two: '✌️ Two fingers', other: '✨ Arcade Pro', tv: '📺 TV mode', install: '📲 Install' };
+  const TX = { tagline: 'Arcade mechanics that were a hit and nobody used again, remade to play with your finger.', all: 'All', tap: '👆 Tap', drag: '✋ Drag', swipe: '↔️ Swipe', two: '✌️ Two fingers', other: '✨ Arcade Pro', favs: '❤️ Favourites', tv: '📺 TV mode', install: '📲 Install' };
   if (EN) { document.querySelectorAll('[data-i]').forEach(e => { if (TX[e.dataset.i]) e.textContent = TX[e.dataset.i]; }); document.title = 'Arcade Perdido · Forgotten classic mechanics'; }
   const loc = (g, k) => (EN && g.en && g.en[k]) || g[k];
   if ((ARCADE_CONFIG.idioma || 'auto') === 'auto') {
@@ -495,7 +505,8 @@ var GAMES_PRO = [
   function render(filter) {
     if (filter !== undefined) curF = filter;
     const words = norm(curQ).split(/\s+/).filter(Boolean);
-    const ok = (g) => (!curF || g.ctrl.indexOf(curF) === 0) && words.every((w) => hay(g).indexOf(w) >= 0);
+    let favs = []; try { favs = JSON.parse(localStorage.getItem('arc_favs') || '[]'); } catch (e) {}
+    const ok = (g) => (!curF || (curF === '❤' ? favs.indexOf(g.id) >= 0 : g.ctrl.indexOf(curF) === 0)) && words.every((w) => hay(g).indexOf(w) >= 0);
     grid.innerHTML = '';
     const mine = GAMES.filter(ok);
     mine.forEach((g) => grid.appendChild(card(g)));

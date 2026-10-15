@@ -219,3 +219,12 @@ html.tv .howto summary { font-size: 16px; }
 .search input:focus { border-color: #ffd166; background: rgba(255,255,255,.12); }
 .search input::placeholder { color: rgba(255,255,255,.5); }
 .grid .empty { grid-column: 1 / -1; text-align: center; opacity: .75; padding: 30px 0; }
+
+/* v2.11: modos de dificultad, selector de nivel y favorito */
+.modes { display: flex; gap: 6px; justify-content: center; margin: 0 0 10px; flex-wrap: wrap; }
+.mbtn.on { background: var(--accent); color: #1b1530; }
+.lvpick { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+.lvpick .lvr { flex: 1; min-width: 60px; accent-color: var(--accent); height: 28px; }
+.lvpick .b.sm { min-width: 40px; }
+.lvpick .lvgo { white-space: nowrap; }
+.b.fav.on { background: #ff6b9d; color: #fff; }

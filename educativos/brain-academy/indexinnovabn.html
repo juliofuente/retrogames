@@ -383,7 +383,7 @@ function startGame(win,def){
   if(!doc.querySelector('link[href*="fonts.googleapis"]')){const l=doc.createElement('link');l.rel='stylesheet';l.href='https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@600;800;900&display=swap';doc.head.appendChild(l);}
   if(arcade)doc.body.classList.add('arcade');
   doc.body.innerHTML=`<div class="k-wrap">
-    <div class="k-top"><button class="k-ib" data-a="home">🏠</button><div class="k-title">${G.emoji} ${tt(G.name)}</div><div class="k-lv"><small>${T('level')}</small><b class="k-lvv"></b></div><button class="k-ib" data-a="snd">${S.sound?'🔊':'🔇'}</button></div>
+    <div class="k-top"><button class="k-ib" data-a="home">🏠</button><div class="k-title">${G.emoji} ${tt(G.name)}</div><div class="k-lv"><small>${T('level')}</small><b class="k-lvv"></b></div><button class="k-ib" data-a="fav" title="❤️">${isFav(def.id)?'❤️':'🤍'}</button><button class="k-ib" data-a="snd">${S.sound?'🔊':'🔇'}</button></div>
     <div class="k-hud"><span class="k-score">⭐ <b>0</b></span><span class="k-hearts"></span><span class="k-prog"></span></div>
     <div class="k-timer" hidden><div class="k-tfill"></div></div>
     <div class="k-card"><div class="k-prompt"></div><div class="k-stage"></div><div class="k-fb"></div></div>
@@ -487,6 +487,7 @@ function startGame(win,def){
 
   // ───── controls ─────
   doc.querySelector('[data-a=home]').onclick=()=>{SFX.click();exit();};
+  doc.querySelector('[data-a=fav]').onclick=e=>{const on=toggleFav(def.id);e.currentTarget.textContent=on?'❤️':'🤍';if(on)SFX.ok();else SFX.click();};
   doc.querySelector('[data-a=snd]').onclick=e=>{S.sound=!S.sound;save();e.currentTarget.textContent=S.sound?'🔊':'🔇';if(S.sound)SFX.click();};
   const nb=$('.k-next');if(nb)nb.onclick=()=>{if(!g.solvedFlag||g.q>=ROUNDS||g.paused)return;SFX.whoosh();newRound();};
   win.addEventListener('keydown',e=>{
@@ -571,6 +572,13 @@ const PLAY={id:null,s:0,p:0};
 function playUid(){let u=null;try{u=localStorage.getItem('arc_uid');}catch(e){}
   if(!/^[a-f0-9]{24}$/.test(u||'')){u=Array.from(crypto.getRandomValues(new Uint8Array(12)),b=>b.toString(16).padStart(2,'0')).join('');try{localStorage.setItem('arc_uid',u);}catch(e){}}
   document.cookie='arc_uid='+u+';path=/;max-age=63072000;SameSite=Lax';return u;}
+// favoritos: lista privada en localStorage (arc_favs, compartida con los juegos arcade) + contador anónimo en la web PHP
+function favList(){try{const v=JSON.parse(localStorage.getItem('arc_favs')||'[]');return Array.isArray(v)?v:[];}catch(e){return[];}}
+function isFav(id){return favList().includes('brain:'+id);}
+function toggleFav(id){const k='brain:'+id,on=!favList().includes(k),l=favList().filter(x=>x!==k);if(on)l.unshift(k);
+  try{localStorage.setItem('arc_favs',JSON.stringify(l));}catch(e){}
+  if(/^https?:/.test(location.protocol))try{fetch('../../api/fav',{method:'POST',body:JSON.stringify({g:k,on:on?1:0,u:playUid()}),keepalive:true,headers:{'Content-Type':'application/json'}}).catch(()=>{});}catch(e){}
+  return on;}
 function playFlush(){if(!PLAY.id||(PLAY.s<1&&!PLAY.p)||!/^https?:/.test(location.protocol))return;
   const body=JSON.stringify({g:'brain:'+PLAY.id,s:Math.round(PLAY.s),p:PLAY.p,u:playUid()});PLAY.s=0;PLAY.p=0;
   try{navigator.sendBeacon&&navigator.sendBeacon('../../api/play',new Blob([body],{type:'application/json'}));}catch(e){}}

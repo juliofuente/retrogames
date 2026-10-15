@@ -9,6 +9,7 @@
      /{id}/es  /{id}/en                                    el juego con el idioma forzado
      /jugar/{id} /en/play/{slug} /pwa/{id}.html            URLs antiguas → 301 a /{id}
      /api/play  (POST)                                     guarda tiempo de juego en data/stats.sqlite (rankings)
+     /api/fav   (POST)                                     marca/desmarca un favorito (cuenta personas por juego)
      /coleccion/{slug}         /en/collection/{slug}       colección (Arcade Perdido / Arcade Pro)
      /categoria/{slug}         /en/category/{slug}         categoría
      /control/{slug}           /en/control/{slug}          juegos por tipo de control
@@ -108,7 +109,7 @@ function tv_label(?string $tv): string { return $tv === 'cursor' ? T('Sí, con c
 function levels_label(array $g): string {
   if ($g['levels'] === 'infinite') return T('Infinitos, con dificultad creciente', 'Endless, with rising difficulty');
   if ($g['levels'] === 'endless') return T('Partida sin fin (récord)', 'Endless run (high score)');
-  return $g['levels'];
+  return $g['levels'] . T(' niveles, con la dificultad repartida de menos a más · modos fácil, normal y difícil', ' levels, difficulty spread from easy to hard · easy, normal and hard modes');
 }
 function based_text(array $g): string {
   $o = [];
@@ -127,6 +128,8 @@ function stats_db(bool $create = false): ?PDO {
     $db->exec('PRAGMA busy_timeout = 3000');
     $db->exec('CREATE TABLE IF NOT EXISTS play (uid TEXT NOT NULL, game_id TEXT NOT NULL, seconds INTEGER NOT NULL DEFAULT 0, plays INTEGER NOT NULL DEFAULT 0, first_at TEXT, last_at TEXT, PRIMARY KEY (uid, game_id))');
     $db->exec('CREATE INDEX IF NOT EXISTS play_game ON play(game_id)');
+    $db->exec('CREATE TABLE IF NOT EXISTS fav (uid TEXT NOT NULL, game_id TEXT NOT NULL, at TEXT, PRIMARY KEY (uid, game_id))');
+    $db->exec('CREATE INDEX IF NOT EXISTS fav_game ON fav(game_id)');
   } catch (Throwable $e) { $db = null; }
   return $db;
 }
@@ -135,12 +138,14 @@ function my_uid(): ?string { $u = (string)($_COOKIE['arc_uid'] ?? ''); return pr
 function stats(): array {
   static $S = null;
   if ($S !== null) return $S;
-  $S = ['all' => [], 'me' => []];
+  $S = ['all' => [], 'me' => [], 'favs' => [], 'myfav' => []];
   $db = stats_db();
   if (!$db) return $S;
   try {
     foreach ($db->query('SELECT game_id, SUM(seconds) s, SUM(plays) p, COUNT(*) u FROM play GROUP BY game_id') as $r) $S['all'][$r['game_id']] = ['s' => (int)$r['s'], 'p' => (int)$r['p'], 'u' => (int)$r['u']];
     if ($u = my_uid()) { $st = $db->prepare('SELECT game_id, seconds s, plays p FROM play WHERE uid = ?'); $st->execute([$u]); foreach ($st as $r) $S['me'][$r['game_id']] = ['s' => (int)$r['s'], 'p' => (int)$r['p']]; }
+    foreach ($db->query('SELECT game_id, COUNT(*) n FROM fav GROUP BY game_id') as $r) $S['favs'][$r['game_id']] = (int)$r['n'];
+    if ($u) { $st = $db->prepare('SELECT game_id, at FROM fav WHERE uid = ? ORDER BY at DESC'); $st->execute([$u]); foreach ($st as $r) $S['myfav'][$r['game_id']] = $r['at']; }
   } catch (Throwable $e) {}
   return $S;
 }
@@ -160,10 +165,14 @@ function played_rows(array $g): string {
   $st = stats(); $a = $st['all'][$g['id']] ?? null; $m = $st['me'][$g['id']] ?? null; $o = '';
   if ($a) $o .= '<dt>' . h(T('Jugado (todos)', 'Played (everyone)')) . '</dt><dd>' . h(fmt_time($a['s']) . ' · ' . $a['p'] . T(' partidas', ' games') . ' · ' . $a['u'] . T(' jugadores', ' players')) . '</dd>';
   if ($m) $o .= '<dt>' . h(T('Jugado (tú)', 'Played (you)')) . '</dt><dd>' . h(fmt_time($m['s']) . ' · ' . $m['p'] . T(' partidas', ' games')) . '</dd>';
+  if ($f = $st['favs'][$g['id']] ?? 0) $o .= '<dt>' . h(T('Favorito', 'Favourite')) . '</dt><dd>❤️ ' . h($f . T($f === 1 ? ' persona' : ' personas', $f === 1 ? ' person' : ' people') . (isset($st['myfav'][$g['id']]) ? T(' (tú también)', ' (you too)') : '')) . '</dd>';
   return $o;
 }
 function rank_html(array $games, int $n = 6, string $what = ''): string {
   $o = ''; $st = stats();
+  $ids = array_column($games, null, 'id');
+  $mine = array_values(array_filter(array_map(function ($id) use ($ids) { return $ids[$id] ?? null; }, array_keys($st['myfav']))));
+  if ($mine) { $o .= '<h2>' . h(T('❤️ Tus favoritos', '❤️ Your favourites')) . '</h2><ul class="grid">'; foreach (array_slice($mine, 0, 12) as $g) $o .= card($g, '', url(play_path($g))); $o .= '</ul>'; }
   foreach ([['me', T('🕹️ Tus más jugados', '🕹️ Your most played')], ['all', T('🔥 Los más jugados', '🔥 Most played')]] as [$who, $title]) {
     $top = top_games($games, $who, $who === 'me' ? min($n, 6) : $n);
     if (!$top) continue;
@@ -173,6 +182,13 @@ function rank_html(array $games, int $n = 6, string $what = ''): string {
       $chip = '<span>⏱ ' . h(fmt_time($x['s'])) . '</span>' . ($who === 'all' && $x['u'] > 1 ? '<span>👥 ' . $x['u'] . '</span>' : '');
       $o .= card($g, $chip, $who === 'me' ? url(play_path($g)) : null, $i + 1);
     }
+    $o .= '</ol>';
+  }
+  $fv = array_values(array_filter($games, function ($g) use ($st) { return ($st['favs'][$g['id']] ?? 0) > 0; }));
+  usort($fv, function ($a, $b) use ($st) { return $st['favs'][$b['id']] <=> $st['favs'][$a['id']]; });
+  if ($fv) {
+    $o .= '<h2>' . h(T('💖 Los favoritos de la gente', '💖 Everyone\'s favourites')) . '</h2><ol class="grid rank">';
+    foreach (array_slice($fv, 0, $n) as $i => $g) $o .= card($g, '<span>❤️ ' . $st['favs'][$g['id']] . '</span>', null, $i + 1);
     $o .= '</ol>';
   }
   return $o;
@@ -426,7 +442,7 @@ function page_home(): void {
   $na = arcade_count(); $ne = count($GAMES) - $na;
   ob_start(); ?>
   <h1><?= h(T('Juegos arcade y educativos gratis para móvil y TV', 'Free arcade and educational games for phone and TV')) ?></h1>
-  <p class="lead"><?= h(T($na . ' juegos HTML5 hechos con emojis: mecánicas de recreativa olvidadas y los grandes éxitos de móvil. Sin anuncios, sin descargas, con niveles infinitos y funcionan sin conexión. Se juegan con el dedo o con el mando de la tele. Y además ' . $ne . ' juegos educativos de mates, lengua, lógica e inglés para niños de 3 a 16 años.', $na . ' HTML5 games made with emojis: forgotten arcade mechanics and the big mobile hits. No ads, no downloads, endless levels and they work offline. Play with your finger or with the TV remote. Plus ' . $ne . ' educational games for maths, language, logic and English for kids aged 3 to 16.')) ?></p>
+  <p class="lead"><?= h(T($na . ' juegos HTML5 hechos con emojis: mecánicas de recreativa olvidadas y los grandes éxitos de móvil. Sin anuncios, sin descargas, con hasta 120 niveles, tres modos de dificultad y funcionan sin conexión. Se juegan con el dedo o con el mando de la tele. Y además ' . $ne . ' juegos educativos de mates, lengua, lógica e inglés para niños de 3 a 16 años.', $na . ' HTML5 games made with emojis: forgotten arcade mechanics and the big mobile hits. No ads, no downloads, up to 120 levels, three difficulty modes and they work offline. Play with your finger or with the TV remote. Plus ' . $ne . ' educational games for maths, language, logic and English for kids aged 3 to 16.')) ?></p>
   <?= rank_html(array_values($GAMES), 12) ?>
   <h2><?= h(T('Colecciones', 'Collections')) ?></h2>
   <div class="cols">
@@ -653,7 +669,7 @@ function page_game(array $g): void {
     [T('¿Se puede jugar sin conexión?', 'Can I play offline?'), T('Sí. Si instalas la app (Añadir a pantalla de inicio) funciona sin internet. También hay una versión autónoma en un solo archivo HTML.', 'Yes. If you install the app (Add to Home screen) it works without internet. There is also a standalone single-file HTML version.')],
     [T('¿Se puede jugar en la tele con el mando?', 'Can I play it on a TV with the remote?'), $g['tv'] ? T('Sí, en Android TV, Google TV o Fire TV. ', 'Yes, on Android TV, Google TV or Fire TV. ') . plain(f($g, 'tvhelp')) . T(' Pueden jugar hasta 4 personas por turnos.', ' Up to 4 people can play taking turns.') : T('No: este juego necesita pantalla táctil.', 'No: this game needs a touch screen.')],
   ];
-  if ($based) $faq[] = [T('¿En qué juego se inspira ' . $t . '?', 'What game is ' . $t . ' inspired by?'), T('Recrea la mecánica de ', 'It recreates the mechanics of ') . $based . T(', con gráficos de emojis, niveles infinitos y controles táctiles.', ', with emoji graphics, endless levels and touch controls.')];
+  if ($based) $faq[] = [T('¿En qué juego se inspira ' . $t . '?', 'What game is ' . $t . ' inspired by?'), T('Recrea la mecánica de ', 'It recreates the mechanics of ') . $based . T(', con gráficos de emojis, hasta 120 niveles con modos fácil, normal y difícil y controles táctiles.', ', with emoji graphics, up to 120 levels with easy, normal and hard modes and touch controls.')];
   ob_start(); ?>
   <?= crumbs_html($crumbs) ?>
   <article>
@@ -718,7 +734,7 @@ function serve_game(array $g, ?string $force): void {
   if ($html === false) { page_404(); return; }
   $p = '/' . $g['id'] . ($force ? '/' . $force : '');
   $lang = $force ?: 'es';
-  $site = ['id' => $g['id'], 'lang' => $force, 'play' => url('/' . $g['id']), 'api' => url('/api/play'),
+  $site = ['id' => $g['id'], 'lang' => $force, 'play' => url('/' . $g['id']), 'api' => url('/api/play'), 'fav' => url('/api/fav'),
     'home' => ['es' => url('/'), 'en' => url('/en/')], 'tv' => ['es' => url('/tv'), 'en' => url('/en/tv')]];
   $title = ($lang === 'en' ? $g['title_en'] : $g['title_es']) . ' · ' . $SITE;
   $desc = cut(($lang === 'en' ? $g['desc_en'] : $g['desc_es']), 160);
@@ -740,6 +756,36 @@ function serve_game(array $g, ?string $force): void {
   exit;
 }
 
+/* juego de una petición de la API: id propio o 'brain:<minijuego>' de Emoji Brain Academy */
+function api_game(string $gid): ?array {
+  global $GAMES;
+  if (strncmp($gid, 'brain:', 6) === 0) {
+    $b = substr($gid, 6);
+    if (preg_match('/^[a-z0-9]+$/', $b)) foreach ($GAMES as $x) if (is_edu($x) && strpos((string)$x['url'], 'juego=' . $b . '&') !== false) return $x;
+    return null;
+  }
+  return $GAMES[$gid] ?? null;
+}
+function api_fav(): void {
+  header('Content-Type: application/json; charset=utf-8');
+  header('Cache-Control: no-store');
+  $fail = function (int $c) { http_response_code($c); echo '{"ok":false}'; exit; };
+  if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') $fail(405);
+  $d = json_decode((string)file_get_contents('php://input', false, null, 0, 1000), true);
+  if (!is_array($d)) $d = $_POST;
+  $u = (string)($d['u'] ?? ''); $g = api_game((string)($d['g'] ?? ''));
+  if (!preg_match('/^[a-f0-9]{24}$/', $u)) $fail(400);
+  if (!$g) $fail(404);
+  $db = stats_db(true);
+  if (!$db) $fail(503);
+  try {
+    if (!empty($d['on'])) $db->prepare('INSERT OR IGNORE INTO fav (uid, game_id, at) VALUES (?, ?, ?)')->execute([$u, $g['id'], gmdate('Y-m-d H:i:s')]);
+    else $db->prepare('DELETE FROM fav WHERE uid = ? AND game_id = ?')->execute([$u, $g['id']]);
+  } catch (Throwable $e) { $fail(503); }
+  echo '{"ok":true}';
+  exit;
+}
+
 function api_play(): void {
   global $GAMES;
   header('Content-Type: application/json; charset=utf-8');
@@ -750,11 +796,7 @@ function api_play(): void {
   if (!is_array($d)) $d = $_POST;
   $gid = (string)($d['g'] ?? ''); $s = (int)($d['s'] ?? 0); $p = (int)($d['p'] ?? 0); $u = (string)($d['u'] ?? '');
   if (!preg_match('/^[a-f0-9]{24}$/', $u) || $s < 0 || $s > 900 || $p < 0 || $p > 50 || ($s === 0 && $p === 0)) $fail(400);
-  $g = null;
-  if (strncmp($gid, 'brain:', 6) === 0) {   // minijuego de Emoji Brain Academy → su ficha educativa
-    $b = substr($gid, 6);
-    if (preg_match('/^[a-z0-9]+$/', $b)) foreach ($GAMES as $x) if (is_edu($x) && strpos((string)$x['url'], 'juego=' . $b . '&') !== false) { $g = $x; break; }
-  } elseif (isset($GAMES[$gid])) $g = $GAMES[$gid];
+  $g = api_game($gid);
   if (!$g) $fail(404);
   $db = stats_db(true);
   if (!$db) $fail(503);
@@ -823,6 +865,7 @@ $arg = $seg[1] ?? null;
 $EN = $L === 'en';
 
 if ($path === '/api/play') api_play();
+if ($path === '/api/fav') api_fav();
 if ($L === 'es' && $path === '/sitemap.xml') out_sitemap();
 if ($L === 'es' && $path === '/robots.txt') out_robots();
 if ($L === 'es' && $k === 'icono' && $arg && count($seg) === 2 && preg_match('/^([a-z0-9-]+)\.svg$/', $arg, $m) && isset($GAMES[$m[1]])) out_svg($GAMES[$m[1]]);

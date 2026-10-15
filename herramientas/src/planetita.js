@@ -6,7 +6,7 @@
   function geo(g) { const s = g.s; s.cx = g.W / 2; s.cy = (g.top + g.bot) / 2 + 20; s.R = Math.min(g.W, g.bot - g.top) * 0.27; }
   function placeObs(g) {
     const s = g.s, L = g.lv, n = clamp(2 + Math.floor(L / 2), 2, 9);
-    s.obs = []; for (let i = 0; i < n; i++) { let a, k = 0; do { a = rand(0, Math.PI * 2); } while ((Math.abs(Math.atan2(Math.sin(a - s.a), Math.cos(a - s.a))) < 1 || s.obs.some((o) => Math.abs(Math.atan2(Math.sin(a - o.a), Math.cos(a - o.a))) < 0.45)) && k++ < 50); s.obs.push({ a, h: L >= 5 && Math.random() < 0.3 ? 2 : 1, e: pick(['🌵', '🪨', '🍄', '🗿']) }); }
+    s.obs = []; for (let i = 0; i < n; i++) { let a, k = 0; do { a = rand(0, Math.PI * 2); } while ((Math.abs(Math.atan2(Math.sin(a - s.a), Math.cos(a - s.a))) < 1.6 || s.obs.some((o) => Math.abs(Math.atan2(Math.sin(a - o.a), Math.cos(a - o.a))) < 0.45)) && k++ < 50); s.obs.push({ a, h: L >= 5 && Math.random() < 0.3 ? 2 : 1, e: pick(['🌵', '🪨', '🍄', '🗿']) }); }
     s.stars = []; for (let i = 0; i < 3; i++) s.stars.push({ a: rand(0, 6.28), up: rand(30, 60) });
   }
   function jump(g) { const s = g.s; if (s.h > 0 || s.dead) return; s.vh = 330; Arcade.tone(520, 0.05, 'triangle', 0.05, 300); }

@@ -101,7 +101,7 @@
       const tr = { c: 0, r: Math.floor(s.R / 2) };
       s.grid[tr.r][0].m = 10; s.grid[tr.r][1].m = pick([10, 12, 9, 15]);
       s.empty = { c: s.C - 1, r: 0 }; s.grid[0][s.C - 1] = null;
-      s.tr = { c: 0, r: tr.r, inS: 3, outS: 1, t: 0 }; s.wait = 3.5;
+      s.tr = { c: 0, r: tr.r, inS: 3, outS: 1, t: 0 }; s.wait = 6;
       placeStar(g); placeStar(g);
       geo(g);
     },
@@ -120,7 +120,7 @@
       const s = g.s;
       for (const row of s.grid) for (const t of row) if (t) { t.ax *= Math.pow(1e-6, dt); t.ay *= Math.pow(1e-6, dt); if (Math.abs(t.ax) < 0.01) t.ax = 0; if (Math.abs(t.ay) < 0.01) t.ay = 0; }
       if (s.wait > 0) { s.wait -= dt; return; }
-      const speed = Math.min(1.6, 0.42 + s.tiles * 0.014) * (g.demoOn ? 0.55 : 1);
+      const speed = Math.min(1.35, 0.28 + s.tiles * 0.01) * (g.demoOn ? 0.55 : 1);   // arranca despacio y acelera poco a poco
       const tr = s.tr;
       tr.t += speed * dt;
       s.smokeT -= dt;

@@ -12,7 +12,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Arcade Perdido">
-<link rel="stylesheet" href="common.css?v=0557e36461">
+<link rel="stylesheet" href="common.css?v=6d7635e467">
 <script src="config.js?v=c6b9a5638f"></script>
 <script>if (arcadeEsTV()) location.replace('indextv.html' + location.search);</script>
 </head>
@@ -28,6 +28,7 @@
     <button class="chip" data-f="Deslizar" data-i="swipe">↔️ Deslizar</button>
     <button class="chip" data-f="Dos" data-i="two">✌️ Dos dedos</button>
     <a class="chip link" href="indexpro.html" id="other" data-i="other" style="text-decoration:none">✨ Arcade Pro</a>
+    <button class="chip" data-f="❤" data-i="favs">❤️ Favoritos</button>
     <button class="chip" id="tvmode" style="display:none" data-i="tv">📺 Modo TV</button>
     <button class="chip" id="lang" style="display:none"></button>
     <button class="chip" id="install" data-i="install">📲 Instalar</button>
@@ -35,14 +36,14 @@
   <main class="grid" id="grid"></main>
   <p class="foot" id="foot"></p>
 </div>
-<script src="games.js?v=465a2179de"></script>
+<script src="games.js?v=6cb2746160"></script>
 <script>
 (function () {
   const get = (k, d) => { try { const v = localStorage.getItem('arc_' + k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } };
   const grid = document.getElementById('grid');
   const EN = arcadeIdioma() === 'en';
   document.documentElement.lang = EN ? 'en' : 'es';
-  const TX = { tagline: 'Arcade mechanics that were a hit and nobody used again, remade to play with your finger.', all: 'All', tap: '👆 Tap', drag: '✋ Drag', swipe: '↔️ Swipe', two: '✌️ Two fingers', other: '✨ Arcade Pro', tv: '📺 TV mode', install: '📲 Install' };
+  const TX = { tagline: 'Arcade mechanics that were a hit and nobody used again, remade to play with your finger.', all: 'All', tap: '👆 Tap', drag: '✋ Drag', swipe: '↔️ Swipe', two: '✌️ Two fingers', other: '✨ Arcade Pro', favs: '❤️ Favourites', tv: '📺 TV mode', install: '📲 Install' };
   if (EN) { document.querySelectorAll('[data-i]').forEach(e => { if (TX[e.dataset.i]) e.textContent = TX[e.dataset.i]; }); document.title = 'Arcade Perdido · Forgotten classic mechanics'; }
   const loc = (g, k) => (EN && g.en && g.en[k]) || g[k];
   if ((ARCADE_CONFIG.idioma || 'auto') === 'auto') {
@@ -67,7 +68,8 @@
   function render(filter) {
     if (filter !== undefined) curF = filter;
     const words = norm(curQ).split(/\s+/).filter(Boolean);
-    const ok = (g) => (!curF || g.ctrl.indexOf(curF) === 0) && words.every((w) => hay(g).indexOf(w) >= 0);
+    let favs = []; try { favs = JSON.parse(localStorage.getItem('arc_favs') || '[]'); } catch (e) {}
+    const ok = (g) => (!curF || (curF === '❤' ? favs.indexOf(g.id) >= 0 : g.ctrl.indexOf(curF) === 0)) && words.every((w) => hay(g).indexOf(w) >= 0);
     grid.innerHTML = '';
     const mine = GAMES.filter(ok);
     mine.forEach((g) => grid.appendChild(card(g)));

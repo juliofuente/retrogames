@@ -16,8 +16,8 @@ COLLECTIONS = [  # id, slug es, slug en, nombre es, nombre en, portada (desde la
      'Mecánicas de arcade de los 80 y 90 que fueron un éxito y nadie volvió a usar, rehechas para jugar con el dedo en el móvil o con el mando en la tele.',
      'Arcade mechanics from the 80s and 90s that were hits and nobody reused, remade to play with your finger on a phone or with the remote on a TV.', '🕹️'),
     ('pro', 'arcade-pro', 'arcade-pro', 'Arcade Pro', 'Arcade Pro', 'pwa/indexpro.html',
-     'Los grandes éxitos de los juegos de móvil (los que recrea Emanuele Feronato en su blog) hechos con emojis, niveles infinitos y sin anuncios.',
-     'The big mobile game hits (the ones Emanuele Feronato recreates on his blog) made with emojis, endless levels and no ads.', '✨'),
+     'Los grandes éxitos de los juegos de móvil (los que recrea Emanuele Feronato en su blog) hechos con emojis, de 60 a 120 niveles con tres modos de dificultad y sin anuncios.',
+     'The big mobile game hits (the ones Emanuele Feronato recreates on his blog) made with emojis, 60 to 120 levels with three difficulty modes and no ads.', '✨'),
     ('edu', 'educativos', 'educational', 'Educativos', 'Educational', 'educativos/index.html',
      'Juegos para aprender jugando, de 3 a 16 años: mates (también con método ABN), lengua y vocabulario, lógica e inglés. Organizados por asignatura y por edad.',
      'Games to learn through play, ages 3 to 16: maths (including the ABN method), language and vocabulary, logic and English. Organised by subject and age.', '🎓'),
@@ -133,7 +133,7 @@ def main():
       tvhelp_es TEXT, tvhelp_en TEXT,      -- controles con mando de TV
       tv TEXT,                             -- 'cruceta' | 'cursor' | NULL (no se puede jugar con mando)
       origin TEXT,                         -- juegos en los que se basa (texto tal cual)
-      lives INTEGER, levels TEXT,          -- levels: 'infinite' | 'endless' | número
+      lives INTEGER, levels TEXT,          -- levels: número de niveles | 'endless' (partida por récord) | 'infinite' (educativos)
       cap INTEGER, physics INTEGER, added_version TEXT, sort INTEGER,
       -- solo juegos educativos (colección 'edu'):
       subject_id TEXT REFERENCES subjects(id),
@@ -169,7 +169,8 @@ def main():
         if se in used_en:
             se = se + '-' + g['id']
         used_en.add(se)
-        lv = 'endless' if g['levels'] is None else 'infinite' if g['levels'] == 0 else str(g['levels'])
+        cap = g.get('cap') or 20   # mismo cálculo que common.js: los niveles «infinitos» pasan a 60–120 según el tope de dificultad
+        lv = 'endless' if g['levels'] is None else str(60 if cap <= 16 else 80 if cap <= 20 else 100 if cap <= 25 else 120) if g['levels'] == 0 else str(g['levels'])
         bg = g.get('bg') or [None, None]
         db.execute('INSERT INTO games VALUES (' + ','.join('?' * 37) + ')', (
             g['id'], se, g['collection'], cat_of[g['id']], CTRL[g['ctrl']][0], g['file'], g['emoji'], g['color'], g['theme'], bg[0], bg[1], g.get('font'),

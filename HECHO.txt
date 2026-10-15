@@ -1,6 +1,20 @@
 ARCADE PERDIDO + ARCADE PRO — LO QUE ESTÁ HECHO
 ================================================
-Fecha: 14-10-2026 · Versión de la PWA (games.js → ARCADE_VERSION): 2.9.0
+Fecha: 14-10-2026 · Versión de la PWA (games.js → ARCADE_VERSION): 2.11.0
+· v2.11.0: NIVELES FINITOS Y MODOS DE DIFICULTAD (en common.js, para todos los juegos):
+  - Los antiguos «niveles infinitos» pasan a 60/80/100/120 niveles según el tope de dificultad del juego (cap ≤16/≤20/≤25/más).
+  - La dificultad interna g.lv (1…cap) se reparte de forma homogénea del primer al último nivel según el modo:
+    😊 Fácil 1→60 % del tope · 🙂 Normal 1→tope · 😈 Difícil 30 %→tope (llega al tope al 75 % de los niveles).
+  - Velocidad (escala el dt de update): empieza más lenta y llega a la normal hacia el 30 % de los niveles (fácil
+    0,72→0,88 · normal 0,85→1 · difícil 1,04→1,15); en los juegos de récord sube durante el primer minuto. Además cada
+    nivel arranca a medio gas y alcanza su velocidad en 2,5 s. g.mode y g.speed disponibles para los juegos.
+  - Progreso, récord y «completado» por modo (claves lv_/best_/done_<id>[_easy|_hard]); el progreso antiguo se convierte.
+  - Menú: botones de modo, «Continuar · Nivel N» y selector (− barra +) para jugar cualquier nivel ya superado.
+  - Vías y Células suavizadas al principio; Planetita no pone obstáculos pegados al jugador.
+· v2.11.0: FAVORITOS: botón 🤍/❤️ en el menú y en la pausa de cada juego (y ❤️ en la barra de Brain Academy). La lista
+  es privada en localStorage (arc_favs) y en la web PHP se cuenta en data/stats.sqlite (tabla fav, POST /api/fav) para
+  los rankings «❤️ Tus favoritos» y «💖 Los favoritos de la gente» y el «Favorito de N personas» de la ficha. En las
+  portadas estáticas hay un filtro ❤️ Favoritos.
 · v2.9.0: 23 minijuegos ABN nuevos en Emoji Brain Academy (ahora 69): doble recta para sumar y restar, saltos en la
   recta hacia delante y hacia atrás, Dale de comer (estimar posiciones en la recta con marcas ¼ ⅓ ½ ⅔ ¾: cae comida y el comilón tiene una zona de boca
   cada vez más estrecha), resta por detracción, doble resta, suma de tres, truco del 9, tablas con trucos, haces y
