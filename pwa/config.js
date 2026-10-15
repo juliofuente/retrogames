@@ -18,8 +18,9 @@
    Variables que puede poner cada página ANTES de cargar config.js / common.js:
      window.withpwa = true       → activa la PWA (service worker sw.js + manifest: instalable y sin conexión).
                                     Sin definir o false: no hay PWA y se borran el service worker y las cachés antiguas.
-     window.isSingleGame = true  → el juego va solo (p. ej. dentro de una app Android): sin botón a la portada,
-                                    sin favoritos ni estadísticas; el botón Atrás del mando no sale del juego.
+     window.isSingleGame         → POR DEFECTO (sin definir o true) el juego va solo (app Android, PWA): sin botón a
+                                    la portada, sin favoritos ni estadísticas; el botón Atrás del mando no sale del juego.
+                                    window.isSingleGame = false → parte de la web: 🏠 a la portada, favoritos y estadísticas.
    jugadoresMax: máximo de jugadores por turnos en modo TV (1–4).
    rondasMultijugador: rondas (un nivel por turno) en los juegos con niveles. */
 var ARCADE_CONFIG = {

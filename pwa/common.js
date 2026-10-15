@@ -362,8 +362,9 @@
   /* ---------- PWA ---------- */
   /* PWA (service worker + manifest) solo si la página pone window.withpwa = true; si no, se quitan (ver arcadePWA en config.js) */
   try { if (typeof window.arcadePWA === 'function') window.arcadePWA(); } catch (e) {}
-  /* window.isSingleGame = true → el juego va solo (p. ej. dentro de una app Android): sin portada, favoritos ni estadísticas */
-  A.single = window.isSingleGame === true;
+  /* Por defecto cada juego va solo (para meterlo en una app Android o como PWA): sin botón a la portada, favoritos ni
+     estadísticas. window.isSingleGame = false → vuelve a ser parte de la web (🏠, favoritos y tiempo de juego). */
+  A.single = window.isSingleGame !== false;
 
   function el(tag, cls, html) { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; }
 

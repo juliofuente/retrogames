@@ -25,6 +25,10 @@ declare(strict_types=1);
 error_reporting(E_ALL);
 ini_set('display_errors', '0');
 
+/* Portada desactivada: «/» (y «/en/») responde 404 y solo se juega entrando directamente a cada juego (/<id>).
+   Para volver a tener portada, pon PORTADA en true. */
+const PORTADA = false;
+
 /* ---------- base URL ---------- */
 $https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https') || (($_SERVER['SERVER_PORT'] ?? '') === '443');
 $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
@@ -907,7 +911,10 @@ if ($L === 'es' && $path === '/sitemap.xml') out_sitemap();
 if ($L === 'es' && $path === '/robots.txt') out_robots();
 if ($L === 'es' && $k === 'icono' && $arg && count($seg) === 2 && preg_match('/^([a-z0-9-]+)\.svg$/', $arg, $m) && isset($GAMES[$m[1]])) out_svg($GAMES[$m[1]]);
 
-if ($r === '/' && count($seg) === 0) { page_home(); exit; }
+if ($r === '/' && count($seg) === 0) {
+  if (!PORTADA) { http_response_code(404); header('Content-Type: text/plain; charset=utf-8'); header('Cache-Control: no-cache'); echo "404 Not Found\n"; exit; }
+  page_home(); exit;
+}
 if (count($seg) === 1 && $k === ($EN ? 'games' : 'juegos')) { page_all(); exit; }
 if (count($seg) === 1 && $k === 'tv') { page_tv(); exit; }
 if (count($seg) === 1 && $k === ($EN ? 'search' : 'buscar')) { page_search(); exit; }

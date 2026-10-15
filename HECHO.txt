@@ -1,6 +1,14 @@
 ARCADE PERDIDO + ARCADE PRO — LO QUE ESTÁ HECHO
 ================================================
-Fecha: 15-10-2026 · Versión de la PWA (games.js → ARCADE_VERSION): 2.13.0
+Fecha: 15-10-2026 · Versión de la PWA (games.js → ARCADE_VERSION): 2.14.0
+· v2.14.0: JUEGOS SUELTOS POR DEFECTO Y SIN PORTADA:
+  - Todos los juegos van solos por defecto (para meterlos en apps Android o hacerlos PWA): sin botón 🏠 a la portada,
+    sin favoritos y sin estadísticas. common.js: A.single = window.isSingleGame !== false. Con
+    window.isSingleGame = false todo vuelve como antes.
+  - Educativos: los 🏠 que llevaban a la web (atributo data-sitehome) se quitan salvo con isSingleGame = false. En
+    Emoji Brain Academy el 🏠 de dentro de cada minijuego vuelve al menú de la app.
+  - La portada del dominio («/» y «/en/») responde 404. Para recuperarla: const PORTADA = true en index.php. Las
+    fichas, categorías y juegos (/<id>) siguen funcionando.
 · v2.13.0: EMOJIS QUE NO SALÍAN Y CACHÉ:
   - common.js comprueba si el dispositivo sabe pintar cada emoji nuevo (Unicode 12+: 🫐 🪨 🥲 🪃 🙂‍↔️ 🟢 🟦…). Si no
     puede, lo cambia por uno antiguo parecido (Arcade.FALLBACK) o dibuja a mano los círculos/cuadrados de color. Antes,
