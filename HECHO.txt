@@ -1,6 +1,15 @@
 ARCADE PERDIDO + ARCADE PRO — LO QUE ESTÁ HECHO
 ================================================
-Fecha: 14-10-2026 · Versión de la PWA (games.js → ARCADE_VERSION): 2.11.0
+Fecha: 14-10-2026 · Versión de la PWA (games.js → ARCADE_VERSION): 2.12.0
+· v2.12.0: variables que una página puede poner ANTES de cargar config.js / common.js:
+  - window.withpwa = true → activa la PWA de esa página (registra pwa/sw.js y deja el manifest). Sin definir: no hay PWA
+    y se dan de baja el service worker de esa carpeta y las cachés antiguas (y se quita el manifest). El nuevo sw.js es
+    «red primero»: con conexión siempre usa lo último del servidor; la caché solo se usa sin conexión.
+    Lo gestiona arcadePWA() en config.js (lo llaman common.js y las portadas pwa/index*.html).
+  - window.isSingleGame = true → el juego va solo, p. ej. dentro de una app Android (WebView): sin botón a la portada,
+    sin favoritos, sin estadísticas ni nada de la web; el botón Atrás del mando no sale del juego. (Arcade.single)
+  - python3 pwa/build.py --solo [id1,id2…] genera autonomos/solo/<id>.html: el juego en un solo archivo, sin
+    dependencias de otros archivos y con window.isSingleGame = true, listo para meter en la app.
 · v2.11.0: NIVELES FINITOS Y MODOS DE DIFICULTAD (en common.js, para todos los juegos):
   - Los antiguos «niveles infinitos» pasan a 60/80/100/120 niveles según el tope de dificultad del juego (cap ≤16/≤20/≤25/más).
   - La dificultad interna g.lv (1…cap) se reparte de forma homogénea del primer al último nivel según el modo:

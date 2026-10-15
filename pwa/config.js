@@ -15,6 +15,11 @@
      'es'   → siempre en español (sin botón).
      'en'   → siempre en inglés (sin botón).
    También se puede forzar con ?lang=es o ?lang=en en la URL.
+   Variables que puede poner cada página ANTES de cargar config.js / common.js:
+     window.withpwa = true       → activa la PWA (service worker sw.js + manifest: instalable y sin conexión).
+                                    Sin definir o false: no hay PWA y se borran el service worker y las cachés antiguas.
+     window.isSingleGame = true  → el juego va solo (p. ej. dentro de una app Android): sin botón a la portada,
+                                    sin favoritos ni estadísticas; el botón Atrás del mando no sale del juego.
    jugadoresMax: máximo de jugadores por turnos en modo TV (1–4).
    rondasMultijugador: rondas (un nivel por turno) en los juegos con niveles. */
 var ARCADE_CONFIG = {
@@ -60,4 +65,17 @@ function arcadeIdioma() {
 function arcadeElegirIdioma(l) {
   try { localStorage.setItem('arc_lang', l); } catch (e) {}
   try { document.cookie = 'arc_lang=' + l + ';path=/;max-age=63072000;SameSite=Lax'; } catch (e) {}
+}
+
+/* PWA: solo con window.withpwa = true (y servida por http/https). El service worker es «red primero»: con conexión
+   siempre carga lo último y solo usa la caché sin conexión, así nunca mezcla versiones. */
+function arcadePWA() {
+  var on = window.withpwa === true && /^https?:/.test(location.protocol) && 'serviceWorker' in navigator;
+  try {
+    if (on) { navigator.serviceWorker.register('sw.js').catch(function () {}); return; }
+    var scope = new URL('./', document.baseURI).href;   // solo el de esta carpeta (no toca otras apps del mismo dominio)
+    if ('serviceWorker' in navigator) navigator.serviceWorker.getRegistrations().then(function (rs) { rs.forEach(function (r) { if (r.scope === scope) r.unregister(); }); }).catch(function () {});
+    if (window.caches) caches.keys().then(function (ks) { ks.filter(function (k) { return /^arcade-perdido-/.test(k); }).forEach(function (k) { caches.delete(k); }); }).catch(function () {});
+    var m = document.querySelector('link[rel=manifest]'); if (m) m.parentNode.removeChild(m);
+  } catch (e) {}
 }

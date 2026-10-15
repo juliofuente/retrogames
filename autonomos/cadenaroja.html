@@ -262,6 +262,11 @@ html.tv .howto summary { font-size: 16px; }
      'es'   → siempre en español (sin botón).
      'en'   → siempre en inglés (sin botón).
    También se puede forzar con ?lang=es o ?lang=en en la URL.
+   Variables que puede poner cada página ANTES de cargar config.js / common.js:
+     window.withpwa = true       → activa la PWA (service worker sw.js + manifest: instalable y sin conexión).
+                                    Sin definir o false: no hay PWA y se borran el service worker y las cachés antiguas.
+     window.isSingleGame = true  → el juego va solo (p. ej. dentro de una app Android): sin botón a la portada,
+                                    sin favoritos ni estadísticas; el botón Atrás del mando no sale del juego.
    jugadoresMax: máximo de jugadores por turnos en modo TV (1–4).
    rondasMultijugador: rondas (un nivel por turno) en los juegos con niveles. */
 var ARCADE_CONFIG = {
@@ -307,6 +312,19 @@ function arcadeIdioma() {
 function arcadeElegirIdioma(l) {
   try { localStorage.setItem('arc_lang', l); } catch (e) {}
   try { document.cookie = 'arc_lang=' + l + ';path=/;max-age=63072000;SameSite=Lax'; } catch (e) {}
+}
+
+/* PWA: solo con window.withpwa = true (y servida por http/https). El service worker es «red primero»: con conexión
+   siempre carga lo último y solo usa la caché sin conexión, así nunca mezcla versiones. */
+function arcadePWA() {
+  var on = window.withpwa === true && /^https?:/.test(location.protocol) && 'serviceWorker' in navigator;
+  try {
+    if (on) { navigator.serviceWorker.register('sw.js').catch(function () {}); return; }
+    var scope = new URL('./', document.baseURI).href;   // solo el de esta carpeta (no toca otras apps del mismo dominio)
+    if ('serviceWorker' in navigator) navigator.serviceWorker.getRegistrations().then(function (rs) { rs.forEach(function (r) { if (r.scope === scope) r.unregister(); }); }).catch(function () {});
+    if (window.caches) caches.keys().then(function (ks) { ks.filter(function (k) { return /^arcade-perdido-/.test(k); }).forEach(function (k) { caches.delete(k); }); }).catch(function () {});
+    var m = document.querySelector('link[rel=manifest]'); if (m) m.parentNode.removeChild(m);
+  } catch (e) {}
 }
 </script>
 <script>
@@ -624,7 +642,10 @@ function arcadeElegirIdioma(l) {
   };
 
   /* ---------- PWA ---------- */
-  try { /* PWA desactivada (v2.8.1): quita el service worker y las cachés viejas */ if ('serviceWorker' in navigator) navigator.serviceWorker.getRegistrations().then((rs) => rs.forEach((r) => r.unregister())).catch(() => {}); if (window.caches) caches.keys().then((ks) => ks.filter((k) => /^arcade-perdido-/.test(k)).forEach((k) => caches.delete(k))).catch(() => {}); } catch (e) {}
+  /* PWA (service worker + manifest) solo si la página pone window.withpwa = true; si no, se quitan (ver arcadePWA en config.js) */
+  try { if (typeof window.arcadePWA === 'function') window.arcadePWA(); } catch (e) {}
+  /* window.isSingleGame = true → el juego va solo (p. ej. dentro de una app Android): sin portada, favoritos ni estadísticas */
+  A.single = window.isSingleGame === true;
 
   function el(tag, cls, html) { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; }
 
@@ -641,7 +662,8 @@ function arcadeElegirIdioma(l) {
     const TV = A.tv, rdef = def.tv === false ? null : def.tv || {};
     let tvdef = TV ? rdef : null;   // en táctil se activa con el pad virtual
     const HOME = TV ? (def.home ? 'indextv.html?sec=pro' : 'indextv.html') : (def.home || 'index.html');
-    const SITE = window.ARCADE_SITE || null;   // lo inyecta index.php cuando el juego se sirve en /<id>
+    const SITE = A.single ? null : window.ARCADE_SITE || null;   // lo inyecta index.php cuando el juego se sirve en /<id>
+    const homeLink = (cls, label) => A.single ? '' : `<a class="${cls}" href="${HOMEQ()}">🏠 ${label}</a>`;
     const STAT = { s: 0, p: 0 };               // segundos jugados y partidas empezadas (se envían a SITE.api)
     const HOMEQ = () => SITE ? (TV ? SITE.tv : SITE.home)[A.lang] : HOME + (HOME.indexOf('?') < 0 ? '?' : '&') + 'lang=' + A.lang;
     M.song = buildSong(def.music || {}, def.id);
@@ -922,7 +944,7 @@ function arcadeElegirIdioma(l) {
       if (TV && !tvdef) {
         show(`<div class="mcol ml"><div class="logo"><div class="halo"></div><span class="mascot">${def.emoji}</span></div><h1 class="ttl">${def.title}</h1></div>
           <div class="mcol mr"><p class="sub">✋ ${T('Este juego necesita pantalla táctil y no se puede jugar con el mando.', 'This game needs a touch screen and can\'t be played with a remote.')}</p>
-          <div class="row"><a class="b pri" href="${HOMEQ()}">🏠 ${T('Elegir otro juego', 'Choose another game')}</a>${modeBtn()}${langBtn()}</div></div>`, 'menu');
+          <div class="row">${homeLink('b pri', T('Elegir otro juego', 'Choose another game'))}${modeBtn()}${langBtn()}</div></div>`, 'menu');
         return;
       }
       const deco = (def.deco || []).slice(0, 6).map((e, i) => `<span class="deco d${i}">${e}</span>`).join('');
@@ -933,7 +955,7 @@ function arcadeElegirIdioma(l) {
           <button class="b sm lvgo" data-act="play" data-lv="${g.unlocked}">▶ ${LV} ${g.unlocked}</button></div>`;
       }
       const modes = TV && g.mp ? '' : `<div class="modes">${Object.keys(MODES).map((m) => `<button class="b sm mbtn${m === MODE ? ' on' : ''}" data-act="mode" data-m="${m}">${MODES[m][0]} ${EN ? MODES[m][2] : MODES[m][1]}</button>`).join('')}</div>`;
-      const favBtn = `<button class="b sm fav${isFav() ? ' on' : ''}" data-act="fav">${isFav() ? '❤️ ' + T('En favoritos', 'In favourites') : '🤍 ' + T('Añadir a favoritos', 'Add to favourites')}</button>`;
+      const favBtn = A.single ? '' : `<button class="b sm fav${isFav() ? ' on' : ''}" data-act="fav">${isFav() ? '❤️ ' + T('En favoritos', 'In favourites') : '🤍 ' + T('Añadir a favoritos', 'Add to favourites')}</button>`;
       const seen = A.get('seen_' + def.id, false); A.set('seen_' + def.id, true);
       const playLabel = hasLevels && g.unlocked > 1 ? T('▶ Continuar · ', '▶ Continue · ') + LV + ' ' + g.unlocked : T('▶ Jugar', '▶ Play');
       const players = TV ? `<div class="lvhead">${T('Jugadores (por turnos)', 'Players (taking turns)')}</div><div class="players">${[1, 2, 3, 4].slice(0, MAXP).map((n) => `<button class="b sm pbtn${n === nPlayers ? ' on' : ''}" data-act="players" data-n="${n}">${n === 1 ? '👤' : AV.slice(0, n).map((a) => a.e).join('')} ${n}</button>`).join('')}</div>` : '';
@@ -948,7 +970,7 @@ function arcadeElegirIdioma(l) {
         <button class="b wide" data-act="demo">👀 ${T('Ver demo', 'Watch demo')}</button>
         ${players}${lv}
         <div class="row">${toggles()}${favBtn}</div>
-        <div class="row"><a class="b sm ghost" href="${HOMEQ()}">🏠 ${T('Todos los juegos', 'All games')}</a>${modeBtn()}${langBtn()}</div></div>`, 'menu');
+        <div class="row">${homeLink('b sm ghost', T('Todos los juegos', 'All games'))}${modeBtn()}${langBtn()}</div></div>`, 'menu');
       const r = ov.querySelector('.lvr');
       if (r) r.addEventListener('input', () => { const go = ov.querySelector('.lvgo'); go.dataset.lv = r.value; go.textContent = '▶ ' + LV + ' ' + r.value; });
     }
@@ -959,7 +981,7 @@ function arcadeElegirIdioma(l) {
       show(`<div class="big">⏸️</div><h2>${T('Pausa', 'Paused')}</h2>
         <button class="b pri wide" data-act="resume">▶ ${T('Continuar', 'Resume')}</button>
         ${acts ? `<div class="row">${acts}</div>` : ''}
-        <div class="row"><button class="b sm fav${isFav() ? ' on' : ''}" data-act="fav">${isFav() ? '❤️ ' + T('En favoritos', 'In favourites') : '🤍 ' + T('Añadir a favoritos', 'Add to favourites')}</button></div>
+        ${A.single ? '' : `<div class="row"><button class="b sm fav${isFav() ? ' on' : ''}" data-act="fav">${isFav() ? '❤️ ' + T('En favoritos', 'In favourites') : '🤍 ' + T('Añadir a favoritos', 'Add to favourites')}</button></div>`}
         <div class="row">${g.mp ? '' : `<button class="b" data-act="restart">🔄 ${T('Reiniciar', 'Restart')}</button>`}<button class="b" data-act="menu">☰ ${g.mp ? T('Abandonar partida', 'Quit match') : T('Menú', 'Menu')}</button></div>
         <div class="row">${toggles()}</div>
         ${TV ? `<div class="tvhelp">🎮 ${def.tvHelp || ''}</div>` : `<details class="howto"><summary>📖 ${T('Cómo se juega', 'How to play')}</summary><div class="help">${def.help}</div></details>`}`);
@@ -1275,7 +1297,7 @@ function arcadeElegirIdioma(l) {
       const now = performance.now(); if (now - lastBack < 300) return; lastBack = now;
       if (g.state === 'play') pause();
       else if (g.state === 'pause') resume();
-      else if (g.state === 'menu') location.href = HOMEQ();
+      else if (g.state === 'menu' && !A.single) location.href = HOMEQ();
       else if (g.state === 'win' || g.state === 'over' || g.state === 'final') menu();
     }
     if (TV) {

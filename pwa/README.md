@@ -97,6 +97,28 @@ Cada juego lleva sus textos en inglés en `en: { title, tag, help, tvHelp, dict 
 
 `build.py` (en la carpeta de trabajo) genera en `arcade-perdido-html/` cada juego con el CSS y el JS comunes incrustados: un solo archivo por juego que se abre sin nada más.
 
+## PWA y juego suelto (v2.12)
+
+Cada página puede definir, **antes** de cargar `config.js` y `common.js`:
+
+```html
+<script>
+  window.withpwa = true;       // activa la PWA: registra sw.js (red primero) y deja el manifest
+  window.isSingleGame = true;  // juego solo: sin portada, favoritos ni estadísticas (para una app Android)
+</script>
+```
+
+- Sin `withpwa` (o `false`) no hay PWA: se dan de baja el service worker de esa carpeta y las cachés antiguas.
+- Con `isSingleGame` el motor oculta «Todos los juegos», el botón de favoritos y no envía estadísticas; el botón
+  Atrás del mando no sale del juego. En el código: `Arcade.single`.
+- `python3 build.py --solo pivote,gemas` (o `--solo` sin lista para todos) genera `../autonomos/solo/<id>.html`:
+  el juego en un solo archivo con `window.isSingleGame = true`, listo para un WebView.
+
+## Modos de dificultad y niveles (v2.11)
+
+- `g.lv` (dificultad interna 1…`cap`) se reparte por 60–120 niveles según el modo (`g.mode`: easy/normal/hard).
+- `g.speed` escala el `dt` que recibe `update` (empieza más lento y cada nivel arranca a medio gas).
+
 ## Probar en local
 
 ```

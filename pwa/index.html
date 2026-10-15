@@ -13,7 +13,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Arcade Perdido">
 <link rel="stylesheet" href="common.css?v=6d7635e467">
-<script src="config.js?v=c6b9a5638f"></script>
+<script src="config.js?v=a2ee08541b"></script>
 <script>if (arcadeEsTV()) location.replace('indextv.html' + location.search);</script>
 </head>
 <body class="home">
@@ -36,7 +36,7 @@
   <main class="grid" id="grid"></main>
   <p class="foot" id="foot"></p>
 </div>
-<script src="games.js?v=6cb2746160"></script>
+<script src="games.js?v=7ef99317c7"></script>
 <script>
 (function () {
   const get = (k, d) => { try { const v = localStorage.getItem('arc_' + k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } };
@@ -107,7 +107,7 @@
   const ios = /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.navigator.standalone;
   if (ios) ib.style.display = 'inline-flex';
   window.addEventListener('pageshow', () => render(document.querySelector('[data-f].on').dataset.f));
-  try { /* PWA desactivada (v2.8.1): quita el service worker y las cachés viejas */ if ('serviceWorker' in navigator) navigator.serviceWorker.getRegistrations().then((rs) => rs.forEach((r) => r.unregister())).catch(() => {}); if (window.caches) caches.keys().then((ks) => ks.filter((k) => /^arcade-perdido-/.test(k)).forEach((k) => caches.delete(k))).catch(() => {}); } catch (e) {}
+  try { if (window.arcadePWA) arcadePWA(); } catch (e) {}   /* PWA solo con window.withpwa = true */
 })();
 </script>
 </body>
