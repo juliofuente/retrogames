@@ -329,7 +329,9 @@
     const TV = A.tv, rdef = def.tv === false ? null : def.tv || {};
     let tvdef = TV ? rdef : null;   // en táctil se activa con el pad virtual
     const HOME = TV ? (def.home ? 'indextv.html?sec=pro' : 'indextv.html') : (def.home || 'index.html');
-    const HOMEQ = () => HOME + (HOME.indexOf('?') < 0 ? '?' : '&') + 'lang=' + A.lang;
+    const SITE = window.ARCADE_SITE || null;   // lo inyecta index.php cuando el juego se sirve en /<id>
+    const STAT = { s: 0, p: 0 };               // segundos jugados y partidas empezadas (se envían a SITE.api)
+    const HOMEQ = () => SITE ? (TV ? SITE.tv : SITE.home)[A.lang] : HOME + (HOME.indexOf('?') < 0 ? '?' : '&') + 'lang=' + A.lang;
     M.song = buildSong(def.music || {}, def.id);
     const infinite = def.levels === 0, hasLevels = def.levels != null;
     if (EN && def.en) { def.title = def.en.title || def.title; def.tag = def.en.tag || def.tag; def.help = def.en.help || def.help; if (def.en.tvHelp) def.tvHelp = def.en.tvHelp; A.setDict(def.en.dict); }
@@ -628,7 +630,7 @@
     function start(level) {
       if (nPlayers > 1) { mpStart(level); return; }
       g.demoOn = false;
-      g.mp = null; g.level = level || 1; g.score = 0; g.lives = def.lives ?? 3; g.t = 0; begin(); if (def.onStart) def.onStart(g);
+      g.mp = null; g.level = level || 1; g.score = 0; g.lives = def.lives ?? 3; g.t = 0; STAT.p++; begin(); if (def.onStart) def.onStart(g);
     }
     /* --- demo: partida automática con un dedo virtual ---
        Cada juego puede definir demo(g) → paso | [pasos] | null. Pasos:
@@ -741,7 +743,7 @@
       else if (act === 'tvmode') { if (window.arcadeElegirTV) arcadeElegirTV(!TV); location.href = location.pathname; }
       else if (act === 'mute') { A.muted = !A.muted; A.set('muted', A.muted); b.innerHTML = (A.muted ? '🔇' : '🔊') + ' ' + T('Sonido', 'Sound'); }
       else if (act === 'music') { A.musicOn = !A.musicOn; A.set('music', A.musicOn); b.innerHTML = (A.musicOn ? '🎵' : '🚫') + ' ' + T('Música', 'Music'); }
-      else if (act === 'lang') { const nl = EN ? 'es' : 'en'; if (window.arcadeElegirIdioma) arcadeElegirIdioma(nl); try { const u = new URLSearchParams(location.search); u.set('lang', nl); location.search = '?' + u.toString(); } catch (_) { location.reload(); } }
+      else if (act === 'lang') { const nl = EN ? 'es' : 'en'; if (window.arcadeElegirIdioma) arcadeElegirIdioma(nl); if (SITE) { location.href = SITE.play + location.search.replace(/([?&])lang=[a-z]+&?/, '$1').replace(/[?&]$/, ''); return; } try { const u = new URLSearchParams(location.search); u.set('lang', nl); location.search = '?' + u.toString(); } catch (_) { location.reload(); } }
     });
     $('hP').addEventListener('click', () => { actx(); if (g.demoOn) { endDemo(); return; } if (g.state === 'play') pause(); else if (g.state === 'pause') resume(); });
 
@@ -1009,6 +1011,20 @@
     document.addEventListener('visibilitychange', () => { if (document.hidden) pause(); });
     window.addEventListener('blur', () => pause());
 
+    /* --- tiempo de juego (web PHP: POST a SITE.api; lo guarda data/stats.sqlite) --- */
+    const statUid = () => {
+      let u = null; try { u = localStorage.getItem('arc_uid'); } catch (_) {}
+      if (!/^[a-f0-9]{24}$/.test(u || '')) { u = Array.from(crypto.getRandomValues(new Uint8Array(12)), (b) => b.toString(16).padStart(2, '0')).join(''); try { localStorage.setItem('arc_uid', u); } catch (_) {} }
+      document.cookie = 'arc_uid=' + u + ';path=/;max-age=63072000;SameSite=Lax'; return u;
+    };
+    const statFlush = () => {
+      if (!SITE || !SITE.api || (STAT.s < 1 && !STAT.p)) return;
+      const body = JSON.stringify({ g: SITE.id || def.id, s: Math.round(STAT.s), p: STAT.p, u: statUid() }); STAT.s = 0; STAT.p = 0;
+      try { if (!(navigator.sendBeacon && navigator.sendBeacon(SITE.api, new Blob([body], { type: 'application/json' })))) fetch(SITE.api, { method: 'POST', body, keepalive: true, headers: { 'Content-Type': 'application/json' } }).catch(() => {}); } catch (_) {}
+    };
+    if (SITE) { statUid(); setInterval(statFlush, 60000); window.addEventListener('pagehide', statFlush); document.addEventListener('visibilitychange', () => { if (document.hidden) statFlush(); }); }
+    A.playStats = STAT;
+
     /* --- bucle --- */
     let last = performance.now();
     function frame(now) {
@@ -1016,6 +1032,7 @@
       let dt = (now - last) / 1000; last = now;
       if (dt > 0.05) dt = 0.05; if (dt < 0) dt = 0;
       g.rt += dt;
+      if (g.state === 'play' && !g.demoOn && !document.hidden) STAT.s += dt;
       if (g.state === 'play') updFace(dt);
       if (g.demoOn) updDemo(dt);
       const live = g.state === 'play' || g.state === 'dying';

@@ -11,6 +11,9 @@ AddDefaultCharset utf-8
   # robots.txt y sitemap.xml los genera index.php
   RewriteRule ^(robots\.txt|sitemap\.xml)$ index.php [L]
 
+  # URLs antiguas de los juegos (/pwa/pivote.html?lang=en) → index.php las redirige a /pivote/en
+  RewriteRule ^pwa/(?!index)[a-z0-9]+\.html$ index.php [L]
+
   # Archivos internos: nunca se sirven
   RewriteRule ^(data|herramientas)(/|$) - [F,L]
   RewriteRule (^|/)\.(?!well-known) - [F,L]

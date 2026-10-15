@@ -49,6 +49,8 @@ function arcadeElegirTV(on) {
 function arcadeIdioma() {
   var c = ARCADE_CONFIG.idioma;
   if (c === 'es' || c === 'en') return c;
+  var site = window.ARCADE_SITE;   // web PHP: /pivote/en fuerza el idioma (sin guardarlo)
+  if (site && (site.lang === 'es' || site.lang === 'en')) return site.lang;
   var q = /[?&]lang=(es|en)/.exec(location.search || '');
   if (q) { try { localStorage.setItem('arc_lang', q[1]); } catch (e) {} return q[1]; }
   try { var v = localStorage.getItem('arc_lang'); if (v === 'es' || v === 'en') return v; } catch (e) {}
@@ -57,4 +59,5 @@ function arcadeIdioma() {
 }
 function arcadeElegirIdioma(l) {
   try { localStorage.setItem('arc_lang', l); } catch (e) {}
+  try { document.cookie = 'arc_lang=' + l + ';path=/;max-age=63072000;SameSite=Lax'; } catch (e) {}
 }

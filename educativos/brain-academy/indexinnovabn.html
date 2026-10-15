@@ -376,6 +376,7 @@ let CUR=null; // running game controller
 function startGame(win,def){
   const doc=win.document,G=CAT.find(x=>x.id===def.id)||{emoji:'🎮',name:{en:def.id},cat:'logic'};
   const P=getProg(def.id);P.plays++;save();
+  if(PLAY.id!==def.id){playFlush();PLAY.id=def.id;}PLAY.p++;
   const arcade=def.mode==='arcade',ROUNDS=def.rounds||5,gid=U.strHash(def.id);
   doc.documentElement.lang=S.lang;
   const css=doc.createElement('style');css.textContent=KIT_CSS+(def.css||'');doc.head.appendChild(css);
@@ -493,7 +494,7 @@ function startGame(win,def){
     if(!arcade&&e.key==='Enter'&&nb){nb.click();return;}
     if(!arcade){const n=parseInt(e.key);if(n>=1&&n<=9){const b=g.stage.querySelectorAll('.k-choice')[n-1];if(b&&!b.disabled)b.click();}}
   });
-  function exit(){stopTimer();g.running=false;if(stopFn){try{stopFn();}catch(e){}}persist();CUR=null;closeGame();}
+  function exit(){playFlush();stopTimer();g.running=false;if(stopFn){try{stopFn();}catch(e){}}persist();CUR=null;closeGame();}
   CUR={exit,g};
   if(arcade)startWave();else newRound();
   return g;
@@ -564,6 +565,17 @@ $('sndBtn').onclick=()=>{S.sound=!S.sound;save();if(S.sound)SFX.click();renderHu
 
 function openGame(g){ac();SFX.whoosh();const f=$('frame');f.src=g.file+'?v=1';f.classList.add('show');document.body.style.overflow='hidden';}
 function closeGame(){const f=$('frame');f.classList.remove('show');f.src='about:blank';document.body.style.overflow='';try{speechSynthesis.cancel();}catch(e){}renderHub();}
+
+// ─── tiempo de juego → web PHP (POST ../../api/play, lo guarda data/stats.sqlite). Sin la web PHP falla en silencio ───
+const PLAY={id:null,s:0,p:0};
+function playUid(){let u=null;try{u=localStorage.getItem('arc_uid');}catch(e){}
+  if(!/^[a-f0-9]{24}$/.test(u||'')){u=Array.from(crypto.getRandomValues(new Uint8Array(12)),b=>b.toString(16).padStart(2,'0')).join('');try{localStorage.setItem('arc_uid',u);}catch(e){}}
+  document.cookie='arc_uid='+u+';path=/;max-age=63072000;SameSite=Lax';return u;}
+function playFlush(){if(!PLAY.id||(PLAY.s<1&&!PLAY.p)||!/^https?:/.test(location.protocol))return;
+  const body=JSON.stringify({g:'brain:'+PLAY.id,s:Math.round(PLAY.s),p:PLAY.p,u:playUid()});PLAY.s=0;PLAY.p=0;
+  try{navigator.sendBeacon&&navigator.sendBeacon('../../api/play',new Blob([body],{type:'application/json'}));}catch(e){}}
+setInterval(()=>{if(CUR&&!document.hidden&&!(CUR.g&&CUR.g.paused))PLAY.s++;},1000);
+setInterval(playFlush,60000);window.addEventListener('pagehide',playFlush);document.addEventListener('visibilitychange',()=>{if(document.hidden)playFlush();});
 
 // public API for the game files (they call parent.Hub)
 window.Hub={start:startGame,U,M,D,SFX,FX,speak,data:loadData,get lang(){return S.lang;},exit:()=>CUR?CUR.exit():closeGame()};

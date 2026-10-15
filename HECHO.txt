@@ -68,6 +68,17 @@ WEB SEO (raíz del repositorio, para un hosting con PHP 7.4+ y Apache)
                    FAQ visible y JSON-LD (@graph) con Organization, WebSite+SearchAction, MobileApplication+WebApplication,
                    CollectionPage/ItemPage, ItemList, BreadcrumbList, VideoGame+MobileApplication (isBasedOn, gamePlatform,
                    playMode, numberOfPlayers, offers gratis, PlayAction, gameTip) y FAQPage.
+· v2.10: cada juego se juega en /{id} (idioma automático: elección guardada, cookie o idioma del navegador) o
+                   /{id}/es · /{id}/en (forzado). index.php sirve pwa/{id}.html con <base href="/pwa/"> y window.ARCADE_SITE
+                   (portada = la home de index.php, idioma, API). Las URLs antiguas (/pwa/{id}.html?lang=…, /jugar/{id},
+                   /en/play/{slug}, /{id}.html) redirigen con 301. Los educativos /{id} redirigen a su app.
+· Tiempo de juego: el motor cuenta los segundos jugando de verdad (sin menú, pausa, demo ni pestaña oculta) y las
+                   partidas empezadas, y los manda cada minuto y al salir a POST /api/play con un id anónimo por navegador
+                   (localStorage + cookie arc_uid). Brain Academy hace lo mismo por minijuego. Se guarda en
+                   data/stats.sqlite (tabla play: uid, game_id, seconds, plays, first_at, last_at), aparte de arcade.sqlite
+                   para que regenerar el catálogo no lo borre; la carpeta data/ debe tener permiso de escritura.
+                   Rankings «Tus más jugados» y «Los más jugados» (mín. 30 s) en la portada, colecciones, categorías,
+                   controles, TV, asignaturas y edades; en la ficha, tiempo, partidas y jugadores (todos y tú).
 · .htaccess        URLs amigables (mod_rewrite), bloquea data/ y herramientas/, compresión y caché.
 · data/arcade.sqlite  131 juegos con toda su info (títulos, lemas, descripciones, cómo se juega y controles TV en
                    es/en, emoji, colores, control, vidas, niveles, colección, categoría y juegos en que se basa).
