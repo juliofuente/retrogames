@@ -1,6 +1,19 @@
 ARCADE PERDIDO + ARCADE PRO — LO QUE ESTÁ HECHO
 ================================================
 Fecha: 14-10-2026 · Versión de la PWA (games.js → ARCADE_VERSION): 2.12.0
+· v2.12.1: NUEVO EDUCATIVO «📝 Problemas de mates» (educativos/problemas-primaria/): problemas de 1.º a 6.º de Primaria
+  con el formato de la «Colección de problemas 4.º de Primaria» (Datos · Operaciones · Resultado con hueco).
+  - banco.js: 97 plantillas (12–32 por curso) con números al azar y solución calculada; 4.º sigue los problemas del PDF.
+    1.º sumas/restas hasta 99 · 2.º llevadas, tablas, mitad, docenas · 3.º 4 cifras, ×1 cifra, :, euros y céntimos,
+    medidas · 4.º como el PDF (×/: por 2 cifras, resto, fracciones, edades, tiempo) · 5.º decimales, fracciones, %,
+    medias, áreas, unidades · 6.º IVA, proporcionalidad directa e inversa, velocidad, áreas, volumen, negativos, escalas.
+  - 30 fichas de 6 problemas por curso (la ficha N siempre es la misma; la dificultad sube con N), teclado numérico,
+    💡 pista (datos y luego operaciones), 🔊 lectura en voz alta, solución tras 2 fallos, estrellas y progreso.
+  - ❤️ favorito y tiempo de juego a la web PHP como el resto (id problemas-primaria). ?curso=4 abre ese curso.
+· v2.12.1: el 🏠 de todos los educativos lleva a la portada general (index.php): en Brain Academy (dentro de un
+  minijuego y en el hub), Aventura de Palabras, Fábrica de Frases y educativos/index.html. La página «Educativos» de
+  index.php ya no enlaza a una portada aparte.
+· v2.12.1: data/julkadmin.php (phpLiteAdmin) accesible desde el navegador; el resto de data/ sigue bloqueado.
 · v2.12.0: variables que una página puede poner ANTES de cargar config.js / common.js:
   - window.withpwa = true → activa la PWA de esa página (registra pwa/sw.js y deja el manifest). Sin definir: no hay PWA
     y se dan de baja el service worker de esa carpeta y las cachés antiguas (y se quita el manifest). El nuevo sw.js es

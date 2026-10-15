@@ -5,7 +5,7 @@
 import glob, hashlib, os, re
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
-PAGES = ['index.html', 'pwa/*.html', 'educativos/index.html', 'educativos/brain-academy/*.html', 'educativos/brain-academy/games/*.html']
+PAGES = ['index.html', 'pwa/*.html', 'educativos/index.html', 'educativos/brain-academy/*.html', 'educativos/brain-academy/games/*.html', 'educativos/problemas-primaria/*.html']
 REF = re.compile(r'''((?:src|href)=")([^"?#:]+\.(?:js|css))(?:\?v=[0-9a-f]*)?(")''')
 
 

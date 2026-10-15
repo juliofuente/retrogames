@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Problemas de mates · 1.º a 6.º de Primaria</title>
+<meta name="description" content="Problemas de matemáticas para 1.º, 2.º, 3.º, 4.º, 5.º y 6.º de Primaria: datos, operaciones y resultado, con pistas y solución.">
+<meta name="theme-color" content="#2b59c3">
+<style>
+  :root { --blue: #2b59c3; --ink: #23264a; --mid: #6b6f95; --ok: #2fb36b; --bad: #e5484d; --sun: #ffd43b; --paper: #fff; --grid: #e7ecf7; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: var(--ink); background: #eef3ff; -webkit-tap-highlight-color: transparent; }
+  .stripes { height: 10px; background: repeating-linear-gradient(90deg, #f7941d 0 22px, #6dbb45 22px 44px, #9c2a91 44px 66px, #00aeef 66px 88px, #ec4899 88px 110px, #fde047 110px 132px); }
+  .app { max-width: 760px; margin: 0 auto; min-height: 100%; display: flex; flex-direction: column; padding: 0 12px max(12px, env(safe-area-inset-bottom)); }
+  header { display: flex; align-items: center; gap: 8px; padding: 10px 0; }
+  header h1 { flex: 1; margin: 0; font-size: clamp(17px, 4.6vw, 22px); color: var(--blue); }
+  .ib { width: 42px; height: 42px; border-radius: 12px; border: 0; background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,.08); font-size: 20px; display: grid; place-items: center; cursor: pointer; text-decoration: none; color: inherit; flex: none; }
+  .scr { display: none; flex: 1; flex-direction: column; gap: 12px; } .scr.on { display: flex; }
+  .hero { text-align: center; margin: 4px 0 6px; } .hero .e { font-size: 52px; } .hero p { color: var(--mid); margin: 4px 0 0; }
+  .grades { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+  .gbtn { border: 0; border-radius: 20px; padding: 16px 10px; color: #fff; font: inherit; cursor: pointer; text-align: center; box-shadow: 0 6px 16px rgba(0,0,0,.12); }
+  .gbtn b { display: block; font-size: 30px; } .gbtn small { display: block; opacity: .92; font-weight: 700; margin-top: 2px; } .gbtn .bar { height: 6px; border-radius: 3px; background: rgba(255,255,255,.35); margin-top: 8px; overflow: hidden; } .gbtn .bar i { display: block; height: 100%; background: #fff; }
+  .fichas { display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 8px; }
+  .fbtn { aspect-ratio: 1; border: 0; border-radius: 14px; background: #fff; font-family: inherit; font-weight: 800; font-size: 19px; line-height: 1; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,.08); color: var(--ink); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; }
+  .fbtn small { font-size: 11px; letter-spacing: -1px; } .fbtn.lock { opacity: .4; cursor: default; } .fbtn.next { outline: 3px solid var(--sun); }
+  .sub { color: var(--mid); font-weight: 700; text-align: center; margin: 0; }
+  .top { display: flex; align-items: center; justify-content: space-between; font-weight: 800; color: var(--mid); }
+  .dots { display: flex; gap: 6px; } .dots i { width: 12px; height: 12px; border-radius: 50%; background: #d5dcf0; } .dots i.ok { background: var(--ok); } .dots i.ko { background: var(--bad); } .dots i.now { background: var(--blue); }
+  .sheet { background: var(--paper) linear-gradient(var(--grid) 1px, transparent 1px) 0 0/22px 22px, linear-gradient(90deg, var(--grid) 1px, transparent 1px) 0 0/22px 22px; background-color: #fff; border-radius: 18px; padding: 14px; box-shadow: 0 6px 18px rgba(30,40,90,.1); display: flex; flex-direction: column; gap: 10px; }
+  .q { display: flex; gap: 12px; align-items: flex-start; } .q .e { font-size: 46px; line-height: 1; flex: none; } .q p { margin: 0; font-size: clamp(17px, 4.4vw, 21px); line-height: 1.45; font-style: italic; background: rgba(255,255,255,.85); border-radius: 8px; }
+  .say { border: 0; background: #eef3ff; border-radius: 10px; padding: 4px 8px; cursor: pointer; font-size: 16px; margin-left: 4px; vertical-align: middle; }
+  .cols { display: grid; grid-template-columns: 1fr 1.4fr; gap: 10px; }
+  .col h3 { margin: 0 0 4px; font-size: 13px; color: var(--blue); text-decoration: underline; font-style: italic; font-weight: 700; }
+  .col ul { margin: 0; padding-left: 18px; font-size: 15px; line-height: 1.5; background: rgba(255,255,255,.85); border-radius: 8px; } .col .ops li { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 14.5px; }
+  .col.hide { display: none; } .cols:has(.col:not(.hide)) { margin-top: 2px; }
+  .res { font-size: clamp(18px, 4.8vw, 22px); line-height: 2; background: rgba(255,255,255,.9); border-radius: 10px; padding: 2px 6px; }
+  .res .hole { display: inline-block; min-width: 3.4em; padding: 0 8px; border-bottom: 3px dashed var(--blue); text-align: center; font-weight: 800; color: var(--blue); cursor: pointer; background: #f3f6ff; border-radius: 8px 8px 0 0; }
+  .res .hole.sel { background: #fff4c2; border-bottom-style: solid; } .res .hole.ok { color: var(--ok); border-bottom-color: var(--ok); background: #e9f9ef; } .res .hole.ko { color: var(--bad); border-bottom-color: var(--bad); background: #ffecec; }
+  .msg { min-height: 1.4em; text-align: center; font-weight: 800; font-size: 17px; } .msg.ok { color: var(--ok); } .msg.ko { color: var(--bad); }
+  .pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; width: 100%; max-width: 440px; margin: 0 auto; }
+  .pad button { height: clamp(48px, 7.5vh, 62px); border: 0; border-radius: 14px; background: #fff; font-family: inherit; font-weight: 800; font-size: 26px; color: var(--ink); box-shadow: 0 3px 0 #d5dcf0; cursor: pointer; }
+  .pad button:active { transform: translateY(2px); box-shadow: 0 1px 0 #d5dcf0; }
+  .acts { display: flex; gap: 8px; } .acts button { flex: 1; height: 56px; border: 0; border-radius: 16px; font-family: inherit; font-weight: 800; font-size: 19px; cursor: pointer; }
+  .hint { background: #fff4c2; color: #6b4d00; } .check { background: var(--blue); color: #fff; } .next { background: var(--ok); color: #fff; }
+  .end { text-align: center; } .end .e { font-size: 70px; } .end .st { font-size: 44px; letter-spacing: 4px; } .end h2 { margin: 6px 0; }
+  .btns { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; } .btns button { border: 0; border-radius: 16px; padding: 14px 18px; font-family: inherit; font-weight: 800; font-size: 17px; cursor: pointer; background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,.08); } .btns .pri { background: var(--blue); color: #fff; }
+  .shake { animation: sh .4s; } @keyframes sh { 25% { transform: translateX(-8px); } 50% { transform: translateX(8px); } 75% { transform: translateX(-4px); } }
+  .pop { animation: pp .35s; } @keyframes pp { 50% { transform: scale(1.04); } }
+  @media (max-width: 520px) { .cols { grid-template-columns: 1fr; } }
+  #sEnd { justify-content: center; } #sPlay { justify-content: space-between; }
+</style>
+</head>
+<body>
+<div class="stripes"></div>
+<div class="app">
+  <header>
+    <a class="ib" href="../../" title="Todos los juegos" aria-label="Todos los juegos">🏠</a>
+    <button class="ib" id="back" aria-label="Atrás" style="display:none">←</button>
+    <h1 id="ttl">📝 Problemas de mates</h1>
+    <button class="ib" id="fav" aria-label="Favorito">🤍</button>
+    <button class="ib" id="snd" aria-label="Sonido">🔊</button>
+  </header>
+
+  <section class="scr on" id="sGrades">
+    <div class="hero"><div class="e">🧮</div><p>Elige tu curso. Lee bien el problema, piensa los <b>datos</b>, haz las <b>operaciones</b> y escribe el <b>resultado</b>.</p></div>
+    <div class="grades" id="grades"></div>
+  </section>
+
+  <section class="scr" id="sFichas">
+    <p class="sub" id="fsub"></p>
+    <div class="fichas" id="fichas"></div>
+  </section>
+
+  <section class="scr" id="sPlay">
+    <div class="top"><span id="where"></span><span class="dots" id="dots"></span></div>
+    <div class="sheet" id="sheet">
+      <div class="q"><div class="e" id="qe"></div><p id="qt"></p></div>
+      <div class="cols"><div class="col hide" id="cDatos"><h3>Datos</h3><ul id="datos"></ul></div><div class="col hide" id="cOps"><h3>Operaciones</h3><ul class="ops" id="ops"></ul></div></div>
+      <div><div class="col"><h3>Resultado</h3></div><div class="res" id="res"></div></div>
+    </div>
+    <div class="msg" id="msg"></div>
+    <div class="pad" id="pad"></div>
+    <div class="acts"><button class="hint" id="hint">💡 Pista</button><button class="check" id="check">✔ Comprobar</button></div>
+  </section>
+
+  <section class="scr" id="sEnd">
+    <div class="end"><div class="e" id="ee"></div><div class="st" id="es"></div><h2 id="eh"></h2><p class="sub" id="ep"></p></div>
+    <div class="btns"><button class="pri" id="enext">Siguiente ficha ▶</button><button id="eagain">🔄 Repetir</button><button id="efichas">📋 Fichas</button></div>
+  </section>
+</div>
+<script src="banco.js?v=b873cbbab5"></script>
+<script>
+(function () {
+  const { B, N } = window.PROBLEMAS;
+  const GAME_ID = 'problemas-primaria', FICHAS = 30, PER = 6;
+  const COL = { 1: '#f7941d', 2: '#6dbb45', 3: '#00aeef', 4: '#2b59c3', 5: '#9c2a91', 6: '#ec4899' };
+  const EMO = { 1: '🐣', 2: '🎈', 3: '🚀', 4: '🧩', 5: '🔭', 6: '🏆' };
+  const $ = (id) => document.getElementById(id);
+  const ls = { get(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } }, set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} } };
+  let prog = ls.get('pp_prog', {}), sound = ls.get('pp_sound', true);
+  const done = (g) => (prog[g] = prog[g] || {});
+
+  /* sonido */
+  let ac = null;
+  const tone = (f, d, type, v, f2) => { if (!sound) return; try { ac = ac || new (window.AudioContext || window.webkitAudioContext)(); const o = ac.createOscillator(), gn = ac.createGain(), t = ac.currentTime; o.type = type || 'sine'; o.frequency.setValueAtTime(f, t); if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + d); gn.gain.setValueAtTime(v || 0.15, t); gn.gain.exponentialRampToValueAtTime(0.001, t + d); o.connect(gn).connect(ac.destination); o.start(t); o.stop(t + d); } catch (e) {} };
+  const SFX = { tap: () => tone(700, 0.05, 'sine', 0.08), ok: () => [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => tone(f, 0.18, 'triangle', 0.15), i * 80)), bad: () => tone(260, 0.25, 'sawtooth', 0.1, 140), win: () => [523, 659, 784, 1047, 1319].forEach((f, i) => setTimeout(() => tone(f, 0.25, 'triangle', 0.16), i * 110)) };
+  const speak = (t) => { try { if (!sound) return; const s = window.speechSynthesis; s.cancel(); const u = new SpeechSynthesisUtterance(t.replace(/−/g, ' menos ').replace(/€/g, ' euros')); u.lang = 'es-ES'; u.rate = 0.95; s.speak(u); } catch (e) {} };
+  $('snd').textContent = sound ? '🔊' : '🔇';
+  $('snd').onclick = () => { sound = !sound; ls.set('pp_sound', sound); $('snd').textContent = sound ? '🔊' : '🔇'; if (!sound) try { speechSynthesis.cancel(); } catch (e) {} };
+
+  /* aleatorio con semilla: cada ficha de cada curso es siempre la misma */
+  const mk = (seed) => () => { seed |= 0; seed = (seed + 0x6D2B79F5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+  function ficha(g, f) {
+    const r = mk(g * 1000 + f * 7 + 13), T = B[g].slice(), k = (f - 1) / (FICHAS - 1);
+    for (let i = T.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [T[i], T[j]] = [T[j], T[i]]; }
+    const out = []; for (let i = 0; i < PER; i++) out.push(T[i % T.length](r, k));
+    return out;
+  }
+
+  /* pantallas */
+  let G = 0, F = 0, P = [], I = 0, tries = 0, okFirst = 0, marks = [], sel = 0, state = 'ask', scr = 'grades';
+  function show(id) { document.querySelectorAll('.scr').forEach((s) => s.classList.toggle('on', s.id === id)); scr = id; $('back').style.display = id === 'sGrades' ? 'none' : ''; window.scrollTo(0, 0); }
+  function renderGrades() {
+    $('ttl').textContent = '📝 Problemas de mates';
+    $('grades').innerHTML = '';
+    for (const g of [1, 2, 3, 4, 5, 6]) {
+      const n = Object.keys(done(g)).length, b = document.createElement('button');
+      b.className = 'gbtn'; b.style.background = COL[g];
+      b.innerHTML = `<b>${EMO[g]} ${g}.º</b><small>de Primaria</small><small>${n} / ${FICHAS} fichas</small><div class="bar"><i style="width:${n / FICHAS * 100}%"></i></div>`;
+      b.onclick = () => { SFX.tap(); G = g; ls.set('pp_last', g); renderFichas(); };
+      $('grades').appendChild(b);
+    }
+    show('sGrades');
+  }
+  function renderFichas() {
+    $('ttl').textContent = `📝 ${G}.º de Primaria`;
+    const d = done(G), unlocked = Math.min(FICHAS, Object.keys(d).length + 1);
+    $('fsub').textContent = 'Cada ficha tiene ' + PER + ' problemas. ⭐ = resueltos a la primera.';
+    $('fichas').innerHTML = '';
+    for (let f = 1; f <= FICHAS; f++) {
+      const b = document.createElement('button'), lock = f > unlocked && !d[f];
+      b.className = 'fbtn' + (lock ? ' lock' : '') + (f === unlocked && !d[f] ? ' next' : '');
+      b.innerHTML = lock ? '🔒' : `${f}<small>${d[f] != null ? '⭐'.repeat(d[f]) || '·' : ''}</small>`;
+      if (!lock) b.onclick = () => { SFX.tap(); startFicha(f); };
+      $('fichas').appendChild(b);
+    }
+    show('sFichas');
+  }
+  function startFicha(f) { F = f; P = ficha(G, f); I = 0; okFirst = 0; marks = []; STAT.p++; show('sPlay'); ask(); }
+  function ask() {
+    const p = P[I]; tries = 0; state = 'ask'; sel = 0;
+    $('ttl').textContent = `📝 ${G}.º · Ficha ${F}`;
+    $('where').textContent = `Problema ${I + 1} de ${P.length}`;
+    $('dots').innerHTML = P.map((_, i) => `<i class="${marks[i] || (i === I ? 'now' : '')}"></i>`).join('');
+    $('qe').textContent = p.e;
+    $('qt').innerHTML = `${I + 1}. ${p.t} <button class="say" id="say" aria-label="Leer">🔊</button>`;
+    $('say').onclick = () => speak(p.t);
+    $('datos').innerHTML = p.datos.map((d) => `<li>${d}</li>`).join('');
+    $('ops').innerHTML = p.ops.map((o) => `<li>${o}</li>`).join('');
+    $('cDatos').classList.add('hide'); $('cOps').classList.add('hide');
+    let h = 0; $('res').innerHTML = p.res.replace(/\{\}/g, () => `<span class="hole" data-i="${h++}"></span>`);
+    $('res').querySelectorAll('.hole').forEach((x) => x.onclick = () => { if (state !== 'ask') return; sel = +x.dataset.i; selHole(); });
+    selHole(); $('msg').textContent = ''; $('msg').className = 'msg';
+    $('hint').style.display = ''; $('check').textContent = '✔ Comprobar'; $('check').className = 'check';
+    $('sheet').classList.remove('pop'); void $('sheet').offsetWidth; $('sheet').classList.add('pop');
+  }
+  const holes = () => [...$('res').querySelectorAll('.hole')];
+  function selHole() { holes().forEach((x, i) => x.classList.toggle('sel', i === sel && state === 'ask')); }
+  function type(k) {
+    if (state !== 'ask') return;
+    const h = holes()[sel]; if (!h) return; h.classList.remove('ko');
+    let v = h.textContent;
+    if (k === '⌫') v = v.slice(0, -1);
+    else if (k === ',') { if (!v.includes(',')) v = (v || '0') + ','; }
+    else if (/\d/.test(k) && v.replace(',', '').length < 9) v += k;
+    h.textContent = v; SFX.tap();
+  }
+  const num = (s) => { const x = parseFloat(String(s).replace(/\./g, '').replace(',', '.')); return Number.isFinite(x) ? x : null; };
+  function check() {
+    if (state !== 'ask') { next(); return; }
+    const p = P[I], hs = holes();
+    if (hs.some((h) => h.textContent === '')) { const e = hs.findIndex((h) => h.textContent === ''); sel = e; selHole(); $('msg').textContent = '✏️ Escribe el resultado en el hueco'; $('msg').className = 'msg'; return; }
+    let all = true;
+    hs.forEach((h, i) => { const v = num(h.textContent), ok = v !== null && Math.abs(v - p.ans[i]) < 1e-6; h.classList.toggle('ok', ok); h.classList.toggle('ko', !ok); if (!ok) all = false; });
+    if (all) {
+      state = 'done'; marks[I] = tries === 0 ? 'ok' : 'ok'; if (tries === 0) okFirst++;
+      SFX.ok(); $('msg').textContent = tries === 0 ? '🎉 ¡Muy bien! Así se resuelve:' : '👍 ¡Ahora sí! Así se resuelve:'; $('msg').className = 'msg ok';
+      $('cDatos').classList.remove('hide'); $('cOps').classList.remove('hide'); end();
+    } else {
+      tries++; SFX.bad(); $('sheet').classList.remove('shake'); void $('sheet').offsetWidth; $('sheet').classList.add('shake');
+      if (tries >= 2) {
+        state = 'done'; marks[I] = 'ko';
+        hs.forEach((h, i) => { h.textContent = N(p.ans[i]); h.classList.remove('ko'); h.classList.add('ok'); });
+        $('cDatos').classList.remove('hide'); $('cOps').classList.remove('hide');
+        $('msg').textContent = '🤔 Casi. Mira cómo se resuelve:'; $('msg').className = 'msg ko'; end();
+      } else { $('msg').textContent = '❌ Revisa las operaciones. Puedes pedir una 💡 pista.'; $('msg').className = 'msg ko'; }
+    }
+    selHole();
+  }
+  function end() { $('hint').style.display = 'none'; $('check').textContent = I + 1 < P.length ? 'Siguiente ▶' : 'Terminar 🏁'; $('check').className = 'next'; }
+  function hint() {
+    if (state !== 'ask') return; SFX.tap();
+    if ($('cDatos').classList.contains('hide')) { $('cDatos').classList.remove('hide'); $('msg').textContent = '💡 Estos son los datos. ¿Qué operación hay que hacer?'; }
+    else { $('cOps').classList.remove('hide'); $('msg').textContent = '💡 Estas son las operaciones. ¡Escribe el resultado!'; tries = Math.max(tries, 1); }
+    $('msg').className = 'msg';
+  }
+  function next() {
+    I++; if (I < P.length) { ask(); return; }
+    const stars = okFirst >= PER ? 3 : okFirst >= 4 ? 2 : okFirst >= 2 ? 1 : 0, d = done(G);
+    d[F] = Math.max(d[F] || 0, stars); ls.set('pp_prog', prog); SFX.win();
+    $('ee').textContent = stars === 3 ? '🏆' : stars ? '🎉' : '💪';
+    $('es').textContent = '⭐'.repeat(stars) + '☆'.repeat(3 - stars);
+    $('eh').textContent = `¡Ficha ${F} terminada!`;
+    $('ep').textContent = `Has resuelto ${okFirst} de ${PER} problemas a la primera.`;
+    $('enext').style.display = F < FICHAS ? '' : 'none';
+    show('sEnd');
+  }
+  $('check').onclick = check; $('hint').onclick = hint;
+  $('enext').onclick = () => startFicha(F + 1); $('eagain').onclick = () => startFicha(F); $('efichas').onclick = renderFichas;
+  $('back').onclick = () => { SFX.tap(); if (scr === 'sPlay' || scr === 'sEnd') renderFichas(); else renderGrades(); };
+  ['7', '8', '9', '4', '5', '6', '1', '2', '3', ',', '0', '⌫'].forEach((k) => { const b = document.createElement('button'); b.textContent = k; b.onclick = () => type(k); $('pad').appendChild(b); });
+  window.addEventListener('keydown', (e) => {
+    if (scr !== 'sPlay') return;
+    if (/^\d$/.test(e.key)) type(e.key); else if (e.key === ',' || e.key === '.') type(','); else if (e.key === 'Backspace') type('⌫');
+    else if (e.key === 'Enter') check(); else if (e.key === 'Tab') { e.preventDefault(); sel = (sel + 1) % holes().length; selHole(); }
+  });
+
+  /* favorito (lista privada en localStorage) y tiempo de juego → web PHP (../../api/…). Sin la web PHP falla en silencio. */
+  const web = /^https?:/.test(location.protocol);
+  const uid = () => { let u = null; try { u = localStorage.getItem('arc_uid'); } catch (e) {} if (!/^[a-f0-9]{24}$/.test(u || '')) { u = Array.from(crypto.getRandomValues(new Uint8Array(12)), (b) => b.toString(16).padStart(2, '0')).join(''); try { localStorage.setItem('arc_uid', u); } catch (e) {} } document.cookie = 'arc_uid=' + u + ';path=/;max-age=63072000;SameSite=Lax'; return u; };
+  const favs = () => { const v = ls.get('arc_favs', []); return Array.isArray(v) ? v : []; };
+  const paintFav = () => { $('fav').textContent = favs().includes(GAME_ID) ? '❤️' : '🤍'; };
+  $('fav').onclick = () => { const on = !favs().includes(GAME_ID), l = favs().filter((x) => x !== GAME_ID); if (on) { l.unshift(GAME_ID); SFX.ok(); } ls.set('arc_favs', l); paintFav();
+    if (web) try { fetch('../../api/fav', { method: 'POST', body: JSON.stringify({ g: GAME_ID, on: on ? 1 : 0, u: uid() }), keepalive: true, headers: { 'Content-Type': 'application/json' } }).catch(() => {}); } catch (e) {} };
+  paintFav();
+  const STAT = { s: 0, p: 0 };
+  const flush = () => { if (!web || (STAT.s < 1 && !STAT.p)) return; const body = JSON.stringify({ g: GAME_ID, s: Math.round(STAT.s), p: STAT.p, u: uid() }); STAT.s = 0; STAT.p = 0; try { navigator.sendBeacon && navigator.sendBeacon('../../api/play', new Blob([body], { type: 'application/json' })); } catch (e) {} };
+  setInterval(() => { if (scr === 'sPlay' && !document.hidden) STAT.s++; }, 1000);
+  setInterval(flush, 60000); window.addEventListener('pagehide', flush); document.addEventListener('visibilitychange', () => { if (document.hidden) flush(); });
+
+  /* ?curso=4 abre directamente ese curso */
+  const q = /[?&]curso=([1-6])/.exec(location.search);
+  if (q) { G = +q[1]; renderFichas(); } else renderGrades();
+})();
+</script>
+</body>
+</html>

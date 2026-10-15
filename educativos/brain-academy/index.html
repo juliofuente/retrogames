@@ -92,6 +92,7 @@ button{cursor:pointer;border:none;background:none;touch-action:manipulation}
 <!-- PROFILES -->
 <section class="scr show" id="sProf">
   <div class="brand"><div class="lg">🧠</div><h1 id="appName">Emoji Brain Academy</h1><p data-t="tagline"></p></div>
+  <div class="toprow"><a class="ib" href="../../" title="🏠" style="text-decoration:none;display:inline-grid;place-items:center">🏠</a></div>
   <div class="toprow" id="langRow"></div>
   <div class="panel" id="profPanel">
     <div class="h2"><span data-t="who"></span><button class="mini" id="editBtn"></button></div>
@@ -104,6 +105,7 @@ button{cursor:pointer;border:none;background:none;touch-action:manipulation}
 <section class="scr" id="sHub">
   <div class="hubtop">
     <div class="me"><span class="av" id="meAv"></span><div style="min-width:0"><b id="meNick"></b><small id="meInfo"></small></div></div>
+    <a class="ib" href="../../" title="🏠" style="text-decoration:none;display:grid;place-items:center">🏠</a>
     <button class="ib" id="langBtn">EN</button>
     <button class="ib" id="sndBtn">🔊</button>
     <button class="ib" id="swBtn" title="Players">👥</button>
@@ -486,7 +488,7 @@ function startGame(win,def){
   g.waveDone=()=>{if(!g.running)return;g.running=false;if(stopFn){stopFn();stopFn=null;}setTimeout(levelUp,500);};
 
   // ───── controls ─────
-  doc.querySelector('[data-a=home]').onclick=()=>{SFX.click();exit();};
+  doc.querySelector('[data-a=home]').onclick=()=>{SFX.click();exit();location.href='../../';};   // 🏠 = portada general de todos los juegos
   doc.querySelector('[data-a=fav]').onclick=e=>{const on=toggleFav(def.id);e.currentTarget.textContent=on?'❤️':'🤍';if(on)SFX.ok();else SFX.click();};
   doc.querySelector('[data-a=snd]').onclick=e=>{S.sound=!S.sound;save();e.currentTarget.textContent=S.sound?'🔊':'🔇';if(S.sound)SFX.click();};
   const nb=$('.k-next');if(nb)nb.onclick=()=>{if(!g.solvedFlag||g.q>=ROUNDS||g.paused)return;SFX.whoosh();newRound();};

@@ -43,7 +43,7 @@
 </head>
 <body>
 <div class="wrap">
-  <div class="top"><a href="../index.html" id="back"></a><button id="lang"></button></div>
+  <div class="top"><a href="../" id="back"></a><button id="lang"></button></div>
   <header>
     <div class="logo">🎓</div>
     <h1 data-es="Juegos educativos" data-en="Educational games"></h1>
@@ -61,7 +61,7 @@
 
   <footer id="foot"></footer>
 </div>
-<script src="juegos.js?v=e81c5d8ead"></script>
+<script src="juegos.js?v=8fccf4213b"></script>
 <script>
 (function () {
   var E = window.EDU, q = /[?&]lang=(es|en)/.exec(location.search), saved = null;
@@ -104,7 +104,7 @@
     document.title = (EN ? 'Educational games' : 'Juegos educativos') + ' · Arcade Perdido';
     document.getElementById('lang').textContent = EN ? '🇪🇸 Español' : '🇬🇧 English';
     document.getElementById('back').textContent = '← Arcade Perdido';
-    document.getElementById('back').href = '../index.html?lang=' + lang;
+    document.getElementById('back').href = '../';
     qi.placeholder = EN ? '🔎 Search educational games…' : '🔎 Buscar juegos educativos…';
     qi.setAttribute('aria-label', EN ? 'Search' : 'Buscar');
     chips(document.getElementById('subj'), [{ id: 'all', label: EN ? '⭐ All' : '⭐ Todas' }].concat(E.subjects.map(function (s) { return { id: s.id, label: s.emoji + ' ' + tr(s.name), color: s.color }; })), subj, function (v) { subj = v; });

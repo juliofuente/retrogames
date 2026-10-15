@@ -500,7 +500,7 @@ function page_collection(array $c): void {
   $games = array_values(array_filter($GAMES, function ($g) use ($c) { return $g['collection_id'] === $c['id']; }));
   $p = col_path($c); $n = f($c, 'name');
   $play = '<div class="btns" style="margin-bottom:18px"><a class="btn pri" href="' . h(url('/' . $c['index_file'])) . '?lang=' . T('es', 'en') . '">▶ ' . h(T('Abrir ' . $n, 'Open ' . $n)) . '</a></div>';
-  if ($c['id'] === 'edu') $play .= edu_tiles() . '<h2>' . h(T('Todos los juegos educativos', 'All educational games')) . '</h2>';
+  if ($c['id'] === 'edu') $play = edu_tiles() . '<h2>' . h(T('Todos los juegos educativos', 'All educational games')) . '</h2>';   // sin portada aparte: esta es su portada
   page_list($p, [col_path($c, 'es'), col_path($c, 'en')], $c['id'] === 'edu' ? T('🎓 Juegos educativos', '🎓 Educational games') : $n, f($c, 'desc'), $games, [[T('Inicio', 'Home'), home_path()], [$n, $p]],
     ($c['id'] === 'edu' ? T('Juegos educativos para niños: ' . count($games) . ' juegos gratis de mates, lengua, lógica e inglés', 'Educational games for kids: ' . count($games) . ' free maths, language, logic and English games')
       : T($n . ': ' . count($games) . ' juegos gratis para móvil y TV', $n . ': ' . count($games) . ' free games for phone and TV')) . ' · ' . $SITE, f($c, 'desc'), ['before' => $play]);

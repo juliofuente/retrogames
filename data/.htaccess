@@ -1,5 +1,16 @@
+# data/: nada es accesible desde la web salvo el visor de la base de datos (julkadmin.php, pide contraseña).
+# Las .sqlite y phpliteadmin.config.php siguen bloqueadas: julkadmin.php las lee desde el disco.
 Require all denied
 <IfModule !mod_authz_core.c>
   Order allow,deny
   Deny from all
 </IfModule>
+<Files "julkadmin.php">
+  <IfModule mod_authz_core.c>
+    Require all granted
+  </IfModule>
+  <IfModule !mod_authz_core.c>
+    Order deny,allow
+    Allow from all
+  </IfModule>
+</Files>

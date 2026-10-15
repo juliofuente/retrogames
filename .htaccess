@@ -14,6 +14,9 @@ AddDefaultCharset utf-8
   # URLs antiguas de los juegos (/pwa/pivote.html?lang=en) → index.php las redirige a /pivote/en
   RewriteRule ^pwa/(?!index)[a-z0-9]+\.html$ index.php [L]
 
+  # Visor de la base de datos (phpLiteAdmin, con contraseña): es lo único de data/ que se sirve
+  RewriteRule ^data/julkadmin\.php$ - [L]
+
   # Archivos internos: nunca se sirven
   RewriteRule ^(data|herramientas)(/|$) - [F,L]
   RewriteRule (^|/)\.(?!well-known) - [F,L]
