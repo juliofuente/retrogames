@@ -10,11 +10,11 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
-<link rel="stylesheet" href="common.css?v=6d7635e467">
+<link rel="stylesheet" href="common.css">
 </head>
 <body class="game">
-<script src="config.js?v=a32e41bd8d"></script>
-<script src="common.js?v=f345c0b76c"></script>
+<script src="config.js"></script>
+<script src="common.js"></script>
 <script>
 (function () {
   const { ri, clamp } = Arcade;
@@ -70,7 +70,7 @@
     const col = s.cols[c];
     if (col.length + s.hand.n > ROWS) { Arcade.sfx.bad(); return; }
     for (const row of s.cols) for (const o of row) o.fresh = false;
-    for (let i = 0; i < s.hand.n; i++) col.push({ v: s.hand.v, pop: 1, fresh: true });
+    for (let i = 0; i < s.hand.n; i++) col.push({ v: s.hand.v, pop: 1, fresh: true, __gl: { x: s.ox + (c + 0.5) * s.cs, y: s.oy + s.cs * (ROWS + 0.95), a: 1, f: Arcade.fno } });   // __gl: salen volando desde la varita
     s.hand = null; Arcade.tone(500, 0.06, 'square', 0.06, 200);
     let chain = 0, seeds = runs(s);
     while (seeds.length) {
@@ -147,8 +147,8 @@
         ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(x, y, r, 0, 6.28); ctx.fill();
         Arcade.emoji(ctx, FACE[v], x, y + r * 0.05, r * 0.95, { alpha: 0.55 });
       };
-      s.cols.forEach((col, c) => col.forEach((o, r) => ball(s.ox + (c + 0.5) * cs, s.oy + (r + 0.5) * cs, o.v, 1 + o.pop * 0.2)));
-      const px = s.ox + (s.pc + 0.5) * cs, py = s.oy + cs * (ROWS + 0.95);
+      s.cols.forEach((col, c) => col.forEach((o, r) => { const [x, y, k] = Arcade.glide(o, s.ox + (c + 0.5) * cs, s.oy + (r + 0.5) * cs, 18); ball(x, y, o.v, (1 + o.pop * 0.2) * k); }));   // se deslizan al bajar/subir
+      const py = s.oy + cs * (ROWS + 0.95), [px] = Arcade.glide(s.me || (s.me = {}), s.ox + (s.pc + 0.5) * cs, py, 24);
       Arcade.emoji(ctx, g.face(), px, py, cs * 0.8); Arcade.emoji(ctx, '🪄', px + cs * 0.36, py - cs * 0.2, cs * 0.36);
       if (s.hand) { ball(px, py - cs * 0.85, s.hand.v, 0.7); Arcade.txt(ctx, '×' + s.hand.n, px + cs * 0.42, py - cs * 0.95, cs * 0.3, '#fff', 'left', 900, 'rgba(0,0,0,.6)'); }
     },

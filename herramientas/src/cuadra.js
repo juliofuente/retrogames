@@ -122,12 +122,12 @@
       ctx.fillStyle = 'rgba(255,60,60,.18)'; ctx.fillRect(s.ox, s.oy + (ROWS - 2) * cs, cs * COLS, cs * 2);
       for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
         const b = s.grid[r][c]; if (!b) continue;
-        const k = 1 + b.pop * 0.2, x = s.ox + c * cs + cs / 2, y = s.oy + r * cs + cs / 2, z = (cs - 3) * k;
+        const [x, y, sc] = Arcade.glide(b, s.ox + c * cs + cs / 2, s.oy + r * cs + cs / 2), z = (cs - 3) * (1 + b.pop * 0.2) * sc;   // bajan deslizándose
         ctx.fillStyle = b.col; Arcade.rr(ctx, x - z / 2, y - z / 2, z, z, cs * 0.18); ctx.fill();
         ctx.fillStyle = 'rgba(255,255,255,.35)'; Arcade.rr(ctx, x - z / 2 + 3, y - z / 2 + 3, z - 6, z * 0.25, cs * 0.1); ctx.fill();
         ctx.fillStyle = 'rgba(0,0,0,.18)'; ctx.fillRect(x - z / 2 + 3, y + z / 2 - 5, z - 6, 3);
       }
-      const shipY = s.oy + (ROWS + 0.8) * cs, sx = s.ox + (s.sc + 0.5) * cs;
+      const shipY = s.oy + (ROWS + 0.8) * cs, [sx] = Arcade.glide(s.ship || (s.ship = {}), s.ox + (s.sc + 0.5) * cs, shipY, 26);
       if (s.trail) {
         const tx = s.ox + (s.trail.c + 0.5) * cs;
         ctx.strokeStyle = 'rgba(255,255,255,' + (s.trail.t * 6) + ')'; ctx.lineWidth = cs * 0.3;

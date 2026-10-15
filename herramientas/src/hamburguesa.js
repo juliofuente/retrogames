@@ -178,7 +178,7 @@
           else { ctx.fillStyle = '#d9822b'; Arcade.rr(ctx, sx, sy + h * 0.35, cs, h * 0.6, 3); ctx.fill(); }
         }
       }
-      for (const e of s.en) { const p = epos(s, e); Arcade.emojiTo(ctx, e.e, p.x, p.y - cs * 0.5, cs * 0.9, e.dir && D[e.dir] ? D[e.dir][0] : 0, 0, { mode: 'flip', rot: e.stun > 0 ? Math.sin(g.t * 20) * 0.3 : 0 }); if (e.stun > 0) Arcade.emoji(ctx, '💫', p.x, p.y - cs * 1.1, cs * 0.5); }
+      for (const e of s.en) { const p = epos(s, e), k = Arcade.glide(e, p.x, p.y, 60)[2]; Arcade.emojiTo(ctx, e.e, p.x, p.y - cs * 0.5, cs * 0.9 * k, e.dir && D[e.dir] ? D[e.dir][0] : 0, 0, { mode: 'flip', rot: e.stun > 0 ? Math.sin(g.t * 20) * 0.3 : 0 }); if (e.stun > 0) Arcade.emoji(ctx, '💫', p.x, p.y - cs * 1.1, cs * 0.5); }
       const p = epos(s, s.pl);
       if (!(s.inv > 0 && Math.floor(g.t * 10) % 2)) Arcade.emojiTo(ctx, g.face(), p.x, p.y - cs * 0.55, cs * 0.85, s.pl.face === 'right' ? 1 : -1, 0, { mode: 'flip' });
       if (s.spray > 0) { ctx.fillStyle = 'rgba(255,255,255,' + s.spray + ')'; ctx.beginPath(); ctx.arc(p.x, p.y - cs * 0.5, cs * 3 * (1 - s.spray), 0, 6.28); ctx.fill(); }

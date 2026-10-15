@@ -14,7 +14,7 @@
   function cells(p) { const n = p.k === 'I' ? 4 : p.k === 'O' ? 4 : 3; return SH[p.k].map(([x, y]) => { for (let i = 0; i < p.rot; i++) { if (p.k === 'O') break; [x, y] = [n - 1 - y, x]; } return [p.x + x, p.y + y]; }); }
   const fits = (s, p) => cells(p).every(([x, y]) => x >= 0 && x < C && y < R && (y < 0 || !s.b[y][x]));
   function spawn(g) {
-    const s = g.s; s.p = { k: s.next.shift(), rot: 0, x: 3, y: -1 }; s.next.push(bag(s)); s.canHold = true; s.lockT = 0;
+    const s = g.s; s.p = { k: s.next.shift(), rot: 0, x: 3, y: -1, gk: {} }; s.next.push(bag(s)); s.canHold = true; s.lockT = 0;
     if (!fits(s, s.p)) { g.message(Arcade.T('¡Arriba del todo!', 'Topped out!'), 1.2); if (g.die()) { for (let r = 0; r < R; r++) s.b[r].fill(null); } }
   }
   function move(g, dx, dy) { const s = g.s; if (!s.p || s.clearing) return false; const q = { ...s.p, x: s.p.x + dx, y: s.p.y + dy }; if (fits(s, q)) { s.p = q; if (dy === 0) s.lockT = 0; return true; } return false; }
@@ -23,7 +23,7 @@
     for (const k of [0, -1, 1, -2, 2]) for (const ky of [0, -1]) { const q = { ...s.p, rot: (s.p.rot + 1) % 4, x: s.p.x + k, y: s.p.y + ky }; if (fits(s, q)) { s.p = q; s.lockT = 0; Arcade.sfx.move(); return; } }
   }
   function hard(g) { const s = g.s; if (!s.p || s.clearing) return; let n = 0; while (move(g, 0, 1)) n++; g.addScore(n * 2); lock(g); g.shake(0.1, 3); }
-  function hold(g) { const s = g.s; if (!s.p || !s.canHold || s.clearing) return; const k = s.p.k; if (s.hold) { s.p = { k: s.hold, rot: 0, x: 3, y: -1 }; } else spawn(g); s.hold = k; s.canHold = false; Arcade.sfx.whoosh(); }
+  function hold(g) { const s = g.s; if (!s.p || !s.canHold || s.clearing) return; const k = s.p.k; if (s.hold) { s.p = { k: s.hold, rot: 0, x: 3, y: -1, gk: {} }; } else spawn(g); s.hold = k; s.canHold = false; Arcade.sfx.whoosh(); }
   function lock(g) {
     const s = g.s;
     for (const [x, y] of cells(s.p)) if (y >= 0) s.b[y][x] = EM[s.p.k];
@@ -115,12 +115,19 @@
       ctx.fillStyle = 'rgba(0,0,0,.45)'; Arcade.rr(ctx, s.ox - 4, s.oy - 4, cs * C + 8, cs * R + 8, 8); ctx.fill();
       ctx.strokeStyle = 'rgba(255,255,255,.05)'; ctx.lineWidth = 1;
       for (let c = 1; c < C; c++) { ctx.beginPath(); ctx.moveTo(s.ox + c * cs, s.oy); ctx.lineTo(s.ox + c * cs, s.oy + R * cs); ctx.stroke(); }
-      const block = (e, x, y, a) => Arcade.emoji(ctx, e, s.ox + (x + 0.5) * cs, s.oy + (y + 0.5) * cs, cs * 1.12, a != null ? { alpha: a } : undefined);
-      for (let r = 0; r < R; r++) for (let c = 0; c < C; c++) if (s.b[r][c]) { const fl = s.clearing && s.clearing.rows.includes(r); block(fl ? '⬜' : s.b[r][c], c, r, fl ? 0.5 + Math.sin(g.rt * 40) * 0.5 : 1); }
+      let ox = 0, oy = 0;   // desplazamiento animado (deslizamiento suave de filas y pieza)
+      const block = (e, x, y, a) => Arcade.emoji(ctx, e, s.ox + ox + (x + 0.5) * cs, s.oy + oy + (y + 0.5) * cs, cs * 1.12, a != null ? { alpha: a } : undefined);
+      for (let r = 0; r < R; r++) {
+        oy = Arcade.glide(s.b[r], 0, r * cs)[1] - r * cs;   // al borrar líneas, las de arriba bajan deslizándose
+        for (let c = 0; c < C; c++) if (s.b[r][c]) { const fl = s.clearing && s.clearing.rows.includes(r); block(fl ? '⬜' : s.b[r][c], c, r, fl ? 0.5 + Math.sin(g.rt * 40) * 0.5 : 1); }
+      }
+      oy = 0;
       if (s.p) {
         let gp = { ...s.p }; while (fits(s, { ...gp, y: gp.y + 1 })) gp.y++;
         for (const [x, y] of cells(gp)) if (y >= 0) block(EM[s.p.k], x, y, 0.22);
+        const [gx, gy] = Arcade.glide(s.p.gk, s.p.x * cs, s.p.y * cs, 26); ox = gx - s.p.x * cs; oy = gy - s.p.y * cs;   // la pieza cae y se mueve suave
         for (const [x, y] of cells(s.p)) if (y >= 0) block(EM[s.p.k], x, y);
+        ox = oy = 0;
       }
       // panel lateral
       const px = s.ox + C * cs + 14, mini = cs * 0.62;

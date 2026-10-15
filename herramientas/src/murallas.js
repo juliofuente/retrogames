@@ -188,7 +188,8 @@
       if (s.phase === 'build' && s.drag && s.piece) {
         const [c, r] = ghostAt(s, s.drag.x, s.drag.y), ok = canPlace(s, s.piece, c, r);
         ctx.fillStyle = ok ? 'rgba(173,181,189,.85)' : 'rgba(255,107,107,.6)';
-        for (const [dx, dy] of s.piece) ctx.fillRect(ox + (c + dx) * cs + 1, oy + (r + dy) * cs + 1, cs - 2, cs - 2);
+        const [gx, gy, k] = Arcade.glide(s.piece, ox + c * cs, oy + r * cs, 26), z = (cs - 2) * k;   // la sombra se desliza de casilla en casilla
+        for (const [dx, dy] of s.piece) ctx.fillRect(gx + (dx + 0.5) * cs - z / 2, gy + (dy + 0.5) * cs - z / 2, z, z);
       }
       if (s.phase === 'build' && !s.drag && s.piece) {
         ctx.globalAlpha = 0.55 + Math.sin(g.t * 5) * 0.2; ctx.fillStyle = '#dee2e6';

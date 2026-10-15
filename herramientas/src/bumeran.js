@@ -155,7 +155,7 @@
         ctx.globalAlpha = 1;
       };
       for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) if (s.f[r][c]) tile(s.ox + c * cs, s.oy + r * cs, s.f[r][c]);
-      if (s.shot) tile(s.ox + s.shot.c * cs, s.oy + s.shot.r * cs, s.shot.t);
+      if (s.shot) { const [x, y] = Arcade.glide(s.shot, s.ox + s.shot.c * cs, s.oy + s.shot.r * cs, 28); tile(x, y, s.shot.t); }   // vuela deslizándose
       // jugador
       const px = s.ox + (COLS + 0.6) * cs, py = s.oy + (s.prow + 0.5) * cs;
       if (s.held) tile(s.ox + (COLS + 0.05) * cs, py - cs * 0.5, s.held, 0.95);

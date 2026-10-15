@@ -68,7 +68,7 @@
     if (!s.hand) return;
     if (col.length + s.hand.n > ROWS) { Arcade.sfx.bad(); return; }
     const fresh = [];
-    for (let i = 0; i < s.hand.n; i++) { const o = { v: s.hand.v, pop: 1 }; col.push(o); fresh.push(o); }
+    for (let i = 0; i < s.hand.n; i++) { const o = { v: s.hand.v, pop: 1, __gl: { x: cpx(s, c), y: s.oy + s.cs * (ROWS + 0.85), a: 1, f: Arcade.fno } }; col.push(o); fresh.push(o); }   // __gl: salen volando desde la mano
     s.hand = null;
     Arcade.tone(420, 0.06, 'square', 0.07, 200);
     resolve(g, [fresh[0]]);
@@ -153,10 +153,10 @@
       const max = Math.max(3.2, 9.5 - g.level * 0.7), k = clamp(s.pushT / max, 0, 1);
       ctx.fillStyle = 'rgba(255,255,255,.1)'; Arcade.rr(ctx, s.ox, s.oy - 12, cs * COLS, 6, 3); ctx.fill();
       ctx.fillStyle = k < 0.25 ? '#ff6b6b' : '#ffd166'; Arcade.rr(ctx, s.ox, s.oy - 12, cs * COLS * k, 6, 3); ctx.fill();
-      for (let c = 0; c < COLS; c++) s.cols[c].forEach((o, r) => drawCoin(ctx, cpx(s, c), cpy(s, r), cs * 0.43 * (1 + o.pop * 0.25), o.v));
+      for (let c = 0; c < COLS; c++) s.cols[c].forEach((o, r) => { const [x, y, k] = Arcade.glide(o, cpx(s, c), cpy(s, r), 18); drawCoin(ctx, x, y, cs * 0.43 * (1 + o.pop * 0.25) * k, o.v); });   // se deslizan al bajar/subir
       // jugador
       const py = s.oy + cs * (ROWS + 0.85);
-      const px = cpx(s, s.pc);
+      const [px] = Arcade.glide(s.me || (s.me = {}), cpx(s, s.pc), py, 24);
       Arcade.emoji(ctx, g.face(), px, py - cs * 0.08, cs * 0.7); if (s.hand) Arcade.emoji(ctx, '🙌', px, py - cs * 0.5, cs * 0.45);
       if (s.hand) {
         drawCoin(ctx, px, py - cs * 0.85, cs * 0.32, s.hand.v);

@@ -10,11 +10,11 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
-<link rel="stylesheet" href="common.css?v=6d7635e467">
+<link rel="stylesheet" href="common.css">
 </head>
 <body class="game">
-<script src="config.js?v=a32e41bd8d"></script>
-<script src="common.js?v=f345c0b76c"></script>
+<script src="config.js"></script>
+<script src="common.js"></script>
 <script>
 (function () {
   const { ri, clamp } = Arcade;
@@ -46,7 +46,7 @@
   function land(g) {
     const s = g.s, p = s.p; s.p = null;
     const over = p.y < 0;
-    for (let dy = 0; dy < 2; dy++) for (let dx = 0; dx < 2; dx++) { const y = p.y + dy; if (y >= 0) s.b[y][p.x + dx] = { k: p.k[dy][dx], m: false, del: false, pop: 1 }; }
+    for (let dy = 0; dy < 2; dy++) for (let dx = 0; dx < 2; dx++) { const y = p.y + dy; if (y >= 0) s.b[y][p.x + dx] = { k: p.k[dy][dx], m: false, del: false, pop: 1, __gl: { x: (p.x + dx) * s.cs, y: y * s.cs, a: 1, f: Arcade.fno } }; }   // __gl: parte de donde se posó (y cae suave)
     Arcade.tone(160, 0.06, 'square', 0.06);
     gravity(s);
     if (over && (s.b[0][p.x] || s.b[0][p.x + 1])) {
@@ -179,12 +179,13 @@
         if (m) { ctx.strokeStyle = del ? '#fff' : 'rgba(255,255,255,' + (0.5 + beat * 0.5) + ')'; ctx.lineWidth = del ? 3 : 2; Arcade.rr(ctx, px + 2, py + 2, cs - 4, cs - 4, 4); ctx.stroke(); if (del) { ctx.fillStyle = 'rgba(255,255,255,.35)'; ctx.fill(); } }
         ctx.globalAlpha = 1;
       };
-      for (let y = 0; y < s.R; y++) for (let x = 0; x < s.C; x++) { const v = s.b[y][x]; if (v) cell(x, y, v.k, v.m, v.del, 1, v.pop); }
+      for (let y = 0; y < s.R; y++) for (let x = 0; x < s.C; x++) { const v = s.b[y][x]; if (v) { const [gx, gy] = Arcade.glide(v, x * cs, y * cs); cell(gx / cs, gy / cs, v.k, v.m, v.del, 1, v.pop); } }   // caen deslizándose
       if (s.p) {
         let gy = s.p.y; while (fits(s, s.p.x, gy + 1)) gy++;
         for (let dy = 0; dy < 2; dy++) for (let dx = 0; dx < 2; dx++) if (gy + dy >= 0) cell(s.p.x + dx, gy + dy, s.p.k[dy][dx], false, false, 0.18);
-        for (let dy = 0; dy < 2; dy++) for (let dx = 0; dx < 2; dx++) if (s.p.y + dy >= 0) cell(s.p.x + dx, s.p.y + dy, s.p.k[dy][dx]);
-          else { ctx.save(); ctx.beginPath(); ctx.rect(0, s.oy - cs * 2, W, cs * 2); ctx.clip(); ctx.globalAlpha = 0.7; cell(s.p.x + dx, s.p.y + dy, s.p.k[dy][dx]); ctx.restore(); }
+        const [qx, qy] = Arcade.glide(s.p, s.p.x * cs, s.p.y * cs, 26), px = qx / cs, py = qy / cs;   // la pieza baja y se mueve suave
+        for (let dy = 0; dy < 2; dy++) for (let dx = 0; dx < 2; dx++) if (s.p.y + dy >= 0) cell(px + dx, py + dy, s.p.k[dy][dx]);
+          else { ctx.save(); ctx.beginPath(); ctx.rect(0, s.oy - cs * 2, W, cs * 2); ctx.clip(); ctx.globalAlpha = 0.7; cell(px + dx, py + dy, s.p.k[dy][dx]); ctx.restore(); }
       }
       // barra de luz
       const lx = s.ox + s.tl * cs;
