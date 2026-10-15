@@ -74,11 +74,13 @@
       const hl = s.hover && at(s, s.hover[0], s.hover[1]) ? new Set(group(s, s.hover[0], s.hover[1]).map(([x, y]) => x * 99 + y)) : null;
       for (let c = 0; c < s.C; c++) for (let r = 0; r < s.R; r++) {
         const v = s.b[c][r]; if (!v) continue;
-        const x = s.ox + c * cs, y = s.oy + (s.R - r - 1) * cs - v.fall * cs * 0.6;
+        const [x, y, k] = Arcade.glide(v, s.ox + c * cs, s.oy + (s.R - r - 1) * cs);   // caen y se juntan deslizándose
         const on = hl && hl.size > 1 && hl.has(c * 99 + r);
-        ctx.fillStyle = BG[v.t]; Arcade.rr(ctx, x + 2, y + 2, cs - 4, cs - 4, cs * 0.25); ctx.fill();
-        if (on) { ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; ctx.stroke(); }
-        Arcade.emoji(ctx, EM[v.t], x + cs / 2, y + cs / 2 + 1, cs * (on ? 0.72 : 0.64));
+        Arcade.scaled(ctx, x + cs / 2, y + cs / 2, k, () => {
+          ctx.fillStyle = BG[v.t]; Arcade.rr(ctx, x + 2, y + 2, cs - 4, cs - 4, cs * 0.25); ctx.fill();
+          if (on) { ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; ctx.stroke(); }
+          Arcade.emoji(ctx, EM[v.t], x + cs / 2, y + cs / 2 + 1, cs * (on ? 0.72 : 0.64));
+        });
       }
       const got = g.score - s.scoreStart;
       Arcade.txt(ctx, 'Objetivo: ' + Math.max(0, got) + ' / ' + s.target, W / 2, s.oy - 28, 15, got >= s.target ? '#69db7c' : '#d3f9d8', 'center', 900);

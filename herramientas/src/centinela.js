@@ -133,9 +133,11 @@
       Arcade.emoji(ctx, '🗿', sx, sy - cs * 0.1, cs * 0.75);
       Arcade.txt(ctx, 'altura ' + s.sH, sx, sy + cs * 0.42, 9, '#fff', 'center', 900, '#000');
       // jugador
-      const px = s.ox + (s.pc + 0.5) * cs, py = s.oy + (s.pr + 0.5) * cs - T(s, s.pc, s.pr).rocks * cs * 0.16;
-      ctx.strokeStyle = '#ffd43b'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(px, py, cs * 0.36, 0, 6.28); ctx.stroke();
-      Arcade.emoji(ctx, g.face(), px, py, cs * 0.52);
+      const [px, py, k] = Arcade.glide(s, s.ox + (s.pc + 0.5) * cs, s.oy + (s.pr + 0.5) * cs - T(s, s.pc, s.pr).rocks * cs * 0.16, 9);   // vuela al robot al saltar
+      Arcade.scaled(ctx, px, py, k, () => {
+        ctx.strokeStyle = '#ffd43b'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(px, py, cs * 0.36, 0, 6.28); ctx.stroke();
+        Arcade.emoji(ctx, g.face(), px, py, cs * 0.52);
+      });
       Arcade.txt(ctx, '⚡ ' + s.en + '   👁️ altura ' + E + (E > s.sH ? ' (¡por encima!)' : ' / ' + (s.sH + 1) + ' para ganar'), W / 2, s.oy - 18, 14, E > s.sH ? '#69db7c' : '#c5f6fa', 'center', 800);
       if (s.seen) Arcade.txt(ctx, '⚠️ ¡Te está mirando!', W / 2, g.top + 12, 14, '#ff6b6b', 'center', 900);
       const bw = (W - 20) / 4;

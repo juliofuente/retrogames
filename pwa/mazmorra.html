@@ -10,11 +10,11 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
-<link rel="stylesheet" href="common.css?v=6d7635e467">
+<link rel="stylesheet" href="common.css">
 </head>
 <body class="game">
-<script src="config.js?v=a32e41bd8d"></script>
-<script src="common.js?v=f345c0b76c"></script>
+<script src="config.js"></script>
+<script src="common.js"></script>
 <script>
 (function () {
   const { ri, clamp, pick } = Arcade;
@@ -162,16 +162,18 @@
         const t = s.b[y][x]; if (!t) continue;
         const on = onp.has(x + ',' + y), dim = kind0 && !on && grp(t.k) !== kind0;
         const sh = t.hit ? (Math.random() - 0.5) * 6 : 0;
-        const px = s.ox + x * cs + sh, py = s.oy + y * cs - (t.fall || 0) * cs * 0.8, z = on ? 3 : 6;
+        const [gx, py, k] = Arcade.glide(t, s.ox + x * cs, s.oy + y * cs), px = gx + sh, z = on ? 3 : 6;   // caen deslizándose; las nuevas crecen
         ctx.globalAlpha = dim ? 0.35 : 1 - (t.fall || 0) * 0.4;
-        ctx.fillStyle = t.k === 'mo' && t.rage ? '#ff6b6b' : TBG[t.k]; Arcade.rr(ctx, px + z, py + z, cs - z * 2, cs - z * 2, cs * 0.22); ctx.fill();
-        ctx.fillStyle = 'rgba(0,0,0,.25)'; Arcade.rr(ctx, px + z, py + cs * 0.7, cs - z * 2, cs * 0.3 - z, cs * 0.2); ctx.fill();
-        if (on) { ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; Arcade.rr(ctx, px + z, py + z, cs - z * 2, cs - z * 2, cs * 0.22); ctx.stroke(); }
-        if (t.k === 'mo') {
-          Arcade.emoji(ctx, MON[t.tier], px + cs / 2, py + cs * 0.44, cs * 0.52);
-          Arcade.txt(ctx, '♥' + t.hp, px + cs * 0.27, py + cs * 0.82, cs * 0.17, '#fff', 'center', 900, 'rgba(0,0,0,.6)');
-          Arcade.txt(ctx, '⚔' + t.atk, px + cs * 0.73, py + cs * 0.82, cs * 0.17, '#ffe066', 'center', 900, 'rgba(0,0,0,.6)');
-        } else Arcade.emoji(ctx, T[t.k], px + cs / 2, py + cs / 2, cs * 0.56);
+        Arcade.scaled(ctx, px + cs / 2, py + cs / 2, k, () => {
+          ctx.fillStyle = t.k === 'mo' && t.rage ? '#ff6b6b' : TBG[t.k]; Arcade.rr(ctx, px + z, py + z, cs - z * 2, cs - z * 2, cs * 0.22); ctx.fill();
+          ctx.fillStyle = 'rgba(0,0,0,.25)'; Arcade.rr(ctx, px + z, py + cs * 0.7, cs - z * 2, cs * 0.3 - z, cs * 0.2); ctx.fill();
+          if (on) { ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; Arcade.rr(ctx, px + z, py + z, cs - z * 2, cs - z * 2, cs * 0.22); ctx.stroke(); }
+          if (t.k === 'mo') {
+            Arcade.emoji(ctx, MON[t.tier], px + cs / 2, py + cs * 0.44, cs * 0.52);
+            Arcade.txt(ctx, '♥' + t.hp, px + cs * 0.27, py + cs * 0.82, cs * 0.17, '#fff', 'center', 900, 'rgba(0,0,0,.6)');
+            Arcade.txt(ctx, '⚔' + t.atk, px + cs * 0.73, py + cs * 0.82, cs * 0.17, '#ffe066', 'center', 900, 'rgba(0,0,0,.6)');
+          } else Arcade.emoji(ctx, T[t.k], px + cs / 2, py + cs / 2, cs * 0.56);
+        });
         ctx.globalAlpha = 1;
       }
     },

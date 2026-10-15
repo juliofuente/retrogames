@@ -79,7 +79,7 @@
         s.clear.t -= dt;
         if (s.clear.t <= 0) {
           for (const k of s.clear.marks) s.b[Math.floor(k / N)][k % N] = rnd(s);
-          s.clear = null;
+          s.fresh = { marks: s.clear.marks, o: {} }; s.clear = null;
           const lv = 1 + Math.floor(s.lines / 6);
           if (lv > g.level) { g.level = lv; g.hud(); if (s.nt < ALL.length) { s.nt++; g.message('Nivel ' + lv, 1.3, 'Nuevo dulce: ' + ALL[s.nt - 1]); } Arcade.sfx.up(); }
           resolve(g);
@@ -114,7 +114,7 @@
         const a = s.anim;
         const draw1 = (xx, yy) => {
           const m = s.clear && s.clear.marks.has(r * N + c);
-          const sc = m ? Math.max(0.05, s.clear.t / 0.3) : 1;
+          const sc = (m ? Math.max(0.05, s.clear.t / 0.3) : 1) * (s.fresh && s.fresh.marks.has(r * N + c) ? Arcade.glide(s.fresh.o, 0, 0)[2] : 1);   // los nuevos aparecen creciendo
           Arcade.emoji(ctx, s.b[r][c], s.ox + (xx + 0.5) * cs, s.oy + (yy + 0.5) * cs, cs * 0.72 * sc, m ? { rot: (1 - sc) * 3 } : null);
         };
         if (a && a.kind === 'row' && a.idx === r) { x = c + a.off; draw1(x, y); draw1(x + (x < 0.5 ? N : -N), y); }

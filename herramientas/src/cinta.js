@@ -58,7 +58,7 @@
         s.bin[c][r] = null;
       }
       // gravedad (índice 0 = fondo)
-      for (let c = 0; c < NL; c++) { const col = s.bin[c].filter((v) => v != null); s.bin[c] = col.concat(new Array(BINR - col.length).fill(null)); }
+      for (let c = 0; c < NL; c++) { const rs = s.bin[c].map((v, r) => r).filter((r) => s.bin[c][r] != null), pad = new Array(BINR - rs.length).fill(null); s.bk[c] = rs.map((r) => s.bk[c][r]).concat(pad); s.bin[c] = rs.map((r) => s.bin[c][r]).concat(pad); }
       const total = pts * chain;
       g.addScore(total, s.cx, s.binTop + s.cs * 2);
       g.message(diag ? 'DIAGONAL!' : 'KLAX!', 0.9, chain > 1 ? 'x' + chain : '');
@@ -74,7 +74,7 @@
     const s = g.s; if (!s.stack.length) { Arcade.sfx.bad(); return; }
     const col = s.bin[s.pl], r = col.indexOf(null);
     if (r < 0) { Arcade.sfx.bad(); g.shake(0.1, 4); return; }
-    const v = s.stack.pop(); col[r] = v;
+    const v = s.stack.pop(); col[r] = v; s.bk[s.pl][r] = {};   // bk: objeto por ficha para animar su caída
     s.fallFx = { c: s.pl, r, t: 0.18, v };
     Arcade.tone(300 + r * 60, 0.07, 'triangle', 0.08, -100);
     checkBin(g);
@@ -116,7 +116,7 @@
     setup(g) {
       g.s = { tiles: [], stack: [], pl: 2, bin: [], spawnT: 1, miss: 0, plx: 2 };
       const s = g.s;
-      for (let c = 0; c < NL; c++) s.bin.push(new Array(BINR).fill(null));
+      s.bk = []; for (let c = 0; c < NL; c++) { s.bin.push(new Array(BINR).fill(null)); s.bk.push(new Array(BINR).fill(null)); }
       s.nc = Math.min(6, 4 + Math.floor((g.lv + 1) / 5));
       s.scoreStart = g.score;
       newGoal(g); geo(g);
@@ -206,7 +206,7 @@
         ctx.fillStyle = (c + r) % 2 ? 'rgba(255,255,255,.04)' : 'rgba(255,255,255,.07)'; ctx.fillRect(p.x - s.cs / 2, p.y - s.cs / 2, s.cs, s.cs);
         const v = s.bin[c][r];
         if (v != null) {
-          let yy = p.y; if (s.fallFx && s.fallFx.c === c && s.fallFx.r === r) yy -= s.fallFx.t * s.cs * 4;
+          let yy = Arcade.glide(s.bk[c][r], p.x, p.y, 20)[1]; if (s.fallFx && s.fallFx.c === c && s.fallFx.r === r) yy -= s.fallFx.t * s.cs * 4;
           tile(p.x, yy, s.cs * 0.86, v);
         }
       }

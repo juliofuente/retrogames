@@ -165,7 +165,7 @@
         else { ctx.moveTo(ox + c * cs + 3, oy + (r + 1) * cs); ctx.lineTo(ox + (c + 1) * cs - 3, oy + (r + 1) * cs); }
         ctx.stroke(); ctx.setLineDash([]); ctx.globalAlpha = 1;
       }
-      for (const c of s.cats) { if (c.dead > 0) continue; const p = pos(s, c); Arcade.emojiTo(ctx, s.dog > 0 ? '🫥' : '👻', p.x, p.y, cs * 0.72, D[c.dir] ? D[c.dir][0] : 0, D[c.dir] ? D[c.dir][1] : 1); }
+      for (const c of s.cats) { if (c.dead > 0) continue; const p = pos(s, c), [x, y, k] = Arcade.glide(c, p.x, p.y, 30); Arcade.emojiTo(ctx, s.dog > 0 ? '🫥' : '👻', x, y, cs * 0.72 * k, D[c.dir] ? D[c.dir][0] : 0, D[c.dir] ? D[c.dir][1] : 1); }   // suave al rebotar en una puerta
       const p = pos(s, s.pl);
       if (!(s.inv > 0 && Math.floor(g.t * 10) % 2)) Arcade.emojiTo(ctx, s.dog > 0 ? '🐶' : g.face(), p.x, p.y, cs * 0.72, D[s.pl.dir] ? D[s.pl.dir][0] : 0, D[s.pl.dir] ? D[s.pl.dir][1] : 1);
       // botones

@@ -10,11 +10,11 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
-<link rel="stylesheet" href="common.css?v=6d7635e467">
+<link rel="stylesheet" href="common.css">
 </head>
 <body class="game">
-<script src="config.js?v=a32e41bd8d"></script>
-<script src="common.js?v=f345c0b76c"></script>
+<script src="config.js"></script>
+<script src="common.js"></script>
 <script>
 (function () {
   const { ri, rand, clamp, pick } = Arcade;
@@ -169,11 +169,14 @@
         let p = s.pos[i];
         if (s.drag && s.drag.i === i) p = s.drag.p0 + s.drag.off;
         if (v.red && s.exit) p += s.exit * 6;
-        const x = s.ox + (v.h ? p : v.fix) * cs + 4, y = s.oy + (v.h ? v.fix : p) * cs + 4, w = (v.h ? v.len : 1) * cs - 8, h = (v.h ? 1 : v.len) * cs - 8;
+        const w = (v.h ? v.len : 1) * cs - 8, h = (v.h ? 1 : v.len) * cs - 8;
+        const [x, y, k] = Arcade.glide(v, s.ox + (v.h ? p : v.fix) * cs + 4, s.oy + (v.h ? v.fix : p) * cs + 4, s.drag && s.drag.i === i ? 1e3 : 18);   // encaja deslizándose
+        ctx.save(); ctx.translate(x + w / 2, y + h / 2); ctx.scale(k, k); ctx.translate(-x - w / 2, -y - h / 2);
         ctx.fillStyle = 'rgba(0,0,0,.35)'; Arcade.rr(ctx, x + 3, y + 4, w, h, cs * 0.2); ctx.fill();
         ctx.fillStyle = v.look[0]; Arcade.rr(ctx, x, y, w, h, cs * 0.2); ctx.fill();
         ctx.fillStyle = 'rgba(255,255,255,.28)'; Arcade.rr(ctx, x + 4, y + 4, w - 8, Math.min(h, w) * 0.22, cs * 0.1); ctx.fill();
         Arcade.emoji(ctx, v.look[1], x + w / 2, y + h / 2, cs * 0.62, { rot: v.h ? 0 : -Math.PI / 2, flip: v.h });
+        ctx.restore();
       });
       Arcade.txt(ctx, 'Movimientos: ' + s.moves + '   ·   Mínimo: ' + s.min, W / 2, s.oy - 34, 15, '#e9ecef', 'center', 800);
       ctx.fillStyle = 'rgba(255,255,255,.1)'; Arcade.rr(ctx, W / 2 - 70, s.oy + a + 22, 140, 40, 14); ctx.fill();

@@ -173,7 +173,7 @@
       for (let r = 0; r < s.R; r++) for (let c = 0; c < s.C; c++) {
         const d = s.b[r][c]; if (!d) continue;
         const sk = d.sink ? d.sink / 0.9 : 1;
-        const z = (cs - 8) * (0.55 + 0.45 * sk) * (1 + d.pop * 0.15);
+        const z = (cs - 8) * (0.55 + 0.45 * sk) * (1 + d.pop * 0.15) * Arcade.glide(d, 0, 0)[2];   // aparece creciendo
         const x = s.ox + (c + d.ax + 0.5) * cs, y = s.oy + (r + d.ay + 0.5) * cs;
         ctx.globalAlpha = 0.4 + 0.6 * sk;
         const side = z * 0.16;
@@ -187,7 +187,8 @@
         ctx.globalAlpha = 1;
       }
       if (s.path) for (const [c, r] of s.path) { ctx.fillStyle = 'rgba(177,151,252,.35)'; ctx.beginPath(); ctx.arc(s.ox + (c + 0.5) * cs, s.oy + (r + 0.5) * cs, cs * 0.08, 0, 6.28); ctx.fill(); }
-      Arcade.emoji(ctx, g.face(), s.ox + (s.pc + 0.5) * cs, s.oy + (s.pr + 0.5) * cs - s.walkAnim * 6, cs * 0.66);
+      const [mx, my] = Arcade.glide(s.me || (s.me = {}), s.ox + (s.pc + 0.5) * cs, s.oy + (s.pr + 0.5) * cs, 24);   // camina sin saltos
+      Arcade.emoji(ctx, g.face(), mx, my - s.walkAnim * 6, cs * 0.66);
       const free = s.b.flat().filter(v => !v).length - 1;
       Arcade.txt(ctx, '🔳 Libres: ' + free, W / 2, s.oy - 20, 15, free < 6 ? '#ff6b6b' : '#d0bfff', 'center', 800);
     },
