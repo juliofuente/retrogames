@@ -14,7 +14,7 @@
 </head>
 <body class="game">
 <script src="config.js?v=a32e41bd8d"></script>
-<script src="common.js?v=f345c0b76c"></script>
+<script src="common.js?v=73faca998e"></script>
 <script>
 (function () {
   const { shuffle, ri } = Arcade;
@@ -114,14 +114,18 @@
       for (let r = 0; r < s.R; r++) for (let c = 0; c < s.C; c++) {
         const x = s.ox + c * cs, y = s.oy + r * cs, border = r === 0 || c === 0 || r === s.R - 1 || c === s.C - 1;
         ctx.fillStyle = border ? '#2a4434' : (r + c) % 2 ? '#22392b' : '#264030'; ctx.fillRect(x, y, cs, cs);
-        const t = s.b[r][c];
-        if (t) tile(x + cs / 2, y + cs / 2, t, cs * (1 + (t.pop || 0) * 0.2));
-        else if (s.cur && valid(s, c, r, s.cur)) { ctx.fillStyle = 'rgba(255,255,255,.18)'; ctx.beginPath(); ctx.arc(x + cs / 2, y + cs / 2, cs * 0.1, 0, 6.28); ctx.fill(); }
+        if (!s.b[r][c] && s.cur && valid(s, c, r, s.cur)) { ctx.fillStyle = 'rgba(255,255,255,.18)'; ctx.beginPath(); ctx.arc(x + cs / 2, y + cs / 2, cs * 0.1, 0, 6.28); ctx.fill(); }
+      }
+      // fichas colocadas: la nueva hereda el __gl de la ficha actual (Object.assign) y vuela desde arriba a su casilla
+      for (let r = 0; r < s.R; r++) for (let c = 0; c < s.C; c++) {
+        const t = s.b[r][c]; if (!t) continue;
+        const [x, y] = Arcade.glide(t, s.ox + (c + 0.5) * cs, s.oy + (r + 0.5) * cs, 14);
+        tile(x, y, t, cs * (1 + (t.pop || 0) * 0.2));
       }
       if (s.flash) { ctx.strokeStyle = '#ff6b6b'; ctx.lineWidth = 3; ctx.strokeRect(s.ox + s.flash.c * cs + 2, s.oy + s.flash.r * cs + 2, cs - 4, cs - 4); }
       // ficha actual
       const hy = s.oy - 46;
-      if (s.cur) { tile(W / 2, hy, s.cur, 56); }
+      if (s.cur) { const [x, y, k] = Arcade.glide(s.cur, W / 2, hy); Arcade.scaled(ctx, x, y, k, () => tile(x, y, s.cur, 56)); }   // la siguiente aparece con un saltito
       Arcade.txt(ctx, 'Ahora', W / 2 - 60, hy, 13, '#b2f2bb', 'right', 700);
       Arcade.txt(ctx, 'Quedan ' + s.bag.length, W / 2 + 60, hy - 9, 13, '#b2f2bb', 'left', 700);
       Arcade.txt(ctx, 'Cruces de 4: ' + s.four, W / 2 + 60, hy + 11, 13, '#ffd43b', 'left', 700);

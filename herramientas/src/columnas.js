@@ -14,7 +14,7 @@
   const free = (s, c, r) => c >= 0 && c < C && r < R && (r < 0 || s.b[r][c] == null);
   function land(g) {
     const s = g.s, p = s.p, top = Math.floor(p.y);
-    for (let k = 0; k < 3; k++) { const r = top + k; if (r >= 0) s.b[r][p.c] = p.g[k]; }
+    for (let k = 0; k < 3; k++) { const r = top + k; if (r >= 0) s.b[r][p.c] = { v: p.g[k] }; }   // objetos: así se animan al caer
     s.p = null; Arcade.tone(160, 0.06, 'square', 0.07);
     if (top < 0) { g.message(Arcade.T('¡Columna llena!', 'Column full!'), 1.2); if (g.die()) for (const row of s.b) row.fill(null); }
     s.chain = 0; resolve(g);
@@ -22,15 +22,15 @@
   function resolve(g) {
     const s = g.s, kill = new Set();
     for (let r = 0; r < R; r++) for (let c = 0; c < C; c++) {
-      const v = s.b[r][c]; if (v == null) continue;
+      const v = s.b[r][c] && s.b[r][c].v; if (v == null) continue;
       for (const [dr, dc] of [[0, 1], [1, 0], [1, 1], [1, -1]]) {
-        let n = 1; while (r + dr * n < R && c + dc * n >= 0 && c + dc * n < C && s.b[r + dr * n][c + dc * n] === v) n++;
+        let n = 1; while (r + dr * n < R && c + dc * n >= 0 && c + dc * n < C && s.b[r + dr * n][c + dc * n] && s.b[r + dr * n][c + dc * n].v === v) n++;
         if (n >= 3) for (let k = 0; k < n; k++) kill.add((r + dr * k) * C + c + dc * k);
       }
     }
     if (!kill.size) { if (g.state === 'play') spawn(g); return; }
     s.chain++;
-    for (const k of kill) { const r = Math.floor(k / C), c = k % C; s.flash.push({ r, c, v: s.b[r][c], t: 0.35 }); }
+    for (const k of kill) { const r = Math.floor(k / C), c = k % C; s.flash.push({ r, c, v: s.b[r][c].v, t: 0.35 }); }
     s.pending = kill;
     s.clearT = 0.35;
     Arcade.sfx.combo(s.chain + kill.size / 3);
@@ -38,7 +38,7 @@
   }
   function applyClear(g) {
     const s = g.s, n = s.pending.size;
-    for (const k of s.pending) { const r = Math.floor(k / C), c = k % C; g.burst(s.ox + (c + 0.5) * s.cs, s.oy + (r + 0.5) * s.cs, { n: 5, color: GEM[s.b[r][c]][0], speed: 180, size: 3 }); s.b[r][c] = null; }
+    for (const k of s.pending) { const r = Math.floor(k / C), c = k % C; g.burst(s.ox + (c + 0.5) * s.cs, s.oy + (r + 0.5) * s.cs, { n: 5, color: GEM[s.b[r][c].v][0], speed: 180, size: 3 }); s.b[r][c] = null; }
     s.pending = null; s.flash = [];
     g.addScore(n * 10 * s.chain * g.lv, s.ox + C * s.cs / 2, s.oy + R * s.cs / 2);
     s.cleared += n;
@@ -66,7 +66,7 @@
         s.dplan = null; return { swipe: [s.ox + (s.p.c + 0.5) * s.cs, s.oy + s.cs * 3, 'down'], len: 80, after: 0.4, say: Arcade.T('Tres joyas iguales en línea (también en diagonal)', 'Three equal jewels in a line (diagonals too)') }; }
       let best = null, gg = s.p.g.slice();
       for (let rot = 0; rot < 3; rot++) { for (let c = 0; c < C; c++) { let r = 0; while (r < R && s.b[r][c] == null) r++; const top = r - 3; if (top < 0) continue;
-          const b = s.b.map((row) => row.slice()); for (let k = 0; k < 3; k++) b[top + k][c] = gg[k]; let kill = 0;
+          const b = s.b.map((row) => row.map((o) => o && o.v)); for (let k = 0; k < 3; k++) b[top + k][c] = gg[k]; let kill = 0;
           for (let y = 0; y < R; y++) for (let x = 0; x < C; x++) { const v = b[y][x]; if (v == null) continue; for (const [dy, dx] of [[0, 1], [1, 0], [1, 1], [1, -1]]) { let n = 1; while (y + dy * n < R && x + dx * n >= 0 && x + dx * n < C && b[y + dy * n][x + dx * n] === v) n++; if (n >= 3) kill += n; } }
           const v = kill * 10 + top * 0.8 + Math.random(); if (!best || v > best.v) best = { v, c, rot }; }
         gg.unshift(gg.pop()); }
@@ -120,15 +120,16 @@
         ctx.globalAlpha = 1;
       };
       for (let r = 0; r < R; r++) for (let c = 0; c < C; c++) {
-        const v = s.b[r][c]; if (v == null) continue;
-        const fl = s.pending && s.pending.has(r * C + c);
-        gem(s.ox + (c + 0.5) * cs, s.oy + (r + 0.5) * cs, v, fl ? (Math.floor(g.rt * 20) % 2 ? 1 : 0.3) : 1);
+        const o = s.b[r][c]; if (o == null) continue;
+        const fl = s.pending && s.pending.has(r * C + c), [x, y] = Arcade.glide(o, s.ox + (c + 0.5) * cs, s.oy + (r + 0.5) * cs, 20);   // caen deslizándose tras limpiar
+        gem(x, y, o.v, fl ? (Math.floor(g.rt * 20) % 2 ? 1 : 0.3) : 1);
       }
       if (s.p) {
         // sombra de caída
         let gy = Math.floor(s.p.y); while (gy + 3 < R && s.b[gy + 3][s.p.c] == null) gy++;
         ctx.fillStyle = 'rgba(255,255,255,.07)'; ctx.fillRect(s.ox + s.p.c * cs, s.oy + Math.max(0, gy) * cs, cs, 3 * cs);
-        for (let k = 0; k < 3; k++) { const y = s.oy + (s.p.y + k + 0.5) * cs; if (y > s.oy) gem(s.ox + (s.p.c + 0.5) * cs, y, s.p.g[k]); }
+        const [px] = Arcade.glide(s.p, s.ox + (s.p.c + 0.5) * cs, 0, 28);   // de lado se desliza (la caída ya es continua)
+        for (let k = 0; k < 3; k++) { const y = s.oy + (s.p.y + k + 0.5) * cs; if (y > s.oy) gem(px, y, s.p.g[k]); }
       }
       const nx = s.ox + C * cs + 46;
       Arcade.txt(ctx, 'Siguiente', nx, s.oy + 10, 12, '#e5dbff', 'center', 800);

@@ -135,8 +135,12 @@
         const boxAlt = (Math.floor(r / s.bh) + Math.floor(c / s.bw)) % 2;
         let fill = boxAlt ? '#ece6ff' : '#f8f6ff';
         if (r === sr || c === sc || (Math.floor(r / s.bh) === Math.floor(sr / s.bh) && Math.floor(c / s.bw) === Math.floor(sc / s.bw))) fill = boxAlt ? '#ddd3ff' : '#e9e3ff';
-        if (i === s.sel) fill = '#ffe066';
         ctx.fillStyle = fill; ctx.fillRect(x + 1, y + 1, cs - 2, cs - 2);
+      }
+      // casilla elegida: el resaltado se desliza de una a otra
+      if (s.sel != null) { const [x, y] = Arcade.glide(s.selK || (s.selK = {}), s.ox + sc * cs, s.oy + sr * cs, 22); ctx.fillStyle = '#ffe066'; ctx.fillRect(x + 1, y + 1, cs - 2, cs - 2); }
+      for (let i = 0; i < n * n; i++) {
+        const r = (i / n) | 0, c = i % n, x = s.ox + c * cs, y = s.oy + r * cs;
         if (s.glow[i]) { ctx.fillStyle = `rgba(105,219,124,${s.glow[i] * 0.6})`; ctx.fillRect(x + 1, y + 1, cs - 2, cs - 2); }
         const v = s.cur[i];
         if (v >= 0) Arcade.emoji(ctx, s.set[v], x + cs / 2, y + cs / 2, cs * 0.66 * (1 + s.pop[i] * 0.4), { alpha: s.fixed[i] ? 1 : 0.95 });

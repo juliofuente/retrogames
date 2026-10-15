@@ -1,6 +1,15 @@
 ARCADE PERDIDO + ARCADE PRO — LO QUE ESTÁ HECHO
 ================================================
-Fecha: 15-10-2026 · Versión de la PWA (games.js → ARCADE_VERSION): 2.14.0
+Fecha: 15-10-2026 · Versión de la PWA (games.js → ARCADE_VERSION): 2.15.0
+· v2.15.0: MODO INFINITO Y TRANSICIONES:
+  - Vuelve el modo infinito y se combina con la dificultad: en el menú de los 113 juegos de niveles hay 😊 Fácil /
+    🙂 Normal / 😈 Difícil y 🚩 N niveles / ♾️ Infinito (cualquier combinación). Cada combinación guarda su propio
+    récord y nivel desbloqueado. En infinito la dificultad sube como en los limitados y al pasar el último nivel se
+    queda al máximo, sin fin. (Los 18 juegos de récord, levels: null, ya eran infinitos.)
+  - Arcade.glide(objeto, x, y) en common.js: las piezas se deslizan de casilla a casilla y aparecen con un pequeño
+    rebote (Arcade.scaled). Aplicado en centro, bumeran, cuadra, bloques, lumina, cambio, murallas, hamburguesa,
+    burbujas, centinela, atasco, ratonera, mazmorra, columnas, parejas, ishido, sumacamino, emojidoku, grupos, dados,
+    galletas, cinta, sombreros, rebotes, fusionabolas y cadenaroja. El resto ya se movía de forma continua.
 · v2.14.0: JUEGOS SUELTOS POR DEFECTO Y SIN PORTADA:
   - Todos los juegos van solos por defecto (para meterlos en apps Android o hacerlos PWA): sin botón 🏠 a la portada,
     sin favoritos y sin estadísticas. common.js: A.single = window.isSingleGame !== false. Con

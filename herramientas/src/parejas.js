@@ -5,11 +5,11 @@
   const TY = ['', '💎', '🍀', '🔥', '⭐', '🌙'];
   const TC = ['', '#74c0fc', '#69db7c', '#ff8787', '#ffd43b', '#b197fc'];
 
-  function fallPass(a) {
+  function fallPass(a, o) {   // o (opcional): objetos que acompañan a cada bloque, para dibujarlos deslizándose
     let moved = false;
     for (let r = R - 2; r >= 0; r--) for (let c = 0; c < C; c++) {
       const i = r * C + c, j = i + C;
-      if (a[i] > 0 && a[j] === 0) { a[j] = a[i]; a[i] = 0; moved = true; }
+      if (a[i] > 0 && a[j] === 0) { a[j] = a[i]; a[i] = 0; moved = true; if (o) { o[j] = o[i]; o[i] = null; } }
     }
     return moved;
   }
@@ -90,7 +90,7 @@
     const s = g.s, a = s.a, c = i % C;
     if (s.phase || a[i] <= 0 || (d < 0 && c === 0) || (d > 0 && c === C - 1) || a[i + d] !== 0) { Arcade.sfx.bad(); return; }
     s.hist.push(a.slice());
-    a[i + d] = a[i]; a[i] = 0; s.sel = i + d; s.moves++;
+    a[i + d] = a[i]; a[i] = 0; s.sel = i + d; s.moves++; s.o[i + d] = s.o[i]; s.o[i] = null;
     s.phase = 'fall'; s.t = 0; Arcade.sfx.move();
   }
   const cellOf = (s, x, y) => { const c = Math.floor((x - s.ox) / s.cs), r = Math.floor((y - s.oy) / s.cs); return c >= 0 && c < C && r >= 0 && r < R ? r * C + c : -1; };
@@ -123,7 +123,7 @@
     },
     setup(g) {
       const lv = genLevel(g.lv);
-      g.s = { a: lv.a.slice(), start: lv.a.slice(), par: lv.m, moves: 0, hist: [], sel: -1, phase: null, t: 0, flash: null };
+      g.s = { a: lv.a.slice(), start: lv.a.slice(), par: lv.m, moves: 0, hist: [], sel: -1, phase: null, t: 0, flash: null, o: [] };
       geo(g);
     },
     layout(g) { if (g.s.a) geo(g); },
@@ -155,7 +155,7 @@
       if (s.phase === 'fall' && s.t > 0.055) {
         s.t = 0;
         const before = s.a.slice();
-        if (!fallPass(s.a)) {
+        if (!fallPass(s.a, s.o)) {
           const m = matches(s.a);
           if (m.length) { s.phase = 'flash'; s.flash = m; Arcade.sfx.coin(); }
           else {
@@ -165,7 +165,7 @@
           }
         } else if (s.sel >= 0 && before[s.sel] > 0 && s.a[s.sel] === 0) s.sel += C;
       } else if (s.phase === 'flash' && s.t > 0.35) {
-        for (const i of s.flash) { g.burst(s.ox + (i % C + 0.5) * s.cs, s.oy + (Math.floor(i / C) + 0.5) * s.cs, { n: 8, color: TC[s.a[i]], speed: 150, size: 3 }); s.a[i] = 0; }
+        for (const i of s.flash) { g.burst(s.ox + (i % C + 0.5) * s.cs, s.oy + (Math.floor(i / C) + 0.5) * s.cs, { n: 8, color: TC[s.a[i]], speed: 150, size: 3 }); s.a[i] = 0; s.o[i] = null; }
         g.addScore(20 * s.flash.length);
         s.flash = null; s.phase = 'fall'; s.t = 0; s.sel = -1;
       }
@@ -178,6 +178,7 @@
       g.scenery(['💎','🔮','✨'], 6, { alpha: 0.12, size: [24, 40], bob: 3 }); /*SC*/
       if (!s.a) return;
       const cs = s.cs;
+      if (s.oa !== s.a) { s.oa = s.a; s.o = []; }   // deshacer/reiniciar: objetos nuevos
       for (let i = 0; i < s.a.length; i++) {
         const c = i % C, r = Math.floor(i / C), x = s.ox + c * cs, y = s.oy + r * cs, v = s.a[i];
         if (v === -1) {
@@ -188,11 +189,14 @@
         }
         ctx.fillStyle = (r + c) % 2 ? '#1f2147' : '#23254f'; ctx.fillRect(x, y, cs + 0.5, cs + 0.5);
         if (v > 0) {
+          const [x, y, k] = Arcade.glide(s.o[i] || (s.o[i] = {}), s.ox + c * cs, s.oy + r * cs, 26);   // se deslizan y caen suaves
+          Arcade.scaled(ctx, x + cs / 2, y + cs / 2, k, () => {
           const fl = s.flash && s.flash.includes(i) && Math.floor(s.t * 20) % 2;
           ctx.fillStyle = fl ? '#fff' : TC[v]; Arcade.rr(ctx, x + 3, y + 3, cs - 6, cs - 6, cs * 0.18); ctx.fill();
           ctx.fillStyle = 'rgba(255,255,255,.35)'; Arcade.rr(ctx, x + 6, y + 5, cs - 12, cs * 0.22, cs * 0.1); ctx.fill();
           Arcade.emoji(ctx, TY[v], x + cs / 2, y + cs / 2 + 1, cs * 0.55);
           if (i === s.sel) { ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; Arcade.rr(ctx, x + 2, y + 2, cs - 4, cs - 4, cs * 0.2); ctx.stroke(); Arcade.txt(ctx, '◀   ▶', x + cs / 2, y - 8, 12, '#fff', 'center', 900); }
+          });
         }
       }
       Arcade.txt(ctx, 'Movimientos: ' + s.moves + '   ·   Mejor solución: ' + s.par, W / 2, s.oy - 20, 14, '#d0ebff', 'center', 800);

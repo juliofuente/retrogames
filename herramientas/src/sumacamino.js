@@ -115,10 +115,12 @@
       const sh = s.wrong ? Math.sin(s.wrong * 60) * 5 : 0;
       for (let y = 0; y < s.R; y++) for (let x = 0; x < s.C; x++) {
         const v = s.b[y][x]; if (!v) continue;
-        const px = s.ox + x * cs + sh, py = s.oy + y * cs - v.fall * cs * 0.8, on = onp.has(x + ',' + y), z = on ? 4 : 7;
+        const [gx, gy, k] = Arcade.glide(v, s.ox + x * cs, s.oy + y * cs), px = gx + sh, py = gy, on = onp.has(x + ',' + y), z = on ? 4 : 7;   // caen deslizándose; las nuevas crecen
         ctx.globalAlpha = 1 - v.fall * 0.5;
-        ctx.fillStyle = on ? (over ? '#ff8787' : '#fff') : TINT[v.v - 1]; Arcade.rr(ctx, px + z, py + z, cs - z * 2, cs - z * 2, cs * 0.25); ctx.fill();
-        Arcade.txt(ctx, v.v, px + cs / 2, py + cs / 2 + 1, cs * 0.44, '#10243a', 'center', 900, null, Arcade.TFONT);
+        Arcade.scaled(ctx, px + cs / 2, py + cs / 2, k, () => {
+          ctx.fillStyle = on ? (over ? '#ff8787' : '#fff') : TINT[v.v - 1]; Arcade.rr(ctx, px + z, py + z, cs - z * 2, cs - z * 2, cs * 0.25); ctx.fill();
+          Arcade.txt(ctx, v.v, px + cs / 2, py + cs / 2 + 1, cs * 0.44, '#10243a', 'center', 900, null, Arcade.TFONT);
+        });
         ctx.globalAlpha = 1;
       }
     },
