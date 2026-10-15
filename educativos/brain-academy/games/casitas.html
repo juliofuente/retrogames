@@ -2,7 +2,7 @@
 <html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Number Houses</title></head>
 <body><script>
 const H=window.parent&&window.parent!==window?window.parent.Hub:null;
-if(!H){location.replace('../index.html');}
+if(!H){location.replace('../');}
 else{
 const {ri,pick,shuf,intChoices}=H.U;
 const TX={es:N=>`🏠 En la casita del ${N} cada piso suma ${N}. ¿Qué número falta?`,en:N=>`🏠 In the house of ${N}, every floor adds up to ${N}. Which number is missing?`,fr:N=>`🏠 Dans la maison du ${N}, chaque étage fait ${N}. Quel nombre manque ?`};

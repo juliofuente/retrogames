@@ -2,7 +2,7 @@
 <html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Meteor Shower</title></head>
 <body><script>
 const H=window.parent&&window.parent!==window?window.parent.Hub:null;
-if(!H){location.replace('../index.html');}
+if(!H){location.replace('../');}
 else{
 const {ri,pick}=H.U;
 const INTRO={en:n=>`Tap ONLY the meteors equal to ${n}. Leave the others — they bounce off the shield!`,es:n=>`Toca SOLO los meteoritos que dan ${n}. Deja pasar los demás: ¡rebotan en el escudo!`,fr:n=>`Touche SEULEMENT les météorites égales à ${n}. Laisse les autres : elles rebondissent sur le bouclier !`};

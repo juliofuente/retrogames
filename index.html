@@ -67,25 +67,25 @@
   <ul class="results" id="res" hidden></ul>
 
   <div class="grid" id="cols">
-    <a class="card" href="pwa/index.html" style="--glow:#ffb703">
+    <a class="card" href="pwa/" style="--glow:#ffb703">
       <div class="em">🕹️</div>
       <h2 data-es="Arcade Perdido" data-en="Lost Arcade"></h2>
       <p data-es="Mecánicas de arcade de los 80 y 90 que nadie volvió a usar, para jugar con el dedo." data-en="Arcade mechanics from the 80s and 90s nobody reused, made to play with your finger."></p>
       <div class="count" id="c1"></div>
     </a>
-    <a class="card" href="pwa/indexpro.html" style="--glow:#da77f2">
+    <a class="card" href="pwa/indexpro" style="--glow:#da77f2">
       <div class="em">✨</div>
       <h2>Arcade Pro</h2>
-      <p data-es="Los grandes éxitos de móvil (de los que recrea Emanuele Feronato) hechos con el mismo motor." data-en="The big mobile hits (the ones Emanuele Feronato recreates) built with the same engine."></p>
+      <p data-es="Los grandes éxitos de los juegos de móvil, hechos con el mismo motor y emojis." data-en="The big mobile game hits, built with the same engine and emojis."></p>
       <div class="count" id="c2"></div>
     </a>
-    <a class="card" href="pwa/indextv.html?tv=1" style="--glow:#4dabf7">
+    <a class="card" href="pwa/indextv?tv=1" style="--glow:#4dabf7">
       <div class="em">📺</div>
       <h2 data-es="Modo TV" data-en="TV mode"></h2>
       <p data-es="Para Android TV / Fire TV: se juega con el mando (cruceta y OK), hasta 4 jugadores por turnos." data-en="For Android TV / Fire TV: play with the remote (D-pad and OK), up to 4 players taking turns."></p>
       <div class="count" id="c3"></div>
     </a>
-    <a class="card" href="educativos/index.html" style="--glow:#69db7c">
+    <a class="card" href="educativos/" style="--glow:#69db7c">
       <div class="em">🎓</div>
       <h2 data-es="Educativos" data-en="Educational"></h2>
       <p data-es="Mates, lengua, lógica e inglés para niños de 3 a 16 años, por asignatura y edad." data-en="Maths, language, logic and English for kids aged 3 to 16, by subject and age."></p>
@@ -93,15 +93,12 @@
     </a>
   </div>
 
-  <div class="small">
-    <a href="autonomos/index.html"><span class="em" style="font-size:28px">📦</span><span><b data-es="Versiones autónomas" data-en="Standalone versions"></b><span class="d" data-es="Cada juego en un solo .html que se abre sin servidor." data-en="Every game in a single .html that opens without a server."></span></span></a>
-    <a href="autonomos/indexpro.html"><span class="em" style="font-size:28px">📦</span><span><b data-es="Arcade Pro autónomo" data-en="Standalone Arcade Pro"></b><span class="d" data-es="La colección Pro en archivos sueltos." data-en="The Pro collection as standalone files."></span></span></a>
-  </div>
+
 
   <footer id="foot"></footer>
 </div>
-<script src="pwa/games.js?v=7ef99317c7"></script>
-<script src="educativos/juegos.js?v=8fccf4213b"></script>
+<script src="pwa/games.js?v=a0d7239133"></script>
+<script src="educativos/juegos.js?v=71bb432557"></script>
 <script>
   (function () {
     var q = /[?&]lang=(es|en)/.exec(location.search), saved = null;
@@ -122,8 +119,8 @@
       document.getElementById('c3').textContent = tv + (EN ? ' games playable with a remote ▶' : ' juegos con mando ▶');
       document.getElementById('lang').textContent = EN ? '🇪🇸 Español' : '🇬🇧 English';
       document.getElementById('foot').innerHTML = (n1 + n2 + n3) + j + (window.ARCADE_VERSION ? ' · v' + ARCADE_VERSION : '') + '<br>' +
-        (EN ? 'Install it as an app from the browser menu once inside a collection.' : 'Dentro de cada colección puedes instalarlo como app desde el menú del navegador.');
-      document.querySelectorAll('a.card, .small a').forEach(function (a) { var u = a.getAttribute('href').split('?'), p = new URLSearchParams(u[1] || ''); p.set('lang', lang); a.setAttribute('href', u[0] + '?' + p.toString()); });
+        (EN ? 'Free games, no ads.' : 'Juegos gratis y sin anuncios.');
+      try { localStorage.setItem('arc_lang', lang); sessionStorage.setItem('arc_back', location.pathname); } catch (e) {}   // el 🏠 de los juegos vuelve aquí y en este idioma
     }
     var qi = document.getElementById('q'), res = document.getElementById('res');
     function norm(t) { return String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''); }
@@ -137,8 +134,8 @@
       var edu = window.EDU ? EDU.games.filter(function (g) { var h = norm([g.title.es, g.title.en, g.desc.es, g.desc.en, g.subject, 'educativo educational'].join(' ')); return words.every(function (w) { return h.indexOf(w) >= 0; }); }) : [];
       res.hidden = false;
       res.innerHTML = hits.length || edu.length ? hits.map(function (x) { var g = x[0], t = (EN && g.en && g.en.title) || g.title, d = (EN && g.en && g.en.tag) || g.tag;
-        return '<li><a href="pwa/' + esc(g.file) + '?lang=' + lang + '"><span class="e">' + g.emoji + '</span><span><b>' + esc(t) + '</b><small>' + esc(d) + ' · ' + x[1] + '</small></span></a></li>'; }).join('')
-        + edu.map(function (g) { var u = g.url + (g.app === 'brain' ? '&lang=' + lang : '');
+        return '<li><a href="pwa/' + esc(g.id) + '"><span class="e">' + g.emoji + '</span><span><b>' + esc(t) + '</b><small>' + esc(d) + ' · ' + x[1] + '</small></span></a></li>'; }).join('')
+        + edu.map(function (g) { var u = g.url + (g.app === 'brain' ? '&lang=' + lang : '');   // Brain Academy necesita el idioma en su enlace
           return '<li><a href="' + esc(u) + '"><span class="e">' + g.emoji + '</span><span><b>' + esc(g.title[lang] || g.title.es) + '</b><small>' + esc(g.desc[lang] || g.desc.es) + ' · 🎓 ' + g.ages[0] + '–' + g.ages[1] + (EN ? ' yrs' : ' años') + '</small></span></a></li>'; }).join('')
         : '<li class="none">' + (EN ? 'No games found. Try e.g. Tetris, Zuma or 2048.' : 'No hay juegos con eso. Prueba por ejemplo Tetris, Zuma o 2048.') + '</li>';
     }

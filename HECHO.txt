@@ -1,6 +1,16 @@
 ARCADE PERDIDO + ARCADE PRO — LO QUE ESTÁ HECHO
 ================================================
 Fecha: 14-10-2026 · Versión de la PWA (games.js → ARCADE_VERSION): 2.12.0
+· v2.12.2: URLS Y VUELTA ATRÁS:
+  - Ninguna URL lleva .html ni index.html: .htaccess redirige /x.html → /x y /carpeta/index.html → /carpeta/, y sirve
+    x.html al pedir /x. Los educativos se juegan en /{id} (index.php sirve su HTML con <base> a su carpeta; Brain Academy
+    recibe minijuego, edad e idioma en window.ARCADE_EDU). /educativos/ → /coleccion/educativos.
+  - Las páginas de listado (portada, colecciones, categorías, controles, TV, asignaturas, edades, A–Z, búsqueda, y las
+    portadas estáticas) guardan su URL en sessionStorage 'arc_back' y su idioma en arc_lang; el 🏠 de todos los juegos
+    (arcade y educativos) vuelve a esa página, y el juego se abre en el idioma de la página de la que se viene.
+  - Sin descargas: fuera el botón «Descargar HTML» y los enlaces a autonomos/; .htaccess bloquea autonomos/ y
+    autonomos/ ya no está en el repositorio (.gitignore; se genera en local con pwa/build.py, p. ej. para --solo).
+  - Eliminadas las referencias a la web de origen de la lista de juegos Pro.
 · v2.12.1: NUEVO EDUCATIVO «📝 Problemas de mates» (educativos/problemas-primaria/): problemas de 1.º a 6.º de Primaria
   con el formato de la «Colección de problemas 4.º de Primaria» (Datos · Operaciones · Resultado con hueco).
   - banco.js: 97 plantillas (12–32 por curso) con números al azar y solución calculada; 4.º sigue los problemas del PDF.
@@ -187,7 +197,7 @@ centinela.html | Centinela / Sentinel | The Sentinel (Firebird, 1986) | TV:curso
 burbujas.html | Burbujas / Bubbles | Magical Drop (Data East, 1995) | TV:cruceta
 cinta.html | Cinta / Conveyor | Klax (Atari Games, 1990) | TV:cruceta
 
-COLECCIÓN PRO (pwa/indexpro.html) — 90 juegos (mecánicas de los juegos que cubre emanueleferonato.com)
+COLECCIÓN PRO (pwa/indexpro.html) — 90 juegos (mecánicas de grandes éxitos de móvil)
 -- Lote 7 (puzles de tablero, v2.5.0) --
 expande.html | Expande / Expand | Zhed (Ground Control) | TV:cursor
 portales.html | Portales / Portals | Warp Shift (FISHLABS) | TV:cursor

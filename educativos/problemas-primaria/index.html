@@ -55,7 +55,7 @@
 <div class="stripes"></div>
 <div class="app">
   <header>
-    <a class="ib" href="../../" title="Todos los juegos" aria-label="Todos los juegos">🏠</a>
+    <a class="ib" href="../../" onclick="return (function(){try{var b=sessionStorage.getItem('arc_back');if(b&&b[0]==='/'&&b[1]!=='/'){location.href=b;return false}}catch(e){}return true})()" title="Todos los juegos" aria-label="Todos los juegos">🏠</a>
     <button class="ib" id="back" aria-label="Atrás" style="display:none">←</button>
     <h1 id="ttl">📝 Problemas de mates</h1>
     <button class="ib" id="fav" aria-label="Favorito">🤍</button>

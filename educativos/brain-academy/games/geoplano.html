@@ -2,7 +2,7 @@
 <html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Geoboard</title></head>
 <body><script>
 const H=window.parent&&window.parent!==window?window.parent.Hub:null;
-if(!H){location.replace('../index.html');}
+if(!H){location.replace('../');}
 else{
 const {ri,pick,intChoices}=H.U;
 const TX={es:{sides:'📐 ¿Cuántos lados tiene la figura de la goma?',verts:'📐 ¿Cuántos vértices (esquinas) tiene la figura?',area:'📐 ¿Cuántos cuadraditos caben dentro de la figura?',per:'📐 Mide el borde: ¿cuántos lados de cuadradito tiene alrededor?',tri:'📐 ¿Cuántos cuadraditos ocupa el triángulo? (Pista: es la mitad de un rectángulo)'},

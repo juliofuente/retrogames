@@ -2,7 +2,7 @@
 <html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Number Friends</title></head>
 <body><script>
 const H=window.parent&&window.parent!==window?window.parent.Hub:null;
-if(!H){location.replace('../index.html');}
+if(!H){location.replace('../');}
 else{
 const {ri,pick,intChoices}=H.U;
 const TX={es:{q:(n,T)=>`🤝 ¿Quién es el amigo del ${T} de ${n}?`,sub:T=>`Juntos suman ${T}`},en:{q:(n,T)=>`🤝 Who is ${n}'s friend to make ${T}?`,sub:T=>`Together they make ${T}`},fr:{q:(n,T)=>`🤝 Qui est l'ami de ${n} pour faire ${T} ?`,sub:T=>`Ensemble ils font ${T}`}};

@@ -94,7 +94,31 @@ function list_path(string $k, ?string $lang = null): string {
   return $m[$k][$en ? 1 : 0];
 }
 function game_file_url(array $g, bool $tv = false): string { return url(play_path($g)) . ($tv ? '?tv=1' : ''); }
-function edu_target(array $g, string $lang): string { return url('/' . $g['url']) . (strpos($g['url'], '?') !== false ? '&lang=' . $lang : ''); }   // Brain Academy entiende ?lang=
+/* un educativo en /{id}: su HTML servido con <base href> a su carpeta (sin .html ni index.html en la URL) */
+function serve_edu(array $g, ?string $force): void {
+  global $SITE;
+  $u = parse_url('/' . $g['url']);
+  $path = ltrim((string)$u['path'], '/');
+  if ($path === '' || substr($path, -1) === '/') $path .= 'index.html'; elseif (!preg_match('/\.html$/', $path)) $path .= '.html';
+  $html = @file_get_contents(__DIR__ . '/' . $path);
+  if ($html === false || strpos(realpath(__DIR__ . '/' . $path) ?: '', realpath(__DIR__ . '/educativos')) !== 0) { page_404(); return; }
+  parse_str((string)($u['query'] ?? ''), $q);
+  $lang = $force ?: guess_lang();
+  if ($q) $q['lang'] = $lang;   // Brain Academy: minijuego, edad e idioma
+  $p = '/' . $g['id'] . ($force ? '/' . $force : '');
+  $title = ($lang === 'en' ? $g['title_en'] : $g['title_es']) . ' · ' . $SITE;
+  $desc = cut($lang === 'en' ? $g['desc_en'] : $g['desc_es'], 160);
+  $head = '<base href="' . h(url('/' . dirname($path) . '/')) . '">'
+    . '<link rel="canonical" href="' . h(abs_url($p)) . '"><meta name="description" content="' . h($desc) . '">'
+    . '<meta property="og:title" content="' . h($title) . '"><meta property="og:url" content="' . h(abs_url($p)) . '">'
+    . '<script>window.ARCADE_EDU=' . json_encode(['id' => $g['id'], 'q' => http_build_query($q), 'home' => url('/')], JSON_UNESCAPED_SLASHES | JSON_HEX_TAG) . ';</script>';
+  $html = preg_replace('/<head[^>]*>/i', '$0' . "\n" . $head, $html, 1);
+  $html = preg_replace('/<title>.*?<\/title>/s', '<title>' . h($title) . '</title>', $html, 1);
+  header('Content-Type: text/html; charset=utf-8');
+  header('Cache-Control: no-cache');
+  echo $html;
+  exit;
+}
 function guess_lang(): string {
   $c = $_COOKIE['arc_lang'] ?? '';
   if ($c === 'es' || $c === 'en') return $c;
@@ -311,6 +335,7 @@ function render(array $o): void {
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title><?= h($title) ?></title>
+<script>try{localStorage.setItem('arc_lang','<?= $L ?>');document.cookie='arc_lang=<?= $L ?>;path=/;max-age=63072000;SameSite=Lax';<?php if (!empty($o['back'])): ?>sessionStorage.setItem('arc_back',location.pathname+location.search);<?php endif; ?>}catch(e){}</script>
 <meta name="description" content="<?= h($desc) ?>">
 <?php if (!empty($o['noindex'])): ?><meta name="robots" content="noindex,follow">
 <?php else: ?><meta name="robots" content="index,follow,max-image-preview:large">
@@ -466,7 +491,7 @@ function page_home(): void {
   <?php $body = ob_get_clean();
   $title = T('Arcade Perdido · ' . $na . ' juegos arcade y ' . $ne . ' educativos gratis', 'Arcade Perdido · ' . $na . ' arcade and ' . $ne . ' educational games, free');
   $desc = T('Juega gratis y sin anuncios a ' . $na . ' juegos HTML5 con emojis (puzles, arcade, un toque, física y estrategia) y a ' . $ne . ' juegos educativos de mates, lengua, lógica e inglés para niños. Para móvil, PC y Android TV.', 'Play ' . $na . ' free, ad-free HTML5 emoji games (puzzles, arcade, one-tap, physics, strategy) and ' . $ne . ' educational maths, language, logic and English games for kids. For phone, PC and Android TV.');
-  render(['path' => $p, 'title' => $title, 'desc' => $desc, 'alt' => ['/', '/en/'], 'body' => $body,
+  render(['path' => $p, 'title' => $title, 'desc' => $desc, 'alt' => ['/', '/en/'], 'body' => $body, 'back' => true,
     'ld' => [app_ld(), page_ld('CollectionPage', $p, $title, $desc, ['about' => ['@id' => abs_url('/#app')], 'mainEntity' => ['@id' => abs_url($p) . '#list']]), itemlist_ld($p, T('Todos los juegos', 'All games'), array_values($GAMES))]]);
 }
 
@@ -491,7 +516,7 @@ function page_list(string $p, array $alt, string $h1, string $lead, array $games
   <?= grid($games) ?>
   <?= $extraBody['after'] ?? '' ?>
   <?php $body = ob_get_clean();
-  render(['path' => $p, 'title' => $title, 'desc' => $desc, 'alt' => $alt, 'body' => $body,
+  render(['path' => $p, 'title' => $title, 'desc' => $desc, 'alt' => $alt, 'body' => $body, 'back' => true,
     'ld' => [page_ld('CollectionPage', $p, $title, $desc, ['breadcrumb' => ['@id' => abs_url($p) . '#breadcrumb'], 'mainEntity' => ['@id' => abs_url($p) . '#list']]), crumbs_ld($crumbs), itemlist_ld($p, $h1, $games)]]);
 }
 
@@ -499,7 +524,7 @@ function page_collection(array $c): void {
   global $GAMES, $SITE;
   $games = array_values(array_filter($GAMES, function ($g) use ($c) { return $g['collection_id'] === $c['id']; }));
   $p = col_path($c); $n = f($c, 'name');
-  $play = '<div class="btns" style="margin-bottom:18px"><a class="btn pri" href="' . h(url('/' . $c['index_file'])) . '?lang=' . T('es', 'en') . '">▶ ' . h(T('Abrir ' . $n, 'Open ' . $n)) . '</a></div>';
+  $play = '<div class="btns" style="margin-bottom:18px"><a class="btn pri" href="' . h(url('/' . $c['index_file'])) . '">▶ ' . h(T('Abrir ' . $n, 'Open ' . $n)) . '</a></div>';
   if ($c['id'] === 'edu') $play = edu_tiles() . '<h2>' . h(T('Todos los juegos educativos', 'All educational games')) . '</h2>';   // sin portada aparte: esta es su portada
   page_list($p, [col_path($c, 'es'), col_path($c, 'en')], $c['id'] === 'edu' ? T('🎓 Juegos educativos', '🎓 Educational games') : $n, f($c, 'desc'), $games, [[T('Inicio', 'Home'), home_path()], [$n, $p]],
     ($c['id'] === 'edu' ? T('Juegos educativos para niños: ' . count($games) . ' juegos gratis de mates, lengua, lógica e inglés', 'Educational games for kids: ' . count($games) . ' free maths, language, logic and English games')
@@ -551,7 +576,7 @@ function page_tv(): void {
   $games = array_values(array_filter($GAMES, function ($g) { return (bool)$g['tv']; }));
   $p = list_path('tv');
   $lead = T('Juegos que se juegan con el mando de Android TV, Google TV o Fire TV (cruceta + OK). Abre la web en el navegador de la tele y juega solo o hasta con 4 jugadores por turnos.', 'Games you can play with an Android TV, Google TV or Fire TV remote (D-pad + OK). Open the site in your TV browser and play alone or with up to 4 players taking turns.');
-  $btn = '<div class="btns" style="margin-bottom:18px"><a class="btn pri" href="' . h(url('/pwa/indextv.html')) . '?tv=1&amp;lang=' . T('es', 'en') . '">📺 ' . h(T('Abrir la portada para TV', 'Open the TV home screen')) . '</a></div>';
+  $btn = '<div class="btns" style="margin-bottom:18px"><a class="btn pri" href="' . h(url('/pwa/indextv')) . '?tv=1">📺 ' . h(T('Abrir la portada para TV', 'Open the TV home screen')) . '</a></div>';
   page_list($p, [list_path('tv', 'es'), list_path('tv', 'en')], T('Juegos para la tele con mando', 'TV games you play with the remote'), $lead, $games,
     [[T('Inicio', 'Home'), home_path()], ['TV', $p]], T(count($games) . ' juegos para Android TV y Fire TV gratis', count($games) . ' free games for Android TV and Fire TV') . ' · ' . $SITE, $lead, ['before' => $btn]);
 }
@@ -572,7 +597,7 @@ function page_all(): void {
   $title = T('Todos los juegos (' . count($games) . ') de la A a la Z', 'All ' . count($games) . ' games from A to Z') . ' · ' . $SITE;
   $desc = T('Índice alfabético de los ' . count($games) . ' juegos gratis de Arcade Perdido, Arcade Pro y los juegos educativos.', 'Alphabetical index of all ' . count($games) . ' free Arcade Perdido, Arcade Pro and educational games.');
   $crumbs = [[T('Inicio', 'Home'), home_path()], [T('Todos los juegos', 'All games'), $p]];
-  render(['path' => $p, 'title' => $title, 'desc' => $desc, 'alt' => [list_path('games', 'es'), list_path('games', 'en')], 'body' => $body,
+  render(['path' => $p, 'title' => $title, 'desc' => $desc, 'alt' => [list_path('games', 'es'), list_path('games', 'en')], 'body' => $body, 'back' => true,
     'ld' => [page_ld('CollectionPage', $p, $title, $desc, ['breadcrumb' => ['@id' => abs_url($p) . '#breadcrumb'], 'mainEntity' => ['@id' => abs_url($p) . '#list']]), crumbs_ld($crumbs), itemlist_ld($p, T('Todos los juegos', 'All games'), $games)]]);
 }
 
@@ -596,7 +621,7 @@ function page_search(): void {
   <p class="lead"><?= h($q === '' ? T('Escribe el nombre de un juego, una mecánica o un clásico (por ejemplo: Tetris, Zuma, 2048).', 'Type a game name, a mechanic or a classic (for example: Tetris, Zuma, 2048).') : count($res) . ' ' . T('juegos encontrados', 'games found')) ?></p>
   <?= $res ? grid($res) : ($q !== '' ? '<p>' . h(T('No hay resultados. Prueba con otra palabra o mira todas las ', 'No results. Try another word or browse all ')) . '<a href="' . h(url(list_path('games'))) . '">' . h(T('categorías y juegos', 'categories and games')) . '</a>.</p>' : '') ?>
   <?php $body = ob_get_clean();
-  render(['path' => $p, 'title' => T('Buscar', 'Search') . ($q !== '' ? ': ' . $q : '') . ' · ' . $SITE, 'desc' => T('Busca entre todos los juegos de Arcade Perdido.', 'Search all Arcade Perdido games.'), 'noindex' => true, 'q' => $q,
+  render(['path' => $p, 'title' => T('Buscar', 'Search') . ($q !== '' ? ': ' . $q : '') . ' · ' . $SITE, 'desc' => T('Busca entre todos los juegos de Arcade Perdido.', 'Search all Arcade Perdido games.'), 'noindex' => true, 'q' => $q, 'back' => true,
     'alt' => [list_path('search', 'es'), list_path('search', 'en')], 'body' => $body, 'ld' => [page_ld('SearchResultsPage', $p, T('Buscar', 'Search'), '')]]);
 }
 
@@ -666,7 +691,7 @@ function page_game(array $g): void {
   $faq = [
     [T('¿Cómo se juega a ' . $t . '?', 'How do you play ' . $t . '?'), plain(f($g, 'help'))],
     [T('¿' . $t . ' es gratis?', 'Is ' . $t . ' free?'), T('Sí. Es gratis, no tiene anuncios ni compras y no hace falta registrarse ni descargar nada: se juega en el navegador.', 'Yes. It is free, with no ads or purchases, and you do not need to sign up or download anything: it runs in your browser.')],
-    [T('¿Se puede jugar sin conexión?', 'Can I play offline?'), T('Sí. Si instalas la app (Añadir a pantalla de inicio) funciona sin internet. También hay una versión autónoma en un solo archivo HTML.', 'Yes. If you install the app (Add to Home screen) it works without internet. There is also a standalone single-file HTML version.')],
+    [T('¿Se puede jugar sin conexión?', 'Can I play offline?'), T('Necesita conexión para cargarse; una vez abierto, la partida sigue aunque se corte internet.', 'It needs a connection to load; once open, the game keeps running even if the connection drops.')],
     [T('¿Se puede jugar en la tele con el mando?', 'Can I play it on a TV with the remote?'), $g['tv'] ? T('Sí, en Android TV, Google TV o Fire TV. ', 'Yes, on Android TV, Google TV or Fire TV. ') . plain(f($g, 'tvhelp')) . T(' Pueden jugar hasta 4 personas por turnos.', ' Up to 4 people can play taking turns.') : T('No: este juego necesita pantalla táctil.', 'No: this game needs a touch screen.')],
   ];
   if ($based) $faq[] = [T('¿En qué juego se inspira ' . $t . '?', 'What game is ' . $t . ' inspired by?'), T('Recrea la mecánica de ', 'It recreates the mechanics of ') . $based . T(', con gráficos de emojis, hasta 120 niveles con modos fácil, normal y difícil y controles táctiles.', ', with emoji graphics, up to 120 levels with easy, normal and hard modes and touch controls.')];
@@ -682,7 +707,6 @@ function page_game(array $g): void {
       <div class="btns">
         <a class="btn pri" href="<?= h(url(play_path($g))) ?>">▶ <?= h(T('Jugar gratis', 'Play for free')) ?></a>
         <?php if ($g['tv']): ?><a class="btn" href="<?= h(game_file_url($g, true)) ?>">📺 <?= h(T('Modo TV', 'TV mode')) ?></a><?php endif; ?>
-        <a class="btn" href="<?= h(url('/autonomos/' . $g['file'])) ?>" download>📦 <?= h(T('Descargar HTML', 'Download HTML')) ?></a>
       </div>
     </div>
   </div>
@@ -886,15 +910,15 @@ if (count($seg) === 2) {
   if (!$EN && $k === 'game' && ($g = find_by($GAMES, 'slug_en', $arg))) redirect(url(game_path($g, 'en')));
   if ($EN && $k === 'juego' && isset($GAMES[$arg])) redirect(url(game_path($GAMES[$arg], 'en')));
 }
-// el juego: /{id} (idioma automático) o /{id}/es|en (forzado). Los educativos redirigen a su app.
+// el juego: /{id} (idioma automático) o /{id}/es|en (forzado). Los educativos se sirven desde su carpeta.
 if (!$EN && (count($seg) === 1 || (count($seg) === 2 && ($arg === 'es' || $arg === 'en'))) && isset($GAMES[$k])) {
   $g = $GAMES[$k];
-  if (is_edu($g)) redirect(edu_target($g, $arg ?: guess_lang()), 302);
+  if (is_edu($g)) serve_edu($g, $arg);
   serve_game($g, $arg);
 }
 // URLs antiguas: /pwa/lazo.html?lang=en&tv=1 → /lazo/en?tv=1 · /lazo.html → /lazo
 $old = null;
-if (count($seg) === 2 && $k === 'pwa' && preg_match('/^([a-z0-9]+)\.html$/', $arg, $m)) $old = $m[1];
+if (count($seg) === 2 && $k === 'pwa' && preg_match('/^([a-z0-9]+)(\.html)?$/', $arg, $m)) $old = $m[1];
 if (count($seg) === 1 && preg_match('/^([a-z0-9]+)\.html$/', $k, $m)) $old = $m[1];
 if ($old !== null && isset($GAMES[$old]) && !is_edu($GAMES[$old])) {
   parse_str((string)($_SERVER['QUERY_STRING'] ?? ''), $q);

@@ -32,7 +32,7 @@ Recopilatorio de juegos HTML5 para móvil (táctil, sin cruceta en pantalla) bas
 
 ## Colección Pro (indexpro.html)
 
-`indexpro.html` lista `GAMES_PRO` (en `games.js`): 20 éxitos de móvil (los que Emanuele Feronato recrea en Phaser) hechos con el mismo motor JS y emojis, con niveles infinitos.
+`indexpro.html` lista `GAMES_PRO` (en `games.js`): éxitos de los juegos de móvil hechos con el mismo motor JS y emojis, con niveles y modos de dificultad.
 Cada juego Pro lleva `home: 'indexpro.html'` en su definición para que «Todos los juegos» vuelva a esa portada (en modo TV vuelve a `indextv.html?sec=pro`).
 La portada de TV tiene dos secciones (🕹️ Arcade Perdido / ✨ Arcade Pro); los juegos con `tv: false` (Cientos, Puntos) no aparecen en ella.
 Para añadir un juego Pro: crea su `.html` y añade una línea a `GAMES_PRO`.

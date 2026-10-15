@@ -11,19 +11,38 @@ AddDefaultCharset utf-8
   # robots.txt y sitemap.xml los genera index.php
   RewriteRule ^(robots\.txt|sitemap\.xml)$ index.php [L]
 
-  # URLs antiguas de los juegos (/pwa/pivote.html?lang=en) → index.php las redirige a /pivote/en
-  RewriteRule ^pwa/(?!index)[a-z0-9]+\.html$ index.php [L]
+  # Juegos arcade con URL antigua (/pwa/pivote.html?lang=en, /pwa/pivote) → index.php los redirige a /pivote (o /pivote/en)
+  RewriteRule ^pwa/(?!index)[a-z0-9]+(\.html)?$ index.php [L]
+
+  # La portada de los educativos es la de index.php
+  RewriteRule ^educativos/?$ /coleccion/educativos [R=301,L]
+  RewriteRule ^educativos/index(\.html)?$ /coleccion/educativos [R=301,L]
 
   # Visor de la base de datos (phpLiteAdmin, con contraseña): es lo único de data/ que se sirve
   RewriteRule ^data/julkadmin\.php$ - [L]
 
-  # Archivos internos: nunca se sirven
-  RewriteRule ^(data|herramientas)(/|$) - [F,L]
+  # Archivos internos y código descargable: nunca se sirven
+  RewriteRule ^(data|herramientas|autonomos)(/|$) - [F,L]
   RewriteRule (^|/)\.(?!well-known) - [F,L]
-  RewriteRule \.(sqlite|sqlite3|db|py|md|txt)$ - [F,L,NC]
+  RewriteRule \.(sqlite|sqlite3|db|py|md|txt|sh|json\.bak)$ - [F,L,NC]
 
   # /index.html de la raíz (portada estática de GitHub Pages) → index.php lo redirige a /
   RewriteRule ^index\.html$ index.php [L]
+
+  # Sin .html en las URLs: /carpeta/index.html → /carpeta/ y /pagina.html → /pagina (solo lo que pide el navegador;
+  # los minijuegos de Brain Academy se cargan dentro de un marco y no se tocan)
+  RewriteCond %{ENV:REDIRECT_STATUS} ^$
+  RewriteCond %{THE_REQUEST} \s/+((?:[^\s?]*/)?)index\.html[\s?]
+  RewriteRule ^ /%1 [R=301,L,NE]
+  RewriteCond %{ENV:REDIRECT_STATUS} ^$
+  RewriteCond %{REQUEST_URI} !^/educativos/brain-academy/games/
+  RewriteCond %{THE_REQUEST} \s/+([^\s?]+?)\.html[\s?]
+  RewriteRule ^ /%1 [R=301,L,NE]
+  # …y /pagina sirve pagina.html si existe
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteCond %{REQUEST_FILENAME}.html -f
+  RewriteRule ^(.+)$ $1.html [L]
 
   # URLs amigables
   RewriteCond %{REQUEST_FILENAME} !-f

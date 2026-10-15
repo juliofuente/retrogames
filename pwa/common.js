@@ -331,11 +331,14 @@
     if (def.voice) Object.assign(A.voice, def.voice);
     const TV = A.tv, rdef = def.tv === false ? null : def.tv || {};
     let tvdef = TV ? rdef : null;   // en táctil se activa con el pad virtual
-    const HOME = TV ? (def.home ? 'indextv.html?sec=pro' : 'indextv.html') : (def.home || 'index.html');
+    const HOME = TV ? (def.home ? 'indextv?sec=pro' : 'indextv') : (def.home || 'index.html').replace(/index\.html$/, './').replace(/\.html$/, '');
     const SITE = A.single ? null : window.ARCADE_SITE || null;   // lo inyecta index.php cuando el juego se sirve en /<id>
     const homeLink = (cls, label) => A.single ? '' : `<a class="${cls}" href="${HOMEQ()}">🏠 ${label}</a>`;
     const STAT = { s: 0, p: 0 };               // segundos jugados y partidas empezadas (se envían a SITE.api)
-    const HOMEQ = () => SITE ? (TV ? SITE.tv : SITE.home)[A.lang] : HOME + (HOME.indexOf('?') < 0 ? '?' : '&') + 'lang=' + A.lang;
+    // 🏠: vuelve a la página de listado de la que se vino (la guardan las portadas en sessionStorage 'arc_back');
+    // si no hay, a la portada de la web (index.php) o de la PWA
+    const BACK = () => { try { const b = sessionStorage.getItem('arc_back'); return b && b[0] === '/' && b[1] !== '/' ? b : null; } catch (_) { return null; } };
+    const HOMEQ = () => BACK() || (SITE ? (TV ? SITE.tv : SITE.home)[A.lang] : HOME);
     M.song = buildSong(def.music || {}, def.id);
     /* niveles finitos (v2.11): los antiguos «infinitos» pasan a 60–120 niveles según su tope de dificultad (cap), y la
        dificultad interna g.lv (1…cap) se reparte de forma homogénea por todos ellos según el modo elegido. */

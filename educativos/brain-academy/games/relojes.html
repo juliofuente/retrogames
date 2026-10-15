@@ -2,7 +2,7 @@
 <html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Clocks</title></head>
 <body><script>
 const H=window.parent&&window.parent!==window?window.parent.Hub:null;
-if(!H){location.replace('../index.html');}
+if(!H){location.replace('../');}
 else{
 const {ri,pick,shuf}=H.U;
 const TX={es:{read:'🕐 ¿Qué hora marca el reloj?',match:t=>`🕐 ¿Qué reloj marca las ${t}?`},en:{read:'🕐 What time does the clock show?',match:t=>`🕐 Which clock shows ${t}?`},fr:{read:"🕐 Quelle heure indique l'horloge ?",match:t=>`🕐 Quelle horloge indique ${t} ?`}};

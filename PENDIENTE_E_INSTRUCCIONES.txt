@@ -3,7 +3,7 @@ ARCADE PRO — LO QUE QUEDA POR HACER E INSTRUCCIONES PARA CONTINUAR (Claude Cod
 
 OBJETIVO
 --------
-Rehacer en JS + emojis (sin Phaser) todos los juegos de https://emanueleferonato.com/games-covered/ para la
+Rehacer en JS + emojis los grandes éxitos de móvil de la lista de referencia para la
 colección Pro (pwa/indexpro.html), con niveles infinitos, animaciones, es/en y soporte TV. Plan: ~14 lotes de 10.
 Hechos: lotes 1–7 (90 juegos Pro, ver HECHO.txt).
 Pendiente también: demos propias para los juegos de acción, plataformas, un toque, física, estrategia y deportes
@@ -31,17 +31,17 @@ Criterios ya decididos:
   Knife Hit (ya existe aparte como "Knife Emohit"), Meowdoku (= Emojidoku).
 · Táctil SIN cruceta en pantalla; en TV, cruceta/cursor.
 
-PENDIENTE — PROPUESTA DE LOTES (título(s) Feronato → nombre propuesto: mecánica)
+PENDIENTE — PROPUESTA DE LOTES (título(s) de referencia → nombre propuesto: mecánica)
 --------------------------------------------------------------------------------
-Los marcados con (?) son títulos poco conocidos: antes de hacerlos, leer el artículo de Feronato
-(https://emanueleferonato.com/tag/<titulo>/ o buscar en su web) para copiar la MECÁNICA, no el arte.
+Los marcados con (?) son títulos poco conocidos: antes de hacerlos, buscar información sobre el juego original
+para copiar la MECÁNICA, no el arte.
 
 Lote 7 — puzles de tablero  ✅ HECHO (v2.5.0): Expande (Zhed), Portales (Warp Shift), Hexágonos (Hex FRVR),
   Lumina (Lumines), Deslizahéroes (Hero Slide), Sumacamino (Plus+Plus/zNumbers/Draw and Sum), Mazmorra (Dungeon Raid…),
   Fusiona bolas (Fuse Ballz), Cadena roja (Grindstone), Losas (Pyramids of Ra).
-  · Pendiente de este lote: Yanga (?) — no se encontró el artículo de Feronato (la web no era accesible desde el
+  · Pendiente de este lote: Yanga (?) — no se encontró información del juego original (la web no era accesible desde el
     entorno y la búsqueda solo devuelve "Yanga+", un Sokoban de ZX Spectrum). Si es eso, añadir "Yanga" al "origin"
-    de Almacén; si no, revisar en https://emanueleferonato.com/tag/yanga/.
+    de Almacén; si no, revisarlo más adelante.
   · Fuse Ballz se interpretó como "disparar bolas numeradas que se fusionan" (estilo Drop the Number): revisar el
     artículo original cuando haya acceso y ajustar la mecánica si difiere.
 Lote 8 — físicas y lanzamiento
@@ -94,7 +94,7 @@ Lote 13 — misceláneos
     Tambaleante como origen), Globe (hecho en Planetita como origen), Goat Rider (hecho en Esquí), GearTaker (?),
     DROP'd (?), Bubble Chaos (?), Bubbles 2 (?), Racing, Platform/Platform game (hecho en Saltarín) → revisar uno a uno.
 Lote 14 — repaso final
-  · Revisar que cada título de la lista de Feronato está cubierto o descartado (añadirlo al "origin" del juego
+  · Revisar que cada título de la lista de referencia está cubierto o descartado (añadirlo al "origin" del juego
     correspondiente si se fusiona).
   · Subir ARCADE_VERSION, regenerar todo, probar y empaquetar.
 
@@ -170,5 +170,5 @@ PROMPT SUGERIDO PARA CLAUDE CODE
 "Lee HECHO.txt, PENDIENTE_E_INSTRUCCIONES.txt y pwa/README.md. Continúa la colección Arcade Pro con el lote 8:
 crea cada juego en herramientas/src siguiendo la estructura de los existentes (es/en, niveles infinitos, tvHelp/tv,
 home:'indexpro.html'), regístralos en mkgames.py, constrúyelos con mk.py, sube ARCADE_VERSION, ejecuta build.py y
-las pruebas (tall.py, ttv.py, t8n.py) y corrige errores. Para los títulos marcados con (?) consulta primero el
-artículo de emanueleferonato.com para entender la mecánica."
+las pruebas (tall.py, ttv.py, t8n.py) y corrige errores. Para los títulos marcados con (?) busca primero
+información del juego original para entender la mecánica."

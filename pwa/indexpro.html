@@ -14,13 +14,13 @@
 <meta name="apple-mobile-web-app-title" content="Arcade Perdido">
 <link rel="stylesheet" href="common.css?v=6d7635e467">
 <script src="config.js?v=a2ee08541b"></script>
-<script>if (arcadeEsTV()) location.replace('indextv.html' + (location.search ? location.search + '&' : '?') + 'sec=pro');</script>
+<script>if (arcadeEsTV()) location.replace('indextv' + (location.search ? location.search + '&' : '?') + 'sec=pro');</script>
 </head>
 <body class="home pro">
 <style>body.pro{--bg1:#123a5a;--bg2:#0d1b2a;--accent:#4dd4ff}body.pro .brand h1{background:linear-gradient(90deg,#4dd4ff,#b197fc,#ff6b9d);-webkit-background-clip:text;background-clip:text;color:transparent}.chip.link{text-decoration:none}</style>
 <div class="wrap">
   <header class="brand" id="hdr"><div class="logo">✨</div><h1>Arcade Pro</h1></header>
-  <p class="tagline" data-i="tagline">Los éxitos de móvil que Emanuele Feronato recrea en Phaser, hechos aquí desde cero con JavaScript y emojis, con animaciones, hasta 120 niveles y tres modos de dificultad.</p>
+  <p class="tagline" data-i="tagline">Los grandes éxitos de los juegos de móvil, hechos desde cero con JavaScript y emojis, con animaciones, hasta 120 niveles y tres modos de dificultad.</p>
   <div class="search"><input type="search" id="q" placeholder="🔎 Buscar juego…" aria-label="Buscar" autocomplete="off" enterkeyhint="search"></div>
   <div class="bar" id="filters">
     <button class="chip on" data-f="" data-i="all">Todos</button>
@@ -28,7 +28,7 @@
     <button class="chip" data-f="Arrastrar" data-i="drag">✋ Arrastrar</button>
     <button class="chip" data-f="Deslizar" data-i="swipe">↔️ Deslizar</button>
     <button class="chip" data-f="Mantener" data-i="hold">✊ Mantener</button>
-    <a class="chip link" href="index.html" id="other" data-i="other">🕹️ Arcade Perdido</a>
+    <a class="chip link" href="./" id="other" data-i="other">🕹️ Arcade Perdido</a>
     <button class="chip" data-f="❤" data-i="favs">❤️ Favoritos</button>
     <button class="chip" id="tvmode" style="display:none" data-i="tv">📺 Modo TV</button>
     <button class="chip" id="lang" style="display:none"></button>
@@ -37,21 +37,21 @@
   <main class="grid" id="grid"></main>
   <p class="foot" id="foot"></p>
 </div>
-<script src="games.js?v=7ef99317c7"></script>
+<script src="games.js?v=a0d7239133"></script>
 <script>
 (function () {
   const get = (k, d) => { try { const v = localStorage.getItem('arc_' + k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } };
   const grid = document.getElementById('grid');
   const EN = arcadeIdioma() === 'en';
   document.documentElement.lang = EN ? 'en' : 'es';
-  const TX = { tagline: 'The mobile hits Emanuele Feronato recreates in Phaser, built here from scratch with JavaScript and emojis, with animations, up to 120 levels and three difficulty modes.', all: 'All', tap: '👆 Tap', drag: '✋ Drag', swipe: '↔️ Swipe', hold: '✊ Hold', other: '🕹️ Arcade Perdido', favs: '❤️ Favourites', tv: '📺 TV mode', install: '📲 Install' };
+  const TX = { tagline: 'The big mobile game hits, built from scratch with JavaScript and emojis, with animations, up to 120 levels and three difficulty modes.', all: 'All', tap: '👆 Tap', drag: '✋ Drag', swipe: '↔️ Swipe', hold: '✊ Hold', other: '🕹️ Arcade Perdido', favs: '❤️ Favourites', tv: '📺 TV mode', install: '📲 Install' };
   if (EN) { document.querySelectorAll('[data-i]').forEach(e => { if (TX[e.dataset.i]) e.textContent = TX[e.dataset.i]; }); document.title = 'Arcade Pro · Mobile hits with emojis'; }
   const loc = (g, k) => (EN && g.en && g.en[k]) || g[k];
   if ((ARCADE_CONFIG.idioma || 'auto') === 'auto') {
     const lb = document.getElementById('lang'); lb.style.display = 'inline-flex'; lb.textContent = EN ? '🇪🇸 Español' : '🇬🇧 English';
-    lb.addEventListener('click', () => { const nl = EN ? 'es' : 'en'; arcadeElegirIdioma(nl); location.search = '?lang=' + nl; });
+    lb.addEventListener('click', () => { const nl = EN ? 'es' : 'en'; arcadeElegirIdioma(nl); location.reload(); });
   }
-  { const o = document.getElementById('other'); o.href = 'index.html?lang=' + (EN ? 'en' : 'es');
+  { const o = document.getElementById('other'); o.href = './';
   }
   const norm = (t) => String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   const hay = (g) => norm([g.title, g.tag, g.desc, g.origin, g.ctrl, g.en && g.en.title, g.en && g.en.tag, g.en && g.en.desc].join(' '));
@@ -59,7 +59,7 @@
   function card(g, other) {
     const best = get('best_' + g.id, 0), done = get('done_' + g.id, false);
     const a = document.createElement('a');
-    a.className = 'gc'; a.href = g.file + '?lang=' + (EN ? 'en' : 'es'); a.style.setProperty('--c', g.color);
+    a.className = 'gc'; a.href = g.id; a.style.setProperty('--c', g.color);
     a.innerHTML = `${other ? `<span class="new" style="background:#9775fa">${other}</span>` : best ? '' : `<span class="new">${EN ? 'NEW' : 'NUEVO'}</span>`}
       <div class="em">${g.emoji}</div><h3>${loc(g, 'title')}</h3><div class="or">${g.origin}</div>
       <p>${loc(g, 'desc')}</p>
@@ -95,7 +95,7 @@
   // Cambio a modo TV (solo si la configuración lo permite)
   if (ARCADE_CONFIG.modo === 'seleccionable') {
     const tb = document.getElementById('tvmode'); tb.style.display = 'inline-flex';
-    tb.addEventListener('click', () => { arcadeElegirTV(true); location.href = 'indextv.html?sec=pro'; });
+    tb.addEventListener('click', () => { arcadeElegirTV(true); location.href = 'indextv?sec=pro'; });
   }
   // Instalación como app
   let deferred = null;
@@ -108,6 +108,7 @@
   const ios = /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.navigator.standalone;
   if (ios) ib.style.display = 'inline-flex';
   window.addEventListener('pageshow', () => render(document.querySelector('[data-f].on').dataset.f));
+  try { sessionStorage.setItem('arc_back', location.pathname + location.search); } catch (e) {}   /* 🏠 de los juegos vuelve aquí */
   try { if (window.arcadePWA) arcadePWA(); } catch (e) {}   /* PWA solo con window.withpwa = true */
 })();
 </script>

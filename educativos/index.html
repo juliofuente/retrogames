@@ -61,7 +61,7 @@
 
   <footer id="foot"></footer>
 </div>
-<script src="juegos.js?v=8fccf4213b"></script>
+<script src="juegos.js?v=71bb432557"></script>
 <script>
 (function () {
   var E = window.EDU, q = /[?&]lang=(es|en)/.exec(location.search), saved = null;
@@ -100,6 +100,7 @@
   function render() {
     var EN = lang === 'en';
     document.documentElement.lang = lang;
+    try { localStorage.setItem('arc_lang', lang); sessionStorage.setItem('arc_back', location.pathname + location.search); } catch (e) {}   // 🏠 de los juegos vuelve aquí
     document.querySelectorAll('[data-es]').forEach(function (el) { el.textContent = el.getAttribute(EN ? 'data-en' : 'data-es'); });
     document.title = (EN ? 'Educational games' : 'Juegos educativos') + ' · Arcade Perdido';
     document.getElementById('lang').textContent = EN ? '🇪🇸 Español' : '🇬🇧 English';

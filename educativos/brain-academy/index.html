@@ -92,7 +92,7 @@ button{cursor:pointer;border:none;background:none;touch-action:manipulation}
 <!-- PROFILES -->
 <section class="scr show" id="sProf">
   <div class="brand"><div class="lg">🧠</div><h1 id="appName">Emoji Brain Academy</h1><p data-t="tagline"></p></div>
-  <div class="toprow"><a class="ib" href="../../" title="🏠" style="text-decoration:none;display:inline-grid;place-items:center">🏠</a></div>
+  <div class="toprow"><a class="ib" href="../../" onclick="location.href=backUrl();return false" title="🏠" style="text-decoration:none;display:inline-grid;place-items:center">🏠</a></div>
   <div class="toprow" id="langRow"></div>
   <div class="panel" id="profPanel">
     <div class="h2"><span data-t="who"></span><button class="mini" id="editBtn"></button></div>
@@ -105,7 +105,7 @@ button{cursor:pointer;border:none;background:none;touch-action:manipulation}
 <section class="scr" id="sHub">
   <div class="hubtop">
     <div class="me"><span class="av" id="meAv"></span><div style="min-width:0"><b id="meNick"></b><small id="meInfo"></small></div></div>
-    <a class="ib" href="../../" title="🏠" style="text-decoration:none;display:grid;place-items:center">🏠</a>
+    <a class="ib" href="../../" onclick="location.href=backUrl();return false" title="🏠" style="text-decoration:none;display:grid;place-items:center">🏠</a>
     <button class="ib" id="langBtn">EN</button>
     <button class="ib" id="sndBtn">🔊</button>
     <button class="ib" id="swBtn" title="Players">👥</button>
@@ -488,7 +488,7 @@ function startGame(win,def){
   g.waveDone=()=>{if(!g.running)return;g.running=false;if(stopFn){stopFn();stopFn=null;}setTimeout(levelUp,500);};
 
   // ───── controls ─────
-  doc.querySelector('[data-a=home]').onclick=()=>{SFX.click();exit();location.href='../../';};   // 🏠 = portada general de todos los juegos
+  doc.querySelector('[data-a=home]').onclick=()=>{SFX.click();exit();location.href=backUrl();};   // 🏠 = página de la que se vino (o la portada general)
   doc.querySelector('[data-a=fav]').onclick=e=>{const on=toggleFav(def.id);e.currentTarget.textContent=on?'❤️':'🤍';if(on)SFX.ok();else SFX.click();};
   doc.querySelector('[data-a=snd]').onclick=e=>{S.sound=!S.sound;save();e.currentTarget.textContent=S.sound?'🔊':'🔇';if(S.sound)SFX.click();};
   const nb=$('.k-next');if(nb)nb.onclick=()=>{if(!g.solvedFlag||g.q>=ROUNDS||g.paused)return;SFX.whoosh();newRound();};
@@ -569,6 +569,8 @@ $('sndBtn').onclick=()=>{S.sound=!S.sound;save();if(S.sound)SFX.click();renderHu
 function openGame(g){ac();SFX.whoosh();const f=$('frame');f.src=g.file+'?v=1';f.classList.add('show');document.body.style.overflow='hidden';}
 function closeGame(){const f=$('frame');f.classList.remove('show');f.src='about:blank';document.body.style.overflow='';try{speechSynthesis.cancel();}catch(e){}renderHub();}
 
+// 🏠: la página de listado de la que se vino (sessionStorage 'arc_back', la guardan las portadas) o la portada general
+function backUrl(){try{const b=sessionStorage.getItem('arc_back');if(b&&b[0]==='/'&&b[1]!=='/')return b;}catch(e){}return '../../';}
 // ─── tiempo de juego → web PHP (POST ../../api/play, lo guarda data/stats.sqlite). Sin la web PHP falla en silencio ───
 const PLAY={id:null,s:0,p:0};
 function playUid(){let u=null;try{u=localStorage.getItem('arc_uid');}catch(e){}
@@ -593,7 +595,7 @@ window.Hub={start:startGame,U,M,D,SFX,FX,speak,data:loadData,get lang(){return S
 // ─── enlace directo: index.html?juego=<id>&edad=3|6|9&lang=es|en|fr ───
 // Abre el juego sin pasar por la lista. Si no hay perfil, crea uno de invitado con esa edad.
 function deepLink(all){
-  const q=new URLSearchParams(location.search),id=q.get('juego')||q.get('game'),l=q.get('lang'),age=+(q.get('edad')||q.get('age'));
+  const q=new URLSearchParams((window.ARCADE_EDU&&ARCADE_EDU.q)||location.search),id=q.get('juego')||q.get('game'),l=q.get('lang'),age=+(q.get('edad')||q.get('age'));
   if(LANGS.includes(l)&&S.lang!==l){S.lang=l;save();}
   const g=id&&all.find(x=>x.id===id);if(!g)return false;
   if(!prof()){const nick=S.lang==='en'?'Guest':S.lang==='fr'?'Invité':'Invitado';

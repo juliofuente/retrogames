@@ -2,7 +2,7 @@
 <html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>ABN Division</title></head>
 <body><script>
 const H=window.parent&&window.parent!==window?window.parent.Hub:null;
-if(!H){location.replace('../index.html');}
+if(!H){location.replace('../');}
 else{
 const {ri,pick,intChoices}=H.U;
 const TX={es:{title:(n,d)=>`➗ Divide ${n} entre ${d} quitando trozos grandes`,step:(r,d)=>`Quedan ${r}. ¿Cuál es el MAYOR número redondo de veces que cabe el ${d}? (10, 20, 100…)`,

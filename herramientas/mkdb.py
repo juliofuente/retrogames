@@ -12,13 +12,13 @@ ROOT = os.path.join(HERE, '..')
 DB = os.path.join(ROOT, 'data', 'arcade.sqlite')
 
 COLLECTIONS = [  # id, slug es, slug en, nombre es, nombre en, portada (desde la raíz), descripción es, descripción en, emoji
-    ('main', 'arcade-perdido', 'lost-arcade', 'Arcade Perdido', 'Lost Arcade', 'pwa/index.html',
+    ('main', 'arcade-perdido', 'lost-arcade', 'Arcade Perdido', 'Lost Arcade', 'pwa/',
      'Mecánicas de arcade de los 80 y 90 que fueron un éxito y nadie volvió a usar, rehechas para jugar con el dedo en el móvil o con el mando en la tele.',
      'Arcade mechanics from the 80s and 90s that were hits and nobody reused, remade to play with your finger on a phone or with the remote on a TV.', '🕹️'),
-    ('pro', 'arcade-pro', 'arcade-pro', 'Arcade Pro', 'Arcade Pro', 'pwa/indexpro.html',
-     'Los grandes éxitos de los juegos de móvil (los que recrea Emanuele Feronato en su blog) hechos con emojis, de 60 a 120 niveles con tres modos de dificultad y sin anuncios.',
-     'The big mobile game hits (the ones Emanuele Feronato recreates on his blog) made with emojis, 60 to 120 levels with three difficulty modes and no ads.', '✨'),
-    ('edu', 'educativos', 'educational', 'Educativos', 'Educational', 'educativos/index.html',
+    ('pro', 'arcade-pro', 'arcade-pro', 'Arcade Pro', 'Arcade Pro', 'pwa/indexpro',
+     'Los grandes éxitos de los juegos de móvil hechos con emojis, de 60 a 120 niveles con tres modos de dificultad y sin anuncios.',
+     'The big mobile game hits made with emojis, 60 to 120 levels with three difficulty modes and no ads.', '✨'),
+    ('edu', 'educativos', 'educational', 'Educativos', 'Educational', 'coleccion/educativos',
      'Juegos para aprender jugando, de 3 a 16 años: mates (también con método ABN), lengua y vocabulario, lógica e inglés. Organizados por asignatura y por edad.',
      'Games to learn through play, ages 3 to 16: maths (including the ABN method), language and vocabulary, logic and English. Organised by subject and age.', '🎓'),
 ]

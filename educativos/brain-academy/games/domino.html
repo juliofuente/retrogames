@@ -2,7 +2,7 @@
 <html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Domino Maths</title></head>
 <body><script>
 const H=window.parent&&window.parent!==window?window.parent.Hub:null;
-if(!H){location.replace('../index.html');}
+if(!H){location.replace('../');}
 else{
 const {ri,pick,shuf,intChoices}=H.U;
 const TX={es:{one:'🁫 ¿Cuántos puntos hay?',sum:'🁫 ¿Cuántos puntos hay en total en la ficha?',find:n=>`🁫 ¿Qué ficha tiene ${n} puntos en total?`,diff:'🁫 ¿Cuántos puntos MÁS tiene un lado que el otro?'},

@@ -54,7 +54,7 @@
   <main class="grid" id="grid"></main>
   <p class="hint" id="hint">🎮 <b>Cruceta</b> para elegir · <b>OK</b> para jugar · En partida, <b>Atrás</b> pausa · Varios jugadores juegan <b>por turnos</b></p>
 </div>
-<script src="games.js?v=7ef99317c7"></script>
+<script src="games.js?v=a0d7239133"></script>
 <script>
 (function () {
   const get = (k, d) => { try { const v = localStorage.getItem('arc_' + k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } };
@@ -79,12 +79,12 @@
   }
   if (ARCADE_CONFIG.modo === 'seleccionable') {
     const b = document.createElement('button'); b.className = 'chip'; b.textContent = EN ? '📱 Mobile mode' : '📱 Modo móvil';
-    b.addEventListener('click', () => { arcadeElegirTV(false); location.href = 'index.html?tv=0'; });
+    b.addEventListener('click', () => { arcadeElegirTV(false); location.href = './?tv=0'; });
     bar.appendChild(b);
   }
   if ((ARCADE_CONFIG.idioma || 'auto') === 'auto') {
     const b = document.createElement('button'); b.className = 'chip'; b.textContent = EN ? '🇪🇸 Español' : '🇬🇧 English';
-    b.addEventListener('click', () => { const nl = EN ? 'es' : 'en'; arcadeElegirIdioma(nl); location.search = '?sec=' + sec + '&lang=' + nl; });
+    b.addEventListener('click', () => { const nl = EN ? 'es' : 'en'; arcadeElegirIdioma(nl); location.search = '?sec=' + sec; });
     bar.appendChild(b);
   }
   const q = ARCADE_CONFIG.modo === 'modonormal' || ARCADE_CONFIG.modo === 'modotv' ? '' : '?tv=1';
@@ -94,7 +94,7 @@
     pro: ['✨ Arcade Pro', EN ? 'Mobile hits remade with emojis · played with the remote' : 'Éxitos de móvil rehechos con emojis · para jugar con el mando'] };
   for (const k of ['main', 'pro']) {
     const b = document.createElement('button'); b.className = 'chip sec'; b.dataset.sec = k; b.textContent = SECS[k][0];
-    b.addEventListener('click', () => { if (sec === k) return; sec = k; render(); setFocus(grid.firstElementChild); history.replaceState(null, '', '?sec=' + k + '&lang=' + (EN ? 'en' : 'es')); });
+    b.addEventListener('click', () => { if (sec === k) return; sec = k; render(); setFocus(grid.firstElementChild); history.replaceState(null, '', '?sec=' + k); try { sessionStorage.setItem('arc_back', location.pathname + location.search); } catch (e) {} });
     secs.appendChild(b);
   }
   bar.prepend(secs);
@@ -106,7 +106,7 @@
     document.getElementById('sub').textContent = SECS[sec][1];
     (sec === 'pro' ? GAMES_PRO : GAMES).filter((g) => g.tv).forEach((g) => {
       const a = document.createElement('a');
-      a.className = 'gc'; a.href = g.file + q + (q ? '&' : '?') + 'lang=' + (EN ? 'en' : 'es'); a.dataset.id = g.id; a.style.setProperty('--c', g.color);
+      a.className = 'gc'; a.href = g.id + q; a.dataset.id = g.id; a.style.setProperty('--c', g.color);
       const best = get('best_' + g.id, 0), lv = get('lv_' + g.id, 1);
       a.innerHTML = `<div class="em">${g.emoji}</div><h3>${loc(g, 'title')}</h3><div class="tg">${loc(g, 'tag') || loc(g, 'desc')}</div>
         <div class="ft"><span>${g.tv === 'cursor' ? '🎯 Cursor' : (EN ? '🎮 D-pad' : '🎮 Cruceta')}</span><span>👥 1–${MAXP}</span>${best ? `<span>🏆 ${best}</span>` : ''}${lv > 1 ? `<span>🚩 ${lv}</span>` : ''}</div>`;
@@ -153,6 +153,7 @@
   });
   const lastId = get('tvlast', null);
   setFocus((lastId && grid.querySelector(`[data-id="${lastId}"]`)) || grid.firstElementChild);
+  try { sessionStorage.setItem('arc_back', location.pathname + location.search); } catch (e) {}   /* 🏠 de los juegos vuelve aquí */
   try { if (window.arcadePWA) arcadePWA(); } catch (e) {}   /* PWA solo con window.withpwa = true */
 })();
 </script>
