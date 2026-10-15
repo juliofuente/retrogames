@@ -94,7 +94,8 @@
       const cs = s.cs, sh = s.shake ? Math.sin(s.shake * 60) * 4 : 0;
       ctx.fillStyle = 'rgba(0,0,0,.3)'; Arcade.rr(ctx, s.ox - 6 + sh, s.oy - 6, cs * C + 12, cs * R + 12, 14); ctx.fill();
       // columna apuntada
-      ctx.fillStyle = 'rgba(255,255,255,.08)'; Arcade.rr(ctx, s.ox + s.aim * cs + 3, s.oy, cs - 6, s.ly - s.oy, 10); ctx.fill();
+      const [lx] = Arcade.glide(s, s.ox + (s.aim + 0.5) * cs, 0, 26);   // el lanzador se desliza entre columnas
+      ctx.fillStyle = 'rgba(255,255,255,.08)'; Arcade.rr(ctx, lx - cs / 2 + 3, s.oy, cs - 6, s.ly - s.oy, 10); ctx.fill();
       const lr = landRow(s, s.aim);
       const ball = (x, y, v, z, a) => {
         const i = lg(v), c = COL[(i - 1) % COL.length];
@@ -105,10 +106,9 @@
         ctx.globalAlpha = 1;
       };
       if (lr >= 0 && !s.fly) ball(s.ox + (s.aim + 0.5) * cs, s.oy + (lr + 0.5) * cs, s.cur, cs * 0.42, 0.22);
-      for (let y = 0; y < R; y++) for (let x = 0; x < C; x++) { const v = s.b[y][x]; if (v) ball(s.ox + (x + 0.5) * cs + sh, s.oy + (y + 0.5) * cs, v.v, cs * 0.44 * (1 + v.pop * 0.18)); }
+      for (let y = 0; y < R; y++) for (let x = 0; x < C; x++) { const v = s.b[y][x]; if (v) { const [bx, by] = Arcade.glide(v, s.ox + (x + 0.5) * cs, s.oy + (y + 0.5) * cs, 20); ball(bx + sh, by, v.v, cs * 0.44 * (1 + v.pop * 0.18)); } }   // suben deslizándose
       if (s.fly) ball(s.ox + (s.fly.c + 0.5) * cs, s.fly.y, s.fly.v, cs * 0.42);
       // lanzador
-      const lx = s.ox + (s.aim + 0.5) * cs;
       Arcade.emoji(ctx, '🔺', lx, s.ly + cs * 0.55, cs * 0.4);
       if (!s.fly) ball(lx, s.ly, s.cur, cs * 0.42);
       Arcade.txt(ctx, 'Siguiente', s.ox + C * cs - 26, s.ly - cs * 0.62, 11, '#bac8ff', 'center', 800);

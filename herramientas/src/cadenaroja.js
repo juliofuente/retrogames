@@ -135,9 +135,10 @@
       const hp = heroPos(s);
       for (let y = 0; y < s.R; y++) for (let x = 0; x < s.C; x++) {
         const t = s.b[y][x]; if (!t) continue;
-        const px = s.ox + (x + 0.5) * cs, py = s.oy + (y + 0.5) * cs - (t.fall || 0) * cs * 0.8, on = onp.has(x + ',' + y);
+        const [px, py, k] = Arcade.glide(t, s.ox + (x + 0.5) * cs, s.oy + (y + 0.5) * cs), on = onp.has(x + ',' + y);   // caen deslizándose
         if (t.k === 'h') { ctx.fillStyle = 'rgba(255,255,255,.25)'; ctx.beginPath(); ctx.arc(px, py, cs * 0.44, 0, 6.3); ctx.fill(); Arcade.emoji(ctx, g.face(), px, py - Math.abs(Math.sin(g.rt * 4)) * 3, cs * 0.66); continue; }
-        if (t.k === 'gem') { Arcade.emoji(ctx, '💎', px, py, cs * (0.6 + Math.sin(g.rt * 5) * 0.05 + (t.pop || 0) * 0.3), { rot: Math.sin(g.rt * 2) * 0.2 }); if (on) { ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(px, py, cs * 0.42, 0, 6.3); ctx.stroke(); } continue; }
+        if (t.k === 'gem') { Arcade.emoji(ctx, '💎', px, py, Math.min(1, k) * cs * (0.6 + Math.sin(g.rt * 5) * 0.05 + (t.pop || 0) * 0.3), { rot: Math.sin(g.rt * 2) * 0.2 }); if (on) { ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(px, py, cs * 0.42, 0, 6.3); ctx.stroke(); } continue; }
+        if (k !== 1) { ctx.save(); ctx.translate(px, py); ctx.scale(k, k); ctx.translate(-px, -py); }
         const dim = col != null && col >= 0 && !on && t.col !== col;
         const angry = t.rage === 0, near = angry && adj(hp, [x, y]);
         ctx.globalAlpha = dim ? 0.35 : 1 - (t.fall || 0) * 0.4;
@@ -147,7 +148,7 @@
         const bite = t.bite ? Math.sin(t.bite * 20) * 4 : 0;
         Arcade.emoji(ctx, CR[t.col], px + bite, py, cs * (angry ? 0.6 + Math.sin(g.rt * 10) * 0.04 : 0.56));
         if (t.rage != null) Arcade.txt(ctx, angry ? '⚡' : t.rage, px + cs * 0.3, py - cs * 0.3, cs * 0.22, '#fff', 'center', 900, 'rgba(0,0,0,.7)');
-        ctx.globalAlpha = 1;
+        ctx.globalAlpha = 1; if (k !== 1) ctx.restore();
       }
     },
   });

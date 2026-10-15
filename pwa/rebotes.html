@@ -10,11 +10,11 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
-<link rel="stylesheet" href="common.css?v=6d7635e467">
+<link rel="stylesheet" href="common.css">
 </head>
 <body class="game">
-<script src="config.js?v=a32e41bd8d"></script>
-<script src="common.js?v=f345c0b76c"></script>
+<script src="config.js"></script>
+<script src="common.js"></script>
 <script>
 (function () {
   const { ri, rand, clamp } = Arcade;
@@ -120,13 +120,15 @@
       ctx.fillStyle = '#1c1c3a'; ctx.fillRect(s.ox, s.oy, C * s.cs, s.floor - s.oy);
       ctx.fillStyle = 'rgba(255,80,80,.35)'; ctx.fillRect(s.ox, s.oy + R * s.cs, C * s.cs, 2);
       for (const br of s.bricks) {
-        const x = s.ox + br.c * s.cs + 2, y = s.oy + br.r * s.cs + 2, z = s.cs - 4;
+        const [x, y, k] = Arcade.glide(br, s.ox + br.c * s.cs + 2, s.oy + br.r * s.cs + 2), z = s.cs - 4;   // bajan deslizándose
         const t = clamp(br.hp / (8 + s.turn * 1.5), 0, 1), hue = 200 - t * 200;
-        ctx.fillStyle = `hsl(${hue},75%,${55 + br.hit * 120}%)`; Arcade.rr(ctx, x, y, z, z, 8); ctx.fill();
-        Arcade.emoji(ctx, FACE[Math.min(FACE.length - 1, Math.floor(br.hp / 8))], x + z / 2, y + z * 0.4, z * 0.42);
-        Arcade.txt(ctx, br.hp, x + z / 2, y + z * 0.8, z * 0.28, '#fff', 'center', 900, 'rgba(0,0,0,.4)');
+        Arcade.scaled(ctx, x + z / 2, y + z / 2, k, () => {
+          ctx.fillStyle = `hsl(${hue},75%,${55 + br.hit * 120}%)`; Arcade.rr(ctx, x, y, z, z, 8); ctx.fill();
+          Arcade.emoji(ctx, FACE[Math.min(FACE.length - 1, Math.floor(br.hp / 8))], x + z / 2, y + z * 0.4, z * 0.42);
+          Arcade.txt(ctx, br.hp, x + z / 2, y + z * 0.8, z * 0.28, '#fff', 'center', 900, 'rgba(0,0,0,.4)');
+        });
       }
-      for (const pk of s.plus) { const px = s.ox + (pk.c + 0.5) * s.cs, py = s.oy + (pk.r + 0.5) * s.cs; Arcade.emoji(ctx, pk.star ? '⭐' : '➕', px, py, s.cs * (0.38 + Math.sin(g.rt * 6) * 0.04)); }
+      for (const pk of s.plus) { const [px, py, k] = Arcade.glide(pk, s.ox + (pk.c + 0.5) * s.cs, s.oy + (pk.r + 0.5) * s.cs); Arcade.scaled(ctx, px, py, k, () => Arcade.emoji(ctx, pk.star ? '⭐' : '➕', px, py, s.cs * (0.38 + Math.sin(g.rt * 6) * 0.04))); }
       ctx.fillStyle = '#fff';
       for (const b of s.balls) { ctx.beginPath(); ctx.arc(b.x, b.y, s.br, 0, 6.28); ctx.fill(); }
       // lanzador y mira

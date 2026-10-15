@@ -119,9 +119,8 @@
         if (run >= 2) Arcade.txt(ctx, run + '/' + NEED, x, hatY(s, st.length) + s.hh * 0.2, 11, run >= 4 ? '#ffd43b' : 'rgba(255,255,255,.6)', 'center', 900, 'rgba(0,0,0,.5)');
       }
       if (s.pair) {
-        const y = s.topY + s.hh * (s.py + 0.5);
-        Arcade.emoji(ctx, HATS[s.pair[0]], s.ox + (s.pc + 0.5) * cw, y, cw * 0.72);
-        Arcade.emoji(ctx, HATS[s.pair[1]], s.ox + (s.pc + 1.5) * cw, y, cw * 0.72);
+        const y = s.topY + s.hh * (s.py + 0.5), [px, , k] = Arcade.glide(s.pair, s.ox + (s.pc + 1) * cw, 0, 26);   // se desliza entre columnas
+        Arcade.scaled(ctx, px, y, k, () => { Arcade.emoji(ctx, HATS[s.pair[0]], px - cw / 2, y, cw * 0.72); Arcade.emoji(ctx, HATS[s.pair[1]], px + cw / 2, y, cw * 0.72); });
       }
       if (s.next) {
         Arcade.txt(ctx, 'Siguiente', W - 70, g.top + 12, 11, '#e9d8c4', 'center', 700);
