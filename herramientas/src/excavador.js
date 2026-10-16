@@ -1,0 +1,263 @@
+// Excavador|#2b1a0e
+(function () {
+  const { ri, rand, clamp, shuffle } = Arcade;
+  const D = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
+  const OPP = { up: 'down', down: 'up', left: 'right', right: 'left' };
+  const LAYER = ['#e8a33d', '#c9772b', '#a4511f', '#7a3418'];
+  const PSPD = 4.4, REACH = 3, POPN = 4;
+
+  const inB = (s, c, r) => c >= 0 && c < s.C && r >= 0 && r < s.R;
+  const dug = (s, c, r) => inB(s, c, r) && s.dug[r][c];
+  const rockAt = (s, c, r) => s.rocks.find((k) => !k.gone && k.c === c && Math.round(k.r) === r && !k.fall);
+  const solid = (s, c, r) => !inB(s, c, r) || !!rockAt(s, c, r);
+  const layerOf = (s, r) => clamp(Math.floor((r - 1) / ((s.R - 1) / 4)), 0, 3);
+
+  function gen(g) {
+    const s = g.s, C = s.C, R = s.R, L = g.lv;
+    s.dug = []; for (let r = 0; r < R; r++) s.dug.push(new Array(C).fill(r === 0));
+    s.start = { c: Math.floor(C / 2), r: Math.floor(R / 2) };
+    for (let r = 0; r <= s.start.r; r++) s.dug[r][s.start.c] = true;
+    s.dug[s.start.r][s.start.c - 1] = s.dug[s.start.r][s.start.c + 1] = true;
+    // enemigos, cada uno en su pequeño túnel lejos del jugador
+    const n = clamp(2 + Math.floor(L / 2), 2, 8), fire = L >= 3 ? clamp(Math.floor((n + 1) / 3), 1, 3) : 0;
+    s.en = []; s.homes = [];
+    for (let i = 0; i < n; i++) for (let t = 0; t < 60; t++) {
+      const hor = Math.random() < 0.6, c = ri(1, C - 2 - (hor ? 2 : 0)), r = ri(2, R - 2 - (hor ? 0 : 2));
+      const cells = [0, 1, 2].map((k) => (hor ? [c + k, r] : [c, r + k]));
+      if (cells.some(([x, y]) => Math.abs(x - s.start.c) + Math.abs(y - s.start.r) < 5 || x === s.start.c || s.homes.some(([hx, hy]) => Math.abs(hx - x) + Math.abs(hy - y) < 3))) continue;
+      cells.forEach(([x, y]) => (s.dug[y][x] = true));
+      const [x, y] = cells[1]; s.homes.push([x, y]);
+      s.en.push({ c: x, r: y, dir: hor ? 'left' : 'up', p: 0, moving: false, kind: i < fire ? 'fire' : 'puff', pump: 0, deflate: 0, ghost: 0, gx: 0, gy: 0, bored: rand(2, 5), flame: 0, prep: 0, fireCd: rand(2, 4) });
+      break;
+    }
+    // rocas: en tierra con tierra debajo, lejos de la columna del jugador
+    s.rocks = [];
+    const nr = clamp(2 + Math.floor(L / 4), 2, 5), spots = [];
+    for (let r = 2; r < R - 2; r++) for (let c = 0; c < C; c++) if (!s.dug[r][c] && !s.dug[r + 1][c] && !s.dug[r - 1][c] && Math.abs(c - s.start.c) > 1) spots.push([c, r]);
+    for (const [c, r] of shuffle(spots)) { if (s.rocks.length >= nr) break; if (s.rocks.some((k) => Math.abs(k.c - c) + Math.abs(k.r - r) < 3)) continue; s.rocks.push({ c, r, wob: 0, fall: false, gone: false, kills: 0 }); }
+  }
+  function geo(g) {
+    const s = g.s, Wa = g.W - 12, Ha = g.bot - g.top - 34;
+    s.cs = Math.min(Wa / s.C, Ha / s.R); s.ox = (g.W - s.cs * s.C) / 2; s.oy = g.top + 28 + (Ha - s.cs * s.R) / 2;
+  }
+  const pos = (s, m) => (m.ghost > 0 ? { x: s.ox + (m.gx + 0.5) * s.cs, y: s.oy + (m.gy + 0.5) * s.cs } : { x: s.ox + (m.c + 0.5 + (m.moving ? D[m.dir][0] * m.p : 0)) * s.cs, y: s.oy + (m.r + 0.5 + (m.moving ? D[m.dir][1] * m.p : 0)) * s.cs });
+  const cellPos = (m) => (m.ghost > 0 ? [m.gx, m.gy] : [m.c + (m.moving ? D[m.dir][0] * m.p : 0), m.r + (m.moving ? D[m.dir][1] * m.p : 0)]);
+
+  // siguiente dirección por los túneles hacia (tc, tr); null si no hay camino
+  function bfsDir(s, c, r, tc, tr, any) {
+    const prev = new Map([[c + ',' + r, null]]), q = [[c, r]];
+    while (q.length) {
+      const [x, y] = q.shift();
+      if (x === tc && y === tr) { let k = x + ',' + y, last = null; while (prev.get(k)) { last = k; k = prev.get(k); } if (!last) return null; const [lx, ly] = last.split(',').map(Number); return Object.keys(D).find((d) => D[d][0] === lx - c && D[d][1] === ly - r); }
+      for (const d in D) { const nx = x + D[d][0], ny = y + D[d][1], k = nx + ',' + ny; if (prev.has(k) || !inB(s, nx, ny) || solid(s, nx, ny) || (!any && !s.dug[ny][nx])) continue; prev.set(k, x + ',' + y); q.push([nx, ny]); }
+    }
+    return null;
+  }
+  function hose(g) { // ¿a qué enemigo alcanza la manguera?
+    const s = g.s, pl = s.pl, [dx, dy] = D[pl.face];
+    let c = pl.c, r = pl.r;
+    for (let k = 1; k <= REACH; k++) {
+      c += dx; r += dy; if (!dug(s, c, r) || rockAt(s, c, r)) return { len: k - 1, e: null };
+      const e = s.en.find((m) => !m.dead && m.ghost <= 0 && Math.abs(cellPos(m)[0] - c) < 0.6 && Math.abs(cellPos(m)[1] - r) < 0.6);
+      if (e) return { len: k, e };
+    }
+    return { len: REACH, e: null };
+  }
+  function pump(g) {
+    const s = g.s, pl = s.pl; if (s.dead || s.done) return;
+    if (pl.moving) { pl.pumpQ = true; return; }
+    const h = hose(g); s.hoseT = 0.25; s.hoseLen = h.len; pl.want = null;
+    if (!h.e) { Arcade.tone(500, 0.05, 'square', 0.04); s.hooked = null; return; }
+    const e = h.e; s.hooked = e; e.pump++; e.deflate = 0.7; e.moving = false;
+    Arcade.tone(300 + e.pump * 120, 0.08, 'triangle', 0.09);
+    if (e.pump >= POPN) {
+      e.dead = true; s.hooked = null; const p = pos(s, e), depth = layerOf(s, e.r);
+      let pts = [200, 300, 400, 500][depth]; if (e.kind === 'fire' && (pl.face === 'left' || pl.face === 'right')) pts *= 2;
+      g.addScore(pts * Math.max(1, Math.round(g.lv / 2)), p.x, p.y - 10); Arcade.sfx.pop(); g.burst(p.x, p.y, { n: 14, emoji: '💥', size: 14, speed: 160 });
+    }
+  }
+  function enemyStep(g, e, dt) {
+    const s = g.s, pl = s.pl, spd = (1.9 + Math.min(g.lv, 16) * 0.09) * (s.en.filter((m) => !m.dead).length === 1 ? 1.3 : 1);
+    if (e.pump > 0) { e.deflate -= dt; if (e.deflate <= 0) { e.pump--; e.deflate = 0.5; if (s.hooked === e && e.pump === 0) s.hooked = null; } return; }
+    if (e.flame > 0) { e.flame -= dt; return; }
+    if (e.prep > 0) { e.prep -= dt; if (e.prep <= 0) { e.flame = 0.7; Arcade.tone(160, 0.5, 'sawtooth', 0.07, 200); } return; }
+    if (e.ghost > 0) { // atraviesa la tierra hacia el jugador
+      const tx = pl.c - e.gx, ty = pl.r - e.gy, d = Math.hypot(tx, ty) || 1, v = spd * 0.6 * dt;
+      e.gx += tx / d * v; e.gy += ty / d * v; e.ghost -= dt;
+      const c = Math.round(e.gx), r = Math.round(e.gy);
+      if (e.ghost < 1.2 && dug(s, c, r) && !rockAt(s, c, r) && Math.hypot(c - e.gx, r - e.gy) < 0.15) { e.c = c; e.r = r; e.ghost = 0; e.moving = false; e.bored = rand(3, 6); }
+      if (e.ghost <= 0 && !(dug(s, c, r))) e.ghost = 0.5;
+      return;
+    }
+    if (e.moving) { e.p += spd * dt; if (e.p < 1) return; e.c += D[e.dir][0]; e.r += D[e.dir][1]; e.p = 0; e.moving = false; }
+    // dragón: escupe fuego si el jugador está en su fila y cerca
+    e.fireCd -= dt;
+    if (e.kind === 'fire' && e.fireCd <= 0 && pl.r === e.r && Math.abs(pl.c - e.c) <= 4) { e.dir = pl.c < e.c ? 'left' : 'right'; e.prep = 0.7; e.fireCd = rand(3, 5); return; }
+    let d = bfsDir(s, e.c, e.r, pl.c, pl.r, false);
+    e.bored -= dt * (d ? 0.4 : 1);
+    if (e.bored <= 0) { e.ghost = 3; e.gx = e.c; e.gy = e.r; e.bored = rand(4, 7); return; }
+    if (!d || Math.random() < 0.15) { const opts = Object.keys(D).filter((k) => dug(s, e.c + D[k][0], e.r + D[k][1]) && !solid(s, e.c + D[k][0], e.r + D[k][1])); const fw = opts.filter((k) => k !== OPP[e.dir]); d = (fw.length ? shuffle(fw) : opts)[0]; }
+    if (d) { e.dir = d; e.moving = true; }
+  }
+  const flameCells = (e) => { const dx = D[e.dir][0] || 1; return [1, 2].map((k) => [e.c + dx * k, e.r]); };
+  function killPlayer(g, why) {
+    const s = g.s, p = pos(s, s.pl); s.dead = 1.2; s.hooked = null; g.mood('hurt', 1.2);
+    g.burst(p.x, p.y, { n: 16, color: why === 'rock' ? ['#868e96', '#fff'] : ['#ff922b', '#fff'], speed: 200 });
+  }
+  function resetPos(s) {
+    const pl = s.pl; pl.c = s.start.c; pl.r = s.start.r; pl.moving = false; pl.want = null; s.inv = 2;
+    s.en.forEach((e, i) => { if (e.dead) return; const [x, y] = s.homes[i]; Object.assign(e, { c: x, r: y, moving: false, p: 0, ghost: 0, pump: 0, flame: 0, prep: 0 }); });
+  }
+
+  Arcade.game({
+    /*THEME*/ tag: 'Cava, hincha y ¡pum!', deco: ['⛏️', '👺', '🐉', '💥', '🍆', '🌑'], font: 'impact', bg: ['#4a2c12', '#2b1a0e'],
+    music: { mode: 'major', bpm: 132, wave: 'square', style: 'march', root: 60 }, voice: { wave: 'square', mul: 1, echo: 0.2 },
+    /*EN*/ en: { title: 'Digger', tag: 'Dig, pump and pop!', help: '<b>Drag</b> (or hold an arrow) to walk: wherever you go you dig a tunnel. <b>Tap</b> to throw the <b>pump</b> forwards along the tunnel and keep tapping to inflate the monster until it <b>pops</b>. If you stop pumping it deflates. 👺 monsters and 🐉 dragons chase you through the tunnels and, when they get bored, cross the earth as ghosts. Dragons breathe fire along their row. Dig under a <b>rock</b> to drop it on them. Pop every monster to clear the level. The deeper, the more points; after two rocks a vegetable 🍆 appears.', tvHelp: 'D-pad to dig · OK to pump.', dict: { 'Monstruos: ': 'Monsters: ' } },
+    /*TV*/ tvHelp: 'Cruceta para cavar · OK para hinchar.',
+    id: 'excavador', title: 'Excavador', emoji: '⛏️', color: '#ffa94d', origin: 'Dig Dug (Namco, 1982)',
+    help: '<b>Arrastra</b> (o mantén una flecha) para andar: por donde pasas, cavas un túnel. <b>Toca</b> para lanzar el <b>hinchador</b> hacia delante por el túnel y sigue tocando para inflar al monstruo hasta que <b>reviente</b>. Si dejas de hinchar, se deshincha. Los monstruos 👺 y los dragones 🐉 te persiguen por los túneles y, cuando se aburren, cruzan la tierra como fantasmas. Los dragones escupen fuego por su fila. Cava debajo de una <b>roca</b> para tirársela encima. Revienta a todos para pasar de nivel. Cuanto más hondo, más puntos; tras dos rocas aparece una verdura 🍆.',
+    lives: 3, levels: 0, cap: 20,
+    setup(g) {
+      g.s = { inv: 1.5, hoseT: 0, hoseLen: 0, hooked: null, dead: 0, rocksDown: 0, veg: null, stick: null, kdir: null };
+      const s = g.s;
+      if (g.W < g.H) { s.C = 11; s.R = 14; } else { s.C = 17; s.R = 10; }
+      gen(g); geo(g);
+      s.pl = { c: s.start.c, r: s.start.r, dir: 'down', face: 'down', p: 0, moving: false, want: null };
+    },
+    layout(g) { if (g.s.dug) geo(g); },
+    down(g, p) { const s = g.s; if (!s.stick) s.stick = { id: p.id, x: p.x, y: p.y, dir: null }; },
+    move(g, p) {
+      const s = g.s, st = s.stick; if (!st || st.id !== p.id) return;
+      const dx = p.x - st.x, dy = p.y - st.y; if (Math.hypot(dx, dy) < 14) return;
+      st.dir = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : dy > 0 ? 'down' : 'up';
+      if (Math.hypot(dx, dy) > 60) { st.x = p.x - dx * 0.5; st.y = p.y - dy * 0.5; }   // el centro sigue al dedo
+    },
+    up(g, p) { const s = g.s; if (s.stick && s.stick.id === p.id) s.stick = null; },
+    tap(g) { pump(g); },
+    key(g, k, d) {
+      const s = g.s, m = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right' }[k];
+      if (m) { if (d) s.kdir = m; else if (s.kdir === m) s.kdir = null; } else if (k === ' ' && d) pump(g);
+    },
+    /*SC*/ demo(g) {
+      const s = g.s, pl = s.pl; if (s.dead || s.done || pl.moving) return { wait: 0.03 };
+      const live = s.en.filter((e) => !e.dead); if (!live.length) return { wait: 0.3 };
+      // si hay un monstruo a tiro en línea, mira hacia él e hincha
+      for (const d in D) { pl.face0 = pl.face; pl.face = d; const h = hose(g); pl.face = pl.face0; if (h.e) { if (pl.face !== d) return { key: 'Arrow' + d[0].toUpperCase() + d.slice(1), dur: 0.02, after: 0 }; return { key: ' ', dur: 0.05, after: 0.12, say: h.e.pump === 0 ? Arcade.T('¡Hínchalo hasta que reviente!', 'Pump it until it pops!') : null }; } }
+      // si no, cava hacia el más cercano, sin pegarse a él
+      if (!s.botE || s.botE.dead) s.botE = live.sort((a, b) => Math.abs(a.c - pl.c) + Math.abs(a.r - pl.r) - Math.abs(b.c - pl.c) - Math.abs(b.r - pl.r))[0];   // se fija en uno hasta reventarlo
+      const e = s.botE;
+      const [ec, er] = cellPos(e).map(Math.round), K = (d) => 'Arrow' + d[0].toUpperCase() + d.slice(1);
+      const dist = Math.abs(ec - pl.c) + Math.abs(er - pl.r);
+      if (s.botLine && s.botLine.n > 0) { const d = s.botLine.d, nc = pl.c + D[d][0], nr = pl.r + D[d][1]; s.botLine.n--; if (inB(s, nc, nr) && !solid(s, nc, nr)) return { key: K(d), dur: 0.9 / PSPD, after: 0 }; s.botLine = null; }
+      if ((ec === pl.c || er === pl.r) && dist <= REACH + 1 && dist > 1) {   // en línea: cava hacia él lo que haya en medio
+        const fd = ec > pl.c ? 'right' : ec < pl.c ? 'left' : er > pl.r ? 'down' : 'up';
+        s.botLine = { d: fd, n: dist - 2 };
+        return { key: K(fd), dur: 0.9 / PSPD, after: 0 };
+      }
+      const dir = bfsDir(s, pl.c, pl.r, ec, er, true);
+      if (!dir) return { wait: 0.15 };
+      return { key: 'Arrow' + dir[0].toUpperCase() + dir.slice(1), dur: 0.9 / PSPD, after: 0, say: s.t0 ? null : (s.t0 = 1, Arcade.T('Cava túneles hasta los monstruos', 'Dig tunnels towards the monsters')) };
+    },
+    update(g, dt) {
+      const s = g.s, pl = s.pl; if (!s.dug) return;
+      s.inv = Math.max(0, s.inv - dt); if (s.hoseT > 0) s.hoseT -= dt;
+      if (s.dead) { s.dead -= dt; if (s.dead <= 0) { s.dead = 0; if (g.state === 'play' && g.die()) resetPos(s); } return; }
+      if (s.done) return;
+      // jugador
+      const want = s.kdir || (s.stick && s.stick.dir);
+      if (want && s.hooked) s.hooked = null;
+      if (pl.moving) {
+        if (want === OPP[pl.dir]) { pl.c += D[pl.dir][0]; pl.r += D[pl.dir][1]; pl.dir = want; pl.face = want; pl.p = 1 - pl.p; }
+        pl.p += PSPD * dt * (s.dug[pl.r + D[pl.dir][1]] && s.dug[pl.r + D[pl.dir][1]][pl.c + D[pl.dir][0]] ? 1 : 0.75);
+        if (pl.p >= 1) { pl.c += D[pl.dir][0]; pl.r += D[pl.dir][1]; pl.p = 0; pl.moving = false; if (pl.pumpQ) { pl.pumpQ = false; pump(g); } }
+      }
+      if (pl.turnT > 0) pl.turnT -= dt;
+      if (!pl.moving && want && !s.hooked && pl.face !== want) { pl.face = want; pl.turnT = 0.07; }   // parado: primero se gira (así puede apuntar sin moverse)
+      else if (!pl.moving && want && !s.hooked && !(pl.turnT > 0)) {
+        const nc = pl.c + D[want][0], nr = pl.r + D[want][1];
+        if (inB(s, nc, nr) && !solid(s, nc, nr)) { pl.dir = want; pl.moving = true; if (!s.dug[nr][nc]) { s.dug[nr][nc] = true; g.addScore(10); if (Math.random() < 0.3) Arcade.tone(90 + Math.random() * 40, 0.04, 'square', 0.03); } }
+      }
+      // rocas
+      for (const k of s.rocks) {
+        if (k.gone) continue;
+        if (!k.fall) {
+          const below = dug(s, k.c, k.r + 1) && !rockAt(s, k.c, k.r + 1), plUnder = pl.c === k.c && pl.r === k.r + 1 && !pl.moving;
+          if (below && !plUnder) { k.wob += dt; if (k.wob > 0.7) { k.fall = true; k.r0 = k.r; s.dug[k.r][k.c] = true; Arcade.sfx.whoosh(); } } else k.wob = 0;
+          continue;
+        }
+        k.r += 7 * dt;
+        const rc = Math.floor(k.r + 0.5);
+        for (const e of s.en) if (!e.dead) { const [x, y] = cellPos(e); if (Math.abs(x - k.c) < 0.6 && y >= k.r - 0.2 && y <= k.r + 0.9) { e.dead = true; k.kills++; const p = pos(s, e); g.addScore(1000 * k.kills, p.x, p.y); Arcade.sfx.hit(); g.burst(p.x, p.y, { n: 12, emoji: '💫', size: 12 }); if (s.hooked === e) s.hooked = null; } }
+        { const [x, y] = cellPos(pl); if (!(s.inv > 0) && Math.abs(x - k.c) < 0.6 && y >= k.r - 0.2 && y <= k.r + 0.9) { killPlayer(g, 'rock'); } }
+        if (!dug(s, k.c, rc + 1) || rockAt(s, k.c, rc + 1)) {
+          k.gone = true; s.rocksDown++; const x = s.ox + (k.c + 0.5) * s.cs, y = s.oy + (rc + 0.5) * s.cs;
+          g.burst(x, y, { n: 14, color: ['#868e96', '#495057', '#adb5bd'], speed: 160, size: 4 }); g.shake(0.2, 5); Arcade.tone(80, 0.25, 'square', 0.1, -40);
+          if (s.rocksDown === 2 && !s.veg) s.veg = { c: s.start.c, r: s.start.r, t: 10 };
+        }
+      }
+      if (s.dead) return;
+      // verdura
+      if (s.veg) { s.veg.t -= dt; if (s.veg.t <= 0) s.veg = null; else if (pl.c === s.veg.c && pl.r === s.veg.r) { const x = s.ox + (pl.c + 0.5) * s.cs, y = s.oy + (pl.r + 0.5) * s.cs; g.addScore(500 * Math.max(1, g.lv), x, y); Arcade.sfx.coin(); s.veg = null; } }
+      // enemigos
+      const pp = cellPos(pl);
+      for (const e of s.en) {
+        if (e.dead) continue;
+        enemyStep(g, e, dt);
+        if (s.inv > 0 || e.pump > 0) continue;
+        const ep = cellPos(e);
+        if (Math.hypot(ep[0] - pp[0], ep[1] - pp[1]) < 0.62) { killPlayer(g, 'en'); break; }
+        if (e.flame > 0 && flameCells(e).some(([x, y]) => Math.abs(x - pp[0]) < 0.6 && Math.abs(y - pp[1]) < 0.5)) { killPlayer(g, 'fire'); break; }
+      }
+      if (s.en.every((e) => e.dead) && !s.done) { s.done = true; g.confetti(60); g.addScore(1000 * g.lv, g.W / 2, g.H / 2); setTimeout(() => { if (g.state === 'play') g.win(); }, 700); }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      ctx.fillStyle = '#2b1a0e'; ctx.fillRect(0, 0, W, H);
+      if (!s.dug) return;
+      const cs = s.cs, ox = s.ox, oy = s.oy;
+      // cielo y capas de tierra
+      ctx.fillStyle = '#74c0fc'; ctx.fillRect(ox, oy, cs * s.C, cs);
+      Arcade.emoji(ctx, '🌼', ox + cs * 1.5, oy + cs * 0.7, cs * 0.5); Arcade.emoji(ctx, '🌷', ox + cs * (s.C - 1.5), oy + cs * 0.7, cs * 0.5);
+      for (let r = 1; r < s.R; r++) { ctx.fillStyle = LAYER[layerOf(s, r)]; ctx.fillRect(ox, oy + r * cs, cs * s.C, cs + 0.5); }
+      ctx.fillStyle = 'rgba(0,0,0,.08)'; for (let r = 1; r < s.R; r++) for (let c = 0; c < s.C; c++) if ((r * 7 + c * 13) % 5 === 0) { ctx.beginPath(); ctx.arc(ox + (c + 0.3) * cs, oy + (r + 0.6) * cs, cs * 0.06, 0, 6.3); ctx.fill(); }
+      // túneles (con uniones entre casillas vecinas)
+      ctx.fillStyle = '#1a0f07'; const m = cs * 0.12;
+      for (let r = 1; r < s.R; r++) for (let c = 0; c < s.C; c++) if (s.dug[r][c]) {
+        Arcade.rr(ctx, ox + c * cs + m, oy + r * cs + m, cs - 2 * m, cs - 2 * m, cs * 0.3); ctx.fill();
+        if (dug(s, c + 1, r)) ctx.fillRect(ox + (c + 0.5) * cs, oy + r * cs + m, cs, cs - 2 * m);
+        if (dug(s, c, r + 1)) ctx.fillRect(ox + c * cs + m, oy + (r + 0.5) * cs, cs - 2 * m, cs);
+        if (dug(s, c + 1, r) && dug(s, c, r + 1) && dug(s, c + 1, r + 1)) ctx.fillRect(ox + (c + 0.5) * cs, oy + (r + 0.5) * cs, cs, cs);
+        if (r === 1 && s.dug[0][c]) ctx.fillRect(ox + c * cs + m, oy + cs * 0.9, cs - 2 * m, cs * 0.6);
+      }
+      // rocas
+      for (const k of s.rocks) if (!k.gone) {
+        const x = ox + (k.c + 0.5) * cs + (k.wob > 0 && !k.fall ? Math.sin(g.rt * 40) * 2 : 0), y = oy + (k.r + 0.5) * cs;
+        ctx.fillStyle = '#868e96'; ctx.beginPath(); ctx.ellipse(x, y, cs * 0.46, cs * 0.4, 0, 0, 6.3); ctx.fill();
+        ctx.fillStyle = '#adb5bd'; ctx.beginPath(); ctx.ellipse(x - cs * 0.12, y - cs * 0.12, cs * 0.18, cs * 0.12, -0.4, 0, 6.3); ctx.fill();
+        ctx.strokeStyle = '#495057'; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(x, y, cs * 0.46, cs * 0.4, 0, 0, 6.3); ctx.stroke();
+      }
+      if (s.veg) Arcade.emoji(ctx, '🍆', ox + (s.veg.c + 0.5) * cs, oy + (s.veg.r + 0.5) * cs, cs * 0.7, { alpha: s.veg.t < 2 && Math.floor(g.rt * 8) % 2 ? 0.4 : 1 });
+      // enemigos
+      for (const e of s.en) {
+        if (e.dead) continue;
+        const p = pos(s, e), base = e.kind === 'fire' ? '🐉' : '👺';
+        if (e.ghost > 0) { Arcade.emoji(ctx, base, p.x, p.y, cs * 0.6, { alpha: 0.35 + 0.15 * Math.sin(g.rt * 10) }); Arcade.emoji(ctx, '👀', p.x, p.y - cs * 0.05, cs * 0.4); continue; }
+        if (e.pump > 0) { const k = 1 + e.pump * 0.28; Arcade.emoji(ctx, base, p.x, p.y, cs * 0.75 * k, { alpha: 0.95, sy: 1 - e.pump * 0.05 }); continue; }
+        if (e.prep > 0) { ctx.fillStyle = 'rgba(255,146,43,' + (0.3 + 0.3 * Math.sin(g.rt * 30)) + ')'; ctx.beginPath(); ctx.arc(p.x, p.y, cs * 0.5, 0, 6.3); ctx.fill(); }
+        Arcade.emojiTo(ctx, base, p.x, p.y + Math.sin(g.rt * 10 + e.c) * 1.5, cs * 0.75, D[e.dir][0], D[e.dir][1], { mode: 'flip' });
+        if (e.flame > 0) for (const [x, y] of flameCells(e)) Arcade.emoji(ctx, '🔥', ox + (x + 0.5) * cs, oy + (y + 0.5) * cs, cs * (0.6 + 0.2 * Math.sin(g.rt * 25)));
+      }
+      // manguera
+      const pp = pos(s, s.pl), [fx, fy] = D[s.pl.face];
+      const len = s.hooked ? Math.hypot(cellPos(s.hooked)[0] - s.pl.c, cellPos(s.hooked)[1] - s.pl.r) : s.hoseT > 0 ? s.hoseLen + 0.4 : 0;
+      if (len > 0 && !s.dead) { ctx.strokeStyle = '#e9ecef'; ctx.lineWidth = Math.max(2, cs * 0.08); ctx.setLineDash([cs * 0.15, cs * 0.08]); ctx.beginPath(); ctx.moveTo(pp.x, pp.y); ctx.lineTo(pp.x + fx * len * cs, pp.y + fy * len * cs); ctx.stroke(); ctx.setLineDash([]); }
+      // jugador
+      if (!(s.inv > 0 && Math.floor(g.rt * 10) % 2)) {
+        if (s.dead) Arcade.emoji(ctx, '😵', pp.x, pp.y, cs * 0.8, { rot: g.rt * 8 });
+        else { Arcade.emojiTo(ctx, g.face(), pp.x, pp.y, cs * 0.8, fx, fy, { mode: 'flip' }); Arcade.emoji(ctx, '⛑️', pp.x, pp.y - cs * 0.32, cs * 0.42); }
+      }
+      if (s.stick && s.stick.dir) { ctx.globalAlpha = 0.25; ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(s.stick.x, s.stick.y, 30, 0, 6.3); ctx.stroke(); ctx.globalAlpha = 1; }
+      Arcade.txt(ctx, 'Monstruos: ' + s.en.filter((e) => !e.dead).length, W / 2, oy - 14, 15, '#ffe8cc', 'center', 900);
+    },
+  });
+})();
