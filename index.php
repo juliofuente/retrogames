@@ -79,7 +79,9 @@ function T(string $es, string $en): string { global $L; return $L === 'en' ? $en
 function f(array $row, string $field): string { global $L; return (string)($row[$field . '_' . $L] ?? $row[$field . '_es'] ?? ''); }
 function home_url(?string $lang = null): string { global $L; return url(($lang ?? $L) === 'en' ? '/en/' : '/'); }
 function game_path(array $g, ?string $lang = null): string { global $L; return ($lang ?? $L) === 'en' ? '/en/game/' . $g['slug_en'] : '/juego/' . $g['id']; }
-function play_path(array $g, ?string $lang = null): string { global $L; return '/' . $g['id'] . (($lang ?? $L) === 'en' ? '/en' : ''); }
+// educativos que en realidad son juegos arcade (url pwa/<id>, ver ARCADE_EDU en mkedu.py): se juegan en el juego de siempre
+function edu_ref(array $g): ?string { return $g['collection_id'] === 'edu' && strpos((string)$g['url'], 'pwa/') === 0 ? substr($g['url'], 4) : null; }
+function play_path(array $g, ?string $lang = null): string { global $L; return '/' . (edu_ref($g) ?? $g['id']) . (($lang ?? $L) === 'en' ? '/en' : ''); }
 function cat_path(array $c, ?string $lang = null): string { global $L; return ($lang ?? $L) === 'en' ? '/en/category/' . $c['slug_en'] : '/categoria/' . $c['slug_es']; }
 function col_path(array $c, ?string $lang = null): string { global $L; return ($lang ?? $L) === 'en' ? '/en/collection/' . $c['slug_en'] : '/coleccion/' . $c['slug_es']; }
 function ctrl_path(array $c, ?string $lang = null): string { global $L; return ($lang ?? $L) === 'en' ? '/en/control/' . $c['slug_en'] : '/control/' . $c['slug_es']; }
@@ -954,6 +956,7 @@ if (count($seg) === 2) {
 juego:
 if (!$EN && (count($seg) === 1 || (count($seg) === 2 && ($arg === 'es' || $arg === 'en'))) && isset($GAMES[$k])) {
   $g = $GAMES[$k];
+  if (is_edu($g) && ($r = edu_ref($g)) !== null) redirect(url('/' . $r . ($arg ? '/' . $arg : '')));
   if (is_edu($g)) serve_edu($g, $arg);
   serve_game($g, $arg);
 }

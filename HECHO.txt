@@ -1,6 +1,22 @@
 ARCADE PERDIDO + ARCADE PRO — LO QUE ESTÁ HECHO
 ================================================
-Fecha: 16-10-2026 · Versión de la PWA (games.js → ARCADE_VERSION): 2.17.0
+Fecha: 16-10-2026 · Versión de la PWA (games.js → ARCADE_VERSION): 2.18.0
+· v2.18.0:
+  - Juegos de números también en Educativos › Mates: Sumas, Sumacamino, Treses, Cambio, Cientos, Dados, Expande y
+    Fusiona bolas. Se definen en ARCADE_EDU (herramientas/mkedu.py) con su edad y descripción educativa; no son
+    copias: en la base de datos son entradas «edu» con url pwa/<id> (id <id>-mates) y index.php (edu_ref) hace que
+    «Jugar» lleve al juego de siempre (/<id>), y /<id>-mates redirige allí. educativos/index.html enlaza a ../pwa/<id>.
+  - Cinta (Klax): fichas sin emojis (baldosas con brillo y bisel), cinta con luces y rodillos, cubeta de cristal,
+    ficha fantasma que enseña dónde caerá y brilla si hará KLAX (y flechas sobre las otras columnas que lo harían),
+    sonidos musicales (notas al atrapar, acorde al hacer KLAX, tic al acercarse una ficha). Más fácil: 5 fallos en
+    vez de 3, cinta más lenta, menos fichas, 3 colores al principio (máx. 5), objetivos más cortos y no salen dos
+    fichas seguidas en el mismo carril. En apaisado/TV, paneles laterales con objetivo, fallos y pila.
+  - Centro (Zoop): carriles de 5 casillas en los cuatro lados, iguales en vertical y en apaisado (antes dependían del
+    tamaño de pantalla). Piezas sin emojis (baldosas con su forma dibujada; la bomba también dibujada), estanque
+    animado, rayo con brillo, aviso de por dónde entrará la siguiente pieza y carril que parpadea en rojo cuando
+    está lleno. Más fácil: 3 vidas (al desbordarse un carril se pierde una y el carril se vacía), empieza con 2
+    colores, más lento al principio. Con un bot de reflejos humanos (~0,8 s por disparo) la primera vida se pierde
+    hacia el nivel 12 (antes se perdía la partida al minuto).
 · v2.17.0: nuevo juego clásico en el Arcade Perdido: Excavador / Digger (mecánica de Dig Dug, Namco 1982). Cavas
   túneles arrastrando (o con la cruceta), tocas para lanzar el hinchador e inflar a los monstruos 👺 hasta que
   revientan, los dragones 🐉 (desde el nivel 3) escupen fuego por su fila, los monstruos aburridos cruzan la tierra

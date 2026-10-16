@@ -61,7 +61,7 @@
 
   <footer id="foot"></footer>
 </div>
-<script src="juegos.js?v=71bb432557"></script>
+<script src="juegos.js?v=20b4005261"></script>
 <script>
 (function () {
   var E = window.EDU, q = /[?&]lang=(es|en)/.exec(location.search), saved = null;
@@ -77,6 +77,7 @@
   function esc(t) { return String(t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   function rel(u) { return u.replace(/^educativos\//, ''); }
   function link(g) {
+    if (g.ref) return '../pwa/' + g.ref;   // juego arcade de números: se juega en el de siempre
     var u = rel(g.url);
     if (g.brainAges) {  // Brain Academy: edad según el filtro elegido
       var a = band === '3-6' && g.brainAges.indexOf(3) >= 0 ? 3 : band === '7-12' ? (g.brainAges.indexOf(9) >= 0 ? 9 : 6) : null;
@@ -129,7 +130,7 @@
     });
     document.getElementById('list').innerHTML = out || '<p class="none">' + (EN ? 'No games match. Try another subject or age.' : 'No hay juegos con esos filtros. Prueba otra asignatura o edad.') + '</p>';
     document.getElementById('appsH').textContent = EN ? '📱 Full apps' : '📱 Apps completas';
-    document.getElementById('apps').innerHTML = E.apps.map(function (a) {
+    document.getElementById('apps').innerHTML = E.apps.filter(function (a) { return a.id !== 'arcade'; }).map(function (a) {
       return '<li><a href="' + esc(rel(a.url)) + (a.langs.indexOf(lang) >= 0 && a.langs.length > 1 ? '?lang=' + lang : '') + '" style="--c:#4dabf7"><span class="ic">' + a.emoji + '</span><span class="tx"><b>' + esc(a.name) + '</b><small>' + esc(tr(a.desc)) + '</small></span></a></li>';
     }).join('');
     document.getElementById('foot').textContent = E.games.length + (EN ? ' educational games' : ' juegos educativos') + (window.ARCADE_VERSION ? ' · v' + ARCADE_VERSION : '');

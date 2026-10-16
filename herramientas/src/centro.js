@@ -1,76 +1,130 @@
 // Centro|#111827
 (function () {
   const { ri, pick, clamp } = Arcade;
-  const COL = ['#ff6b6b', '#ffd43b', '#69db7c', '#4dabf7'], GLY = ['●', '▲', '■', '◆'];
+  // colores de las piezas: [base, claro, oscuro] · cada color tiene además su forma (para distinguirlos sin color)
+  const COL = [['#ff6b6b', '#ffc9c9', '#c92a2a'], ['#ffd43b', '#fff3bf', '#e67700'], ['#51cf66', '#d3f9d8', '#2b8a3e'], ['#4dabf7', '#d0ebff', '#1864ab']];
   const SIDES = ['L', 'R', 'T', 'B'];
+  const LEN = 5;   // casillas de cada carril: igual en los cuatro lados y en vertical o apaisado
+  const NOTE = [0, 2, 4, 7, 9, 12, 14, 16, 19, 21, 24].map((n) => 330 * Math.pow(2, n / 12));
 
   function geo(g) {
-    const s = g.s, Wa = g.W - 16, Ha = g.bot - g.top - 16;
-    s.cs = Math.min(Wa / 10, Ha / 10, 58);
-    s.lenH = Math.floor((Wa / s.cs - 4) / 2); s.lenV = Math.floor((Ha / s.cs - 4) / 2);
-    s.cx0 = (g.W - 4 * s.cs) / 2; s.cy0 = g.top + 8 + (Ha - 4 * s.cs) / 2;
+    const s = g.s, Wa = g.W - 12, Ha = g.bot - g.top - 30, n = 4 + LEN * 2;
+    s.cs = Math.min(Wa / n, Ha / n, 46);
+    s.cx0 = (g.W - 4 * s.cs) / 2; s.cy0 = g.top + 26 + (Ha - 4 * s.cs) / 2;
   }
-  const len = (s, side) => (side === 'L' || side === 'R' ? s.lenH : s.lenV);
   // posición en pantalla de la casilla k (0 = la de fuera) de la línea i del lado side
   function cellXY(s, side, i, k) {
-    const L = len(s, side), cs = s.cs, d = L - 1 - k; // d = distancia desde el centro (0 pegada)
+    const cs = s.cs, d = LEN - 1 - k; // d = distancia desde el centro (0 pegada)
     if (side === 'L') return [s.cx0 - (d + 1) * cs, s.cy0 + i * cs];
     if (side === 'R') return [s.cx0 + (4 + d) * cs, s.cy0 + i * cs];
     if (side === 'T') return [s.cx0 + i * cs, s.cy0 - (d + 1) * cs];
     return [s.cx0 + i * cs, s.cy0 + (4 + d) * cs];
   }
+  const nColors = (g) => clamp(2 + Math.floor((g.level + 1) / 3), 2, 4);
+  function pickNext(g) {
+    const s = g.s; let side = pick(SIDES), i = ri(0, 3);
+    // evita llenar de golpe un carril que ya está casi lleno
+    for (let k = 0; k < 4 && s.lines[side][i].length >= LEN - 1; k++) { side = pick(SIDES); i = ri(0, 3); }
+    s.next = { side, i, bomb: Math.random() < 0.05, c: ri(0, nColors(g) - 1) };
+  }
   function spawn(g) {
-    const s = g.s, side = pick(SIDES), i = ri(0, 3), line = s.lines[side][i];
-    const p = Math.random() < 0.03 ? { bomb: true, c: 0 } : { c: ri(0, Math.min(3, 1 + g.level)) };
-    line.unshift(p);
+    const s = g.s, n = s.next; if (!n) return pickNext(g);
+    const line = s.lines[n.side][n.i];
+    line.unshift(n.bomb ? { bomb: true, c: 0 } : { c: n.c });
     s.pieces++;
-    if (line.length > len(s, side)) { s.lostAt = [side, i]; Arcade.sfx.boom(); g.shake(0.5, 12); g.state = 'dying'; setTimeout(g.over, 900); }
+    Arcade.tone(160 + line.length * 30, 0.05, 'triangle', 0.04);
+    if (line.length === LEN) { s.warn = 0.6; Arcade.tone(880, 0.08, 'square', 0.05); setTimeout(() => Arcade.tone(880, 0.08, 'square', 0.05), 120); }
+    if (line.length > LEN) overflow(g, n.side, n.i);
+    pickNext(g);
+  }
+  // una pieza llega al estanque: se pierde una vida y ese carril se vacía
+  function overflow(g, side, i) {
+    const s = g.s, line = s.lines[side][i];
+    line.forEach((p, k) => { const [x, y] = cellXY(s, side, i, Math.min(k, LEN - 1)); g.burst(x + s.cs / 2, y + s.cs / 2, { n: 4, color: '#ff6b6b', speed: 140, size: 3 }); });
+    line.length = 0; s.hurtLane = { side, i, t: 0.8 };
+    Arcade.sfx.boom(); g.shake(0.4, 10);
+    if (g.die()) { s.spawnT = 1.5; g.message(Arcade.T('¡Al estanque!', 'Into the pond!'), 1); }
   }
   function shoot(g, side, i) {
     const s = g.s, line = s.lines[side][i];
-    s.beam = { side, i, t: 0.15 };
+    s.beam = { side, i, t: 0.18, c: s.pc };
+    s.face = side;
+    Arcade.tone(900, 0.1, 'sawtooth', 0.04, -600);
     let n = 0;
     while (line.length) {
       const last = line[line.length - 1];
-      if (last.bomb) { n += line.length; line.length = 0; Arcade.sfx.boom(); g.shake(0.2, 6); break; }
+      if (last.bomb) {
+        line.forEach((p, k) => { const [x, y] = cellXY(s, side, i, k); g.burst(x + s.cs / 2, y + s.cs / 2, { n: 8, color: ['#ff922b', '#ffd43b', '#495057'], speed: 200, size: 4 }); });
+        n += line.length; line.length = 0; Arcade.sfx.boom(); g.shake(0.2, 6); break;
+      }
       if (last.c !== s.pc) break;
       const [x, y] = cellXY(s, side, i, line.length - 1);
-      g.burst(x + s.cs / 2, y + s.cs / 2, { n: 6, color: COL[last.c], speed: 160, size: 3 });
+      g.burst(x + s.cs / 2, y + s.cs / 2, { n: 8, color: [COL[last.c][0], COL[last.c][1]], speed: 170, size: 3 });
+      s.pops.push({ x: x + s.cs / 2, y: y + s.cs / 2, c: COL[last.c][0], t: 0.3 });
+      setTimeout(() => Arcade.tone(NOTE[Math.min(NOTE.length - 1, n)], 0.1, 'triangle', 0.08), n * 45);
       line.pop(); n++;
     }
-    if (line.length) { const last = line[line.length - 1]; const t = last.c; last.c = s.pc; s.pc = t; Arcade.sfx.move(); }
+    if (line.length) { const last = line[line.length - 1]; const t = last.c; last.c = s.pc; s.pc = t; s.swapT = 0.3; setTimeout(() => Arcade.tone(500, 0.09, 'square', 0.05, 200), n * 45); }
+    else if (!n) Arcade.tone(250, 0.08, 'sine', 0.04);
     if (n) {
       const pts = 10 * n * (n >= 3 ? n : 1) * g.level;
       const [x, y] = cellXY(s, side, i, Math.max(0, line.length - 1));
       g.addScore(pts, x + s.cs / 2, y);
-      Arcade.tone(600 + n * 80, 0.08, 'square', 0.07);
+      if (n >= 4) g.message(n + '×', 0.6);
       s.cleared += n;
-      const lv = 1 + Math.floor(s.cleared / 35);
-      if (lv > g.level) { g.level = lv; g.hud(); g.message('Nivel ' + lv, 1.1); Arcade.sfx.up(); }
+      const lv = 1 + Math.floor(s.cleared / 30);
+      if (lv > g.level) { g.level = lv; g.hud(); g.message(Arcade.T('Nivel ', 'Level ') + lv, 1.1); Arcade.sfx.up(); }
     }
+  }
+  // forma de cada color, dibujada (sin emojis)
+  function glyph(ctx, c, x, y, r) {
+    ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.beginPath();
+    if (c === 0) ctx.arc(x, y, r, 0, 6.3);
+    else if (c === 1) { ctx.moveTo(x, y - r * 1.1); ctx.lineTo(x + r, y + r * 0.8); ctx.lineTo(x - r, y + r * 0.8); ctx.closePath(); }
+    else if (c === 2) ctx.rect(x - r * 0.85, y - r * 0.85, r * 1.7, r * 1.7);
+    else { ctx.moveTo(x, y - r * 1.15); ctx.lineTo(x + r, y); ctx.lineTo(x, y + r * 1.15); ctx.lineTo(x - r, y); ctx.closePath(); }
+    ctx.fill();
+  }
+  function piece(ctx, x, y, cs, p, t) {
+    const m = cs * 0.07, w = cs - 2 * m, r = cs * 0.24;
+    ctx.fillStyle = 'rgba(0,0,0,.35)'; Arcade.rr(ctx, x + m + 1, y + m + 3, w, w, r); ctx.fill();
+    if (p.bomb) {
+      const cx = x + cs / 2, cy = y + cs / 2 + cs * 0.04;
+      ctx.fillStyle = '#212529'; ctx.beginPath(); ctx.arc(cx, cy, cs * 0.34, 0, 6.3); ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,.25)'; ctx.beginPath(); ctx.arc(cx - cs * 0.12, cy - cs * 0.12, cs * 0.09, 0, 6.3); ctx.fill();
+      ctx.strokeStyle = '#ced4da'; ctx.lineWidth = Math.max(2, cs * 0.06); ctx.beginPath(); ctx.moveTo(cx + cs * 0.18, cy - cs * 0.26); ctx.quadraticCurveTo(cx + cs * 0.32, cy - cs * 0.45, cx + cs * 0.38, cy - cs * 0.36); ctx.stroke();
+      ctx.fillStyle = Math.floor(t * 12) % 2 ? '#ffd43b' : '#ff922b'; ctx.beginPath(); ctx.arc(cx + cs * 0.39, cy - cs * 0.38, cs * 0.08, 0, 6.3); ctx.fill();
+      return;
+    }
+    const [c0, c1, c2] = COL[p.c];
+    ctx.fillStyle = c2; Arcade.rr(ctx, x + m, y + m, w, w, r); ctx.fill();
+    const gr = ctx.createLinearGradient(0, y + m, 0, y + m + w); gr.addColorStop(0, c1); gr.addColorStop(0.5, c0); gr.addColorStop(1, c2);
+    ctx.fillStyle = gr; Arcade.rr(ctx, x + m + w * 0.07, y + m + w * 0.06, w * 0.86, w * 0.8, r * 0.8); ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.4)'; Arcade.rr(ctx, x + cs * 0.22, y + cs * 0.16, cs * 0.56, cs * 0.12, cs * 0.06); ctx.fill();
+    glyph(ctx, p.c, x + cs / 2, y + cs / 2 + cs * 0.04, cs * 0.16);
   }
 
   Arcade.game({
-    /*THEME*/ tag: "La rana que defiende el estanque", deco: ["🐸", "🎯", "💣", "🪷", "💧", "🐸"], font: "impact", bg: ["#1f2937", "#111827"], music: {"mode": "dorian", "bpm": 126, "wave": "square", "style": "arcade", "root": 55}, voice: {"wave": "square", "mul": 1, "echo": 0.15}, ambient: {"e": ["🪷", "💧"], "n": 6, "vy": 8, "sway": 6, "alpha": 0.1},
-    /*EN*/ en: {"title": "Center", "tag": "The frog that guards the pond", "help": "Pieces advance towards the centre from all four sides. <b>Tap a row or column</b> to shoot from the centre: you remove all consecutive pieces <b>of your colour</b>. When you hit a different colour, <b>you swap colours</b>. If a piece enters the central square, it's over. 💣 clears the whole line.", "tvHelp": "D-pad: choose a lane around the frog · OK shoot.", "dict": {}},
+    /*THEME*/ tag: "La rana que defiende el estanque", deco: ["🐸", "🎯", "💣", "🌸", "💧", "🐸"], font: "impact", bg: ["#1f2937", "#111827"], music: {"mode": "dorian", "bpm": 120, "wave": "square", "style": "arcade", "root": 55}, voice: {"wave": "square", "mul": 1, "echo": 0.15}, ambient: {"e": ["🌸", "💧"], "n": 6, "vy": 8, "sway": 6, "alpha": 0.1},
+    /*EN*/ en: {"title": "Center", "tag": "The frog that guards the pond", "help": "Pieces advance towards the pond in the centre from all four sides, along lanes of 5 squares. <b>Tap a row or column</b> to shoot from the centre: you remove all consecutive pieces <b>of your colour</b> (the one the frog holds). When you hit a different colour, <b>you swap colours</b>. The arrow shows where the next piece will come in, and a lane flashes red when it is full: one more and the piece falls into the pond and you lose a life (that lane empties). The bomb clears the whole lane.", "tvHelp": "D-pad: choose a lane around the frog · OK shoot.", "dict": {"Siguiente": "Next"}},
     /*TV*/ tvHelp: "Cruceta: elige un carril alrededor de la rana · OK disparar.", tv: { mode: 'tap', targets: (g) => { const s = g.s, o = []; if (!s.lines) return o; for (const sd of SIDES) for (let i = 0; i < 4; i++) { const [x, y] = cellXY(s, sd, i, 0); o.push({ x, y, w: s.cs, h: s.cs }); } return o; } },
     id: 'centro', title: 'Centro', emoji: '🎯', color: '#4dabf7', origin: 'Zoop (Hookstone, 1995)',
-    help: 'Las piezas avanzan hacia el centro desde los cuatro lados. <b>Toca una fila o columna</b> para disparar desde el centro: eliminas todas las piezas seguidas <b>de tu color</b>. Al chocar con otra de distinto color, <b>intercambiáis los colores</b>. Si una pieza entra en el cuadro central, se acaba. 💣 limpia toda la línea.',
-    lives: 0, levels: null,
+    help: 'Las piezas avanzan hacia el estanque del centro desde los cuatro lados, por carriles de 5 casillas. <b>Toca una fila o columna</b> para disparar desde el centro: eliminas todas las piezas seguidas <b>de tu color</b> (el que lleva la rana). Al chocar con otra de distinto color, <b>intercambiáis los colores</b>. La flecha te avisa de por dónde entrará la siguiente pieza, y un carril parpadea en rojo cuando está lleno: si entra una más, la pieza cae al estanque y pierdes una vida (ese carril se vacía). La bomba limpia todo el carril.',
+    lives: 3, levels: null, cap: 20,
     demo(g) {
       const s = g.s; let best = null;
       for (const sd of SIDES) for (let i = 0; i < 4; i++) { const line = s.lines[sd][i]; if (!line.length) continue; let n = 0;
         for (let k = line.length - 1; k >= 0; k--) { if (line[k].bomb) { n += 10; break; } if (line[k].c !== s.pc) break; n++; }
-        const v = n * 10 + line.length * (n ? 1 : 0.6) + Math.random(); if (!best || v > best.v) best = { v, sd, i, n }; }
+        const v = n * 10 + line.length * (n ? 1 : 0.6) + (line.length >= LEN - 1 ? 8 : 0) + Math.random(); if (!best || v > best.v) best = { v, sd, i, n }; }
       if (!best) return { wait: 0.3 };
-      const [x, y] = cellXY(s, best.sd, best.i, len(s, best.sd) - 1);
+      const [x, y] = cellXY(s, best.sd, best.i, LEN - 1);
       return { tap: [x + s.cs / 2, y + s.cs / 2], after: 0.35, say: best.n ? Arcade.T('Dispara al carril donde está tu color', 'Shoot at the lane with your colour') : Arcade.T('Sin coincidencias: dispara para cambiar de color', 'No match: shoot to swap colours') };
     },
     setup(g) {
-      g.s = { lines: {}, pc: 0, spawnT: 1, pieces: 0, cleared: 0, beam: null };
+      g.s = { lines: {}, pc: 0, spawnT: 1.2, pieces: 0, cleared: 0, beam: null, pops: [], next: null, face: 'B' };
       const s = g.s; geo(g);
       for (const sd of SIDES) s.lines[sd] = [[], [], [], []];
-      for (let k = 0; k < 6; k++) spawn(g);
+      for (let k = 0; k < 5; k++) spawn(g);
     },
     layout(g) { if (g.s.lines) geo(g); },
     down(g, p) {
@@ -91,51 +145,65 @@
     update(g, dt) {
       const s = g.s;
       if (s.beam) { s.beam.t -= dt; if (s.beam.t <= 0) s.beam = null; }
+      if (s.swapT > 0) s.swapT -= dt; if (s.warn > 0) s.warn -= dt;
+      if (s.hurtLane) { s.hurtLane.t -= dt; if (s.hurtLane.t <= 0) s.hurtLane = null; }
+      for (const p of s.pops) p.t -= dt; s.pops = s.pops.filter((p) => p.t > 0);
       s.spawnT -= dt;
-      if (s.spawnT <= 0) { s.spawnT = Math.max(0.32, 1.35 - g.level * 0.1); spawn(g); }
+      if (s.spawnT <= 0) { s.spawnT = Math.max(0.42, 1.6 - g.level * 0.1); spawn(g); if (Math.random() < clamp((g.level - 5) * 0.04, 0, 0.35)) spawn(g); }   // desde el nivel 6, a veces entran dos
     },
     draw(g, ctx) {
       const s = g.s, W = g.W, H = g.H, cs = s.cs;
-      ctx.fillStyle = '#111827'; ctx.fillRect(0, 0, W, H);
-      g.scenery(['🪷','🌿','💧','🐟'], 10, { alpha: 0.25, bob: 2 }); /*SC*/
+      const bg = ctx.createRadialGradient(W / 2, H / 2, 20, W / 2, H / 2, Math.max(W, H) * 0.7); bg.addColorStop(0, '#16324f'); bg.addColorStop(1, '#0b1220');
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      g.scenery(['🌸', '🌿', '💧', '🐟'], 10, { alpha: 0.18, bob: 2 }); /*SC*/
       if (!s.lines) return;
-      // carriles
+      // carriles (canales de agua)
       for (const sd of SIDES) for (let i = 0; i < 4; i++) {
-        const L = len(s, sd);
-        for (let k = 0; k < L; k++) {
+        const line = s.lines[sd][i], full = line.length >= LEN, hurt = s.hurtLane && s.hurtLane.side === sd && s.hurtLane.i === i;
+        for (let k = 0; k < LEN; k++) {
           const [x, y] = cellXY(s, sd, i, k);
-          ctx.fillStyle = (i + k) % 2 ? 'rgba(255,255,255,.04)' : 'rgba(255,255,255,.07)';
-          ctx.fillRect(x, y, cs, cs);
+          ctx.fillStyle = (i + k) % 2 ? 'rgba(77,171,247,.07)' : 'rgba(77,171,247,.12)'; ctx.fillRect(x + 1, y + 1, cs - 2, cs - 2);
         }
-        const [x, y] = cellXY(s, sd, i, L - 1);
-        ctx.fillStyle = 'rgba(255,80,80,.12)'; ctx.fillRect(x, y, cs, cs);
+        const [x, y] = cellXY(s, sd, i, LEN - 1);
+        ctx.fillStyle = full ? 'rgba(255,80,80,' + (0.25 + 0.2 * Math.sin(g.rt * 14)) + ')' : line.length === LEN - 1 ? 'rgba(255,146,43,.2)' : 'rgba(255,80,80,.08)'; ctx.fillRect(x + 1, y + 1, cs - 2, cs - 2);
+        if (hurt) { const [a, b] = cellXY(s, sd, i, 0), [c, d] = cellXY(s, sd, i, LEN - 1); ctx.fillStyle = 'rgba(255,60,60,' + s.hurtLane.t * 0.6 + ')'; ctx.fillRect(Math.min(a, c), Math.min(b, d), Math.abs(c - a) + cs, Math.abs(d - b) + cs); }
       }
-      // centro
-      ctx.fillStyle = '#1f2937'; Arcade.rr(ctx, s.cx0, s.cy0, cs * 4, cs * 4, 10); ctx.fill();
-      ctx.strokeStyle = COL[s.pc]; ctx.lineWidth = 3; Arcade.rr(ctx, s.cx0 + 2, s.cy0 + 2, cs * 4 - 4, cs * 4 - 4, 10); ctx.stroke();
+      // estanque central
+      const mx = s.cx0 + 2 * cs, my = s.cy0 + 2 * cs;
+      const pg = ctx.createRadialGradient(mx, my, cs * 0.3, mx, my, cs * 2.8); pg.addColorStop(0, '#2f9e44'); pg.addColorStop(0.6, '#1971c2'); pg.addColorStop(1, '#0b3d6e');
+      ctx.fillStyle = pg; Arcade.rr(ctx, s.cx0, s.cy0, cs * 4, cs * 4, cs * 0.5); ctx.fill();
+      for (let k = 0; k < 3; k++) { ctx.strokeStyle = 'rgba(255,255,255,' + (0.12 - k * 0.03) + ')'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(mx, my, cs * (0.9 + ((g.rt * 0.6 + k * 0.33) % 1) * 1.1), 0, 6.3); ctx.stroke(); }
+      ctx.strokeStyle = COL[s.pc][0]; ctx.lineWidth = 3 + (s.swapT > 0 ? s.swapT * 10 : 0); Arcade.rr(ctx, s.cx0 + 2, s.cy0 + 2, cs * 4 - 4, cs * 4 - 4, cs * 0.5); ctx.stroke();
+      // rayo
       if (s.beam) {
-        const b = s.beam, mx = s.cx0 + 2 * cs, my = s.cy0 + 2 * cs;
-        ctx.strokeStyle = COL[s.pc]; ctx.globalAlpha = b.t * 6; ctx.lineWidth = cs * 0.25; ctx.beginPath();
-        if (b.side === 'L' || b.side === 'R') { const y = s.cy0 + (b.i + 0.5) * cs; ctx.moveTo(mx, y); ctx.lineTo(b.side === 'L' ? 0 : W, y); }
-        else { const x = s.cx0 + (b.i + 0.5) * cs; ctx.moveTo(x, my); ctx.lineTo(x, b.side === 'T' ? 0 : H); }
-        ctx.stroke(); ctx.globalAlpha = 1;
+        const b = s.beam;
+        ctx.strokeStyle = COL[b.c][1]; ctx.globalAlpha = Math.min(1, b.t * 7); ctx.lineCap = 'round';
+        ctx.shadowColor = COL[b.c][0]; ctx.shadowBlur = 18; ctx.lineWidth = cs * 0.22; ctx.beginPath();
+        if (b.side === 'L' || b.side === 'R') { const y = s.cy0 + (b.i + 0.5) * cs; ctx.moveTo(mx, y); ctx.lineTo(b.side === 'L' ? s.cx0 - LEN * cs : s.cx0 + (4 + LEN) * cs, y); }
+        else { const x = s.cx0 + (b.i + 0.5) * cs; ctx.moveTo(x, my); ctx.lineTo(x, b.side === 'T' ? s.cy0 - LEN * cs : s.cy0 + (4 + LEN) * cs); }
+        ctx.stroke(); ctx.shadowBlur = 0; ctx.globalAlpha = 1; ctx.lineCap = 'butt';
       }
-      Arcade.emoji(ctx, g.face(), s.cx0 + 2 * cs, s.cy0 + 2 * cs, cs * 1.4);
-      ctx.fillStyle = COL[s.pc]; ctx.beginPath(); ctx.arc(s.cx0 + 2 * cs, s.cy0 + 2.9 * cs, cs * 0.28, 0, 6.28); ctx.fill();
-      Arcade.txt(ctx, GLY[s.pc], s.cx0 + 2 * cs, s.cy0 + 2.9 * cs, cs * 0.3, 'rgba(0,0,0,.6)');
+      // rana con su color
+      ctx.fillStyle = 'rgba(64,192,87,.6)'; ctx.beginPath(); ctx.ellipse(mx, my + cs * 0.5, cs * 1.1, cs * 0.45, 0, 0, 6.3); ctx.fill();
+      Arcade.emoji(ctx, g.face(), mx, my - cs * 0.15, cs * 1.3);
+      piece(ctx, mx - cs * 0.42, my + cs * 0.4, cs * 0.84, { c: s.pc }, g.rt);
+      // aviso de la siguiente pieza
+      if (s.next) {
+        const n = s.next, [x, y] = cellXY(s, n.side, n.i, 0), cx = x + cs / 2, cy = y + cs / 2, o = cs * 0.75;
+        const [ox, oy] = { L: [-o, 0], R: [o, 0], T: [0, -o], B: [0, o] }[n.side], blink = Math.min(1, Math.max(0.3, 1 - s.spawnT));
+        ctx.globalAlpha = blink; ctx.fillStyle = n.bomb ? '#ff922b' : COL[n.c][0];
+        const ang = Math.atan2(-oy, -ox); ctx.save(); ctx.translate(cx + ox, cy + oy); ctx.rotate(ang); ctx.beginPath(); ctx.moveTo(cs * 0.22, 0); ctx.lineTo(-cs * 0.14, -cs * 0.18); ctx.lineTo(-cs * 0.14, cs * 0.18); ctx.closePath(); ctx.fill(); ctx.restore(); ctx.globalAlpha = 1;
+      }
       // piezas
       for (const sd of SIDES) for (let i = 0; i < 4; i++) {
         const line = s.lines[sd][i];
         line.forEach((p, k) => {
-          const [x0, y0] = cellXY(s, sd, i, k), [x, y, sc] = Arcade.glide(p, x0, y0);   // avanzan deslizándose
-          Arcade.scaled(ctx, x + cs / 2, y + cs / 2, sc, () => {
-            if (p.bomb) { Arcade.emoji(ctx, '💣', x + cs / 2, y + cs / 2, cs * 0.75); return; }
-            ctx.fillStyle = COL[p.c]; Arcade.rr(ctx, x + 3, y + 3, cs - 6, cs - 6, cs * 0.25); ctx.fill();
-            ctx.fillStyle = 'rgba(255,255,255,.3)'; Arcade.rr(ctx, x + 6, y + 5, cs - 12, cs * 0.22, cs * 0.1); ctx.fill();
-            Arcade.txt(ctx, GLY[p.c], x + cs / 2, y + cs / 2 + 1, cs * 0.38, 'rgba(0,0,0,.45)');
-          });
+          const [x0, y0] = cellXY(s, sd, i, Math.min(k, LEN - 1)), [x, y, sc] = Arcade.glide(p, x0, y0);   // avanzan deslizándose
+          Arcade.scaled(ctx, x + cs / 2, y + cs / 2, sc, () => piece(ctx, x, y, cs, p, g.rt));
         });
       }
+      for (const p of s.pops) { ctx.globalAlpha = p.t / 0.3; ctx.strokeStyle = p.c; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(p.x, p.y, cs * (0.9 - p.t * 1.5), 0, 6.3); ctx.stroke(); ctx.globalAlpha = 1; }
+      Arcade.txt(ctx, Arcade.T('Nivel ', 'Level ') + g.level + ' · ' + (s.cleared % 30) + '/30', W / 2, g.top + 14, 14, '#a5d8ff', 'center', 900, 'rgba(0,0,0,.5)');
     },
   });
 })();

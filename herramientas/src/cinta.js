@@ -1,8 +1,12 @@
 // Cinta|#151a2e
 (function () {
   const { rand, ri, clamp } = Arcade;
-  const NL = 5, STEPS = 7, BINR = 5, MAXSTACK = 5;
-  const COL = [['#ff5d73', '🍓'], ['#ffd43b', '🍋'], ['#51cf66', '🍏'], ['#4dabf7', '🫐'], ['#b197fc', '🍇'], ['#ff922b', '🍊']];
+  const NL = 5, STEPS = 7, BINR = 5, MAXSTACK = 5, MISS = 5;
+  // colores de las fichas: [base, claro, oscuro]
+  const COL = [['#ff4d6d', '#ff8fa3', '#a4133c'], ['#ffd43b', '#fff3bf', '#e67700'], ['#40c057', '#b2f2bb', '#1b6e2e'], ['#339af0', '#a5d8ff', '#1864ab'], ['#9775fa', '#d0bfff', '#5f3dc4'], ['#ff922b', '#ffd8a8', '#c2410c']];
+  // sonidos: notas de una escala para que las jugadas suenen musicales
+  const NOTE = [0, 2, 4, 7, 9, 12, 14, 16, 19, 21].map((n) => 392 * Math.pow(2, n / 12));
+  const chord = (base, n) => { for (let i = 0; i < Math.min(6, n + 2); i++) setTimeout(() => Arcade.tone(NOTE[(base + i * 2) % NOTE.length] * (i > 4 ? 2 : 1), 0.16, 'triangle', 0.07), i * 55); };
   const GOALS = [
     { k: 'klax', es: (n) => 'Haz ' + n + ' klax', en: (n) => 'Make ' + n + ' klaxes' },
     { k: 'diag', es: (n) => 'Haz ' + n + ' diagonales', en: (n) => 'Make ' + n + ' diagonals' },
@@ -14,8 +18,8 @@
     const s = g.s;
     s.bw = Math.min(g.W - 24, 430);
     s.cx = g.W / 2;
-    const avail = g.bot - g.top - 30;
-    s.cy0 = g.top + 34; s.cy1 = g.top + avail * 0.46;
+    const avail = g.bot - g.top - 30; s.wide = g.W > (g.bot - g.top) * 1.25;
+    s.cy0 = g.top + 34; s.cy1 = g.top + avail * (s.wide ? 0.38 : 0.46);
     s.py = s.cy1 + 26;
     s.binTop = s.py + 46;
     s.cs = Math.min(s.bw / NL, (g.bot - 8 - s.binTop) / BINR);
@@ -30,7 +34,7 @@
   const laneAtX = (s, x) => clamp(Math.floor((x - s.bx0) / s.cs), 0, NL - 1);
   function newGoal(g) {
     const s = g.s, L = g.lv, gk = GOALS[(g.level - 1) % 4];
-    const n = gk.k === 'klax' ? 3 + Math.floor(L / 3) : gk.k === 'diag' ? 1 + Math.floor(L / 5) : gk.k === 'pts' ? 2000 + L * 600 : 18 + L * 3;
+    const n = gk.k === 'klax' ? 2 + Math.floor(L / 4) : gk.k === 'diag' ? 1 + Math.floor(L / 7) : gk.k === 'pts' ? 1500 + L * 400 : 12 + L * 2;
     s.goal = { k: gk.k, n, have: 0, txt: Arcade.T(gk.es(n), gk.en(n)) };
   }
   function checkBin(g) {
@@ -54,7 +58,7 @@
       chain++;
       for (const k of kill) {
         const [c, r] = k.split(',').map(Number), p = binXY(s, c, r);
-        g.burst(p.x, p.y, { n: 8, color: COL[s.bin[c][r]][0], speed: 200, size: 4 });
+        g.burst(p.x, p.y, { n: 10, color: [COL[s.bin[c][r]][0], COL[s.bin[c][r]][1], '#fff'], speed: 220, size: 4 }); s.pops.push({ x: p.x, y: p.y, c: COL[s.bin[c][r]][0], t: 0.35 });
         s.bin[c][r] = null;
       }
       // gravedad (índice 0 = fondo)
@@ -62,12 +66,19 @@
       const total = pts * chain;
       g.addScore(total, s.cx, s.binTop + s.cs * 2);
       g.message(diag ? 'DIAGONAL!' : 'KLAX!', 0.9, chain > 1 ? 'x' + chain : '');
-      Arcade.sfx.combo(chain + lines); g.flash('#ffffff', 0.12); g.shake(0.15, 5);
+      chord(chain * 2 + (diag ? 3 : 0), lines + chain); Arcade.sfx.combo(chain + lines); g.flash(diag ? '#ffd43b' : '#ffffff', 0.12); g.shake(0.15, 5);
       if (s.goal.k === 'klax') s.goal.have += lines;
       if (s.goal.k === 'diag') s.goal.have += diag;
     }
     if (s.goal.k === 'pts') s.goal.have = g.score - s.scoreStart;
     if (s.goal.have >= s.goal.n) { g.addScore(1000 * g.lv, g.W / 2, g.H / 2); g.win(s.miss === 0 ? 3 : s.miss === 1 ? 2 : 1); }
+  }
+  // longitud de la línea más larga que haría la ficha v si cae en la columna c (−1 si está llena)
+  function lineLen(s, c, v) {
+    const col = s.bin[c], r = col.indexOf(null); if (r < 0) return -1;
+    const at = (x, y) => (x === c && y === r ? v : x >= 0 && x < NL && y >= 0 && y < BINR ? s.bin[x][y] : undefined);
+    let best = 0; for (const [dc, dr] of [[1, 0], [0, 1], [1, 1], [1, -1]]) { let n = 1; for (let k = 1; at(c + dc * k, r + dr * k) === v; k++) n++; for (let k = 1; at(c - dc * k, r - dr * k) === v; k++) n++; best = Math.max(best, n); }
+    return best;
   }
   const binXY = (s, c, r) => ({ x: s.bx0 + (c + 0.5) * s.cs, y: s.binTop + (BINR - r - 0.5) * s.cs });
   function drop(g) {
@@ -76,29 +87,29 @@
     if (r < 0) { Arcade.sfx.bad(); g.shake(0.1, 4); return; }
     const v = s.stack.pop(); col[r] = v; s.bk[s.pl][r] = {};   // bk: objeto por ficha para animar su caída
     s.fallFx = { c: s.pl, r, t: 0.18, v };
-    Arcade.tone(300 + r * 60, 0.07, 'triangle', 0.08, -100);
+    Arcade.tone(180 + r * 40, 0.09, 'sine', 0.12, -90); Arcade.noise && Arcade.noise(0.04, 0.05);
     checkBin(g);
     if (g.state === 'play' && s.bin.every((c) => c.every((v) => v != null))) { g.message(Arcade.T('¡Cubeta llena!', 'Bin full!'), 1.2); lose(g); }
   }
   function throwBack(g) {
     const s = g.s; if (!s.stack.length) return;
     const v = s.stack.pop(); s.tiles.push({ lane: s.pl, step: 3, t: 0, v, back: true });
-    Arcade.sfx.whoosh();
+    Arcade.tone(500, 0.12, 'triangle', 0.06, 400);
   }
   function lose(g) {
-    const s = g.s; s.tiles = []; s.miss = 0; s.spawnT = 1.5;
+    const s = g.s; s.tiles = []; s.miss = 0; s.spawnT = 2;
     if (g.die()) { s.stack = []; }
   }
 
   Arcade.game({
-    /*THEME*/ tag: 'Atrapa, apila y haz KLAX', deco: ['🍓', '🍋', '🍏', '🫐', '🍇', '🍊'], font: 'impact', bg: ['#232b4a', '#151a2e'],
+    /*THEME*/ tag: 'Atrapa, apila y haz KLAX', deco: ['🎛️', '✨', '🏭', '⚙️', '🎯', '💥'], font: 'impact', bg: ['#232b4a', '#151a2e'],
     music: { mode: 'dorian', bpm: 132, wave: 'square', style: 'drive', root: 57 }, voice: { wave: 'square', mul: 1.05, echo: 0.2 },
     ambient: { e: ['✨'], n: 8, vy: 0, sway: 0, twinkle: 1, alpha: 0.22, size: [8, 14] },
-    en: { title: 'Conveyor', tag: 'Catch, stack and make KLAX', help: 'Tiles tumble down a <b>conveyor belt</b> with five lanes. Move the <b>paddle</b> (tap or drag a lane) to catch them; it holds up to 5. <b>Swipe down</b> (or tap the paddle\'s lane) to drop the top tile into the bin below, and <b>swipe up</b> to throw it back onto the belt. Line up <b>3 or more of the same colour</b> horizontally, vertically or <b>diagonally</b> (worth the most) to make a KLAX. Each level has its own goal. If you miss 3 tiles or the bin fills up, you lose a life.', tvHelp: '◀ ▶ move the paddle · ▼ or OK drop a tile into the bin · ▲ throw it back.',
-      dict: { 'Haz ': 'Make ', 'Fallos: ': 'Misses: ', '¡Cubeta llena!': 'Bin full!', '¡Se te escapó!': 'Missed!' } },
+    en: { title: 'Conveyor', tag: 'Catch, stack and make KLAX', help: 'Tiles tumble down a <b>conveyor belt</b> with five lanes. Move the <b>paddle</b> (tap or drag a lane) to catch them; it holds up to 5. <b>Swipe down</b> (or tap the paddle\'s lane) to drop the top tile into the bin below, and <b>swipe up</b> to throw it back onto the belt. Line up <b>3 or more of the same colour</b> horizontally, vertically or <b>diagonally</b> (worth the most) to make a KLAX. The ghost tile in the bin shows where it will land and glows if it will make a KLAX. Each level has its own goal. If you miss 5 tiles or the bin fills up, you lose a life.', tvHelp: '◀ ▶ move the paddle · ▼ or OK drop a tile into the bin · ▲ throw it back.',
+      dict: { 'Haz ': 'Make ', 'Fallos': 'Misses', '¡Cubeta llena!': 'Bin full!', '¡Se te escapó!': 'Missed!' } },
     tvHelp: '◀ ▶ mover la paleta · ▼ u OK soltar ficha en la cubeta · ▲ devolverla a la cinta.',
     id: 'cinta', title: 'Cinta', emoji: '🎛️', color: '#ffd43b', origin: 'Klax (Atari Games, 1990)',
-    help: 'Las fichas bajan dando vueltas por una <b>cinta</b> de cinco carriles. Mueve la <b>paleta</b> (toca o arrastra hacia un carril) para atraparlas; caben 5. <b>Desliza hacia abajo</b> (o toca el carril donde está la paleta) para soltar la de arriba en la cubeta de abajo y <b>desliza hacia arriba</b> para devolverla a la cinta. Alinea <b>3 o más del mismo color</b> en horizontal, vertical o <b>diagonal</b> (la que más puntúa) para hacer un KLAX. Cada nivel tiene su objetivo. Si se te escapan 3 fichas o se llena la cubeta, pierdes una vida.',
+    help: 'Las fichas bajan dando vueltas por una <b>cinta</b> de cinco carriles. Mueve la <b>paleta</b> (toca o arrastra hacia un carril) para atraparlas; caben 5. <b>Desliza hacia abajo</b> (o toca el carril donde está la paleta) para soltar la de arriba en la cubeta de abajo y <b>desliza hacia arriba</b> para devolverla a la cinta. Alinea <b>3 o más del mismo color</b> en horizontal, vertical o <b>diagonal</b> (la que más puntúa) para hacer un KLAX. La ficha fantasma de la cubeta te enseña dónde caerá y brilla si hará KLAX. Cada nivel tiene su objetivo. Si se te escapan 5 fichas o se llena la cubeta, pierdes una vida.',
     lives: 3, levels: 0, cap: 18,
     demo(g) {
       const s = g.s; const LX = (l) => s.bx0 + (l + 0.5) * s.cs, LY = s.binTop - s.cs * 0.6;
@@ -114,10 +125,10 @@
       return { wait: 0.15 };
     },
     setup(g) {
-      g.s = { tiles: [], stack: [], pl: 2, bin: [], spawnT: 1, miss: 0, plx: 2 };
+      g.s = { tiles: [], stack: [], pl: 2, bin: [], spawnT: 1.4, miss: 0, plx: 2, pops: [], lastT: -1 };
       const s = g.s;
       s.bk = []; for (let c = 0; c < NL; c++) { s.bin.push(new Array(BINR).fill(null)); s.bk.push(new Array(BINR).fill(null)); }
-      s.nc = Math.min(6, 4 + Math.floor((g.lv + 1) / 5));
+      s.nc = Math.min(5, 3 + Math.floor((g.lv + 2) / 6));
       s.scoreStart = g.score;
       newGoal(g); geo(g);
     },
@@ -135,85 +146,119 @@
       const s = g.s, L = g.lv;
       s.plx += (s.pl - s.plx) * Math.min(1, dt * 18);
       if (s.fallFx) { s.fallFx.t -= dt; if (s.fallFx.t <= 0) s.fallFx = null; }
-      const flip = Math.max(0.16, 0.5 - L * 0.018);
+      const flip = Math.max(0.24, 0.62 - L * 0.016);
       s.spawnT -= dt;
-      if (s.spawnT <= 0) { s.spawnT = Math.max(0.55, 1.9 - L * 0.07) * rand(0.7, 1.3); s.tiles.push({ lane: ri(0, NL - 1), step: 0, t: 0, v: ri(0, s.nc - 1) }); }
+      if (s.spawnT <= 0) { s.spawnT = Math.max(0.85, 2.3 - L * 0.06) * rand(0.8, 1.2);
+        // si ya hay varias en el mismo carril, se elige otro, para que no lleguen dos a la vez
+        let lane = ri(0, NL - 1); for (let k = 0; k < 4 && s.tiles.some((t) => !t.back && t.lane === lane && t.step < 2); k++) lane = ri(0, NL - 1);
+        s.tiles.push({ lane, step: 0, t: 0, v: ri(0, s.nc - 1) }); }
       for (const t of s.tiles) {
         t.t += dt / flip;
         if (t.t >= 1) {
-          t.t -= 1; t.step++;
+          t.t -= 1; t.step++; if (!t.back && t.step >= STEPS - 2 && t.step < STEPS) Arcade.tone(t.lane === s.pl ? 880 : 520, 0.025, 'square', 0.025);   // tic al acercarse
           if (t.step >= STEPS) {
             t.dead = true;
-            if (s.pl === t.lane && s.stack.length < MAXSTACK) {
-              s.stack.push(t.v); Arcade.tone(500 + s.stack.length * 70, 0.05, 'square', 0.07);
+            if ((s.pl === t.lane || (Math.abs(s.plx - t.lane) < 0.45)) && s.stack.length < MAXSTACK) {
+              s.stack.push(t.v); Arcade.tone(NOTE[s.stack.length + 1], 0.08, 'triangle', 0.09); s.catchFx = 0.2;
               const b = beltXY(s, t.lane, 1); g.burst(b.x, b.y, { n: 5, color: COL[t.v][0], speed: 100, size: 3 });
               if (s.goal.k === 'catch') { s.goal.have++; if (s.goal.have >= s.goal.n) { g.addScore(1000 * g.lv, g.W / 2, g.H / 2); g.win(s.miss === 0 ? 3 : s.miss === 1 ? 2 : 1); return; } }
             } else {
               s.miss++; const b = beltXY(s, t.lane, 1);
               g.float(Arcade.T('¡Se te escapó!', 'Missed!'), b.x, b.y + 20, '#ff6b6b', 18); Arcade.sfx.bad(); g.shake(0.15, 5);
-              if (s.miss >= 3) { lose(g); return; }
+              if (s.miss >= MISS) { lose(g); return; }
             }
           }
         }
       }
       s.tiles = s.tiles.filter((t) => !t.dead);
+      for (const p of s.pops) p.t -= dt; s.pops = s.pops.filter((p) => p.t > 0); if (s.catchFx > 0) s.catchFx -= dt;
     },
     draw(g, ctx) {
       const s = g.s, W = g.W, H = g.H;
       const bg = ctx.createLinearGradient(0, 0, 0, H);
-      bg.addColorStop(0, '#2b3566'); bg.addColorStop(1, '#0f1324');
+      bg.addColorStop(0, '#2b3566'); bg.addColorStop(1, '#0b0f1f');
       ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
-      g.scenery(['⚙️', '🔩', '🏭'], 6, { alpha: 0.08, size: [30, 50] });
+      g.scenery(['⚙️', '🔩', '🏭'], 6, { alpha: 0.07, size: [30, 50] });
       if (!s.bin) return;
-      // cinta en perspectiva
-      const tl = beltXY(s, -0.5, 0), tr = beltXY(s, NL - 0.5, 0), bl = beltXY(s, -0.5, 1), br = beltXY(s, NL - 0.5, 1);
-      const pad = 8;
-      ctx.fillStyle = '#3a3f5c'; ctx.beginPath(); ctx.moveTo(tl.x - pad, tl.y - 14); ctx.lineTo(tr.x + pad, tr.y - 14); ctx.lineTo(br.x + pad * 1.5, br.y + 14); ctx.lineTo(bl.x - pad * 1.5, bl.y + 14); ctx.fill();
-      const bg2 = ctx.createLinearGradient(0, tl.y, 0, bl.y); bg2.addColorStop(0, '#1b1f33'); bg2.addColorStop(1, '#2c3150');
-      ctx.fillStyle = bg2; ctx.beginPath(); ctx.moveTo(tl.x, tl.y - 10); ctx.lineTo(tr.x, tr.y - 10); ctx.lineTo(br.x, br.y + 10); ctx.lineTo(bl.x, bl.y + 10); ctx.fill();
-      // rayas de la cinta (se mueven)
-      const off = (g.rt * 1.2) % (1 / STEPS);
-      ctx.strokeStyle = 'rgba(255,255,255,.07)'; ctx.lineWidth = 2;
-      for (let k = 0; k <= STEPS; k++) { const p = k / STEPS + off; if (p > 1) continue; const a = beltXY(s, -0.5, p), b = beltXY(s, NL - 0.5, p); ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke(); }
-      for (let l = 0; l <= NL; l++) { const a = beltXY(s, l - 0.5, 0), b = beltXY(s, l - 0.5, 1); ctx.strokeStyle = 'rgba(255,255,255,.05)'; ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke(); }
-      // carril de la paleta
-      { const a = beltXY(s, s.pl - 0.5, 0), b = beltXY(s, s.pl + 0.5, 0), c = beltXY(s, s.pl + 0.5, 1), d = beltXY(s, s.pl - 0.5, 1);
-        ctx.fillStyle = 'rgba(255,212,59,.07)'; ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.lineTo(c.x, c.y); ctx.lineTo(d.x, d.y); ctx.fill(); }
-      const tile = (x, y, sz, v, sy, alpha) => {
+      // ficha: baldosa con brillo, bisel y sombra (sin dibujos dentro)
+      const tile = (x, y, sz, v, sy, alpha, glow) => {
+        const [c0, c1, c2] = COL[v], r = sz * 0.22;
         ctx.save(); ctx.globalAlpha = alpha ?? 1; ctx.translate(x, y); ctx.scale(1, sy ?? 1);
-        ctx.fillStyle = 'rgba(0,0,0,.35)'; Arcade.rr(ctx, -sz / 2 + 2, -sz / 2 + 3, sz, sz, sz * 0.2); ctx.fill();
-        ctx.fillStyle = COL[v][0]; Arcade.rr(ctx, -sz / 2, -sz / 2, sz, sz, sz * 0.2); ctx.fill();
-        ctx.fillStyle = 'rgba(255,255,255,.3)'; Arcade.rr(ctx, -sz / 2 + 3, -sz / 2 + 3, sz - 6, sz * 0.28, sz * 0.12); ctx.fill();
+        if (glow) { ctx.shadowColor = c1; ctx.shadowBlur = 16; }
+        ctx.fillStyle = 'rgba(0,0,0,.4)'; Arcade.rr(ctx, -sz / 2 + 2, -sz / 2 + 4, sz, sz, r); ctx.fill(); ctx.shadowBlur = 0;
+        ctx.fillStyle = c2; Arcade.rr(ctx, -sz / 2, -sz / 2, sz, sz, r); ctx.fill();
+        const gr = ctx.createLinearGradient(0, -sz / 2, 0, sz / 2); gr.addColorStop(0, c1); gr.addColorStop(0.45, c0); gr.addColorStop(1, c2);
+        ctx.fillStyle = gr; Arcade.rr(ctx, -sz / 2 + sz * 0.07, -sz / 2 + sz * 0.06, sz * 0.86, sz * 0.82, r * 0.8); ctx.fill();
+        ctx.fillStyle = 'rgba(255,255,255,.45)'; Arcade.rr(ctx, -sz * 0.32, -sz * 0.38, sz * 0.64, sz * 0.16, sz * 0.08); ctx.fill();
+        ctx.fillStyle = 'rgba(255,255,255,.18)'; ctx.beginPath(); ctx.arc(-sz * 0.22, sz * 0.12, sz * 0.07, 0, 6.3); ctx.fill();
         ctx.restore();
-        Arcade.emoji(ctx, COL[v][1], x, y, sz * 0.55, { sy: sy ?? 1, alpha: alpha ?? 1 });
       };
+      // cinta en perspectiva con rodillos
+      const tl = beltXY(s, -0.5, 0), tr = beltXY(s, NL - 0.5, 0), bl = beltXY(s, -0.5, 1), br = beltXY(s, NL - 0.5, 1), pad = 10;
+      ctx.fillStyle = '#4c5375'; ctx.beginPath(); ctx.moveTo(tl.x - pad, tl.y - 16); ctx.lineTo(tr.x + pad, tr.y - 16); ctx.lineTo(br.x + pad * 1.6, br.y + 16); ctx.lineTo(bl.x - pad * 1.6, bl.y + 16); ctx.fill();
+      const bg2 = ctx.createLinearGradient(0, tl.y, 0, bl.y); bg2.addColorStop(0, '#161a2c'); bg2.addColorStop(1, '#30365a');
+      ctx.fillStyle = bg2; ctx.beginPath(); ctx.moveTo(tl.x, tl.y - 12); ctx.lineTo(tr.x, tr.y - 12); ctx.lineTo(br.x, br.y + 12); ctx.lineTo(bl.x, bl.y + 12); ctx.fill();
+      const off = (g.rt * 0.9) % (1 / STEPS);
+      for (let k = 0; k <= STEPS; k++) { const p = k / STEPS + off; if (p > 1) continue; const a = beltXY(s, -0.5, p), b = beltXY(s, NL - 0.5, p); ctx.strokeStyle = 'rgba(255,255,255,' + (0.04 + p * 0.06) + ')'; ctx.lineWidth = 1 + p * 2; ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke(); }
+      for (let l = 0; l <= NL; l++) { const a = beltXY(s, l - 0.5, 0), b = beltXY(s, l - 0.5, 1); ctx.strokeStyle = 'rgba(255,255,255,.06)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke(); }
+      // luces de los raíles
+      for (let k = 0; k < STEPS; k++) { const p = (k + 0.5) / STEPS, a = beltXY(s, -0.5, p), b = beltXY(s, NL - 0.5, p), on = Math.floor(g.rt * 4) % STEPS === k; for (const q of [a, b]) { ctx.fillStyle = on ? '#ffe066' : 'rgba(255,224,102,.25)'; ctx.beginPath(); ctx.arc(q.x + (q === a ? -pad * 0.6 : pad * 0.6), q.y, 2 + p * 2, 0, 6.3); ctx.fill(); } }
+      // carril de la paleta
+      { const a = beltXY(s, s.plx - 0.5, 0), b = beltXY(s, s.plx + 0.5, 0), c = beltXY(s, s.plx + 0.5, 1), d = beltXY(s, s.plx - 0.5, 1);
+        const lg = ctx.createLinearGradient(0, a.y, 0, d.y); lg.addColorStop(0, 'rgba(255,212,59,0)'); lg.addColorStop(1, 'rgba(255,212,59,.16)');
+        ctx.fillStyle = lg; ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.lineTo(c.x, c.y); ctx.lineTo(d.x, d.y); ctx.fill(); }
       // fichas en la cinta (dando la vuelta)
       for (const t of s.tiles) {
         const p = (t.step + t.t) / STEPS, b = beltXY(s, t.lane, p);
         const sy = Math.abs(Math.cos(t.t * Math.PI)) * 0.8 + 0.2;
-        tile(b.x, b.y - Math.sin(t.t * Math.PI) * b.size * 0.25, b.size, t.v, sy);
+        tile(b.x, b.y - Math.sin(t.t * Math.PI) * b.size * 0.25, b.size, t.v, sy, 1, t.step >= STEPS - 1);
       }
       // paleta y pila
-      const px = s.bx0 + (s.plx + 0.5) * s.cs, ps = s.cs * 0.62;
-      s.stack.forEach((v, i) => tile(px, s.py - 8 - i * ps * 0.42, ps, v, 0.55));
-      ctx.fillStyle = '#ced4da'; Arcade.rr(ctx, px - s.cs * 0.45, s.py, s.cs * 0.9, 12, 6); ctx.fill();
-      ctx.fillStyle = '#868e96'; Arcade.rr(ctx, px - s.cs * 0.45, s.py + 8, s.cs * 0.9, 6, 3); ctx.fill();
-      Arcade.txt(ctx, s.stack.length + '/5', px, s.py + 26, 11, '#adb5bd', 'center', 800);
-      // cubeta
-      ctx.fillStyle = 'rgba(0,0,0,.35)'; Arcade.rr(ctx, s.bx0 - 6, s.binTop - 6, s.binW + 12, s.cs * BINR + 12, 12); ctx.fill();
+      const px = s.bx0 + (s.plx + 0.5) * s.cs, ps = s.cs * 0.62, bump = s.catchFx > 0 ? s.catchFx * 12 : 0;
+      s.stack.forEach((v, i) => tile(px, s.py - 8 - i * ps * 0.42 + bump, ps, v, 0.55));
+      const pg = ctx.createLinearGradient(0, s.py, 0, s.py + 16); pg.addColorStop(0, '#f1f3f5'); pg.addColorStop(1, '#868e96');
+      ctx.fillStyle = pg; Arcade.rr(ctx, px - s.cs * 0.47, s.py + bump * 0.3, s.cs * 0.94, 14, 7); ctx.fill();
+      ctx.fillStyle = '#ffd43b'; for (let i = 0; i < MAXSTACK; i++) { ctx.globalAlpha = i < s.stack.length ? 1 : 0.25; ctx.beginPath(); ctx.arc(px - s.cs * 0.3 + i * s.cs * 0.15, s.py + 7 + bump * 0.3, 2.5, 0, 6.3); ctx.fill(); }
+      ctx.globalAlpha = 1;
+      // cubeta de cristal
+      ctx.fillStyle = 'rgba(0,0,0,.4)'; Arcade.rr(ctx, s.bx0 - 8, s.binTop - 8, s.binW + 16, s.cs * BINR + 16, 14); ctx.fill();
+      ctx.strokeStyle = 'rgba(165,216,255,.35)'; ctx.lineWidth = 3; Arcade.rr(ctx, s.bx0 - 8, s.binTop - 8, s.binW + 16, s.cs * BINR + 16, 14); ctx.stroke();
       for (let c = 0; c < NL; c++) for (let r = 0; r < BINR; r++) {
         const p = binXY(s, c, r);
-        ctx.fillStyle = (c + r) % 2 ? 'rgba(255,255,255,.04)' : 'rgba(255,255,255,.07)'; ctx.fillRect(p.x - s.cs / 2, p.y - s.cs / 2, s.cs, s.cs);
+        ctx.fillStyle = (c + r) % 2 ? 'rgba(255,255,255,.035)' : 'rgba(255,255,255,.06)'; ctx.fillRect(p.x - s.cs / 2, p.y - s.cs / 2, s.cs, s.cs);
         const v = s.bin[c][r];
         if (v != null) {
           let yy = Arcade.glide(s.bk[c][r], p.x, p.y, 20)[1]; if (s.fallFx && s.fallFx.c === c && s.fallFx.r === r) yy -= s.fallFx.t * s.cs * 4;
-          tile(p.x, yy, s.cs * 0.86, v);
+          tile(p.x, yy, s.cs * 0.88, v);
         }
       }
-      if (s.pl != null) { ctx.strokeStyle = 'rgba(255,212,59,.5)'; ctx.lineWidth = 2; ctx.strokeRect(s.bx0 + s.pl * s.cs + 1, s.binTop + 1, s.cs - 2, s.cs * BINR - 2); }
+      // dónde caería la ficha de arriba (y si haría KLAX, brilla)
+      if (s.stack.length) {
+        const v = s.stack[s.stack.length - 1], r = s.bin[s.pl].indexOf(null);
+        if (r >= 0) { const p = binXY(s, s.pl, r), n = lineLen(s, s.pl, v); tile(p.x, p.y, s.cs * 0.88, v, 1, n >= 3 ? 0.45 + 0.25 * Math.sin(g.rt * 8) : 0.22, n >= 3);
+          if (n >= 3) Arcade.txt(ctx, 'KLAX', p.x, p.y, Math.max(10, s.cs * 0.2), '#fff', 'center', 900, 'rgba(0,0,0,.5)'); }
+      }
+      // otras columnas donde la ficha de arriba haría KLAX: una flecha encima
+      if (s.stack.length) { const v = s.stack[s.stack.length - 1]; for (let c = 0; c < NL; c++) if (c !== s.pl && lineLen(s, c, v) >= 3) { const x = s.bx0 + (c + 0.5) * s.cs; ctx.globalAlpha = 0.6 + 0.4 * Math.sin(g.rt * 6); ctx.fillStyle = COL[v][1]; ctx.beginPath(); ctx.moveTo(x - 7, s.binTop - 16); ctx.lineTo(x + 7, s.binTop - 16); ctx.lineTo(x, s.binTop - 6); ctx.fill(); ctx.globalAlpha = 1; } }
+      for (const p of s.pops) { ctx.globalAlpha = p.t / 0.35; ctx.strokeStyle = p.c; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(p.x, p.y, s.cs * (0.9 - p.t), 0, 6.3); ctx.stroke(); ctx.globalAlpha = 1; }
+      ctx.strokeStyle = 'rgba(255,212,59,.55)'; ctx.lineWidth = 2; ctx.strokeRect(s.bx0 + s.pl * s.cs + 1, s.binTop + 1, s.cs - 2, s.cs * BINR - 2);
+      // en pantallas apaisadas: paneles a los lados con el objetivo, la pila y los fallos
+      if (s.wide) {
+        const pw = Math.min(220, s.bx0 - 40), lx = s.bx0 - 24 - pw, rx = s.bx0 + s.binW + 24, py0 = s.binTop;
+        if (pw > 120) {
+          ctx.fillStyle = 'rgba(0,0,0,.3)'; Arcade.rr(ctx, lx, py0, pw, 110, 14); ctx.fill(); Arcade.rr(ctx, rx, py0, pw, 110, 14); ctx.fill();
+          Arcade.txt(ctx, '🎯', lx + pw / 2, py0 + 24, 22, '#fff', 'center');
+          Arcade.txt(ctx, s.goal.txt, lx + pw / 2, py0 + 54, 15, '#ffe066', 'center', 900);
+          const k = Math.min(1, s.goal.have / s.goal.n); ctx.fillStyle = 'rgba(255,255,255,.12)'; Arcade.rr(ctx, lx + 16, py0 + 76, pw - 32, 12, 6); ctx.fill(); ctx.fillStyle = '#ffe066'; Arcade.rr(ctx, lx + 16, py0 + 76, Math.max(8, (pw - 32) * k), 12, 6); ctx.fill();
+          Arcade.txt(ctx, 'Fallos', rx + pw / 2, py0 + 22, 14, '#ffc9c9', 'center', 900);
+          for (let i = 0; i < MISS; i++) { ctx.fillStyle = i < s.miss ? '#ff6b6b' : 'rgba(255,255,255,.18)'; ctx.beginPath(); ctx.arc(rx + pw / 2 + (i - (MISS - 1) / 2) * 22, py0 + 50, 8, 0, 6.3); ctx.fill(); }
+          for (let i = 0; i < MAXSTACK; i++) { const v = s.stack[i]; if (v != null) tile(rx + pw / 2 + (i - (MAXSTACK - 1) / 2) * 30, py0 + 86, 24, v); else { ctx.strokeStyle = 'rgba(255,255,255,.2)'; ctx.lineWidth = 2; Arcade.rr(ctx, rx + pw / 2 + (i - (MAXSTACK - 1) / 2) * 30 - 12, py0 + 74, 24, 24, 5); ctx.stroke(); } }
+        }
+      }
       // objetivo y fallos
       Arcade.txt(ctx, '🎯 ' + s.goal.txt + '  ·  ' + Math.min(s.goal.have, s.goal.n) + '/' + s.goal.n, W / 2, g.top + 14, 14, '#ffe066', 'center', 900, 'rgba(0,0,0,.5)');
-      Arcade.txt(ctx, 'Fallos: ' + '❌'.repeat(s.miss) + '⬜'.repeat(Math.max(0, 3 - s.miss)), W - 12, s.py + 6, 12, '#ffc9c9', 'right', 800);
+      const mx = W - 14; if (!s.wide || s.bx0 - 40 <= 120) for (let i = 0; i < MISS; i++) { ctx.fillStyle = i < s.miss ? '#ff6b6b' : 'rgba(255,255,255,.18)'; ctx.beginPath(); ctx.arc(mx - i * 13, s.py + 6, 4.5, 0, 6.3); ctx.fill(); }
+      if (!s.wide || s.bx0 - 40 <= 120) Arcade.txt(ctx, 'Fallos', mx - MISS * 13 - 4, s.py + 6, 11, '#ffc9c9', 'right', 800);
     },
   });
 })();

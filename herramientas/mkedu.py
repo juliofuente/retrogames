@@ -48,7 +48,31 @@ APPS = [  # id, nombre, emoji, url (desde la raíz), idiomas, descripción es, d
     ('fabrica', 'Fábrica de Frases', '🏭', 'educativos/fabrica-frases/', ['es'],
      'Monta frases en inglés pieza a pieza: presente, negativas, preguntas, pasado, futuro y más.',
      'Build English sentences piece by piece: present, negatives, questions, past, future and more.'),
+    ('arcade', 'Arcade Perdido', '🕹️', 'pwa/', ['es', 'en'],
+     'Juegos arcade de números de Arcade Perdido y Arcade Pro que también sirven para practicar mates.',
+     'Number arcade games from Arcade Perdido and Arcade Pro that are also good maths practice.'),
 ]
+# Juegos arcade (pwa/) que también salen en los educativos: ref = id del juego en pwa/games.js.
+# No son copias: el enlace lleva al juego de siempre.
+ARCADE_EDU = [  # ref, asignatura, edades, título es/en, descripción es/en
+    ('sumas', 'mates', (6, 12), ('Sumas', 'Sums'),
+     ('Cálculo mental contrarreloj: elige el resultado correcto de cada suma antes de que se acabe el tiempo.', 'Mental maths against the clock: pick the right answer to each sum before time runs out.')),
+    ('sumacamino', 'mates', (7, 14), ('Sumacamino', 'Sum Path'),
+     ('Dibuja caminos por números vecinos que sumen exactamente el objetivo: sumas de varias cifras sin parar.', 'Draw paths through neighbouring numbers that add up exactly to the target: non-stop multi-number sums.')),
+    ('treses', 'mates', (7, 16), ('Treses', 'Threes'),
+     ('Desliza las cartas: 1 + 2 hacen 3 y las iguales se suman (3, 6, 12, 24…). Practica sumas y dobles.', 'Slide the cards: 1 + 2 make 3 and equal cards add up (3, 6, 12, 24…). Practise sums and doubles.')),
+    ('cambio', 'mates', (6, 12), ('Cambio', 'Change'),
+     ('Cinco monedas de 1 hacen 5, dos de 5 hacen 10…: cambia monedas y aprende cómo se combinan los valores del dinero.', 'Five 1 coins make 5, two 5s make 10…: change coins and learn how money values combine.')),
+    ('cientos', 'mates', (7, 12), ('Cientos', 'Hundreds'),
+     ('Haz crecer los círculos hasta que sus números sumen 100, sin que se toquen: calcula cuánto falta para llegar.', 'Grow the circles until their numbers add up to 100 without touching: work out how much is left.')),
+    ('dados', 'mates', (6, 10), ('Dados', 'Dice'),
+     ('Haz rodar los dados y junta tantos como indica su número (tres 3, cuatro 4…): contar y agrupar.', 'Roll the dice and group as many as their number says (three 3s, four 4s…): counting and grouping.')),
+    ('expande', 'mates', (7, 14), ('Expande', 'Expand'),
+     ('Cada número se estira tantas casillas como indica: cuenta casillas y planea para llegar a la meta.', 'Each number stretches as many squares as it shows: count squares and plan your way to the goal.')),
+    ('fusionabolas', 'mates', (7, 14), ('Fusiona bolas', 'Fuse Balls'),
+     ('Bolas numeradas que se fusionan al tocarse iguales: 2 + 2 = 4, 4 + 4 = 8… dobles y potencias de 2.', 'Numbered balls that merge when equal ones touch: 2 + 2 = 4, 4 + 4 = 8… doubles and powers of 2.')),
+]
+EXTRA_ARCADE = [dict(id=r, ref=r, app='arcade', subject=sj, emoji=None, ages=a, langs=['es', 'en'], url='pwa/' + r, title=t, desc=d) for r, sj, a, t, d in ARCADE_EDU]
 # Juegos sueltos (los de Brain Academy se añaden solos). ages = (mín, máx).
 EXTRA = [
     dict(id='aventura-de-palabras', app='aventura', subject='lengua', emoji='📚', ages=(7, 14), langs=['es'],
@@ -86,6 +110,11 @@ def bands_of(lo, hi):
 
 
 
+def arcade_emojis():
+    t = open(os.path.join(ROOT, 'pwa', 'games.js'), encoding='utf-8').read()
+    return dict(re.findall(r"id: '([a-z0-9]+)',\s*title: '[^']*',\s*emoji: '([^']+)'", t)) | {m[0]: m[1] for m in re.findall(r'"id": "([a-z0-9]+)", "title": "[^"]*", "emoji": "([^"]+)"', t)}
+
+
 def build():
     d = json.load(open(os.path.join(ROOT, 'educativos', 'brain-academy', 'data', 'games.json'), encoding='utf-8'))
     games, seen = [], set()
@@ -100,6 +129,10 @@ def build():
                           abn=bool(g.get('innovabn'))))
     for e in EXTRA:
         games.append(dict(id=e['id'], app=e['app'], subject=e['subject'], emoji=e['emoji'], ages=list(e['ages']), langs=e['langs'], url=e['url'],
+                          title={'es': e['title'][0], 'en': e['title'][1]}, desc={'es': e['desc'][0], 'en': e['desc'][1]}))
+    emo = arcade_emojis()
+    for e in EXTRA_ARCADE:
+        games.append(dict(id=e['id'], ref=e['ref'], app='arcade', subject=e['subject'], emoji=emo[e['ref']], ages=list(e['ages']), langs=e['langs'], url=e['url'],
                           title={'es': e['title'][0], 'en': e['title'][1]}, desc={'es': e['desc'][0], 'en': e['desc'][1]}))
     for g in games:
         assert g['id'] not in seen, 'id repetido ' + g['id']
