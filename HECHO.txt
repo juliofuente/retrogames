@@ -1,6 +1,9 @@
 ARCADE PERDIDO + ARCADE PRO — LO QUE ESTÁ HECHO
 ================================================
-Fecha: 15-10-2026 · Versión de la PWA (games.js → ARCADE_VERSION): 2.15.1
+Fecha: 16-10-2026 · Versión de la PWA (games.js → ARCADE_VERSION): 2.16.0
+· v2.16.0: LOTE 8 (físicas y lanzamiento) de Arcade Pro: 8 juegos nuevos, todos con demo propia que juega bien,
+  es/en, TV y niveles comprobados con un bot en Node (ver notas técnicas). Honda, Gancho, Empujón, Racimo, Bote,
+  Luz flotante, Elástico y Pasarela.
 · v2.15.1: vuelven la portada (PORTADA = true en index.php) y, por defecto, el 🏠, los favoritos y el tiempo de juego
   en todos los juegos (A.single = window.isSingleGame === true). Para un juego suelto (app Android, PWA):
   window.isSingleGame = true.
@@ -236,6 +239,16 @@ burbujas.html | Burbujas / Bubbles | Magical Drop (Data East, 1995) | TV:cruceta
 cinta.html | Cinta / Conveyor | Klax (Atari Games, 1990) | TV:cruceta
 
 COLECCIÓN PRO (pwa/indexpro.html) — 90 juegos (mecánicas de grandes éxitos de móvil)
+-- Lote 8 (físicas y lanzamiento, v2.16.0) --
+honda.html | Honda / Sling | Sling / Slingy | TV:cruceta
+gancho.html | Gancho / Hook | HookPod / Mikey Hooks | TV:cruceta
+empujon.html | Empujón / Fling | Fling (Ryan Ferrier) | TV:cursor
+racimo.html | Racimo / Bunch | SameGame / SamePhysics / Phyballs | TV:cursor
+bote.html | Bote / Bounce | Bouncing Ball / Ball Game / Ball: Revamped / Ball vs Ball | TV:cruceta
+luz.html | Luz flotante / Floaty Light | Floaty Light / Bouncy Light | TV:cruceta
+elastico.html | Elástico / Elastic | Elasticity / Draw Line Bounce | TV:cruceta
+pasarela.html | Pasarela / Skyway | Trailblazer (Gremlin, 1986) / Tunnelball | TV:cruceta
+
 -- Lote 7 (puzles de tablero, v2.5.0) --
 expande.html | Expande / Expand | Zhed (Ground Control) | TV:cursor
 portales.html | Portales / Portals | Warp Shift (FISHLABS) | TV:cursor
@@ -342,5 +355,10 @@ NOTAS TÉCNICAS DE LO HECHO
   comprobado reproduciéndolo: 800/800 resueltos), Portales (BFS: solución mínima mostrada como "Mínimo" y usada para
   las estrellas), Sumacamino (el objetivo sale de un camino real del tablero). Balance con bots en Node: Hexágonos,
   Lumina, Deslizahéroes, Mazmorra, Fusiona bolas, Cadena roja.
+· Lote 8: cada demo se ejecutó como bot en Node (mock.js + simulador de pasos de demo) en niveles 1–25: Honda,
+  Gancho, Bote, Luz flotante y Pasarela ganan el 100 % de los niveles probados; Elástico ~98 %; Empujón genera solo
+  tableros con solución (DFS) y la demo sigue esa solución; Racimo fija el objetivo con una partida del bot «grupo
+  más grande» sobre el mismo mundo físico (semilla), así que siempre es alcanzable (holgura: fácil +4, normal +2).
+  Pasarela: el camino seguro (y los carriles al cambiar de carril) nunca tiene agujeros; el tiempo deja ~30 % de margen.
 · Pruebas pasadas en todos: táctil nivel 1 y forzado a nivel 4, TV 1 y 2 jugadores, escaneo de textos en inglés,
   sin errores de JavaScript.

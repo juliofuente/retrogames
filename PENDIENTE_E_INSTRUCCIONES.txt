@@ -5,9 +5,9 @@ OBJETIVO
 --------
 Rehacer en JS + emojis los grandes éxitos de móvil de la lista de referencia para la
 colección Pro (pwa/indexpro.html), con niveles infinitos, animaciones, es/en y soporte TV. Plan: ~14 lotes de 10.
-Hechos: lotes 1–7 (90 juegos Pro, ver HECHO.txt).
+Hechos: lotes 1–8 (98 juegos Pro, ver HECHO.txt).
 Pendiente también: demos propias para los juegos de acción, plataformas, un toque, física, estrategia y deportes
-(hoy usan la demo genérica, que enseña el control pero no juega bien). Quedan unos 60 títulos (lotes 8–14).
+(hoy usan la demo genérica, que enseña el control pero no juega bien). Quedan unos 50 títulos (lotes 9–14).
 
 IMPORTANTE AL GENERAR O SUBIR CAMBIOS
 · Después de mk.py / mkgames.py / mkedu.py ejecuta SIEMPRE: python3 herramientas/stamp.py && python3 pwa/build.py
@@ -44,16 +44,12 @@ Lote 7 — puzles de tablero  ✅ HECHO (v2.5.0): Expande (Zhed), Portales (Warp
     de Almacén; si no, revisarlo más adelante.
   · Fuse Ballz se interpretó como "disparar bolas numeradas que se fusionan" (estilo Drop the Number): revisar el
     artículo original cuando haya acceso y ajustar la mecánica si difiere.
-Lote 8 — físicas y lanzamiento
-  · Sling / Slingy → "Honda": columpiarse y lanzarse de ancla en ancla.
-  · HookPod / Mikey Hooks → "Gancho": engancharse a puntos y balancearse (péndulo) avanzando.
-  · Fling → "Empujón": bolas en cuadrícula, lanzar una contra otra para sacarlas, que quede una.
-  · Phyballs / SamePhysics (?) → SameGame con física (usar phys.js).
-  · Ball vs Ball / Ball Game / Ball: Revamped / Bouncing Ball 1-2 / Bouncy Light / Floaty Light → 2–3 juegos de
-    bola que bota: "Bote" (botar sobre plataformas al ritmo), "Luz flotante".
-  · Elasticity (?) → "Elástico": cuerda elástica para lanzar.
-  · Trailblazer (?), Tunnelball (?) → revisar.
-  · Spears N' Coins (?), Sproing (?) → revisar.
+Lote 8 — físicas y lanzamiento  ✅ HECHO (v2.16.0): Honda (Sling/Slingy), Gancho (HookPod/Mikey Hooks), Empujón (Fling),
+  Racimo (SameGame con física; Phyballs/SamePhysics en el origen), Bote (Bouncing Ball/Ball Game/Ball vs Ball),
+  Luz flotante (Floaty Light/Bouncy Light), Elástico (Elasticity), Pasarela (Trailblazer/Tunnelball).
+  · Phyballs resultó ser un Arkanoid con Box2D (Emanuele Feronato): está en el origen de Racimo; si se quiere, hacer
+    un Arkanoid con ladrillos físicos aparte.
+  · Sin información fiable (no se hicieron): Spears N' Coins (?), Sproing (?). Revisar en el lote 14.
 Lote 9 — reflejos y un botón
   · One Button Game / One Tap RPG → "Un botón": RPG de un toque (atacar en el momento justo).
   · Quick Switch → "Interruptor": cambia el color/estado del personaje para pasar puertas del mismo color.

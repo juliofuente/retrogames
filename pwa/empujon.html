@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Empujón · Arcade Perdido</title>
+<meta name="theme-color" content="#13233a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css?v=6d7635e467">
+</head>
+<body class="game">
+<script src="config.js?v=c463c71b8c"></script>
+<script src="common.js?v=8bd36b43cd"></script>
+<script>
+(function () {
+  const { ri, clamp, shuffle } = Arcade;
+  const C = 7, R = 8;
+  const D = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
+  const FUR = ['🐵', '🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯', '🦁', '🐮', '🐷', '🐸', '🐔'];
+  const inb = (x, y) => x >= 0 && y >= 0 && x < C && y < R;
+
+  // board: Map "x,y" -> id. Devuelve null si el movimiento no vale, o { b, path: [{id, from:[x,y], to:[x,y], out}] }
+  function fling(b, x, y, dir) {
+    const [dx, dy] = D[dir], k = (x, y) => x + ',' + y;
+    if (!b.has(k(x, y))) return null;
+    if (b.has(k(x + dx, y + dy))) return null;          // pegada a otra: no se puede lanzar
+    let tx = x + dx, ty = y + dy; while (inb(tx, ty) && !b.has(k(tx, ty))) { tx += dx; ty += dy; }
+    if (!inb(tx, ty)) return null;                       // no hay nada contra lo que chocar
+    const nb = new Map(b), path = [];
+    let cx = x, cy = y;
+    for (;;) {
+      const id = nb.get(k(cx, cy));
+      let nx = cx + dx, ny = cy + dy; while (inb(nx, ny) && !nb.has(k(nx, ny))) { nx += dx; ny += dy; }
+      nb.delete(k(cx, cy));
+      if (!inb(nx, ny)) { path.push({ id, from: [cx, cy], to: [nx, ny], out: true }); break; }
+      const sx = nx - dx, sy = ny - dy; nb.set(k(sx, sy), id); path.push({ id, from: [cx, cy], to: [sx, sy] });
+      // el golpe atraviesa las bolas pegadas y empuja a la última de la fila
+      let hx = nx, hy = ny; while (nb.has(k(hx + dx, hy + dy))) { hx += dx; hy += dy; }
+      cx = hx; cy = hy;
+    }
+    return { b: nb, path };
+  }
+  const keyOf = (b) => [...b.keys()].sort().join(';');
+  function moves(b) { const o = []; for (const p of b.keys()) { const [x, y] = p.split(',').map(Number); for (const d in D) { const r = fling(b, x, y, d); if (r) o.push({ x, y, d, r }); } } return o; }
+  // primera jugada de una solución (o null si no tiene)
+  function solve(b, dead, budget) {
+    if (b.size <= 1) return [];
+    const kk = keyOf(b); if (dead.has(kk)) return null;
+    if (budget.n-- <= 0) return null;
+    for (const m of moves(b)) { const s = solve(m.r.b, dead, budget); if (s) return [m, ...s]; }
+    dead.add(kk); return null;
+  }
+  function generate(L) {
+    const n = clamp(3 + Math.floor((L + 1) / 2.5), 3, 11);
+    for (let tries = 0; tries < 400; tries++) {
+      // las bolas se reparten por unas pocas filas y columnas para que se crucen
+      const cols = shuffle([...Array(C).keys()]).slice(0, clamp(Math.ceil(n / 2) + 1, 2, C)), rows = shuffle([...Array(R).keys()]).slice(0, clamp(Math.ceil(n / 2) + 1, 2, R));
+      const b = new Map(); let guard = 0;
+      while (b.size < n && guard++ < 200) { const x = cols[ri(0, cols.length - 1)], y = rows[ri(0, rows.length - 1)]; if (!b.has(x + ',' + y)) b.set(x + ',' + y, b.size); }
+      if (b.size < n) continue;
+      const sol = solve(b, new Set(), { n: 60000 });
+      if (sol) return { b, sol };
+    }
+    return generate(Math.max(1, L - 2));
+  }
+  function geo(g) {
+    const s = g.s, top = g.top + 80, Ha = g.bot - top - 10;
+    s.cs = Math.min((g.W - 20) / C, Ha / R, 80); s.ox = (g.W - s.cs * C) / 2; s.oy = top + (Ha - s.cs * R) / 2;
+    s.btn = [{ k: 'undo', x: g.W / 2 - 110, y: g.top + 10, w: 100, h: 38, instant: true }, { k: 'reset', x: g.W / 2 + 10, y: g.top + 10, w: 100, h: 38, instant: true }];
+  }
+  const cellAt = (s, px, py) => { const x = Math.floor((px - s.ox) / s.cs), y = Math.floor((py - s.oy) / s.cs); return inb(x, y) ? [x, y] : null; };
+  const CX = (s, x) => s.ox + (x + 0.5) * s.cs, CY = (s, y) => s.oy + (y + 0.5) * s.cs;
+  function act(g, x, y, dir) {
+    const s = g.s; if (s.done) return;
+    const r = fling(s.b, x, y, dir);
+    if (!r) { Arcade.sfx.bad(); s.wob = { k: x + ',' + y, t: 1 }; return; }
+    s.hist.push(s.b); s.b = r.b; s.moves++;
+    const out = r.path[r.path.length - 1], [dx, dy] = D[dir];
+    s.flying.push({ id: out.id, x: CX(s, out.from[0]), y: CY(s, out.from[1]), vx: dx * 900, vy: dy * 900, t: 0.8, delay: 0.06 * (r.path.length - 1) });
+    r.path.forEach((p, i) => { if (!p.out) s.hits.push({ x: CX(s, p.to[0] + dx * 0.5), y: CY(s, p.to[1] + dy * 0.5), t: 0.12 * i }); });
+    Arcade.sfx.whoosh(); setTimeout(() => { Arcade.sfx.pop(); }, 120);
+    if (s.b.size === 1) {
+      s.done = true;
+      setTimeout(() => {
+        if (g.state !== 'play') return;
+        const [p] = [...s.b.keys()], [px, py] = p.split(',').map(Number);
+        g.burst(CX(s, px), CY(s, py), { n: 18, emoji: '✨', size: 16, speed: 220 }); g.ring(CX(s, px), CY(s, py), '#ffd43b', 80, 6);
+        g.addScore(Math.max(40, 120 * s.n - (s.moves - (s.n - 1)) * 30) * g.lv, CX(s, px), CY(s, py) - 20);
+        setTimeout(() => { if (g.state === 'play') g.win(s.restarts === 0 && s.undos === 0 ? 3 : s.restarts + s.undos <= 2 ? 2 : 1); }, 700);
+      }, 500);
+    } else if (!moves(s.b).length) g.message(Arcade.T('Sin jugadas', 'No moves left'), 1.6, Arcade.T('Deshaz o empieza otra vez', 'Undo or start again'));
+  }
+  function undo(g) { const s = g.s, h = s.hist.pop(); if (!h || s.done) return; s.b = h; s.undos++; s.flying = []; Arcade.sfx.whoosh(); }
+  function reset(g) { const s = g.s; if (s.done || !s.hist.length) return; s.b = new Map(s.start); s.hist = []; s.restarts++; s.flying = []; Arcade.sfx.whoosh(); }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Lanza, choca y que quede uno', deco: ['🐵', '🐶', '🐱', '🐼', '💥', '🏆'], font: 'comic', bg: ['#1c3a5e', '#13233a'],
+    music: { mode: 'major', bpm: 100, wave: 'triangle', style: 'chill', root: 62 }, voice: { wave: 'triangle', mul: 1.2, echo: 0.3 },
+    /*EN*/ en: { title: 'Fling', tag: 'Fling, crash and leave just one', help: '<b>Swipe</b> an animal to fling it in a line. It slides until it hits another one and stops right beside it; the one it hits gets shoved and keeps going until it hits the next… and the last one flies off the board. You can\'t fling an animal that is touching another one in that direction, or one with nothing to hit. Leave <b>only one</b> on the board. ↩️ undoes and 🔄 restarts. Every level has a solution.', tvHelp: 'D-pad to choose an animal · OK to pick it up · arrow to fling it.', dict: { '↩️ Deshacer': '↩️ Undo', '🔄 Reiniciar': '🔄 Restart', 'Quedan ': 'Left ' } },
+    /*TV*/ tvHelp: 'Cruceta para elegir · OK para cogerlo · flecha para lanzarlo.',
+    tv: { mode: 'swipe', follow: false, targets: (g) => { const s = g.s; if (!s.b) return []; const o = []; for (const p of s.b.keys()) { const [x, y] = p.split(',').map(Number); o.push({ x: s.ox + x * s.cs, y: s.oy + y * s.cs, w: s.cs, h: s.cs }); } return o.concat(s.btn); } },
+    id: 'empujon', title: 'Empujón', emoji: '🐵', color: '#ffa94d', origin: 'Fling (Ryan Ferrier)',
+    help: '<b>Desliza</b> un animal para lanzarlo en línea recta. Rueda hasta chocar con otro y se queda pegado a él; el golpeado sale empujado y sigue hasta chocar con el siguiente… y el último se sale del tablero. No puedes lanzar un animal que esté pegado a otro en esa dirección, ni uno que no tenga nada contra lo que chocar. Deja <b>solo uno</b> en el tablero. ↩️ deshace y 🔄 empieza de nuevo. Todos los niveles tienen solución.',
+    lives: 0, levels: 0, cap: 24,
+    /*SC*/ demo(g) {
+      const s = g.s; if (s.done || s.flying.length) return { wait: 0.3 };
+      const sol = solve(s.b, new Set(), { n: 40000 }); if (!sol || !sol.length) return { tap: [s.btn[1].x + 50, s.btn[1].y + 19], after: 0.6 };
+      const m = sol[0];
+      return { swipe: [CX(s, m.x), CY(s, m.y), m.d], len: s.cs * 0.9, after: 0.7, say: s.moves === 0 ? Arcade.T('Lánzalo contra otro: el último sale volando', 'Fling it at another: the last one flies off') : s.b.size === 2 ? Arcade.T('¡Que quede solo uno!', 'Leave just one!') : null };
+    },
+    setup(g) {
+      const lv = generate(g.lv), ids = shuffle(FUR.slice());
+      g.s = { b: lv.b, start: new Map(lv.b), n: lv.b.size, hist: [], moves: 0, undos: 0, restarts: 0, flying: [], hits: [], fur: ids, done: false };
+      geo(g);
+    },
+    layout(g) { if (g.s.b) geo(g); },
+    swipe(g, d, p) { const s = g.s, c = cellAt(s, p.sx, p.sy); if (c) act(g, c[0], c[1], d); },
+    tap(g, p) { const s = g.s; for (const b of s.btn) if (p.x >= b.x && p.x <= b.x + b.w && p.y >= b.y && p.y <= b.y + b.h) return b.k === 'undo' ? undo(g) : reset(g); },
+    key(g, k, d) { if (d && (k === 'z' || k === 'Backspace')) undo(g); else if (d && k === 'r') reset(g); },
+    update(g, dt) {
+      const s = g.s;
+      for (const f of s.flying) { if (f.delay > 0) { f.delay -= dt; continue; } f.x += f.vx * dt; f.y += f.vy * dt; f.t -= dt; }
+      s.flying = s.flying.filter((f) => f.t > 0);
+      for (const h of s.hits) { h.t -= dt; if (h.t <= 0 && !h.done) { h.done = true; g.burst(h.x, h.y, { n: 6, color: ['#fff', '#ffd43b'], speed: 120, grav: 0, life: 0.3 }); Arcade.tone(300 + Math.random() * 200, 0.05, 'square', 0.05); } }
+      s.hits = s.hits.filter((h) => h.t > -0.3);
+      if (s.wob) { s.wob.t -= dt * 4; if (s.wob.t <= 0) s.wob = null; }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      const bg = ctx.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, '#13233a'); bg.addColorStop(1, '#2a4a75');
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      if (!s.b) return;
+      const cs = s.cs;
+      ctx.fillStyle = 'rgba(0,0,0,.25)'; Arcade.rr(ctx, s.ox - 8, s.oy - 8, cs * C + 16, cs * R + 16, 16); ctx.fill();
+      for (let y = 0; y < R; y++) for (let x = 0; x < C; x++) { ctx.fillStyle = (x + y) % 2 ? 'rgba(255,255,255,.07)' : 'rgba(255,255,255,.03)'; ctx.fillRect(s.ox + x * cs, s.oy + y * cs, cs, cs); }
+      for (const [p, id] of s.b) {
+        const [x, y] = p.split(',').map(Number), objs = s.objs || (s.objs = {}), o = objs[id] || (objs[id] = { id });
+        let [gx, gy, k] = Arcade.glide(o, CX(s, x), CY(s, y), 22);
+        if (s.wob && s.wob.k === p) gx += Math.sin(s.wob.t * 20) * 5;
+        Arcade.scaled(ctx, gx, gy, k, () => {
+          ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.beginPath(); ctx.ellipse(gx, gy + cs * 0.36, cs * 0.32, cs * 0.08, 0, 0, 6.3); ctx.fill();
+          Arcade.emoji(ctx, s.fur[id % s.fur.length], gx, gy, cs * 0.78);
+        });
+      }
+      for (const f of s.flying) Arcade.emoji(ctx, s.done ? '😵' : '😱', f.x, f.y, cs * 0.78, { rot: g.rt * 12, alpha: Math.min(1, f.t * 2) });
+      for (const b of s.btn) { ctx.fillStyle = 'rgba(255,255,255,.12)'; Arcade.rr(ctx, b.x, b.y, b.w, b.h, 12); ctx.fill(); Arcade.txt(ctx, b.k === 'undo' ? '↩️ Deshacer' : '🔄 Reiniciar', b.x + b.w / 2, b.y + b.h / 2, 14, '#fff', 'center', 800); }
+      Arcade.txt(ctx, 'Quedan ' + s.b.size, W / 2, s.oy - 16, 15, '#ffd8a8', 'center', 900);
+    },
+  });
+})();
+</script>
+</body>
+</html>

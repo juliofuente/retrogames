@@ -1,0 +1,168 @@
+// Honda|#1b1640
+(function () {
+  const { rand, clamp, pick } = Arcade;
+  const TAU = Math.PI * 2, FW = 6, G = 3.2, CATCH = 1.12, WALL = 0.25;
+
+  // posición de un ancla en el instante t (algunas se mueven de lado a lado)
+  const apos = (a, t) => (a.amp ? { x: a.x + Math.sin(t * a.sp + a.ph) * a.amp, y: a.y } : a);
+  const foePos = (f, t) => ({ x: f.x + Math.sin(t * f.sp + f.ph) * f.amp, y: f.y });
+  const segDist = (p, a, b) => { const dx = b.x - a.x, dy = b.y - a.y, L = dx * dx + dy * dy || 1, k = clamp(((p.x - a.x) * dx + (p.y - a.y) * dy) / L, 0, 1); return Math.hypot(p.x - a.x - dx * k, p.y - a.y - dy * k); };
+
+  function build(g) {
+    const s = g.s, L = g.lv, n = clamp(7 + Math.floor(L * 0.55), 7, 20);
+    const a = [{ x: FW / 2, y: 0 }];
+    for (let i = 1; i < n; i++) {
+      const p = a[i - 1], dy = clamp(rand(1.35, 1.75) + L * 0.025, 1.3, 2.35);
+      const reach = clamp(1.2 + L * 0.06, 1.2, 2.3);
+      let x = clamp(p.x + rand(-reach, reach), 0.9, FW - 0.9);
+      if (Math.abs(x - p.x) < 0.5) x = clamp(p.x + (x < FW / 2 ? 0.9 : -0.9), 0.9, FW - 0.9);
+      const an = { x, y: p.y + dy };
+      if (L >= 6 && i < n - 1 && Math.random() < clamp((L - 5) * 0.05, 0, 0.45)) { an.amp = Math.min(rand(0.4, 0.9), x - 0.7, FW - 0.7 - x); an.sp = rand(0.9, 1.6); an.ph = rand(0, TAU); if (an.amp < 0.25) delete an.amp; }
+      a.push(an);
+    }
+    s.an = a; s.goal = n - 1; s.top = a[n - 1].y;
+    // estrellas y enemigos entre anclas
+    s.stars = []; s.foes = [];
+    for (let i = 1; i < n; i++) {
+      const p = a[i - 1], q = a[i], m = { x: (p.x + q.x) / 2, y: (p.y + q.y) / 2 };
+      if (Math.random() < 0.7) s.stars.push({ x: clamp(m.x + rand(-0.4, 0.4), 0.5, FW - 0.5), y: m.y + rand(-0.2, 0.3), got: false });
+      if (L >= 4 && i > 1 && Math.random() < clamp(0.15 + L * 0.03, 0, 0.75)) {
+        for (let k = 0; k < 12; k++) {
+          const f = { x: rand(0.5, FW - 0.5), y: rand(p.y + 0.2, q.y + 0.4), amp: rand(0.1, 0.4) * Math.min(1, L / 12), sp: rand(1, 2), ph: rand(0, TAU), e: Arcade.foe(i + L, Arcade.FOES_SMALL) };
+          const ok = a.every((x) => Math.hypot(x.x - f.x, x.y - f.y) > 1.6 + f.amp + (x.amp || 0)) && segDist(f, p, q) > 0.95 && f.x - f.amp > 0.35 && f.x + f.amp < FW - 0.35;
+          if (ok) { s.foes.push(f); break; }
+        }
+      }
+    }
+  }
+  function attach(g, i, quiet) {
+    const s = g.s, A = apos(s.an[i], s.t), b = s.b;
+    const dx = b.x - A.x, dy = b.y - A.y, r = clamp(Math.hypot(dx, dy), 0.55, CATCH);
+    const cross = dx * b.vy - dy * b.vx;
+    s.cur = i; s.ang = Math.atan2(dy, dx); s.r = r; s.dir = cross >= 0 ? 1 : -1; s.fly = false;
+    if (!quiet) {
+      Arcade.tone(380 + Math.min(i, 16) * 40, 0.08, 'triangle', 0.08); g.ring(X(g, A.x), Y(g, A.y), '#ffd43b', s.u * 0.7);
+      if (i > s.best) { g.addScore(10 * (i - s.best) * Math.max(1, g.lv), X(g, A.x), Y(g, A.y) - s.u * 0.5); s.best = i; s.home = i; }
+      else s.home = i;
+      if (i === s.goal) { s.done = true; g.confetti(70); g.addScore(150 * g.lv, g.W / 2, g.H * 0.4); Arcade.sfx.win(); setTimeout(() => { if (g.state === 'play') g.win(); }, 700); }
+    }
+  }
+  function release(g) {
+    const s = g.s; if (s.fly || s.done || s.dead) return;
+    const tx = -Math.sin(s.ang) * s.dir, ty = Math.cos(s.ang) * s.dir, V = s.V;
+    s.b.vx = tx * V; s.b.vy = ty * V; s.fly = true; s.left = s.cur; s.leftT = 0.25; s.trail = [];
+    Arcade.sfx.whoosh(); Arcade.tone(600, 0.12, 'sine', 0.06, 300);
+  }
+  // avanza la pelota; devuelve 'catch' (s.cur cambia), 'dead', o null
+  function stepBall(s, dt, sim) {
+    const b = s.b;
+    if (!s.fly) {
+      const A = apos(s.an[s.cur], s.t); s.ang += s.dir * (s.V / s.r) * dt;
+      b.x = A.x + Math.cos(s.ang) * s.r; b.y = A.y + Math.sin(s.ang) * s.r;
+      b.vx = -Math.sin(s.ang) * s.dir * s.V; b.vy = Math.cos(s.ang) * s.dir * s.V;
+    } else {
+      b.vy -= G * dt; b.x += b.vx * dt; b.y += b.vy * dt;
+      if (b.x < WALL) { b.x = WALL; b.vx = Math.abs(b.vx); if (!sim) Arcade.tone(200, 0.05, 'square', 0.04); }
+      if (b.x > FW - WALL) { b.x = FW - WALL; b.vx = -Math.abs(b.vx); if (!sim) Arcade.tone(200, 0.05, 'square', 0.04); }
+      if (s.leftT > 0) s.leftT -= dt;
+      for (let i = 0; i < s.an.length; i++) {
+        if (i === s.left && s.leftT > 0) continue;
+        const A = apos(s.an[i], s.t); if (Math.hypot(A.x - b.x, A.y - b.y) <= CATCH) return { ev: 'catch', i };
+      }
+    }
+    for (const f of s.foes) { if (f.dead) continue; const F = foePos(f, s.t); if (Math.hypot(F.x - b.x, F.y - b.y) < 0.42) return { ev: 'dead', f }; }
+    if (b.y < s.floor) return { ev: 'dead' };
+    return null;
+  }
+  // ¿a qué ancla llegaría si se soltara ahora? (para la demo)
+  function simRelease(s) {
+    const c = { an: s.an, foes: s.foes, t: s.t, b: { ...s.b }, cur: s.cur, ang: s.ang, r: s.r, dir: s.dir, V: s.V, fly: true, left: s.cur, leftT: 0.25, floor: s.floor };
+    c.b.vx = -Math.sin(s.ang) * s.dir * s.V; c.b.vy = Math.cos(s.ang) * s.dir * s.V;
+    for (let k = 0; k < 360; k++) { c.t += 1 / 120; const r = stepBall(c, 1 / 120, true); if (r) return r.ev === 'catch' ? r.i : -1; }
+    return -1;
+  }
+  function geo(g) { const s = g.s, h = g.bot - g.top; s.u = Math.min((g.W - 16) / FW, h / 9.5); s.ox = (g.W - FW * s.u) / 2; s.my = g.top + h * 0.64; }
+  const X = (g, x) => g.s.ox + x * g.s.u, Y = (g, y) => g.s.my - (y - g.s.cam) * g.s.u;
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Gira, suelta y vuela', deco: ['⚓', '🌀', '⭐', '🏁', '💫', '🎯'], font: 'round', bg: ['#2d2a6e', '#1b1640'],
+    music: { mode: 'mixo', bpm: 118, wave: 'triangle', style: 'arcade', root: 60 }, voice: { wave: 'triangle', mul: 1.1, echo: 0.3 },
+    ambient: { e: ['✦', '·', '✧'], n: 16, vy: -8, sway: 4, twinkle: 1, alpha: 0.3, size: [6, 12] },
+    /*EN*/ en: { title: 'Sling', tag: 'Spin, let go and fly', help: 'You spin around an <b>anchor</b>. <b>Tap</b> to let go: you fly off in the direction you were moving and grab onto the next anchor you pass close to. Climb up to the 🏁 flag. If you fall off the bottom or touch a creature you lose a life and go back to your last anchor. ⭐ stars give points. The walls bounce you back.', tvHelp: 'OK to let go of the anchor.', dict: { 'Altura: ': 'Height: ' } },
+    /*TV*/ tvHelp: 'OK para soltarte del ancla.',
+    id: 'honda', title: 'Honda', emoji: '🌀', color: '#ffd43b', origin: 'Sling / Slingy',
+    help: 'Giras alrededor de un <b>ancla</b>. <b>Toca</b> para soltarte: sales disparado hacia donde ibas y te agarras a la siguiente ancla por la que pases cerca. Sube hasta la bandera 🏁. Si caes por abajo o tocas a un bicho, pierdes una vida y vuelves a tu última ancla. Las estrellas ⭐ dan puntos. Las paredes te rebotan.',
+    lives: 3, levels: 0, cap: 25,
+    setup(g) {
+      g.s = { t: 0, cam: 0, best: 0, home: 0, trail: [], b: { x: FW / 2 + 1, y: 0, vx: 0, vy: 1 } };
+      const s = g.s; geo(g); build(g);
+      s.V = 4.5 + Math.min(g.lv, 25) * 0.05;
+      s.ang = Math.PI * 0.75; s.r = 1; s.dir = 1; s.cur = 0; s.fly = false; s.floor = -6;
+      stepBall(s, 0);
+    },
+    layout(g) { if (g.s.an) geo(g); },
+    down(g) { release(g); },
+    key(g, k, d) { if (d && (k === ' ' || k === 'ArrowUp')) release(g); },
+    demo(g) {
+      const s = g.s; if (s.fly || s.done || s.dead) return { wait: 0.05 };
+      const i = simRelease(s);
+      if (i > s.cur) return { tap: [g.W / 2, g.bot - 70], after: 0.05, say: s.cur === 0 ? Arcade.T('Suéltate cuando apuntes a la siguiente ancla', 'Let go when you point at the next anchor') : null };
+      return { wait: 0.02 };
+    },
+    update(g, dt) {
+      const s = g.s; if (!s.an) return;
+      s.t += dt;
+      if (s.dead) { s.dead -= dt; if (s.dead <= 0) { s.dead = 0; if (g.state === 'play' && g.die()) { s.b.vx = 0; s.b.vy = 1; s.fly = false; s.cur = s.home; s.ang = Math.PI * 0.5; s.r = 1; s.dir = 1; s.inv = 1.2; } } return; }
+      if (s.inv > 0) s.inv -= dt;
+      const r = s.done ? null : stepBall(s, dt);
+      if (r && r.ev === 'catch') attach(g, r.i);
+      else if (r && r.ev === 'dead' && !(s.inv > 0 && r.f)) {
+        s.dead = 0.9; s.fly = false; g.mood('scared', 1);
+        if (r.f) { g.burst(X(g, s.b.x), Y(g, s.b.y), { n: 14, color: ['#ff6b6b', '#fff'], speed: 200 }); Arcade.sfx.hit(); }
+        else { Arcade.tone(500, 0.5, 'sine', 0.1, -380); g.message(Arcade.T('¡Al vacío!', 'Into the void!'), 0.9); }
+      }
+      if (s.fly) { s.trail.push({ x: s.b.x, y: s.b.y }); if (s.trail.length > 16) s.trail.shift(); } else if (s.trail.length) s.trail.shift();
+      // estrellas
+      for (const st of s.stars) if (!st.got && Math.hypot(st.x - s.b.x, st.y - s.b.y) < 0.5) { st.got = true; g.addScore(25 * Math.max(1, g.lv), X(g, st.x), Y(g, st.y)); Arcade.sfx.coin(); }
+      // cámara: sigue a la pelota sin bajar de su ancla
+      const want = Math.max(0, (s.fly ? s.b.y : apos(s.an[s.cur], s.t).y) + 0.6);
+      s.cam += (want - s.cam) * Math.min(1, dt * (s.fly ? 2.2 : 3));
+      s.floor = Math.min(apos(s.an[s.home], s.t).y - 2.2, s.cam - (g.bot - s.my) / s.u - 0.6);
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      const bg = ctx.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, '#0d0b2a'); bg.addColorStop(1, '#3b2f8a');
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      if (!s.an) return;
+      if (W > H) g.scenery(['☁️', '⭐', '🌙', '✨'], 14, { alpha: 0.14, size: [22, 40], bob: 4 });   // adorno a los lados en pantallas apaisadas
+      const u = s.u;
+      // paredes
+      ctx.fillStyle = 'rgba(255,255,255,.06)'; ctx.fillRect(s.ox - 6, 0, 6, H); ctx.fillRect(s.ox + FW * u, 0, 6, H);
+      // nubes de fondo con paralaje
+      for (let i = 0; i < 6; i++) { const y = ((i * 170 + s.cam * u * 0.3) % (H + 200)) - 100; Arcade.emoji(ctx, i % 2 ? '☁️' : '🌙', ((i * 97) % W), y, i % 2 ? 50 : 22, { alpha: 0.12 }); }
+      // camino guía
+      ctx.strokeStyle = 'rgba(255,212,59,.12)'; ctx.lineWidth = 2; ctx.setLineDash([4, 8]); ctx.beginPath();
+      s.an.forEach((a, i) => { const p = apos(a, s.t); i ? ctx.lineTo(X(g, p.x), Y(g, p.y)) : ctx.moveTo(X(g, p.x), Y(g, p.y)); }); ctx.stroke(); ctx.setLineDash([]);
+      for (const st of s.stars) if (!st.got) Arcade.emoji(ctx, '⭐', X(g, st.x), Y(g, st.y) + Math.sin(g.rt * 3 + st.x) * 3, u * 0.42);
+      s.an.forEach((a, i) => {
+        const p = apos(a, s.t), x = X(g, p.x), y = Y(g, p.y); if (y < -u * 2 || y > H + u * 2) return;
+        const near = i === s.cur && !s.fly;
+        ctx.strokeStyle = near ? 'rgba(255,212,59,.35)' : 'rgba(255,255,255,.08)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x, y, CATCH * u, 0, TAU); ctx.stroke();
+        ctx.fillStyle = i === s.goal ? '#ffd43b' : i <= s.best ? '#748ffc' : '#e9ecef';
+        ctx.beginPath(); ctx.arc(x, y, u * 0.16, 0, TAU); ctx.fill();
+        ctx.strokeStyle = '#1b1640'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(x, y, u * 0.08, 0, TAU); ctx.stroke();
+        if (a.amp) { ctx.strokeStyle = 'rgba(255,255,255,.18)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(X(g, a.x - a.amp), y); ctx.lineTo(X(g, a.x + a.amp), y); ctx.stroke(); }
+        if (i === s.goal) Arcade.emoji(ctx, '🏁', x + u * 0.25, y - u * 0.45, u * 0.6);
+      });
+      for (const f of s.foes) { const p = foePos(f, s.t); Arcade.emojiTo(ctx, f.e, X(g, p.x), Y(g, p.y), u * 0.62, Math.cos(g.rt * f.sp + f.ph), 0, { mode: 'flip' }); }
+      // cuerda y pelota
+      const bx = X(g, s.b.x), by = Y(g, s.b.y);
+      s.trail.forEach((t, i) => { ctx.globalAlpha = (i / s.trail.length) * 0.4; ctx.fillStyle = '#ffd43b'; ctx.beginPath(); ctx.arc(X(g, t.x), Y(g, t.y), u * 0.2 * (i / s.trail.length), 0, TAU); ctx.fill(); });
+      ctx.globalAlpha = 1;
+      if (!s.fly && !s.dead) { const p = apos(s.an[s.cur], s.t); ctx.strokeStyle = '#ffe066'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(X(g, p.x), Y(g, p.y)); ctx.lineTo(bx, by); ctx.stroke(); }
+      if (!s.dead || Math.floor(g.rt * 10) % 2) Arcade.emoji(ctx, s.dead ? '😵' : s.fly ? '😆' : g.face(), bx, by, u * 0.62, { rot: s.fly ? g.rt * 6 : 0, alpha: s.inv > 0 ? 0.6 : 1 });
+      const pct = Math.round(clamp(s.b.y / Math.max(1, s.top), 0, 1) * 100);
+      Arcade.txt(ctx, 'Altura: ' + pct + '%', W / 2, g.top + 14, 15, '#dbe4ff', 'center', 900);
+    },
+  });
+})();

@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Gancho · Arcade Perdido</title>
+<meta name="theme-color" content="#2b1408">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css?v=6d7635e467">
+</head>
+<body class="game">
+<script src="config.js?v=c463c71b8c"></script>
+<script src="common.js?v=8bd36b43cd"></script>
+<script>
+(function () {
+  const { rand, clamp } = Arcade;
+  const TAU = Math.PI * 2, G = 9, R = 5.2, CEIL = 8.6, LAVA = 0.55, VMAX = 12;
+
+  function build(g) {
+    const s = g.s, L = g.lv, n = clamp(8 + Math.floor(L * 0.6), 8, 24);
+    const h = [{ x: 2, y: 6.6 }];
+    for (let i = 1; i < n; i++) {
+      const p = h[i - 1];
+      h.push({ x: p.x + clamp(rand(2.3, 3.2) + L * 0.035, 2.3, 4), y: clamp(rand(4.6, 7.2) - (L > 10 && Math.random() < 0.3 ? 0.8 : 0), 4.2, 7.4) });
+    }
+    s.hooks = h; s.goalX = h[n - 1].x + 2.6;
+    s.coins = []; s.saws = [];
+    for (let i = 1; i < n; i++) {
+      const p = h[i - 1], q = h[i];
+      if (Math.random() < 0.6) s.coins.push({ x: (p.x + q.x) / 2, y: Math.min(p.y, q.y) - rand(1.6, 2.6), got: false });
+      // sierras: flotan por debajo del arco de vuelo o cerca del techo, nunca encima de un gancho
+      if (L >= 5 && i > 1 && Math.random() < clamp(0.12 + L * 0.03, 0, 0.7)) {
+        const low = Math.random() < 0.6;
+        s.saws.push({ x: (p.x + q.x) / 2 + rand(-0.4, 0.4), y: low ? rand(1.2, 1.9) : CEIL - rand(0.3, 0.6), amp: low ? rand(0.2, 0.5) : 0.15, sp: rand(1.5, 2.5), ph: rand(0, TAU) });
+      }
+    }
+  }
+  const sawPos = (w, t) => ({ x: w.x, y: w.y + Math.sin(t * w.sp + w.ph) * w.amp });
+  function grabTarget(s) {
+    const p = s.p; let best = -1, bd = 1e9;
+    s.hooks.forEach((h, i) => {
+      const d = Math.hypot(h.x - p.x, h.y - p.y);
+      if (d > R || h.y < p.y - 0.2 || h.x < p.x - 0.6) return;
+      const sc = d - (h.x - p.x) * 0.6 + (i <= s.last ? 2 : 0);
+      if (sc < bd) { bd = sc; best = i; }
+    });
+    return best;
+  }
+  function grab(g) {
+    const s = g.s; if (s.hook >= 0 || s.dead || s.done) return;
+    const i = grabTarget(s); if (i < 0) { s.miss = 0.3; Arcade.sfx.tick(); return; }
+    const h = s.hooks[i]; s.hook = i; s.len = Math.max(1, Math.hypot(h.x - s.p.x, h.y - s.p.y)); s.lenT = ropeT(h, s.len); s.shot = 1;
+    Arcade.tone(700, 0.06, 'square', 0.05, -200);
+    if (i > s.last) { g.addScore(10 * Math.max(1, g.lv), X(g, h.x), Y(g, h.y) - 20); s.last = i; }
+  }
+  // la cuerda se recoge sola hasta una longitud que no roce la lava
+  const ropeT = (h, d) => Math.max(1, Math.min(d, h.y - 2.6, 2.8));
+  function letGo(s) { if (s.hook >= 0) { s.hook = -1; if (!s.sim) Arcade.sfx.whoosh(); } }
+  function step(s, dt) {
+    const p = s.p; p.vy -= G * dt;
+    if (s.hook >= 0) { // empujón suave hacia delante para no perder el ritmo
+      const h = s.hooks[s.hook], dx = p.x - h.x, dy = p.y - h.y, d = Math.hypot(dx, dy) || 1, tx = -dy / d, ty = dx / d, sgn = tx * p.vx + ty * p.vy >= 0 ? 1 : -1;
+      if (sgn * tx > 0) { p.vx += tx * sgn * 2.2 * dt; p.vy += ty * sgn * 2.2 * dt; }
+    }
+    const sp = Math.hypot(p.vx, p.vy); if (sp > VMAX) { p.vx *= VMAX / sp; p.vy *= VMAX / sp; }
+    p.x += p.vx * dt; p.y += p.vy * dt;
+    if (s.hook >= 0) {
+      if (s.len > s.lenT) s.len = Math.max(s.lenT, s.len - 7 * dt);
+      const h = s.hooks[s.hook], dx = p.x - h.x, dy = p.y - h.y, d = Math.hypot(dx, dy);
+      if (d > s.len) { const nx = dx / d, ny = dy / d; p.x = h.x + nx * s.len; p.y = h.y + ny * s.len; const vr = p.vx * nx + p.vy * ny; if (vr > 0) { p.vx -= vr * nx; p.vy -= vr * ny; } }
+    }
+    if (p.y > CEIL) { p.y = CEIL; if (p.vy > 0) p.vy = 0; }
+    if (p.x < 0.4) { p.x = 0.4; p.vx = Math.abs(p.vx); }
+  }
+  // ¿cuánto hay que mantener colgado para soltarse bien? (para la demo)
+  function holdTime(s) {
+    const c = { hooks: s.hooks, p: { ...s.p }, hook: -1, len: 0, last: s.last, sim: true };
+    const i = grabTarget(c); if (i < 0) return -1;
+    c.hook = i; c.len = Math.max(1, Math.hypot(s.hooks[i].x - c.p.x, s.hooks[i].y - c.p.y)); c.lenT = ropeT(s.hooks[i], c.len);
+    for (let t = 0; t < 4; t += 1 / 60) {
+      step(c, 1 / 60); const h = s.hooks[i];
+      if (c.p.x > h.x + 0.3 && c.p.vy > 1.2 && c.p.vx > 2.4) return t;
+      if (c.p.y < LAVA + 0.4) return -1;
+    }
+    return 2;
+  }
+  function geo(g) { const s = g.s, h = g.bot - g.top; s.u = Math.min(h / 9.6, g.W / 7); s.oy = g.bot - 0.2 * s.u; }
+  const X = (g, x) => (x - g.s.cam) * g.s.u + g.W * 0.32, Y = (g, y) => g.s.oy - y * g.s.u;
+  function respawn(s) { const h = s.hooks[Math.max(0, s.last)]; s.p = { x: h.x - 0.2, y: h.y - 2.2, vx: 4.5, vy: 0 }; s.hook = Math.max(0, s.last); s.len = s.lenT = Math.hypot(0.2, 2.2); s.inv = 1.2; }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Engánchate y vuela sobre la lava', deco: ['🔗', '🔥', '🌋', '💰', '⚙️', '🏁'], font: 'impact', bg: ['#5c1f0a', '#2b1408'],
+    music: { mode: 'dorian', bpm: 132, wave: 'square', style: 'drive', root: 57 }, voice: { wave: 'square', mul: 0.9, echo: 0.2 },
+    ambient: { e: ['🔥', '✨'], n: 10, vy: -30, sway: 10, alpha: 0.2, size: [8, 14] },
+    /*EN*/ en: { title: 'Hook', tag: 'Hook on and fly over the lava', help: '<b>Hold</b> the screen to throw the rope to the nearest hook ahead and <b>swing</b>; <b>let go</b> to fly forward. Grab the next hook before you fall. Reach the 🏁 flag without touching the lava or the ⚙️ saws. 🪙 coins give points. The further you swing past the bottom, the higher you fly.', tvHelp: 'Hold OK to hook on · let go to fly.', dict: { 'Meta: ': 'Goal: ' } },
+    /*TV*/ tvHelp: 'Mantén OK para engancharte · suelta para volar.',
+    id: 'gancho', title: 'Gancho', emoji: '🎣', color: '#ff922b', origin: 'HookPod / Mikey Hooks',
+    help: '<b>Mantén pulsado</b> para lanzar la cuerda al gancho más cercano por delante y <b>balancearte</b>; <b>suelta</b> para salir volando hacia delante. Agárrate al siguiente gancho antes de caer. Llega a la bandera 🏁 sin tocar la lava ni las sierras ⚙️. Las monedas 🪙 dan puntos. Cuanto más pases del punto más bajo antes de soltarte, más alto volarás.',
+    lives: 3, levels: 0, cap: 25,
+    setup(g) {
+      g.s = { t: 0, cam: 0, last: 0, hook: 0, dead: 0, trail: [] };
+      const s = g.s; geo(g); build(g); respawn(s); s.inv = 0;
+    },
+    layout(g) { if (g.s.hooks) geo(g); },
+    down(g) { grab(g); },
+    up(g) { letGo(g.s); },
+    key(g, k, d) { if (k === ' ' || k === 'ArrowUp') { if (d) grab(g); else letGo(g.s); } },
+    demo(g) {
+      const s = g.s; if (s.dead || s.done) return { wait: 0.1 };
+      if (s.hook >= 0) { // colgado al empezar o tras reaparecer: espera al buen momento para soltar
+        const h = s.hooks[s.hook]; if (s.p.x > h.x + 0.3 && s.p.vy > 1.2 && s.p.vx > 2.4) { letGo(s); return { wait: 0.05 }; } return { wait: 0.02 };
+      }
+      const i = grabTarget(s);
+      if (i > s.last - 1 && i >= 0) { const d = holdTime(s); if (d > 0 && (s.p.vy < 0.4 || Math.hypot(s.hooks[i].x - s.p.x, s.hooks[i].y - s.p.y) < R * 0.7)) return { hold: [g.W * 0.6, g.bot - 80], dur: d, say: s.last === 0 ? Arcade.T('Mantén para engancharte, suelta para volar', 'Hold to hook on, let go to fly') : null }; }
+      return { wait: 0.03 };
+    },
+    update(g, dt) {
+      const s = g.s; if (!s.hooks) return;
+      s.t += dt; if (s.shot > 0) s.shot -= dt * 6; if (s.miss > 0) s.miss -= dt; if (s.inv > 0) s.inv -= dt;
+      if (s.dead) { s.dead -= dt; if (s.dead <= 0) { s.dead = 0; if (g.state === 'play' && g.die()) respawn(s); } return; }
+      if (s.done) { s.p.x += 4 * dt; return; }
+      step(s, dt);
+      const p = s.p;
+      s.trail.push({ x: p.x, y: p.y }); if (s.trail.length > 12) s.trail.shift();
+      for (const c of s.coins) if (!c.got && Math.hypot(c.x - p.x, c.y - p.y) < 0.55) { c.got = true; g.addScore(25 * Math.max(1, g.lv), X(g, c.x), Y(g, c.y)); Arcade.sfx.coin(); }
+      let hit = p.y < LAVA;
+      if (!(s.inv > 0)) for (const w of s.saws) { const q = sawPos(w, s.t); if (Math.hypot(q.x - p.x, q.y - p.y) < 0.6) hit = true; }
+      if (hit) {
+        s.dead = 1; s.hook = -1; g.mood('hurt', 1);
+        g.burst(X(g, p.x), Y(g, p.y), { n: 18, color: ['#ff922b', '#ffd43b', '#fa5252'], speed: 220, up: 120 });
+        Arcade.tone(300, 0.4, 'sawtooth', 0.08, -200); if (p.y < LAVA) g.message(Arcade.T('¡Lava!', 'Lava!'), 0.8);
+      }
+      if (p.x >= s.goalX && !s.done) { s.done = true; s.hook = -1; g.confetti(70); g.addScore(150 * g.lv, g.W / 2, g.H * 0.4); setTimeout(() => { if (g.state === 'play') g.win(); }, 800); }
+      s.cam += (p.x - s.cam) * Math.min(1, dt * 3);
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      const bg = ctx.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, '#1a0a05'); bg.addColorStop(0.7, '#5c1f0a'); bg.addColorStop(1, '#c92a2a');
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      if (!s.hooks) return;
+      const u = s.u;
+      // montañas de fondo
+      ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.beginPath(); ctx.moveTo(0, H);
+      for (let x = 0; x <= W; x += 16) ctx.lineTo(x, Y(g, 3.2 + Math.sin((x / u + s.cam * 0.4) * 0.5) * 1.2 + Math.sin((x / u + s.cam * 0.4) * 1.3) * 0.4));
+      ctx.lineTo(W, H); ctx.fill();
+      // techo
+      ctx.fillStyle = '#1a0a05'; ctx.fillRect(0, 0, W, Y(g, CEIL + 0.3));
+      // ganchos
+      const tgt = s.hook < 0 && !s.dead ? grabTarget(s) : -1;
+      s.hooks.forEach((h, i) => {
+        const x = X(g, h.x), y = Y(g, h.y); if (x < -u * 5 || x > W + u * 5) return;
+        ctx.strokeStyle = 'rgba(255,255,255,.18)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x, Y(g, CEIL + 0.3)); ctx.lineTo(x, y); ctx.stroke();
+        if (i === tgt) { ctx.strokeStyle = 'rgba(255,212,59,' + (0.4 + 0.3 * Math.sin(g.rt * 8)) + ')'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(x, y, u * 0.45, 0, TAU); ctx.stroke(); }
+        ctx.fillStyle = i <= s.last ? '#ffd43b' : '#ced4da'; ctx.strokeStyle = '#343a40'; ctx.lineWidth = u * 0.1;
+        ctx.beginPath(); ctx.arc(x, y, u * 0.22, 0, TAU); ctx.stroke(); ctx.beginPath(); ctx.arc(x, y, u * 0.1, 0, TAU); ctx.fill();
+      });
+      for (const c of s.coins) if (!c.got) Arcade.emoji(ctx, '🪙', X(g, c.x), Y(g, c.y), u * 0.5, { sx: Math.abs(Math.cos(g.rt * 3 + c.x)) * 0.8 + 0.2 });
+      for (const w of s.saws) { const q = sawPos(w, s.t); Arcade.emoji(ctx, '⚙️', X(g, q.x), Y(g, q.y), u * 0.95, { rot: g.rt * 8 }); }
+      // meta
+      const gx = X(g, s.goalX); ctx.fillStyle = 'rgba(255,255,255,.12)'; ctx.fillRect(gx - 3, Y(g, CEIL), 6, Y(g, LAVA) - Y(g, CEIL)); Arcade.emoji(ctx, '🏁', gx, Y(g, 4.2), u * 1.1);
+      // lava
+      const ly = Y(g, LAVA);
+      ctx.fillStyle = '#fa5252'; ctx.beginPath(); ctx.moveTo(0, H);
+      for (let x = 0; x <= W; x += 10) ctx.lineTo(x, ly + Math.sin(x * 0.05 + g.rt * 3) * 4 + Math.sin(x * 0.13 - g.rt * 2) * 2);
+      ctx.lineTo(W, H); ctx.fill();
+      ctx.fillStyle = '#ffa94d'; ctx.globalAlpha = 0.6; ctx.fillRect(0, ly + 8, W, 4); ctx.globalAlpha = 1;
+      // jugador
+      const p = s.p, px = X(g, p.x), py = Y(g, p.y);
+      s.trail.forEach((t, i) => { ctx.globalAlpha = (i / s.trail.length) * 0.3; ctx.fillStyle = '#ffd43b'; ctx.beginPath(); ctx.arc(X(g, t.x), Y(g, t.y), u * 0.18 * (i / s.trail.length), 0, TAU); ctx.fill(); });
+      ctx.globalAlpha = 1;
+      if (s.hook >= 0 && !s.dead) {
+        const h = s.hooks[s.hook], hx = X(g, h.x), hy = Y(g, h.y), k = s.shot > 0 ? 1 - s.shot : 1;
+        ctx.strokeStyle = '#e9c46a'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(px + (hx - px) * k, py + (hy - py) * k); ctx.stroke();
+      } else if (s.miss > 0) { ctx.strokeStyle = 'rgba(233,196,106,.5)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(px + u * 2, py - u * 2); ctx.stroke(); }
+      if (!s.dead) Arcade.emojiTo(ctx, s.hook < 0 && p.vy < -4 ? '😱' : g.face(), px, py, u * 0.8, p.vx, 0, { mode: 'flip', alpha: s.inv > 0 && Math.floor(g.rt * 10) % 2 ? 0.5 : 1 });
+      else Arcade.emoji(ctx, '🔥', px, Math.min(py, ly), u * 0.9 * s.dead);
+      const pct = Math.round(clamp(p.x / s.goalX, 0, 1) * 100);
+      Arcade.txt(ctx, 'Meta: ' + pct + '%', W / 2, g.top + 14, 15, '#ffe8cc', 'center', 900);
+    },
+  });
+})();
+</script>
+</body>
+</html>

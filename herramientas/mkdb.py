@@ -58,12 +58,12 @@ CATEGORIES = [
 ]
 
 CAT = {
-    'puzles': 'vias bumeran dados parejas domino hielo avalancha expande portales sumacamino losas relojes sumas destellos agua almacen buscaminas laberinto puzle inundacion cientos atasco emojidoku',
-    'combinar': 'cambio cuadra galletas centro sombreros burbujas cinta hexagonos lumina deslizaheroes mazmorra fusionabolas cadenaroja treses gemas bloques rosario sandia fusion grupos columnas puntos',
-    'accion': 'lazo pivote tuberia balancin cubos camarero mariquita piramide pinguino castillos hamburguesa fontanero cerditos justa ratonera desplazado campanas tunel monociclo esquiva astro dardos gloton globo pezgordo supervivientes cruce ladrillos rebotes',
-    'untoque': 'trepamuros planetita carretera torreta reaccion estallido punteria reflejos golpecolor encaje resorte escaleras montana helicoptero aleteo helice minero doscoches salto puente torre lenador saltacolor pinchos orbita candado',
-    'plataformas': 'escalador trampolin agujeros carrera saltarin volteo',
-    'fisica': 'barra fantasma tambaleante balanza teeter tirachinas derribo gravedad alas',
+    'puzles': 'empujon vias bumeran dados parejas domino hielo avalancha expande portales sumacamino losas relojes sumas destellos agua almacen buscaminas laberinto puzle inundacion cientos atasco emojidoku',
+    'combinar': 'racimo cambio cuadra galletas centro sombreros burbujas cinta hexagonos lumina deslizaheroes mazmorra fusionabolas cadenaroja treses gemas bloques rosario sandia fusion grupos columnas puntos',
+    'accion': 'luz pasarela lazo pivote tuberia balancin cubos camarero mariquita piramide pinguino castillos hamburguesa fontanero cerditos justa ratonera desplazado campanas tunel monociclo esquiva astro dardos gloton globo pezgordo supervivientes cruce ladrillos rebotes',
+    'untoque': 'honda gancho trepamuros planetita carretera torreta reaccion estallido punteria reflejos golpecolor encaje resorte escaleras montana helicoptero aleteo helice minero doscoches salto puente torre lenador saltacolor pinchos orbita candado',
+    'plataformas': 'bote escalador trampolin agujeros carrera saltarin volteo',
+    'fisica': 'elastico barra fantasma tambaleante balanza teeter tirachinas derribo gravedad alas',
     'estrategia': 'murallas centinela artilleria huerto torres celulas',
     'tablero': 'ishido palabra poker enraya memoria',
     'deportes': 'esqui circuito billar arquero minigolf',
@@ -73,7 +73,8 @@ CTRL = {  # control (como en games.js) → slug es, slug en, nombre en
     'Mantener': ('mantener', 'hold', 'Hold'), 'Dos dedos': ('dos-dedos', 'two-fingers', 'Two fingers'), 'Dos pulgares': ('dos-pulgares', 'two-thumbs', 'Two thumbs'),
 }
 ADDED = {'expande': '2.5.0', 'portales': '2.5.0', 'hexagonos': '2.5.0', 'lumina': '2.5.0', 'deslizaheroes': '2.5.0', 'sumacamino': '2.5.0',
-         'mazmorra': '2.5.0', 'fusionabolas': '2.5.0', 'cadenaroja': '2.5.0', 'losas': '2.5.0'}
+         'mazmorra': '2.5.0', 'fusionabolas': '2.5.0', 'cadenaroja': '2.5.0', 'losas': '2.5.0',
+         'honda': '2.16.0', 'gancho': '2.16.0', 'empujon': '2.16.0', 'racimo': '2.16.0', 'bote': '2.16.0', 'luz': '2.16.0', 'elastico': '2.16.0', 'pasarela': '2.16.0'}
 
 
 def slugify(t):

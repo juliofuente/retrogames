@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Racimo · Arcade Perdido</title>
+<meta name="theme-color" content="#1d1a2e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css?v=6d7635e467">
+</head>
+<body class="game">
+<script src="config.js?v=c463c71b8c"></script>
+<script src="common.js?v=8bd36b43cd"></script>
+<script src="phys.js?v=59122bc9b1"></script>
+<script>
+// @phys
+(function () {
+  const { clamp } = Arcade;
+  const FR = ['🍎', '🍊', '🍋', '🍏', '🍇'], COL = ['#fa5252', '#fd7e14', '#fcc419', '#82c91e', '#9c36b5'];
+  const WW = 360, WH = 540, BR = 19, NEAR = 5;
+  const rng = (seed) => () => { seed |= 0; seed = (seed + 0x6d2b79f5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+
+  function makeWorld(seed, n, k) {
+    const r = rng(seed), w = new Arcade.Phys.World({ gy: 900, iterations: 6, substeps: 2 });
+    w.box(WW / 2, WH + 20, WW + 80, 40, { static: true, friction: 0.6 });
+    w.box(-20, WH / 2 - 200, 40, WH + 400, { static: true, friction: 0.2 }); w.box(WW + 20, WH / 2 - 200, 40, WH + 400, { static: true, friction: 0.2 });
+    const per = Math.floor(WW / (BR * 2 + 2));
+    for (let i = 0; i < n; i++) {
+      const row = Math.floor(i / per), col = i % per;
+      const x = BR + 2 + col * (BR * 2 + 2) + (row % 2 ? BR : 0) * 0.5 + r() * 3, y = WH - BR - row * (BR * 1.9) - r() * 4;
+      w.circle(Math.min(WW - BR - 1, x), y, BR - r() * 2, { density: 1, friction: 0.35, restitution: 0.05, data: { c: Math.floor(r() * k) } });
+    }
+    return w;
+  }
+  const balls = (w) => w.bodies.filter((b) => b.kind === 'circle' && !b.removed);
+  function group(w, b0) {
+    const bs = balls(w), out = [b0], seen = new Set([b0]);
+    for (let i = 0; i < out.length; i++) {
+      const a = out[i];
+      for (const b of bs) if (!seen.has(b) && b.data.c === a.data.c && Math.hypot(a.p.x - b.p.x, a.p.y - b.p.y) < a.r + b.r + NEAR) { seen.add(b); out.push(b); }
+    }
+    return out;
+  }
+  function groups(w) {
+    const seen = new Set(), out = [];
+    for (const b of balls(w)) { if (seen.has(b)) continue; const gr = group(w, b); gr.forEach((x) => seen.add(x)); if (gr.length >= 2) out.push(gr); }
+    return out;
+  }
+  const calm = (w) => w.bodies.every((b) => !b.im || Math.hypot(b.v.x, b.v.y) < 10);
+  function settle(w, max) { for (let i = 0; i < max; i++) { w.step(1 / 60); if (i > 10 && calm(w)) break; } }
+  // partida del bot «el grupo más grande primero»: marca el objetivo del nivel (siempre alcanzable)
+  function greedy(seed, n, k) {
+    const w = makeWorld(seed, n, k); settle(w, 240);
+    for (let it = 0; it < 80; it++) {
+      const gs = groups(w); if (!gs.length) break;
+      gs.sort((a, b) => b.length - a.length); for (const b of gs[0]) w.remove(b);
+      settle(w, 120);
+    }
+    return balls(w).length;
+  }
+  function geo(g) { const s = g.s, top = g.top + 48, h = g.bot - top - 8; s.sc = Math.min((g.W - 16) / WW, h / WH); s.ox = (g.W - WW * s.sc) / 2; s.oy = top + h - WH * s.sc; }
+  const SX = (s, x) => s.ox + x * s.sc, SY = (s, y) => s.oy + y * s.sc;
+  function pop(g, b) {
+    const s = g.s; if (s.done || !calm(s.w)) return;
+    const gr = group(s.w, b);
+    if (gr.length < 2) { s.wob = { b, t: 1 }; Arcade.sfx.bad(); return; }
+    let cx = 0, cy = 0;
+    for (const x of gr) { cx += x.p.x; cy += x.p.y; s.w.remove(x); g.burst(SX(s, x.p.x), SY(s, x.p.y), { n: 5, color: COL[x.data.c], speed: 160, life: 0.5 }); }
+    cx /= gr.length; cy /= gr.length;
+    const pts = gr.length * (gr.length - 1) * 5 * Math.max(1, Math.round(g.lv / 2));
+    g.addScore(pts, SX(s, cx), SY(s, cy)); Arcade.sfx.combo ? Arcade.sfx.combo(Math.min(8, gr.length)) : Arcade.sfx.pop();
+    if (gr.length >= 6) { g.ring(SX(s, cx), SY(s, cy), COL[gr[0].data.c], 30 + gr.length * 8, 5); g.shake(0.15, 4); }
+    s.moves++; s.check = 0.35;
+  }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Revienta grupos y deja que caigan', deco: ['🍎', '🍊', '🍋', '🍏', '🍇', '💥'], font: 'round', bg: ['#33295c', '#1d1a2e'],
+    music: { mode: 'lydian', bpm: 96, wave: 'triangle', style: 'chill', root: 64 }, voice: { wave: 'sine', mul: 1.2, echo: 0.35 },
+    /*EN*/ en: { title: 'Bunch', tag: 'Pop groups and let them tumble', help: 'A pile of fruit with real physics. <b>Tap</b> a group of <b>2 or more</b> touching fruits of the same kind to pop it: the rest falls, rolls and makes new groups. The bigger the group, the more points. When there are no groups left, you pass the level if <b>no more fruit than the goal</b> remains. The goal comes from a robot that always pops the biggest group, so you can always reach it.', tvHelp: 'D-pad to choose a fruit · OK to pop its group.', dict: { 'Quedan ': 'Left ', ' · objetivo ≤ ': ' · goal ≤ ' } },
+    /*TV*/ tvHelp: 'Cruceta para elegir fruta · OK para reventar su grupo.',
+    tv: { mode: 'tap', targets: (g) => { const s = g.s; if (!s.w) return []; const r = BR * s.sc; return balls(s.w).map((b) => ({ x: SX(s, b.p.x) - r, y: SY(s, b.p.y) - r, w: r * 2, h: r * 2 })); } },
+    id: 'racimo', title: 'Racimo', emoji: '🍇', color: '#cc5de8', origin: 'SameGame / SamePhysics / Phyballs',
+    help: 'Un montón de frutas con física de verdad. <b>Toca</b> un grupo de <b>2 o más</b> frutas iguales que se toquen para reventarlo: las demás caen, ruedan y forman grupos nuevos. Cuanto más grande el grupo, más puntos. Cuando ya no quedan grupos, pasas de nivel si quedan <b>como mucho tantas frutas como el objetivo</b>. El objetivo sale de un robot que siempre revienta el grupo más grande, así que siempre se puede conseguir.',
+    lives: 3, levels: 0, cap: 20,
+    setup(g) {
+      const L = g.lv, n = clamp(26 + L * 2, 26, 60), k = L < 4 ? 3 : L < 11 ? 4 : 5;
+      const seed = (Math.random() * 1e9) | 0, bot = greedy(seed, n, k);
+      const slack = { easy: 4, normal: 2, hard: 0 }[g.mode] ?? 2;
+      g.s = { w: makeWorld(seed, n, k), n, k, goal: Math.min(n - 2, bot + slack), bot, moves: 0, check: 1, done: false };
+      settle(g.s.w, 30);   // empieza cayendo un poco
+      geo(g);
+    },
+    layout(g) { if (g.s.w) geo(g); },
+    tap(g, p) { const s = g.s; if (!s.w) return; const b = s.w.at((p.x - s.ox) / s.sc, (p.y - s.oy) / s.sc); if (b && b.kind === 'circle') pop(g, b); },
+    /*SC*/ demo(g) {
+      const s = g.s; if (s.done || !calm(s.w)) return { wait: 0.3 };
+      const gs = groups(s.w); if (!gs.length) return { wait: 0.5 };
+      gs.sort((a, b) => b.length - a.length); const b = gs[0][0];
+      return { tap: [SX(s, b.p.x), SY(s, b.p.y)], after: 0.6, say: s.moves === 0 ? Arcade.T('Revienta grupos de frutas iguales', 'Pop groups of matching fruit') : s.moves === 2 ? Arcade.T('Los grupos grandes dan muchos más puntos', 'Big groups give far more points') : null };
+    },
+    update(g, dt) {
+      const s = g.s; if (!s.w) return;
+      s.w.step(Math.min(dt, 1 / 30));
+      for (const b of balls(s.w)) if (b.p.y > WH + 200) s.w.remove(b);
+      if (s.wob) { s.wob.t -= dt * 4; if (s.wob.t <= 0) s.wob = null; }
+      if (s.done) return;
+      if (s.check > 0) { s.check -= dt; return; }
+      if (!calm(s.w)) return;
+      s.check = 0.4;
+      if (groups(s.w).length) return;
+      const left = balls(s.w).length; s.done = true;
+      if (left <= s.goal) {
+        const bonus = left === 0 ? 2000 : Math.max(0, s.goal - left) * 60;
+        g.addScore((200 + bonus) * Math.max(1, Math.round(g.lv / 2)), g.W / 2, g.H * 0.4); g.confetti(70);
+        setTimeout(() => { if (g.state === 'play') g.win(left <= s.bot ? 3 : left <= s.bot + 1 ? 2 : 1); }, 700);
+      } else {
+        g.message(Arcade.T('Quedan demasiadas', 'Too many left'), 1.3, left + ' / ' + s.goal);
+        setTimeout(() => { if (g.state === 'play' && g.die()) Arcade.current.def.setup(g); }, 1400);
+      }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      const bg = ctx.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, '#1d1a2e'); bg.addColorStop(1, '#3b2f6b');
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      if (!s.w) return;
+      if (W > H) g.scenery(['🍎', '🍊', '🍋', '🍇', '🍏'], 14, { alpha: 0.14, size: [22, 40], bob: 4 });   // adorno a los lados en pantallas apaisadas
+      const sc = s.sc;
+      ctx.fillStyle = 'rgba(255,255,255,.06)'; Arcade.rr(ctx, s.ox - 6, s.oy - 10, WW * sc + 12, WH * sc + 16, 14); ctx.fill();
+      ctx.strokeStyle = 'rgba(255,255,255,.25)'; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(s.ox - 4, s.oy); ctx.lineTo(s.ox - 4, s.oy + WH * sc + 4); ctx.lineTo(s.ox + WW * sc + 4, s.oy + WH * sc + 4); ctx.lineTo(s.ox + WW * sc + 4, s.oy); ctx.stroke();
+      const quiet = calm(s.w);
+      for (const b of balls(s.w)) {
+        let x = SX(s, b.p.x), y = SY(s, b.p.y); const r = b.r * sc;
+        if (s.wob && s.wob.b === b) x += Math.sin(s.wob.t * 25) * 4;
+        ctx.fillStyle = COL[b.data.c] + '33'; ctx.beginPath(); ctx.arc(x, y, r, 0, 6.3); ctx.fill();
+        Arcade.emoji(ctx, FR[b.data.c], x, y, r * 1.85, { rot: b.a });
+      }
+      // resalta el grupo bajo el dedo/cursor
+      if (quiet && s.hover) { const b = s.w.at(s.hover[0], s.hover[1]); if (b && b.kind === 'circle') { const gr = group(s.w, b); if (gr.length >= 2) { ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; for (const x of gr) { ctx.beginPath(); ctx.arc(SX(s, x.p.x), SY(s, x.p.y), x.r * sc + 2, 0, 6.3); ctx.stroke(); } } } }
+      const left = balls(s.w).length;
+      Arcade.txt(ctx, 'Quedan ' + left + ' · objetivo ≤ ' + s.goal, W / 2, g.top + 22, 16, left <= s.goal ? '#69db7c' : '#f3d9fa', 'center', 900);
+    },
+    hover(g, x, y) { const s = g.s; if (s.w) s.hover = [(x - s.ox) / s.sc, (y - s.oy) / s.sc]; },
+  });
+})();
+</script>
+</body>
+</html>

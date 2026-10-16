@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Luz flotante · Arcade Perdido</title>
+<meta name="theme-color" content="#05060f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css?v=6d7635e467">
+</head>
+<body class="game">
+<script src="config.js?v=c463c71b8c"></script>
+<script src="common.js?v=8bd36b43cd"></script>
+<script>
+(function () {
+  const { rand, clamp } = Arcade;
+  const FW = 6, OR = 0.3, STEER = 5.5, TH = 0.36;
+
+  function build(g) {
+    const s = g.s, L = g.lv, n = clamp(9 + Math.floor(L * 0.7), 9, 26);
+    s.vy = 2.1 + Math.min(L, 25) * 0.045;
+    const gates = []; let y = 4, cx = FW / 2;
+    for (let i = 0; i < n; i++) {
+      const dy = clamp(rand(2.5, 3.3) - L * 0.035, 1.9, 3.3), gw = clamp(rand(1.75, 2.1) - L * 0.035, 1.05, 2.1);
+      const maxShift = STEER * (dy / s.vy) * 0.55;
+      const nc = clamp(cx + rand(-1, 1) * Math.min(maxShift, 0.6 + L * 0.12), gw / 2 + 0.25, FW - gw / 2 - 0.25);
+      y += dy;
+      const gt = { y, cx: nc, gw };
+      if (L >= 6 && Math.random() < clamp((L - 5) * 0.05, 0, 0.5)) { gt.amp = Math.min(rand(0.4, 1), nc - gw / 2 - 0.2, FW - gw / 2 - 0.2 - nc); gt.sp = rand(0.7, 1.3); gt.ph = rand(0, 6.28); if (gt.amp < 0.2) delete gt.amp; }
+      gates.push(gt); cx = nc;
+    }
+    s.gates = gates; s.goalY = y + 2.5;
+    // chispas: casi una por puerta, en el hueco o un poco antes
+    s.sparks = [];
+    gates.forEach((gt, i) => { if (Math.random() < clamp(0.95 - L * 0.012, 0.65, 0.95)) s.sparks.push({ x: clamp(gt.cx + rand(-0.4, 0.4), 0.4, FW - 0.4), y: gt.y - rand(0.9, 1.4), got: false }); void i; });
+    s.drain = 0.055 + Math.min(L, 25) * 0.0035;
+  }
+  const gapX = (gt, t) => gt.cx + (gt.amp ? Math.sin(t * gt.sp + gt.ph) * gt.amp : 0);
+  function geo(g) { const s = g.s, h = g.bot - g.top; s.u = Math.min((g.W - 12) / FW, h / 9); s.ox = (g.W - FW * s.u) / 2; s.my = g.top + h * 0.7; }
+  const X = (g, x) => g.s.ox + x * g.s.u, Y = (g, y) => g.s.my - (y - g.s.y) * g.s.u;
+  function respawn(s) {
+    const gt = s.gates[s.passed - 1], y = gt ? gt.y + 0.7 : 1.5;
+    s.y = y; s.x = gt ? gapX(gt, s.t) : FW / 2; s.light = Math.max(s.light, 0.65); s.inv = 1.5;
+  }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Sube en la oscuridad sin apagarte', deco: ['💡', '✨', '🌑', '🦇', '🌟', '🕯️'], font: 'fancy', bg: ['#141634', '#05060f'],
+    music: { mode: 'phryg', bpm: 78, wave: 'sine', style: 'chill', root: 57 }, voice: { wave: 'sine', mul: 1.3, echo: 0.45 },
+    /*EN*/ en: { title: 'Floaty Light', tag: 'Rise through the dark without going out', help: 'You are a little <b>light</b> that floats up on its own through a dark cave. <b>Drag</b> left and right to slip through the gaps in the rock. Your glow keeps fading: catch the ✨ sparks to light up again, because the darker it gets the less you see. If you touch the rock or your light goes out, you lose a life. Reach the top.', tvHelp: '◀ ▶ to move · catch the sparks.', dict: { 'Altura: ': 'Height: ', 'Luz': 'Light' } },
+    /*TV*/ tvHelp: '◀ ▶ para moverte · recoge las chispas.',
+    id: 'luz', title: 'Luz flotante', emoji: '💡', color: '#ffe066', origin: 'Floaty Light / Bouncy Light',
+    help: 'Eres una pequeña <b>luz</b> que sube sola por una cueva oscura. <b>Arrastra</b> a izquierda y derecha para pasar por los huecos de la roca. Tu brillo se va gastando: recoge las chispas ✨ para iluminarte otra vez, porque cuanto más oscuro, menos ves. Si tocas la roca o se te apaga la luz, pierdes una vida. Llega arriba del todo.',
+    lives: 3, levels: 0, cap: 25,
+    setup(g) {
+      g.s = { t: 0, x: FW / 2, y: 0, light: 1, passed: 0, kdir: 0, dead: 0, trail: [] };
+      geo(g); build(g);
+    },
+    layout(g) { if (g.s.gates) geo(g); },
+    down(g, p) { g.s.lx = p.x; },
+    move(g, p) { const s = g.s; if (s.lx == null) return; s.x = clamp(s.x + (p.x - s.lx) / s.u * 1.15, OR, FW - OR); s.lx = p.x; },
+    up(g) { g.s.lx = null; },
+    key(g, k, d) { const s = g.s; if (k === 'ArrowLeft') s.kdir = d ? -1 : s.kdir === -1 ? 0 : s.kdir; if (k === 'ArrowRight') s.kdir = d ? 1 : s.kdir === 1 ? 0 : s.kdir; },
+    /*SC*/ demo(g) {
+      const s = g.s; if (s.dead || s.done) return { wait: 0.2 };
+      const gt = s.gates[s.passed]; let tx = gt ? gapX(gt, s.t + Math.max(0, (gt.y - s.y) / s.vy) * 0.6) : FW / 2;
+      const sp = s.sparks.find((k) => !k.got && k.y > s.y + 0.2 && k.y < (gt ? gt.y : 1e9)); if (sp && Math.abs(sp.x - s.x) < 2.2) tx = sp.x;
+      const dx = clamp(tx - s.x, -1.6, 1.6); if (Math.abs(dx) < 0.08) return { wait: 0.06 };
+      const fx = g.W / 2, fy = g.bot - 110;
+      return { drag: [[fx, fy], [fx + dx * s.u / 1.15, fy]], dur: 0.22, after: 0.02, say: s.passed === 0 && s.t < 1.5 ? Arcade.T('Arrastra para pasar por los huecos', 'Drag to slip through the gaps') : s.light < 0.45 ? Arcade.T('¡Coge chispas para brillar más!', 'Catch sparks to glow brighter!') : null };
+    },
+    update(g, dt) {
+      const s = g.s; if (!s.gates) return;
+      s.t += dt; if (s.inv > 0) s.inv -= dt; if (s.flash > 0) s.flash -= dt * 2;
+      if (s.dead) { s.dead -= dt; if (s.dead <= 0) { s.dead = 0; if (g.state === 'play' && g.die()) respawn(s); } return; }
+      if (s.done) { s.y += s.vy * dt * 2; return; }
+      if (s.kdir) s.x = clamp(s.x + s.kdir * STEER * dt, OR, FW - OR);
+      const py = s.y; s.y += s.vy * dt;
+      s.light = Math.max(0, s.light - s.drain * dt);
+      s.trail.push({ x: s.x, y: s.y }); if (s.trail.length > 14) s.trail.shift();
+      for (const k of s.sparks) if (!k.got && Math.hypot(k.x - s.x, k.y - s.y) < 0.55) { k.got = true; s.light = Math.min(1, s.light + 0.38); s.flash = 1; g.addScore(20 * Math.max(1, g.lv), X(g, k.x), Y(g, k.y)); Arcade.sfx.coin(); Arcade.tone(900, 0.2, 'sine', 0.05, 500); }
+      let hit = false;
+      for (let i = s.passed; i < s.gates.length; i++) {
+        const gt = s.gates[i]; if (gt.y - TH / 2 > s.y + OR) break;
+        const cx = gapX(gt, s.t);
+        if (Math.abs(gt.y - s.y) < TH / 2 + OR && Math.abs(s.x - cx) > gt.gw / 2 - OR * 0.85) hit = true;
+        if (py <= gt.y && s.y > gt.y && !hit) { s.passed = i + 1; g.addScore(10 * Math.max(1, g.lv)); Arcade.tone(500 + i * 20, 0.06, 'triangle', 0.05); }
+      }
+      if (s.inv > 0) hit = false;
+      if (hit || s.light <= 0) {
+        s.dead = 1; g.mood('hurt', 1);
+        g.burst(X(g, s.x), Y(g, s.y), { n: 18, color: ['#ffe066', '#fff3bf', '#fab005'], speed: 200, grav: 0 });
+        Arcade.tone(400, 0.6, 'sine', 0.1, -300); g.message(s.light <= 0 ? Arcade.T('¡Te apagaste!', 'Your light went out!') : Arcade.T('¡Roca!', 'Rock!'), 0.9);
+      }
+      if (s.y >= s.goalY && !s.done) { s.done = true; g.confetti(70); g.addScore((150 + Math.round(s.light * 200)) * g.lv, g.W / 2, g.H * 0.4); setTimeout(() => { if (g.state === 'play') g.win(); }, 800); }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      ctx.fillStyle = '#0b0d22'; ctx.fillRect(0, 0, W, H);
+      if (!s.gates) return;
+      const u = s.u;
+      ctx.fillStyle = '#2b2f4a'; ctx.fillRect(0, 0, s.ox, H); ctx.fillRect(s.ox + FW * u, 0, W, H);
+      // rocas
+      for (const gt of s.gates) {
+        const y = Y(g, gt.y); if (y < -40 || y > H + 40) continue;
+        const cx = gapX(gt, s.t), a = X(g, cx - gt.gw / 2), b = X(g, cx + gt.gw / 2), th = TH * u;
+        ctx.fillStyle = '#495057'; Arcade.rr(ctx, s.ox - 4, y - th / 2, a - s.ox + 4, th, 8); ctx.fill(); Arcade.rr(ctx, b, y - th / 2, s.ox + FW * u - b + 4, th, 8); ctx.fill();
+        ctx.fillStyle = '#868e96'; ctx.fillRect(s.ox, y - th / 2, a - s.ox - 6, 3); ctx.fillRect(b + 6, y - th / 2, s.ox + FW * u - b - 6, 3);
+      }
+      const goalY = Y(g, s.goalY); if (goalY > -40) { ctx.fillStyle = 'rgba(255,224,102,.25)'; ctx.fillRect(s.ox, goalY - 10, FW * u, 20); Arcade.emoji(ctx, '🌟', W / 2, goalY - 26, u * 0.8); }
+      for (const k of s.sparks) if (!k.got) Arcade.emoji(ctx, '✨', X(g, k.x), Y(g, k.y), u * 0.5, { rot: Math.sin(g.rt * 3 + k.x) * 0.3 });
+      // oscuridad: solo se ve alrededor de la luz
+      const px = X(g, s.x), py = Y(g, s.y), vis = (0.9 + 3.2 * s.light) * u;
+      const dk = ctx.createRadialGradient(px, py, vis * 0.25, px, py, vis);
+      dk.addColorStop(0, 'rgba(5,6,15,0)'); dk.addColorStop(1, 'rgba(5,6,15,.97)');
+      ctx.fillStyle = dk; ctx.fillRect(0, 0, W, H);
+      // las chispas lejanas titilan un poco para orientarse
+      for (const k of s.sparks) if (!k.got) { const x = X(g, k.x), y = Y(g, k.y); if (Math.hypot(x - px, y - py) > vis * 0.8) { ctx.globalAlpha = 0.25 + 0.2 * Math.sin(g.rt * 5 + k.y); Arcade.emoji(ctx, '✨', x, y, u * 0.32); ctx.globalAlpha = 1; } }
+      s.trail.forEach((t, i) => { ctx.globalAlpha = (i / s.trail.length) * 0.35 * s.light + 0.05; ctx.fillStyle = '#ffe066'; ctx.beginPath(); ctx.arc(X(g, t.x), Y(g, t.y), u * 0.18 * (i / s.trail.length), 0, 6.3); ctx.fill(); });
+      ctx.globalAlpha = 1;
+      if (!s.dead) {
+        const gl = ctx.createRadialGradient(px, py, 2, px, py, u * (0.5 + s.light * 0.5 + (s.flash > 0 ? s.flash * 0.4 : 0)));
+        gl.addColorStop(0, 'rgba(255,240,180,.9)'); gl.addColorStop(1, 'rgba(255,224,102,0)'); ctx.fillStyle = gl; ctx.beginPath(); ctx.arc(px, py, u * 1.4, 0, 6.3); ctx.fill();
+        Arcade.emoji(ctx, g.face(), px, py, OR * 2.4 * u, { alpha: s.inv > 0 && Math.floor(g.rt * 10) % 2 ? 0.5 : 1 });
+      }
+      // barra de luz
+      const bw = Math.min(180, W * 0.45), bx = W / 2 - bw / 2, by = g.top + 30;
+      ctx.fillStyle = 'rgba(255,255,255,.12)'; Arcade.rr(ctx, bx, by, bw, 10, 5); ctx.fill();
+      ctx.fillStyle = s.light < 0.3 ? '#ff6b6b' : '#ffe066'; Arcade.rr(ctx, bx, by, Math.max(4, bw * s.light), 10, 5); ctx.fill();
+      Arcade.txt(ctx, 'Luz', bx - 22, by + 5, 12, '#ffe066', 'center', 900);
+      Arcade.txt(ctx, 'Altura: ' + Math.round(clamp(s.y / s.goalY, 0, 1) * 100) + '%', W / 2, g.top + 14, 14, '#dbe4ff', 'center', 900);
+    },
+  });
+})();
+</script>
+</body>
+</html>

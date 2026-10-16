@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Elástico · Arcade Perdido</title>
+<meta name="theme-color" content="#2a0f2b">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css?v=6d7635e467">
+</head>
+<body class="game">
+<script src="config.js?v=c463c71b8c"></script>
+<script src="common.js?v=8bd36b43cd"></script>
+<script>
+(function () {
+  const { rand, clamp, pick } = Arcade;
+  const FW = 6, FH = 9.6, G = 9, BRAD = 0.3, VMIN = 9.2, LIFE = 3;
+
+  function build(g) {
+    const s = g.s, L = g.lv;
+    s.maxLen = clamp(2.8 - L * 0.04, 1.5, 2.8);
+    const nStars = clamp(3 + Math.floor(L / 3), 3, 9), nHaz = L < 4 ? 0 : clamp(Math.floor((L - 2) / 4), 1, 5);
+    s.haz = [];
+    for (let i = 0; i < nHaz; i++) for (let k = 0; k < 30; k++) {
+      const h = { x: rand(0.8, FW - 0.8), y: rand(3, FH - 1.5), r: 0.36, amp: L >= 10 ? rand(0, 0.9) : 0, sp: rand(0.6, 1.2), ph: rand(0, 6.28), e: pick(['💣', '🌵', '🦔']) };
+      if (h.x - h.amp < 0.5 || h.x + h.amp > FW - 0.5) h.amp = 0;
+      if (s.haz.every((o) => Math.hypot(o.x - h.x, o.y - h.y) > 1.6) && Math.abs(h.x - FW / 2) > 0.7) { s.haz.push(h); break; }
+    }
+    s.stars = [];
+    for (let i = 0; i < nStars; i++) for (let k = 0; k < 40; k++) {
+      const st = { x: rand(0.6, FW - 0.6), y: rand(2.6, FH - 1.2), got: false };
+      if (s.haz.every((h) => Math.hypot(h.x - st.x, h.y - st.y) > 1.3 + h.amp) && s.stars.every((o) => Math.hypot(o.x - st.x, o.y - st.y) > 1)) { s.stars.push(st); break; }
+    }
+  }
+  const hpos = (h, t) => ({ x: h.x + Math.sin(t * h.sp + h.ph) * h.amp, y: h.y });
+  function drop(s) { s.b = { x: FW / 2 + rand(-0.6, 0.6), y: FH - 0.6, vx: rand(-0.4, 0.4), vy: 0 }; s.wait = 0.9; }
+  // avance de la bola con paredes; si se pasa un elástico, también rebota en él
+  function stepBall(s, dt, band) {
+    const b = s.b; b.vy -= G * dt; b.x += b.vx * dt; b.y += b.vy * dt;
+    if (b.x < BRAD) { b.x = BRAD; b.vx = Math.abs(b.vx) * 0.9; }
+    if (b.x > FW - BRAD) { b.x = FW - BRAD; b.vx = -Math.abs(b.vx) * 0.9; }
+    if (b.y > FH - BRAD) { b.y = FH - BRAD; b.vy = -Math.abs(b.vy) * 0.8; }
+    if (!band) return null;
+    const ax = band.x2 - band.x1, ay = band.y2 - band.y1, L2 = ax * ax + ay * ay || 1;
+    const k = clamp(((b.x - band.x1) * ax + (b.y - band.y1) * ay) / L2, 0, 1), cx = band.x1 + ax * k, cy = band.y1 + ay * k;
+    const dx = b.x - cx, dy = b.y - cy, d = Math.hypot(dx, dy);
+    if (d >= BRAD + 0.05) return null;
+    let nx = -ay, ny = ax; const nl = Math.hypot(nx, ny) || 1; nx /= nl; ny /= nl;
+    if (dx * nx + dy * ny < 0) { nx = -nx; ny = -ny; }
+    const vn = b.vx * nx + b.vy * ny; if (vn >= 0) return null;
+    const tvx = b.vx - vn * nx, tvy = b.vy - vn * ny, out = Math.max(-vn * 1.05, VMIN);
+    b.vx = tvx * 0.9 + nx * out; b.vy = tvy * 0.9 + ny * out;
+    b.x = cx + nx * (BRAD + 0.06); b.y = cy + ny * (BRAD + 0.06);
+    return { k, x: cx, y: cy };
+  }
+  // demo: dónde estará la bola cuando caiga a la altura y0
+  function predict(s, y0) {
+    const c = { b: { ...s.b } }; let t = 0;
+    for (; t < 3; t += 1 / 60) { stepBall(c, 1 / 60, null); if (c.b.vy < 0 && c.b.y <= y0) return { x: c.b.x, y: c.b.y, vx: c.b.vx, vy: c.b.vy, t }; }
+    return null;
+  }
+  function geo(g) { const s = g.s, h = g.bot - g.top - 30; s.u = Math.min((g.W - 12) / FW, h / FH); s.ox = (g.W - FW * s.u) / 2; s.oy = g.bot - 4; }
+  const X = (g, x) => g.s.ox + x * g.s.u, Y = (g, y) => g.s.oy - y * g.s.u;
+  const WX = (g, px) => (px - g.s.ox) / g.s.u, WY = (g, py) => (g.s.oy - py) / g.s.u;
+  function clampLen(s, x1, y1, x2, y2) { const d = Math.hypot(x2 - x1, y2 - y1); if (d > s.maxLen) { x2 = x1 + (x2 - x1) * s.maxLen / d; y2 = y1 + (y2 - y1) * s.maxLen / d; } return [x2, y2]; }
+  function setBand(g, x1, y1, x2, y2) {
+    const s = g.s; [x2, y2] = clampLen(s, x1, y1, x2, y2);
+    if (Math.hypot(x2 - x1, y2 - y1) < 0.45) return false;
+    s.band = { x1, y1, x2, y2, life: LIFE, wob: 0 }; Arcade.tone(300, 0.08, 'triangle', 0.06, 200); return true;
+  }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Dibuja una goma y rebota hasta las estrellas', deco: ['🎾', '⭐', '〰️', '🌵', '💣', '✨'], font: 'comic', bg: ['#5c1f5e', '#2a0f2b'],
+    music: { mode: 'mixo', bpm: 112, wave: 'triangle', style: 'arcade', root: 62 }, voice: { wave: 'triangle', mul: 1.1, echo: 0.3 },
+    ambient: { e: ['✦', '·'], n: 12, vy: 4, twinkle: 1, alpha: 0.25, size: [6, 12] },
+    /*EN*/ en: { title: 'Elastic', tag: 'Draw a rubber band and bounce to the stars', help: 'The ball falls from above. <b>Drag</b> to draw an <b>elastic band</b>: when the ball hits it, it bounces off hard, perpendicular to the band. Tilt it to send the ball wherever you want. Collect every ⭐ to clear the level. Each band lasts 3 bounces and drawing a new one replaces the old. If the ball falls off the bottom or touches 💣 🌵 🦔, you lose a life.', tvHelp: '◀ ▶ move the band · ▲ ▼ tilt it · OK puts a new one.', dict: { 'Estrellas: ': 'Stars: ' } },
+    /*TV*/ tvHelp: '◀ ▶ mueve la goma · ▲ ▼ la inclina · OK pone una nueva.',
+    id: 'elastico', title: 'Elástico', emoji: '🎾', color: '#f783ac', origin: 'Elasticity / Draw Line Bounce',
+    help: 'La bola cae desde arriba. <b>Arrastra</b> para dibujar una <b>goma elástica</b>: cuando la bola choca con ella, sale rebotada con fuerza, perpendicular a la goma. Inclínala para mandar la bola donde quieras. Recoge todas las ⭐ para pasar de nivel. Cada goma aguanta 3 botes y si dibujas otra, la anterior desaparece. Si la bola cae por abajo o toca 💣 🌵 🦔, pierdes una vida.',
+    lives: 3, levels: 0, cap: 25,
+    setup(g) {
+      g.s = { t: 0, band: null, draw: null, dead: 0, trail: [], kx: FW / 2, ky: 1.6, ka: 0 };
+      const s = g.s; geo(g); build(g); drop(s);
+    },
+    layout(g) { if (g.s.stars) geo(g); },
+    down(g, p) { const s = g.s; s.draw = { x1: WX(g, p.x), y1: WY(g, p.y), x2: WX(g, p.x), y2: WY(g, p.y) }; },
+    move(g, p) { const s = g.s; if (!s.draw) return; [s.draw.x2, s.draw.y2] = clampLen(s, s.draw.x1, s.draw.y1, WX(g, p.x), WY(g, p.y)); },
+    up(g) { const s = g.s, d = s.draw; s.draw = null; if (d) setBand(g, d.x1, d.y1, d.x2, d.y2); },
+    key(g, k, d) {
+      const s = g.s; if (!d) { if (k === 'ArrowLeft' || k === 'ArrowRight') s.kmv = 0; if (k === 'ArrowUp' || k === 'ArrowDown') s.krot = 0; return; }
+      if (k === 'ArrowLeft') s.kmv = -1; if (k === 'ArrowRight') s.kmv = 1; if (k === 'ArrowUp') s.krot = 1; if (k === 'ArrowDown') s.krot = -1;
+      if (k === ' ') s.kon = true;
+    },
+    /*SC*/ demo(g) {
+      const s = g.s; if (s.dead || s.done || s.wait > 0) return { wait: 0.2 };
+      if (s.band && s.band.life > 0 && s.b.vy < 0) { const pr = predict(s, Math.min(s.band.y1, s.band.y2)); if (pr && Math.abs(pr.x - (s.band.x1 + s.band.x2) / 2) < s.maxLen * 0.35) return { wait: 0.15 }; }
+      if (!s.stars.some((x) => !x.got)) return { wait: 0.3 };
+      const y0 = clamp(Math.min(...s.stars.filter((x) => !x.got).map((x) => x.y)) - 2.6, 1.2, 4.2), pr = predict(s, y0);
+      if (!pr || pr.t < 0.45) return { wait: 0.1 };
+      // prueba varias inclinaciones y se queda con la que pasa por más estrellas sin tocar peligros
+      const hl = Math.min(1.1, s.maxLen / 2); let best = null, bs = -1e9;
+      for (let a = -1.25; a <= 1.25; a += 0.1) {
+        const band = { x1: pr.x - Math.cos(a) * hl, y1: pr.y - 0.25 - Math.sin(a) * hl, x2: pr.x + Math.cos(a) * hl, y2: pr.y - 0.25 + Math.sin(a) * hl };
+        const c = { b: { ...s.b } }, got = new Set(); let hitT = -1, sc = 0, md = 1e9;
+        for (let t = 0; t < pr.t + 2.2; t += 1 / 60) {
+          const h = stepBall(c, 1 / 60, hitT < 0 ? band : null); if (h) hitT = t;
+          if (hitT < 0) continue;
+          if (c.b.y < -0.5 || s.haz.some((z) => { const p = hpos(z, s.t + t); return Math.hypot(p.x - c.b.x, p.y - c.b.y) < z.r + BRAD; })) { sc -= 1000; break; }
+          s.stars.forEach((st, i) => { if (!st.got) { const d = Math.hypot(st.x - c.b.x, st.y - c.b.y); if (d < 0.5) got.add(i); md = Math.min(md, d); } });
+        }
+        if (hitT < 0) continue;
+        sc += got.size * 10 - md;
+        if (sc > bs) { bs = sc; best = band; }
+      }
+      if (!best) return { wait: 0.1 };
+      const { x1, y1, x2, y2 } = best;
+      return { drag: [[X(g, x1), Y(g, y1)], [X(g, x2), Y(g, y2)]], dur: 0.25, after: 0.1, say: !s.band ? Arcade.T('Dibuja la goma bajo la bola', 'Draw the band under the ball') : null };
+    },
+    update(g, dt) {
+      const s = g.s; if (!s.stars) return;
+      s.t += dt; if (s.inv > 0) s.inv -= dt;
+      // control con teclas/mando: una goma que se mueve e inclina
+      if (s.kmv || s.krot || s.kon) {
+        s.kx = clamp(s.kx + (s.kmv || 0) * 4 * dt, 0.6, FW - 0.6); s.ka = clamp(s.ka + (s.krot || 0) * 1.6 * dt, -1, 1);
+        const hl = Math.min(1.1, s.maxLen / 2), c = Math.cos(s.ka), sn = Math.sin(s.ka);
+        if (s.kon || (s.band && s.band.kb)) { const lf = s.band && s.band.kb && !s.kon ? s.band.life : LIFE; s.band = { x1: s.kx - c * hl, y1: s.ky - sn * hl, x2: s.kx + c * hl, y2: s.ky + sn * hl, life: lf, wob: s.band ? s.band.wob : 0, kb: true }; }
+        s.kon = false;
+      }
+      if (s.dead) { s.dead -= dt; if (s.dead <= 0) { s.dead = 0; if (g.state === 'play' && g.die()) { drop(s); s.inv = 1; } } return; }
+      if (s.done) return;
+      if (s.wait > 0) { s.wait -= dt; return; }
+      if (s.band && s.band.wob > 0) s.band.wob -= dt * 3;
+      const hit = stepBall(s, dt, s.band && s.band.life > 0 ? s.band : null);
+      if (hit) { s.band.life--; s.band.wob = 1; s.band.hk = hit.k; Arcade.tone(180, 0.18, 'sine', 0.12, 260); g.ring(X(g, hit.x), Y(g, hit.y), '#f783ac', 30, 4); if (s.band.life <= 0) s.band = null; }
+      const b = s.b; s.trail.push({ x: b.x, y: b.y }); if (s.trail.length > 12) s.trail.shift();
+      for (const st of s.stars) if (!st.got && Math.hypot(st.x - b.x, st.y - b.y) < 0.55) { st.got = true; g.addScore(50 * Math.max(1, g.lv), X(g, st.x), Y(g, st.y)); Arcade.sfx.coin(); g.burst(X(g, st.x), Y(g, st.y), { n: 8, emoji: '✨', size: 12, speed: 140 }); }
+      let dead = b.y < -0.6;
+      if (!(s.inv > 0)) for (const h of s.haz) { const p = hpos(h, s.t); if (Math.hypot(p.x - b.x, p.y - b.y) < h.r + BRAD * 0.8) dead = true; }
+      if (dead) { s.dead = 1; g.mood('hurt', 1); g.burst(X(g, b.x), Y(g, Math.max(0, b.y)), { n: 14, color: ['#f783ac', '#fff'], speed: 200 }); Arcade.sfx.hit(); }
+      if (s.stars.every((x) => x.got) && !s.done) { s.done = true; g.confetti(70); g.addScore(150 * g.lv, g.W / 2, g.H * 0.4); setTimeout(() => { if (g.state === 'play') g.win(); }, 700); }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      const bg = ctx.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, '#2a0f2b'); bg.addColorStop(1, '#862e9c');
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      if (!s.stars) return;
+      if (W > H) g.scenery(['⭐', '🎾', '✨', '💫'], 14, { alpha: 0.14, size: [22, 40], bob: 4 });   // adorno a los lados en pantallas apaisadas
+      const u = s.u;
+      ctx.strokeStyle = 'rgba(255,255,255,.18)'; ctx.lineWidth = 3; ctx.strokeRect(s.ox, Y(g, FH), FW * u, FH * u);
+      ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.fillRect(s.ox, Y(g, 0) - 4, FW * u, 8);
+      for (const st of s.stars) if (!st.got) Arcade.emoji(ctx, '⭐', X(g, st.x), Y(g, st.y), u * 0.55, { rot: Math.sin(g.rt * 2 + st.x) * 0.2 });
+      for (const h of s.haz) { const p = hpos(h, s.t); Arcade.emoji(ctx, h.e, X(g, p.x), Y(g, p.y), u * 0.8); }
+      const drawBand = (b, alpha, dash) => {
+        const x1 = X(g, b.x1), y1 = Y(g, b.y1), x2 = X(g, b.x2), y2 = Y(g, b.y2);
+        ctx.globalAlpha = alpha; ctx.strokeStyle = '#ffdeeb'; ctx.lineWidth = 5; ctx.lineCap = 'round'; if (dash) ctx.setLineDash([8, 8]);
+        ctx.beginPath(); ctx.moveTo(x1, y1);
+        if (b.wob > 0) { const k = b.hk ?? 0.5, mx = x1 + (x2 - x1) * k, my = y1 + (y2 - y1) * k, nx = -(y2 - y1), ny = x2 - x1, nl = Math.hypot(nx, ny) || 1, a = Math.sin(b.wob * 14) * b.wob * 12; ctx.quadraticCurveTo(mx + nx / nl * a, my + ny / nl * a, x2, y2); }
+        else ctx.lineTo(x2, y2);
+        ctx.stroke(); ctx.setLineDash([]);
+        ctx.fillStyle = '#e64980'; for (const [x, y] of [[x1, y1], [x2, y2]]) { ctx.beginPath(); ctx.arc(x, y, 6, 0, 6.3); ctx.fill(); }
+        if (b.life) for (let i = 0; i < b.life; i++) { ctx.fillStyle = '#ffdeeb'; ctx.beginPath(); ctx.arc((x1 + x2) / 2 + (i - (b.life - 1) / 2) * 10, (y1 + y2) / 2 - 14, 3, 0, 6.3); ctx.fill(); }
+        ctx.globalAlpha = 1; ctx.lineCap = 'butt';
+      };
+      if (s.band) drawBand(s.band, 1);
+      if (s.draw) drawBand(s.draw, 0.6, true);
+      const b = s.b;
+      s.trail.forEach((t, i) => { ctx.globalAlpha = (i / s.trail.length) * 0.35; ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(X(g, t.x), Y(g, t.y), u * 0.16 * (i / s.trail.length), 0, 6.3); ctx.fill(); });
+      ctx.globalAlpha = 1;
+      if (!s.dead) {
+        if (s.wait > 0) { ctx.globalAlpha = 0.5 + 0.5 * Math.sin(g.rt * 12); }
+        Arcade.emoji(ctx, '🎾', X(g, b.x), Y(g, b.y), BRAD * 2.3 * u, { rot: g.rt * 3, alpha: s.inv > 0 && Math.floor(g.rt * 10) % 2 ? 0.5 : 1 });
+        Arcade.emoji(ctx, g.face(), X(g, b.x) + u * 0.32, Y(g, b.y) - u * 0.32, u * 0.36);
+        ctx.globalAlpha = 1;
+      }
+      const left = s.stars.filter((x) => !x.got).length;
+      Arcade.txt(ctx, 'Estrellas: ' + (s.stars.length - left) + '/' + s.stars.length, W / 2, g.top + 14, 15, '#ffdeeb', 'center', 900);
+    },
+  });
+})();
+</script>
+</body>
+</html>

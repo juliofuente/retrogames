@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Bote · Arcade Perdido</title>
+<meta name="theme-color" content="#0b2b26">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css?v=6d7635e467">
+</head>
+<body class="game">
+<script src="config.js?v=c463c71b8c"></script>
+<script src="common.js?v=8bd36b43cd"></script>
+<script>
+(function () {
+  const { rand, clamp, pick } = Arcade;
+  const G = 22, HB = 2.6, VB = Math.sqrt(2 * G * HB), VX = 4.3, ACC = 26, BR = 0.32;
+
+  function build(g) {
+    const s = g.s, L = g.lv, n = clamp(9 + Math.floor(L * 0.6), 9, 24);
+    const P = [{ x0: -2, x1: 4, y: 1 }];
+    for (let i = 1; i < n; i++) {
+      const p = P[i - 1], gap = clamp(rand(0.7, 1.3) + L * 0.06, 0.7, 2.5), len = clamp(rand(1.8, 3.4) - L * 0.05, 1.3, 3.4);
+      const y = clamp(p.y + clamp(rand(-1.1, 1.1) * Math.min(1, 0.3 + L / 12), -1.3, 1.3), 0, 5);
+      const q = { x0: p.x1 + gap, x1: p.x1 + gap + len, y };
+      if (L >= 7 && i < n - 1 && Math.random() < clamp((L - 6) * 0.04, 0, 0.35)) { q.amp = rand(0.4, 0.8); q.sp = rand(0.8, 1.4); q.ph = rand(0, 6.28); }
+      // pinchos sobre parte de la plataforma, dejando sitio para caer
+      if (L >= 3 && i < n - 1 && len >= 2.4 && Math.random() < clamp(0.2 + L * 0.03, 0, 0.6)) { const w = clamp(rand(0.5, 0.9), 0.5, len - 1.5); const left = Math.random() < 0.5; q.sp0 = left ? q.x0 : q.x1 - w; q.sp1 = q.sp0 + w; }
+      P.push(q);
+    }
+    P[n - 1].x1 = P[n - 1].x0 + 4; delete P[n - 1].amp;
+    s.P = P; s.goalX = P[n - 1].x0 + 1.8;
+    s.coins = [];
+    for (let i = 1; i < n; i++) { const a = P[i - 1], b = P[i]; if (Math.random() < 0.65) s.coins.push({ x: (a.x1 + b.x0) / 2, y: Math.max(a.y, b.y) + rand(1.2, 2.2), got: false }); }
+  }
+  const off = (p, t) => (p.amp ? Math.sin(t * p.sp + p.ph) * p.amp : 0);
+  // un paso de física; devuelve 'land' | 'spike' | 'fall' | null
+  function phys(s, dt, dir) {
+    const b = s.b, want = dir * VX;
+    b.vx += clamp(want - b.vx, -ACC * dt, ACC * dt);
+    const py = b.y; b.vy -= G * dt; b.x += b.vx * dt; b.y += b.vy * dt;
+    if (b.vy < 0) for (const p of s.P) {
+      const o = off(p, s.t), x0 = p.x0 + o, x1 = p.x1 + o;
+      if (b.x < x0 - BR * 0.6 || b.x > x1 + BR * 0.6) continue;
+      if (py - BR >= p.y - 0.02 && b.y - BR < p.y) {
+        b.y = p.y + BR; b.vy = VB;
+        if (p.sp0 != null && b.x > p.sp0 + o - 0.12 && b.x < p.sp1 + o + 0.12) return 'spike';
+        if (p.amp) b.x += (off(p, s.t + dt) - o);
+        return { ev: 'land', p };
+      }
+    }
+    if (b.y < s.lowY - 3) return 'fall';
+    return null;
+  }
+  // la demo prueba unas cuantas pulsaciones y se queda con la que más avanza sin morir
+  function plan(s) {
+    const opts = [[1, 0.12], [1, 0.3], [1, 0.5], [1, 0.75], [0, 0.1], [-1, 0.15], [-1, 0.35]];
+    let best = null, bs = -1e9;
+    for (const [dir, d] of opts) {
+      const c = { P: s.P, t: s.t, lowY: s.lowY, b: { ...s.b } };
+      let t = 0, ok = true, lands = 0, lastP = null;
+      for (; t < 2.6 && ok; t += 1 / 60) {
+        c.t += 1 / 60; const r = phys(c, 1 / 60, t < d ? dir : 0);
+        if (r === 'spike' || r === 'fall') ok = false; else if (r && r.ev === 'land') { lands++; lastP = r.p; if (t > d + 0.35 && lands >= 1) break; }
+      }
+      if (!ok) continue;
+      const P = lastP || s.P[0], o = off(P, c.t), margin = Math.min(c.b.x - (P.x0 + o), P.x1 + o - c.b.x);
+      const sc = c.b.x + Math.min(0.6, margin) * 1.5 + (dir === 1 ? 0.05 : 0);
+      if (sc > bs) { bs = sc; best = [dir, d]; }
+    }
+    return best || [0, 0.1];
+  }
+  function geo(g) { const s = g.s, h = g.bot - g.top; s.u = Math.min(h / 9, g.W / 7.5); s.oy = g.top + h * 0.72; }
+  const X = (g, x) => (x - g.s.cam) * g.s.u + g.W * 0.38, Y = (g, y) => g.s.oy - (y - g.s.camY) * g.s.u;
+  function setDir(g) { const s = g.s; let d = 0; for (const p of g.pointers.values()) d = p.x < g.W / 2 ? -1 : 1; s.tdir = d; }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Bota, bota y no caigas', deco: ['⚽', '🌿', '💰', '🌵', '🏁', '💫'], font: 'wide', bg: ['#14524a', '#0b2b26'],
+    music: { mode: 'major', bpm: 124, wave: 'square', style: 'arcade', root: 60 }, voice: { wave: 'square', mul: 1, echo: 0.2 },
+    ambient: { e: ['🍃', '✨'], n: 8, vy: 12, vx: -20, sway: 12, alpha: 0.2, size: [10, 16] },
+    /*EN*/ en: { title: 'Bounce', tag: 'Bounce, bounce and don\'t fall', help: 'The ball <b>bounces on its own</b> to the same rhythm. <b>Hold</b> the right half of the screen to go forward and the left half to go back; let go and it brakes. Land on the platforms, jump over the gaps and avoid the 🌵 spikes. Reach the 🏁 flag. 🪙 coins give points. Falling into a gap or landing on spikes costs a life.', tvHelp: '◀ ▶ to move · the ball bounces on its own.', dict: { 'Meta: ': 'Goal: ', '◀ atrás': '◀ back', 'avanza ▶': 'forward ▶' } },
+    /*TV*/ tvHelp: '◀ ▶ para moverte · la bola bota sola.',
+    id: 'bote', title: 'Bote', emoji: '⚽', color: '#69db7c', origin: 'Bouncing Ball / Ball Game / Ball: Revamped / Ball vs Ball',
+    help: 'La bola <b>bota sola</b> siempre al mismo ritmo. <b>Mantén</b> la mitad derecha de la pantalla para avanzar y la izquierda para retroceder; si sueltas, frena. Cae sobre las plataformas, salta los huecos y evita los pinchos 🌵. Llega a la bandera 🏁. Las monedas 🪙 dan puntos. Caer a un hueco o sobre los pinchos te quita una vida.',
+    lives: 3, levels: 0, cap: 25,
+    setup(g) {
+      g.s = { t: 0, cam: 0, camY: 1, tdir: 0, kdir: 0, b: { x: 0.5, y: 3, vx: 0, vy: 0 }, safe: 0, squash: 0, dead: 0 };
+      const s = g.s; geo(g); build(g); s.lowY = Math.min(...s.P.map((p) => p.y));
+    },
+    layout(g) { if (g.s.P) geo(g); },
+    down(g) { setDir(g); },
+    move(g) { setDir(g); },
+    up(g) { setDir(g); },
+    key(g, k, d) { const s = g.s; if (k === 'ArrowLeft') s.kdir = d ? -1 : s.kdir === -1 ? 0 : s.kdir; if (k === 'ArrowRight') s.kdir = d ? 1 : s.kdir === 1 ? 0 : s.kdir; },
+    /*SC*/ demo(g) {
+      const s = g.s; if (s.dead || s.done) return { wait: 0.2 };
+      const [dir, d] = plan(s);
+      if (dir === 0) return { wait: d };
+      return { hold: [dir > 0 ? g.W * 0.8 : g.W * 0.2, g.bot - 90], dur: d, say: s.t < 2 ? Arcade.T('Mantén a la derecha para avanzar', 'Hold the right side to move forward') : null };
+    },
+    update(g, dt) {
+      const s = g.s; if (!s.P) return;
+      s.t += dt; if (s.squash > 0) s.squash -= dt * 5; if (s.inv > 0) s.inv -= dt;
+      if (s.dead) { s.dead -= dt; if (s.dead <= 0) { s.dead = 0; if (g.state === 'play' && g.die()) { const p = s.P[s.safe]; s.b = { x: (p.x0 + p.x1) / 2 + off(p, s.t), y: p.y + 2.5, vx: 0, vy: 0 }; s.inv = 1; } } return; }
+      if (s.done) { s.b.vx = 0; }
+      const dir = s.done ? 0 : s.kdir || s.tdir;
+      const r = phys(s, dt, dir);
+      if (r && r.ev === 'land') {
+        s.squash = 1; Arcade.tone(260 + Math.min(12, s.P.indexOf(r.p)) * 25, 0.07, 'sine', 0.09, 120);
+        const i = s.P.indexOf(r.p); if (i > s.safe) { g.addScore(10 * (i - s.safe) * Math.max(1, g.lv), X(g, s.b.x), Y(g, s.b.y) - 30); s.safe = i; }
+        if (s.b.x >= s.goalX - 0.6 && i === s.P.length - 1 && !s.done) { s.done = true; g.confetti(70); g.addScore(150 * g.lv, g.W / 2, g.H * 0.4); setTimeout(() => { if (g.state === 'play') g.win(); }, 900); }
+      } else if ((r === 'spike' && !(s.inv > 0)) || r === 'fall') {
+        s.dead = 1; g.mood('hurt', 1);
+        if (r === 'spike') { g.burst(X(g, s.b.x), Y(g, s.b.y), { n: 16, color: ['#fff', '#ff6b6b'], speed: 220 }); Arcade.sfx.hit(); }
+        else { Arcade.tone(500, 0.5, 'sine', 0.1, -380); g.message(Arcade.T('¡Al hueco!', 'Down the gap!'), 0.8); }
+      }
+      for (const c of s.coins) if (!c.got && Math.hypot(c.x - s.b.x, c.y - s.b.y) < 0.6) { c.got = true; g.addScore(25 * Math.max(1, g.lv), X(g, c.x), Y(g, c.y)); Arcade.sfx.coin(); }
+      s.cam += (s.b.x - s.cam) * Math.min(1, dt * 3);
+      const pf = s.P[s.safe]; s.camY += (pf.y + 1.2 - s.camY) * Math.min(1, dt * 2);
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      const bg = ctx.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, '#a5f3e9'); bg.addColorStop(1, '#14524a');
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      if (!s.P) return;
+      const u = s.u;
+      for (let i = 0; i < 5; i++) Arcade.emoji(ctx, '☁️', (((i * 230 - s.cam * u * 0.25) % (W + 160)) + W + 160) % (W + 160) - 80, g.top + 30 + (i % 3) * 36, 54, { alpha: 0.7 });
+      ctx.fillStyle = 'rgba(20,82,74,.35)'; ctx.beginPath(); ctx.moveTo(0, H); for (let x = 0; x <= W; x += 16) ctx.lineTo(x, Y(g, s.lowY - 0.5) - 60 - Math.sin((x / u + s.cam * 0.5) * 0.4) * 40); ctx.lineTo(W, H); ctx.fill();
+      for (const p of s.P) {
+        const o = off(p, s.t), x0 = X(g, p.x0 + o), x1 = X(g, p.x1 + o), y = Y(g, p.y); if (x1 < -20 || x0 > W + 20) continue;
+        ctx.fillStyle = '#8d5524'; Arcade.rr(ctx, x0, y, x1 - x0, u * 0.6, 6); ctx.fill();
+        ctx.fillStyle = p.amp ? '#ffd43b' : '#51cf66'; Arcade.rr(ctx, x0, y - 2, x1 - x0, u * 0.22, 6); ctx.fill();
+        if (p.sp0 != null) { const a = X(g, p.sp0 + o), b = X(g, p.sp1 + o), n = Math.max(1, Math.round((b - a) / (u * 0.32))); for (let k = 0; k < n; k++) Arcade.emoji(ctx, '🌵', a + (k + 0.5) * (b - a) / n, y - u * 0.18, u * 0.42); }
+      }
+      const fx = X(g, s.goalX), fy = Y(g, s.P[s.P.length - 1].y); Arcade.emoji(ctx, '🏁', fx + u * 0.6, fy - u * 0.6, u * 1);
+      for (const c of s.coins) if (!c.got) Arcade.emoji(ctx, '🪙', X(g, c.x), Y(g, c.y), u * 0.5, { sx: Math.abs(Math.cos(g.rt * 3 + c.x)) * 0.8 + 0.2 });
+      const bx = X(g, s.b.x), by = Y(g, s.b.y), sq = Math.max(0, s.squash) * 0.25;
+      ctx.fillStyle = 'rgba(0,0,0,.18)'; const pl = s.P[s.safe]; ctx.beginPath(); ctx.ellipse(bx, Y(g, pl.y), u * 0.3, u * 0.08, 0, 0, 6.3); ctx.fill();
+      if (!s.dead) Arcade.emoji(ctx, '⚽', bx, by + sq * u * 0.3, BR * 2.2 * u, { rot: s.b.x * 2.5, sx: 1 + sq, sy: 1 - sq, alpha: s.inv > 0 && Math.floor(g.rt * 10) % 2 ? 0.5 : 1 });
+      if (!s.dead) Arcade.emoji(ctx, g.face(), bx, by - u * 0.55, u * 0.42);
+      if (!g.demoOn && s.t < 4) { ctx.globalAlpha = 0.5 * (1 - s.t / 4); Arcade.txt(ctx, '◀ atrás', W * 0.2, g.bot - 40, 16, '#fff', 'center', 900, 'rgba(0,0,0,.4)'); Arcade.txt(ctx, 'avanza ▶', W * 0.8, g.bot - 40, 16, '#fff', 'center', 900, 'rgba(0,0,0,.4)'); ctx.globalAlpha = 1; }
+      Arcade.txt(ctx, 'Meta: ' + Math.round(clamp(s.b.x / s.goalX, 0, 1) * 100) + '%', W / 2, g.top + 14, 15, '#0b2b26', 'center', 900);
+    },
+  });
+})();
+</script>
+</body>
+</html>
