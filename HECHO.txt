@@ -1,6 +1,11 @@
 ARCADE PERDIDO + ARCADE PRO — LO QUE ESTÁ HECHO
 ================================================
-Fecha: 16-10-2026 · Versión de la PWA (games.js → ARCADE_VERSION): 2.18.0
+Fecha: 16-10-2026 · Versión de la PWA (games.js → ARCADE_VERSION): 2.18.1
+· v2.18.1: ARREGLO MODO TV: ?tv=1 (botón «📺 Modo TV» de la ficha o la portada de TV) se guardaba en la sesión
+  (sessionStorage arc_tv_sess) y, con modo 'automatico', todos los juegos seguían en modo TV sin forma de salir.
+  Ahora ?tv=1 / ?tv=0 solo vale para la página que lo lleva (y se borra el valor antiguo guardado), y cuando el
+  modo TV viene forzado en un aparato que no es una tele, el menú del juego y la portada de TV muestran
+  «📱 Modo móvil» para volver. Probados los 140 juegos en táctil y TV sin errores.
 · v2.18.0:
   - Juegos de números también en Educativos › Mates: Sumas, Sumacamino, Treses, Cambio, Cientos, Dados, Expande y
     Fusiona bolas. Se definen en ARCADE_EDU (herramientas/mkedu.py) con su edad y descripción educativa; no son

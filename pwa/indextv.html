@@ -7,7 +7,7 @@
 <meta name="theme-color" content="#0d0a1f">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon-192.png">
-<script src="config.js?v=c463c71b8c"></script>
+<script src="config.js?v=d6380ae9b0"></script>
 <style>
   :root { --bg: #0d0a1f; --ink: #f4f1ff; --muted: #a9a3c9; --font: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; --emoji: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
   * { box-sizing: border-box; }
@@ -54,7 +54,7 @@
   <main class="grid" id="grid"></main>
   <p class="hint" id="hint">🎮 <b>Cruceta</b> para elegir · <b>OK</b> para jugar · En partida, <b>Atrás</b> pausa · Varios jugadores juegan <b>por turnos</b></p>
 </div>
-<script src="games.js?v=16596b9943"></script>
+<script src="games.js?v=ac04e87865"></script>
 <script>
 (function () {
   const get = (k, d) => { try { const v = localStorage.getItem('arc_' + k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } };
@@ -77,9 +77,10 @@
     b.addEventListener('click', () => { players = n; set('players', n); bar.querySelectorAll('.pl').forEach((x) => x.classList.toggle('on', x === b)); });
     bar.appendChild(b);
   }
-  if (ARCADE_CONFIG.modo === 'seleccionable') {
+  // botón para volver al modo móvil: en 'seleccionable' y siempre que no sea una tele de verdad
+  if (ARCADE_CONFIG.modo === 'seleccionable' || (ARCADE_CONFIG.modo !== 'modotv' && !arcadeTVDetectado())) {
     const b = document.createElement('button'); b.className = 'chip'; b.textContent = EN ? '📱 Mobile mode' : '📱 Modo móvil';
-    b.addEventListener('click', () => { arcadeElegirTV(false); location.href = './?tv=0'; });
+    b.addEventListener('click', () => { if (ARCADE_CONFIG.modo === 'seleccionable') arcadeElegirTV(false); location.href = '../'; });
     bar.appendChild(b);
   }
   if ((ARCADE_CONFIG.idioma || 'auto') === 'auto') {

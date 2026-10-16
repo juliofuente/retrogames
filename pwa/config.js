@@ -8,7 +8,7 @@
      'automatico'    → detecta la tele por el navegador (Fire TV, Android TV, Google TV,
                        Tizen, webOS, Bravia…).
    En 'seleccionable' y 'automatico' también se puede forzar con ?tv=1 o ?tv=0 en la URL
-   (se recuerda durante la sesión).
+   (solo para esa página; en el menú del juego sale el botón 📱 Modo móvil / 📺 Modo TV para cambiarlo).
    idioma:
      'auto' → detecta el idioma del navegador o la tele (español si es es/ca/gl/eu; si no, inglés)
               y muestra un botón 🇪🇸 / 🇬🇧 para cambiarlo (se recuerda en el dispositivo).
@@ -37,11 +37,9 @@ function arcadeEsTV() {
   var m = ARCADE_CONFIG.modo;
   if (m === 'modotv') return true;
   if (m === 'modonormal') return false;
+  // ?tv=1 / ?tv=0 solo vale para la página que lo lleva (antes se guardaba en la sesión y ya no se podía salir del modo TV)
   var q = /[?&]tv=([01])/.exec(location.search || '');
-  try {
-    if (q) sessionStorage.setItem('arc_tv_sess', q[1]);
-    else { var ss = sessionStorage.getItem('arc_tv_sess'); if (ss !== null) q = [0, ss]; }
-  } catch (e) {}
+  try { sessionStorage.removeItem('arc_tv_sess'); } catch (e) {}
   if (q) return q[1] === '1';
   if (m === 'seleccionable') {
     try { var v = localStorage.getItem('arc_tvmode'); if (v !== null) return v === '1'; } catch (e) {}

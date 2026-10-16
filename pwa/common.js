@@ -691,7 +691,9 @@
     }
     function hide() { ov.classList.remove('on'); focusEl = null; }
     const toggles = () => `<button class="b sm" data-act="mute">${A.muted ? '🔇' : '🔊'} ${T('Sonido', 'Sound')}</button><button class="b sm" data-act="music">${A.musicOn ? '🎵' : '🚫'} ${T('Música', 'Music')}</button>`;
-    const modeBtn = () => A.config.modo === 'seleccionable' ? `<button class="b sm ghost" data-act="tvmode">${TV ? T('📱 Modo móvil', '📱 Mobile mode') : T('📺 Modo TV', '📺 TV mode')}</button>` : '';
+    // botón 📱/📺: en 'seleccionable', y también cuando el modo TV viene forzado por la URL en un aparato que no es una tele
+    const tvForced = () => TV && !(window.arcadeTVDetectado && window.arcadeTVDetectado());
+    const modeBtn = () => A.config.modo === 'seleccionable' || (tvForced() && A.config.modo !== 'modotv') ? `<button class="b sm ghost" data-act="tvmode">${TV ? T('📱 Modo móvil', '📱 Mobile mode') : T('📺 Modo TV', '📺 TV mode')}</button>` : '';
     function menu() {
       g.state = 'menu'; M.stop(); g.mp = null; g.demoOn = false; g.hud();
       if (TV && !tvdef) {
@@ -874,7 +876,11 @@
       else if (act === 'nextturn') nextTurn();
       else if (act === 'gact') { const a = tvdef.actions[+b.dataset.i]; resume(); a.run(g); }
       else if (act === 'players') { nPlayers = +b.dataset.n; A.set('players', nPlayers); ov.querySelectorAll('.pbtn').forEach((x) => x.classList.toggle('on', x === b)); }
-      else if (act === 'tvmode') { if (window.arcadeElegirTV) arcadeElegirTV(!TV); location.href = location.pathname; }
+      else if (act === 'tvmode') {
+        if (A.config.modo === 'seleccionable' && window.arcadeElegirTV) arcadeElegirTV(!TV);
+        let qs = ''; try { const u = new URLSearchParams(location.search); u.delete('tv'); if (A.config.modo !== 'seleccionable' && !TV) u.set('tv', '1'); qs = u.toString(); } catch (_) {}
+        location.href = location.pathname + (qs ? '?' + qs : '');
+      }
       else if (act === 'mute') { A.muted = !A.muted; A.set('muted', A.muted); b.innerHTML = (A.muted ? '🔇' : '🔊') + ' ' + T('Sonido', 'Sound'); }
       else if (act === 'music') { A.musicOn = !A.musicOn; A.set('music', A.musicOn); b.innerHTML = (A.musicOn ? '🎵' : '🚫') + ' ' + T('Música', 'Music'); }
       else if (act === 'lang') { const nl = EN ? 'es' : 'en'; if (window.arcadeElegirIdioma) arcadeElegirIdioma(nl); if (SITE) { location.href = SITE.play + location.search.replace(/([?&])lang=[a-z]+&?/, '$1').replace(/[?&]$/, ''); return; } try { const u = new URLSearchParams(location.search); u.set('lang', nl); location.search = '?' + u.toString(); } catch (_) { location.reload(); } }
