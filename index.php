@@ -29,7 +29,7 @@ ini_set('display_errors', '0');
    colecciones, asignaturas, edades, controles, TV, búsqueda y los índices estáticos /pwa/, /pwa/indexpro,
    /pwa/indextv) responden un 404 sencillo. Solo se entra directamente a cada juego (/<id>, /<id>/es, /<id>/en).
    Para volver a la normalidad (portada y listados), pon PORTADA en true. */
-const PORTADA = false;
+const PORTADA = true;
 
 /* ---------- base URL ---------- */
 $https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https') || (($_SERVER['SERVER_PORT'] ?? '') === '443');
