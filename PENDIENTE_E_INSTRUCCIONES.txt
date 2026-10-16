@@ -108,8 +108,9 @@ La web no indica licencia: NO copiar su código ni sus niveles; rehacer la mecá
   Threefit (mecánica no confirmada).
 · Lote 3 ✅ (v2.21.0): Hex, Bridg-It (Puentes), Quarto, Match Nim (Nim), Hare and Hounds (Liebre y perros), Fox and
   Dogs (Zorro y perros), Halma, Chinese Checkers (Damas chinas), Backgammon, Abalone, Hnefatafl (Tafl).
-· Lote 4 propuesto: Senet, Three Men's Morris, Mu Torere, Four Field Kono, Quirkat (Alquerque), Tic Tackle, Tiger and
-  Bull, Coyote and Chickens, Knight and Queens, Four Corner.
+· Lote 4 ✅ (v2.22.0): Senet, Three Men's Morris (Molino de tres), Mu Torere, Four Field Kono (Kono), Quirkat
+  (Alquerque), Tiger and Bull (hecho como Bagh-Chal: Tigres y cabras), Coyote and Chickens (Coyote y gallinas).
+· Por confirmar la mecánica antes de hacerlos: Tic Tackle, Knight and Queens, Four Corner, Nikulus, Threefit.
 · Resto por revisar: Addy, FlipFlop, PlusMinus, Rebulus, TipTop (números → también a Mates), Divi, Circles, Cosmos,
   Balance, Blobski, CarChamp, ChinaBox, Kainan, Li, Mosaic, Raku, Pile Tile,
   Monaco, Passalch, Solongg, Soonoo, Long Line, Patience 42, Penny Lane, Piracy, Speedy Eater, Noah, Animal Game,

@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Kono · Arcade Perdido</title>
+<meta name="theme-color" content="#14281d">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css?v=6d7635e467">
+</head>
+<body class="game">
+<script src="config.js?v=d6380ae9b0"></script>
+<script src="common.js?v=207858a9a6"></script>
+<script>
+(function () {
+  const { rand, clamp, pick } = Arcade;
+  // Four Field Kono (Corea): 4×4. Para comer saltas por encima de una ficha TUYA y caes sobre una rival.
+  const cfg = (L) => ({ depth: clamp(1 + Math.floor(L / 3), 1, 7), noise: clamp(0.45 - L * 0.025, 0.1, 0.45) });
+  const D4 = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+  function moves(b, who) {
+    const out = [];
+    for (let i = 0; i < 16; i++) {
+      if (b[i] !== who) continue; const x = i % 4, y = (i / 4) | 0;
+      for (const [dx, dy] of D4) {
+        const ax = x + dx, ay = y + dy; if (ax < 0 || ay < 0 || ax > 3 || ay > 3) continue; const a = ay * 4 + ax;
+        if (!b[a]) out.push({ from: i, to: a, cap: false });
+        else if (b[a] === who) { const tx = ax + dx, ty = ay + dy; if (tx < 0 || ty < 0 || tx > 3 || ty > 3) continue; const t = ty * 4 + tx; if (b[t] === 3 - who) out.push({ from: i, to: t, cap: true, over: a }); }
+      }
+    }
+    return out;
+  }
+  function apply(b0, m) { const b = b0.slice(); b[m.to] = b[m.from]; b[m.from] = 0; return b; }
+  function evalB(b) { let v = 0, m2 = 0, m1 = 0; for (const p of b) { if (p === 2) v += 10; else if (p === 1) v -= 10; } m2 = moves(b, 2).length; m1 = moves(b, 1).length; return v + (m2 - m1) * 0.3; }
+  function search(b, who, depth, a, bt) {
+    const ms = moves(b, who); if (!ms.length || !b.includes(who)) return [who === 2 ? -1000 - depth : 1000 + depth, null];
+    if (!depth) return [evalB(b), null];
+    ms.sort((p, q) => q.cap - p.cap);
+    let best = who === 2 ? -1e9 : 1e9, bm = ms[0];
+    for (const m of ms) { const v = search(apply(b, m), 3 - who, depth - 1, a, bt)[0]; if (who === 2 ? v > best : v < best) { best = v; bm = m; } if (who === 2) a = Math.max(a, v); else bt = Math.min(bt, v); if (a >= bt) break; }
+    return [best, bm];
+  }
+  function geo(g) { const s = g.s, Ha = g.bot - g.top - 110; s.cs = Math.min((g.W - 40) / 4, Ha / 4, 130); s.ox = (g.W - s.cs * 3) / 2; s.oy = g.top + 88 + (Ha - s.cs * 3) / 2; }
+  const XY = (s, i) => [s.ox + (i % 4) * s.cs, s.oy + ((i / 4) | 0) * s.cs];
+  function hit(s, x, y) { let bi = -1, bd = s.cs * 0.45; for (let i = 0; i < 16; i++) { const [px, py] = XY(s, i), d = Math.hypot(px - x, py - y); if (d < bd) { bd = d; bi = i; } } return bi; }
+  function stone(ctx, x, y, r, who) {
+    ctx.fillStyle = 'rgba(0,0,0,.4)'; ctx.beginPath(); ctx.ellipse(x + 2, y + r * 0.3, r, r * 0.8, 0, 0, 6.3); ctx.fill();
+    const c = who === 1 ? ['#ffffff', '#f1f3f5', '#adb5bd'] : ['#5c5f66', '#25262b', '#000'];
+    const gr = ctx.createRadialGradient(x - r * 0.3, y - r * 0.4, r * 0.1, x, y, r); gr.addColorStop(0, c[0]); gr.addColorStop(0.6, c[1]); gr.addColorStop(1, c[2]);
+    ctx.fillStyle = gr; ctx.beginPath(); ctx.ellipse(x, y, r, r * 0.88, 0, 0, 6.3); ctx.fill();
+  }
+  function play(g, m, who) { const s = g.s; s.anim = { m, who, t: 0 }; s.sel = -1; Arcade.tone(who === 1 ? 520 : 360, 0.05, 'triangle', 0.05); }
+  function animDone(g) {
+    const s = g.s, a = s.anim; s.anim = null; s.b = apply(s.b, a.m); s.plies++; s.last = a.m.to;
+    if (a.m.cap) { const [x, y] = XY(s, a.m.to); g.burst(x, y, { n: 14, color: a.who === 1 ? ['#25262b', '#868e96'] : ['#fff', '#dee2e6'], speed: 190 }); Arcade.sfx.pop(); g.shake && g.shake(3); if (a.who === 1) g.addScore(60 * Math.max(1, Math.round(g.lv / 2)), x, y); }
+    s.quiet = a.m.cap ? 0 : s.quiet + 1;
+    const next = 3 - a.who;
+    if (!s.b.includes(next) || !moves(s.b, next).length) return end(g, next === 2 ? 1 : 2);
+    if (s.quiet >= 30) { const me = s.b.filter((v) => v === 1).length, cpu = s.b.filter((v) => v === 2).length; return end(g, me > cpu ? 1 : me < cpu ? 2 : 0); }
+    s.turn = next; if (next === 2) s.think = rand(0.35, 0.7);
+  }
+  function end(g, w) {
+    const s = g.s; s.done = true;
+    if (w === 1) { g.confetti(80); g.addScore(400 * g.lv, g.W / 2, g.H / 2); const mine = s.b.filter((v) => v === 1).length; setTimeout(() => { if (g.state === 'play') g.win(mine >= 6 ? 3 : mine >= 4 ? 2 : 1); }, 1300); }
+    else if (w === 2) { g.message(Arcade.T('Gana la máquina', 'The machine wins'), 1.4); setTimeout(() => { if (g.state === 'play' && g.die()) Arcade.current.def.setup(g); }, 1800); }
+    else { g.message(Arcade.T('Empate: otra vez', 'Draw: again'), 1.3); setTimeout(() => { if (g.state === 'play') Arcade.current.def.setup(g); }, 1500); }
+  }
+  function tapPoint(g, i) {
+    const s = g.s; if (s.done || s.turn !== 1 || s.anim || i < 0) return; const ms = moves(s.b, 1);
+    if (s.sel >= 0) { const m = ms.find((m) => m.from === s.sel && m.to === i); if (m) { play(g, m, 1); return; } }
+    if (s.b[i] === 1) { if (ms.some((m) => m.from === i)) { s.sel = i; Arcade.tone(600, 0.04, 'square', 0.04); } else Arcade.sfx.bad(); return; }
+    Arcade.sfx.bad();
+  }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Salta sobre los tuyos para comer', deco: ['⚪', '⚫', '🪨', '🎋', '🏆', '🧠'], font: 'round', bg: ['#21402d', '#14281d'],
+    music: { mode: 'penta', bpm: 84, wave: 'sine', style: 'chill', root: 57 }, voice: { wave: 'sine', mul: 1.1, echo: 0.4 },
+    /*EN*/ en: { title: 'Kono', tag: 'Jump over your own to capture', help: 'Four Field Kono, from Korea. You are white and the machine is black, eight stones each on a 4×4 board. On your turn move a stone <b>one step</b> (up, down, left or right) to an empty point. The odd part is how you capture: you <b>jump over one of your own stones</b> and land <b>on top of an enemy stone</b> right behind it, which is removed. <b>Tap</b> a stone and then a lit point (red if you capture). Win by capturing everything or leaving the machine unable to move.', tvHelp: 'D-pad to a stone · OK · then to a lit point · OK.', dict: { 'Tu turno': 'Your turn', 'Pensando…': 'Thinking…' } },
+    /*TV*/ tvHelp: 'Cruceta hasta una piedra · OK · luego a un punto iluminado · OK.',
+    tv: { mode: 'tap', targets: (g) => { const s = g.s; if (!s.b || s.turn !== 1) return []; const ms = moves(s.b, 1), set = new Set(ms.map((m) => m.from)); if (s.sel >= 0) ms.filter((m) => m.from === s.sel).forEach((m) => set.add(m.to)); return [...set].map((i) => { const [x, y] = XY(s, i); return { x: x - s.cs * 0.4, y: y - s.cs * 0.4, w: s.cs * 0.8, h: s.cs * 0.8 }; }); } },
+    id: 'kono', title: 'Kono', emoji: '⚪', color: '#8ce99a', origin: 'Four Field Kono (Lutanho)',
+    help: 'El Four Field Kono de Corea. Eres las blancas y la máquina las negras, ocho piedras cada uno en un tablero de 4×4. En tu turno mueves una piedra <b>un paso</b> (arriba, abajo, izquierda o derecha) a un punto libre. Lo curioso es cómo se come: <b>saltas por encima de una piedra tuya</b> y caes <b>encima de una rival</b> que esté justo detrás, que desaparece. <b>Toca</b> una piedra y luego un punto iluminado (rojo si comes). Ganas si te lo comes todo o dejas a la máquina sin movimientos.',
+    lives: 3, levels: 0, cap: 20,
+    /*SC*/ demo(g) {
+      const s = g.s; if (s.done || s.turn !== 1 || s.anim) return { wait: 0.3 };
+      if (!s.botMv) s.botMv = search(s.b, 1, 8, -1e9, 1e9)[1]; const m = s.botMv; if (!m) return { wait: 0.3 };
+      if (s.sel !== m.from) return { tap: XY(s, m.from), after: 0.25, say: s.plies ? null : Arcade.T('Salta sobre una tuya y cae encima de una negra', 'Jump over yours and land on a black one') };
+      s.botMv = null; return { tap: XY(s, m.to), after: 0.4 };
+    },
+    setup(g) {
+      const o = cfg(g.lv), b = new Array(16).fill(0); for (let i = 0; i < 16; i++) b[i] = i < 8 ? 2 : 1;
+      g.s = { b, depth: o.depth, noise: o.noise, turn: 1, sel: -1, anim: null, done: false, think: 0, plies: 0, quiet: 0, last: -1, botMv: null };
+      geo(g);
+    },
+    layout(g) { if (g.s.b) geo(g); },
+    tap(g, p) { tapPoint(g, hit(g.s, p.x, p.y)); },
+    update(g, dt) {
+      const s = g.s; if (!s.b) return;
+      if (s.anim) { s.anim.t += dt / (s.anim.m.cap ? 0.38 : 0.24); if (s.anim.t >= 1) animDone(g); return; }
+      if (s.turn === 2 && !s.done) { s.think -= dt; if (s.think > 0) return; const ms = moves(s.b, 2); const m = Math.random() < s.noise ? pick(ms) : search(s.b, 2, s.depth, -1e9, 1e9)[1]; play(g, m || ms[0], 2); }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      const bg = ctx.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, '#2f5a3f'); bg.addColorStop(1, '#0d1a12'); ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      if (!s.b) return;
+      const cs = s.cs;
+      ctx.fillStyle = 'rgba(0,0,0,.35)'; Arcade.rr(ctx, s.ox - cs * 0.5 + 4, s.oy - cs * 0.5 + 6, cs * 4, cs * 4, 18); ctx.fill();
+      const wg = ctx.createLinearGradient(s.ox, s.oy, s.ox + cs * 3, s.oy + cs * 3); wg.addColorStop(0, '#e6c99d'); wg.addColorStop(1, '#c49a63'); ctx.fillStyle = wg; Arcade.rr(ctx, s.ox - cs * 0.5, s.oy - cs * 0.5, cs * 4, cs * 4, 18); ctx.fill();
+      ctx.strokeStyle = '#5c3a1a'; ctx.lineWidth = 3; for (let k = 0; k < 4; k++) { ctx.beginPath(); ctx.moveTo(s.ox, s.oy + k * cs); ctx.lineTo(s.ox + 3 * cs, s.oy + k * cs); ctx.stroke(); ctx.beginPath(); ctx.moveTo(s.ox + k * cs, s.oy); ctx.lineTo(s.ox + k * cs, s.oy + 3 * cs); ctx.stroke(); }
+      const ms = s.turn === 1 && !s.anim && !s.done ? moves(s.b, 1) : [], tg = ms.filter((m) => m.from === s.sel);
+      if (s.last >= 0) { const [x, y] = XY(s, s.last); ctx.strokeStyle = 'rgba(255,212,59,.85)'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(x, y, cs * 0.4, 0, 6.3); ctx.stroke(); }
+      const r = cs * 0.3, a = s.anim;
+      for (let i = 0; i < 16; i++) { const v = s.b[i]; if (!v || (a && a.m.from === i)) continue; if (a && a.m.cap && a.m.to === i && a.t < 0.85) { /* la víctima espera */ } const [x, y] = XY(s, i); stone(ctx, x, y - (s.sel === i ? 6 + Math.sin(g.rt * 8) * 2 : 0), r, v); }
+      for (const m of tg) { const [x, y] = XY(s, m.to); ctx.fillStyle = m.cap ? 'rgba(250,82,82,' + (0.5 + 0.3 * Math.sin(g.rt * 8)) + ')' : 'rgba(64,192,87,.85)'; ctx.beginPath(); ctx.arc(x, y, cs * (m.cap ? 0.18 : 0.13), 0, 6.3); ctx.fill(); }
+      if (a) { const [x0, y0] = XY(s, a.m.from), [x1, y1] = XY(s, a.m.to), t = Math.min(1, a.t); stone(ctx, x0 + (x1 - x0) * t, y0 + (y1 - y0) * t - (a.m.cap ? Math.sin(t * Math.PI) * cs * 0.55 : 0), r * (1 + (a.m.cap ? Math.sin(t * Math.PI) * 0.2 : 0)), a.who); }
+      const me = s.b.filter((v) => v === 1).length, cpu = s.b.filter((v) => v === 2).length;
+      Arcade.txt(ctx, s.done ? '' : s.turn === 1 ? 'Tu turno' : 'Pensando…', W / 2, g.top + 26, 16, '#ebfbee', 'center', 900);
+      stone(ctx, W / 2 - 60, g.top + 52, 9, 1); stone(ctx, W / 2 + 60, g.top + 52, 9, 2);
+      Arcade.txt(ctx, String(me), W / 2 - 44, g.top + 52, 14, '#fff', 'left', 900); Arcade.txt(ctx, String(cpu), W / 2 + 44, g.top + 52, 14, '#fff', 'right', 900);
+    },
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Mu Torere · Arcade Perdido</title>
+<meta name="theme-color" content="#1d1430">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css?v=6d7635e467">
+</head>
+<body class="game">
+<script src="config.js?v=d6380ae9b0"></script>
+<script src="common.js?v=207858a9a6"></script>
+<script>
+(function () {
+  const { rand, clamp, pick } = Arcade;
+  // 8 puntas (0..7) en círculo y el centro (8). Gana quien deja al otro sin movimientos.
+  const cfg = (L) => ({ depth: clamp(1 + Math.floor(L / 3), 1, 6), noise: clamp(0.35 - L * 0.012, 0.15, 0.35) });
+  function moves(b, who) {
+    const out = [], e = b.indexOf(0);
+    if (e === 8) { for (let i = 0; i < 8; i++) if (b[i] === who && (b[(i + 1) % 8] === 3 - who || b[(i + 7) % 8] === 3 - who)) out.push({ from: i, to: 8 }); }
+    else { for (const n of [(e + 1) % 8, (e + 7) % 8]) if (b[n] === who) out.push({ from: n, to: e }); if (b[8] === who) out.push({ from: 8, to: e }); }
+    return out;
+  }
+  function apply(b0, m) { const b = b0.slice(); b[m.to] = b[m.from]; b[m.from] = 0; return b; }
+  // tabla exacta (para la demo): valor para quien mueve: 1 gana, −1 pierde, 0 tablas
+  let TABLE = null;
+  function table() {
+    if (TABLE) return TABLE; const states = [];
+    const rec = (b, i, a, c) => { if (i === 9) { if (a === 4 && c === 4) states.push(b.slice()); return; } for (const v of [0, 1, 2]) { if (v === 0 && b.includes(0)) continue; if (v === 1 && a === 4) continue; if (v === 2 && c === 4) continue; b[i] = v; rec(b, i + 1, a + (v === 1), c + (v === 2)); b[i] = undefined; } };
+    rec([], 0, 0, 0);
+    const T = new Map(); for (const b of states) for (const w of [1, 2]) T.set(b.join('') + w, moves(b, w).length ? null : -1);
+    let ch = true; while (ch) { ch = false; for (const b of states) for (const w of [1, 2]) { const k = b.join('') + w; if (T.get(k) !== null) continue; const vs = moves(b, w).map((m) => T.get(apply(b, m).join('') + (3 - w))); if (vs.includes(-1)) { T.set(k, 1); ch = true; } else if (vs.every((v) => v === 1)) { T.set(k, -1); ch = true; } } }
+    for (const [k, v] of T) if (v === null) T.set(k, 0);
+    return (TABLE = T);
+  }
+  function look(b, who, depth) { // búsqueda corta: 1 gana, −1 pierde, 0 no se sabe
+    const ms = moves(b, who); if (!ms.length) return -1; if (!depth) return 0;
+    let best = -1; for (const m of ms) { const v = -look(apply(b, m), 3 - who, depth - 1); if (v > best) best = v; if (best === 1) break; } return best;
+  }
+  function chooseAI(b, depth, noise) {
+    const ms = moves(b, 2); if (Math.random() < noise) return pick(ms);
+    const sc = ms.map((m) => ({ m, v: -look(apply(b, m), 1, depth - 1) + Math.random() * 0.1 })); sc.sort((a, c) => c.v - a.v); return sc[0].m;
+  }
+  function chooseBest(b, who) { const T = table(), ms = moves(b, who); let best = null, bv = -2; for (const m of ms) { const v = -T.get(apply(b, m).join('') + (3 - who)) + Math.random() * 0.1; if (v > bv) { bv = v; best = m; } } return best; }
+  function geo(g) { const s = g.s, Ha = g.bot - g.top - 110; s.R = Math.min((g.W - 30) / 2.6, Ha / 2.6, 170); s.cx = g.W / 2; s.cy = g.top + 88 + Ha / 2; }
+  const XY = (s, i) => (i === 8 ? [s.cx, s.cy] : [s.cx + Math.cos(-Math.PI / 2 + i * Math.PI / 4) * s.R, s.cy + Math.sin(-Math.PI / 2 + i * Math.PI / 4) * s.R]);
+  function hit(s, x, y) { let bi = -1, bd = s.R * 0.32; for (let i = 0; i < 9; i++) { const [px, py] = XY(s, i), d = Math.hypot(px - x, py - y); if (d < bd) { bd = d; bi = i; } } return bi; }
+  function stone(ctx, x, y, r, who) {
+    ctx.fillStyle = 'rgba(0,0,0,.4)'; ctx.beginPath(); ctx.ellipse(x + 2, y + r * 0.3, r, r * 0.8, 0, 0, 6.3); ctx.fill();
+    const c = who === 1 ? ['#ffd8a8', '#e8590c', '#7a2e05'] : ['#868e96', '#212529', '#000'];
+    const gr = ctx.createRadialGradient(x - r * 0.3, y - r * 0.4, r * 0.1, x, y, r); gr.addColorStop(0, c[0]); gr.addColorStop(0.6, c[1]); gr.addColorStop(1, c[2]);
+    ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(x, y, r, 0, 6.3); ctx.fill();
+    ctx.strokeStyle = who === 1 ? 'rgba(255,255,255,.35)' : 'rgba(255,255,255,.18)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x, y, r * 0.55, 0.3, 5.2); ctx.stroke(); // espiral koru
+  }
+  function play(g, m, who) { const s = g.s; s.anim = { m, who, t: 0 }; s.sel = -1; Arcade.tone(who === 1 ? 494 : 330, 0.07, 'triangle', 0.06); }
+  function animDone(g) {
+    const s = g.s, a = s.anim; s.anim = null; s.b = apply(s.b, a.m); s.plies++; s.last = a.m.to; if (a.who === 1) { s.moves++; g.addScore(10 * Math.max(1, Math.round(g.lv / 2)), ...XY(s, a.m.to)); }
+    const next = 3 - a.who;
+    if (!moves(s.b, next).length) {
+      s.done = true;
+      if (next === 2) { g.confetti(80); g.addScore(400 * g.lv, g.W / 2, g.H / 2); for (let i = 0; i < 9; i++) if (s.b[i] === 2) { const [x, y] = XY(s, i); g.ring(x, y, '#ffd43b', s.R * 0.25, 4); } const st = s.moves <= 8 ? 3 : s.moves <= 16 ? 2 : 1; setTimeout(() => { if (g.state === 'play') g.win(st); }, 1300); }
+      else { g.message(Arcade.T('Te has quedado sin movimientos', 'You have no moves left'), 1.5); setTimeout(() => { if (g.state === 'play' && g.die()) Arcade.current.def.setup(g); }, 1900); }
+      return;
+    }
+    if (s.plies >= 40) { s.done = true; g.message(Arcade.T('Tablas: otra partida', 'Draw: another game'), 1.3); setTimeout(() => { if (g.state === 'play') Arcade.current.def.setup(g); }, 1500); return; }
+    s.turn = next; if (next === 2) s.think = rand(0.5, 0.9);
+  }
+  function tapPoint(g, i) {
+    const s = g.s; if (s.done || s.turn !== 1 || s.anim || i < 0) return; const ms = moves(s.b, 1);
+    const direct = ms.filter((m) => m.from === i); if (direct.length === 1) { play(g, direct[0], 1); return; }
+    if (s.b[i] === 0) { const m = ms.find((m) => m.to === i && (s.sel < 0 || m.from === s.sel)); if (m) { play(g, m, 1); return; } }
+    if (s.b[i] === 1 && direct.length) { s.sel = i; return; }
+    Arcade.sfx.bad(); s.nope = 0.6;
+  }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Deja al rival sin salida', deco: ['🟠', '⚫', '🌀', '🌿', '🏆', '🧠'], font: 'round', bg: ['#2f2050', '#1d1430'],
+    music: { mode: 'dorian', bpm: 78, wave: 'sine', style: 'chill', root: 50 }, voice: { wave: 'sine', mul: 1.1, echo: 0.45 },
+    /*EN*/ en: { title: 'Mu Torere', tag: 'Leave your rival with no way out', help: 'A Māori game from New Zealand. There are 8 points on a star and the centre; each side has 4 stones and there is only <b>one empty spot</b>. On your turn move a stone into the gap: from a point to the <b>next point</b> around the star, from the <b>centre</b> to a point, or from a point to the <b>centre</b> — but only if that stone has an <b>enemy stone next to it</b>. <b>Tap</b> the stone that can move. Whoever cannot move <b>loses</b>. If neither side gets stuck, it is a draw and you play again.', tvHelp: 'D-pad to one of your stones that can move · OK.', dict: { 'Tu turno': 'Your turn', 'Pensando…': 'Thinking…', 'Esa no puede moverse': 'That one can\'t move' } },
+    /*TV*/ tvHelp: 'Cruceta hasta una piedra tuya que pueda moverse · OK.',
+    tv: { mode: 'tap', targets: (g) => { const s = g.s; if (!s.b || s.turn !== 1) return []; return [...new Set(moves(s.b, 1).map((m) => m.from))].map((i) => { const [x, y] = XY(s, i); return { x: x - s.R * 0.16, y: y - s.R * 0.16, w: s.R * 0.32, h: s.R * 0.32 }; }); } },
+    id: 'mutorere', title: 'Mu Torere', emoji: '🌀', color: '#ff922b', origin: 'Mu Torere (Lutanho)',
+    help: 'Un juego maorí de Nueva Zelanda. Hay 8 puntas en una estrella y el centro; cada uno tiene 4 piedras y solo queda <b>un hueco libre</b>. En tu turno mueves una piedra al hueco: de una punta a la <b>punta vecina</b>, del <b>centro</b> a una punta, o de una punta al <b>centro</b>, pero esto último solo si esa piedra tiene una <b>rival al lado</b>. <b>Toca</b> la piedra que puede moverse. Quien no puede mover, <b>pierde</b>. Si nadie se queda bloqueado es empate y se juega otra.',
+    lives: 3, levels: 0, cap: 20,
+    /*SC*/ demo(g) {
+      const s = g.s; if (s.done || s.turn !== 1 || s.anim) return { wait: 0.3 };
+      const m = chooseBest(s.b, 1); if (!m) return { wait: 0.3 };
+      return { tap: XY(s, m.from), after: 0.5, say: s.plies ? null : Arcade.T('Solo puedes mover hacia el hueco', 'You can only move into the gap') };
+    },
+    setup(g) {
+      const o = cfg(g.lv), b = [1, 1, 1, 1, 2, 2, 2, 2, 0], rot = Math.floor(rand(0, 8)), rb = new Array(9).fill(0); for (let i = 0; i < 8; i++) rb[(i + rot) % 8] = b[i];
+      g.s = { b: rb, depth: o.depth, noise: o.noise, turn: 1, sel: -1, anim: null, done: false, think: 0, plies: 0, moves: 0, last: -1, nope: 0 };
+      geo(g);
+    },
+    layout(g) { if (g.s.b) geo(g); },
+    tap(g, p) { tapPoint(g, hit(g.s, p.x, p.y)); },
+    update(g, dt) {
+      const s = g.s; if (!s.b) return; if (s.nope > 0) s.nope -= dt;
+      if (s.anim) { s.anim.t += dt / 0.35; if (s.anim.t >= 1) animDone(g); return; }
+      if (s.turn === 2 && !s.done) { s.think -= dt; if (s.think > 0) return; play(g, chooseAI(s.b, s.depth, s.noise), 2); }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      const bg = ctx.createRadialGradient(W / 2, H / 2, 30, W / 2, H / 2, Math.max(W, H) * 0.7); bg.addColorStop(0, '#4a3480'); bg.addColorStop(1, '#120c20'); ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      if (!s.b) return;
+      const R = s.R;
+      // estrella de 8 puntas tallada
+      ctx.fillStyle = 'rgba(0,0,0,.3)'; ctx.beginPath(); for (let k = 0; k < 16; k++) { const a = -Math.PI / 2 + k * Math.PI / 8, q = k % 2 ? R * 0.55 : R * 1.25; ctx.lineTo(s.cx + Math.cos(a) * q + 4, s.cy + Math.sin(a) * q + 6); } ctx.closePath(); ctx.fill();
+      const sg = ctx.createRadialGradient(s.cx, s.cy, 10, s.cx, s.cy, R * 1.25); sg.addColorStop(0, '#c08a52'); sg.addColorStop(1, '#7a4f26'); ctx.fillStyle = sg;
+      ctx.beginPath(); for (let k = 0; k < 16; k++) { const a = -Math.PI / 2 + k * Math.PI / 8, q = k % 2 ? R * 0.55 : R * 1.25; ctx.lineTo(s.cx + Math.cos(a) * q, s.cy + Math.sin(a) * q); } ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = '#3b2410'; ctx.lineWidth = 4; ctx.lineCap = 'round';
+      for (let i = 0; i < 8; i++) { const [x, y] = XY(s, i), [x2, y2] = XY(s, (i + 1) % 8); ctx.beginPath(); ctx.moveTo(s.cx, s.cy); ctx.lineTo(x, y); ctx.stroke(); ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x2, y2); ctx.stroke(); }
+      const ms = s.turn === 1 && !s.anim && !s.done ? moves(s.b, 1) : [], can = new Set(ms.map((m) => m.from)), e = s.b.indexOf(0);
+      for (let i = 0; i < 9; i++) { const [x, y] = XY(s, i); ctx.fillStyle = '#3b2410'; ctx.beginPath(); ctx.arc(x, y, R * 0.13, 0, 6.3); ctx.fill(); }
+      if (e >= 0 && !s.anim) { const [x, y] = XY(s, e); ctx.strokeStyle = 'rgba(255,236,153,' + (0.4 + 0.3 * Math.sin(g.rt * 4)) + ')'; ctx.lineWidth = 3; ctx.setLineDash([6, 5]); ctx.beginPath(); ctx.arc(x, y, R * 0.15, 0, 6.3); ctx.stroke(); ctx.setLineDash([]); }
+      const r = R * 0.13, a = s.anim;
+      for (let i = 0; i < 9; i++) {
+        const v = s.b[i]; if (!v || (a && a.m.from === i)) continue; const [x, y] = XY(s, i);
+        if (can.has(i)) { ctx.fillStyle = 'rgba(255,212,59,' + (0.25 + 0.2 * Math.sin(g.rt * 5)) + ')'; ctx.beginPath(); ctx.arc(x, y, r * 1.5, 0, 6.3); ctx.fill(); }
+        stone(ctx, x, y, r, v);
+      }
+      if (a) { const [x0, y0] = XY(s, a.m.from), [x1, y1] = XY(s, a.m.to), t = Math.min(1, a.t), ee = t * t * (3 - 2 * t); stone(ctx, x0 + (x1 - x0) * ee, y0 + (y1 - y0) * ee - Math.sin(t * Math.PI) * r * 1.5, r * (1 + Math.sin(t * Math.PI) * 0.2), a.who); }
+      Arcade.txt(ctx, s.done ? '' : s.nope > 0 ? 'Esa no puede moverse' : s.turn === 1 ? 'Tu turno' : 'Pensando…', W / 2, g.top + 28, 16, s.nope > 0 ? '#ffa8a8' : '#e5dbff', 'center', 900);
+      Arcade.txt(ctx, (40 - s.plies) + ' ⏳', W / 2, g.top + 52, 12, '#b197fc', 'center', 800);
+    },
+  });
+})();
+</script>
+</body>
+</html>

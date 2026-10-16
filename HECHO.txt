@@ -1,6 +1,14 @@
 ARCADE PERDIDO + ARCADE PRO — LO QUE ESTÁ HECHO
 ================================================
-Fecha: 16-10-2026 · Versión de la PWA (games.js → ARCADE_VERSION): 2.21.0
+Fecha: 16-10-2026 · Versión de la PWA (games.js → ARCADE_VERSION): 2.22.0
+· v2.22.0: LOTE LUTANHO 4 (juegos de tablero antiguos, rehechos desde cero): Senet (reglas de Kendall simplificadas:
+  palitos, cambio de sitio, protección de 2 y bloqueo de 3, casa de la felicidad, agua y salida exacta; 3 piezas y luego
+  5), Tigres y cabras (Bagh-Chal: el número de cabras que pueden comerse baja de 8 a 5 con el nivel), Coyote y gallinas
+  (tablero en cruz de 33 puntos; 17, 15 y 13 gallinas; se gana encerrando al coyote o llenando el corral), Alquerque
+  (captura obligatoria y en cadena, la más larga), Kono (Four Field Kono: se come saltando sobre una ficha propia),
+  Mu Torere (tabla exacta para la demo; la máquina mira de 1 a 6 jugadas), Molino de tres (Three Men's Morris con tabla
+  exacta; en los niveles impares desde el 7 hay diagonales y empieza la máquina). Molino de tres sale también en
+  Educativos › Lógica.
 · v2.21.0: LOTE LUTANHO 3 (juegos de tablero, rehechos desde cero): Hex (5×5 → 11×11; IA por camino más corto con
   respuesta a 2 jugadas), Puentes (Bridg-It de Gale; el rojo empieza y siempre puede ganar), Quarto (la máquina resuelve
   el final exacto con 3–8 huecos; desde el nivel 10 también cuentan los cuadrados 2×2), Nim (filas de cerillas con

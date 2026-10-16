@@ -1,0 +1,121 @@
+// Alquerque|#30200f
+(function () {
+  const { rand, clamp, pick } = Arcade;
+  // Alquerque / Quirkat: 5×5 con diagonales; tú (1) subes, la máquina (2) baja. Comer es obligatorio y en cadena.
+  const cfg = (L) => ({ depth: clamp(1 + Math.floor(L / 4), 1, 4), noise: clamp(0.45 - L * 0.025, 0.1, 0.45) });
+  const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, -1], [1, -1], [-1, 1]];
+  const NB = []; for (let i = 0; i < 25; i++) { const x = i % 5, y = (i / 5) | 0; NB.push(DIRS.map(([dx, dy], d) => { const tx = x + dx, ty = y + dy; if (tx < 0 || ty < 0 || tx > 4 || ty > 4) return -1; if (d >= 4 && (x + y) % 2) return -1; return ty * 5 + tx; })); }
+  const FWD = { 1: new Set([0, 1, 3, 5, 6]), 2: new Set([0, 1, 2, 4, 7]) }; // de lado o hacia delante
+  function moves(b, who) {
+    const jumps = [], steps = [];
+    for (let i = 0; i < 25; i++) {
+      if (b[i] !== who) continue;
+      const rec = (pos, bb, path, caps) => { let more = false; for (let d = 0; d < 8; d++) { const m = NB[pos][d]; if (m < 0 || bb[m] !== 3 - who) continue; const t = NB[m][d]; if (t < 0 || bb[t]) continue; more = true; const b2 = bb.slice(); b2[pos] = 0; b2[m] = 0; b2[t] = who; rec(t, b2, path.concat(t), caps.concat(m)); } if (!more && caps.length) jumps.push({ from: i, to: pos, path, caps }); };
+      rec(i, b, [], []);
+      if (!jumps.length) for (const d of FWD[who]) { const j = NB[i][d]; if (j >= 0 && !b[j]) steps.push({ from: i, to: j, path: [j], caps: [] }); }
+    }
+    if (jumps.length) { const mx = Math.max(...jumps.map((j) => j.caps.length)); return jumps.filter((j) => j.caps.length === mx); }
+    return steps;
+  }
+  function apply(b0, m) { const b = b0.slice(), v = b[m.from]; b[m.from] = 0; for (const c of m.caps) b[c] = 0; b[m.to] = v; return b; }
+  function evalB(b) { let v = 0; for (let i = 0; i < 25; i++) { const p = b[i]; if (!p) continue; const x = i % 5, y = (i / 5) | 0, c = (x > 0 && x < 4 ? 0.3 : 0) + ((x + y) % 2 ? 0 : 0.2); v += p === 2 ? 10 + c + y * 0.15 : -(10 + c + (4 - y) * 0.15); } return v; }
+  function search(b, who, depth, a, bt) {
+    const ms = moves(b, who); if (!ms.length) return [who === 2 ? -1000 - depth : 1000 + depth, null];
+    if (!depth) return [evalB(b), null];
+    let best = who === 2 ? -1e9 : 1e9, bm = ms[0];
+    for (const m of ms) { const v = search(apply(b, m), 3 - who, depth - 1, a, bt)[0]; if (who === 2 ? v > best : v < best) { best = v; bm = m; } if (who === 2) a = Math.max(a, v); else bt = Math.min(bt, v); if (a >= bt) break; }
+    return [best, bm];
+  }
+  function geo(g) { const s = g.s, Ha = g.bot - g.top - 110; s.cs = Math.min((g.W - 40) / 5, Ha / 5, 110); s.ox = (g.W - s.cs * 4) / 2; s.oy = g.top + 88 + (Ha - s.cs * 4) / 2; }
+  const XY = (s, i) => [s.ox + (i % 5) * s.cs, s.oy + ((i / 5) | 0) * s.cs];
+  function hit(s, x, y) { let bi = -1, bd = s.cs * 0.45; for (let i = 0; i < 25; i++) { const [px, py] = XY(s, i), d = Math.hypot(px - x, py - y); if (d < bd) { bd = d; bi = i; } } return bi; }
+  function piece(ctx, x, y, r, who) {
+    ctx.fillStyle = 'rgba(0,0,0,.4)'; ctx.beginPath(); ctx.ellipse(x + 1, y + r * 0.3, r, r * 0.8, 0, 0, 6.3); ctx.fill();
+    const c = who === 1 ? ['#ffe8cc', '#f08c00', '#8a4b00'] : ['#c5f6fa', '#1098ad', '#0b4f5c'];
+    const gr = ctx.createRadialGradient(x - r * 0.3, y - r * 0.35, r * 0.1, x, y, r); gr.addColorStop(0, c[0]); gr.addColorStop(0.6, c[1]); gr.addColorStop(1, c[2]);
+    ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(x, y, r, 0, 6.3); ctx.fill(); ctx.strokeStyle = 'rgba(255,255,255,.3)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x, y, r * 0.6, 0, 6.3); ctx.stroke();
+  }
+  function play(g, m, who) { const s = g.s; s.anim = { m, who, k: 0, t: 0 }; s.sel = -1; Arcade.tone(who === 1 ? 480 : 340, 0.05, 'triangle', 0.05); }
+  function animDone(g) {
+    const s = g.s, a = s.anim; s.anim = null; s.b = apply(s.b, a.m); s.plies++; s.last = a.m.to;
+    if (a.m.caps.length) { for (const c of a.m.caps) { const [x, y] = XY(s, c); g.burst(x, y, { n: 12, color: a.who === 1 ? ['#1098ad', '#c5f6fa'] : ['#f08c00', '#ffe8cc'], speed: 180 }); } Arcade.sfx.pop(); if (a.who === 1) g.addScore(40 * a.m.caps.length * Math.max(1, Math.round(g.lv / 2)), ...XY(s, a.m.to)); }
+    s.quiet = a.m.caps.length ? 0 : s.quiet + 1;
+    const next = 3 - a.who;
+    if (!moves(s.b, next).length) {
+      s.done = true;
+      if (next === 2) { g.confetti(80); g.addScore(500 * g.lv, g.W / 2, g.H / 2); const mine = s.b.filter((v) => v === 1).length; setTimeout(() => { if (g.state === 'play') g.win(mine >= 9 ? 3 : mine >= 5 ? 2 : 1); }, 1300); }
+      else { g.message(Arcade.T('Gana la máquina', 'The machine wins'), 1.4); setTimeout(() => { if (g.state === 'play' && g.die()) Arcade.current.def.setup(g); }, 1800); }
+      return;
+    }
+    if (s.quiet >= 40) { // sin capturas mucho rato: gana quien tenga más
+      const me = s.b.filter((v) => v === 1).length, cpu = s.b.filter((v) => v === 2).length; s.done = true;
+      if (me > cpu) { g.message(Arcade.T('¡Ganas por fichas!', 'You win on pieces!'), 1.3); g.confetti(60); setTimeout(() => { if (g.state === 'play') g.win(1); }, 1400); }
+      else if (me < cpu) { g.message(Arcade.T('La máquina gana por fichas', 'The machine wins on pieces'), 1.4); setTimeout(() => { if (g.state === 'play' && g.die()) Arcade.current.def.setup(g); }, 1800); }
+      else { g.message(Arcade.T('Empate: otra vez', 'Draw: again'), 1.3); setTimeout(() => { if (g.state === 'play') Arcade.current.def.setup(g); }, 1500); }
+      return;
+    }
+    s.turn = next; if (next === 2) s.think = rand(0.35, 0.7);
+  }
+  function tapPoint(g, i) {
+    const s = g.s; if (s.done || s.turn !== 1 || s.anim || i < 0) return; const ms = moves(s.b, 1);
+    if (s.b[i] === 1) { if (ms.some((m) => m.from === i)) { s.sel = i; Arcade.tone(600, 0.04, 'square', 0.04); } else { Arcade.sfx.bad(); s.must = ms.some((m) => m.caps.length) ? 0.9 : 0; } return; }
+    if (s.sel < 0) return; const m = ms.find((m) => m.from === s.sel && m.to === i); if (!m) { Arcade.sfx.bad(); return; } play(g, m, 1);
+  }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Las damas de la Alhambra', deco: ['🟠', '🔵', '🕌', '🌙', '🏆', '🧠'], font: 'serif', bg: ['#5a3b1c', '#30200f'],
+    music: { mode: 'phryg', bpm: 90, wave: 'triangle', style: 'chill', root: 52 }, voice: { wave: 'sine', mul: 1, echo: 0.4 },
+    /*EN*/ en: { title: 'Alquerque', tag: 'The draughts of the Alhambra', help: 'The ancestor of draughts, played in al-Andalus. You are orange and start at the bottom; the machine is blue. Pieces move one step along the lines <b>forwards, sideways or diagonally forwards</b> (never back). <b>Tap</b> a piece and then a lit point. You capture by <b>jumping</b> over an enemy piece into the empty point behind it, in any direction, and you can chain jumps. <b>Capturing is compulsory</b> (and you must take the longest chain). Win by capturing everything or leaving the machine with no moves. If nobody captures for a long time, whoever has more pieces wins.', tvHelp: 'D-pad to a piece · OK · then to a lit point · OK.', dict: { 'Tu turno': 'Your turn', 'Pensando…': 'Thinking…', '¡Tienes que comer!': 'You must capture!' } },
+    /*TV*/ tvHelp: 'Cruceta hasta una ficha · OK · luego a un punto iluminado · OK.',
+    tv: { mode: 'tap', targets: (g) => { const s = g.s; if (!s.b || s.turn !== 1) return []; const ms = moves(s.b, 1), set = new Set(ms.map((m) => m.from)); if (s.sel >= 0) ms.filter((m) => m.from === s.sel).forEach((m) => set.add(m.to)); return [...set].map((i) => { const [x, y] = XY(s, i); return { x: x - s.cs * 0.4, y: y - s.cs * 0.4, w: s.cs * 0.8, h: s.cs * 0.8 }; }); } },
+    id: 'alquerque', title: 'Alquerque', emoji: '🕌', color: '#ff922b', origin: 'Alquerque / Quirkat (Lutanho)',
+    help: 'El antepasado de las damas, que se jugaba en al-Ándalus. Eres el naranja y empiezas abajo; la máquina es el azul. Las fichas avanzan un paso por las líneas <b>hacia delante, de lado o en diagonal hacia delante</b> (nunca hacia atrás). <b>Toca</b> una ficha y luego un punto iluminado. Se come <b>saltando</b> por encima de una ficha rival hasta el punto libre de detrás, en cualquier dirección, y se pueden encadenar saltos. <b>Comer es obligatorio</b> (y hay que hacer la cadena más larga). Ganas si te lo comes todo o dejas a la máquina sin movimientos. Si nadie come durante mucho rato, gana quien tenga más fichas.',
+    lives: 3, levels: 0, cap: 20,
+    /*SC*/ demo(g) {
+      const s = g.s; if (s.done || s.turn !== 1 || s.anim) return { wait: 0.3 };
+      if (!s.botMv) s.botMv = search(s.b, 1, 4, -1e9, 1e9)[1]; const m = s.botMv; if (!m) return { wait: 0.3 };
+      if (s.sel !== m.from) return { tap: XY(s, m.from), after: 0.25, say: s.plies ? null : Arcade.T('Si puedes comer, tienes que comer', 'If you can capture, you must') };
+      s.botMv = null; return { tap: XY(s, m.to), after: 0.4 };
+    },
+    setup(g) {
+      const o = cfg(g.lv), b = new Array(25).fill(0);
+      for (let i = 0; i < 25; i++) { const x = i % 5, y = (i / 5) | 0; if (y < 2 || (y === 2 && x < 2)) b[i] = 2; else if (y > 2 || (y === 2 && x > 2)) b[i] = 1; }
+      g.s = { b, depth: o.depth, noise: o.noise, turn: 1, sel: -1, anim: null, done: false, think: 0, plies: 0, quiet: 0, last: -1, must: 0, botMv: null };
+      geo(g);
+    },
+    layout(g) { if (g.s.b) geo(g); },
+    tap(g, p) { tapPoint(g, hit(g.s, p.x, p.y)); },
+    update(g, dt) {
+      const s = g.s; if (!s.b) return; if (s.must > 0) s.must -= dt;
+      if (s.anim) { const a = s.anim; a.t += dt / 0.24; if (a.t >= 1) { a.t = 0; a.k++; if (a.k >= a.m.path.length) animDone(g); else Arcade.tone(420 + a.k * 60, 0.04, 'sine', 0.05); } return; }
+      if (s.turn === 2 && !s.done) { s.think -= dt; if (s.think > 0) return; const ms = moves(s.b, 2); const m = Math.random() < s.noise ? pick(ms) : search(s.b, 2, s.depth, -1e9, 1e9)[1]; play(g, m || ms[0], 2); }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      const bg = ctx.createRadialGradient(W / 2, H / 2, 30, W / 2, H / 2, Math.max(W, H) * 0.75); bg.addColorStop(0, '#7a5530'); bg.addColorStop(1, '#1a1008'); ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      if (!s.b) return;
+      const cs = s.cs;
+      // tablero de piedra con zócalo de azulejos
+      ctx.fillStyle = 'rgba(0,0,0,.35)'; Arcade.rr(ctx, s.ox - cs * 0.5 + 4, s.oy - cs * 0.5 + 6, cs * 5, cs * 5, 16); ctx.fill();
+      ctx.fillStyle = '#e9d8b4'; Arcade.rr(ctx, s.ox - cs * 0.5, s.oy - cs * 0.5, cs * 5, cs * 5, 16); ctx.fill();
+      ctx.strokeStyle = '#1c7ed6'; ctx.lineWidth = 3; Arcade.rr(ctx, s.ox - cs * 0.42, s.oy - cs * 0.42, cs * 4.84, cs * 4.84, 12); ctx.stroke();
+      ctx.lineCap = 'round'; ctx.strokeStyle = '#8a5a2e'; ctx.lineWidth = 3;
+      for (let i = 0; i < 25; i++) for (const d of [0, 2, 4, 7]) { const j = NB[i][d]; if (j < 0) continue; const [x1, y1] = XY(s, i), [x2, y2] = XY(s, j); ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); }
+      const ms = s.turn === 1 && !s.anim && !s.done ? moves(s.b, 1) : [], tg = new Set(ms.filter((m) => m.from === s.sel).map((m) => m.to)), can = new Set(ms.map((m) => m.from));
+      if (s.last >= 0) { const [x, y] = XY(s, s.last); ctx.strokeStyle = 'rgba(255,212,59,.8)'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(x, y, cs * 0.42, 0, 6.3); ctx.stroke(); }
+      const r = cs * 0.3, a = s.anim;
+      for (let i = 0; i < 25; i++) {
+        const v = s.b[i]; const [x, y] = XY(s, i);
+        if (tg.has(i)) { ctx.fillStyle = 'rgba(64,192,87,.8)'; ctx.beginPath(); ctx.arc(x, y, cs * 0.14, 0, 6.3); ctx.fill(); }
+        if (!v || (a && a.m.from === i)) continue; if (a && a.m.caps.indexOf(i) >= 0 && a.m.caps.indexOf(i) < a.k) continue;
+        piece(ctx, x, y - (s.sel === i ? 5 + Math.sin(g.rt * 8) * 2 : 0), r, v);
+        if (v === 1 && can.has(i) && s.sel < 0) { ctx.strokeStyle = 'rgba(255,255,255,' + (0.35 + 0.25 * Math.sin(g.rt * 5)) + ')'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x, y, r + 3, 0, 6.3); ctx.stroke(); }
+      }
+      if (a) { const pts = [a.m.from, ...a.m.path], [x0, y0] = XY(s, pts[a.k]), [x1, y1] = XY(s, pts[Math.min(a.k + 1, pts.length - 1)]), t = Math.min(1, a.t); piece(ctx, x0 + (x1 - x0) * t, y0 + (y1 - y0) * t - (a.m.caps.length ? Math.sin(t * Math.PI) * cs * 0.4 : 0), r, a.who); }
+      const me = s.b.filter((v) => v === 1).length, cpu = s.b.filter((v) => v === 2).length;
+      Arcade.txt(ctx, s.done ? '' : s.must > 0 ? '¡Tienes que comer!' : s.turn === 1 ? 'Tu turno' : 'Pensando…', W / 2, g.top + 26, 16, s.must > 0 ? '#ffa8a8' : '#ffe8cc', 'center', 900);
+      piece(ctx, W / 2 - 60, g.top + 52, 8, 1); piece(ctx, W / 2 + 60, g.top + 52, 8, 2);
+      Arcade.txt(ctx, String(me), W / 2 - 44, g.top + 52, 14, '#fff', 'left', 900); Arcade.txt(ctx, String(cpu), W / 2 + 44, g.top + 52, 14, '#fff', 'right', 900);
+    },
+  });
+})();

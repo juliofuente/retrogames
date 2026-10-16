@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Tigres y cabras · Arcade Perdido</title>
+<meta name="theme-color" content="#2b2410">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css?v=6d7635e467">
+</head>
+<body class="game">
+<script src="config.js?v=d6380ae9b0"></script>
+<script src="common.js?v=207858a9a6"></script>
+<script>
+(function () {
+  const { rand, clamp, pick } = Arcade;
+  // Bagh-Chal: tú pones y mueves 20 cabras; la máquina mueve 4 tigres que comen saltando
+  const cfg = (L) => ({ need: L <= 3 ? 8 : L <= 7 ? 7 : L <= 12 ? 6 : 5, depth: L <= 4 ? 1 : L <= 10 ? 2 : 3, noise: clamp(0.45 - L * 0.025, 0.12, 0.45) });
+  const N = 5, DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, -1], [1, -1], [-1, 1]];
+  const NB = []; for (let i = 0; i < 25; i++) { const x = i % 5, y = (i / 5) | 0; NB.push(DIRS.map(([dx, dy], d) => { const tx = x + dx, ty = y + dy; if (tx < 0 || ty < 0 || tx >= N || ty >= N) return -1; if (d >= 4 && (x + y) % 2) return -1; return ty * 5 + tx; })); }
+  function moves(st, who) {
+    const b = st.b, out = [];
+    if (who === 1) {
+      if (st.hand > 0) { for (let i = 0; i < 25; i++) if (!b[i]) out.push({ from: -1, to: i }); return out; }
+      for (let i = 0; i < 25; i++) if (b[i] === 1) for (const j of NB[i]) if (j >= 0 && !b[j]) out.push({ from: i, to: j });
+      return out;
+    }
+    for (let i = 0; i < 25; i++) if (b[i] === 2) for (let d = 0; d < 8; d++) { const j = NB[i][d]; if (j < 0) continue; if (!b[j]) out.push({ from: i, to: j }); else if (b[j] === 1) { const k = NB[j][d]; if (k >= 0 && !b[k]) out.push({ from: i, to: k, cap: j }); } }
+    return out;
+  }
+  function apply(st, m, who) {
+    const b = st.b.slice(); let hand = st.hand, caps = st.caps;
+    if (who === 1) { if (m.from < 0) { hand--; } else b[m.from] = 0; b[m.to] = 1; }
+    else { b[m.from] = 0; b[m.to] = 2; if (m.cap != null) { b[m.cap] = 0; caps++; } }
+    return { b, hand, caps };
+  }
+  function evalT(st, need) { // para los tigres
+    if (st.caps >= need) return 1e5; const tm = moves(st, 2); if (!tm.length) return -1e5;
+    let threats = 0, free = 0; for (const m of tm) { if (m.cap != null) threats++; else free++; }
+    let trapped = 0; for (let i = 0; i < 25; i++) if (st.b[i] === 2 && !tm.some((m) => m.from === i)) trapped++;
+    let edge = 0; for (let i = 0; i < 25; i++) if (st.b[i] === 1) { const x = i % 5, y = (i / 5) | 0; if (!x || !y || x === 4 || y === 4) edge++; }
+    return st.caps * 120 + threats * 40 + free * 4 - trapped * 30 - edge * 2;
+  }
+  function search(st, who, depth, a, bt, need) {
+    if (st.caps >= need) return [1e5 + depth, null];
+    const ms = moves(st, who);
+    if (!ms.length) return [who === 2 ? -1e5 - depth : evalT(st, need), null];
+    if (!depth) return [evalT(st, need), null];
+    ms.sort((p, q) => (q.cap != null) - (p.cap != null));
+    let best = who === 2 ? -1e9 : 1e9, bm = ms[0];
+    for (const m of ms) {
+      const v = search(apply(st, m, who), 3 - who, depth - 1, a, bt, need)[0];
+      if (who === 2 ? v > best : v < best) { best = v; bm = m; }
+      if (who === 2) a = Math.max(a, v); else bt = Math.min(bt, v); if (a >= bt) break;
+    }
+    return [best, bm];
+  }
+  function geo(g) { const s = g.s, Ha = g.bot - g.top - 120; s.cs = Math.min((g.W - 100) / 4, Ha / 4.9, 110); s.ox = (g.W - s.cs * 4) / 2; s.oy = g.top + 96 + (Ha - s.cs * 4) / 2; }
+  const XY = (s, i) => [s.ox + (i % 5) * s.cs, s.oy + ((i / 5) | 0) * s.cs];
+  function hit(s, x, y) { let bi = -1, bd = s.cs * 0.42; for (let i = 0; i < 25; i++) { const [px, py] = XY(s, i), d = Math.hypot(px - x, py - y); if (d < bd) { bd = d; bi = i; } } return bi; }
+  function play(g, m, who) { const s = g.s; s.anim = { m, who, t: 0 }; s.sel = -1; Arcade.tone(who === 1 ? 520 : 200, who === 1 ? 0.05 : 0.12, who === 1 ? 'triangle' : 'sawtooth', 0.05); }
+  function animDone(g) {
+    const s = g.s, a = s.anim; s.anim = null; const st = apply(s, a.m, a.who); s.b = st.b; s.hand = st.hand; s.caps = st.caps; s.plies++; s.last = a.m.to;
+    if (a.m.cap != null) { const [x, y] = XY(s, a.m.cap); g.burst(x, y, { n: 16, color: ['#fff', '#ced4da'], speed: 200 }); g.shake && g.shake(4); Arcade.sfx.bad(); }
+    if (a.who === 1) g.addScore(10 * Math.max(1, Math.round(g.lv / 2)), ...XY(s, a.m.to));
+    if (s.caps >= s.need) return lose(g, Arcade.T('Los tigres se han comido ' + s.need + ' cabras', 'The tigers ate ' + s.need + ' goats'));
+    const next = 3 - a.who;
+    if (!moves(s, next).length) {
+      if (next === 2) { s.done = true; g.confetti(90); g.addScore(500 * g.lv, g.W / 2, g.H / 2); for (let i = 0; i < 25; i++) if (s.b[i] === 2) { const [x, y] = XY(s, i); g.ring(x, y, '#ffd43b', s.cs * 0.6, 4); } const st2 = s.caps === 0 ? 3 : s.caps <= 2 ? 2 : 1; setTimeout(() => { if (g.state === 'play') g.win(st2); }, 1400); return; }
+      return lose(g, Arcade.T('Tus cabras no pueden moverse', 'Your goats can\'t move'));
+    }
+    if (s.plies >= 240) { s.done = true; g.message(Arcade.T('Empate: otra vez', 'Draw: again'), 1.3); setTimeout(() => { if (g.state === 'play') Arcade.current.def.setup(g); }, 1500); return; }
+    s.turn = next; if (next === 2) s.think = rand(0.35, 0.65);
+  }
+  function lose(g, why) { const s = g.s; s.done = true; g.message(why, 1.6); setTimeout(() => { if (g.state === 'play' && g.die()) Arcade.current.def.setup(g); }, 2000); }
+  function tapPoint(g, i) {
+    const s = g.s; if (s.done || s.turn !== 1 || s.anim || i < 0) return;
+    if (s.hand > 0) { if (s.b[i]) { Arcade.sfx.bad(); return; } play(g, { from: -1, to: i }, 1); return; }
+    if (s.b[i] === 1) { s.sel = i; Arcade.tone(600, 0.04, 'square', 0.04); return; }
+    if (s.sel < 0) return; const m = moves(s, 1).find((m) => m.from === s.sel && m.to === i); if (!m) { Arcade.sfx.bad(); return; } play(g, m, 1);
+  }
+  const danger = (s) => { const set = new Set(); for (const m of moves(s, 2)) if (m.cap != null) set.add(m.cap); return set; };
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Encierra a los tigres con tus cabras', deco: ['🐯', '🐐', '🌿', '🏔️', '🏆', '🧠'], font: 'round', bg: ['#4a3d1c', '#2b2410'],
+    music: { mode: 'penta', bpm: 92, wave: 'triangle', style: 'chill', root: 55 }, voice: { wave: 'triangle', mul: 1, echo: 0.35 },
+    /*EN*/ en: { title: 'Tigers and Goats', tag: 'Trap the tigers with your goats', help: 'Bagh-Chal, from Nepal. You have <b>20 goats</b> 🐐 and the machine has <b>4 tigers</b> 🐯. First you <b>place</b> your goats one by one on empty points; once they are all in, you <b>move</b> them one step along the lines. Tigers move one step or <b>jump</b> over a goat into the empty point behind it, and eat it. You win if <b>no tiger can move</b>. You lose if they eat the number of goats shown at the top. Keep your goats together and with their backs covered!', tvHelp: 'D-pad to a point · OK to place; later, a goat · OK · and its destination · OK.', dict: { 'Pon una cabra': 'Place a goat', 'Mueve una cabra': 'Move a goat', 'Los tigres piensan…': 'The tigers are thinking…', 'En la mano: ': 'In hand: ', 'Comidas: ': 'Eaten: ' } },
+    /*TV*/ tvHelp: 'Cruceta hasta un punto · OK para poner; después, una cabra · OK · y su destino · OK.',
+    tv: { mode: 'tap', targets: (g) => { const s = g.s; if (!s.b || s.turn !== 1) return []; const set = new Set(); if (s.hand > 0) s.b.forEach((v, i) => { if (!v) set.add(i); }); else { s.b.forEach((v, i) => { if (v === 1) set.add(i); }); if (s.sel >= 0) moves(s, 1).filter((m) => m.from === s.sel).forEach((m) => set.add(m.to)); } return [...set].map((i) => { const [x, y] = XY(s, i); return { x: x - s.cs * 0.35, y: y - s.cs * 0.35, w: s.cs * 0.7, h: s.cs * 0.7 }; }); } },
+    id: 'tigres', title: 'Tigres y cabras', emoji: '🐯', color: '#ffa94d', origin: 'Bagh-Chal / Tiger and Bull (Lutanho)',
+    help: 'El Bagh-Chal de Nepal. Tienes <b>20 cabras</b> 🐐 y la máquina <b>4 tigres</b> 🐯. Primero <b>colocas</b> tus cabras de una en una en puntos libres; cuando estén todas, las <b>mueves</b> un paso por las líneas. Los tigres avanzan un paso o <b>saltan</b> por encima de una cabra hasta el punto libre de detrás, y se la comen. Ganas si <b>ningún tigre puede moverse</b>. Pierdes si se comen las cabras que marca arriba. ¡Mantén las cabras juntas y con la espalda cubierta!',
+    lives: 3, levels: 0, cap: 20,
+    /*SC*/ demo(g) {
+      const s = g.s; if (s.done || s.turn !== 1 || s.anim) return { wait: 0.3 };
+      if (!s.botMv) { s.botMv = search(s, 1, s.hand > 0 ? 4 : 5, -1e9, 1e9, s.need)[1]; }
+      const m = s.botMv; if (!m) return { wait: 0.3 };
+      const say = s.plies ? null : Arcade.T('No dejes cabras sueltas delante de un tigre', 'Don\'t leave goats alone in front of a tiger');
+      if (m.from >= 0 && s.sel !== m.from) return { tap: XY(s, m.from), after: 0.25, say };
+      s.botMv = null; return { tap: XY(s, m.to), after: 0.35, say };
+    },
+    setup(g) {
+      const o = cfg(g.lv), b = new Array(25).fill(0); for (const c of [0, 4, 20, 24]) b[c] = 2;
+      g.s = { b, hand: 20, caps: 0, need: o.need, depth: o.depth, noise: o.noise, turn: 1, sel: -1, anim: null, done: false, think: 0, plies: 0, last: -1, hv: -1, botMv: null };
+      geo(g);
+    },
+    layout(g) { if (g.s.b) geo(g); },
+    hover(g, x, y) { if (g.s.b) g.s.hv = hit(g.s, x, y); },
+    tap(g, p) { tapPoint(g, hit(g.s, p.x, p.y)); },
+    update(g, dt) {
+      const s = g.s; if (!s.b) return;
+      if (s.anim) { s.anim.t += dt / (s.anim.m.cap != null ? 0.4 : 0.25); if (s.anim.t >= 1) animDone(g); return; }
+      if (s.turn === 2 && !s.done) {
+        s.think -= dt; if (s.think > 0) return;
+        const ms = moves(s, 2); let m;
+        if (Math.random() < s.noise) { const caps = ms.filter((k) => k.cap != null); m = caps.length && Math.random() < 0.5 ? pick(caps) : pick(ms); }
+        else m = search(s, 2, s.depth + 1, -1e9, 1e9, s.need)[1];
+        play(g, m || ms[0], 2);
+      }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      const bg = ctx.createRadialGradient(W / 2, H / 2, 30, W / 2, H / 2, Math.max(W, H) * 0.75); bg.addColorStop(0, '#6b5a2a'); bg.addColorStop(1, '#1c170a'); ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      if (!s.b) return;
+      const cs = s.cs;
+      ctx.fillStyle = 'rgba(0,0,0,.25)'; Arcade.rr(ctx, s.ox - cs * 0.45, s.oy - cs * 0.45, cs * 4.9, cs * 4.9, 18); ctx.fill();
+      ctx.lineCap = 'round';
+      for (let i = 0; i < 25; i++) for (let d = 0; d < 8; d += 2) { const j = NB[i][d]; if (j < 0) continue; const [x1, y1] = XY(s, i), [x2, y2] = XY(s, j); ctx.strokeStyle = '#d9b98c'; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); }
+      const dz = s.turn === 1 && !s.done ? danger(s) : new Set();
+      const tg = new Set(s.turn === 1 && !s.anim && !s.done ? (s.hand > 0 ? [] : moves(s, 1).filter((m) => m.from === s.sel).map((m) => m.to)) : []);
+      for (let i = 0; i < 25; i++) { const [x, y] = XY(s, i); ctx.fillStyle = tg.has(i) ? 'rgba(105,219,124,.9)' : s.hand > 0 && s.turn === 1 && !s.b[i] && i === s.hv ? '#ffe066' : '#8a6a3c'; ctx.beginPath(); ctx.arc(x, y, cs * (tg.has(i) ? 0.14 : 0.09), 0, 6.3); ctx.fill(); }
+      const sz = cs * 0.62, a = s.anim;
+      for (let i = 0; i < 25; i++) {
+        const v = s.b[i]; if (!v || (a && a.m.from === i)) continue; if (a && a.m.cap === i && a.t > 0.5) continue; const [x, y] = XY(s, i);
+        if (v === 1 && dz.has(i)) { ctx.fillStyle = 'rgba(250,82,82,' + (0.35 + 0.2 * Math.sin(g.rt * 8)) + ')'; ctx.beginPath(); ctx.arc(x, y, sz * 0.6, 0, 6.3); ctx.fill(); }
+        ctx.fillStyle = 'rgba(0,0,0,.3)'; ctx.beginPath(); ctx.ellipse(x, y + sz * 0.35, sz * 0.38, sz * 0.12, 0, 0, 6.3); ctx.fill();
+        Arcade.emoji(ctx, v === 1 ? '🐐' : '🐯', x, y - (s.sel === i ? 6 + Math.sin(g.rt * 8) * 3 : 0), sz);
+      }
+      if (a) { const [x1, y1] = XY(s, a.m.to); let x0, y0; if (a.m.from < 0) { x0 = x1; y0 = y1 - cs; } else [x0, y0] = XY(s, a.m.from); const t = Math.min(1, a.t); Arcade.emoji(ctx, a.who === 1 ? '🐐' : '🐯', x0 + (x1 - x0) * t, y0 + (y1 - y0) * t - Math.sin(t * Math.PI) * cs * (a.m.cap != null ? 0.6 : 0.25), sz * (a.m.from < 0 ? 0.5 + t * 0.5 : 1)); }
+      Arcade.txt(ctx, s.done ? '' : s.turn === 1 ? (s.hand > 0 ? 'Pon una cabra' : 'Mueve una cabra') : 'Los tigres piensan…', W / 2, g.top + 26, 16, '#fff3bf', 'center', 900);
+      Arcade.txt(ctx, 'En la mano: ' + s.hand + '   ·   Comidas: ' + s.caps + '/' + s.need, W / 2, g.top + 50, 13, s.caps >= s.need - 1 ? '#ffa8a8' : '#ffe8cc', 'center', 800);
+    },
+  });
+})();
+</script>
+</body>
+</html>

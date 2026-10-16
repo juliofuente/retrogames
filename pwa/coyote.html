@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Coyote y gallinas · Arcade Perdido</title>
+<meta name="theme-color" content="#2d1e12">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css?v=6d7635e467">
+</head>
+<body class="game">
+<script src="config.js?v=d6380ae9b0"></script>
+<script src="common.js?v=207858a9a6"></script>
+<script>
+(function () {
+  const { rand, clamp, pick } = Arcade;
+  // tablero en cruz de 33 puntos; tú mueves las gallinas (hacia abajo o de lado), la máquina el coyote
+  const cfg = (L) => ({ hens: L <= 6 ? 17 : L <= 13 ? 15 : 13, depth: L <= 5 ? 1 : L <= 12 ? 2 : 3, noise: clamp(0.45 - L * 0.025, 0.12, 0.45) });
+  const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, -1], [1, -1], [-1, 1]];
+  const PTS = [], ID = {}; for (let y = 0; y < 7; y++) for (let x = 0; x < 7; x++) if ((x >= 2 && x <= 4) || (y >= 2 && y <= 4)) { ID[x + ',' + y] = PTS.length; PTS.push([x, y]); }
+  const NB = PTS.map(([x, y]) => DIRS.map(([dx, dy], d) => { if (d >= 4 && (x + y) % 2) return -1; return ID[(x + dx) + ',' + (y + dy)] ?? -1; }));
+  const PEN = PTS.map(([x, y], i) => (y >= 5 ? i : -1)).filter((i) => i >= 0); // corral de abajo (6 puntos)
+  const HEN_OK = new Set([0, 1, 2, 4, 7]); // derecha, izquierda, abajo y diagonales hacia abajo
+  function henStart(n) { const out = []; PTS.forEach(([x, y], i) => { if (y <= 2) out.push(i); }); if (n >= 15) out.push(ID['0,3'], ID['6,3']); if (n >= 17) out.push(ID['1,3'], ID['5,3']); return out; }
+  function henMoves(b) { const out = []; for (let i = 0; i < b.length; i++) if (b[i] === 1) for (const d of HEN_OK) { const j = NB[i][d]; if (j >= 0 && !b[j]) out.push({ from: i, to: j, path: [j], caps: [] }); } return out; }
+  function coyMoves(b) {
+    const c = b.indexOf(2), out = []; if (c < 0) return out;
+    for (const j of NB[c]) if (j >= 0 && !b[j]) out.push({ from: c, to: j, path: [j], caps: [] });
+    const rec = (pos, bb, path, caps) => { let more = false; for (let d = 0; d < 8; d++) { const m = NB[pos][d]; if (m < 0 || bb[m] !== 1) continue; const t = NB[m][d]; if (t < 0 || bb[t]) continue; more = true; const b2 = bb.slice(); b2[m] = 0; b2[pos] = 0; b2[t] = 2; rec(t, b2, path.concat(t), caps.concat(m)); } if (!more && caps.length) out.push({ from: c, to: pos, path, caps }); };
+    rec(c, b, [], []);
+    return out;
+  }
+  function apply(b0, m, who) { const b = b0.slice(); b[m.from] = 0; for (const c of m.caps) b[c] = 0; b[m.to] = who; return b; }
+  const hens = (b) => b.filter((v) => v === 1).length;
+  const penFull = (b) => PEN.every((i) => b[i] === 1);
+  function evalC(b, lim) { // para el coyote
+    const h = hens(b); if (h < lim) return 1e5; if (penFull(b)) return -1e5;
+    const cm = coyMoves(b); if (!cm.length) return -1e5;
+    let jumps = 0; for (const m of cm) if (m.caps.length) jumps = Math.max(jumps, m.caps.length);
+    let down = 0; for (let i = 0; i < b.length; i++) if (b[i] === 1) down += PTS[i][1];
+    return -h * 100 + jumps * 45 + cm.length * 6 - down * 2;
+  }
+  function search(b, who, depth, a, bt, lim) {
+    if (hens(b) < lim) return [1e5 + depth, null]; if (penFull(b)) return [-1e5 - depth, null];
+    const ms = who === 2 ? coyMoves(b) : henMoves(b);
+    if (!ms.length) return [who === 2 ? -1e5 - depth : 1e5 + depth, null];
+    if (!depth) return [evalC(b, lim), null];
+    ms.sort((p, q) => q.caps.length - p.caps.length);
+    let best = who === 2 ? -1e9 : 1e9, bm = ms[0];
+    for (const m of ms) { const v = search(apply(b, m, who), 3 - who, depth - 1, a, bt, lim)[0]; if (who === 2 ? v > best : v < best) { best = v; bm = m; } if (who === 2) a = Math.max(a, v); else bt = Math.min(bt, v); if (a >= bt) break; }
+    return [best, bm];
+  }
+  function geo(g) { const s = g.s, Ha = g.bot - g.top - 100; s.cs = Math.min((g.W - 70) / 6, Ha / 6.6, 84); s.ox = (g.W - s.cs * 6) / 2; s.oy = g.top + 82 + (Ha - s.cs * 6) / 2; }
+  const XY = (s, i) => [s.ox + PTS[i][0] * s.cs, s.oy + PTS[i][1] * s.cs];
+  function hit(s, x, y) { let bi = -1, bd = s.cs * 0.45; for (let i = 0; i < PTS.length; i++) { const [px, py] = XY(s, i), d = Math.hypot(px - x, py - y); if (d < bd) { bd = d; bi = i; } } return bi; }
+  function play(g, m, who) { const s = g.s; s.anim = { m, who, k: 0, t: 0 }; s.sel = -1; Arcade.tone(who === 1 ? 640 : 240, 0.06, who === 1 ? 'triangle' : 'sawtooth', 0.05); }
+  function animDone(g) {
+    const s = g.s, a = s.anim; s.anim = null; s.b = apply(s.b, a.m, a.who); s.plies++; s.last = a.m.to;
+    if (a.m.caps.length) { for (const c of a.m.caps) { const [x, y] = XY(s, c); g.burst(x, y, { n: 14, color: ['#fff', '#ffd8a8', '#fa5252'], speed: 200 }); } g.shake && g.shake(4); Arcade.sfx.bad(); }
+    if (a.who === 1) { s.moves++; g.addScore(10 * Math.max(1, Math.round(g.lv / 2)), ...XY(s, a.m.to)); }
+    if (hens(s.b) < s.lim) return lose(g, Arcade.T('El coyote se ha comido demasiadas gallinas', 'The coyote ate too many hens'));
+    if (penFull(s.b)) return win(g, Arcade.T('¡Corral lleno!', 'Pen filled!'));
+    const next = 3 - a.who, ms = next === 2 ? coyMoves(s.b) : henMoves(s.b);
+    if (!ms.length) { if (next === 2) return win(g, Arcade.T('¡Coyote atrapado!', 'Coyote trapped!')); return lose(g, Arcade.T('Tus gallinas no pueden moverse', 'Your hens can\'t move')); }
+    s.turn = next; if (next === 2) s.think = rand(0.35, 0.65);
+  }
+  function win(g, msg) { const s = g.s; s.done = true; g.message(msg, 1.2); g.confetti(90); g.addScore(500 * g.lv, g.W / 2, g.H / 2); const lost = s.start - hens(s.b), st = lost === 0 ? 3 : lost <= 2 ? 2 : 1; setTimeout(() => { if (g.state === 'play') g.win(st); }, 1400); }
+  function lose(g, why) { const s = g.s; s.done = true; g.message(why, 1.6); setTimeout(() => { if (g.state === 'play' && g.die()) Arcade.current.def.setup(g); }, 2000); }
+  function tapPoint(g, i) {
+    const s = g.s; if (s.done || s.turn !== 1 || s.anim || i < 0) return;
+    if (s.b[i] === 1) { s.sel = i; Arcade.tone(600, 0.04, 'square', 0.04); return; }
+    if (s.sel < 0) return; const m = henMoves(s.b).find((m) => m.from === s.sel && m.to === i); if (!m) { Arcade.sfx.bad(); return; } play(g, m, 1);
+  }
+  const danger = (b) => { const set = new Set(); for (const m of coyMoves(b)) for (const c of m.caps) set.add(c); return set; };
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Que el coyote no se coma tus gallinas', deco: ['🐔', '🐺', '🌵', '🌾', '🏆', '🧠'], font: 'round', bg: ['#4f3520', '#2d1e12'],
+    music: { mode: 'mixo', bpm: 104, wave: 'triangle', style: 'arcade', root: 53 }, voice: { wave: 'triangle', mul: 1, echo: 0.3 },
+    /*EN*/ en: { title: 'Coyote and Hens', tag: 'Don\'t let the coyote eat your hens', help: 'A cross-shaped board. You move the <b>hens</b> 🐔 and the machine moves the <b>coyote</b> 🐺. Hens move one step along a line <b>downwards or sideways, never up</b>. The coyote goes anywhere and eats by <b>jumping</b> over a hen into the empty point behind, even several in a row. <b>Tap</b> a hen and then where it goes. You win if the coyote <b>cannot move</b> or if you fill the <b>pen</b> (the 6 points at the bottom). You lose if you end up with fewer hens than shown at the top.', tvHelp: 'D-pad to a hen · OK · then to a lit point · OK.', dict: { 'Tu turno': 'Your turn', 'El coyote piensa…': 'The coyote is thinking…', 'Gallinas: ': 'Hens: ', ' (mínimo ': ' (minimum ', 'Corral: ': 'Pen: ' } },
+    /*TV*/ tvHelp: 'Cruceta hasta una gallina · OK · luego a un punto iluminado · OK.',
+    tv: { mode: 'tap', targets: (g) => { const s = g.s; if (!s.b || s.turn !== 1) return []; const set = new Set(); s.b.forEach((v, i) => { if (v === 1) set.add(i); }); if (s.sel >= 0) henMoves(s.b).filter((m) => m.from === s.sel).forEach((m) => set.add(m.to)); return [...set].map((i) => { const [x, y] = XY(s, i); return { x: x - s.cs * 0.4, y: y - s.cs * 0.4, w: s.cs * 0.8, h: s.cs * 0.8 }; }); } },
+    id: 'coyote', title: 'Coyote y gallinas', emoji: '🐔', color: '#ffa94d', origin: 'Coyote and Chickens / Fox and Geese (Lutanho)',
+    help: 'Tablero en cruz. Mueves las <b>gallinas</b> 🐔 y la máquina al <b>coyote</b> 🐺. Las gallinas avanzan un paso por las líneas <b>hacia abajo o de lado, nunca hacia arriba</b>. El coyote va a cualquier lado y come <b>saltando</b> por encima de una gallina hasta el punto libre de detrás, incluso varias seguidas. <b>Toca</b> una gallina y luego adónde va. Ganas si el coyote <b>no puede moverse</b> o si llenas el <b>corral</b> (los 6 puntos de abajo). Pierdes si te quedan menos gallinas de las que marca arriba.',
+    lives: 3, levels: 0, cap: 20,
+    /*SC*/ demo(g) {
+      const s = g.s; if (s.done || s.turn !== 1 || s.anim) return { wait: 0.3 };
+      if (!s.botMv) s.botMv = search(s.b, 1, 4, -1e9, 1e9, s.lim)[1]; const m = s.botMv; if (!m) return { wait: 0.3 };
+      if (s.sel !== m.from) return { tap: XY(s, m.from), after: 0.25, say: s.moves ? null : Arcade.T('Avanza en bloque, sin huecos', 'Advance as a block, no gaps') };
+      s.botMv = null; return { tap: XY(s, m.to), after: 0.35 };
+    },
+    setup(g) {
+      const o = cfg(g.lv), b = new Array(PTS.length).fill(0); for (const i of henStart(o.hens)) b[i] = 1; b[ID['3,4']] = 2;
+      g.s = { b, start: o.hens, lim: 9, depth: o.depth, noise: o.noise, turn: 1, sel: -1, anim: null, done: false, think: 0, plies: 0, moves: 0, last: -1, botMv: null };
+      geo(g);
+    },
+    layout(g) { if (g.s.b) geo(g); },
+    tap(g, p) { tapPoint(g, hit(g.s, p.x, p.y)); },
+    update(g, dt) {
+      const s = g.s; if (!s.b) return;
+      if (s.anim) { const a = s.anim; a.t += dt / (a.m.caps.length ? 0.32 : 0.25); if (a.t >= 1) { a.t = 0; a.k++; if (a.k >= a.m.path.length) animDone(g); else Arcade.tone(300, 0.05, 'sawtooth', 0.04); } return; }
+      if (s.turn === 2 && !s.done) {
+        s.think -= dt; if (s.think > 0) return;
+        const ms = coyMoves(s.b); let m;
+        if (Math.random() < s.noise) { const caps = ms.filter((k) => k.caps.length); m = caps.length && Math.random() < 0.6 ? pick(caps) : pick(ms); }
+        else m = search(s.b, 2, s.depth + 1, -1e9, 1e9, s.lim)[1];
+        play(g, m || ms[0], 2);
+      }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      const bg = ctx.createRadialGradient(W / 2, H / 2, 30, W / 2, H / 2, Math.max(W, H) * 0.75); bg.addColorStop(0, '#7a5530'); bg.addColorStop(1, '#1e140b'); ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      if (!s.b) return;
+      const cs = s.cs;
+      // corral
+      const [px, py] = XY(s, ID['2,5']); ctx.fillStyle = 'rgba(255,212,59,.15)'; Arcade.rr(ctx, px - cs * 0.4, py - cs * 0.4, cs * 2.8, cs * 1.8, 14); ctx.fill(); ctx.strokeStyle = 'rgba(255,212,59,.5)'; ctx.setLineDash([6, 6]); ctx.lineWidth = 2; ctx.stroke(); ctx.setLineDash([]);
+      ctx.lineCap = 'round'; ctx.strokeStyle = '#e8c38f'; ctx.lineWidth = 4;
+      for (let i = 0; i < PTS.length; i++) for (const d of [0, 2, 4, 6]) { const j = NB[i][d]; if (j < 0) continue; const [x1, y1] = XY(s, i), [x2, y2] = XY(s, j); ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); }
+      const tg = new Set(s.sel >= 0 && !s.anim ? henMoves(s.b).filter((m) => m.from === s.sel).map((m) => m.to) : []), dz = s.turn === 1 && !s.done ? danger(s.b) : new Set();
+      for (let i = 0; i < PTS.length; i++) { const [x, y] = XY(s, i); ctx.fillStyle = tg.has(i) ? 'rgba(105,219,124,.95)' : '#8a6a3c'; ctx.beginPath(); ctx.arc(x, y, cs * (tg.has(i) ? 0.15 : 0.1), 0, 6.3); ctx.fill(); }
+      const sz = cs * 0.66, a = s.anim;
+      for (let i = 0; i < PTS.length; i++) {
+        const v = s.b[i]; if (!v || (a && a.m.from === i)) continue; if (a && a.m.caps.indexOf(i) >= 0 && a.m.caps.indexOf(i) < a.k) continue; const [x, y] = XY(s, i);
+        if (v === 1 && dz.has(i)) { ctx.fillStyle = 'rgba(250,82,82,' + (0.35 + 0.2 * Math.sin(g.rt * 8)) + ')'; ctx.beginPath(); ctx.arc(x, y, sz * 0.6, 0, 6.3); ctx.fill(); }
+        ctx.fillStyle = 'rgba(0,0,0,.3)'; ctx.beginPath(); ctx.ellipse(x, y + sz * 0.35, sz * 0.38, sz * 0.12, 0, 0, 6.3); ctx.fill();
+        Arcade.emoji(ctx, v === 1 ? '🐔' : '🐺', x, y - (s.sel === i ? 6 + Math.sin(g.rt * 8) * 3 : 0), sz);
+      }
+      if (a) { const pts = [a.m.from, ...a.m.path], [x0, y0] = XY(s, pts[a.k]), [x1, y1] = XY(s, pts[Math.min(a.k + 1, pts.length - 1)]), t = Math.min(1, a.t); Arcade.emoji(ctx, a.who === 1 ? '🐔' : '🐺', x0 + (x1 - x0) * t, y0 + (y1 - y0) * t - Math.sin(t * Math.PI) * cs * (a.m.caps.length ? 0.6 : 0.25), sz); }
+      const h = hens(s.b), inPen = PEN.filter((i) => s.b[i] === 1).length;
+      Arcade.txt(ctx, s.done ? '' : s.turn === 1 ? 'Tu turno' : 'El coyote piensa…', W / 2, g.top + 26, 16, '#fff3bf', 'center', 900);
+      Arcade.txt(ctx, 'Gallinas: ' + h + ' (mínimo ' + s.lim + ')   ·   Corral: ' + inPen + '/6', W / 2, g.top + 50, 13, h <= s.lim ? '#ffa8a8' : '#ffe8cc', 'center', 800);
+    },
+  });
+})();
+</script>
+</body>
+</html>

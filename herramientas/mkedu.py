@@ -87,6 +87,8 @@ ARCADE_EDU = [  # ref, asignatura, edades, título es/en, descripción es/en
      ('Filas de cerillas: descubre la estrategia ganadora pensando en parejas y en números pares e impares.', 'Rows of matches: discover the winning strategy by thinking in pairs and odd and even numbers.')),
     ('liebre', 'logica', (6, 14), ('Liebre y perros', 'Hare and Hounds'),
      ('Tres perros acorralan a una liebre: anticipa sus salidas y avanza sin dejar huecos.', 'Three hounds corner a hare: predict its escapes and advance without leaving gaps.')),
+    ('tres', 'logica', (6, 14), ('Molino de tres', 'Three Men\'s Morris'),
+     ('El tres en raya que se mueve: anticipa las jugadas de la máquina para hacer línea.', 'Noughts and crosses that moves: think ahead of the machine to make a line.')),
 ]
 EXTRA_ARCADE = [dict(id=r, ref=r, app='arcade', subject=sj, emoji=None, ages=a, langs=['es', 'en'], url='pwa/' + r, title=t, desc=d) for r, sj, a, t, d in ARCADE_EDU]
 # Juegos sueltos (los de Brain Academy se añaden solos). ages = (mín, máx).

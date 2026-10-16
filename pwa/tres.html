@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Molino de tres · Arcade Perdido</title>
+<meta name="theme-color" content="#2a1b3d">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css?v=6d7635e467">
+</head>
+<body class="game">
+<script src="config.js?v=d6380ae9b0"></script>
+<script src="common.js?v=207858a9a6"></script>
+<script>
+(function () {
+  const { rand, clamp, pick } = Arcade;
+  // Three Men's Morris: pones 3 fichas y luego las mueves a un punto vecino; gana quien hace 3 en línea
+  const cfg = (L) => { const diag = L >= 7 && L % 2 === 1; return { diag, depth: diag ? 3 : clamp(1 + Math.floor(L / 2), 1, 9), noise: diag ? 0.32 : clamp(0.4 - L * 0.015, 0.12, 0.4) }; };
+  const ORTHO = [[0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6], [1, 4, 7], [2, 5, 8]], DIAG = [[0, 4, 8], [2, 4, 6]];
+  function topo(diag) {
+    const lines = diag ? ORTHO.concat(DIAG) : ORTHO, adj = [...Array(9)].map(() => new Set());
+    for (const l of lines) for (let k = 0; k < 2; k++) { adj[l[k]].add(l[k + 1]); adj[l[k + 1]].add(l[k]); }
+    return { lines, adj: adj.map((s) => [...s]) };
+  }
+  const won = (T, b, w) => T.lines.some((l) => l.every((i) => b[i] === w));
+  const count = (b, w) => b.filter((v) => v === w).length;
+  function moves(T, b, w) {
+    const out = []; if (count(b, w) < 3) { for (let i = 0; i < 9; i++) if (!b[i]) out.push({ from: -1, to: i }); return out; }
+    for (let i = 0; i < 9; i++) if (b[i] === w) for (const j of T.adj[i]) if (!b[j]) out.push({ from: i, to: j });
+    return out;
+  }
+  function apply(b0, m, w) { const b = b0.slice(); if (m.from >= 0) b[m.from] = 0; b[m.to] = w; return b; }
+  const TABLES = {};
+  function table(T, key) { // valor exacto para quien mueve
+    if (TABLES[key]) return TABLES[key]; const S = [];
+    const rec = (b, i) => { if (i === 9) { const p = count(b, 1), c = count(b, 2); if (p <= 3 && c <= 3 && Math.abs(p - c) <= 1) S.push(b.slice()); return; } for (const v of [0, 1, 2]) { b[i] = v; rec(b, i + 1); } };
+    rec([], 0);
+    const M = new Map(), turnsOf = (b) => { const p = count(b, 1), c = count(b, 2); if (p === c) return [1, 2]; return [p > c ? 2 : 1]; };
+    for (const b of S) for (const w of turnsOf(b)) { const k = b.join('') + w; if (won(T, b, 3 - w)) M.set(k, -1); else if (won(T, b, w)) M.set(k, 1); else M.set(k, moves(T, b, w).length ? null : -1); }
+    let ch = true; while (ch) { ch = false; for (const [k, v] of M) { if (v !== null) continue; const b = k.slice(0, 9).split('').map(Number), w = +k[9]; const vs = moves(T, b, w).map((m) => M.get(apply(b, m, w).join('') + (3 - w))); if (vs.includes(-1)) { M.set(k, 1); ch = true; } else if (vs.every((x) => x === 1)) { M.set(k, -1); ch = true; } } }
+    for (const [k, v] of M) if (v === null) M.set(k, 0);
+    return (TABLES[key] = M);
+  }
+  function look(T, b, w, depth) { if (won(T, b, 3 - w)) return -1; const ms = moves(T, b, w); if (!ms.length) return -1; if (!depth) return 0; let best = -1; for (const m of ms) { const v = -look(T, apply(b, m, w), 3 - w, depth - 1); if (v > best) best = v; if (best === 1) break; } return best; }
+  function chooseAI(s) { const ms = moves(s.T, s.b, 2); if (Math.random() < s.noise) return pick(ms); const sc = ms.map((m) => ({ m, v: -look(s.T, apply(s.b, m, 2), 1, s.depth - 1) + Math.random() * 0.1 + (m.to === 4 ? 0.05 : 0) })); sc.sort((a, c) => c.v - a.v); return sc[0].m; }
+  function chooseBest(s) { const M = table(s.T, s.diag ? 'd' : 'o'), ms = moves(s.T, s.b, 1); let bm = null, bv = -9; for (const m of ms) { const v = -M.get(apply(s.b, m, 1).join('') + 2) + Math.random() * 0.1; if (v > bv) { bv = v; bm = m; } } return bm; }
+  function geo(g) { const s = g.s, Ha = g.bot - g.top - 120; s.cs = Math.min((g.W - 40) / 2.9, Ha / 2.9, 150); s.ox = (g.W - s.cs * 2) / 2; s.oy = g.top + 96 + (Ha - s.cs * 2) / 2; }
+  const XY = (s, i) => [s.ox + (i % 3) * s.cs, s.oy + ((i / 3) | 0) * s.cs];
+  function hit(s, x, y) { let bi = -1, bd = s.cs * 0.4; for (let i = 0; i < 9; i++) { const [px, py] = XY(s, i), d = Math.hypot(px - x, py - y); if (d < bd) { bd = d; bi = i; } } return bi; }
+  function piece(ctx, x, y, r, w) {
+    ctx.fillStyle = 'rgba(0,0,0,.4)'; ctx.beginPath(); ctx.ellipse(x + 2, y + r * 0.3, r, r * 0.8, 0, 0, 6.3); ctx.fill();
+    const c = w === 1 ? ['#ffe3e3', '#f03e3e', '#7d1414'] : ['#d0ebff', '#1c7ed6', '#0b3d75'];
+    const gr = ctx.createRadialGradient(x - r * 0.3, y - r * 0.4, r * 0.1, x, y, r); gr.addColorStop(0, c[0]); gr.addColorStop(0.6, c[1]); gr.addColorStop(1, c[2]);
+    ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(x, y, r, 0, 6.3); ctx.fill(); ctx.strokeStyle = 'rgba(255,255,255,.3)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x, y, r * 0.62, 0, 6.3); ctx.stroke();
+  }
+  function play(g, m, w) { const s = g.s; s.anim = { m, w, t: 0 }; s.sel = -1; Arcade.tone(w === 1 ? 523 : 392, 0.06, 'triangle', 0.06); }
+  function animDone(g) {
+    const s = g.s, a = s.anim; s.anim = null; s.b = apply(s.b, a.m, a.w); s.plies++; s.last = a.m.to; if (a.w === 1) { s.moves++; g.addScore(10 * Math.max(1, Math.round(g.lv / 2)), ...XY(s, a.m.to)); }
+    const ln = s.T.lines.find((l) => l.every((i) => s.b[i] === a.w));
+    if (ln) {
+      s.done = true; s.winLn = ln; Arcade.sfx.up();
+      if (a.w === 1) { g.confetti(80); g.addScore(400 * g.lv, g.W / 2, g.H / 2); const st = s.moves <= 4 ? 3 : s.moves <= 9 ? 2 : 1; setTimeout(() => { if (g.state === 'play') g.win(st); }, 1300); }
+      else { g.message(Arcade.T('Tres en línea de la máquina', 'Three in a row for the machine'), 1.4); setTimeout(() => { if (g.state === 'play' && g.die()) Arcade.current.def.setup(g); }, 1900); }
+      return;
+    }
+    const next = 3 - a.w;
+    if (!moves(s.T, s.b, next).length) { s.done = true; if (next === 2) { g.confetti(60); setTimeout(() => { if (g.state === 'play') g.win(2); }, 1200); } else { g.message(Arcade.T('No puedes mover', 'You can\'t move'), 1.4); setTimeout(() => { if (g.state === 'play' && g.die()) Arcade.current.def.setup(g); }, 1800); } return; }
+    if (s.plies >= 40) { s.done = true; g.message(Arcade.T('Tablas: otra partida', 'Draw: another game'), 1.3); setTimeout(() => { if (g.state === 'play') Arcade.current.def.setup(g); }, 1500); return; }
+    s.turn = next; if (next === 2) s.think = rand(0.45, 0.8);
+  }
+  function tapPoint(g, i) {
+    const s = g.s; if (s.done || s.turn !== 1 || s.anim || i < 0) return; const ms = moves(s.T, s.b, 1);
+    if (count(s.b, 1) < 3) { const m = ms.find((m) => m.to === i); if (m) play(g, m, 1); else Arcade.sfx.bad(); return; }
+    if (s.b[i] === 1) { s.sel = i; Arcade.tone(600, 0.04, 'square', 0.04); return; }
+    if (s.sel >= 0) { const m = ms.find((m) => m.from === s.sel && m.to === i); if (m) { play(g, m, 1); return; } }
+    if (!s.b[i]) { const opts = ms.filter((m) => m.to === i); if (opts.length === 1) { play(g, opts[0], 1); return; } }
+    Arcade.sfx.bad();
+  }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'El tres en raya que se mueve', deco: ['🔴', '🔵', '🏛️', '✨', '🏆', '🧠'], font: 'serif', bg: ['#45305f', '#2a1b3d'],
+    music: { mode: 'lydian', bpm: 90, wave: 'triangle', style: 'chill', root: 55 }, voice: { wave: 'sine', mul: 1.1, echo: 0.35 },
+    /*EN*/ en: { title: 'Three Men\'s Morris', tag: 'Noughts and crosses that moves', help: 'A game from ancient Rome. You are red and you start. First you each <b>place</b> 3 pieces on the 9 points; then, on each turn, you <b>move</b> one of yours along a line to a neighbouring empty point. Whoever makes <b>three in a row</b> along a line wins, whether placing or moving. <b>Tap</b> a point to place; later tap a piece and then where it goes. On odd levels from 7 the <b>diagonals</b> count too (and you can move along them), and the machine starts. If nobody wins in a while, it is a draw and you play again.', tvHelp: 'D-pad to a point · OK; later, a piece · OK · and its destination · OK.', dict: { 'Pon una ficha': 'Place a piece', 'Mueve una ficha': 'Move a piece', 'Pensando…': 'Thinking…', 'Con diagonales · empieza la máquina': 'With diagonals · the machine starts' } },
+    /*TV*/ tvHelp: 'Cruceta hasta un punto · OK; después, una ficha · OK · y su destino · OK.',
+    tv: { mode: 'tap', targets: (g) => { const s = g.s; if (!s.b || s.turn !== 1) return []; const set = new Set(); const ms = moves(s.T, s.b, 1); ms.forEach((m) => { if (m.from < 0) set.add(m.to); else set.add(m.from); }); if (s.sel >= 0) ms.filter((m) => m.from === s.sel).forEach((m) => set.add(m.to)); return [...set].map((i) => { const [x, y] = XY(s, i); return { x: x - s.cs * 0.35, y: y - s.cs * 0.35, w: s.cs * 0.7, h: s.cs * 0.7 }; }); } },
+    id: 'tres', title: 'Molino de tres', emoji: '🏛️', color: '#e599f7', origin: 'Three Men\'s Morris (Lutanho)',
+    help: 'Un juego de la antigua Roma. Eres el rojo y empiezas tú. Primero cada uno <b>coloca</b> 3 fichas en los 9 puntos; después, en cada turno, <b>mueves</b> una tuya por una línea a un punto vecino libre. Gana quien haga <b>tres en línea</b> por una línea, ya sea colocando o moviendo. <b>Toca</b> un punto para colocar; luego toca una ficha y su destino. En los niveles impares desde el 7 también valen las <b>diagonales</b> (y se puede mover por ellas), y empieza la máquina. Si nadie gana en un rato, son tablas y se juega otra.',
+    lives: 3, levels: 0, cap: 20,
+    /*SC*/ demo(g) {
+      const s = g.s; if (s.done || s.turn !== 1 || s.anim) return { wait: 0.3 };
+      const m = chooseBest(s); if (!m) return { wait: 0.3 }; const say = s.plies ? null : Arcade.T('Haz tres en línea antes que la máquina', 'Make three in a row before the machine');
+      if (m.from >= 0 && s.sel !== m.from) return { tap: XY(s, m.from), after: 0.25, say };
+      return { tap: XY(s, m.to), after: 0.4, say };
+    },
+    setup(g) {
+      const o = cfg(g.lv), T = topo(o.diag);
+      g.s = { T, diag: o.diag, b: new Array(9).fill(0), depth: o.depth, noise: o.noise, turn: o.diag ? 2 : 1, sel: -1, anim: null, done: false, think: o.diag ? 1 : 0, plies: 0, moves: 0, last: -1, winLn: null };
+      geo(g); if (o.diag) g.message('Con diagonales · empieza la máquina', 1.4);
+    },
+    layout(g) { if (g.s.b) geo(g); },
+    tap(g, p) { tapPoint(g, hit(g.s, p.x, p.y)); },
+    update(g, dt) {
+      const s = g.s; if (!s.b) return;
+      if (s.anim) { s.anim.t += dt / 0.3; if (s.anim.t >= 1) animDone(g); return; }
+      if (s.turn === 2 && !s.done) { s.think -= dt; if (s.think > 0) return; play(g, chooseAI(s), 2); }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      const bg = ctx.createRadialGradient(W / 2, H / 2, 30, W / 2, H / 2, Math.max(W, H) * 0.75); bg.addColorStop(0, '#5f4285'); bg.addColorStop(1, '#160e21'); ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      if (!s.b) return;
+      const cs = s.cs, pad = cs * 0.45;
+      ctx.fillStyle = 'rgba(0,0,0,.35)'; Arcade.rr(ctx, s.ox - pad + 4, s.oy - pad + 6, cs * 2 + pad * 2, cs * 2 + pad * 2, 20); ctx.fill();
+      ctx.fillStyle = '#ece4d4'; Arcade.rr(ctx, s.ox - pad, s.oy - pad, cs * 2 + pad * 2, cs * 2 + pad * 2, 20); ctx.fill();
+      ctx.strokeStyle = 'rgba(120,100,80,.25)'; ctx.lineWidth = 1; for (let k = 0; k < 12; k++) { ctx.beginPath(); ctx.moveTo(s.ox - pad, s.oy - pad + k * cs * 0.25); ctx.lineTo(s.ox - pad + cs * 0.4, s.oy - pad + k * cs * 0.25 + cs * 0.2); ctx.stroke(); }
+      ctx.lineCap = 'round'; ctx.strokeStyle = '#5c4a3a'; ctx.lineWidth = 5;
+      for (const l of s.T.lines) { const [x1, y1] = XY(s, l[0]), [x2, y2] = XY(s, l[2]); ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); }
+      if (s.winLn) { const [x1, y1] = XY(s, s.winLn[0]), [x2, y2] = XY(s, s.winLn[2]); ctx.strokeStyle = 'rgba(255,212,59,' + (0.6 + 0.3 * Math.sin(g.rt * 8)) + ')'; ctx.lineWidth = 14; ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); }
+      const ms = s.turn === 1 && !s.anim && !s.done ? moves(s.T, s.b, 1) : [], placing = count(s.b, 1) < 3, tg = new Set(placing ? ms.map((m) => m.to) : ms.filter((m) => m.from === s.sel).map((m) => m.to));
+      for (let i = 0; i < 9; i++) { const [x, y] = XY(s, i); ctx.fillStyle = tg.has(i) ? 'rgba(64,192,87,' + (0.6 + 0.3 * Math.sin(g.rt * 6)) + ')' : '#5c4a3a'; ctx.beginPath(); ctx.arc(x, y, cs * (tg.has(i) ? 0.12 : 0.08), 0, 6.3); ctx.fill(); }
+      const r = cs * 0.24, a = s.anim;
+      for (let i = 0; i < 9; i++) { const v = s.b[i]; if (!v || (a && a.m.from === i)) continue; const [x, y] = XY(s, i); piece(ctx, x, y - (s.sel === i ? 6 + Math.sin(g.rt * 8) * 2 : s.winLn && s.winLn.includes(i) ? Math.abs(Math.sin(g.rt * 8)) * 6 : 0), r, v); }
+      if (a) { const [x1, y1] = XY(s, a.m.to); let x0, y0; if (a.m.from < 0) { x0 = a.w === 1 ? s.ox - cs * 0.2 : s.ox + cs * 2.2; y0 = s.oy + cs * 2.6; if (a.w === 2) y0 = s.oy - cs * 0.6; } else [x0, y0] = XY(s, a.m.from); const t = Math.min(1, a.t), e = t * t * (3 - 2 * t); piece(ctx, x0 + (x1 - x0) * e, y0 + (y1 - y0) * e - Math.sin(t * Math.PI) * cs * 0.3, r, a.w); }
+      // fichas por poner
+      for (let k = 0; k < 3 - count(s.b, 1) - (a && a.w === 1 && a.m.from < 0 ? 1 : 0); k++) piece(ctx, W / 2 - 70 - k * 22, g.top + 54, 8, 1);
+      for (let k = 0; k < 3 - count(s.b, 2) - (a && a.w === 2 && a.m.from < 0 ? 1 : 0); k++) piece(ctx, W / 2 + 70 + k * 22, g.top + 54, 8, 2);
+      Arcade.txt(ctx, s.done ? '' : s.turn === 1 ? (placing ? 'Pon una ficha' : 'Mueve una ficha') : 'Pensando…', W / 2, g.top + 28, 16, '#f3d9fa', 'center', 900);
+    },
+  });
+})();
+</script>
+</body>
+</html>
