@@ -104,8 +104,7 @@ Cada página puede definir, **antes** de cargar `config.js` y `common.js`:
 ```html
 <script>
   window.withpwa = true;       // activa la PWA: registra sw.js (red primero) y deja el manifest
-  window.isSingleGame = false; // POR DEFECTO el juego va solo (sin portada, favoritos ni estadísticas, para apps
-                               // Android o PWA); con false vuelve el 🏠 a la web, los favoritos y las estadísticas
+  window.isSingleGame = true;  // juego solo: sin portada, favoritos ni estadísticas (para una app Android)
 </script>
 ```
 

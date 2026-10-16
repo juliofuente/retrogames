@@ -488,7 +488,7 @@ function startGame(win,def){
   g.waveDone=()=>{if(!g.running)return;g.running=false;if(stopFn){stopFn();stopFn=null;}setTimeout(levelUp,500);};
 
   // ───── controls ─────
-  doc.querySelector('[data-a=home]').onclick=()=>{SFX.click();exit();if(window.isSingleGame===false)location.href=backUrl();};   // 🏠 = vuelve al menú de la app (con isSingleGame = false, a la página de la que se vino)
+  doc.querySelector('[data-a=home]').onclick=()=>{SFX.click();exit();if(window.isSingleGame!==true)location.href=backUrl();};   // 🏠 = página de la que se vino (con isSingleGame = true, al menú de la app)
   doc.querySelector('[data-a=fav]').onclick=e=>{const on=toggleFav(def.id);e.currentTarget.textContent=on?'❤️':'🤍';if(on)SFX.ok();else SFX.click();};
   doc.querySelector('[data-a=snd]').onclick=e=>{S.sound=!S.sound;save();e.currentTarget.textContent=S.sound?'🔊':'🔇';if(S.sound)SFX.click();};
   const nb=$('.k-next');if(nb)nb.onclick=()=>{if(!g.solvedFlag||g.q>=ROUNDS||g.paused)return;SFX.whoosh();newRound();};
@@ -612,6 +612,6 @@ loadData('games').then(d=>{
 }).catch(err=>{console.error(err);renderProfiles();$('profPanel').style.display='none';$('errBox').style.display='block';$('errBox').textContent='⚠️ '+T('loadErr');});
 renderProfiles();
 </script>
-<script>/* Sin botón a la portada salvo window.isSingleGame = false (los juegos van solos, p. ej. dentro de una app) */if(window.isSingleGame!==false)document.querySelectorAll('[data-sitehome]').forEach(function(a){a.remove()});</script>
+<script>/* Con window.isSingleGame = true (juego suelto, p. ej. dentro de una app) se quita el botón a la portada */if(window.isSingleGame===true)document.querySelectorAll('[data-sitehome]').forEach(function(a){a.remove()});</script>
 </body>
 </html>

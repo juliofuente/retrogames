@@ -244,6 +244,6 @@
   if (q) { G = +q[1]; renderFichas(); } else renderGrades();
 })();
 </script>
-<script>/* Sin botón a la portada salvo window.isSingleGame = false (los juegos van solos, p. ej. dentro de una app) */if(window.isSingleGame!==false)document.querySelectorAll('[data-sitehome]').forEach(function(a){a.remove()});</script>
+<script>/* Con window.isSingleGame = true (juego suelto, p. ej. dentro de una app) se quita el botón a la portada */if(window.isSingleGame===true)document.querySelectorAll('[data-sitehome]').forEach(function(a){a.remove()});</script>
 </body>
 </html>

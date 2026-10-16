@@ -57,10 +57,9 @@ REGLAS DEL SISTEMA (obligatorias)
  6. Pantalla: que se vea bien en móvil vertical (390×780) y en TV (960×540), sin huecos vacíos grandes. Lo
     importante debe quedar en la mitad baja, cerca del dedo.
  7. URLs: nunca enlaces con .html ni index.html. Las fichas son /<id> y, si se fuerza el idioma, /<id>/en.
-    Por defecto los juegos van SOLOS (para apps Android o PWA): sin 🏠, sin favoritos y sin estadísticas. Solo con
-    window.isSingleGame = false el motor pone el 🏠 (vuelve a la sección guardada en sessionStorage 'arc_back').
+    El 🏠 lo pone el motor (vuelve a la sección de la que vino el jugador, guardada en sessionStorage 'arc_back').
  8. Nada de window.withpwa ni de service workers propios: la PWA está desactivada. El juego debe funcionar solo
-    (es lo normal) y también con window.isSingleGame = false (con 🏠, favoritos y estadísticas).
+    con window.isSingleGame = true (sin 🏠, sin favoritos y sin estadísticas, p. ej. dentro de una app Android).
 
 CONSTRUIR Y REGISTRAR (arcade)
   cd herramientas
@@ -81,7 +80,7 @@ CONSTRUIR Y REGISTRAR (educativo o app propia)
     La url no lleva .html (p. ej. 'educativos/<carpeta>/').
   · Añade la carpeta a PAGES en herramientas/stamp.py si tiene .js/.css propios.
   · Pon el botón 🏠 flotante que vuelve a 'arc_back' con el atributo data-sitehome y, antes de </body>, el script
-    que lo quita salvo con window.isSingleGame = false (cópialos de educativos/fabrica-frases/index.html, al final).
+    que lo quita con window.isSingleGame = true (cópialos de educativos/fabrica-frases/index.html, al final).
   · Favoritos y tiempo de juego: cópialo de educativos/problemas-primaria/index.html (busca uid, api/fav y
     api/play). El id del juego tiene que ser el mismo que en EXTRA.
   · Después: python3 mkedu.py && python3 stamp.py && python3 mkdb.py
@@ -96,7 +95,7 @@ PROBAR ANTES DEL COMMIT
     · que la demo funciona
     · que se juega una partida
     · que se pasa de nivel
-    · que por defecto no hay 🏠 y que, con window.isSingleGame = false, el 🏠 vuelve a la categoría de la que venías
+    · que el 🏠 vuelve a la categoría de la que venías (y que con window.isSingleGame = true no sale)
   · Haz capturas y míralas.
   · Prueba todos los juegos (smoke test) si has tocado pwa/common.js.
   · Actualiza HECHO.txt (qué se ha hecho y versión).
