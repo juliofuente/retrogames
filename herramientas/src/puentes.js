@@ -1,0 +1,123 @@
+// Puentes|#0f2433
+(function () {
+  const { rand, clamp, pick } = Arcade;
+  // Bridg-It: el rojo une arriba con abajo, el azul (máquina) izquierda con derecha. Cada puente corta uno del rival.
+  const cfg = (L) => [clamp(3 + Math.floor((L - 1) / 4), 3, 7), L <= 6 ? 1 : 2, clamp(0.5 - L * 0.03, 0.12, 0.5)];
+  function build(n) {
+    const G = 2 * n + 1, mids = [], adj = { 1: {}, 2: {} };
+    for (let y = 1; y < G - 1; y++) for (let x = 1; x < G - 1; x++) {
+      if ((x + y) % 2) continue; const odd = x % 2 === 1;
+      const red = odd ? [(y - 1) * G + x, (y + 1) * G + x] : [y * G + x - 1, y * G + x + 1];
+      const blue = odd ? [y * G + x - 1, y * G + x + 1] : [(y - 1) * G + x, (y + 1) * G + x];
+      const m = { x, y, ends: { 1: red, 2: blue } }; mids.push(m);
+    }
+    mids.forEach((m, k) => { for (const w of [1, 2]) { const [a, b] = m.ends[w]; (adj[w][a] = adj[w][a] || []).push([k, b]); (adj[w][b] = adj[w][b] || []).push([k, a]); } });
+    return { G, mids, adj };
+  }
+  const isRed = (G, i) => (i % G) % 2 === 1 && ((i / G) | 0) % 2 === 0;
+  const startOf = (B, who) => { const out = [], G = B.G; for (let k = 0; k < G; k++) { const i = who === 1 ? k : k * G; if (who === 1 ? k % 2 === 1 : k % 2 === 1) out.push(i); } return out; };
+  const atEnd = (B, who, i) => (who === 1 ? ((i / B.G) | 0) === B.G - 1 : i % B.G === B.G - 1);
+  function dist(B, own, who) {
+    const D = {}, dq = []; for (const i of startOf(B, who)) { D[i] = 0; dq.push(i); }
+    let best = 1e9;
+    while (dq.length) {
+      const i = dq.shift(), d = D[i]; if (atEnd(B, who, i)) best = Math.min(best, d);
+      for (const [k, j] of B.adj[who][i] || []) { const o = own[k]; if (o === 3 - who) continue; const nd = d + (o === who ? 0 : 1); if (D[j] === undefined || nd < D[j]) { D[j] = nd; o === who ? dq.unshift(j) : dq.push(j); } }
+    }
+    return best;
+  }
+  function chain(B, own, who) {
+    const prev = {}, q = []; for (const i of startOf(B, who)) { prev[i] = null; q.push(i); }
+    while (q.length) { const i = q.shift(); if (atEnd(B, who, i)) { const ks = []; for (let j = i; prev[j]; j = prev[j][1]) ks.push(prev[j][0]); return ks; } for (const [k, j] of B.adj[who][i] || []) if (own[k] === who && !(j in prev)) { prev[j] = [k, i]; q.push(j); } }
+    return [];
+  }
+  function value(B, own, who) { const me = dist(B, own, who), op = dist(B, own, 3 - who); if (!me) return 1000; if (!op) return -1000; return op - me; }
+  function ranked(B, own, who) {
+    const out = [], c = (B.G - 1) / 2;
+    own.forEach((o, k) => { if (o) return; own[k] = who; const m = B.mids[k]; out.push([value(B, own, who) - (Math.abs(m.x - c) + Math.abs(m.y - c)) * 0.004 + Math.random() * 0.003, k]); own[k] = 0; });
+    return out.sort((a, b) => b[0] - a[0]);
+  }
+  function best(B, own, who, depth) {
+    const r = ranked(B, own, who); if (!r.length) return -1; if (depth <= 1 || r[0][0] >= 1000) return r[0][1];
+    let bv = -1e9, bm = r[0][1];
+    for (const [, k] of r.slice(0, 10)) { own[k] = who; const rep = ranked(B, own, 3 - who)[0]; let v; if (!rep) v = value(B, own, who); else { own[rep[1]] = 3 - who; v = value(B, own, who); own[rep[1]] = 0; } own[k] = 0; if (v > bv) { bv = v; bm = k; } }
+    return bm;
+  }
+  function geo(g) { const s = g.s, G = s.B.G, Ha = g.bot - g.top - 76; s.cs = Math.min((g.W - 20) / (G + 0.4), Ha / (G + 0.4), 56); s.ox = (g.W - s.cs * (G - 1)) / 2; s.oy = g.top + 66 + (Ha - s.cs * (G - 1)) / 2; }
+  const PXY = (s, x, y) => [s.ox + x * s.cs, s.oy + y * s.cs];
+  const DXY = (s, i) => PXY(s, i % s.B.G, (i / s.B.G) | 0);
+  function midAt(s, x, y) { let bk = -1, bd = s.cs * 0.62; s.B.mids.forEach((m, k) => { if (s.own[k]) return; const [mx, my] = PXY(s, m.x, m.y), d = Math.hypot(mx - x, my - y); if (d < bd) { bd = d; bk = k; } }); return bk; }
+  function claim(g, k, who) {
+    const s = g.s; s.own[k] = who; s.pop[k] = 0; s.last = k; if (who === 1) s.moves++;
+    Arcade.tone(who === 1 ? 560 : 400, 0.07, 'triangle', 0.07, who === 1 ? 120 : -80); Arcade.tone(who === 1 ? 840 : 600, 0.05, 'sine', 0.04);
+    const m = s.B.mids[k], [x, y] = PXY(s, m.x, m.y);
+    if (!dist(s.B, s.own, who)) {
+      s.done = true; s.win = chain(s.B, s.own, who); s.winT = 0;
+      if (who === 1) { g.confetti(80); g.addScore(300 * g.lv, g.W / 2, g.H / 2); const st = s.moves <= s.n * 1.8 ? 3 : s.moves <= s.n * 2.6 ? 2 : 1; setTimeout(() => { if (g.state === 'play') g.win(st); }, 1400); }
+      else { g.message(Arcade.T('La máquina ha cruzado', 'The machine got across'), 1.4); setTimeout(() => { if (g.state === 'play' && g.die()) Arcade.current.def.setup(g); }, 1800); }
+      return;
+    }
+    if (who === 1) g.addScore(10 * Math.max(1, Math.round(g.lv / 2)), x, y - 12);
+    s.gap = [dist(s.B, s.own, 1), dist(s.B, s.own, 2)]; s.turn = 3 - who; if (s.turn === 2) s.think = rand(0.35, 0.7);
+  }
+  const COL = { 1: ['#ff8787', '#e03131', '#a61e1e'], 2: ['#74c0fc', '#1c7ed6', '#0b4f8a'] };
+  function dot(ctx, x, y, r, who) { const c = COL[who], gr = ctx.createRadialGradient(x - r * 0.3, y - r * 0.35, 1, x, y, r); gr.addColorStop(0, c[0]); gr.addColorStop(0.6, c[1]); gr.addColorStop(1, c[2]); ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(x, y, r, 0, 6.3); ctx.fill(); }
+  function bridge(ctx, s, m, who, k, glow) {
+    const [a, b] = m.ends[who], [x1, y1] = DXY(s, a), [x2, y2] = DXY(s, b), mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
+    const hx = (x2 - x1) / 2 * k, hy = (y2 - y1) / 2 * k, w = s.cs * 0.3;
+    ctx.lineCap = 'round'; ctx.strokeStyle = 'rgba(0,0,0,.35)'; ctx.lineWidth = w + 3; ctx.beginPath(); ctx.moveTo(mx - hx + 2, my - hy + 3); ctx.lineTo(mx + hx + 2, my + hy + 3); ctx.stroke();
+    ctx.strokeStyle = glow ? '#ffe066' : COL[who][1]; ctx.lineWidth = w; ctx.beginPath(); ctx.moveTo(mx - hx, my - hy); ctx.lineTo(mx + hx, my + hy); ctx.stroke();
+    ctx.strokeStyle = 'rgba(255,255,255,.35)'; ctx.lineWidth = w * 0.3; ctx.beginPath(); ctx.moveTo(mx - hx * 0.8, my - hy * 0.8 - w * 0.15); ctx.lineTo(mx + hx * 0.8, my + hy * 0.8 - w * 0.15); ctx.stroke();
+  }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Tiende puentes y corta los del rival', deco: ['🌉', '🔴', '🔵', '🧠', '🏆', '✨'], font: 'round', bg: ['#173a52', '#0f2433'],
+    music: { mode: 'mixo', bpm: 92, wave: 'triangle', style: 'chill', root: 55 }, voice: { wave: 'sine', mul: 1.1, echo: 0.3 },
+    /*EN*/ en: { title: 'Bridges', tag: 'Build bridges and cut your rival\'s', help: 'You are red and must join the <b>top and bottom</b> with a path of red bridges. The machine (blue) tries to join <b>left and right</b>. <b>Tap</b> between two red dots that are next to each other to build a bridge. Every bridge you build <b>blocks</b> the blue bridge that would cross it, and vice versa. You move first, so there is always a way to win… if you find it! The board grows with the levels.', tvHelp: 'D-pad to a gap between two red dots · OK to build a bridge.', dict: { 'Tu turno': 'Your turn', 'Pensando…': 'Thinking…', 'Te faltan ': 'You need ', 'A la máquina: ': 'Machine needs: ' } },
+    /*TV*/ tvHelp: 'Cruceta hasta un hueco entre dos puntos rojos · OK para tender el puente.',
+    tv: { mode: 'tap', targets: (g) => { const s = g.s; if (!s.own) return []; const out = []; s.B.mids.forEach((m, k) => { if (!s.own[k]) { const [x, y] = PXY(s, m.x, m.y); out.push({ x: x - s.cs * 0.4, y: y - s.cs * 0.4, w: s.cs * 0.8, h: s.cs * 0.8 }); } }); return out; } },
+    id: 'puentes', title: 'Puentes', emoji: '🌉', color: '#ff6b6b', origin: 'Bridg-It (David Gale) (Lutanho)',
+    help: 'Eres el rojo y tienes que unir <b>arriba con abajo</b> con un camino de puentes rojos. La máquina (azul) intenta unir <b>izquierda con derecha</b>. <b>Toca</b> entre dos puntos rojos vecinos para tender un puente. Cada puente que pones <b>bloquea</b> el puente azul que lo cruzaría, y al revés. Empiezas tú, así que siempre hay una forma de ganar… ¡si la encuentras! El tablero crece con los niveles.',
+    lives: 3, levels: 0, cap: 20,
+    /*SC*/ demo(g) {
+      const s = g.s; if (s.done || s.turn !== 1) return { wait: 0.3 };
+      const k = best(s.B, s.own, 1, 2); if (k < 0) return { wait: 0.3 }; const m = s.B.mids[k];
+      return { tap: PXY(s, m.x, m.y), after: 0.4, say: s.moves ? null : Arcade.T('Une los puntos rojos de arriba a abajo', 'Join the red dots from top to bottom') };
+    },
+    setup(g) {
+      const [n, depth, noise] = cfg(g.lv), B = build(n);
+      g.s = { n, B, own: new Array(B.mids.length).fill(0), depth, noise, turn: 1, think: 0, done: false, moves: 0, last: -1, pop: {}, win: [], winT: 0, gap: [n, n], hv: -1 };
+      geo(g);
+    },
+    layout(g) { if (g.s.own) geo(g); },
+    hover(g, x, y) { if (g.s.own) g.s.hv = midAt(g.s, x, y); },
+    tap(g, p) { const s = g.s; if (s.done || s.turn !== 1) return; const k = midAt(s, p.x, p.y); if (k < 0) { Arcade.sfx.bad(); return; } claim(g, k, 1); },
+    update(g, dt) {
+      const s = g.s; if (!s.own) return;
+      for (const k in s.pop) { s.pop[k] += dt * 5; if (s.pop[k] >= 1) delete s.pop[k]; }
+      if (s.done) { s.winT += dt; return; }
+      if (s.turn === 2) {
+        s.think -= dt; if (s.think > 0) return;
+        let k; if (Math.random() < s.noise) { const r = ranked(s.B, s.own, 2); k = pick(r.slice(0, Math.max(3, Math.floor(r.length / 3))))[1]; } else k = best(s.B, s.own, 2, s.depth);
+        claim(g, k, 2);
+      }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      const bg = ctx.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, '#1d4a66'); bg.addColorStop(1, '#0a1924'); ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      if (!s.own) return;
+      const B = s.B, G = B.G, cs = s.cs, [x0, y0] = PXY(s, 0, 0), L = cs * (G - 1);
+      // agua con ondas y orillas
+      ctx.fillStyle = 'rgba(0,0,0,.2)'; Arcade.rr(ctx, x0 - cs * 0.6, y0 - cs * 0.6, L + cs * 1.2, L + cs * 1.2, 16); ctx.fill();
+      ctx.strokeStyle = 'rgba(165,216,255,.08)'; ctx.lineWidth = 2; for (let k = 0; k < 8; k++) { const yy = y0 + (k + 0.5) * L / 8; ctx.beginPath(); for (let xx = x0; xx <= x0 + L; xx += 8) ctx.lineTo(xx, yy + Math.sin(xx * 0.05 + g.rt * 2 + k) * 3); ctx.stroke(); }
+      ctx.fillStyle = 'rgba(224,49,49,.55)'; ctx.fillRect(x0, y0 - cs * 0.55, L, cs * 0.18); ctx.fillRect(x0, y0 + L + cs * 0.37, L, cs * 0.18);
+      ctx.fillStyle = 'rgba(28,126,214,.6)'; ctx.fillRect(x0 - cs * 0.55, y0, cs * 0.18, L); ctx.fillRect(x0 + L + cs * 0.37, y0, cs * 0.18, L);
+      const lit = new Set(s.win);
+      if (s.hv >= 0 && s.turn === 1 && !s.done && !s.own[s.hv]) { ctx.globalAlpha = 0.35; bridge(ctx, s, B.mids[s.hv], 1, 1, false); ctx.globalAlpha = 1; }
+      B.mids.forEach((m, k) => { const o = s.own[k]; if (!o) return; const p = s.pop[k]; bridge(ctx, s, m, o, p != null ? 0.3 + p * 0.7 : 1, lit.has(k) && s.winT * 10 > s.win.indexOf(k)); });
+      for (let y = 0; y < G; y++) for (let x = 0; x < G; x++) { const i = y * G + x; if ((x + y) % 2 === 0) continue; const [px, py] = PXY(s, x, y); dot(ctx, px, py, cs * 0.22, isRed(G, i) ? 1 : 2); }
+      Arcade.txt(ctx, s.done ? '' : s.turn === 1 ? 'Tu turno' : 'Pensando…', W / 2, g.top + 26, 16, '#e7f5ff', 'center', 900);
+      if (!s.done) Arcade.txt(ctx, 'Te faltan ' + s.gap[0] + '  ·  A la máquina: ' + s.gap[1], W / 2, g.top + 50, 12, '#a5d8ff', 'center', 700);
+    },
+  });
+})();

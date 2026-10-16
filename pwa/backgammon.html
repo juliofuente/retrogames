@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Backgammon · Arcade Perdido</title>
+<meta name="theme-color" content="#2a1608">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css?v=6d7635e467">
+</head>
+<body class="game">
+<script src="config.js?v=d6380ae9b0"></script>
+<script src="common.js?v=207858a9a6"></script>
+<script>
+(function () {
+  const { rand, clamp, pick } = Arcade;
+  // Cada bando cuenta sus puntos desde su casa: 1..24, 25 = barra, 0 = fuera. El punto i de uno es el 25 − i del otro.
+  const cfg = (L) => ({ kind: L <= 2 ? 'race' : L <= 6 ? 'hyper' : 'full', noise: clamp(0.5 - L * 0.025, 0.2, 0.5) });
+  function startPos(kind) {
+    const a = new Array(26).fill(0), b = new Array(26).fill(0);
+    if (kind === 'race') { [[1, 1], [2, 2], [3, 2], [4, 2], [5, 2], [6, 1], [8, 1], [9, 1]].forEach(([i, n]) => (a[i] = n)); [[2, 1], [3, 1], [4, 2], [5, 2], [6, 2], [7, 1], [8, 1], [10, 1], [11, 1]].forEach(([i, n]) => (b[i] = n)); }
+    else if (kind === 'hyper') { a[24] = a[23] = a[22] = 1; b[24] = b[23] = b[22] = 1; }
+    else for (const x of [a, b]) { x[24] = 2; x[13] = 5; x[8] = 3; x[6] = 5; }
+    return [a, b];
+  }
+  const total = (x) => x.reduce((s, v) => s + v, 0);
+  const pip = (x) => x.reduce((s, v, i) => s + v * i, 0);
+  function stepsFor(me, op, d) {
+    const out = [];
+    if (me[25] > 0) { const t = 25 - d; if (op[25 - t] <= 1) out.push({ f: 25, t, d }); return out; }
+    let outside = 0; for (let i = 7; i <= 25; i++) outside += me[i];
+    let highest = 0; for (let i = 24; i >= 1; i--) if (me[i]) { highest = i; break; }
+    for (let f = 24; f >= 1; f--) {
+      if (!me[f]) continue; const t = f - d;
+      if (t >= 1) { if (op[25 - t] <= 1) out.push({ f, t, d }); }
+      else if (!outside && (t === 0 || f === highest)) out.push({ f, t: 0, d });
+    }
+    return out;
+  }
+  function applyStep(me, op, st) { const m = me.slice(), o = op.slice(); m[st.f]--; let hit = false; if (st.t >= 1) { if (o[25 - st.t] === 1) { o[25 - st.t] = 0; o[25]++; hit = true; } m[st.t]++; } else m[0]++; return [m, o, hit]; }
+  function sequences(me, op, dice) {
+    const out = [];
+    const rec = (m, o, left, steps) => {
+      let any = false; const tried = new Set();
+      for (let k = 0; k < left.length; k++) {
+        const d = left[k]; if (tried.has(d)) continue; tried.add(d);
+        const rest = left.slice(0, k).concat(left.slice(k + 1));
+        for (const st of stepsFor(m, o, d)) { any = true; const [m2, o2, hit] = applyStep(m, o, st); rec(m2, o2, rest, steps.concat({ ...st, hit })); }
+      }
+      if (!any) out.push({ steps, me: m, op: o });
+    };
+    rec(me, op, dice, []);
+    const max = Math.max(0, ...out.map((s) => s.steps.length)); let best = out.filter((s) => s.steps.length === max);
+    if (max === 1 && dice.length === 2 && dice[0] !== dice[1]) { const hi = Math.max(...dice), big = best.filter((s) => s.steps[0].d === hi); if (big.length) best = big; }
+    return best;
+  }
+  function evalPos(me, op) {
+    if (me[0] === 15 || (me[0] && !total(me.slice(1)))) return 1000;
+    let v = (pip(op) - pip(me)) * 0.1 + me[0] * 0.05 - me[25] * 0.6 + op[25] * 0.7;
+    // ¿queda contacto? (alguna ficha rival por detrás de alguna mía)
+    let myBack = 0; for (let i = 25; i >= 1; i--) if (me[i]) { myBack = i; break; }
+    let opFront = 26; for (let j = 25; j >= 1; j--) if (op[j]) opFront = Math.min(opFront, 25 - j); // su ficha más retrasada vista desde mí
+    if (op[25]) opFront = 0;
+    const contact = myBack > opFront;
+    let run = 0, best = 0;
+    for (let i = 1; i <= 24; i++) {
+      const n = me[i];
+      if (n >= 2) { v += i <= 6 ? 0.3 : i <= 9 ? 0.2 : 0.08; run++; best = Math.max(best, run); } else run = 0;
+      if (n === 1 && contact) {
+        let shots = 0; for (let j = 0; j <= 25; j++) { const k = j === 25 ? 0 : 25 - j; if (!op[j]) continue; const dd = i - k; if (dd >= 1 && dd <= 6) shots += 0.4; else if (dd > 6 && dd <= 12) shots += 0.12; }
+        v -= Math.min(1, shots) * (0.4 + (25 - i) * 0.05);
+      }
+    }
+    v += best * best * 0.05;
+    return v;
+  }
+  function choose(me, op, dice, noise) {
+    const seqs = sequences(me, op, dice); if (!seqs.length || !seqs[0].steps.length) return null;
+    const seen = new Map(); for (const s of seqs) { const k = s.me.join(',') + '|' + s.op.join(','); if (!seen.has(k)) seen.set(k, s); }
+    const list = [...seen.values()].map((s) => ({ s, v: evalPos(s.me, s.op) + Math.random() * 0.01 })).sort((a, b) => b.v - a.v);
+    if (noise && Math.random() < noise) return pick(list.slice(0, Math.max(2, Math.ceil(list.length / 3)))).s;
+    return list[0].s;
+  }
+  // —— geometría: tablero en unidades (15 × 11), girado en vertical ——
+  function geo(g) {
+    const s = g.s, top = g.top + 62, Ha = g.bot - top - 8; s.port = Ha > g.W * 1.1;
+    if (s.port) { s.U = Math.min((g.W - 12) / 11, Ha / 15); s.ox = (g.W - s.U * 11) / 2; s.oy = top + (Ha - s.U * 15) / 2; }
+    else { s.U = Math.min((g.W - 20) / 15, Ha / 11); s.ox = (g.W - s.U * 15) / 2; s.oy = top + (Ha - s.U * 11) / 2; }
+  }
+  const P = (s, u, v) => (s.port ? [s.ox + (11 - v) * s.U, s.oy + u * s.U] : [s.ox + u * s.U, s.oy + v * s.U]);
+  const UV = (s, x, y) => (s.port ? [(y - s.oy) / s.U, 11 - (x - s.ox) / s.U] : [(x - s.ox) / s.U, (y - s.oy) / s.U]);
+  // punto i desde el jugador: columna u y si está abajo
+  function slot(i) { if (i <= 6) return [13.5 - i, true]; if (i <= 12) return [12 - i + 0.5, true]; if (i <= 18) return [i - 13 + 0.5, false]; return [i - 12 + 0.5, false]; }
+  function checkerUV(i, k, n, low) { const sp = n > 5 ? 4.4 / (n - 1) : 1; const [u] = slot(i); return [u, low ? 11 - 0.5 - k * sp : 0.5 + k * sp]; }
+  function pointAt(s, x, y) {
+    const [u, v] = UV(s, x, y); if (u >= 13.3 && u <= 15 && v >= 0 && v <= 11) return 0; // bandeja de salida
+    if (u >= 6 && u < 7 && v >= 0 && v <= 11) return 25;
+    if (v < 0 || v > 11 || u < 0 || u >= 13) return -1; const low = v > 5.5;
+    for (let i = 1; i <= 24; i++) { const [su, sl] = slot(i); if (sl === low && Math.abs(u - su) < 0.5) return i; }
+    return -1;
+  }
+  const COL = { 1: ['#ffffff', '#f1e3c8', '#b89b6a'], 2: ['#6b4a3a', '#3b2418', '#160b06'] };
+  function checker(ctx, x, y, r, who, lift) {
+    const c = COL[who]; y -= lift || 0;
+    ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.beginPath(); ctx.arc(x + 1.5, y + 2.5, r, 0, 6.3); ctx.fill();
+    const gr = ctx.createRadialGradient(x - r * 0.35, y - r * 0.4, r * 0.1, x, y, r); gr.addColorStop(0, c[0]); gr.addColorStop(0.7, c[1]); gr.addColorStop(1, c[2]);
+    ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(x, y, r, 0, 6.3); ctx.fill();
+    ctx.strokeStyle = who === 1 ? 'rgba(120,90,50,.45)' : 'rgba(255,255,255,.15)'; ctx.lineWidth = Math.max(1, r * 0.12); ctx.beginPath(); ctx.arc(x, y, r * 0.62, 0, 6.3); ctx.stroke();
+  }
+  function die(ctx, x, y, sz, v, used, rot) {
+    ctx.save(); ctx.translate(x, y); ctx.rotate(rot || 0); ctx.globalAlpha = used ? 0.35 : 1;
+    ctx.fillStyle = 'rgba(0,0,0,.35)'; Arcade.rr(ctx, -sz / 2 + 2, -sz / 2 + 3, sz, sz, sz * 0.18); ctx.fill();
+    const gr = ctx.createLinearGradient(-sz / 2, -sz / 2, sz / 2, sz / 2); gr.addColorStop(0, '#fff'); gr.addColorStop(1, '#dee2e6'); ctx.fillStyle = gr; Arcade.rr(ctx, -sz / 2, -sz / 2, sz, sz, sz * 0.18); ctx.fill();
+    const P6 = { 1: [[0, 0]], 2: [[-1, -1], [1, 1]], 3: [[-1, -1], [0, 0], [1, 1]], 4: [[-1, -1], [1, -1], [-1, 1], [1, 1]], 5: [[-1, -1], [1, -1], [0, 0], [-1, 1], [1, 1]], 6: [[-1, -1], [1, -1], [-1, 0], [1, 0], [-1, 1], [1, 1]] };
+    ctx.fillStyle = '#c92a2a'; for (const [a, b] of P6[v] || []) { ctx.beginPath(); ctx.arc(a * sz * 0.26, b * sz * 0.26, sz * 0.09, 0, 6.3); ctx.fill(); }
+    ctx.restore();
+  }
+  // —— turnos ——
+  function roll(g, who) {
+    const s = g.s, a = 1 + Math.floor(Math.random() * 6), b = 1 + Math.floor(Math.random() * 6);
+    s.dice = { who, vals: a === b ? [a, a, a, a] : [a, b], show: [a, b], t: 0, used: [] }; s.phase = 'rolling';
+    for (let k = 0; k < 5; k++) setTimeout(() => Arcade.tone(300 + Math.random() * 300, 0.03, 'square', 0.03), k * 70);
+  }
+  function rolled(g) {
+    const s = g.s, d = s.dice, [me, op] = d.who === 1 ? [s.a, s.b] : [s.b, s.a];
+    s.seqs = sequences(me, op, d.vals);
+    if (!s.seqs.length || !s.seqs[0].steps.length) { g.message(d.who === 1 ? Arcade.T('No puedes mover', 'You can\'t move') : Arcade.T('La máquina no puede mover', 'The machine can\'t move'), 1); s.phase = 'wait'; s.wait = 1.1; s.next = 3 - d.who; return; }
+    if (d.who === 1) { s.phase = 'play'; s.sel = s.a[25] ? 25 : -1; }
+    else { s.plan = choose(s.b, s.a, d.vals, s.noise).steps.slice(); s.phase = 'ai'; s.wait = 0.45; }
+  }
+  function firstSteps(s) { const m = new Map(); for (const q of s.seqs) { const st = q.steps[0]; if (st) m.set(st.f + ':' + st.t, st); } return [...m.values()]; }
+  function doStep(g, who, st) {
+    const s = g.s; s.anim = { who, st, t: 0 };
+    const [x, y] = P(s, 0, 0); void x; void y; Arcade.tone(who === 1 ? 420 : 300, 0.05, 'triangle', 0.06);
+  }
+  function stepDone(g) {
+    const s = g.s, a = s.anim; s.anim = null; const who = a.who, st = a.st;
+    if (who === 1) { const [m, o, hit] = applyStep(s.a, s.b, st); s.a = m; s.b = o; if (hit) hitFx(g, st, 1); if (st.t === 0) bearFx(g, 1); }
+    else { const [m, o, hit] = applyStep(s.b, s.a, st); s.b = m; s.a = o; if (hit) hitFx(g, st, 2); if (st.t === 0) bearFx(g, 2); }
+    const ui = s.dice.used; ui.push(st.d);
+    if (s.a[0] === 15 || s.b[0] === 15 || (s.kind !== 'full' && (!total(s.a.slice(1)) || !total(s.b.slice(1))))) return finish(g);
+    if (who === 1) {
+      s.seqs = s.seqs.filter((q) => q.steps[0] && q.steps[0].f === st.f && q.steps[0].d === st.d).map((q) => ({ ...q, steps: q.steps.slice(1) }));
+      s.sel = s.a[25] ? 25 : -1;
+      if (!s.seqs.length || !s.seqs[0].steps.length) { s.phase = 'wait'; s.wait = 0.5; s.next = 2; }
+    } else if (!s.plan.length) { s.phase = 'wait'; s.wait = 0.6; s.next = 1; } else s.wait = 0.35;
+  }
+  function hitFx(g, st, who) { const s = g.s, i = who === 1 ? st.t : 25 - st.t, [u] = slot(i), [x, y] = P(s, u, 5.5); g.burst(x, y, { n: 14, color: who === 1 ? ['#3b2418', '#868e96'] : ['#fff', '#f1e3c8'], speed: 200 }); Arcade.sfx.pop(); g.shake && g.shake(4); if (who === 1) g.addScore(50 * Math.max(1, Math.round(g.lv / 2)), x, y); }
+  function bearFx(g, who) { const s = g.s, [x, y] = P(s, 14.2, who === 1 ? 8.5 : 2.5); g.ring(x, y, '#ffd43b', s.U, 3); Arcade.tone(880, 0.06, 'sine', 0.05); if (who === 1) g.addScore(20, x, y); }
+  function finish(g) {
+    const s = g.s; s.done = true; s.phase = 'end'; const iWin = s.a[0] === 15 || (s.kind !== 'full' && !total(s.a.slice(1)));
+    if (iWin) { const gam = s.b[0] === 0; g.confetti(90); if (gam) g.message(Arcade.T('¡Gammon!', 'Gammon!'), 1.2); g.addScore((gam ? 800 : 400) * g.lv, g.W / 2, g.H / 2); const st = gam ? 3 : s.b[0] <= 7 ? 2 : 1; setTimeout(() => { if (g.state === 'play') g.win(st); }, 1500); }
+    else { g.message(Arcade.T('Gana la máquina', 'The machine wins'), 1.4); setTimeout(() => { if (g.state === 'play' && g.die()) Arcade.current.def.setup(g); }, 1900); }
+  }
+  function tapAt(g, x, y) {
+    const s = g.s; if (s.phase !== 'play' || s.anim) return;
+    const i = pointAt(s, x, y), fs = firstSteps(s);
+    if (s.sel >= 0) { const st = fs.find((q) => q.f === s.sel && q.t === i); if (st) { doStep(g, 1, st); return; } }
+    if (i >= 1 && fs.some((q) => q.f === i)) { s.sel = i; Arcade.tone(600, 0.04, 'square', 0.04); return; }
+    if (i === 25 && s.a[25]) { s.sel = 25; return; }
+    Arcade.sfx.bad();
+  }
+  // posición en pantalla de la ficha superior de un punto (para animar)
+  function topUV(s, who, i, extra) {
+    if (i === 25) return [6.5, who === 1 ? 6.6 + extra * 0.9 : 4.4 - extra * 0.9];
+    if (i === 0) return [14.2, who === 1 ? 10.4 - extra * 0.25 : 0.6 + extra * 0.25];
+    const pi = who === 1 ? i : 25 - i, low = slot(pi)[1], n = who === 1 ? s.a[i] : s.b[i];
+    return checkerUV(pi, Math.max(0, n - 1 + extra), Math.max(n + extra, 1), low);
+  }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Dados, carreras y golpes en la barra', deco: ['🎲', '⚪', '⚫', '🏁', '🏆', '🧠'], font: 'serif', bg: ['#4a2a12', '#2a1608'],
+    music: { mode: 'phryg', bpm: 88, wave: 'triangle', style: 'chill', root: 52 }, voice: { wave: 'sine', mul: 1, echo: 0.35 },
+    /*EN*/ en: { title: 'Backgammon', tag: 'Dice, races and hits to the bar', help: 'You are white and your checkers travel around the board towards your <b>home</b> (bottom right; bottom left on a vertical screen), and then you <b>bear them off</b>. The dice are rolled automatically: <b>tap</b> a checker and then a lit point to move it by one die. You cannot land where the machine has <b>two or more</b> checkers; if there is only one, you <b>hit</b> it and send it to the bar. Doubles are played four times. Bear off all your checkers before the machine. Early levels are short races, then come 3-checker games and finally the full game.', tvHelp: 'D-pad to a checker · OK · then to a lit point · OK.', dict: { 'Tu turno': 'Your turn', 'Turno de la máquina': 'Machine\'s turn', 'Toca una ficha': 'Tap a checker', 'Carrera': 'Race', 'Partida de 3 fichas': '3-checker game', 'Partida completa': 'Full game', 'Fuera: ': 'Off: ', 'Pips: ': 'Pips: ' } },
+    /*TV*/ tvHelp: 'Cruceta hasta una ficha · OK · luego a un punto iluminado · OK.',
+    tv: { mode: 'tap', targets: (g) => { const s = g.s; if (!s.a || s.phase !== 'play') return []; const set = new Set(); for (const st of firstSteps(s)) { set.add(st.f); if (s.sel === st.f) set.add(st.t); } return [...set].map((i) => { const who = 1, [u, v] = i === 0 ? [14.2, 8.5] : i === 25 ? [6.5, 7] : (() => { const [su, low] = slot(i); return [su, low ? 9 : 2]; })(); void who; const [x, y] = P(s, u, v); return { x: x - s.U * 0.5, y: y - s.U * 0.5, w: s.U, h: s.U }; }); } },
+    id: 'backgammon', title: 'Backgammon', emoji: '🎲', color: '#e8b16a', origin: 'Backgammon / Tablas reales (Lutanho)',
+    help: 'Eres las blancas: tus fichas dan la vuelta al tablero hasta tu <b>casa</b> (abajo a la derecha; abajo a la izquierda con la pantalla en vertical) y luego las <b>sacas</b>. Los dados se tiran solos: <b>toca</b> una ficha y luego un punto iluminado para moverla lo que marca un dado. No puedes caer donde la máquina tenga <b>dos o más</b> fichas; si solo tiene una, la <b>golpeas</b> y va a la barra. Los dobles se juegan cuatro veces. Saca todas tus fichas antes que la máquina. Los primeros niveles son carreras cortas, luego partidas de 3 fichas y al final la partida completa.',
+    lives: 3, levels: 0, cap: 20,
+    /*SC*/ demo(g) {
+      const s = g.s; if (s.phase !== 'play' || s.anim || !s.seqs.length) return { wait: 0.3 };
+      const tapI = (i) => { const [u, v] = i === 0 ? [14.2, 8.5] : i === 25 ? [6.5, 6.6] : (() => { const [su, low] = slot(i); return [su, low ? 9 : 2]; })(); return P(s, u, v); };
+      if (!s.botStep || s.sel !== s.botStep.f) {
+        let best = null, bv = -1e9; for (const q of s.seqs) { const v = evalPos(q.me, q.op); if (v > bv) { bv = v; best = q; } }
+        if (!best || !best.steps[0]) return { wait: 0.3 }; s.botStep = best.steps[0];
+        return { tap: tapI(s.botStep.f), after: 0.25, say: s.turns++ ? null : Arcade.T('Mueve lo que marca cada dado', 'Move what each die says') };
+      }
+      const st = s.botStep; s.botStep = null; return { tap: tapI(st.t), after: 0.35 };
+    },
+    setup(g) {
+      const o = cfg(g.lv), [a, b] = startPos(o.kind);
+      g.s = { a, b, kind: o.kind, noise: o.noise, phase: 'wait', wait: 0.8, next: 1, dice: null, seqs: [], sel: -1, anim: null, plan: [], done: false, turns: 0 };
+      geo(g); g.message(o.kind === 'race' ? 'Carrera' : o.kind === 'hyper' ? 'Partida de 3 fichas' : 'Partida completa', 1.2);
+    },
+    layout(g) { if (g.s.a) geo(g); },
+    tap(g, p) { tapAt(g, p.x, p.y); },
+    update(g, dt) {
+      const s = g.s; if (!s.a || s.done) return;
+      if (s.anim) { s.anim.t += dt / 0.32; if (s.anim.t >= 1) stepDone(g); return; }
+      if (s.phase === 'rolling') { s.dice.t += dt; if (s.dice.t >= 0.6) rolled(g); return; }
+      if (s.phase === 'wait') { s.wait -= dt; if (s.wait <= 0) roll(g, s.next); return; }
+      if (s.phase === 'ai') { s.wait -= dt; if (s.wait <= 0 && s.plan.length) doStep(g, 2, s.plan.shift()); }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      ctx.fillStyle = '#1c0f05'; ctx.fillRect(0, 0, W, H);
+      if (!s.a) return;
+      const U = s.U, poly = (pts, col) => { ctx.fillStyle = col; ctx.beginPath(); pts.forEach(([u, v]) => ctx.lineTo(...P(s, u, v))); ctx.closePath(); ctx.fill(); };
+      // marco y fieltro
+      poly([[-0.3, -0.3], [15.3, -0.3], [15.3, 11.3], [-0.3, 11.3]], '#6b3d17');
+      poly([[0, 0], [6, 0], [6, 11], [0, 11]], '#1f5f3f'); poly([[7, 0], [13, 0], [13, 11], [7, 11]], '#1f5f3f');
+      poly([[6, 0], [7, 0], [7, 11], [6, 11]], '#4a2a12'); poly([[13.4, 0], [15, 0], [15, 11], [13.4, 11]], '#3b210d');
+      const fs = s.phase === 'play' && !s.anim ? firstSteps(s) : [], from = new Set(fs.map((q) => q.f)), dest = new Set(fs.filter((q) => q.f === s.sel).map((q) => q.t));
+      for (let i = 1; i <= 24; i++) {
+        const [u, low] = slot(i), col = i % 2 ? '#e8c38f' : '#9c3a1f', v0 = low ? 11 : 0, v1 = low ? 6.2 : 4.8;
+        poly([[u - 0.48, v0], [u + 0.48, v0], [u, v1]], col);
+        if (dest.has(i)) { ctx.globalAlpha = 0.45 + 0.25 * Math.sin(g.rt * 7); poly([[u - 0.48, v0], [u + 0.48, v0], [u, v1]], '#69db7c'); ctx.globalAlpha = 1; }
+      }
+      if (dest.has(0)) { ctx.globalAlpha = 0.4 + 0.25 * Math.sin(g.rt * 7); poly([[13.4, 6], [15, 6], [15, 11], [13.4, 11]], '#69db7c'); ctx.globalAlpha = 1; }
+      const r = U * 0.46, an = s.anim;
+      const drawSide = (who) => {
+        const arr = who === 1 ? s.a : s.b;
+        for (let i = 1; i <= 24; i++) {
+          let n = arr[i]; if (an && an.who === who && an.st.f === i) n--; if (n <= 0) continue;
+          const pi = who === 1 ? i : 25 - i, low = slot(pi)[1];
+          for (let k = 0; k < n; k++) { const [u, v] = checkerUV(pi, k, n, low), [x, y] = P(s, u, v); const top = k === n - 1, lift = who === 1 && s.sel === i && top ? 4 + Math.sin(g.rt * 8) * 2 : 0; checker(ctx, x, y, r, who, lift); if (who === 1 && top && from.has(i) && s.sel !== i) { ctx.strokeStyle = 'rgba(255,212,59,' + (0.5 + 0.3 * Math.sin(g.rt * 6)) + ')'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x, y, r + 2, 0, 6.3); ctx.stroke(); } }
+          if (n > 5) { const [u, v] = checkerUV(pi, n - 1, n, low), [x, y] = P(s, u, v); Arcade.txt(ctx, String(n), x, y, U * 0.42, who === 1 ? '#5c3a1a' : '#fff', 'center', 900); }
+        }
+        let nb = arr[25]; if (an && an.who === who && an.st.f === 25) nb--;
+        for (let k = 0; k < nb; k++) { const [x, y] = P(s, ...topUV(s, who, 25, k - (nb - 1))); checker(ctx, x, y, r, who, who === 1 && s.sel === 25 && k === nb - 1 ? 4 : 0); }
+        for (let k = 0; k < arr[0]; k++) { const [u, v] = topUV(s, who, 0, k), [x1, y1] = P(s, u - 0.55, v), [x2, y2] = P(s, u + 0.55, v); ctx.strokeStyle = who === 1 ? '#f1e3c8' : '#3b2418'; ctx.lineWidth = Math.max(2, U * 0.2); ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); }
+      };
+      drawSide(2); drawSide(1);
+      if (an) { const who = an.who, st = an.st, [u0, v0] = topUV(s, who, st.f, 0), [u1, v1] = topUV(s, who, st.t, 1), t = Math.min(1, an.t), e = t * t * (3 - 2 * t), [x, y] = P(s, u0 + (u1 - u0) * e, v0 + (v1 - v0) * e); checker(ctx, x, y - Math.sin(t * Math.PI) * U * 0.8, r * (1 + Math.sin(t * Math.PI) * 0.15), who, 0); }
+      // dados
+      if (s.dice) {
+        const d = s.dice, [cx, cy] = P(s, d.who === 1 ? 10 : 3, 5.5), sz = U * 0.9, rolling = s.phase === 'rolling';
+        const vals = rolling ? [1 + Math.floor(Math.random() * 6), 1 + Math.floor(Math.random() * 6)] : d.show, dbl = d.vals.length === 4;
+        vals.forEach((v, k) => { const usedN = d.used.filter((x) => x === v).length, used = !rolling && (dbl ? d.used.length >= (k === 0 ? 2 : 4) : usedN > (k === 1 && vals[0] === v ? 1 : 0)); die(ctx, cx + (k - 0.5) * sz * 1.25, cy + (rolling ? Math.sin(d.t * 30 + k) * 4 : 0), sz, v, used, rolling ? d.t * 12 * (k ? 1 : -1) : 0); });
+        if (dbl && !rolling) Arcade.txt(ctx, '×4', cx + sz * 1.45, cy, U * 0.45, '#ffd43b', 'center', 900);
+      }
+      const msg = s.done ? '' : s.dice && s.dice.who === 2 ? 'Turno de la máquina' : s.phase === 'play' ? (s.sel >= 0 ? 'Tu turno' : 'Toca una ficha') : '';
+      Arcade.txt(ctx, msg, W / 2, g.top + 22, 15, '#ffe8cc', 'center', 900);
+      Arcade.txt(ctx, 'Pips: ' + pip(s.a) + ' · ' + pip(s.b) + '   Fuera: ' + s.a[0] + ' · ' + s.b[0], W / 2, g.top + 42, 12, '#e8b16a', 'center', 700);
+    },
+  });
+})();
+</script>
+</body>
+</html>

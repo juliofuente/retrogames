@@ -1,0 +1,104 @@
+// Zorro y perros|#2b1a0e
+(function () {
+  const { rand, clamp, pick } = Arcade;
+  // perros (tú) suben en diagonal; el zorro (máquina) va en diagonal hacia cualquier lado
+  const cfg = (L) => ({ n: L >= 10 ? 10 : 8, depth: clamp(1 + Math.floor(L / 5), 1, 3), noise: clamp(0.45 - L * 0.03, 0.12, 0.45) });
+  const D4 = [[1, 1], [-1, 1], [1, -1], [-1, -1]];
+  function foxMoves(n, fox, dogs) { const x = fox % n, y = (fox / n) | 0, out = []; for (const [dx, dy] of D4) { const tx = x + dx, ty = y + dy; if (tx < 0 || ty < 0 || tx >= n || ty >= n) continue; const t = ty * n + tx; if (!dogs.includes(t)) out.push(t); } return out; }
+  function dogMoves(n, fox, dogs) { const out = []; dogs.forEach((d, k) => { const x = d % n, y = (d / n) | 0; for (const dx of [-1, 1]) { const tx = x + dx, ty = y - 1; if (tx < 0 || ty < 0 || tx >= n) continue; const t = ty * n + tx; if (t !== fox && !dogs.includes(t)) out.push({ k, from: d, to: t }); } }); return out; }
+  function foxDist(n, fox, dogs) { // pasos hasta la fila de abajo sin pisar perros
+    if (((fox / n) | 0) === n - 1) return 0; const seen = new Set([fox]); let fr = [fox], d = 0;
+    while (fr.length) { d++; const nx = []; for (const f of fr) for (const t of foxMoves(n, f, dogs)) { if (seen.has(t)) continue; if (((t / n) | 0) === n - 1) return d; seen.add(t); nx.push(t); } fr = nx; }
+    return 99;
+  }
+  function evalF(n, fox, dogs) { const d = foxDist(n, fox, dogs); if (d === 0) return 1000; if (d === 99) { return -400 + foxMoves(n, fox, dogs).length * 5 - Math.max(...dogs.map((x) => (x / n) | 0)) * 0; } return -d * 10 + foxMoves(n, fox, dogs).length - dogs.reduce((a, x) => a + (n - 1 - ((x / n) | 0)), 0) * 0.5; }
+  // valor desde el punto de vista del zorro
+  function search(n, fox, dogs, foxTurn, depth, a, b) {
+    if (((fox / n) | 0) === n - 1) return [1000 + depth, null];
+    if (foxTurn) {
+      const ms = foxMoves(n, fox, dogs); if (!ms.length) return [-1000 - depth, null]; if (!depth) return [evalF(n, fox, dogs), null];
+      let best = -1e9, bm = ms[0];
+      for (const t of ms) { const v = search(n, t, dogs, false, depth - 1, a, b)[0]; if (v > best) { best = v; bm = t; } a = Math.max(a, v); if (a >= b) break; }
+      return [best, bm];
+    }
+    const ms = dogMoves(n, fox, dogs); if (!ms.length) return [1000 + depth, null]; if (!depth) return [evalF(n, fox, dogs), null];
+    let best = 1e9, bm = ms[0];
+    for (const m of ms) { const nd = dogs.slice(); nd[m.k] = m.to; const v = search(n, fox, nd, true, depth - 1, a, b)[0]; if (v < best) { best = v; bm = m; } b = Math.min(b, v); if (a >= b) break; }
+    return [best, bm];
+  }
+  function geo(g) { const s = g.s, n = s.n, Ha = g.bot - g.top - 80; s.cs = Math.min((g.W - 20) / n, Ha / n, 78); s.ox = (g.W - s.cs * n) / 2; s.oy = g.top + 66 + (Ha - s.cs * n) / 2; }
+  const XY = (s, i) => [s.ox + (i % s.n + 0.5) * s.cs, s.oy + (((i / s.n) | 0) + 0.5) * s.cs];
+  function lose(g, why) { const s = g.s; s.done = true; g.message(why, 1.5); setTimeout(() => { if (g.state === 'play' && g.die()) Arcade.current.def.setup(g); }, 1900); }
+  function afterDog(g) {
+    const s = g.s, a = s.anim; s.anim = null; s.dogs[a.k] = a.to; s.moves++;
+    if (!foxMoves(s.n, s.fox, s.dogs).length) {
+      s.done = true; const [x, y] = XY(s, s.fox); g.ring(x, y, '#ffd43b', s.cs, 5); g.confetti(80); g.addScore(400 * g.lv, x, y); Arcade.sfx.win && Arcade.sfx.win();
+      const par = s.n === 8 ? 14 : 22, st = s.moves <= par ? 3 : s.moves <= par * 1.4 ? 2 : 1; setTimeout(() => { if (g.state === 'play') g.win(st); }, 1400); return;
+    }
+    g.addScore(10 * Math.max(1, Math.round(g.lv / 2)), ...XY(s, a.to)); s.turn = 2; s.think = rand(0.4, 0.75);
+  }
+  function afterFox(g) {
+    const s = g.s, a = s.anim; s.anim = null; s.fox = a.to;
+    if (((s.fox / s.n) | 0) === s.n - 1) return lose(g, Arcade.T('¡El zorro se ha colado!', 'The fox slipped through!'));
+    if (!dogMoves(s.n, s.fox, s.dogs).length) return lose(g, Arcade.T('Los perros no pueden moverse', 'The dogs can\'t move'));
+    s.turn = 1;
+  }
+  function tapCell(g, i) {
+    const s = g.s; if (s.done || s.turn !== 1 || s.anim) return;
+    const k = s.dogs.indexOf(i); if (k >= 0) { s.sel = k; Arcade.tone(600, 0.04, 'square', 0.04); return; }
+    if (s.sel < 0) return; const m = dogMoves(s.n, s.fox, s.dogs).find((m) => m.k === s.sel && m.to === i);
+    if (!m) { Arcade.sfx.bad(); return; } s.sel = -1; s.anim = { kind: 'd', k: m.k, from: m.from, to: m.to, t: 0 }; Arcade.tone(380, 0.06, 'square', 0.05);
+  }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Que el zorro no se cuele entre tus perros', deco: ['🦊', '🐕', '🌲', '🍂', '🏆', '🧠'], font: 'round', bg: ['#4a2e14', '#2b1a0e'],
+    music: { mode: 'dorian', bpm: 96, wave: 'triangle', style: 'arcade', root: 53 }, voice: { wave: 'triangle', mul: 1, echo: 0.3 },
+    /*EN*/ en: { title: 'Fox and Hounds', tag: 'Don\'t let the fox slip past your hounds', help: 'You move the <b>hounds</b> 🐕 and the machine moves the <b>fox</b> 🦊, all on the dark squares. Hounds move <b>one square diagonally, only upwards</b>; the fox moves one square diagonally <b>in any direction</b>. <b>Tap</b> a hound and then the square where it goes. You win if the fox <b>cannot move</b>. If the fox reaches the bottom row, it escapes and you lose. Keep the hounds in a line with no gaps! From level 10 the board is 10×10 with 5 hounds.', tvHelp: 'D-pad to a hound · OK · then to a lit square · OK.', dict: { 'Tu turno': 'Your turn', 'El zorro piensa…': 'The fox is thinking…', 'Pasos del zorro hasta abajo: ': 'Fox steps to the bottom: ', 'encerrado': 'trapped' } },
+    /*TV*/ tvHelp: 'Cruceta hasta un perro · OK · luego a una casilla iluminada · OK.',
+    tv: { mode: 'tap', targets: (g) => { const s = g.s; if (!s.dogs) return []; const set = new Set(s.dogs); if (s.sel >= 0) dogMoves(s.n, s.fox, s.dogs).filter((m) => m.k === s.sel).forEach((m) => set.add(m.to)); return [...set].map((i) => ({ x: s.ox + (i % s.n) * s.cs, y: s.oy + Math.floor(i / s.n) * s.cs, w: s.cs, h: s.cs })); } },
+    id: 'zorro', title: 'Zorro y perros', emoji: '🦊', color: '#ff922b', origin: 'Fox and Hounds / Fox and Dogs (Lutanho)',
+    help: 'Mueves a los <b>perros</b> 🐕 y la máquina al <b>zorro</b> 🦊, todos por las casillas oscuras. Los perros avanzan <b>una casilla en diagonal, solo hacia arriba</b>; el zorro va una casilla en diagonal <b>hacia cualquier lado</b>. <b>Toca</b> un perro y luego la casilla a la que va. Ganas si el zorro <b>no puede moverse</b>. Si el zorro llega a la fila de abajo, se escapa y pierdes. ¡Mantén a los perros en fila y sin huecos! Desde el nivel 10 el tablero es de 10×10 con 5 perros.',
+    lives: 3, levels: 0, cap: 20,
+    /*SC*/ demo(g) {
+      const s = g.s; if (s.done || s.turn !== 1 || s.anim) return { wait: 0.3 };
+      const m = search(s.n, s.fox, s.dogs, false, 6, -1e9, 1e9)[1]; if (!m) return { wait: 0.3 };
+      if (s.sel !== m.k) return { tap: XY(s, m.from), after: 0.25, say: s.moves ? null : Arcade.T('Sube en fila, sin dejar huecos', 'Move up in a line, no gaps') };
+      return { tap: XY(s, m.to), after: 0.4 };
+    },
+    setup(g) {
+      const o = cfg(g.lv), n = o.n, dogs = [];
+      for (let x = 0; x < n; x++) if ((x + n - 1) % 2 === 1) dogs.push((n - 1) * n + x);
+      const tops = []; for (let x = 0; x < n; x++) if (x % 2 === 1) tops.push(x);
+      g.s = { n, dogs, fox: pick(tops.slice(1, -1).length ? tops.slice(1, -1) : tops), depth: o.depth, noise: o.noise, turn: 1, sel: -1, anim: null, done: false, moves: 0, think: 0 };
+      geo(g);
+    },
+    layout(g) { if (g.s.dogs) geo(g); },
+    tap(g, p) { const s = g.s, c = Math.floor((p.x - s.ox) / s.cs), r = Math.floor((p.y - s.oy) / s.cs); if (c >= 0 && r >= 0 && c < s.n && r < s.n) tapCell(g, r * s.n + c); },
+    update(g, dt) {
+      const s = g.s; if (!s.dogs) return;
+      if (s.anim) { s.anim.t += dt / 0.28; if (s.anim.t >= 1) (s.anim.kind === 'd' ? afterDog : afterFox)(g); return; }
+      if (s.turn === 2 && !s.done) {
+        s.think -= dt; if (s.think > 0) return;
+        const ms = foxMoves(s.n, s.fox, s.dogs); if (!ms.length) return;
+        const to = Math.random() < s.noise ? pick(ms) : search(s.n, s.fox, s.dogs, true, s.depth * 2 - 1, -1e9, 1e9)[1] ?? ms[0];
+        s.anim = { kind: 'f', from: s.fox, to, t: 0 }; Arcade.tone(720, 0.05, 'sine', 0.05, -150);
+      }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      ctx.fillStyle = '#1e1208'; ctx.fillRect(0, 0, W, H);
+      if (!s.dogs) return;
+      const n = s.n, cs = s.cs;
+      ctx.fillStyle = '#4a2e14'; Arcade.rr(ctx, s.ox - 10, s.oy - 10, cs * n + 20, cs * n + 20, 12); ctx.fill();
+      for (let i = 0; i < n * n; i++) { const x = s.ox + (i % n) * cs, y = s.oy + Math.floor(i / n) * cs, dark = ((i % n) + ((i / n) | 0)) % 2; ctx.fillStyle = dark ? '#3f6b2a' : '#d8c8a0'; ctx.fillRect(x, y, cs, cs); if (dark && ((i / n) | 0) === n - 1) { ctx.fillStyle = 'rgba(255,146,43,.18)'; ctx.fillRect(x, y, cs, cs); } }
+      const tg = new Set(s.sel >= 0 && s.turn === 1 && !s.anim ? dogMoves(n, s.fox, s.dogs).filter((m) => m.k === s.sel).map((m) => m.to) : []);
+      for (const t of tg) { const [x, y] = XY(s, t); ctx.fillStyle = 'rgba(255,255,255,' + (0.35 + 0.2 * Math.sin(g.rt * 7)) + ')'; ctx.beginPath(); ctx.arc(x, y, cs * 0.16, 0, 6.3); ctx.fill(); }
+      const sz = cs * 0.72, shadow = (x, y) => { ctx.fillStyle = 'rgba(0,0,0,.3)'; ctx.beginPath(); ctx.ellipse(x, y + sz * 0.35, sz * 0.38, sz * 0.12, 0, 0, 6.3); ctx.fill(); };
+      s.dogs.forEach((d, k) => { if (s.anim && s.anim.kind === 'd' && s.anim.k === k) return; const [x, y] = XY(s, d); shadow(x, y); Arcade.emoji(ctx, '🐕', x, y - (s.sel === k ? 6 + Math.sin(g.rt * 8) * 3 : 0), sz); });
+      if (!(s.anim && s.anim.kind === 'f')) { const [x, y] = XY(s, s.fox); shadow(x, y); Arcade.emoji(ctx, '🦊', x, y - (s.done ? Math.abs(Math.sin(g.rt * 9)) * 4 : 0), sz); }
+      if (s.anim) { const a = s.anim, [x0, y0] = XY(s, a.from), [x1, y1] = XY(s, a.to), t = Math.min(1, a.t); Arcade.emoji(ctx, a.kind === 'd' ? '🐕' : '🦊', x0 + (x1 - x0) * t, y0 + (y1 - y0) * t - Math.sin(t * Math.PI) * cs * 0.35, sz); }
+      Arcade.txt(ctx, s.done ? '' : s.turn === 1 ? 'Tu turno' : 'El zorro piensa…', W / 2, g.top + 24, 16, '#ffe8cc', 'center', 900);
+      const d = foxDist(n, s.fox, s.dogs); if (!s.done) Arcade.txt(ctx, 'Pasos del zorro hasta abajo: ' + (d >= 99 ? 'encerrado' : d), W / 2, g.top + 46, 12, d >= 99 ? '#8ce99a' : '#ffc078', 'center', 800);
+    },
+  });
+})();

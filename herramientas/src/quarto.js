@@ -1,0 +1,176 @@
+// Quarto|#2b1d12
+(function () {
+  const { rand, clamp, pick, shuffle } = Arcade;
+  // pieza = 4 bits: 1 alta, 2 oscura, 4 cuadrada, 8 hueca
+  const LINES = [];
+  for (let k = 0; k < 4; k++) { LINES.push([k * 4, k * 4 + 1, k * 4 + 2, k * 4 + 3]); LINES.push([k, k + 4, k + 8, k + 12]); }
+  LINES.push([0, 5, 10, 15], [3, 6, 9, 12]);
+  const SQUARES = []; for (let y = 0; y < 3; y++) for (let x = 0; x < 3; x++) { const i = y * 4 + x; SQUARES.push([i, i + 1, i + 4, i + 5]); }
+  const cfg = (L) => ({ exact: clamp(3 + Math.floor(L / 3), 3, 8), noise: clamp(0.45 - L * 0.03, 0.12, 0.45), sq: L >= 10 });
+  const shared = (b, ln) => { let a = 15, o = 0; for (const i of ln) { const v = b[i]; if (v < 0) return 0; a &= v; o |= v; } return a | (~o & 15); };
+  function winLine(b, sq) { for (const ln of sq ? LINES.concat(SQUARES) : LINES) if (shared(b, ln)) return ln; return null; }
+  const winsAt = (b, i, p, sq) => { b[i] = p; const w = winLine(b, sq); b[i] = -1; return !!w; };
+  const canWin = (b, p, sq) => { for (let i = 0; i < 16; i++) if (b[i] < 0 && winsAt(b, i, p, sq)) return i; return -1; };
+  // valor exacto para quien tiene que colocar "hand": 1 gana, 0 tablas, −1 pierde
+  function solve(b, hand, left, sq, memo) {
+    const key = b.join(',') + '|' + hand; if (memo.has(key)) return memo.get(key);
+    let best = -1;
+    for (let i = 0; i < 16 && best < 1; i++) {
+      if (b[i] >= 0) continue; b[i] = hand;
+      if (winLine(b, sq)) best = 1;
+      else if (!left.length) best = Math.max(best, 0);
+      else for (let k = 0; k < left.length && best < 1; k++) { const q = left[k], rest = left.filter((x) => x !== q); best = Math.max(best, -solve(b, q, rest, sq, memo)); }
+      b[i] = -1;
+    }
+    memo.set(key, best); return best;
+  }
+  // decide dónde colocar "hand" y qué pieza dar después
+  function think(b, hand, left, opt) {
+    const sq = opt.sq, empt = b.filter((v) => v < 0).length;
+    const w = canWin(b, hand, sq); if (w >= 0 && Math.random() > opt.noise * 0.4) return { cell: w, give: null };
+    if (empt <= opt.exact) {
+      const memo = new Map(); let bv = -2, bm = null;
+      for (let i = 0; i < 16; i++) {
+        if (b[i] >= 0) continue; b[i] = hand;
+        if (!left.length) { if (bv < 0) { bv = 0; bm = { cell: i, give: null }; } }
+        else for (const q of shuffle(left.slice())) { const v = -solve(b, q, left.filter((x) => x !== q), sq, memo); if (v > bv) { bv = v; bm = { cell: i, give: q }; } }
+        b[i] = -1; if (bv === 1) break;
+      }
+      if (bm) return bm;
+    }
+    // heurística: busca colocación y pieza "seguras"; prefiere dejar al rival con pocas piezas seguras
+    let opts = [];
+    for (let i = 0; i < 16; i++) {
+      if (b[i] >= 0) continue; b[i] = hand;
+      const safe = left.filter((q) => canWin(b, q, sq) < 0);
+      for (const q of safe) { const rest = left.filter((x) => x !== q); let worst = 0; for (let j = 0; j < 16; j++) if (b[j] < 0) { b[j] = q; worst = Math.max(worst, rest.filter((r) => canWin(b, r, sq) < 0).length); b[j] = -1; } opts.push({ cell: i, give: q, sc: -Math.abs((worst % 2) - 1) * 0.5 + safe.length * 0.05 + Math.random() * 0.3 }); }
+      b[i] = -1;
+    }
+    if (!opts.length) { const e = []; b.forEach((v, i) => { if (v < 0) e.push(i); }); return { cell: pick(e), give: left.length ? pick(left) : null }; }
+    opts.sort((a, c) => c.sc - a.sc); return opts[0];
+  }
+  function geo(g) {
+    const s = g.s, W = g.W, top = g.top + 52, Ha = g.bot - top - 8;
+    s.port = Ha > W * 1.05;
+    if (s.port) {
+      s.c1 = Math.min((W - 16) / 5.3, (Ha * 0.62) / 5.2, 90); s.c2 = Math.min((W - 16) / 8, (Ha - s.c1 * 5.4) / 2.3, 64);
+      s.bx = (W - s.c1 * 4) / 2; s.by = top + s.c1 * 0.62; s.rc = 8; s.rx = (W - s.c2 * 8) / 2; s.ry = s.by + s.c1 * 4.65;
+    } else {
+      s.c1 = Math.min(Ha / 5.3, (W - 40) / 9.2, 90); s.c2 = s.c1 * 0.8;
+      const tot = s.c1 * 5.4 + s.c2 * 4 + s.c1 * 0.4; s.bx = (W - tot) / 2 + s.c1 * 0.6; s.by = top + (Ha - s.c1 * 4) / 2; s.rc = 4; s.rx = s.bx + s.c1 * 4 + s.c1 * 1.0; s.ry = top + (Ha - s.c2 * 4) / 2;
+    }
+  }
+  const CXY = (s, i) => [s.bx + (i % 4 + 0.5) * s.c1, s.by + (((i / 4) | 0) + 0.5) * s.c1];
+  const RXY = (s, p) => [s.rx + (p % s.rc + 0.5) * s.c2, s.ry + (((p / s.rc) | 0) + 0.5) * s.c2];
+  const HAND = (s) => [s.bx + s.c1 * 4.15, s.by - s.c1 * 0.15];
+  function piece(ctx, x, y, u, p, alpha) {
+    const tall = p & 1, dark = p & 2, sq = p & 4, hol = p & 8, h = u * (tall ? 0.95 : 0.5), w = u * 0.62;
+    const side = dark ? ['#5c3a1a', '#3b2410'] : ['#f3d9a4', '#c99a5b'], topc = dark ? '#7a4f26' : '#ffeccc';
+    ctx.save(); ctx.globalAlpha = alpha ?? 1; ctx.translate(x, y + h / 2 - u * 0.05);
+    ctx.fillStyle = 'rgba(0,0,0,.3)'; ctx.beginPath(); ctx.ellipse(0, 0, w * 0.62, w * 0.2, 0, 0, 6.3); ctx.fill();
+    const gr = ctx.createLinearGradient(-w / 2, 0, w / 2, 0); gr.addColorStop(0, side[1]); gr.addColorStop(0.35, side[0]); gr.addColorStop(1, side[1]);
+    ctx.fillStyle = gr;
+    if (sq) { ctx.fillRect(-w / 2, -h, w, h); ctx.fillStyle = topc; ctx.beginPath(); ctx.moveTo(-w / 2, -h); ctx.lineTo(-w / 2 + w * 0.18, -h - w * 0.2); ctx.lineTo(w / 2 + w * 0.18, -h - w * 0.2); ctx.lineTo(w / 2, -h); ctx.closePath(); ctx.fill(); ctx.fillStyle = side[1]; ctx.beginPath(); ctx.moveTo(w / 2, -h); ctx.lineTo(w / 2 + w * 0.18, -h - w * 0.2); ctx.lineTo(w / 2 + w * 0.18, -w * 0.2); ctx.lineTo(w / 2, 0); ctx.closePath(); ctx.fill(); }
+    else { ctx.beginPath(); ctx.ellipse(0, 0, w / 2, w * 0.17, 0, 0, Math.PI); ctx.lineTo(-w / 2, -h); ctx.lineTo(w / 2, -h); ctx.closePath(); ctx.fill(); ctx.fillStyle = topc; ctx.beginPath(); ctx.ellipse(0, -h, w / 2, w * 0.17, 0, 0, 6.3); ctx.fill(); }
+    if (hol) { ctx.fillStyle = dark ? '#1e1208' : '#8a6234'; ctx.beginPath(); ctx.ellipse(sq ? w * 0.09 : 0, -h - (sq ? w * 0.1 : 0), w * 0.2, w * 0.07, 0, 0, 6.3); ctx.fill(); }
+    ctx.restore();
+  }
+  function placed(g, who) {
+    const s = g.s, a = s.anim; s.anim = null; s.b[a.cell] = a.p; s.last = a.cell; s.hand = -1;
+    Arcade.tone(who === 1 ? 460 : 330, 0.08, 'triangle', 0.07); const [x, y] = CXY(s, a.cell); g.ring(x, y, '#ffd8a8', s.c1 * 0.45, 3);
+    const w = winLine(s.b, s.sq);
+    if (w) { s.done = true; s.winLn = w; s.winT = 0; if (who === 1) { g.confetti(80); g.addScore(400 * g.lv, g.W / 2, g.H / 2); const L = s.left.length; setTimeout(() => { if (g.state === 'play') g.win(L >= 8 ? 3 : L >= 4 ? 2 : 1); }, 1400); } else { g.message(Arcade.T('¡Quarto de la máquina!', 'Quarto for the machine!'), 1.4); setTimeout(() => { if (g.state === 'play' && g.die()) Arcade.current.def.setup(g); }, 1900); } return; }
+    if (!s.left.length) { s.done = true; g.message(Arcade.T('Empate: otra vez', 'Draw: again'), 1.3); setTimeout(() => { if (g.state === 'play') Arcade.current.def.setup(g); }, 1500); return; }
+    if (who === 1) { g.addScore(10 * Math.max(1, Math.round(g.lv / 2)), x, y - 16); s.phase = 'give'; }
+    else { s.phase = 'mgive'; s.think = rand(0.3, 0.6); }
+  }
+  function give(g, p, who) { const s = g.s; s.left = s.left.filter((x) => x !== p); s.fly = { p, t: 0, who }; Arcade.tone(600, 0.05, 'sine', 0.05); s.phase = 'fly'; }
+  function flown(g) {
+    const s = g.s, f = s.fly; s.fly = null; s.hand = f.p;
+    if (f.who === 1) { s.phase = 'mplace'; s.think = rand(0.45, 0.9); } else s.phase = 'place';
+  }
+  function hit(s, x, y) {
+    for (let i = 0; i < 16; i++) { const [cx, cy] = CXY(s, i); if (Math.abs(x - cx) < s.c1 / 2 && Math.abs(y - cy) < s.c1 / 2) return { cell: i }; }
+    for (let p = 0; p < 16; p++) { const [cx, cy] = RXY(s, p); if (Math.abs(x - cx) < s.c2 / 2 && Math.abs(y - cy) < s.c2 / 2) return { piece: p }; }
+    return null;
+  }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Tú eliges la pieza del rival', deco: ['🟤', '⚪', '🗼', '🧩', '🏆', '🧠'], font: 'serif', bg: ['#4a3220', '#2b1d12'],
+    music: { mode: 'dorian', bpm: 80, wave: 'sine', style: 'chill', root: 52 }, voice: { wave: 'sine', mul: 1, echo: 0.4 },
+    /*EN*/ en: { title: 'Quarto', tag: 'You choose your rival\'s piece', help: 'There are 16 different pieces: <b>tall or short</b>, <b>light or dark</b>, <b>round or square</b>, <b>solid or hollow</b>. Make a line of 4 (row, column or diagonal) that <b>shares any feature</b> and you win. The twist: <b>you don\'t choose the piece you place</b>, your rival gives it to you. Each turn, <b>tap</b> a square to place the piece you were given, then <b>tap</b> one of the remaining pieces to give it to the machine. Careful not to give it a winning piece! From level 10, a <b>2×2 square</b> also counts.', tvHelp: 'D-pad to a square · OK to place · then to a piece · OK to give it.', dict: { 'Coloca tu pieza': 'Place your piece', 'Elige la pieza de la máquina': 'Pick the machine\'s piece', 'Pensando…': 'Thinking…', 'También valen los cuadrados 2×2': '2×2 squares count too' } },
+    /*TV*/ tvHelp: 'Cruceta hasta una casilla · OK para colocar · luego a una pieza · OK para dársela.',
+    tv: { mode: 'tap', targets: (g) => { const s = g.s; if (!s.b) return []; if (s.phase === 'place') return s.b.map((v, i) => (v < 0 ? i : -1)).filter((i) => i >= 0).map((i) => { const [x, y] = CXY(s, i); return { x: x - s.c1 / 2, y: y - s.c1 / 2, w: s.c1, h: s.c1 }; }); if (s.phase === 'give') return s.left.map((p) => { const [x, y] = RXY(s, p); return { x: x - s.c2 / 2, y: y - s.c2 / 2, w: s.c2, h: s.c2 }; }); return []; } },
+    id: 'quarto', title: 'Quarto', emoji: '🗼', color: '#e8b16a', origin: 'Quarto (Blaise Müller) (Lutanho)',
+    help: 'Hay 16 piezas distintas: <b>altas o bajas</b>, <b>claras u oscuras</b>, <b>redondas o cuadradas</b>, <b>macizas o huecas</b>. Si haces una línea de 4 (fila, columna o diagonal) que <b>comparta alguna característica</b>, ganas. Lo curioso: <b>la pieza que colocas no la eliges tú</b>, te la da el rival. En cada turno, <b>toca</b> una casilla para colocar la pieza que te han dado y luego <b>toca</b> una de las que quedan para dársela a la máquina. ¡Cuidado con regalarle una pieza ganadora! Desde el nivel 10 también vale un <b>cuadrado de 2×2</b>.',
+    lives: 3, levels: 0, cap: 20,
+    /*SC*/ demo(g) {
+      const s = g.s; if (s.done || s.anim || s.fly) return { wait: 0.3 };
+      if (s.phase === 'place') { s.plan = think(s.b, s.hand, s.left, { exact: 8, noise: 0, sq: s.sq }); return { tap: CXY(s, s.plan.cell), after: 0.5, say: s.plies++ ? null : Arcade.T('Busca 4 en línea que compartan algo', 'Look for 4 in a row sharing something') }; }
+      if (s.phase === 'give') { let q = s.plan && s.plan.give; if (q == null || !s.left.includes(q)) q = s.left.find((x) => canWin(s.b, x, s.sq) < 0) ?? s.left[0]; return { tap: RXY(s, q), after: 0.5 }; }
+      return { wait: 0.3 };
+    },
+    setup(g) {
+      const o = cfg(g.lv), left = []; for (let p = 0; p < 16; p++) left.push(p);
+      g.s = { b: new Array(16).fill(-1), left, hand: -1, phase: 'mgive', think: 0.6, exact: o.exact, noise: o.noise, sq: o.sq, done: false, anim: null, fly: null, last: -1, winLn: null, winT: 0, plies: 0 };
+      geo(g); if (o.sq) g.message('También valen los cuadrados 2×2', 1.6);
+    },
+    layout(g) { if (g.s.b) geo(g); },
+    tap(g, p) {
+      const s = g.s; if (s.done || s.anim || s.fly) return; const h = hit(s, p.x, p.y); if (!h) return;
+      if (s.phase === 'place' && h.cell != null) { if (s.b[h.cell] >= 0) { Arcade.sfx.bad(); return; } s.anim = { cell: h.cell, p: s.hand, t: 0, who: 1, from: HAND(s) }; s.phase = 'anim'; }
+      else if (s.phase === 'give' && h.piece != null) { if (!s.left.includes(h.piece)) { Arcade.sfx.bad(); return; } give(g, h.piece, 1); }
+    },
+    update(g, dt) {
+      const s = g.s; if (!s.b) return;
+      if (s.done) { s.winT += dt; return; }
+      if (s.anim) { s.anim.t += dt / 0.3; if (s.anim.t >= 1) placed(g, s.anim.who); return; }
+      if (s.fly) { s.fly.t += dt / 0.35; if (s.fly.t >= 1) flown(g); return; }
+      if (s.phase === 'mgive' || s.phase === 'mplace') {
+        s.think -= dt; if (s.think > 0) return;
+        if (s.phase === 'mgive') { // primera pieza o la decidida al colocar
+          let q = s.plan2 != null && s.left.includes(s.plan2) ? s.plan2 : null; s.plan2 = null;
+          if (q == null) { const safe = s.left.filter((x) => canWin(s.b, x, s.sq) < 0); q = Math.random() < s.noise || !safe.length ? pick(s.left) : pick(safe); }
+          give(g, q, 2);
+        } else {
+          const m = think(s.b, s.hand, s.left, { exact: s.exact, noise: s.noise, sq: s.sq });
+          let gv = m.give; if (gv != null && Math.random() < s.noise) gv = pick(s.left.length ? s.left : [gv]);
+          s.plan2 = gv; s.anim = { cell: m.cell, p: s.hand, t: 0, who: 2, from: HAND(s) }; s.phase = 'anim';
+        }
+      }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      const bg = ctx.createRadialGradient(W / 2, H * 0.45, 40, W / 2, H / 2, Math.max(W, H) * 0.75); bg.addColorStop(0, '#5a3d26'); bg.addColorStop(1, '#1e140b'); ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      if (!s.b) return;
+      const c1 = s.c1, c2 = s.c2;
+      // tablero redondo de madera
+      const cx = s.bx + c1 * 2, cy = s.by + c1 * 2;
+      ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.beginPath(); ctx.arc(cx + 3, cy + 6, c1 * 2.55, 0, 6.3); ctx.fill();
+      const wg = ctx.createRadialGradient(cx - c1, cy - c1, 10, cx, cy, c1 * 2.6); wg.addColorStop(0, '#c08a52'); wg.addColorStop(1, '#7a4f26'); ctx.fillStyle = wg; ctx.beginPath(); ctx.arc(cx, cy, c1 * 2.55, 0, 6.3); ctx.fill();
+      const lit = new Set(s.winLn || []);
+      for (let i = 0; i < 16; i++) {
+        const [x, y] = CXY(s, i); ctx.fillStyle = lit.has(i) ? 'rgba(255,224,102,' + (0.45 + 0.3 * Math.sin(g.rt * 8)) + ')' : i === s.hv && s.phase === 'place' && s.b[i] < 0 ? '#8a5a2e' : '#5c3a1a';
+        ctx.beginPath(); ctx.arc(x, y, c1 * 0.42, 0, 6.3); ctx.fill(); ctx.strokeStyle = 'rgba(0,0,0,.35)'; ctx.lineWidth = 2; ctx.stroke();
+      }
+      for (let i = 0; i < 16; i++) if (s.b[i] >= 0) { const [x, y] = CXY(s, i); piece(ctx, x, y - (lit.has(i) ? Math.abs(Math.sin(g.rt * 6 + i)) * 6 : 0), c1 * 0.78, s.b[i]); }
+      // reserva
+      ctx.fillStyle = 'rgba(0,0,0,.22)'; Arcade.rr(ctx, s.rx - 6, s.ry - 6, c2 * s.rc + 12, c2 * (16 / s.rc) + 12, 12); ctx.fill();
+      for (let p = 0; p < 16; p++) {
+        const [x, y] = RXY(s, p); if (!s.left.includes(p)) continue;
+        const sel = s.phase === 'give'; if (sel && p === s.hvp) { ctx.fillStyle = 'rgba(255,255,255,.15)'; Arcade.rr(ctx, x - c2 / 2 + 2, y - c2 / 2 + 2, c2 - 4, c2 - 4, 8); ctx.fill(); }
+        piece(ctx, x, y + (sel ? Math.sin(g.rt * 3 + p) * 1.5 : 0), c2 * 0.82, p);
+      }
+      // mano y animaciones
+      const [hx, hy] = HAND(s), hsz = s.c1 * 0.7;
+      ctx.fillStyle = s.phase === 'place' ? 'rgba(255,212,59,' + (0.25 + 0.12 * Math.sin(g.rt * 5)) + ')' : 'rgba(255,236,204,.1)'; ctx.beginPath(); ctx.arc(hx, hy, s.c1 * 0.5, 0, 6.3); ctx.fill(); ctx.strokeStyle = 'rgba(255,236,204,.35)'; ctx.lineWidth = 2; ctx.setLineDash([5, 5]); ctx.stroke(); ctx.setLineDash([]);
+      if (s.hand >= 0 && !s.anim) piece(ctx, hx, hy - hsz * 0.15, hsz, s.hand);
+      if (s.anim) { const a = s.anim, [tx, ty] = CXY(s, a.cell), t = Math.min(1, a.t), e = 1 - (1 - t) * (1 - t), fx = hx, fy = hy; piece(ctx, fx + (tx - fx) * e, fy + (ty - fy) * e - Math.sin(t * Math.PI) * 30, hsz + (c1 * 0.78 - hsz) * e, a.p); }
+      if (s.fly) { const f = s.fly, [fx, fy] = RXY(s, f.p), t = Math.min(1, f.t), e = 1 - (1 - t) * (1 - t), tx = hx, ty = hy; piece(ctx, fx + (tx - fx) * e, fy + (ty - fy) * e - Math.sin(t * Math.PI) * 40, c2 * 0.82 + (hsz - c2 * 0.82) * e, f.p); }
+      const msg = s.done ? '' : s.phase === 'place' ? 'Coloca tu pieza' : s.phase === 'give' ? 'Elige la pieza de la máquina' : 'Pensando…';
+      Arcade.txt(ctx, msg, W / 2, g.top + 26, 16, '#ffe8cc', 'center', 900);
+      if (s.sq) Arcade.txt(ctx, 'También valen los cuadrados 2×2', W / 2, g.top + 46, 11, '#e8b16a', 'center', 700);
+    },
+    hover(g, x, y) { const s = g.s; if (!s.b) return; const h = hit(s, x, y); s.hv = h && h.cell != null ? h.cell : -1; s.hvp = h && h.piece != null ? h.piece : -1; },
+  });
+})();

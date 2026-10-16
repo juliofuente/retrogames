@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Tafl · Arcade Perdido</title>
+<meta name="theme-color" content="#1b2433">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css?v=6d7635e467">
+</head>
+<body class="game">
+<script src="config.js?v=d6380ae9b0"></script>
+<script src="common.js?v=207858a9a6"></script>
+<script>
+(function () {
+  const { rand, clamp, pick } = Arcade;
+  // piezas: 1 = defensor (tú), 3 = rey (tú), 2 = atacante (máquina)
+  const cfg = (L) => ({ n: L <= 7 ? 7 : L <= 14 ? 9 : 11, noise: clamp(0.45 - L * 0.025, 0.12, 0.45) });
+  function startBoard(n) {
+    const b = new Array(n * n).fill(0), c = (n - 1) / 2, put = (x, y, v) => { b[y * n + x] = v; };
+    const sym = (pts, v) => { for (const [x, y] of pts) { put(x, y, v); put(n - 1 - x, n - 1 - y, v); put(y, x, v); put(n - 1 - y, n - 1 - x, v); } };
+    put(c, c, 3);
+    if (n === 7) { sym([[3, 0], [3, 1]], 2); sym([[3, 2]], 1); }
+    else if (n === 9) { sym([[3, 0], [4, 0], [5, 0], [4, 1]], 2); sym([[4, 2], [4, 3]], 1); }
+    else { sym([[3, 0], [4, 0], [5, 0], [6, 0], [7, 0], [5, 1]], 2); sym([[5, 3], [5, 4], [4, 4]], 1); }
+    return b;
+  }
+  const side = (v) => (v === 2 ? 2 : v ? 1 : 0);
+  function special(n, i) { const x = i % n, y = (i / n) | 0, c = (n - 1) / 2; if ((x === 0 || x === n - 1) && (y === 0 || y === n - 1)) return 'corner'; if (x === c && y === c) return 'throne'; return null; }
+  const D4 = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+  function movesOf(n, b, who) {
+    const out = [];
+    for (let i = 0; i < b.length; i++) {
+      if (side(b[i]) !== who) continue; const x = i % n, y = (i / n) | 0, king = b[i] === 3;
+      for (const [dx, dy] of D4) for (let k = 1; ; k++) {
+        const tx = x + dx * k, ty = y + dy * k; if (tx < 0 || ty < 0 || tx >= n || ty >= n) break; const t = ty * n + tx; if (b[t]) break;
+        const sp = special(n, t); if (sp && !king) { if (sp === 'throne') continue; break; }
+        out.push({ from: i, to: t });
+      }
+    }
+    return out;
+  }
+  function hostile(n, b, i, who) { // ¿la casilla i hace de "yunque" para el bando who?
+    const v = b[i]; if (v && side(v) === who) return true; const sp = special(n, i); if (sp === 'corner') return true; if (sp === 'throne' && !v) return true; return false;
+  }
+  function apply(n, b0, m) {
+    const b = b0.slice(), v = b[m.from], who = side(v); b[m.to] = v; b[m.from] = 0;
+    const x = m.to % n, y = (m.to / n) | 0, caps = [];
+    for (const [dx, dy] of D4) {
+      const ax = x + dx, ay = y + dy, bx = x + 2 * dx, by = y + 2 * dy; if (bx < 0 || by < 0 || bx >= n || by >= n) continue;
+      const a = ay * n + ax, c = by * n + bx; if (!b[a] || side(b[a]) === who || b[a] === 3) continue;
+      if (hostile(n, b, c, who)) { caps.push(a); b[a] = 0; }
+    }
+    let kingTaken = false;
+    if (who === 2 && n <= 9) { // rey débil: lejos del trono basta con encerrarlo entre dos
+      for (const [dx, dy] of D4) { const ax = x + dx, ay = y + dy, bx = x + 2 * dx, by = y + 2 * dy; if (bx < 0 || by < 0 || bx >= n || by >= n) continue; const a = ay * n + ax; if (b[a] !== 3) continue; const c = (n - 1) / 2, nearT = Math.abs(ax - c) + Math.abs(ay - c) <= 1; if (!nearT && hostile(n, b, by * n + bx, 2)) kingTaken = true; }
+    }
+    if (who === 2 && !kingTaken) { const k = b.indexOf(3); if (k >= 0) { const kx = k % n, ky = (k / n) | 0; kingTaken = D4.every(([dx, dy]) => { const tx = kx + dx, ty = ky + dy; if (tx < 0 || ty < 0 || tx >= n || ty >= n) return false; const t = ty * n + tx; return b[t] === 2 || special(n, t) === 'throne'; }); } }
+    return { b, caps, kingTaken, kingOut: v === 3 && special(n, m.to) === 'corner' };
+  }
+  function kingSteps(n, b) { // jugadas del rey hasta una esquina (máx. 3)
+    const k = b.indexOf(3); if (k < 0) return 9; const seen = new Map([[k, 0]]), q = [k];
+    while (q.length) { const c = q.shift(), d = seen.get(c); if (special(n, c) === 'corner') return d; if (d >= 3) continue; const x = c % n, y = (c / n) | 0;
+      for (const [dx, dy] of D4) for (let s = 1; ; s++) { const tx = x + dx * s, ty = y + dy * s; if (tx < 0 || ty < 0 || tx >= n || ty >= n) break; const t = ty * n + tx; if (b[t] && b[t] !== 3) break; if (!seen.has(t)) { seen.set(t, d + 1); q.push(t); } } }
+    return 9;
+  }
+  function cornerLines(n, b) { // casillas libres entre el rey y cada esquina que ve
+    const k = b.indexOf(3); if (k < 0) return []; const x = k % n, y = (k / n) | 0, out = [];
+    for (const [dx, dy] of D4) { const path = []; for (let s = 1; ; s++) { const tx = x + dx * s, ty = y + dy * s; if (tx < 0 || ty < 0 || tx >= n || ty >= n) break; const t = ty * n + tx; if (b[t]) break; if (special(n, t) === 'corner') { out.push(path); break; } path.push(t); } }
+    return out;
+  }
+  function unstoppable(n, b) { // con el atacante a mover: ¿puede tapar la amenaza del rey?
+    const L = cornerLines(n, b); if (!L.length) return false; if (L.length >= 2) return true;
+    const need = new Set(L[0]); if (!need.size) return true;
+    return !movesOf(n, b, 2).some((m) => need.has(m.to));
+  }
+  function evalA(n, b) { // valor para el atacante
+    let att = 0, def = 0; for (const v of b) { if (v === 2) att++; else if (v === 1) def++; }
+    const k = b.indexOf(3); if (k < 0) return 1e5;
+    const ks = kingSteps(n, b), kx = k % n, ky = (k / n) | 0;
+    let ring = 0; for (const [dx, dy] of D4) { const tx = kx + dx, ty = ky + dy; if (tx >= 0 && ty >= 0 && tx < n && ty < n && b[ty * n + tx] === 2) ring++; }
+    let guard = 0; for (const [cx, cy] of [[0, 0], [n - 1, 0], [0, n - 1], [n - 1, n - 1]]) for (const [gx, gy] of [[1, 1], [1, 0], [0, 1]]) { const x = cx ? cx - gx : gx, y = cy ? cy - gy : gy; if (b[y * n + x] === 2) guard += gx && gy ? 7 : 4; }
+    const lost = ks === 1 && unstoppable(n, b);
+    return att * 10 - def * 16 + ring * 14 + guard - (lost ? 5000 : ks === 1 ? 400 : ks === 2 ? 90 : ks === 3 ? 30 : 0);
+  }
+  // respuestas que merece la pena mirar: todas las del rey y las que capturan o se pegan al rey
+  function keyMoves(n, b, who) {
+    const k = b.indexOf(3), kx = k % n, ky = (k / n) | 0;
+    return movesOf(n, b, who).filter((m) => { if (b[m.from] === 3) return true; const tx = m.to % n, ty = (m.to / n) | 0; if (tx === kx || ty === ky) return true; for (const [dx, dy] of D4) { const ax = tx + dx, ay = ty + dy; if (ax < 0 || ay < 0 || ax >= n || ay >= n) continue; const v = b[ay * n + ax]; if (v && side(v) !== who) return true; } return false; });
+  }
+  function searchA(n, b, noise) { // atacante: su jugada y la mejor respuesta del defensor
+    const ms = movesOf(n, b, 2); let best = -1e9, bm = null;
+    for (const m of ms) {
+      const r = apply(n, b, m); let v;
+      if (r.kingTaken) v = 1e6;
+      else { let worst = evalA(n, r.b); for (const m2 of keyMoves(n, r.b, 1)) { const r2 = apply(n, r.b, m2); const w = r2.kingOut ? -1e6 : evalA(n, r2.b); if (w < worst) worst = w; if (worst <= -1e6) break; } v = worst; }
+      v += Math.random() * (1 + noise * 40); if (v > best) { best = v; bm = m; }
+    }
+    return bm;
+  }
+  function searchD(n, b) { // defensor (demo)
+    const ms = movesOf(n, b, 1); let best = -1e9, bm = null;
+    for (const m of ms) {
+      const r = apply(n, b, m); let v;
+      if (r.kingOut) v = 1e6;
+      else { let worst = -evalA(n, r.b); for (const m2 of keyMoves(n, r.b, 2)) { const r2 = apply(n, r.b, m2); const w = r2.kingTaken ? -1e6 : -evalA(n, r2.b); if (w < worst) worst = w; if (worst <= -1e6) break; } v = worst; }
+      v += Math.random(); if (v > best) { best = v; bm = m; }
+    }
+    return bm;
+  }
+  function geo(g) { const s = g.s, n = s.n, Ha = g.bot - g.top - 76; s.cs = Math.min((g.W - 20) / n, Ha / n, 76); s.ox = (g.W - s.cs * n) / 2; s.oy = g.top + 64 + (Ha - s.cs * n) / 2; }
+  const XY = (s, i) => [s.ox + (i % s.n + 0.5) * s.cs, s.oy + (((i / s.n) | 0) + 0.5) * s.cs];
+  function piece(ctx, x, y, r, v) {
+    ctx.fillStyle = 'rgba(0,0,0,.4)'; ctx.beginPath(); ctx.ellipse(x + 1, y + r * 0.3, r, r * 0.8, 0, 0, 6.3); ctx.fill();
+    const c = v === 2 ? ['#ff8787', '#c92a2a', '#5c0f0f'] : ['#ffffff', '#e9ecef', '#adb5bd'];
+    const gr = ctx.createRadialGradient(x - r * 0.3, y - r * 0.35, r * 0.1, x, y, r); gr.addColorStop(0, c[0]); gr.addColorStop(0.6, c[1]); gr.addColorStop(1, c[2]);
+    ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(x, y, r, 0, 6.3); ctx.fill();
+    ctx.strokeStyle = v === 2 ? 'rgba(255,255,255,.25)' : 'rgba(0,0,0,.18)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x, y, r * 0.6, 0, 6.3); ctx.stroke();
+    if (v === 3) Arcade.emoji(ctx, '👑', x, y - r * 0.05, r * 1.25);
+  }
+  function play(g, m, who) { const s = g.s; s.anim = { m, who, t: 0, v: s.b[m.from] }; s.sel = -1; Arcade.tone(who === 1 ? 460 : 320, 0.06, 'triangle', 0.06); }
+  function animDone(g) {
+    const s = g.s, a = s.anim; s.anim = null; const r = apply(s.n, s.b, a.m); s.b = r.b; s.last = a.m.to; s.plies++; if (a.who === 1) s.moves++;
+    for (const c of r.caps) { const [x, y] = XY(s, c); g.burst(x, y, { n: 14, color: a.who === 1 ? ['#c92a2a', '#ffa8a8'] : ['#fff', '#adb5bd'], speed: 180 }); }
+    if (r.caps.length) { Arcade.sfx.pop(); if (a.who === 1) g.addScore(60 * r.caps.length * Math.max(1, Math.round(g.lv / 2)), ...XY(s, a.m.to)); }
+    if (r.kingOut) { s.done = true; const [x, y] = XY(s, a.m.to); g.ring(x, y, '#ffd43b', s.cs * 1.2, 6); g.confetti(90); g.addScore(500 * g.lv, x, y); const par = s.n === 7 ? 8 : s.n === 9 ? 12 : 16, st = s.moves <= par ? 3 : s.moves <= par * 1.6 ? 2 : 1; setTimeout(() => { if (g.state === 'play') g.win(st); }, 1400); return; }
+    if (r.kingTaken) return lose(g, Arcade.T('¡Han atrapado al rey!', 'The king has been caught!'));
+    const next = 3 - a.who;
+    if (!movesOf(s.n, s.b, next).length) { if (next === 1) return lose(g, Arcade.T('No puedes mover', 'You can\'t move')); s.done = true; g.confetti(60); setTimeout(() => { if (g.state === 'play') g.win(1); }, 1200); return; }
+    if (s.plies >= 220) { s.done = true; g.message(Arcade.T('Empate: otra vez', 'Draw: again'), 1.3); setTimeout(() => { if (g.state === 'play') Arcade.current.def.setup(g); }, 1500); return; }
+    s.turn = next; if (next === 2) s.think = rand(0.35, 0.7);
+    if (next === 1 && kingSteps(s.n, s.b) === 1) g.message(Arcade.T('¡El rey ve una esquina!', 'The king can see a corner!'), 0.9);
+  }
+  function lose(g, why) { const s = g.s; s.done = true; g.message(why, 1.5); setTimeout(() => { if (g.state === 'play' && g.die()) Arcade.current.def.setup(g); }, 1900); }
+  function tapCell(g, i) {
+    const s = g.s; if (s.done || s.turn !== 1 || s.anim || i < 0) return;
+    if (side(s.b[i]) === 1) { s.sel = i; s.opts = movesOf(s.n, s.b, 1).filter((m) => m.from === i); Arcade.tone(600, 0.04, 'square', 0.04); return; }
+    if (s.sel < 0) return; const m = s.opts.find((m) => m.to === i);
+    if (!m) { Arcade.sfx.bad(); return; } play(g, m, 1);
+  }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Lleva al rey a una esquina', deco: ['👑', '⚔️', '🛡️', '🏰', '🏆', '🧠'], font: 'serif', bg: ['#2b3a52', '#1b2433'],
+    music: { mode: 'aeolian', bpm: 84, wave: 'triangle', style: 'chill', root: 50 }, voice: { wave: 'triangle', mul: 1, echo: 0.4 },
+    /*EN*/ en: { title: 'Tafl', tag: 'Get the king to a corner', help: 'The old Viking game. You defend the <b>king</b> 👑 with the white pieces; the machine\'s red attackers surround you. All pieces move <b>like a rook</b>: as far as they like in a straight line, without jumping. <b>Tap</b> a piece and then a lit square. You <b>capture</b> an enemy piece by trapping it between two of yours (or one of yours and a corner). You win if the king reaches one of the <b>four corners</b> 🏰; you lose if the king is caught: on the small boards two attackers on opposite sides are enough (except next to the throne, where it takes four); on the big board it must be surrounded on all four sides. Only the king may stop on the centre (throne) and in the corners. The board grows: Brandubh 7×7, Tablut 9×9 and Hnefatafl 11×11.', tvHelp: 'D-pad to a white piece · OK · then to a lit square · OK.', dict: { 'Tu turno': 'Your turn', 'Pensando…': 'Thinking…', 'Atacantes: ': 'Attackers: ', 'Defensores: ': 'Defenders: ' } },
+    /*TV*/ tvHelp: 'Cruceta hasta una pieza blanca · OK · luego a una casilla iluminada · OK.',
+    tv: { mode: 'tap', targets: (g) => { const s = g.s; if (!s.b) return []; const set = new Set(); s.b.forEach((v, i) => { if (side(v) === 1) set.add(i); }); if (s.sel >= 0) s.opts.forEach((m) => set.add(m.to)); return [...set].map((i) => ({ x: s.ox + (i % s.n) * s.cs, y: s.oy + Math.floor(i / s.n) * s.cs, w: s.cs, h: s.cs })); } },
+    id: 'tafl', title: 'Tafl', emoji: '🛡️', color: '#74c0fc', origin: 'Hnefatafl / Tablut / Brandubh (Lutanho)',
+    help: 'El juego de los vikingos. Defiendes al <b>rey</b> 👑 con las piezas blancas; los atacantes rojos de la máquina te rodean. Todas las piezas se mueven <b>como la torre</b>: lo que quieran en línea recta, sin saltar. <b>Toca</b> una pieza y luego una casilla iluminada. <b>Capturas</b> una pieza rival si la encierras entre dos tuyas (o entre una tuya y una esquina). Ganas si el rey llega a una de las <b>cuatro esquinas</b> 🏰; pierdes si atrapan al rey: en los tableros pequeños basta con encerrarlo entre dos atacantes (salvo junto al trono, donde hacen falta cuatro); en el grande hay que rodearlo por los cuatro lados. Solo el rey puede pararse en el centro (el trono) y en las esquinas. El tablero crece: Brandubh 7×7, Tablut 9×9 y Hnefatafl 11×11.',
+    lives: 3, levels: 0, cap: 20,
+    /*SC*/ demo(g) {
+      const s = g.s; if (s.done || s.turn !== 1 || s.anim) return { wait: 0.3 };
+      if (!s.botMv) s.botMv = searchD(s.n, s.b); const m = s.botMv; if (!m) return { wait: 0.3 };
+      if (s.sel !== m.from) return { tap: XY(s, m.from), after: 0.25, say: s.moves ? null : Arcade.T('Abre camino al rey hacia una esquina', 'Clear a path for the king to a corner') };
+      s.botMv = null; return { tap: XY(s, m.to), after: 0.4 };
+    },
+    setup(g) {
+      const o = cfg(g.lv);
+      g.s = { n: o.n, b: startBoard(o.n), noise: o.noise, turn: 2, think: 0.9, sel: -1, opts: [], anim: null, done: false, plies: 0, moves: 0, last: -1, botMv: null };
+      geo(g); g.message(o.n === 7 ? 'Brandubh' : o.n === 9 ? 'Tablut' : 'Hnefatafl', 1.1);
+    },
+    layout(g) { if (g.s.b) geo(g); },
+    tap(g, p) { const s = g.s, c = Math.floor((p.x - s.ox) / s.cs), r = Math.floor((p.y - s.oy) / s.cs); tapCell(g, c >= 0 && r >= 0 && c < s.n && r < s.n ? r * s.n + c : -1); },
+    update(g, dt) {
+      const s = g.s; if (!s.b) return;
+      if (s.anim) { s.anim.t += dt / 0.26; if (s.anim.t >= 1) animDone(g); return; }
+      if (s.turn === 2 && !s.done) {
+        s.think -= dt; if (s.think > 0) return;
+        const ms = movesOf(s.n, s.b, 2); if (!ms.length) return;
+        let m = searchA(s.n, s.b, s.noise); if (Math.random() < s.noise * 0.6) { const r = pick(ms), rr = apply(s.n, s.b, r); if (!movesOf(s.n, rr.b, 1).some((k) => apply(s.n, rr.b, k).kingOut) || Math.random() < s.noise) m = r; }
+        play(g, m || ms[0], 2);
+      }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      const bg = ctx.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, '#2b3a52'); bg.addColorStop(1, '#0e141d'); ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      if (!s.b) return;
+      const n = s.n, cs = s.cs;
+      ctx.fillStyle = '#5c3a1a'; Arcade.rr(ctx, s.ox - 10, s.oy - 10, cs * n + 20, cs * n + 20, 12); ctx.fill();
+      for (let i = 0; i < n * n; i++) {
+        const x = s.ox + (i % n) * cs, y = s.oy + Math.floor(i / n) * cs, sp = special(n, i);
+        ctx.fillStyle = sp === 'corner' ? '#e8b16a' : sp === 'throne' ? '#c08a52' : ((i % n) + ((i / n) | 0)) % 2 ? '#d9b98c' : '#e6c99d'; ctx.fillRect(x, y, cs, cs);
+        ctx.strokeStyle = 'rgba(92,58,26,.35)'; ctx.lineWidth = 1; ctx.strokeRect(x + 0.5, y + 0.5, cs - 1, cs - 1);
+        if (sp === 'corner') Arcade.emoji(ctx, '🏰', x + cs / 2, y + cs / 2, cs * 0.6); else if (sp === 'throne' && !s.b[i]) { ctx.strokeStyle = '#8a5a2e'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x + cs / 2, y + cs / 2, cs * 0.3, 0, 6.3); ctx.stroke(); }
+      }
+      if (s.last >= 0) { const [x, y] = XY(s, s.last); ctx.strokeStyle = 'rgba(255,212,59,.8)'; ctx.lineWidth = 3; ctx.strokeRect(x - cs / 2 + 2, y - cs / 2 + 2, cs - 4, cs - 4); }
+      if (s.sel >= 0 && !s.anim) for (const m of s.opts) { const [x, y] = XY(s, m.to), win = s.b[s.sel] === 3 && special(n, m.to) === 'corner'; ctx.fillStyle = win ? 'rgba(255,212,59,.85)' : 'rgba(64,192,87,.55)'; ctx.beginPath(); ctx.arc(x, y, cs * (win ? 0.3 : 0.15), 0, 6.3); ctx.fill(); }
+      const r = cs * 0.38;
+      for (let i = 0; i < n * n; i++) { const v = s.b[i]; if (!v || (s.anim && s.anim.m.from === i)) continue; const [x, y] = XY(s, i); piece(ctx, x, y - (s.sel === i ? 5 + Math.sin(g.rt * 8) * 2 : 0), r, v); }
+      if (s.anim) { const a = s.anim, [x0, y0] = XY(s, a.m.from), [x1, y1] = XY(s, a.m.to), t = Math.min(1, a.t), e = t * t * (3 - 2 * t); piece(ctx, x0 + (x1 - x0) * e, y0 + (y1 - y0) * e - Math.sin(t * Math.PI) * cs * 0.2, r, a.v); }
+      let att = 0, def = 0; for (const v of s.b) { if (v === 2) att++; else if (v === 1) def++; }
+      Arcade.txt(ctx, s.done ? '' : s.turn === 1 ? 'Tu turno' : 'Pensando…', W / 2, g.top + 24, 16, '#e7f5ff', 'center', 900);
+      Arcade.txt(ctx, 'Defensores: ' + def + '   ·   Atacantes: ' + att, W / 2, g.top + 46, 12, '#a5d8ff', 'center', 700);
+    },
+  });
+})();
+</script>
+</body>
+</html>

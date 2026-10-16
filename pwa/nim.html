@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Nim · Arcade Perdido</title>
+<meta name="theme-color" content="#1b1530">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css?v=6d7635e467">
+</head>
+<body class="game">
+<script src="config.js?v=d6380ae9b0"></script>
+<script src="common.js?v=207858a9a6"></script>
+<script>
+(function () {
+  const { rand, clamp, pick, shuffle } = Arcade;
+  function cfg(L) {
+    const rows = clamp(2 + Math.floor(L / 4), 2, 5), mx = clamp(3 + Math.floor(L / 3), 3, 9);
+    const maxTake = L >= 8 && L % 3 === 2 ? 3 : 0, lastWins = L >= 4 && L % 3 === 1;
+    return { rows, mx, maxTake, lastWins, noise: clamp(0.55 - L * 0.03, 0.12, 0.55) };
+  }
+  // ¿gana quien mueve en este estado?
+  function wins(st, o, memo) {
+    const key = st.slice().sort((a, b) => a - b).join(','); if (memo.has(key)) return memo.get(key);
+    const total = st.reduce((a, b) => a + b, 0); let r;
+    if (!total) r = !o.lastWins; // sin cerillas: si "el último pierde", el rival cogió la última
+    else {
+      r = false;
+      for (let i = 0; i < st.length && !r; i++) for (let k = 1; k <= st[i] && (!o.maxTake || k <= o.maxTake) && !r; k++) { st[i] -= k; if (!wins(st, o, memo)) r = true; st[i] += k; }
+    }
+    memo.set(key, r); return r;
+  }
+  function goodMoves(st, o, memo) { const out = []; for (let i = 0; i < st.length; i++) for (let k = 1; k <= st[i] && (!o.maxTake || k <= o.maxTake); k++) { st[i] -= k; if (!wins(st, o, memo)) out.push([i, k]); st[i] += k; } return out; }
+  function allMoves(st, o) { const out = []; for (let i = 0; i < st.length; i++) for (let k = 1; k <= st[i] && (!o.maxTake || k <= o.maxTake); k++) out.push([i, k]); return out; }
+  function geo(g) {
+    const s = g.s, n = s.st.length, Ha = g.bot - g.top - 150, maxM = Math.max(...s.init);
+    s.rh = Math.min(Ha / n, 110); s.mw = Math.min((g.W - 30) / maxM, 46); s.mh = Math.min(s.rh * 0.78, s.mw * 2.6, 90);
+    s.oy = g.top + 90 + (Ha - s.rh * n) / 2; s.btn = { x: g.W / 2 - 90, y: g.bot - 62, w: 180, h: 48 };
+  }
+  const MXY = (s, r, k) => { const n = s.init[r]; return [s.W2 - (n * s.mw) / 2 + (k + 0.5) * s.mw, s.oy + (r + 0.5) * s.rh]; };
+  function match(ctx, x, y, h, w, lit, burn) {
+    const sw = Math.max(4, w * 0.18);
+    ctx.fillStyle = 'rgba(0,0,0,.3)'; ctx.fillRect(x - sw / 2 + 2, y - h / 2 + 4, sw, h);
+    const gr = ctx.createLinearGradient(x - sw / 2, 0, x + sw / 2, 0); gr.addColorStop(0, '#c99a5b'); gr.addColorStop(0.5, '#f3d9a4'); gr.addColorStop(1, '#b07a3c');
+    ctx.fillStyle = burn ? '#3b2410' : gr; ctx.fillRect(x - sw / 2, y - h / 2 + sw, sw, h - sw);
+    ctx.fillStyle = lit ? '#ffd43b' : '#e03131'; ctx.beginPath(); ctx.ellipse(x, y - h / 2 + sw * 0.9, sw * 0.85, sw * 1.15, 0, 0, 6.3); ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.35)'; ctx.beginPath(); ctx.arc(x - sw * 0.25, y - h / 2 + sw * 0.6, sw * 0.28, 0, 6.3); ctx.fill();
+    if (burn) { const f = ctx.createRadialGradient(x, y - h / 2, 1, x, y - h / 2, sw * 3); f.addColorStop(0, 'rgba(255,244,180,.95)'); f.addColorStop(0.5, 'rgba(255,146,43,.7)'); f.addColorStop(1, 'rgba(255,80,0,0)'); ctx.fillStyle = f; ctx.beginPath(); ctx.ellipse(x, y - h / 2 - sw, sw * 2, sw * 3.2, 0, 0, 6.3); ctx.fill(); }
+  }
+  function take(g, r, k, who) {
+    const s = g.s, o = s.o, memo = s.memo;
+    if (who === 1 && wins(s.st, o, memo)) { s.st[r] -= k; if (wins(s.st, o, memo)) s.miss++; s.st[r] += k; }
+    const n0 = s.st[r]; s.st[r] -= k; s.sel = null;
+    for (let j = 0; j < k; j++) { const [x, y] = MXY(s, r, n0 - 1 - j); s.fly.push({ x, y, vx: rand(-60, 60), vy: rand(-320, -200), rot: 0, vr: rand(-6, 6), t: -j * 0.06 }); }
+    Arcade.noise && Arcade.noise(0.18, 0.06); for (let j = 0; j < k; j++) setTimeout(() => Arcade.tone(900 + j * 80, 0.05, 'triangle', 0.04), j * 60);
+    s.lastMove = { who, r, k };
+    const total = s.st.reduce((a, b) => a + b, 0);
+    if (!total) {
+      s.done = true; const iWin = o.lastWins ? who === 1 : who === 2;
+      if (iWin) { g.confetti(70); g.addScore(300 * g.lv, g.W / 2, g.H / 2); setTimeout(() => { if (g.state === 'play') g.win(s.miss === 0 ? 3 : s.miss <= 1 ? 2 : 1); }, 1300); }
+      else { g.message(o.lastWins ? Arcade.T('La máquina cogió la última', 'The machine took the last one') : Arcade.T('Te ha tocado la última', 'You were left with the last one'), 1.5); setTimeout(() => { if (g.state === 'play' && g.die()) Arcade.current.def.setup(g); }, 1900); }
+      return;
+    }
+    if (who === 1) g.addScore(10 * k, ...MXY(s, r, 0));
+    s.turn = 3 - who; if (s.turn === 2) s.think = rand(0.6, 1.1);
+  }
+  function hitMatch(s, x, y) { for (let r = 0; r < s.st.length; r++) for (let k = 0; k < s.st[r]; k++) { const [mx, my] = MXY(s, r, k); if (Math.abs(x - mx) < s.mw / 2 && Math.abs(y - my) < s.rh / 2) return [r, k]; } return null; }
+  const inBtn = (s, x, y) => x >= s.btn.x && x <= s.btn.x + s.btn.w && y >= s.btn.y && y <= s.btn.y + s.btn.h;
+  function selectAt(g, r, k) { // desde la cerilla tocada hasta el final de la fila
+    const s = g.s, o = s.o; let cnt = s.st[r] - k; if (o.maxTake) cnt = Math.min(cnt, o.maxTake);
+    s.sel = { r, k: cnt }; Arcade.tone(500 + cnt * 40, 0.04, 'square', 0.04);
+  }
+  function rules(o) { return (o.lastWins ? 'Quien coge la última GANA' : 'Quien coge la última PIERDE') + (o.maxTake ? ' · máx. ' + o.maxTake : ''); }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'No te quedes con la última cerilla', deco: ['🔥', '🧠', '🔢', '🏆', '✨', '🎯'], font: 'round', bg: ['#2b2350', '#1b1530'],
+    music: { mode: 'dorian', bpm: 76, wave: 'triangle', style: 'chill', root: 50 }, voice: { wave: 'sine', mul: 1, echo: 0.4 },
+    /*EN*/ en: { title: 'Nim', tag: 'Don\'t get stuck with the last match', help: 'There are rows of matches. On your turn, take <b>as many as you like from a single row</b> (at least one): <b>tap</b> a match and it is selected together with the ones to its right, then tap <b>Take</b>. Then the machine takes its turn. Normally, <b>whoever takes the last match loses</b>; some levels reverse it (the last one wins) or set a maximum per turn — read the rule above the table. Every position can be won if you think ahead: look for moves that leave pairs.', tvHelp: 'D-pad to a match · OK to select · then to Take · OK.', dict: { 'Coger': 'Take', 'Tu turno': 'Your turn', 'Pensando…': 'Thinking…', 'Quien coge la última GANA': 'Whoever takes the last one WINS', 'Quien coge la última PIERDE': 'Whoever takes the last one LOSES', 'máx. ': 'max ', 'La máquina coge ': 'The machine takes ', 'Toca una cerilla': 'Tap a match' } },
+    /*TV*/ tvHelp: 'Cruceta hasta una cerilla · OK para elegir · luego a Coger · OK.',
+    tv: { mode: 'tap', targets: (g) => { const s = g.s; if (!s.st || s.turn !== 1 || s.done) return []; const out = []; for (let r = 0; r < s.st.length; r++) for (let k = 0; k < s.st[r]; k++) { const [x, y] = MXY(s, r, k); out.push({ x: x - s.mw / 2, y: y - s.rh / 2, w: s.mw, h: s.rh }); } if (s.sel) out.push(s.btn); return out; } },
+    id: 'nim', title: 'Nim', emoji: '🔥', color: '#ff922b', origin: 'Nim / Marienbad (Lutanho)',
+    help: 'Hay filas de cerillas. En tu turno coge <b>las que quieras de una sola fila</b> (al menos una): <b>toca</b> una cerilla y quedará elegida junto con las de su derecha; luego pulsa <b>Coger</b>. Después juega la máquina. Normalmente <b>quien coge la última pierde</b>; en algunos niveles es al revés (la última gana) o hay un máximo por turno: mira la regla encima de la mesa. Todas las partidas se pueden ganar si piensas: busca dejar las filas por parejas.',
+    lives: 3, levels: 0, cap: 20,
+    /*SC*/ demo(g) {
+      const s = g.s; if (s.done || s.turn !== 1) return { wait: 0.3 };
+      const gm = goodMoves(s.st, s.o, s.memo), m = gm.length ? gm[0] : pick(allMoves(s.st, s.o)); const [r, k] = m;
+      if (!s.sel || s.sel.r !== r || s.sel.k !== k) return { tap: MXY(s, r, s.st[r] - k), after: 0.4, say: s.plies++ ? null : Arcade.T('Toca una cerilla y luego Coger', 'Tap a match, then Take') };
+      return { tap: [s.btn.x + s.btn.w / 2, s.btn.y + s.btn.h / 2], after: 0.6 };
+    },
+    setup(g) {
+      const o = cfg(g.lv); let st, memo, tries = 0;
+      do { st = []; for (let i = 0; i < o.rows; i++) st.push(Math.floor(rand(1, o.mx + 1))); memo = new Map(); tries++; } while ((!wins(st.slice(), o, memo) || st.reduce((a, b) => a + b, 0) < o.rows * 2) && tries < 500);
+      if (g.lv <= 2) st.sort((a, b) => a - b);
+      g.s = { o, st, init: st.slice(), memo, turn: 1, sel: null, done: false, think: 0, fly: [], miss: 0, plies: 0, lastMove: null, W2: g.W / 2 };
+      geo(g); g.message(rules(o), 1.8);
+    },
+    layout(g) { if (g.s.st) { g.s.W2 = g.W / 2; geo(g); } },
+    tap(g, p) {
+      const s = g.s; if (s.done || s.turn !== 1) return;
+      if (s.sel && inBtn(s, p.x, p.y)) return take(g, s.sel.r, s.sel.k, 1);
+      const h = hitMatch(s, p.x, p.y); if (h) selectAt(g, h[0], h[1]); else s.sel = null;
+    },
+    update(g, dt) {
+      const s = g.s; if (!s.st) return;
+      for (const f of s.fly) { f.t += dt; if (f.t < 0) continue; f.vy += 700 * dt; f.x += f.vx * dt; f.y += f.vy * dt; f.rot += f.vr * dt; }
+      s.fly = s.fly.filter((f) => f.y < g.H + 80);
+      if (s.turn === 2 && !s.done) {
+        s.think -= dt; if (s.think > 0) return;
+        const gm = goodMoves(s.st, s.o, s.memo), m = gm.length && Math.random() > s.o.noise ? pick(gm) : pick(allMoves(s.st, s.o));
+        g.message('La máquina coge ' + m[1], 0.8); take(g, m[0], m[1], 2);
+      }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      const bg = ctx.createRadialGradient(W / 2, H / 2, 30, W / 2, H / 2, Math.max(W, H) * 0.7); bg.addColorStop(0, '#3a2f6b'); bg.addColorStop(1, '#120d22'); ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      if (!s.st) return;
+      // mesa
+      const ty = s.oy - 16, th = s.rh * s.st.length + 32;
+      ctx.fillStyle = 'rgba(0,0,0,.35)'; Arcade.rr(ctx, 14, ty + 6, W - 28, th, 18); ctx.fill();
+      const tg = ctx.createLinearGradient(0, ty, 0, ty + th); tg.addColorStop(0, '#2f6b45'); tg.addColorStop(1, '#1f4a2f'); ctx.fillStyle = tg; Arcade.rr(ctx, 12, ty, W - 24, th, 18); ctx.fill();
+      for (let r = 0; r < s.st.length; r++) {
+        for (let k = 0; k < s.init[r]; k++) { const [x, y] = MXY(s, r, k); ctx.fillStyle = 'rgba(0,0,0,.12)'; ctx.fillRect(x - 3, y - s.mh / 2 + 8, 6, s.mh - 8); }
+        for (let k = 0; k < s.st[r]; k++) {
+          const [x, y] = MXY(s, r, k), on = s.sel && s.sel.r === r && k >= s.st[r] - s.sel.k;
+          match(ctx, x, y - (on ? 10 + Math.sin(g.rt * 8 + k) * 2 : 0), s.mh, s.mw, on, false);
+        }
+        Arcade.txt(ctx, String(s.st[r]), 26, s.oy + (r + 0.5) * s.rh, 13, 'rgba(255,255,255,.5)', 'left', 800);
+      }
+      for (const f of s.fly) { if (f.t < 0) continue; ctx.save(); ctx.translate(f.x, f.y); ctx.rotate(f.rot); match(ctx, 0, 0, s.mh, s.mw, true, true); ctx.restore(); }
+      Arcade.txt(ctx, rules(s.o), W / 2, g.top + 34, 14, s.o.lastWins ? '#8ce99a' : '#ffc078', 'center', 900);
+      Arcade.txt(ctx, s.done ? '' : s.turn === 1 ? (s.sel ? 'Tu turno' : 'Toca una cerilla') : 'Pensando…', W / 2, g.top + 58, 14, '#d0bfff', 'center', 800);
+      if (s.turn === 1 && !s.done) {
+        const b = s.btn, on = !!s.sel; ctx.globalAlpha = on ? 1 : 0.35; ctx.fillStyle = on ? '#ff922b' : '#555'; Arcade.rr(ctx, b.x, b.y, b.w, b.h, 24); ctx.fill();
+        Arcade.txt(ctx, 'Coger' + (on ? ' ' + s.sel.k : ''), b.x + b.w / 2, b.y + b.h / 2, 20, '#fff', 'center', 900); ctx.globalAlpha = 1;
+      }
+    },
+  });
+})();
+</script>
+</body>
+</html>

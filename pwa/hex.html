@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Hex · Arcade Perdido</title>
+<meta name="theme-color" content="#101a33">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css?v=6d7635e467">
+</head>
+<body class="game">
+<script src="config.js?v=d6380ae9b0"></script>
+<script src="common.js?v=207858a9a6"></script>
+<script>
+(function () {
+  const { rand, clamp, pick } = Arcade;
+  // nivel → [tamaño, profundidad, ruido]
+  const cfg = (L) => [clamp(5 + Math.floor((L - 1) / 3), 5, 11), L <= 5 ? 1 : 2, clamp(0.5 - L * 0.03, 0.12, 0.5)];
+  const NB = [[-1, 0], [-1, 1], [0, -1], [0, 1], [1, -1], [1, 0]];
+  // jugador 1 (rojo) une arriba y abajo; jugador 2 (azul, máquina) une izquierda y derecha
+  function dist(b, n, who) {
+    const D = new Array(n * n).fill(1e9), dq = [];
+    for (let k = 0; k < n; k++) {
+      const i = who === 1 ? k : k * n; const v = b[i]; if (v === 3 - who) continue;
+      const c = v === who ? 0 : 1; if (c < D[i]) { D[i] = c; c ? dq.push(i) : dq.unshift(i); }
+    }
+    let best = 1e9;
+    while (dq.length) {
+      const i = dq.shift(), d = D[i], r = (i / n) | 0, c = i % n;
+      if ((who === 1 ? r : c) === n - 1) best = Math.min(best, d);
+      for (const [dr, dc] of NB) {
+        const rr = r + dr, cc = c + dc; if (rr < 0 || cc < 0 || rr >= n || cc >= n) continue; const j = rr * n + cc, v = b[j];
+        if (v === 3 - who) continue; const nd = d + (v === who ? 0 : 1); if (nd < D[j]) { D[j] = nd; v === who ? dq.unshift(j) : dq.push(j); }
+      }
+    }
+    return best;
+  }
+  function chain(b, n, who) { // camino ganador para iluminarlo
+    const prev = {}, q = [];
+    for (let k = 0; k < n; k++) { const i = who === 1 ? k : k * n; if (b[i] === who) { prev[i] = -1; q.push(i); } }
+    while (q.length) {
+      const i = q.shift(), r = (i / n) | 0, c = i % n;
+      if ((who === 1 ? r : c) === n - 1) { const out = []; for (let j = i; j !== -1; j = prev[j]) out.push(j); return out; }
+      for (const [dr, dc] of NB) { const rr = r + dr, cc = c + dc; if (rr < 0 || cc < 0 || rr >= n || cc >= n) continue; const j = rr * n + cc; if (b[j] === who && !(j in prev)) { prev[j] = i; q.push(j); } }
+    }
+    return [];
+  }
+  const centre = (n, i) => { const r = (i / n) | 0, c = i % n, m = (n - 1) / 2; return -(Math.abs(r - m) + Math.abs(c - m) + Math.abs(r + c - 2 * m)) * 0.01; };
+  function value(b, n, who) { const me = dist(b, n, who), op = dist(b, n, 3 - who); if (me === 0) return 1000; if (op === 0) return -1000; return op - me; }
+  function ranked(b, n, who) {
+    const out = [];
+    for (let i = 0; i < n * n; i++) { if (b[i]) continue; b[i] = who; out.push([value(b, n, who) + centre(n, i) + Math.random() * 0.004, i]); b[i] = 0; }
+    return out.sort((a, c) => c[0] - a[0]);
+  }
+  function best(b, n, who, depth) {
+    const r = ranked(b, n, who); if (!r.length) return -1; if (depth <= 1 || r[0][0] >= 1000) return r[0][1];
+    let bv = -1e9, bm = r[0][1];
+    for (const [, i] of r.slice(0, 10)) {
+      b[i] = who; const rep = ranked(b, n, 3 - who)[0]; let v;
+      if (!rep) v = value(b, n, who); else { b[rep[1]] = 3 - who; v = value(b, n, who) + centre(n, i); b[rep[1]] = 0; }
+      b[i] = 0; if (v > bv) { bv = v; bm = i; }
+    }
+    return bm;
+  }
+  function geo(g) {
+    const s = g.s, n = s.n, Ha = g.bot - g.top - 90, Wa = g.W - 24;
+    s.cs = Math.min(Wa / ((n - 1) * 1.5 + 2.4), Ha / ((n - 1) * 0.866 + 2), 64);
+    const w = s.cs * (n - 1) * 1.5, h = s.cs * (n - 1) * 0.866;
+    s.ox = (g.W - w) / 2; s.oy = g.top + 70 + (Ha - h) / 2;
+  }
+  const XY = (s, i) => { const r = (i / s.n) | 0, c = i % s.n; return [s.ox + (c + r / 2) * s.cs, s.oy + r * s.cs * 0.866]; };
+  function hexPath(ctx, x, y, R) { ctx.beginPath(); for (let k = 0; k < 6; k++) { const a = Math.PI / 6 + k * Math.PI / 3; ctx.lineTo(x + Math.cos(a) * R, y + Math.sin(a) * R); } ctx.closePath(); }
+  function stone(ctx, x, y, r, who, k) {
+    const c = who === 1 ? ['#ffc9c9', '#f03e3e', '#9b1c1c'] : ['#d0ebff', '#228be6', '#0b3d75'];
+    ctx.save(); ctx.translate(x, y); ctx.scale(k, k);
+    ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.beginPath(); ctx.ellipse(1, r * 0.25, r, r * 0.9, 0, 0, 6.3); ctx.fill();
+    const gr = ctx.createRadialGradient(-r * 0.35, -r * 0.4, r * 0.1, 0, 0, r); gr.addColorStop(0, c[0]); gr.addColorStop(0.55, c[1]); gr.addColorStop(1, c[2]);
+    ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(0, 0, r, 0, 6.3); ctx.fill(); ctx.restore();
+  }
+  function place(g, i, who) {
+    const s = g.s; s.b[i] = who; s.pop[i] = 0; s.last = i; s.moves += who === 1 ? 1 : 0;
+    Arcade.tone(who === 1 ? 520 : 380, 0.07, 'triangle', 0.07); const [x, y] = XY(s, i); g.ring(x, y, who === 1 ? '#ff8787' : '#74c0fc', s.cs * 0.6, 3);
+    if (dist(s.b, s.n, who) === 0) return finish(g, who);
+    const me = dist(s.b, s.n, 1), op = dist(s.b, s.n, 2);
+    if (who === 1) g.addScore(10 * Math.max(1, Math.round(g.lv / 2)), x, y - 10);
+    s.turn = 3 - who; if (s.turn === 2) s.think = rand(0.35, 0.7); s.gap = [me, op];
+  }
+  function finish(g, who) {
+    const s = g.s; s.done = true; s.win = chain(s.b, s.n, who); s.winT = 0; s.winner = who;
+    if (who === 1) {
+      g.confetti(80); Arcade.sfx.win && Arcade.sfx.win(); g.addScore(300 * g.lv, g.W / 2, g.H / 2);
+      const st = s.moves <= s.n * 1.6 ? 3 : s.moves <= s.n * 2.3 ? 2 : 1; setTimeout(() => { if (g.state === 'play') g.win(st); }, 1400);
+    } else { g.message(Arcade.T('La máquina ha cruzado', 'The machine got across'), 1.4); setTimeout(() => { if (g.state === 'play' && g.die()) Arcade.current.def.setup(g); }, 1800); }
+  }
+  function cellAt(s, x, y) { let bi = -1, bd = s.cs * 0.55; for (let i = 0; i < s.n * s.n; i++) { const [cx, cy] = XY(s, i), d = Math.hypot(cx - x, cy - y); if (d < bd) { bd = d; bi = i; } } return bi; }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Cruza el tablero antes que la máquina', deco: ['🔴', '🔵', '🍯', '🌉', '🏆', '🧠'], font: 'round', bg: ['#1c2c5c', '#101a33'],
+    music: { mode: 'lydian', bpm: 88, wave: 'triangle', style: 'chill', root: 57 }, voice: { wave: 'sine', mul: 1.1, echo: 0.35 },
+    /*EN*/ en: { title: 'Hex', tag: 'Cross the board before the machine', help: 'You are red and must join the <b>top and bottom</b> red edges with an unbroken chain of your stones. The machine (blue) tries to join the <b>left and right</b> edges. <b>Tap</b> an empty hexagon to place a stone; you take turns. There are no draws: one of you always gets across. Tip: two stones with two empty cells between them form a <b>bridge</b> that cannot be cut. The board grows with the levels.', tvHelp: 'D-pad to an empty hexagon · OK to place a stone.', dict: { 'Tu turno': 'Your turn', 'Pensando…': 'Thinking…', 'Une arriba y abajo': 'Join top and bottom', 'Te faltan ': 'You need ', 'A la máquina: ': 'Machine needs: ' } },
+    /*TV*/ tvHelp: 'Cruceta hasta un hexágono vacío · OK para poner ficha.',
+    tv: { mode: 'tap', targets: (g) => { const s = g.s; if (!s.b) return []; const out = []; for (let i = 0; i < s.n * s.n; i++) if (!s.b[i]) { const [x, y] = XY(s, i); out.push({ x: x - s.cs * 0.45, y: y - s.cs * 0.45, w: s.cs * 0.9, h: s.cs * 0.9 }); } return out; } },
+    id: 'hex', title: 'Hex', emoji: '🐝', color: '#ff6b6b', origin: 'Hex (Piet Hein / John Nash) (Lutanho)',
+    help: 'Eres el rojo y tienes que unir los bordes rojos de <b>arriba y abajo</b> con una cadena de fichas sin cortes. La máquina (azul) intenta unir los de <b>izquierda y derecha</b>. <b>Toca</b> un hexágono vacío para poner ficha; vais por turnos. No hay empates: siempre alguien consigue cruzar. Truco: dos fichas con dos casillas libres entre ellas forman un <b>puente</b> que no se puede cortar. El tablero crece con los niveles.',
+    lives: 3, levels: 0, cap: 20,
+    /*SC*/ demo(g) {
+      const s = g.s; if (s.done || s.turn !== 1) return { wait: 0.3 };
+      const i = best(s.b, s.n, 1, 2); if (i < 0) return { wait: 0.3 };
+      return { tap: XY(s, i), after: 0.4, say: s.moves ? null : Arcade.T('Une los bordes rojos', 'Join the red edges') };
+    },
+    setup(g) {
+      const [n, depth, noise] = cfg(g.lv);
+      g.s = { n, b: new Array(n * n).fill(0), depth, noise, turn: 1, think: 0, done: false, moves: 0, last: -1, pop: {}, win: [], winT: 0, gap: [n, n] };
+      geo(g);
+    },
+    layout(g) { if (g.s.b) geo(g); },
+    hover(g, x, y) { if (g.s.b) g.s.hv = cellAt(g.s, x, y); },
+    tap(g, p) { const s = g.s; if (s.done || s.turn !== 1) return; const i = cellAt(s, p.x, p.y); if (i < 0) return; if (s.b[i]) { Arcade.sfx.bad(); return; } place(g, i, 1); },
+    update(g, dt) {
+      const s = g.s; if (!s.b) return;
+      for (const k in s.pop) { s.pop[k] += dt * 5; if (s.pop[k] >= 1) delete s.pop[k]; }
+      if (s.done) { s.winT += dt; return; }
+      if (s.turn === 2) {
+        s.think -= dt; if (s.think > 0) return;
+        const empty = []; s.b.forEach((v, i) => { if (!v) empty.push(i); });
+        let i;
+        if (Math.random() < s.noise) { // jugada floja pero no absurda: cerca de alguna ficha
+          const near = empty.filter((e) => { const r = (e / s.n) | 0, c = e % s.n; return NB.some(([dr, dc]) => { const rr = r + dr, cc = c + dc; return rr >= 0 && cc >= 0 && rr < s.n && cc < s.n && s.b[rr * s.n + cc]; }); });
+          i = pick(near.length ? near : empty);
+        } else i = best(s.b, s.n, 2, s.depth);
+        place(g, i, 2);
+      }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      const bg = ctx.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, '#1c2c5c'); bg.addColorStop(1, '#0a1022'); ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      if (!s.b) return;
+      const n = s.n, cs = s.cs, R = cs * 0.577;
+      // bordes de color
+      const corner = (r, c) => [s.ox + (c + r / 2) * cs, s.oy + r * cs * 0.866], e = cs * 0.75;
+      const A = corner(-e / cs, -e / cs), B = corner(-e / cs, n - 1 + e / cs), C = corner(n - 1 + e / cs, n - 1 + e / cs), D = corner(n - 1 + e / cs, -e / cs), M = [(A[0] + C[0]) / 2, (A[1] + C[1]) / 2];
+      const tri = (p, q, col) => { ctx.fillStyle = col; ctx.beginPath(); ctx.moveTo(M[0], M[1]); ctx.lineTo(p[0], p[1]); ctx.lineTo(q[0], q[1]); ctx.closePath(); ctx.fill(); };
+      tri(A, B, '#c92a2a'); tri(D, C, '#c92a2a'); tri(A, D, '#1971c2'); tri(B, C, '#1971c2');
+      const hv = s.turn === 1 && !s.done ? s.hv ?? -1 : -1;
+      for (let i = 0; i < n * n; i++) {
+        const [x, y] = XY(s, i); hexPath(ctx, x, y, R * 0.97);
+        ctx.fillStyle = i === hv && !s.b[i] ? '#5c6fa8' : ((i % n) + ((i / n) | 0)) % 2 ? '#3b4a7a' : '#34436f'; ctx.fill();
+        ctx.strokeStyle = '#1b2547'; ctx.lineWidth = 2; ctx.stroke();
+      }
+      const lit = new Set(s.win);
+      for (let i = 0; i < n * n; i++) {
+        const v = s.b[i]; if (!v) continue; const [x, y] = XY(s, i), p = s.pop[i];
+        const k = p != null ? 0.4 + p * 0.6 + Math.sin(p * Math.PI) * 0.25 : 1;
+        if (lit.has(i)) { const idx = s.win.indexOf(i), on = s.winT * 14 > idx; if (on) { ctx.fillStyle = 'rgba(255,236,153,' + (0.35 + 0.25 * Math.sin(g.rt * 8 + idx)) + ')'; hexPath(ctx, x, y, R); ctx.fill(); } }
+        stone(ctx, x, y, R * 0.68, v, Math.min(1.15, k));
+        if (i === s.last && !s.done) { ctx.strokeStyle = 'rgba(255,255,255,.7)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x, y, R * 0.3, 0, 6.3); ctx.stroke(); }
+      }
+      stone(ctx, W / 2 - 120, g.top + 26, 10, 1, 1); stone(ctx, W / 2 + 120, g.top + 26, 10, 2, 1);
+      Arcade.txt(ctx, s.done ? '' : s.turn === 1 ? 'Tu turno' : 'Pensando…', W / 2, g.top + 26, 16, '#e7f5ff', 'center', 900);
+      if (!s.done) Arcade.txt(ctx, 'Te faltan ' + s.gap[0] + '  ·  A la máquina: ' + s.gap[1], W / 2, g.top + 50, 12, '#a5b4fc', 'center', 700);
+    },
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,147 @@
+// Liebre y perros|#1d2a12
+(function () {
+  const { rand, clamp, pick } = Arcade;
+  const cfg = (L) => ({ C: L >= 10 ? 5 : 3, LIM: L >= 4 && L < 10 ? 10 : 0, noise: clamp(0.55 - L * 0.03, 0.15, 0.55) });
+  function board(C) {
+    const P = [[0, 1]]; for (let c = 1; c <= C; c++) for (let r = 0; r < 3; r++) P.push([c, r]); P.push([C + 1, 1]);
+    const id = (c, r) => (c === 0 ? 0 : c === C + 1 ? P.length - 1 : 1 + (c - 1) * 3 + r), E = [], seen = new Set();
+    const add = (a, b) => { const k = Math.min(a, b) + '-' + Math.max(a, b); if (!seen.has(k)) { seen.add(k); E.push([a, b]); } };
+    for (let r = 0; r < 3; r++) { add(0, id(1, r)); add(P.length - 1, id(C, r)); }
+    for (let c = 1; c <= C; c++) {
+      add(id(c, 0), id(c, 1)); add(id(c, 1), id(c, 2)); if (c < C) for (let r = 0; r < 3; r++) add(id(c, r), id(c + 1, r));
+      if (c % 2 === 0) for (const cc of [c - 1, c + 1]) if (cc >= 1 && cc <= C) { add(id(c, 1), id(cc, 0)); add(id(c, 1), id(cc, 2)); }
+    }
+    const adj = P.map(() => []); for (const [a, b] of E) { adj[a].push(b); adj[b].push(a); }
+    return { P, adj, E, id, C };
+  }
+  // análisis retrógrado: W[estado] = 1 si los perros pueden forzar la victoria
+  function retro(B, LIM) {
+    const N = B.P.length, T = []; for (let a = 0; a < N; a++) for (let b = a + 1; b < N; b++) for (let c = b + 1; c < N; c++) T.push([a, b, c]);
+    const TI = new Map(T.map((t, i) => [t.join(','), i])), L = LIM || 1;
+    return { N, T, TI, L, LIM, W: new Uint8Array(T.length * N * 2 * L), ready: false, B };
+  }
+  const idx = (R, t, hare, turn, cnt) => ((t * R.N + hare) * 2 + turn) * R.L + cnt;
+  const col = (B, i) => B.P[i][0];
+  function houndMoves(B, h, hare) { const out = []; for (let k = 0; k < 3; k++) { const a = h[k]; for (const b of B.adj[a]) { if (col(B, b) < col(B, a) || h.includes(b) || b === hare) continue; const nh = h.slice(); nh[k] = b; nh.sort((x, y) => x - y); out.push({ from: a, to: b, nh, vert: col(B, b) === col(B, a) }); } } return out; }
+  const nextCnt = (R, m, cnt) => (!R.LIM ? 0 : m.vert ? (cnt + 1 >= R.LIM ? -1 : cnt + 1) : 0);
+  function pass(R) {
+    const B = R.B; let changed = false;
+    for (let t = 0; t < R.T.length; t++) {
+      const h = R.T[t], minc = Math.min(col(B, h[0]), col(B, h[1]), col(B, h[2]));
+      for (let hare = 0; hare < R.N; hare++) {
+        if (h.includes(hare) || col(B, hare) < minc) continue;
+        const hm = houndMoves(B, h, hare), mv = B.adj[hare].filter((b) => !h.includes(b));
+        for (let cnt = 0; cnt < R.L; cnt++) {
+          let i = idx(R, t, hare, 0, cnt);
+          if (!R.W[i]) for (const m of hm) { const nc = nextCnt(R, m, cnt); if (nc >= 0 && R.W[idx(R, R.TI.get(m.nh.join(',')), hare, 1, nc)]) { R.W[i] = 1; changed = true; break; } }
+          i = idx(R, t, hare, 1, cnt);
+          if (!R.W[i]) { let ok = true; for (const b of mv) if (col(B, b) < minc || !R.W[idx(R, t, b, 0, cnt)]) { ok = false; break; } if (ok) { R.W[i] = 1; changed = true; } }
+        }
+      }
+    }
+    if (!changed) R.ready = true;
+  }
+  function geo(g) {
+    const s = g.s, C = s.B.C, Ha = g.bot - g.top - 110, port = Ha > g.W * 1.1;
+    s.port = port; const cols = C + 2;
+    if (port) { s.cs = Math.min((g.W - 40) / 2, (Ha * 0.9) / (cols - 1), 100); s.ox = g.W / 2 - s.cs; s.oy = g.top + 90 + (Ha - s.cs * (cols - 1)) / 2; }
+    else { s.cs = Math.min((g.W - 40) / (cols - 1), Ha / 2, 120); s.ox = (g.W - s.cs * (cols - 1)) / 2; s.oy = g.top + 90 + (Ha - s.cs * 2) / 2; }
+  }
+  // en vertical el tablero se gira: los perros avanzan hacia abajo
+  const XY = (s, i) => { const [c, r] = s.B.P[i]; return s.port ? [s.ox + r * s.cs, s.oy + c * s.cs] : [s.ox + c * s.cs, s.oy + r * s.cs]; };
+  function hit(s, x, y) { let bi = -1, bd = s.cs * 0.42; s.B.P.forEach((_, i) => { const [px, py] = XY(s, i), d = Math.hypot(px - x, py - y); if (d < bd) { bd = d; bi = i; } }); return bi; }
+  function state(s) { return idx(s.R, s.R.TI.get(s.h.slice().sort((a, b) => a - b).join(',')), s.hare, 1, s.cnt); }
+  function moveHound(g, m) {
+    const s = g.s; s.anim = { kind: 'h', from: m.from, to: m.to, t: 0 }; s.sel = -1;
+    Arcade.tone(360, 0.06, 'square', 0.05); Arcade.tone(300, 0.08, 'square', 0.04);
+  }
+  function endHound(g) {
+    const s = g.s, a = s.anim, B = s.B; s.anim = null; const k = s.h.indexOf(a.from); s.h[k] = a.to; s.moves++;
+    const vert = col(B, a.to) === col(B, a.from); s.cnt = s.R.LIM ? (vert ? s.cnt + 1 : 0) : 0;
+    if (s.R.LIM && s.cnt >= s.R.LIM) return lose(g, Arcade.T('Demasiados pasos de lado', 'Too many sideways moves'));
+    const mv = B.adj[s.hare].filter((b) => !s.h.includes(b));
+    if (!mv.length) { // ¡atrapada!
+      s.done = true; const [x, y] = XY(s, s.hare); g.ring(x, y, '#ffd43b', s.cs * 0.6, 5); g.confetti(80); Arcade.sfx.win && Arcade.sfx.win(); g.addScore(400 * g.lv, x, y);
+      const par = s.B.C === 3 ? 12 : 18, st = s.moves <= par ? 3 : s.moves <= par * 1.5 ? 2 : 1; setTimeout(() => { if (g.state === 'play') g.win(st); }, 1400); return;
+    }
+    g.addScore(10 * Math.max(1, Math.round(g.lv / 2)), ...XY(s, a.to));
+    s.turn = 2; s.think = rand(0.45, 0.8);
+  }
+  function lose(g, why) { const s = g.s; s.done = true; g.message(why, 1.5); setTimeout(() => { if (g.state === 'play' && g.die()) Arcade.current.def.setup(g); }, 1900); }
+  function hareMove(g) {
+    const s = g.s, B = s.B, R = s.R, h = s.h.slice().sort((a, b) => a - b), t = R.TI.get(h.join(',')), minc = Math.min(...s.h.map((i) => col(B, i)));
+    const mv = B.adj[s.hare].filter((b) => !s.h.includes(b)); if (!mv.length) return;
+    const esc = mv.find((b) => col(B, b) < minc); let to;
+    if (esc != null && Math.random() > s.noise * 0.5) to = esc;
+    else {
+      const good = mv.filter((b) => !R.W[idx(R, t, b, 0, s.cnt)]);
+      if (good.length && Math.random() > s.noise) to = pick(good);
+      else { // perdida: busca huecos y movilidad, y tira hacia la izquierda
+        const sc = (b) => B.adj[b].filter((x) => !s.h.includes(x)).length * 1.0 - col(B, b) * 0.6 + Math.random() * (0.6 + s.noise * 3); to = mv.sort((a, c) => sc(c) - sc(a))[0];
+      }
+    }
+    s.anim = { kind: 'r', from: s.hare, to, t: 0 }; Arcade.tone(700, 0.05, 'sine', 0.05, 200);
+  }
+  function endHare(g) {
+    const s = g.s, a = s.anim; s.anim = null; s.hare = a.to;
+    if (col(s.B, s.hare) < Math.min(...s.h.map((i) => col(s.B, i)))) return lose(g, Arcade.T('¡La liebre se ha escapado!', 'The hare got away!'));
+    s.turn = 1;
+  }
+  function tapPoint(g, i) {
+    const s = g.s; if (s.done || s.turn !== 1 || s.anim || i < 0) return;
+    if (s.h.includes(i)) { s.sel = i; Arcade.tone(600, 0.04, 'square', 0.04); return; }
+    if (s.sel < 0) return; const m = houndMoves(s.B, s.h, s.hare).find((m) => m.from === s.sel && m.to === i);
+    if (!m) { Arcade.sfx.bad(); return; } moveHound(g, m);
+  }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Acorrala a la liebre con tus tres perros', deco: ['🐇', '🐕', '🌾', '🌳', '🏆', '🧠'], font: 'round', bg: ['#33501f', '#1d2a12'],
+    music: { mode: 'mixo', bpm: 100, wave: 'triangle', style: 'arcade', root: 55 }, voice: { wave: 'triangle', mul: 1, echo: 0.3 },
+    /*EN*/ en: { title: 'Hare and Hounds', tag: 'Corner the hare with your three hounds', help: 'You control the <b>three hounds</b> 🐕 and the machine moves the <b>hare</b> 🐇. Hounds move one step along a line, <b>forwards or sideways, never back</b>; the hare moves in any direction. <b>Tap</b> a hound and then the point where it goes. You win if the hare <b>cannot move</b>. You lose if the hare gets <b>behind all your hounds</b>. In some levels you may make at most 10 sideways moves in a row. The board gets longer later on.', tvHelp: 'D-pad to a hound · OK · then to a point · OK.', dict: { 'Tu turno': 'Your turn', 'La liebre piensa…': 'The hare is thinking…', 'Preparando…': 'Getting ready…', 'Pasos de lado: ': 'Sideways moves: ' } },
+    /*TV*/ tvHelp: 'Cruceta hasta un perro · OK · luego a un punto · OK.',
+    tv: { mode: 'tap', targets: (g) => { const s = g.s; if (!s.h) return []; const set = new Set(s.h); if (s.sel >= 0) houndMoves(s.B, s.h, s.hare).filter((m) => m.from === s.sel).forEach((m) => set.add(m.to)); return [...set].map((i) => { const [x, y] = XY(s, i); return { x: x - s.cs * 0.3, y: y - s.cs * 0.3, w: s.cs * 0.6, h: s.cs * 0.6 }; }); } },
+    id: 'liebre', title: 'Liebre y perros', emoji: '🐇', color: '#94d82d', origin: 'Hare and Hounds / Jeu militaire (Lutanho)',
+    help: 'Manejas a los <b>tres perros</b> 🐕 y la máquina mueve a la <b>liebre</b> 🐇. Los perros avanzan un paso por las líneas, <b>hacia delante o de lado, nunca hacia atrás</b>; la liebre va en cualquier dirección. <b>Toca</b> un perro y luego el punto al que va. Ganas si la liebre <b>no puede moverse</b>. Pierdes si la liebre consigue ponerse <b>detrás de todos tus perros</b>. En algunos niveles no puedes dar más de 10 pasos de lado seguidos. Más adelante el tablero es más largo.',
+    lives: 3, levels: 0, cap: 20,
+    /*SC*/ demo(g) {
+      const s = g.s; if (s.done || s.turn !== 1 || s.anim || !s.R.ready) return { wait: 0.3 };
+      const R = s.R, ms = houndMoves(s.B, s.h, s.hare), win = ms.filter((m) => { const nc = nextCnt(R, m, s.cnt); return nc >= 0 && R.W[idx(R, R.TI.get(m.nh.join(',')), s.hare, 1, nc)]; });
+      const m = (win.length ? win : ms).sort((a, b) => (a.vert - b.vert))[0]; if (!m) return { wait: 0.3 };
+      if (s.sel !== m.from) return { tap: XY(s, m.from), after: 0.25, say: s.moves ? null : Arcade.T('Avanza sin dejar huecos', 'Advance without leaving gaps') };
+      return { tap: XY(s, m.to), after: 0.4 };
+    },
+    setup(g) {
+      const o = cfg(g.lv), B = board(o.C), key = o.C + ':' + o.LIM;
+      Arcade._liebre = Arcade._liebre || {}; const R = Arcade._liebre[key] || (Arcade._liebre[key] = retro(B, o.LIM)); R.B = B;
+      g.s = { B, R, h: [0, B.id(1, 0), B.id(1, 2)], hare: B.P.length - 1, cnt: 0, turn: 1, sel: -1, anim: null, done: false, moves: 0, noise: o.noise, think: 0, hv: -1 };
+      geo(g);
+    },
+    layout(g) { if (g.s.h) geo(g); },
+    hover(g, x, y) { if (g.s.h) g.s.hv = hit(g.s, x, y); },
+    tap(g, p) { tapPoint(g, hit(g.s, p.x, p.y)); },
+    update(g, dt) {
+      const s = g.s; if (!s.h) return;
+      if (!s.R.ready) { const t0 = Date.now(); do pass(s.R); while (!s.R.ready && Date.now() - t0 < 12); }
+      if (s.anim) { s.anim.t += dt / 0.3; if (s.anim.t >= 1) (s.anim.kind === 'h' ? endHound : endHare)(g); return; }
+      if (s.turn === 2 && !s.done && s.R.ready) { s.think -= dt; if (s.think <= 0) hareMove(g); }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      const bg = ctx.createRadialGradient(W / 2, H / 2, 30, W / 2, H / 2, Math.max(W, H) * 0.75); bg.addColorStop(0, '#4b7a2a'); bg.addColorStop(1, '#16220d'); ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      if (!s.h) return;
+      const B = s.B, cs = s.cs;
+      for (let k = 0; k < 40; k++) { const x = (k * 97.3) % W, y = (k * 151.7) % H; ctx.fillStyle = 'rgba(148,216,45,.12)'; ctx.fillRect(x, y, 2, 6); }
+      ctx.lineCap = 'round';
+      for (const [a, b] of B.E) { const [x1, y1] = XY(s, a), [x2, y2] = XY(s, b); ctx.strokeStyle = 'rgba(0,0,0,.25)'; ctx.lineWidth = 9; ctx.beginPath(); ctx.moveTo(x1, y1 + 3); ctx.lineTo(x2, y2 + 3); ctx.stroke(); ctx.strokeStyle = '#c9a26b'; ctx.lineWidth = 6; ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); }
+      const tg = new Set(s.sel >= 0 && s.turn === 1 && !s.anim ? houndMoves(B, s.h, s.hare).filter((m) => m.from === s.sel).map((m) => m.to) : []);
+      B.P.forEach((_, i) => { const [x, y] = XY(s, i); ctx.fillStyle = tg.has(i) ? 'rgba(105,219,124,' + (0.6 + 0.3 * Math.sin(g.rt * 7)) + ')' : '#8a6a3c'; ctx.beginPath(); ctx.arc(x, y, cs * (tg.has(i) ? 0.17 : 0.12), 0, 6.3); ctx.fill(); });
+      const sz = cs * 0.5;
+      const drawAt = (i, e, extra, flip) => { const [x, y] = XY(s, i); ctx.fillStyle = 'rgba(0,0,0,.3)'; ctx.beginPath(); ctx.ellipse(x, y + sz * 0.35, sz * 0.4, sz * 0.13, 0, 0, 6.3); ctx.fill(); Arcade.emoji(ctx, e, x, y - (extra || 0), sz); };
+      s.h.forEach((i) => { if (s.anim && s.anim.kind === 'h' && s.anim.from === i) return; drawAt(i, '🐕', s.sel === i ? 8 + Math.sin(g.rt * 8) * 3 : 0); });
+      if (!(s.anim && s.anim.kind === 'r')) drawAt(s.hare, '🐇', s.done ? Math.abs(Math.sin(g.rt * 10)) * 4 : Math.abs(Math.sin(g.rt * 3)) * 2);
+      if (s.anim) { const a = s.anim, [x0, y0] = XY(s, a.from), [x1, y1] = XY(s, a.to), t = Math.min(1, a.t), x = x0 + (x1 - x0) * t, y = y0 + (y1 - y0) * t - Math.sin(t * Math.PI) * cs * 0.3; Arcade.emoji(ctx, a.kind === 'h' ? '🐕' : '🐇', x, y, sz); }
+      Arcade.txt(ctx, s.done ? '' : !s.R.ready && s.turn === 2 ? 'Preparando…' : s.turn === 1 ? 'Tu turno' : 'La liebre piensa…', W / 2, g.top + 28, 16, '#f4fce3', 'center', 900);
+      if (s.R.LIM) Arcade.txt(ctx, 'Pasos de lado: ' + s.cnt + '/' + s.R.LIM, W / 2, g.top + 52, 13, s.cnt >= s.R.LIM - 2 ? '#ffa8a8' : '#d8f5a2', 'center', 800);
+    },
+  });
+})();

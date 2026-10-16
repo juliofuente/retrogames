@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Halma · Arcade Perdido</title>
+<meta name="theme-color" content="#1f2a20">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css?v=6d7635e467">
+</head>
+<body class="game">
+<script src="config.js?v=d6380ae9b0"></script>
+<script src="common.js?v=207858a9a6"></script>
+<script>
+(function () {
+  const { rand, clamp, pick } = Arcade;
+  // nivel → [lado, tamaño del campamento, ruido, ¿la máquina piensa dos jugadas?]
+  const cfg = (L) => [L <= 5 ? 8 : L <= 12 ? 10 : 12, L <= 5 ? 3 : L <= 12 ? 4 : 5, clamp(0.6 - L * 0.025, 0.2, 0.6), L >= 12];
+  const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, -1], [1, -1], [-1, 1]];
+  function topo(n, k) {
+    const cells = [], nb = [];
+    for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) cells.push([x, y]);
+    for (let i = 0; i < n * n; i++) { const [x, y] = cells[i]; nb.push(DIRS.map(([dx, dy]) => { const tx = x + dx, ty = y + dy; return tx < 0 || ty < 0 || tx >= n || ty >= n ? -1 : ty * n + tx; })); }
+    const tl = [], br = []; for (let i = 0; i < n * n; i++) { const [x, y] = cells[i]; if (x + y < k) tl.push(i); if (x + y > 2 * n - 2 - k) br.push(i); }
+    // jugador 1 sale abajo a la derecha y va arriba a la izquierda; la máquina al revés
+    return { cells, nb, n, players: [null, { home: br, goal: tl, tip: 0 }, { home: tl, goal: br, tip: n * n - 1 }] };
+  }
+  function movesFrom(T, b, i) {
+    const out = [];
+    for (let d = 0; d < T.nb[i].length; d++) { const j = T.nb[i][d]; if (j >= 0 && !b[j]) out.push({ from: i, to: j, path: [j], jump: false }); }
+    const seen = new Set([i]), q = [[i, []]];
+    while (q.length) {
+      const [c, path] = q.shift();
+      for (let d = 0; d < T.nb[c].length; d++) { const m = T.nb[c][d]; if (m < 0 || !b[m]) continue; const j = T.nb[m][d]; if (j < 0 || b[j] || seen.has(j)) continue; seen.add(j); const p = path.concat(j); out.push({ from: i, to: j, path: p, jump: true }); q.push([j, p]); }
+    }
+    return out;
+  }
+  function allMoves(T, b, who) { const out = []; for (let i = 0; i < b.length; i++) if (b[i] === who) out.push(...movesFrom(T, b, i)); return out; }
+  const D = (T, a, c) => { const [x1, y1] = T.cells[a], [x2, y2] = T.cells[c]; return Math.max(Math.abs(x1 - x2), Math.abs(y1 - y2)) + 0.1 * (Math.abs(x1 - x2) + Math.abs(y1 - y2)); };
+  function evalP(T, b, who) { // lo que le queda por recorrer: cada ficha fuera de la meta, hasta su hueco libre más cercano
+    const goal = T.players[who].goal, gs = new Set(goal), free = goal.filter((c) => b[c] !== who); let e = 0;
+    for (let i = 0; i < b.length; i++) { if (b[i] !== who || gs.has(i)) continue; let m = 1e9; for (const c of free) m = Math.min(m, D(T, i, c)); e += m === 1e9 ? 0 : m; }
+    return e;
+  }
+  function applyM(b, m) { const nb = b.slice(); nb[m.to] = nb[m.from]; nb[m.from] = 0; return nb; }
+  function gainFn(T, b, who) { // ganancia rápida de una jugada: lo que se acerca la ficha a su hueco libre más cercano
+    const goal = T.players[who].goal, gs = new Set(goal), free = goal.filter((c) => b[c] !== who);
+    const near = (i) => { if (gs.has(i)) return 0; let m = 1e9; for (const c of free) m = Math.min(m, D(T, i, c)); return m === 1e9 ? 0 : m; };
+    const tip = T.players[who].tip;
+    return (m) => near(m.from) - near(m.to) + (gs.has(m.to) && !gs.has(m.from) ? 0.3 : 0) + 0.12 * (D(T, m.from, tip) - D(T, m.to, tip));
+  }
+  function choose(T, b, who, two, noise) {
+    const ms = allMoves(T, b, who); if (!ms.length) return null;
+    const gs = new Set(T.players[who].goal), gain = gainFn(T, b, who);
+    let cand = ms.filter((m) => !(gs.has(m.from) && !gs.has(m.to))).map((m) => ({ m, v: gain(m) + Math.random() * (0.05 + noise * 4) }));
+    if (!cand.length) return pick(ms);
+    cand.sort((a, c) => c.v - a.v);
+    if (noise && Math.random() < noise * 0.5) { const ok = cand.filter((c) => c.v > 0.5); if (ok.length) return pick(ok).m; }
+    if (two) {
+      cand = cand.slice(0, 10);
+      for (const c of cand) { const nb = applyM(b, c.m), g2 = gainFn(T, nb, who); let b2 = 0; for (const m2 of allMoves(T, nb, who)) { if (gs.has(m2.from) && !gs.has(m2.to)) continue; const v = g2(m2); if (v > b2) b2 = v; } c.v += b2 * 0.6; }
+      cand.sort((a, c) => c.v - a.v);
+    }
+    return cand[0].m;
+  }
+  function done(T, b, who) { const g = T.players[who].goal; if (g.some((c) => !b[c])) return false; return g.some((c) => b[c] === who); }
+  function geo(g) { const s = g.s, n = s.T.n, Ha = g.bot - g.top - 76; s.cs = Math.min((g.W - 20) / n, Ha / n, 64); s.ox = (g.W - s.cs * n) / 2; s.oy = g.top + 64 + (Ha - s.cs * n) / 2; }
+  const XY = (s, i) => { const [x, y] = s.T.cells[i]; return [s.ox + (x + 0.5) * s.cs, s.oy + (y + 0.5) * s.cs]; };
+  const COLS = { 1: ['#ffc9c9', '#f03e3e', '#9b1c1c'], 2: ['#d3f9d8', '#2f9e44', '#155724'] };
+  function marble(ctx, x, y, r, who) { const c = COLS[who]; ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.beginPath(); ctx.ellipse(x + 1, y + r * 0.3, r, r * 0.8, 0, 0, 6.3); ctx.fill(); const gr = ctx.createRadialGradient(x - r * 0.35, y - r * 0.4, r * 0.08, x, y, r); gr.addColorStop(0, c[0]); gr.addColorStop(0.55, c[1]); gr.addColorStop(1, c[2]); ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(x, y, r, 0, 6.3); ctx.fill(); ctx.fillStyle = 'rgba(255,255,255,.55)'; ctx.beginPath(); ctx.ellipse(x - r * 0.35, y - r * 0.4, r * 0.25, r * 0.15, -0.6, 0, 6.3); ctx.fill(); }
+  function play(g, m, who) { const s = g.s; s.anim = { m, who, k: 0, t: 0 }; s.sel = -1; Arcade.tone(who === 1 ? 520 : 380, 0.05, 'triangle', 0.05); }
+  function animDone(g) {
+    const s = g.s, a = s.anim; s.anim = null; s.b = applyM(s.b, a.m); s.last = a.m.to; s.plies++; if (a.who === 1) s.moves++;
+    if (a.who === 1 && a.m.path.length > 1) g.addScore(15 * a.m.path.length * Math.max(1, Math.round(g.lv / 2)), ...XY(s, a.m.to));
+    if (a.who === 1 && a.m.path.length > 2) g.float(Arcade.T('¡Salto x', 'Jump x') + a.m.path.length + '!', XY(s, a.m.to)[0], XY(s, a.m.to)[1] - 20, '#ffd43b', 18);
+    if (done(s.T, s.b, a.who)) {
+      s.done = true;
+      if (a.who === 1) { g.confetti(80); g.addScore(400 * g.lv, g.W / 2, g.H / 2); const other = evalP(s.T, s.b, 2), st = other >= s.T.players[2].goal.length * 2.5 ? 3 : other >= s.T.players[2].goal.length ? 2 : 1; setTimeout(() => { if (g.state === 'play') g.win(st); }, 1300); }
+      else { g.message(Arcade.T('La máquina llegó antes', 'The machine got there first'), 1.4); setTimeout(() => { if (g.state === 'play' && g.die()) Arcade.current.def.setup(g); }, 1800); }
+      return;
+    }
+    if (s.plies > 400) { s.done = true; g.message(Arcade.T('Empate: otra vez', 'Draw: again'), 1.3); setTimeout(() => { if (g.state === 'play') Arcade.current.def.setup(g); }, 1500); return; }
+    s.turn = 3 - a.who; if (s.turn === 2) s.think = rand(0.3, 0.6);
+    if (s.turn === 1 && !allMoves(s.T, s.b, 1).length) { s.turn = 2; s.think = 0.4; }
+  }
+  function tapCell(g, i) {
+    const s = g.s; if (s.done || s.turn !== 1 || s.anim || i < 0) return;
+    if (s.b[i] === 1) { s.sel = i; s.opts = movesFrom(s.T, s.b, i); Arcade.tone(600, 0.04, 'square', 0.04); return; }
+    if (s.sel < 0) return; const m = s.opts.find((m) => m.to === i);
+    if (!m) { Arcade.sfx.bad(); return; } play(g, m, 1);
+  }
+  function cellAt(s, x, y) { const c = Math.floor((x - s.ox) / s.cs), r = Math.floor((y - s.oy) / s.cs); return c >= 0 && r >= 0 && c < s.T.n && r < s.T.n ? r * s.T.n + c : -1; }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Salta en cadena hasta la esquina contraria', deco: ['🔴', '🟢', '🐸', '🏁', '🏆', '🧠'], font: 'round', bg: ['#2f4a33', '#1f2a20'],
+    music: { mode: 'lydian', bpm: 92, wave: 'triangle', style: 'chill', root: 55 }, voice: { wave: 'sine', mul: 1.1, echo: 0.35 },
+    /*EN*/ en: { title: 'Halma', tag: 'Chain jumps to the opposite corner', help: 'Take all your red pieces to the <b>opposite corner</b> (top left) before the machine takes its green ones to yours. <b>Tap</b> a piece and then a lit square. A piece can <b>step</b> to a neighbouring square (also diagonally) or <b>jump</b> over any piece next to it into the empty square behind; you can chain <b>as many jumps as you like</b> in one turn. Pieces are never captured. Use the machine\'s pieces as stepping stones!', tvHelp: 'D-pad to a piece · OK · then to a lit square · OK.', dict: { 'Tu turno': 'Your turn', 'Pensando…': 'Thinking…', 'Te quedan ': 'You have ', ' por llegar': ' to go', 'Tú ': 'You ', 'Máquina ': 'Machine ' } },
+    /*TV*/ tvHelp: 'Cruceta hasta una ficha · OK · luego a una casilla iluminada · OK.',
+    tv: { mode: 'tap', targets: (g) => { const s = g.s; if (!s.b) return []; const set = new Set(); s.b.forEach((v, i) => { if (v === 1) set.add(i); }); if (s.sel >= 0) s.opts.forEach((m) => set.add(m.to)); return [...set].map((i) => { const [x, y] = XY(s, i); return { x: x - s.cs / 2, y: y - s.cs / 2, w: s.cs, h: s.cs }; }); } },
+    id: 'halma', title: 'Halma', emoji: '🐸', color: '#69db7c', origin: 'Halma (George H. Monks) (Lutanho)',
+    help: 'Lleva todas tus fichas rojas a la <b>esquina contraria</b> (arriba a la izquierda) antes de que la máquina lleve las verdes a la tuya. <b>Toca</b> una ficha y luego una casilla iluminada. Una ficha puede <b>dar un paso</b> a una casilla vecina (también en diagonal) o <b>saltar</b> por encima de cualquier ficha que tenga al lado hasta la casilla libre de detrás; puedes encadenar <b>todos los saltos que quieras</b> en un turno. Aquí no se come. ¡Usa las fichas de la máquina como trampolín!',
+    lives: 3, levels: 0, cap: 20,
+    /*SC*/ demo(g) {
+      const s = g.s; if (s.done || s.turn !== 1 || s.anim) return { wait: 0.3 };
+      const m = choose(s.T, s.b, 1, true, 0); if (!m) return { wait: 0.3 };
+      if (s.sel !== m.from) return { tap: XY(s, m.from), after: 0.25, say: s.moves ? null : Arcade.T('Encadena saltos para avanzar rápido', 'Chain jumps to move fast') };
+      return { tap: XY(s, m.to), after: 0.3 };
+    },
+    setup(g) {
+      const [n, k, noise, two] = cfg(g.lv), T = topo(n, k), b = new Array(n * n).fill(0);
+      for (const c of T.players[1].home) b[c] = 1; for (const c of T.players[2].home) b[c] = 2;
+      g.s = { T, b, noise, two, turn: 1, sel: -1, opts: [], anim: null, done: false, think: 0, plies: 0, moves: 0, last: -1, hv: -1 };
+      geo(g);
+    },
+    layout(g) { if (g.s.b) geo(g); },
+    hover(g, x, y) { if (g.s.b) g.s.hv = cellAt(g.s, x, y); },
+    tap(g, p) { tapCell(g, cellAt(g.s, p.x, p.y)); },
+    update(g, dt) {
+      const s = g.s; if (!s.b) return;
+      if (s.anim) { const a = s.anim; a.t += dt / (a.m.jump ? 0.2 : 0.18); if (a.t >= 1) { a.t = 0; a.k++; if (a.k < a.m.path.length) Arcade.tone(500 + a.k * 70, 0.05, 'sine', 0.05); else animDone(g); } return; }
+      if (s.turn === 2 && !s.done) { s.think -= dt; if (s.think > 0) return; const m = choose(s.T, s.b, 2, s.two, s.noise); if (m) play(g, m, 2); else { s.turn = 1; } }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      const bg = ctx.createRadialGradient(W / 2, H / 2, 30, W / 2, H / 2, Math.max(W, H) * 0.7); bg.addColorStop(0, '#3e6343'); bg.addColorStop(1, '#141c15'); ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      if (!s.b) return;
+      const T = s.T, n = T.n, cs = s.cs, g1 = new Set(T.players[1].goal), g2 = new Set(T.players[2].goal);
+      ctx.fillStyle = '#6b4a2b'; Arcade.rr(ctx, s.ox - 10, s.oy - 10, cs * n + 20, cs * n + 20, 12); ctx.fill();
+      for (let i = 0; i < n * n; i++) { const [x, y] = T.cells[i]; ctx.fillStyle = (x + y) % 2 ? '#e9d8b4' : '#f5ead2'; if (g1.has(i)) ctx.fillStyle = (x + y) % 2 ? '#f7b2b2' : '#ffc9c9'; if (g2.has(i)) ctx.fillStyle = (x + y) % 2 ? '#a9e3b4' : '#c3fae8'; ctx.fillRect(s.ox + x * cs, s.oy + y * cs, cs, cs); }
+      if (s.last >= 0) { const [x, y] = XY(s, s.last); ctx.strokeStyle = 'rgba(255,212,59,.8)'; ctx.lineWidth = 3; ctx.strokeRect(x - cs / 2 + 2, y - cs / 2 + 2, cs - 4, cs - 4); }
+      if (s.sel >= 0 && !s.anim) for (const m of s.opts) { const [x, y] = XY(s, m.to); ctx.fillStyle = m.jump ? 'rgba(255,212,59,.75)' : 'rgba(64,192,87,.6)'; ctx.beginPath(); ctx.arc(x, y, cs * (m.to === s.hv ? 0.24 : 0.17), 0, 6.3); ctx.fill(); }
+      const r = cs * 0.36;
+      for (let i = 0; i < n * n; i++) { const v = s.b[i]; if (!v || (s.anim && s.anim.m.from === i)) continue; const [x, y] = XY(s, i); marble(ctx, x, y - (s.sel === i ? 5 + Math.sin(g.rt * 8) * 2 : 0), r, v); }
+      if (s.anim) { const a = s.anim, pts = [a.m.from, ...a.m.path], [x0, y0] = XY(s, pts[a.k]), [x1, y1] = XY(s, pts[Math.min(a.k + 1, pts.length - 1)]), t = Math.min(1, a.t); marble(ctx, x0 + (x1 - x0) * t, y0 + (y1 - y0) * t - (a.m.jump ? Math.sin(t * Math.PI) * cs * 0.5 : 0), r * (1 + (a.m.jump ? Math.sin(t * Math.PI) * 0.15 : 0)), a.who); }
+      const left = (who) => s.b.filter((v, i) => v === who && !T.players[who].goal.includes(i)).length;
+      Arcade.txt(ctx, s.done ? '' : s.turn === 1 ? 'Tu turno' : 'Pensando…', W / 2, g.top + 24, 16, '#ebfbee', 'center', 900);
+      marble(ctx, W / 2 - 120, g.top + 47, 8, 1); marble(ctx, W / 2 + 120, g.top + 47, 8, 2);
+      Arcade.txt(ctx, 'Tú ' + left(1), W / 2 - 106, g.top + 47, 13, '#fff', 'left', 800); Arcade.txt(ctx, 'Máquina ' + left(2), W / 2 + 106, g.top + 47, 13, '#fff', 'right', 800);
+    },
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,6 +1,18 @@
 ARCADE PERDIDO + ARCADE PRO — LO QUE ESTÁ HECHO
 ================================================
-Fecha: 16-10-2026 · Versión de la PWA (games.js → ARCADE_VERSION): 2.20.0
+Fecha: 16-10-2026 · Versión de la PWA (games.js → ARCADE_VERSION): 2.21.0
+· v2.21.0: LOTE LUTANHO 3 (juegos de tablero, rehechos desde cero): Hex (5×5 → 11×11; IA por camino más corto con
+  respuesta a 2 jugadas), Puentes (Bridg-It de Gale; el rojo empieza y siempre puede ganar), Quarto (la máquina resuelve
+  el final exacto con 3–8 huecos; desde el nivel 10 también cuentan los cuadrados 2×2), Nim (filas de cerillas con
+  solución exacta; la partida siempre empieza ganable; variantes "la última gana" y máximo 3 por turno), Liebre y perros
+  (tablero de 11 y de 17 puntos; análisis retrógrado completo para la liebre, hecho poco a poco entre fotogramas; límite
+  de 10 pasos de lado en algunos niveles), Zorro y perros (8×8 con 4 perros y 10×10 con 5; zorro con minimax), Halma
+  (8×8, 10×10 y 12×12; saltos en cadena), Damas chinas (estrella de 121 agujeros; desde el nivel 12, contra dos máquinas),
+  Backgammon (carreras, partidas de 3 fichas y la partida completa; regla de usar el máximo de dados y el mayor si solo
+  cabe uno), Abalone (empujes 2–1, 3–1 y 3–2; echar 3, 4 o 6; posición de las "margaritas" en niveles pares desde el 10),
+  Tafl (Brandubh 7×7, Tablut 9×9 y Hnefatafl 11×11; rey débil en los pequeños; la IA detecta amenazas del rey que no se
+  pueden tapar). Todos con demo, es/en, TV y bots que ganan los niveles 1–20 en simulación. Nim sale también en
+  Educativos › Mates y Liebre y perros en › Lógica.
 · v2.20.0: LOTE LUTANHO 2 (rehechos desde cero, niveles propios): Damas (reglas inglesas, captura obligatoria y en
   cadena, coronación; IA alfa-beta hasta 4 jugadas), Molino (Nine Men's Morris: poner, mover, volar con 3, molinos;
   6 fichas en los primeros niveles), Araña (Spider de 1 palo y luego 2; los de 1 palo se comprueban al momento y los
