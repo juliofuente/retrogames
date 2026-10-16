@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Apagón · Arcade Perdido</title>
+<meta name="theme-color" content="#0d0b1e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css?v=6d7635e467">
+</head>
+<body class="game">
+<script src="config.js?v=d6380ae9b0"></script>
+<script src="common.js?v=207858a9a6"></script>
+<script>
+(function () {
+  const { ri, clamp, shuffle } = Arcade;
+  // nivel → [tamaño, forma del interruptor] · forma 'plus' (clásica) o 'x' (también las diagonales)
+  function cfg(L) { const n = L <= 2 ? 3 : L <= 5 ? 4 : L <= 11 ? 5 : L <= 16 ? 6 : 7; return [n, L >= 14 && L % 3 === 2 ? 'x' : 'plus']; }
+  const NB = { plus: [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1]], x: [[0, 0], [1, 1], [-1, -1], [1, -1], [-1, 1]] };
+  function press(b, n, i, shape) { const x = i % n, y = (i / n) | 0; for (const [dx, dy] of NB[shape]) { const cx = x + dx, cy = y + dy; if (cx >= 0 && cy >= 0 && cx < n && cy < n) b[cy * n + cx] ^= 1; } }
+  // solución mínima por eliminación en GF(2) (probando todas las variables libres)
+  function solve(b, n, shape) {
+    const m = n * n, rows = [];
+    for (let i = 0; i < m; i++) { const r = new Uint8Array(m + 1); for (let j = 0; j < m; j++) { const e = new Array(m).fill(0); press(e, n, j, shape); r[j] = e[i]; } r[m] = b[i]; rows.push(r); }
+    const piv = [], where = new Array(m).fill(-1); let row = 0;
+    for (let col = 0; col < m && row < m; col++) {
+      let sel = -1; for (let r = row; r < m; r++) if (rows[r][col]) { sel = r; break; } if (sel < 0) continue;
+      [rows[sel], rows[row]] = [rows[row], rows[sel]];
+      for (let r = 0; r < m; r++) if (r !== row && rows[r][col]) for (let c = col; c <= m; c++) rows[r][c] ^= rows[row][c];
+      where[col] = row; piv.push(col); row++;
+    }
+    for (let r = row; r < m; r++) if (rows[r][m]) return null;
+    const free = []; for (let c = 0; c < m; c++) if (where[c] < 0) free.push(c);
+    let best = null;
+    for (let mask = 0; mask < 1 << free.length; mask++) {
+      const x = new Array(m).fill(0); free.forEach((c, k) => (x[c] = (mask >> k) & 1));
+      for (const c of piv) { const r = rows[where[c]]; let v = r[m]; for (const f of free) if (r[f] && x[f]) v ^= 1; x[c] = v; }
+      const w = x.reduce((a, v) => a + v, 0); if (!best || w < best.w) best = { w, x };
+    }
+    return best;
+  }
+  function geo(g) { const s = g.s, Ha = g.bot - g.top - 110; s.cs = Math.min((g.W - 24) / s.n, Ha / s.n, 96); s.ox = (g.W - s.cs * s.n) / 2; s.oy = g.top + 90 + (Ha - s.cs * s.n) / 2; }
+  function tapCell(g, i) {
+    const s = g.s; if (s.done) return;
+    press(s.b, s.n, i, s.shape); s.presses++; s.wave.push({ i, t: 0 });
+    const on = s.b.reduce((a, v) => a + v, 0);
+    Arcade.tone(300 + (s.n * s.n - on) * 18, 0.08, 'triangle', 0.07);
+    if (!on) {
+      s.done = true; g.confetti(60); Arcade.sfx.win();
+      g.addScore(Math.max(50, (s.par * 3 - s.presses) * 30) * Math.max(1, Math.round(g.lv / 2)), g.W / 2, g.H / 2);
+      setTimeout(() => { if (g.state === 'play') g.win(s.presses <= s.par ? 3 : s.presses <= s.par + 3 ? 2 : 1); }, 900);
+    }
+  }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Apaga todas las luces', deco: ['💡', '🌙', '✨', '🔌', '⭐', '🌃'], font: 'wide', bg: ['#1b1740', '#0d0b1e'],
+    music: { mode: 'lydian', bpm: 78, wave: 'sine', style: 'chill', root: 64 }, voice: { wave: 'sine', mul: 1.3, echo: 0.45 },
+    /*EN*/ en: { title: 'Lights Out', tag: 'Switch every light off', help: '<b>Tap</b> a light to switch it: it changes, and so do the ones touching it in a <b>cross</b> (on and off). Switch <b>every light off</b>. Every board comes from an all-off board, so it always has a solution; the "Best" counter shows the fewest presses possible. On some levels the switches change the <b>diagonals</b> instead (the drawing on the button shows it).', tvHelp: 'D-pad to a light · OK to switch it.', dict: { 'Pulsaciones: ': 'Presses: ', 'Mínimo: ': 'Best: ', 'en cruz': 'cross', 'en diagonal': 'diagonals' } },
+    /*TV*/ tvHelp: 'Cruceta hasta una luz · OK para cambiarla.',
+    tv: { mode: 'tap', targets: (g) => { const s = g.s; if (!s.b) return []; return s.b.map((_, i) => ({ x: s.ox + (i % s.n) * s.cs, y: s.oy + Math.floor(i / s.n) * s.cs, w: s.cs, h: s.cs })); } },
+    id: 'apagon', title: 'Apagón', emoji: '💡', color: '#ffe066', origin: 'Lights Out (Tiger Electronics, 1995 · Lutanho)',
+    help: '<b>Toca</b> una luz para cambiarla: cambia ella y también las que la tocan <b>en cruz</b> (se encienden o se apagan). <b>Apaga todas</b> las luces. Cada tablero sale de uno apagado, así que siempre tiene solución; el marcador «Mínimo» dice las pulsaciones que hacen falta como poco. En algunos niveles los interruptores cambian las <b>diagonales</b> (lo verás dibujado arriba).',
+    lives: 0, levels: 0, cap: 20,
+    /*SC*/ demo(g) {
+      const s = g.s; if (s.done) return { wait: 0.4 };
+      const sol = solve(s.b, s.n, s.shape); if (!sol) return { wait: 0.4 };
+      const i = sol.x.findIndex((v) => v); if (i < 0) return { wait: 0.4 };
+      return { tap: [s.ox + (i % s.n + 0.5) * s.cs, s.oy + (Math.floor(i / s.n) + 0.5) * s.cs], after: 0.5, say: s.presses ? null : Arcade.T('Cada luz cambia también a sus vecinas', 'Each light also switches its neighbours') };
+    },
+    setup(g) {
+      const [n, shape] = cfg(g.lv), m = n * n;
+      for (let t = 0; ; t++) {
+        const b = new Array(m).fill(0), k = clamp(2 + Math.floor(g.lv * 0.8), 2, Math.floor(m * 0.6));
+        shuffle([...Array(m).keys()]).slice(0, k).forEach((i) => press(b, n, i, shape));
+        if (!b.some(Boolean)) continue;
+        const sol = solve(b, n, shape); if (!sol || (sol.w < Math.min(k, 2 + Math.floor(g.lv / 3)) && t < 30)) continue;
+        g.s = { n, shape, b, par: sol.w, presses: 0, done: false, wave: [] };
+        break;
+      }
+      geo(g);
+    },
+    layout(g) { if (g.s.b) geo(g); },
+    tap(g, p) { const s = g.s, c = Math.floor((p.x - s.ox) / s.cs), r = Math.floor((p.y - s.oy) / s.cs); if (c >= 0 && r >= 0 && c < s.n && r < s.n) tapCell(g, r * s.n + c); },
+    update(g, dt) { const s = g.s; if (!s.b) return; for (const w of s.wave) w.t += dt; s.wave = s.wave.filter((w) => w.t < 0.5); },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      ctx.fillStyle = '#0d0b1e'; ctx.fillRect(0, 0, W, H);
+      if (!s.b) return;
+      const cs = s.cs, n = s.n, on = s.b.reduce((a, v) => a + v, 0);
+      // brillo general según las luces encendidas
+      const glow = ctx.createRadialGradient(W / 2, s.oy + cs * n / 2, 10, W / 2, s.oy + cs * n / 2, cs * n);
+      glow.addColorStop(0, 'rgba(255,224,102,' + (0.05 + 0.25 * on / (n * n)) + ')'); glow.addColorStop(1, 'rgba(255,224,102,0)'); ctx.fillStyle = glow; ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = '#1b1740'; Arcade.rr(ctx, s.ox - 10, s.oy - 10, cs * n + 20, cs * n + 20, 16); ctx.fill();
+      s.b.forEach((v, i) => {
+        const x = s.ox + (i % n) * cs, y = s.oy + Math.floor(i / n) * cs, m = cs * 0.08;
+        let pulse = 0; for (const w of s.wave) { const wx = w.i % n, wy = (w.i / n) | 0, d = Math.abs(wx - (i % n)) + Math.abs(wy - ((i / n) | 0)); if (d <= 1) pulse = Math.max(pulse, Math.sin(Math.min(1, w.t / 0.3) * Math.PI) * (d ? 0.6 : 1)); }
+        const sq = 1 - pulse * 0.08;
+        ctx.save(); ctx.translate(x + cs / 2, y + cs / 2); ctx.scale(sq, sq);
+        if (v) {
+          ctx.shadowColor = '#ffd43b'; ctx.shadowBlur = cs * 0.4;
+          const gr = ctx.createRadialGradient(0, -cs * 0.1, cs * 0.05, 0, 0, cs * 0.5); gr.addColorStop(0, '#fffbe6'); gr.addColorStop(0.5, '#ffe066'); gr.addColorStop(1, '#f59f00');
+          ctx.fillStyle = gr;
+        } else { const gr = ctx.createLinearGradient(0, -cs / 2, 0, cs / 2); gr.addColorStop(0, '#2c2a55'); gr.addColorStop(1, '#1a1838'); ctx.fillStyle = gr; }
+        Arcade.rr(ctx, -cs / 2 + m, -cs / 2 + m, cs - 2 * m, cs - 2 * m, cs * 0.22); ctx.fill(); ctx.shadowBlur = 0;
+        ctx.fillStyle = v ? 'rgba(255,255,255,.55)' : 'rgba(255,255,255,.06)'; Arcade.rr(ctx, -cs * 0.3, -cs * 0.36, cs * 0.6, cs * 0.12, cs * 0.06); ctx.fill();
+        ctx.restore();
+      });
+      // forma del interruptor
+      const ix = W / 2, iy = g.top + 58, d = 9;
+      for (const [dx, dy] of NB[s.shape]) { ctx.fillStyle = dx || dy ? '#ffe066' : '#fff'; ctx.fillRect(ix + dx * d - 3.5 - 70, iy + dy * d - 3.5, 7, 7); }
+      Arcade.txt(ctx, s.shape === 'x' ? 'en diagonal' : 'en cruz', ix - 52, iy, 12, '#ffe8a3', 'left', 800);
+      Arcade.txt(ctx, 'Pulsaciones: ' + s.presses + '   ·   Mínimo: ' + s.par, W / 2, g.top + 24, 15, '#ffe8a3', 'center', 900);
+    },
+  });
+})();
+</script>
+</body>
+</html>

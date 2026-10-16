@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Casa llena · Arcade Perdido</title>
+<meta name="theme-color" content="#1b2a41">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css?v=6d7635e467">
+</head>
+<body class="game">
+<script src="config.js?v=d6380ae9b0"></script>
+<script src="common.js?v=207858a9a6"></script>
+<script>
+(function () {
+  const { ri, clamp, pick, shuffle } = Arcade;
+  const D = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
+  const KEYS = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right' };
+
+  // genera un nivel recorriéndolo: cada deslizamiento acaba contra una pared que se coloca justo después
+  function generate(L) {
+    const C = clamp(4 + Math.floor((L + 1) / 3), 4, 9), R = clamp(5 + Math.floor(L / 3), 5, 11), want = clamp(0.5 + L * 0.015, 0.5, 0.8);
+    for (let t = 0; t < 400; t++) {
+      const st = new Array(C * R).fill(0), sx = ri(0, C - 1), sy = ri(0, R - 1), dirs = []; // 0 desconocida · 1 camino · 2 pared
+      let x = sx, y = sy, last = null; st[y * C + x] = 1;
+      for (let step = 0; step < 200; step++) {
+        const opts = shuffle(Object.keys(D)).filter((d) => d !== last && (() => { const [dx, dy] = D[d], nx = x + dx, ny = y + dy; return nx >= 0 && ny >= 0 && nx < C && ny < R && st[ny * C + nx] === 0; })());
+        if (!opts.length) break;
+        const d = opts[0], [dx, dy] = D[d]; let max = 0;
+        while (true) { const nx = x + dx * (max + 1), ny = y + dy * (max + 1); if (nx < 0 || ny < 0 || nx >= C || ny >= R || st[ny * C + nx] !== 0) break; max++; }
+        const len = ri(1, max); for (let k = 1; k <= len; k++) st[(y + dy * k) * C + x + dx * k] = 1;
+        x += dx * len; y += dy * len;
+        const ex = x + dx, ey = y + dy; if (ex >= 0 && ey >= 0 && ex < C && ey < R && st[ey * C + ex] === 0) st[ey * C + ex] = 2;
+        dirs.push(d); last = d;
+      }
+      const path = st.filter((v) => v === 1).length;
+      if (path < C * R * want || dirs.length < 3 + Math.floor(L / 2)) continue;
+      return { C, R, wall: st.map((v) => v !== 1), start: [sx, sy], sol: dirs };
+    }
+    return generate(Math.max(1, L - 1));
+  }
+  function geo(g) { const s = g.s, Ha = g.bot - g.top - 90; s.cs = Math.min((g.W - 20) / s.C, Ha / s.R, 70); s.ox = (g.W - s.cs * s.C) / 2; s.oy = g.top + 80 + (Ha - s.cs * s.R) / 2; s.btn = [{ k: 'undo', x: g.W / 2 - 110, y: g.top + 36, w: 100, h: 34 }, { k: 'reset', x: g.W / 2 + 10, y: g.top + 36, w: 100, h: 34 }]; }
+  const free = (s, x, y) => x >= 0 && y >= 0 && x < s.C && y < s.R && !s.wall[y * s.C + x] && !s.vis[y * s.C + x];
+  function slide(g, d) {
+    const s = g.s; if (s.done || s.anim) return;
+    const [dx, dy] = D[d]; let n = 0; while (free(s, s.x + dx * (n + 1), s.y + dy * (n + 1))) n++;
+    if (!n) { s.bump = { dx, dy, t: 0.2 }; Arcade.tone(160, 0.05, 'square', 0.04); return; }
+    s.hist.push({ vis: s.vis.slice(), x: s.x, y: s.y }); s.moves.push(d);
+    s.anim = { x0: s.x, y0: s.y, dx, dy, n, t: 0 };
+    for (let k = 1; k <= n; k++) s.vis[(s.y + dy * k) * s.C + s.x + dx * k] = s.hist.length;
+    s.x += dx * n; s.y += dy * n;
+    Arcade.tone(330 + n * 30, 0.08, 'triangle', 0.07, 200);
+  }
+  function settled(g) {
+    const s = g.s; s.anim = null; Arcade.tone(200, 0.05, 'sine', 0.06);
+    const left = s.wall.reduce((a, w, i) => a + (!w && !s.vis[i] ? 1 : 0), 0);
+    if (!left) {
+      s.done = true; g.confetti(60); g.addScore(Math.max(50, 200 - (s.moves.length - s.sol.length) * 15) * g.lv, g.W / 2, g.H / 2);
+      setTimeout(() => { if (g.state === 'play') g.win(s.undos + s.resets === 0 ? 3 : s.undos + s.resets * 2 <= 4 ? 2 : 1); }, 900);
+    } else if (!Object.keys(D).some((d) => free(s, s.x + D[d][0], s.y + D[d][1]))) g.message(Arcade.T('¡Encerrado!', 'Stuck!'), 1.3, Arcade.T('Deshaz o empieza otra vez', 'Undo or start again'));
+  }
+  function undo(g) { const s = g.s, h = s.hist.pop(); if (!h || s.done || s.anim) return; s.vis = h.vis; s.x = h.x; s.y = h.y; s.moves.pop(); s.undos++; Arcade.sfx.whoosh(); }
+  function reset(g) { const s = g.s; if (s.done || s.anim || !s.hist.length) return; const h = s.hist[0]; s.vis = h.vis; s.x = h.x; s.y = h.y; s.hist = []; s.moves = []; s.resets++; Arcade.sfx.whoosh(); }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Recorre toda la casa de un tirón', deco: ['🏠', '🔵', '🧱', '➡️', '⬇️', '🏁'], font: 'round', bg: ['#2b3f5c', '#1b2a41'],
+    music: { mode: 'major', bpm: 96, wave: 'triangle', style: 'chill', root: 62 }, voice: { wave: 'triangle', mul: 1.15, echo: 0.3 },
+    /*EN*/ en: { title: 'Full House', tag: 'Cover the whole house in one go', help: 'The ball starts on the marked square. <b>Swipe</b> (or use the arrows) and it rolls in that direction <b>until it hits</b> a wall or a square it has already painted. Paint <b>every free square</b> of the house. If it gets trapped before that, undo ↩️ or start again 🔄. Every level is made by rolling it, so it always has a solution.', tvHelp: 'D-pad to roll the ball.', dict: { '↩️ Deshacer': '↩️ Undo', '🔄 Reiniciar': '🔄 Restart', 'Faltan ': 'Left ' } },
+    /*TV*/ tvHelp: 'Cruceta para rodar la bola.',
+    id: 'casallena', title: 'Casa llena', emoji: '🏠', color: '#74c0fc', origin: 'Full House (Lutanho)',
+    help: 'La bola empieza en la casilla marcada. <b>Desliza</b> (o usa las flechas) y rueda en esa dirección <b>hasta que choca</b> con una pared o con una casilla que ya ha pintado. Pinta <b>todas las casillas libres</b> de la casa. Si se queda encerrada antes, deshaz ↩️ o empieza otra vez 🔄. Cada nivel se ha hecho recorriéndolo, así que siempre tiene solución.',
+    lives: 0, levels: 0, cap: 22,
+    /*SC*/ demo(g) {
+      const s = g.s; if (s.done || s.anim) return { wait: 0.2 };
+      // si lo hecho no coincide con la solución, empieza de nuevo
+      const ok = s.moves.every((d, i) => d === s.sol[i]);
+      if (!ok) return { tap: [s.btn[1].x + 50, s.btn[1].y + 17], after: 0.4 };
+      const d = s.sol[s.moves.length]; if (!d) return { wait: 0.3 };
+      return { swipe: [s.ox + (s.x + 0.5) * s.cs, s.oy + (s.y + 0.5) * s.cs, d], len: s.cs * 1.2, after: 0.25, say: s.moves.length ? null : Arcade.T('Rueda hasta chocar y píntalo todo', 'Roll until you bump and paint it all') };
+    },
+    setup(g) {
+      const lv = generate(g.lv);
+      g.s = { ...lv, vis: new Array(lv.C * lv.R).fill(0), x: lv.start[0], y: lv.start[1], hist: [], moves: [], undos: 0, resets: 0, done: false, anim: null };
+      g.s.vis[lv.start[1] * lv.C + lv.start[0]] = -1;
+      geo(g);
+    },
+    layout(g) { if (g.s.wall) geo(g); },
+    swipe(g, d) { slide(g, d); },
+    tap(g, p) { const s = g.s; for (const b of s.btn) if (p.x >= b.x && p.x <= b.x + b.w && p.y >= b.y && p.y <= b.y + b.h) return b.k === 'undo' ? undo(g) : reset(g); },
+    key(g, k, d) { if (!d) return; if (KEYS[k]) slide(g, KEYS[k]); else if (k === 'z' || k === 'Backspace' || k === ' ') undo(g); else if (k === 'r') reset(g); },
+    update(g, dt) {
+      const s = g.s; if (!s.wall) return;
+      if (s.anim) { s.anim.t += dt * 16 / s.anim.n; if (s.anim.t >= 1) settled(g); }
+      if (s.bump) { s.bump.t -= dt; if (s.bump.t <= 0) s.bump = null; }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      ctx.fillStyle = '#1b2a41'; ctx.fillRect(0, 0, W, H);
+      if (!s.wall) return;
+      const cs = s.cs, painted = new Set();
+      // casillas pintadas aparecen poco a poco con el rodar de la bola
+      const a = s.anim, along = a ? Math.floor(a.t * a.n + 0.5) : 0;
+      ctx.fillStyle = '#0d1626'; Arcade.rr(ctx, s.ox - 8, s.oy - 8, cs * s.C + 16, cs * s.R + 16, 12); ctx.fill();
+      for (let y = 0; y < s.R; y++) for (let x = 0; x < s.C; x++) {
+        const i = y * s.C + x, px = s.ox + x * cs, py = s.oy + y * cs;
+        if (s.wall[i]) {
+          ctx.fillStyle = '#9c4a2b'; ctx.fillRect(px, py, cs, cs);
+          ctx.strokeStyle = '#6b2e18'; ctx.lineWidth = 1.5; ctx.strokeRect(px + 0.5, py + 0.5, cs - 1, cs - 1);
+          ctx.beginPath(); ctx.moveTo(px, py + cs / 2); ctx.lineTo(px + cs, py + cs / 2); ctx.moveTo(px + cs / 2, py); ctx.lineTo(px + cs / 2, py + cs / 2); ctx.moveTo(px + cs / 4, py + cs / 2); ctx.lineTo(px + cs / 4, py + cs); ctx.moveTo(px + cs * 0.75, py + cs / 2); ctx.lineTo(px + cs * 0.75, py + cs); ctx.stroke();
+          continue;
+        }
+        let v = s.vis[i];
+        if (a && v === s.hist.length) { const k = Math.abs(x - a.x0) + Math.abs(y - a.y0); if (k > along) v = 0; }
+        ctx.fillStyle = v ? '#4dabf7' : '#e9ecef'; Arcade.rr(ctx, px + 2, py + 2, cs - 4, cs - 4, cs * 0.15); ctx.fill();
+        if (v) { ctx.fillStyle = 'rgba(255,255,255,.25)'; Arcade.rr(ctx, px + 5, py + 5, cs - 10, cs * 0.2, cs * 0.08); ctx.fill(); painted.add(i); }
+        if (x === s.start[0] && y === s.start[1]) { ctx.strokeStyle = '#ffd43b'; ctx.lineWidth = 3; Arcade.rr(ctx, px + 4, py + 4, cs - 8, cs - 8, cs * 0.15); ctx.stroke(); }
+      }
+      let bx = s.x, by = s.y; if (a) { bx = a.x0 + a.dx * a.n * Math.min(1, a.t); by = a.y0 + a.dy * a.n * Math.min(1, a.t); }
+      if (s.bump) { bx += s.bump.dx * s.bump.t * 0.6; by += s.bump.dy * s.bump.t * 0.6; }
+      const x = s.ox + (bx + 0.5) * cs, y = s.oy + (by + 0.5) * cs, r = cs * 0.34;
+      const gr = ctx.createRadialGradient(x - r * 0.35, y - r * 0.4, r * 0.1, x, y, r); gr.addColorStop(0, '#fff'); gr.addColorStop(0.3, '#ffd43b'); gr.addColorStop(1, '#e67700');
+      ctx.fillStyle = 'rgba(0,0,0,.3)'; ctx.beginPath(); ctx.ellipse(x + 2, y + r * 0.8, r * 0.8, r * 0.25, 0, 0, 6.3); ctx.fill();
+      ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(x, y, r, 0, 6.3); ctx.fill();
+      Arcade.emoji(ctx, g.face(), x, y, r * 1.3);
+      for (const b of s.btn) { ctx.fillStyle = 'rgba(255,255,255,.12)'; Arcade.rr(ctx, b.x, b.y, b.w, b.h, 10); ctx.fill(); Arcade.txt(ctx, b.k === 'undo' ? '↩️ Deshacer' : '🔄 Reiniciar', b.x + b.w / 2, b.y + b.h / 2, 13, '#fff', 'center', 800); }
+      const left = s.wall.reduce((n, w, i) => n + (!w && !s.vis[i] ? 1 : 0), 0);
+      Arcade.txt(ctx, 'Faltan ' + left, W / 2, g.top + 16, 15, '#d0ebff', 'center', 900);
+    },
+  });
+})();
+</script>
+</body>
+</html>

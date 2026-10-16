@@ -1,0 +1,128 @@
+// Cuatro en raya|#14213d
+(function () {
+  const { rand, clamp, pick } = Arcade;
+  const C = 7, R = 6, ORDER = [3, 2, 4, 1, 5, 0, 6];
+  // nivel → [profundidad, ruido]
+  const cfg = (L) => [clamp(1 + Math.floor(L / 3), 1, 5), clamp(0.45 - L * 0.04, 0.06, 0.45)];
+  const top = (b, c) => { for (let r = R - 1; r >= 0; r--) if (!b[r * C + c]) return r; return -1; };
+  function winAt(b, i) {
+    const who = b[i]; if (!who) return null; const x = i % C, y = (i / C) | 0;
+    for (const [dx, dy] of [[1, 0], [0, 1], [1, 1], [1, -1]]) {
+      const cells = [i];
+      for (let k = 1; k < 4; k++) { const cx = x + dx * k, cy = y + dy * k; if (cx < 0 || cy < 0 || cx >= C || cy >= R || b[cy * C + cx] !== who) break; cells.push(cy * C + cx); }
+      for (let k = 1; k < 4; k++) { const cx = x - dx * k, cy = y - dy * k; if (cx < 0 || cy < 0 || cx >= C || cy >= R || b[cy * C + cx] !== who) break; cells.push(cy * C + cx); }
+      if (cells.length >= 4) return cells;
+    }
+    return null;
+  }
+  function score(b, who) { // ventanas de 4
+    let v = 0; const W = [[1, 0], [0, 1], [1, 1], [1, -1]];
+    for (let y = 0; y < R; y++) for (let x = 0; x < C; x++) for (const [dx, dy] of W) {
+      const ex = x + dx * 3, ey = y + dy * 3; if (ex < 0 || ey < 0 || ex >= C || ey >= R) continue;
+      let me = 0, op = 0; for (let k = 0; k < 4; k++) { const c = b[(y + dy * k) * C + x + dx * k]; if (c === who) me++; else if (c) op++; }
+      if (!op) v += [0, 1, 6, 40][me] || 0; else if (!me) v -= [0, 1, 7, 60][op] || 0;
+    }
+    for (let y = 0; y < R; y++) v += (b[y * C + 3] === who ? 3 : b[y * C + 3] ? -3 : 0);
+    return v;
+  }
+  function negamax(b, who, depth, a, bt) {
+    let any = false, best = -1e9, mv = -1;
+    for (const c of ORDER) {
+      const r = top(b, c); if (r < 0) continue; any = true;
+      const i = r * C + c; b[i] = who;
+      let v; if (winAt(b, i)) v = 10000 + depth; else if (!depth) v = score(b, who); else v = -negamax(b, 3 - who, depth - 1, -bt, -a)[0];
+      b[i] = 0;
+      if (v > best) { best = v; mv = c; } if (v > a) a = v; if (a >= bt) break;
+    }
+    return any ? [best, mv] : [0, -1];
+  }
+  function geo(g) { const s = g.s, Ha = g.bot - g.top - 110; s.cs = Math.min((g.W - 24) / C, Ha / (R + 0.6), 84); s.ox = (g.W - s.cs * C) / 2; s.oy = g.top + 90 + (Ha - s.cs * (R + 0.6)) / 2 + s.cs * 0.6; }
+  function drop(g, c, who) {
+    const s = g.s, r = top(s.b, c); if (r < 0) return false;
+    const i = r * C + c; s.b[i] = who; s.fall = { i, y: -1, v: 0, who }; s.busy = true; s.moves += who === 1 ? 1 : 0;
+    Arcade.tone(who === 1 ? 480 : 300, 0.06, 'triangle', 0.06);
+    return true;
+  }
+  function landed(g) {
+    const s = g.s, f = s.fall; s.fall = null; s.busy = false; s.pop[f.i] = 1;
+    Arcade.tone(160 + ((f.i / C) | 0) * 40, 0.1, 'sine', 0.12, -60);
+    const w = winAt(s.b, f.i);
+    if (w) {
+      s.done = true; s.winLine = w;
+      if (f.who === 1) { g.addScore(300 * g.lv, g.W / 2, g.H / 2); g.confetti(70); setTimeout(() => { if (g.state === 'play') g.win(s.moves <= 9 ? 3 : s.moves <= 15 ? 2 : 1); }, 1100); }
+      else { g.message(Arcade.T('Gana la máquina', 'The machine wins'), 1.4); setTimeout(() => { if (g.state === 'play' && g.die()) Arcade.current.def.setup(g); }, 1700); }
+      return;
+    }
+    if (s.b.every(Boolean)) { s.done = true; g.message(Arcade.T('Empate: otra vez', 'Draw: again'), 1.3); setTimeout(() => { if (g.state === 'play') Arcade.current.def.setup(g); }, 1500); return; }
+    s.turn = 3 - f.who; if (s.turn === 2) s.think = rand(0.35, 0.7);
+  }
+  const CHIP = { 1: ['#ffe066', '#f59f00', '#e67700'], 2: ['#ff8787', '#e03131', '#a61e1e'] };
+  function chip(ctx, x, y, r, who) {
+    const [a, b, c] = CHIP[who];
+    const gr = ctx.createRadialGradient(x - r * 0.3, y - r * 0.3, r * 0.1, x, y, r); gr.addColorStop(0, a); gr.addColorStop(0.7, b); gr.addColorStop(1, c);
+    ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(x, y, r, 0, 6.3); ctx.fill();
+    ctx.strokeStyle = 'rgba(0,0,0,.2)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x, y, r * 0.66, 0, 6.3); ctx.stroke();
+  }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Deja caer y conecta cuatro', deco: ['🟡', '🔴', '⬇️', '🎯', '🏆', '🧠'], font: 'round', bg: ['#1d3557', '#14213d'],
+    music: { mode: 'major', bpm: 100, wave: 'triangle', style: 'chill', root: 60 }, voice: { wave: 'triangle', mul: 1.1, echo: 0.3 },
+    /*EN*/ en: { title: 'Four in a Row', tag: 'Drop and connect four', help: 'You play yellow against the machine (red). <b>Tap a column</b> to drop a disc: it falls to the lowest free space. Get <b>4 in a row</b> horizontally, vertically or diagonally before the machine does, and block its lines. Each level the machine thinks one move further ahead. A draw replays the level.', tvHelp: '◀ ▶ choose the column · OK to drop.', dict: { 'Tu turno': 'Your turn', 'Pensando…': 'Thinking…', 'Nivel de la máquina: ': 'Machine level: ' } },
+    /*TV*/ tvHelp: '◀ ▶ elige la columna · OK para soltar.',
+    tv: { mode: 'tap', targets: (g) => { const s = g.s; if (!s.b) return []; const o = []; for (let c = 0; c < C; c++) if (top(s.b, c) >= 0) o.push({ x: s.ox + c * s.cs, y: s.oy - s.cs * 0.6, w: s.cs, h: s.cs * (R + 0.6) }); return o; } },
+    id: 'cuatro', title: 'Cuatro en raya', emoji: '🟡', color: '#ffd43b', origin: 'Connect 4 / Four in a Row (Lutanho)',
+    help: 'Juegas con las amarillas contra la máquina (rojas). <b>Toca una columna</b> para dejar caer una ficha: baja hasta el hueco más bajo libre. Haz <b>4 en raya</b> en horizontal, vertical o diagonal antes que la máquina, y tápale sus líneas. En cada nivel la máquina piensa una jugada más por delante. El empate repite el nivel.',
+    lives: 3, levels: 0, cap: 20,
+    /*SC*/ demo(g) {
+      const s = g.s; if (s.done || s.turn !== 1 || s.busy) return { wait: 0.25 };
+      const [, c] = negamax(s.b.slice(), 1, 4, -1e9, 1e9); const col = c >= 0 ? c : ORDER.find((k) => top(s.b, k) >= 0);
+      return { tap: [s.ox + (col + 0.5) * s.cs, s.oy + s.cs * 2], after: 0.4, say: s.moves ? null : Arcade.T('Haz 4 en raya antes que la máquina', 'Get 4 in a row before the machine') };
+    },
+    setup(g) {
+      const [depth, noise] = cfg(g.lv);
+      g.s = { b: new Array(C * R).fill(0), pop: new Array(C * R).fill(0), turn: g.level % 2 === 0 ? 2 : 1, think: 0.8, depth, noise, done: false, moves: 0, hover: -1, winLine: null };
+      geo(g);
+    },
+    layout(g) { if (g.s.b) geo(g); },
+    tap(g, p) { const s = g.s; if (s.done || s.turn !== 1 || s.busy) return; const c = Math.floor((p.x - s.ox) / s.cs); if (c < 0 || c >= C) return; if (!drop(g, c, 1)) Arcade.sfx.bad(); },
+    hover(g, x) { const s = g.s; s.hover = Math.floor((x - s.ox) / s.cs); },
+    move(g, p) { const s = g.s; s.hover = Math.floor((p.x - s.ox) / s.cs); },
+    update(g, dt) {
+      const s = g.s; if (!s.b) return;
+      for (let i = 0; i < s.pop.length; i++) s.pop[i] = Math.max(0, s.pop[i] - dt * 3);
+      if (s.fall) { const f = s.fall, ty = (f.i / C) | 0; f.v += 40 * dt; f.y += f.v * dt; if (f.y >= ty) { if (f.v > 6) { f.y = ty; f.v = -f.v * 0.25; Arcade.tone(200, 0.04, 'sine', 0.05); } else landed(g); } return; }
+      if (s.turn === 2 && !s.done) {
+        s.think -= dt; if (s.think > 0) return;
+        const free = ORDER.filter((c) => top(s.b, c) >= 0);
+        let c = Math.random() < s.noise ? pick(free) : negamax(s.b.slice(), 2, s.depth, -1e9, 1e9)[1];
+        // aunque haga ruido, nunca deja de ganar si puede ni de tapar una línea de cuatro
+        let won = false; for (const k of free) { const r = top(s.b, k), b = s.b.slice(); b[r * C + k] = 2; if (winAt(b, r * C + k)) { c = k; won = true; break; } }
+        if (!won && s.depth > 1) for (const k of free) { const r = top(s.b, k), b = s.b.slice(); b[r * C + k] = 1; if (winAt(b, r * C + k)) { c = k; break; } }
+        if (c < 0 || top(s.b, c) < 0) c = free[0];
+        drop(g, c, 2);
+      }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      const bg = ctx.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, '#1d3557'); bg.addColorStop(1, '#0b1428');
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      if (!s.b) return;
+      const cs = s.cs, r = cs * 0.4;
+      // fichas (detrás del tablero)
+      s.b.forEach((v, i) => { if (!v || (s.fall && s.fall.i === i)) return; const x = s.ox + (i % C + 0.5) * cs, y = s.oy + (((i / C) | 0) + 0.5) * cs; chip(ctx, x, y, r * (1 + s.pop[i] * 0.08), v); });
+      if (s.fall) { const f = s.fall; chip(ctx, s.ox + (f.i % C + 0.5) * cs, s.oy + (f.y + 0.5) * cs, r, f.who); }
+      // tablero con agujeros
+      ctx.save(); ctx.beginPath(); ctx.rect(s.ox - 10, s.oy - 6, cs * C + 20, cs * R + 16);
+      for (let i = 0; i < C * R; i++) { const x = s.ox + (i % C + 0.5) * cs, y = s.oy + (((i / C) | 0) + 0.5) * cs; ctx.moveTo(x + r + 2, y); ctx.arc(x, y, r + 2, 0, 6.3, true); }
+      const bd = ctx.createLinearGradient(0, s.oy, 0, s.oy + cs * R); bd.addColorStop(0, '#3b5bdb'); bd.addColorStop(1, '#1c3faa');
+      ctx.fillStyle = bd; ctx.fill('evenodd'); ctx.restore();
+      ctx.fillStyle = '#152c7a'; ctx.fillRect(s.ox - 18, s.oy + cs * R + 10, cs * C + 36, 12);
+      // ficha preparada encima de la columna
+      if (s.turn === 1 && !s.done && !s.busy) { const c = clamp(s.hover >= 0 ? s.hover : 3, 0, C - 1); ctx.globalAlpha = 0.85; chip(ctx, s.ox + (c + 0.5) * cs, s.oy - cs * 0.45, r * 0.9, 1); ctx.globalAlpha = 1; }
+      if (s.winLine) { const pts = s.winLine.map((i) => [s.ox + (i % C + 0.5) * cs, s.oy + (((i / C) | 0) + 0.5) * cs]).sort((a, b) => a[0] - b[0] || a[1] - b[1]); ctx.strokeStyle = 'rgba(255,255,255,.85)'; ctx.lineWidth = cs * 0.12; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(...pts[0]); ctx.lineTo(...pts[pts.length - 1]); ctx.stroke(); ctx.lineCap = 'butt'; }
+      chip(ctx, W / 2 - 100, g.top + 28, 12, 1); chip(ctx, W / 2 + 100, g.top + 28, 12, 2);
+      Arcade.txt(ctx, s.done ? '' : s.turn === 1 ? 'Tu turno' : 'Pensando…', W / 2, g.top + 28, 16, '#fff', 'center', 900);
+      Arcade.txt(ctx, 'Nivel de la máquina: ' + s.depth, W / 2, g.top + 52, 12, '#a5d8ff', 'center', 800);
+    },
+  });
+})();

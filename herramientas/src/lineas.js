@@ -1,0 +1,132 @@
+// Líneas|#1a1b3a
+(function () {
+  const { ri, clamp, shuffle } = Arcade;
+  const N = 9;
+  const COL = [['#ff6b6b', '#c92a2a'], ['#ffd43b', '#e67700'], ['#51cf66', '#2b8a3e'], ['#4dabf7', '#1864ab'], ['#cc5de8', '#862e9c'], ['#ff922b', '#d9480f'], ['#f8f9fa', '#868e96']];
+  const DIRS = [[1, 0], [0, 1], [1, 1], [1, -1]];
+  const inb = (x, y) => x >= 0 && y >= 0 && x < N && y < N;
+
+  function reachable(b, from) {
+    const seen = new Map([[from, -1]]), q = [from];
+    while (q.length) { const i = q.shift(), x = i % N, y = (i / N) | 0; for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const nx = x + dx, ny = y + dy, j = ny * N + nx; if (!inb(nx, ny) || b[j] >= 0 || seen.has(j)) continue; seen.set(j, i); q.push(j); } }
+    return seen;
+  }
+  function pathTo(prev, to) { const p = []; for (let k = to; k !== -1; k = prev.get(k)) p.unshift(k); return p; }
+  function linesAt(b, i) {
+    const c = b[i]; if (c < 0) return []; const x = i % N, y = (i / N) | 0, out = new Set();
+    for (const [dx, dy] of DIRS) {
+      const cells = [i];
+      for (let k = 1; inb(x + dx * k, y + dy * k) && b[(y + dy * k) * N + x + dx * k] === c; k++) cells.push((y + dy * k) * N + x + dx * k);
+      for (let k = 1; inb(x - dx * k, y - dy * k) && b[(y - dy * k) * N + x - dx * k] === c; k++) cells.push((y - dy * k) * N + x - dx * k);
+      if (cells.length >= 5) cells.forEach((j) => out.add(j));
+    }
+    return [...out];
+  }
+  const lineLen = (b, i, c) => { const x = i % N, y = (i / N) | 0; let best = 1; for (const [dx, dy] of DIRS) { let n = 1; for (let k = 1; inb(x + dx * k, y + dy * k) && b[(y + dy * k) * N + x + dx * k] === c; k++) n++; for (let k = 1; inb(x - dx * k, y - dy * k) && b[(y - dy * k) * N + x - dx * k] === c; k++) n++; best = Math.max(best, n); } return best; };
+  function geo(g) { const s = g.s, Ha = g.bot - g.top - 100; s.cs = Math.min((g.W - 16) / N, Ha / N, 64); s.ox = (g.W - s.cs * N) / 2; s.oy = g.top + 86 + (Ha - s.cs * N) / 2; }
+  function preview(g) { const s = g.s, free = shuffle(s.b.map((v, i) => (v < 0 ? i : -1)).filter((i) => i >= 0)); s.next = free.slice(0, 3).map((i) => ({ i, c: ri(0, s.nc - 1) })); }
+  function spawn(g) {
+    const s = g.s;
+    for (const n of s.next) {
+      let i = n.i; if (s.b[i] >= 0) { const free = s.b.map((v, k) => (v < 0 ? k : -1)).filter((k) => k >= 0); if (!free.length) break; i = free[ri(0, free.length - 1)]; }
+      s.b[i] = n.c; s.grow[i] = 0.001; s.objs[i] = {};
+      const l = linesAt(s.b, i); if (l.length) clear(g, l, false);
+    }
+    Arcade.tone(260, 0.06, 'triangle', 0.05);
+    if (s.b.every((v) => v >= 0)) { s.done = true; g.message(Arcade.T('¡Tablero lleno!', 'Board full!'), 1.3); setTimeout(() => { if (g.state === 'play' && g.die()) Arcade.current.def.setup(g); }, 1500); return; }
+    preview(g);
+  }
+  function clear(g, cells, mine) {
+    const s = g.s; let cx = 0, cy = 0;
+    for (const j of cells) { const c = s.b[j]; cx += j % N; cy += (j / N) | 0; s.pops.push({ i: j, c, t: 0.4 }); s.b[j] = -1; }
+    cx = s.ox + (cx / cells.length + 0.5) * s.cs; cy = s.oy + (cy / cells.length + 0.5) * s.cs;
+    const pts = (cells.length * 10 + (cells.length - 5) * 30) * Math.max(1, Math.round(g.lv / 2));
+    g.addScore(pts, cx, cy); s.lines++;
+    for (let k = 0; k < Math.min(8, cells.length); k++) setTimeout(() => Arcade.tone(523 * Math.pow(2, [0, 4, 7, 12, 16, 19, 24, 28][k] / 12), 0.12, 'triangle', 0.07), k * 50);
+    if (cells.length > 5) g.ring(cx, cy, '#ffd43b', s.cs * 3, 5);
+    if (s.lines >= s.goal && !s.done) { s.done = true; g.confetti(70); g.addScore(300 * g.lv, g.W / 2, g.H / 2); setTimeout(() => { if (g.state === 'play') g.win(s.turns <= s.goal * 6 ? 3 : s.turns <= s.goal * 9 ? 2 : 1); }, 900); }
+  }
+  function tapCell(g, i) {
+    const s = g.s; if (s.done || s.walk) return;
+    if (s.b[i] >= 0) { s.sel = i; Arcade.tone(600, 0.05, 'square', 0.04); return; }
+    if (s.sel < 0) return;
+    const prev = reachable(s.b, s.sel); if (!prev.has(i)) { Arcade.sfx.bad(); s.noway = { i, t: 0.4 }; return; }
+    s.walk = { path: pathTo(prev, i), k: 0, t: 0, c: s.b[s.sel] }; s.b[s.sel] = -1; s.sel = -1; s.turns++;
+  }
+  function arrive(g) {
+    const s = g.s, w = s.walk, i = w.path[w.path.length - 1]; s.walk = null; s.b[i] = w.c; s.objs[i] = { __gl: null };
+    Arcade.tone(400, 0.05, 'sine', 0.06);
+    const l = linesAt(s.b, i); if (l.length) clear(g, l, true); else spawn(g);
+  }
+  function ball(ctx, x, y, r, c, sq) {
+    const [a, b] = COL[c];
+    ctx.fillStyle = 'rgba(0,0,0,.3)'; ctx.beginPath(); ctx.ellipse(x + 1, y + r * 0.85, r * 0.8, r * 0.25, 0, 0, 6.3); ctx.fill();
+    ctx.save(); ctx.translate(x, y); ctx.scale(1 + (sq || 0), 1 - (sq || 0));
+    const gr = ctx.createRadialGradient(-r * 0.35, -r * 0.4, r * 0.1, 0, 0, r); gr.addColorStop(0, '#fff'); gr.addColorStop(0.25, a); gr.addColorStop(1, b);
+    ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(0, 0, r, 0, 6.3); ctx.fill(); ctx.restore();
+  }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Cinco del mismo color y desaparecen', deco: ['🔴', '🟡', '🟢', '🔵', '🟣', '✨'], font: 'round', bg: ['#2b2d5c', '#1a1b3a'],
+    music: { mode: 'lydian', bpm: 92, wave: 'sine', style: 'chill', root: 62 }, voice: { wave: 'sine', mul: 1.2, echo: 0.4 },
+    /*EN*/ en: { title: 'Lines', tag: 'Five of a colour and they vanish', help: '<b>Tap a ball</b> to pick it and then <b>an empty square</b> to send it there: it only gets there if there is a free path. Line up <b>5 or more balls of the same colour</b> (across, down or diagonally) and they disappear. Each move that clears nothing brings <b>3 new balls</b>: the small dots show where and of what colour they will appear. Make the number of lines the level asks for before the board fills up.', tvHelp: 'D-pad to a ball · OK to pick it · then to an empty square · OK.', dict: { 'Líneas: ': 'Lines: ', 'Siguientes': 'Next' } },
+    /*TV*/ tvHelp: 'Cruceta hasta una bola · OK para cogerla · luego a una casilla libre · OK.',
+    tv: { mode: 'tap', targets: (g) => { const s = g.s; if (!s.b) return []; return s.b.map((_, i) => ({ x: s.ox + (i % N) * s.cs, y: s.oy + Math.floor(i / N) * s.cs, w: s.cs, h: s.cs })); } },
+    id: 'lineas', title: 'Líneas', emoji: '🔵', color: '#748ffc', origin: 'Color Lines (Lutanho) / Lines 98',
+    help: '<b>Toca una bola</b> para elegirla y luego <b>una casilla vacía</b> para mandarla allí: solo llega si hay un camino libre. Pon en línea <b>5 o más bolas del mismo color</b> (en horizontal, vertical o diagonal) y desaparecen. Cada jugada sin hacer línea trae <b>3 bolas nuevas</b>: los puntitos te enseñan dónde y de qué color saldrán. Haz las líneas que pide el nivel antes de que se llene el tablero.',
+    lives: 3, levels: 0, cap: 20,
+    /*SC*/ demo(g) {
+      const s = g.s; if (s.done || s.walk) return { wait: 0.3 };
+      let best = null;
+      s.b.forEach((c, i) => {
+        if (c < 0) return; const prev = reachable(s.b, i); s.b[i] = -1;
+        for (const [j] of prev) { if (j === i) continue; const n = lineLen(s.b, j, c), v = (n >= 5 ? 100 : n * n) + (s.next.some((x) => x.i === j) ? -2 : 0) + Math.random() * 0.5; if (!best || v > best.v) best = { v, i, j }; }
+        s.b[i] = c;
+      });
+      if (!best) return { wait: 0.3 };
+      const P = (k) => [s.ox + (k % N + 0.5) * s.cs, s.oy + (Math.floor(k / N) + 0.5) * s.cs];
+      if (s.sel !== best.i) return { tap: P(best.i), after: 0.25, say: s.turns ? null : Arcade.T('Junta 5 del mismo color en línea', 'Line up 5 of the same colour') };
+      return { tap: P(best.j), after: 0.5 };
+    },
+    setup(g) {
+      const L = g.lv, nc = L < 8 ? 5 : L < 18 ? 6 : 7;
+      g.s = { b: new Array(N * N).fill(-1), grow: {}, objs: {}, sel: -1, walk: null, pops: [], lines: 0, goal: clamp(3 + Math.floor(L / 2.5), 3, 10), nc, turns: 0, done: false };
+      const s = g.s; geo(g);
+      const free = shuffle([...Array(N * N).keys()]); for (let k = 0; k < 5; k++) s.b[free[k]] = ri(0, nc - 1);
+      preview(g);
+    },
+    layout(g) { if (g.s.b) geo(g); },
+    tap(g, p) { const s = g.s, c = Math.floor((p.x - s.ox) / s.cs), r = Math.floor((p.y - s.oy) / s.cs); if (c >= 0 && r >= 0 && c < N && r < N) tapCell(g, r * N + c); },
+    update(g, dt) {
+      const s = g.s; if (!s.b) return;
+      for (const k in s.grow) { s.grow[k] += dt * 4; if (s.grow[k] >= 1) delete s.grow[k]; }
+      for (const p of s.pops) p.t -= dt; s.pops = s.pops.filter((p) => p.t > 0);
+      if (s.noway) { s.noway.t -= dt; if (s.noway.t <= 0) s.noway = null; }
+      if (s.walk) { const w = s.walk; w.t += dt; while (w.t >= 0.045) { w.t -= 0.045; w.k++; if (w.k >= w.path.length - 1) { arrive(g); break; } } }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      const bg = ctx.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, '#2b2d5c'); bg.addColorStop(1, '#0f1029');
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      if (!s.b) return;
+      const cs = s.cs, r = cs * 0.38;
+      ctx.fillStyle = 'rgba(0,0,0,.3)'; Arcade.rr(ctx, s.ox - 6, s.oy - 6, cs * N + 12, cs * N + 12, 12); ctx.fill();
+      for (let i = 0; i < N * N; i++) { const x = s.ox + (i % N) * cs, y = s.oy + Math.floor(i / N) * cs; ctx.fillStyle = (i % N + ((i / N) | 0)) % 2 ? '#3b3e78' : '#33366a'; Arcade.rr(ctx, x + 1.5, y + 1.5, cs - 3, cs - 3, cs * 0.15); ctx.fill(); }
+      if (s.noway) { const i = s.noway.i; ctx.fillStyle = 'rgba(255,80,80,' + s.noway.t + ')'; ctx.fillRect(s.ox + (i % N) * cs, s.oy + Math.floor(i / N) * cs, cs, cs); }
+      // dónde saldrán las siguientes
+      for (const n of s.next) if (s.b[n.i] < 0) ball(ctx, s.ox + (n.i % N + 0.5) * cs, s.oy + (Math.floor(n.i / N) + 0.5) * cs, r * 0.32, n.c);
+      // camino posible de la bola elegida
+      s.b.forEach((c, i) => {
+        if (c < 0) return; const x = s.ox + (i % N + 0.5) * cs, y = s.oy + (Math.floor(i / N) + 0.5) * cs, gk = s.grow[i] != null ? s.grow[i] : 1;
+        const sel = i === s.sel, jump = sel ? Math.abs(Math.sin(g.rt * 9)) * cs * 0.12 : 0, sq = sel ? Math.max(0, Math.cos(g.rt * 9 * 2)) * 0.06 : 0;
+        ball(ctx, x, y - jump, r * gk, c, sq);
+      });
+      if (s.walk) { const w = s.walk, a = w.path[w.k], b = w.path[Math.min(w.path.length - 1, w.k + 1)], f = w.t / 0.045; const x = s.ox + ((a % N) + ((b % N) - (a % N)) * f + 0.5) * cs, y = s.oy + (((a / N) | 0) + (((b / N) | 0) - ((a / N) | 0)) * f + 0.5) * cs; ball(ctx, x, y, r, w.c); }
+      for (const p of s.pops) { const x = s.ox + (p.i % N + 0.5) * cs, y = s.oy + (Math.floor(p.i / N) + 0.5) * cs, k = p.t / 0.4; ctx.globalAlpha = k; ball(ctx, x, y, r * (1 + (1 - k) * 0.6), p.c); ctx.globalAlpha = 1; }
+      // marcador
+      Arcade.txt(ctx, 'Líneas: ' + Math.min(s.lines, s.goal) + '/' + s.goal, W / 2, g.top + 22, 16, '#dbe4ff', 'center', 900);
+      Arcade.txt(ctx, 'Siguientes', W / 2 - 50, g.top + 54, 12, '#a5b4fc', 'right', 800);
+      s.next.forEach((n, k) => ball(ctx, W / 2 - 30 + k * 30, g.top + 54, 11, n.c));
+    },
+  });
+})();

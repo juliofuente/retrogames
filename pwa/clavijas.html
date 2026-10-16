@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Clavijas · Arcade Perdido</title>
+<meta name="theme-color" content="#2b1a0e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css?v=6d7635e467">
+</head>
+<body class="game">
+<script src="config.js?v=d6380ae9b0"></script>
+<script src="common.js?v=207858a9a6"></script>
+<script>
+(function () {
+  const { ri, clamp, shuffle, pick } = Arcade;
+  const D = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
+  // tableros: inglés (33 agujeros) y europeo (37)
+  const ENG = (x, y) => x >= 0 && y >= 0 && x < 7 && y < 7 && ((x >= 2 && x <= 4) || (y >= 2 && y <= 4));
+  const EUR = (x, y) => ENG(x, y) || (x >= 1 && x <= 5 && y >= 1 && y <= 5);
+  // figuras clásicas en el tablero inglés (comprobadas con el solucionador: acaban en una sola clavija)
+  const SHAPES = [
+    ['Cruz', 'Cross', ['3,1', '2,2', '3,2', '4,2', '3,3', '3,4']],
+    ['Más', 'Plus', ['3,1', '3,2', '1,3', '2,3', '3,3', '4,3', '5,3', '3,4', '3,5']],
+    ['Chimenea', 'Fireplace', ['2,0', '3,0', '4,0', '2,1', '3,1', '4,1', '2,2', '3,2', '4,2', '2,3', '4,3']],
+    ['Flecha', 'Up arrow', ['3,0', '2,1', '3,1', '4,1', '1,2', '2,2', '3,2', '4,2', '5,2', '3,3', '3,4', '2,5', '3,5', '4,5', '2,6', '3,6', '4,6']],
+    ['Pirámide', 'Pyramid', ['3,1', '2,2', '3,2', '4,2', '1,3', '2,3', '3,3', '4,3', '5,3', '0,4', '1,4', '2,4', '3,4', '4,4', '5,4', '6,4']],
+    ['Diamante', 'Diamond', ['3,0', '2,1', '3,1', '4,1', '1,2', '2,2', '3,2', '4,2', '5,2', '0,3', '1,3', '2,3', '4,3', '5,3', '6,3', '1,4', '2,4', '3,4', '4,4', '5,4', '2,5', '3,5', '4,5', '3,6']],
+  ];
+  const k = (x, y) => x + ',' + y;
+  function jumps(holes, pegs) {
+    const out = [];
+    for (const p of pegs) { const [x, y] = p.split(',').map(Number); for (const d in D) { const [dx, dy] = D[d], m = k(x + dx, y + dy), t = k(x + 2 * dx, y + 2 * dy); if (pegs.has(m) && holes.has(t) && !pegs.has(t)) out.push({ from: p, over: m, to: t, d }); } }
+    return out;
+  }
+  function solve(holes, pegs0, budget) {
+    const dead = new Set(); let n = 0;
+    const rec = (pegs) => {
+      if (pegs.size === 1) return [];
+      if (++n > budget) return null;
+      const key = [...pegs].sort().join(';'); if (dead.has(key)) return null;
+      for (const j of jumps(holes, pegs)) { const np = new Set(pegs); np.delete(j.from); np.delete(j.over); np.add(j.to); const r = rec(np); if (r) return [j, ...r]; }
+      dead.add(key); return null;
+    };
+    return rec(pegs0);
+  }
+  // nivel generado: se parte de una sola clavija y se hacen saltos «al revés»
+  function reverseGen(holes, n) {
+    const H = [...holes];
+    for (let t = 0; t < 200; t++) {
+      const pegs = new Set([pick(H)]);
+      let guard = 0;
+      while (pegs.size < n && guard++ < 400) {
+        const p = pick([...pegs]), [x, y] = p.split(',').map(Number), d = pick(Object.keys(D)), [dx, dy] = D[d];
+        const m = k(x - dx, y - dy), f = k(x - 2 * dx, y - 2 * dy);
+        if (holes.has(m) && holes.has(f) && !pegs.has(m) && !pegs.has(f)) { pegs.delete(p); pegs.add(m); pegs.add(f); }
+      }
+      if (pegs.size >= n) return pegs;
+    }
+    return null;
+  }
+  function makeLevel(L) {
+    const eng = new Set(), eur = new Set();
+    for (let y = 0; y < 7; y++) for (let x = 0; x < 7; x++) { if (ENG(x, y)) eng.add(k(x, y)); if (EUR(x, y)) eur.add(k(x, y)); }
+    if (L <= SHAPES.length) { const [es, en, cells] = SHAPES[L - 1]; return { holes: eng, pegs: new Set(cells), name: Arcade.T(es, en) }; }
+    if (L >= 22 && L % 4 === 2) { const pegs = new Set(eng); pegs.delete('3,3'); return { holes: eng, pegs, name: Arcade.T('Solitario completo', 'Full solitaire') }; }
+    const holes = L >= 12 && L % 2 ? eur : eng, n = clamp(10 + Math.floor((L - SHAPES.length) * 0.8), 10, 26);
+    for (let t = 0; t < 6; t++) { const pegs = reverseGen(holes, n - t); if (pegs) return { holes, pegs, name: holes === eur ? Arcade.T('Tablero europeo', 'European board') : Arcade.T('Tablero inglés', 'English board') }; }
+    return makeLevel(1);
+  }
+  function geo(g) { const s = g.s, Ha = g.bot - g.top - 110; s.cs = Math.min((g.W - 16) / 7.9, Ha / 7.9, 72); s.ox = (g.W - s.cs * 7) / 2; s.oy = g.top + 90 + (Ha - s.cs * 7) / 2; s.btn = [{ k: 'undo', x: g.W / 2 - 110, y: g.top + 40, w: 100, h: 34, instant: true }, { k: 'reset', x: g.W / 2 + 10, y: g.top + 40, w: 100, h: 34, instant: true }]; }
+  const XY = (s, p) => { const [x, y] = p.split(',').map(Number); return [s.ox + (x + 0.5) * s.cs, s.oy + (y + 0.5) * s.cs]; };
+  const cellAt = (s, px, py) => { const x = Math.floor((px - s.ox) / s.cs), y = Math.floor((py - s.oy) / s.cs), p = k(x, y); return s.holes.has(p) ? p : null; };
+  function doJump(g, j) {
+    const s = g.s; s.hist.push(new Set(s.pegs)); s.pegs.delete(j.from); s.pegs.delete(j.over); s.pegs.add(j.to); s.sel = null; s.moves++;
+    s.hop = { from: j.from, to: j.to, t: 0 }; s.gone.push({ p: j.over, t: 0.35 });
+    Arcade.tone(500, 0.06, 'triangle', 0.07, 300); setTimeout(() => Arcade.tone(260, 0.06, 'sine', 0.08), 160);
+    g.addScore(10 * Math.max(1, Math.round(g.lv / 2)));
+    if (s.pegs.size === 1) {
+      s.done = true; const center = s.pegs.has('3,3');
+      setTimeout(() => { if (g.state !== 'play') return; const [x, y] = XY(s, [...s.pegs][0]); g.burst(x, y, { n: 20, emoji: '✨', size: 14, speed: 200 }); g.confetti(70); g.addScore((center ? 600 : 300) * g.lv, x, y - 20); if (center) g.message(Arcade.T('¡En el centro!', 'Right in the centre!'), 1); }, 300);
+      setTimeout(() => { if (g.state === 'play') g.win(s.undos + s.resets === 0 ? 3 : s.undos + s.resets * 3 <= 6 ? 2 : 1); }, 1300);
+    } else if (!jumps(s.holes, s.pegs).length) g.message(Arcade.T('Sin saltos', 'No jumps left'), 1.5, Arcade.T('Deshaz o empieza otra vez', 'Undo or start again'));
+  }
+  function tryFrom(g, from, to) {
+    const s = g.s, j = jumps(s.holes, s.pegs).find((m) => m.from === from && m.to === to);
+    if (j) { doJump(g, j); return true; } return false;
+  }
+  function undo(g) { const s = g.s, h = s.hist.pop(); if (!h || s.done) return; s.pegs = h; s.undos++; s.sel = null; Arcade.sfx.whoosh(); }
+  function reset(g) { const s = g.s; if (s.done || !s.hist.length) return; s.pegs = new Set(s.start); s.hist = []; s.resets++; s.sel = null; Arcade.sfx.whoosh(); }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Salta, quita y deja una sola', deco: ['🟤', '🪵', '🎯', '⭐', '🏆', '🧠'], font: 'serif', bg: ['#5c3a1a', '#2b1a0e'],
+    music: { mode: 'dorian', bpm: 80, wave: 'triangle', style: 'chill', root: 57 }, voice: { wave: 'triangle', mul: 1.1, echo: 0.35 },
+    /*EN*/ en: { title: 'Peg Solitaire', tag: 'Jump, remove and leave just one', help: 'A peg can <b>jump over a neighbour</b> (across or down, never diagonally) into an empty hole just behind it, and the peg it jumped over is removed. <b>Swipe</b> a peg in the direction you want, or tap it and then tap the hole. Leave <b>a single peg</b> on the board (in the centre, extra points). The first levels are the classic figures (Cross, Plus, Fireplace, Arrow, Pyramid, Diamond); then come boards generated backwards from a single peg, the European board and, from time to time, the full solitaire. ↩️ undoes, 🔄 restarts.', tvHelp: 'D-pad to a peg · OK to pick it · arrow to jump.', dict: { '↩️ Deshacer': '↩️ Undo', '🔄 Reiniciar': '🔄 Restart', 'Clavijas: ': 'Pegs: ' } },
+    /*TV*/ tvHelp: 'Cruceta hasta una clavija · OK para cogerla · flecha para saltar.',
+    tv: { mode: 'swipe', follow: false, targets: (g) => { const s = g.s; if (!s.pegs) return []; return [...s.pegs].map((p) => { const [x, y] = XY(s, p); return { x: x - s.cs / 2, y: y - s.cs / 2, w: s.cs, h: s.cs }; }).concat(s.btn); } },
+    id: 'clavijas', title: 'Clavijas', emoji: '🎯', color: '#e8a33d', origin: 'Peg Solitaire / Peggy (Lutanho)',
+    help: 'Una clavija puede <b>saltar sobre otra vecina</b> (en horizontal o vertical, nunca en diagonal) hasta un agujero vacío justo detrás, y la que salta se quita. <b>Desliza</b> una clavija hacia donde quieras, o tócala y luego toca el agujero. Deja <b>una sola clavija</b> en el tablero (en el centro, puntos extra). Los primeros niveles son las figuras clásicas (Cruz, Más, Chimenea, Flecha, Pirámide, Diamante); luego vienen tableros generados al revés desde una sola clavija, el tablero europeo y, de vez en cuando, el solitario completo. ↩️ deshace y 🔄 empieza de nuevo.',
+    lives: 0, levels: 0, cap: 26,
+    /*SC*/ demo(g) {
+      const s = g.s; if (s.done || s.hop) return { wait: 0.3 };
+      const sol = solve(s.holes, s.pegs, 30000); if (!sol || !sol.length) return { tap: [s.btn[0].x + 50, s.btn[0].y + 17], after: 0.5 };
+      const j = sol[0], [x, y] = XY(s, j.from);
+      return { swipe: [x, y, j.d], len: s.cs * 0.8, after: 0.5, say: s.moves ? null : Arcade.T('Salta por encima y la quitas', 'Jump over a peg to remove it') };
+    },
+    setup(g) {
+      const lv = makeLevel(g.lv);
+      g.s = { holes: lv.holes, pegs: lv.pegs, start: new Set(lv.pegs), name: lv.name, sel: null, hist: [], undos: 0, resets: 0, moves: 0, done: false, hop: null, gone: [] };
+      geo(g);
+    },
+    layout(g) { if (g.s.holes) geo(g); },
+    swipe(g, d, p) { const s = g.s; if (s.done) return; const c = cellAt(s, p.sx, p.sy); if (!c || !s.pegs.has(c)) return; const [x, y] = c.split(',').map(Number), [dx, dy] = D[d]; if (!tryFrom(g, c, k(x + 2 * dx, y + 2 * dy))) Arcade.sfx.bad(); },
+    tap(g, p) {
+      const s = g.s; if (s.done) return;
+      for (const b of s.btn) if (p.x >= b.x && p.x <= b.x + b.w && p.y >= b.y && p.y <= b.y + b.h) return b.k === 'undo' ? undo(g) : reset(g);
+      const c = cellAt(s, p.x, p.y); if (!c) return;
+      if (s.pegs.has(c)) { s.sel = c; Arcade.tone(600, 0.04, 'square', 0.04); return; }
+      if (s.sel && !tryFrom(g, s.sel, c)) Arcade.sfx.bad();
+    },
+    key(g, kk, d) { if (d && (kk === 'z' || kk === 'Backspace')) undo(g); else if (d && kk === 'r') reset(g); },
+    update(g, dt) { const s = g.s; if (s.hop) { s.hop.t += dt / 0.3; if (s.hop.t >= 1) s.hop = null; } for (const x of s.gone) x.t -= dt; s.gone = (s.gone || []).filter((x) => x.t > 0); },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      ctx.fillStyle = '#2b1a0e'; ctx.fillRect(0, 0, W, H);
+      if (!s.holes) return;
+      const cs = s.cs;
+      // tablero de madera redondo
+      const cx = s.ox + cs * 3.5, cy = s.oy + cs * 3.5, R = cs * 3.85;
+      const wd = ctx.createRadialGradient(cx - R * 0.3, cy - R * 0.3, R * 0.1, cx, cy, R); wd.addColorStop(0, '#d08c4a'); wd.addColorStop(1, '#7a4419');
+      ctx.fillStyle = 'rgba(0,0,0,.4)'; ctx.beginPath(); ctx.arc(cx + 3, cy + 6, R, 0, 6.3); ctx.fill();
+      ctx.fillStyle = wd; ctx.beginPath(); ctx.arc(cx, cy, R, 0, 6.3); ctx.fill();
+      ctx.strokeStyle = 'rgba(60,30,10,.25)'; ctx.lineWidth = 2; for (let r = R * 0.3; r < R; r += R * 0.17) { ctx.beginPath(); ctx.arc(cx + 4, cy - 3, r, 0, 6.3); ctx.stroke(); }
+      const can = new Set(), dests = new Set(); for (const j of jumps(s.holes, s.pegs)) { can.add(j.from); if (j.from === s.sel) dests.add(j.to); }
+      for (const h of s.holes) { const [x, y] = XY(s, h); ctx.fillStyle = 'rgba(40,20,5,.65)'; ctx.beginPath(); ctx.arc(x, y, cs * 0.2, 0, 6.3); ctx.fill(); if (dests.has(h)) { ctx.strokeStyle = '#ffd43b'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(x, y, cs * 0.28, 0, 6.3); ctx.stroke(); } }
+      const peg = (x, y, sz, hi) => {
+        ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.beginPath(); ctx.ellipse(x + 2, y + sz * 0.5, sz * 0.8, sz * 0.35, 0, 0, 6.3); ctx.fill();
+        const gr = ctx.createRadialGradient(x - sz * 0.3, y - sz * 0.35, sz * 0.1, x, y, sz); gr.addColorStop(0, hi ? '#fff3bf' : '#ffd8a8'); gr.addColorStop(0.5, hi ? '#fcc419' : '#e8590c'); gr.addColorStop(1, hi ? '#e67700' : '#862e09');
+        ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(x, y, sz, 0, 6.3); ctx.fill();
+      };
+      for (const p of s.pegs) {
+        if (s.hop && s.hop.to === p) continue;
+        const [x, y] = XY(s, p), sel = p === s.sel, lift = sel ? cs * 0.08 + Math.sin(g.rt * 8) * cs * 0.03 : 0;
+        peg(x, y - lift, cs * 0.3, sel || (can.has(p) && !s.sel && false));
+      }
+      if (s.hop) { const [x0, y0] = XY(s, s.hop.from), [x1, y1] = XY(s, s.hop.to), t = s.hop.t; peg(x0 + (x1 - x0) * t, y0 + (y1 - y0) * t - Math.sin(t * Math.PI) * cs * 0.6, cs * 0.3 * (1 + Math.sin(t * Math.PI) * 0.2), true); }
+      for (const x of s.gone) { const [px, py] = XY(s, x.p); ctx.globalAlpha = x.t / 0.35; peg(px, py - (0.35 - x.t) * cs * 2, cs * 0.3 * (x.t / 0.35 + 0.3)); ctx.globalAlpha = 1; }
+      for (const b of s.btn) { ctx.fillStyle = 'rgba(255,255,255,.12)'; Arcade.rr(ctx, b.x, b.y, b.w, b.h, 10); ctx.fill(); Arcade.txt(ctx, b.k === 'undo' ? '↩️ Deshacer' : '🔄 Reiniciar', b.x + b.w / 2, b.y + b.h / 2, 13, '#fff', 'center', 800); }
+      Arcade.txt(ctx, s.name + ' · ' + 'Clavijas: ' + s.pegs.size, W / 2, g.top + 18, 15, '#ffe8cc', 'center', 900);
+    },
+  });
+})();
+</script>
+</body>
+</html>

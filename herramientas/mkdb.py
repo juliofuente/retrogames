@@ -58,14 +58,14 @@ CATEGORIES = [
 ]
 
 CAT = {
-    'puzles': 'empujon vias bumeran dados parejas domino hielo avalancha expande portales sumacamino losas relojes sumas destellos agua almacen buscaminas laberinto puzle inundacion cientos atasco emojidoku',
-    'combinar': 'racimo cambio cuadra galletas centro sombreros burbujas cinta hexagonos lumina deslizaheroes mazmorra fusionabolas cadenaroja treses gemas bloques rosario sandia fusion grupos columnas puntos',
-    'accion': 'luz pasarela lazo pivote tuberia balancin cubos camarero mariquita piramide pinguino excavador castillos hamburguesa fontanero cerditos justa ratonera desplazado campanas tunel monociclo esquiva astro dardos gloton globo pezgordo supervivientes cruce ladrillos rebotes',
+    'puzles': 'apagon clavijas casallena hanoi empujon vias bumeran dados parejas domino hielo avalancha expande portales sumacamino losas relojes sumas destellos agua almacen buscaminas laberinto puzle inundacion cientos atasco emojidoku',
+    'combinar': 'lineas racimo cambio cuadra galletas centro sombreros burbujas cinta hexagonos lumina deslizaheroes mazmorra fusionabolas cadenaroja treses gemas bloques rosario sandia fusion grupos columnas puntos',
+    'accion': 'serpiente luz pasarela lazo pivote tuberia balancin cubos camarero mariquita piramide pinguino excavador castillos hamburguesa fontanero cerditos justa ratonera desplazado campanas tunel monociclo esquiva astro dardos gloton globo pezgordo supervivientes cruce ladrillos rebotes',
     'untoque': 'honda gancho trepamuros planetita carretera torreta reaccion estallido punteria reflejos golpecolor encaje resorte escaleras montana helicoptero aleteo helice minero doscoches salto puente torre lenador saltacolor pinchos orbita candado',
     'plataformas': 'bote escalador trampolin agujeros carrera saltarin volteo',
     'fisica': 'elastico barra fantasma tambaleante balanza teeter tirachinas derribo gravedad alas',
     'estrategia': 'murallas centinela artilleria huerto torres celulas',
-    'tablero': 'ishido palabra poker enraya memoria',
+    'tablero': 'reversi cuatro mancala solitario ishido palabra poker enraya memoria',
     'deportes': 'esqui circuito billar arquero minigolf',
 }
 CTRL = {  # control (como en games.js) → slug es, slug en, nombre en
@@ -75,7 +75,7 @@ CTRL = {  # control (como en games.js) → slug es, slug en, nombre en
 ADDED = {'expande': '2.5.0', 'portales': '2.5.0', 'hexagonos': '2.5.0', 'lumina': '2.5.0', 'deslizaheroes': '2.5.0', 'sumacamino': '2.5.0',
          'mazmorra': '2.5.0', 'fusionabolas': '2.5.0', 'cadenaroja': '2.5.0', 'losas': '2.5.0',
          'honda': '2.16.0', 'gancho': '2.16.0', 'empujon': '2.16.0', 'racimo': '2.16.0', 'bote': '2.16.0', 'luz': '2.16.0', 'elastico': '2.16.0', 'pasarela': '2.16.0',
-         'excavador': '2.17.0'}
+         'excavador': '2.17.0', **{k: '2.19.0' for k in 'reversi cuatro mancala solitario lineas apagon clavijas casallena hanoi serpiente'.split()}}
 
 
 def slugify(t):

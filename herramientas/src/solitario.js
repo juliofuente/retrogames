@@ -1,0 +1,264 @@
+// Solitario|#0b4d2c
+(function () {
+  const { clamp, shuffle } = Arcade;
+  const SUIT = ['♠', '♥', '♦', '♣'], RANK = ['', 'A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+  const red = (s) => s === 1 || s === 2;
+  const S = (c) => (c / 13) | 0, Rk = (c) => (c % 13) + 1;
+
+  /* ---------- solucionador (para repartir solo partidas con solución) ----------
+     estado: tab[7] = { d: cartas boca abajo, u: cartas boca arriba }, f[4] = rango en cada palo, t = mazo+descarte, w = cartas sacadas */
+  function reach(n, w, k) { const o = new Set(); if (w > 0) o.add(w - 1); let p = w; while (p < n) { p = Math.min(p + k, n); o.add(p - 1); } p = 0; while (p < w) { p = Math.min(p + k, n); o.add(p - 1); } return [...o].sort((a, b) => a - b); }
+  const fits = (c, on) => on == null ? Rk(c) === 13 : red(S(c)) !== red(S(on)) && Rk(c) === Rk(on) - 1;
+  function key(st) { return st.tab.map((c) => c.d.length + ':' + c.u.join(',')).join('|') + '#' + st.f.join(',') + '#' + st.t.join(',') + '@' + st.w; }
+  function clone(st) { return { tab: st.tab.map((c) => ({ d: c.d.slice(), u: c.u.slice() })), f: st.f.slice(), t: st.t.slice(), w: st.w }; }
+  function flip(col) { if (!col.u.length && col.d.length) col.u.push(col.d.pop()); }
+  function genMoves(st, k) {
+    const out = [];
+    const tops = st.tab.map((c) => c.u[c.u.length - 1]);
+    // a la base
+    st.tab.forEach((c, i) => { const x = tops[i]; if (x != null && Rk(x) === st.f[S(x)] + 1) out.push({ p: 0, a: 'tf', i }); });
+    for (const j of reach(st.t.length, st.w, k)) { const x = st.t[j]; if (Rk(x) === st.f[S(x)] + 1) out.push({ p: 1, a: 'mf', j }); }
+    // del mazo a la mesa
+    for (const j of reach(st.t.length, st.w, k)) { const x = st.t[j]; st.tab.forEach((c, i) => { if (fits(x, tops[i])) out.push({ p: 3, a: 'mt', j, i }); }); }
+    // entre columnas
+    st.tab.forEach((c, i) => c.u.forEach((x, n) => {
+      if (Rk(x) === 13 && n === 0 && !c.d.length) return;   // rey ya en el fondo: moverlo no sirve
+      st.tab.forEach((c2, i2) => { if (i2 !== i && fits(x, tops[i2])) out.push({ p: n === 0 && c.d.length ? 2 : 4, a: 'tt', i, n, i2 }); });
+    }));
+    return out.sort((a, b) => a.p - b.p);
+  }
+  function apply(st, m) {
+    const s = clone(st);
+    if (m.a === 'tf') { const x = s.tab[m.i].u.pop(); s.f[S(x)]++; flip(s.tab[m.i]); }
+    else if (m.a === 'mf') { const x = s.t.splice(m.j, 1)[0]; s.f[S(x)]++; s.w = m.j; }
+    else if (m.a === 'mt') { const x = s.t.splice(m.j, 1)[0]; s.tab[m.i].u.push(x); s.w = m.j; }
+    else { const run = s.tab[m.i].u.splice(m.n); s.tab[m.i2].u.push(...run); flip(s.tab[m.i]); }
+    return s;
+  }
+  function solve(st0, k, budget) {
+    const seen = new Set(); let nodes = 0;
+    const rec = (st) => {
+      if (st.f.every((x) => x === 13)) return [];
+      if (++nodes > budget) return null;
+      const kk = key(st); if (seen.has(kk)) return null; seen.add(kk);
+      for (const m of genMoves(st, k)) { const r = rec(apply(st, m)); if (r) return [m, ...r]; }
+      return null;
+    };
+    return rec(st0);
+  }
+  function deal(L) {
+    const k = L >= 12 ? 3 : 1;
+    for (let tries = 0; tries < 40; tries++) {
+      const deck = shuffle([...Array(52).keys()]), tab = [];
+      let p = 0; for (let i = 0; i < 7; i++) { const d = deck.slice(p, p + i); p += i; const u = [deck[p++]]; tab.push({ d, u }); }
+      const st = { tab, f: [0, 0, 0, 0], t: deck.slice(p), w: 0 };
+      if (solve(st, k, 25000)) return { st, k };
+    }
+    return deal(1);
+  }
+
+  /* ---------- juego ---------- */
+  function geo(g) {
+    const s = g.s, W = g.W, top = g.top + 46;
+    s.cw = Math.min((W - 16) / 7 - 4, 92); s.ch = s.cw * 1.42; s.gap = (W - s.cw * 7) / 8;
+    s.y0 = top; s.ty = top + s.ch + Math.max(10, s.ch * 0.18); s.maxH = g.bot - 8 - s.ty;
+    s.px = (i) => s.gap + i * (s.cw + s.gap);
+  }
+  // posición de cada carta en pantalla (se recalcula en cada fotograma; las cartas se deslizan con Arcade.glide)
+  function layoutCards(g) {
+    const s = g.s, L = [];
+    s.stock.forEach((c, n) => L.push({ c, x: s.px(0) - Math.min(n, 3) * 0.6, y: s.y0 - Math.min(n, 3) * 0.6, up: false, where: 'stock' }));
+    const vis = s.k === 3 ? 3 : 1, ws = s.waste.length;
+    s.waste.forEach((c, n) => { const o = Math.max(0, n - (ws - vis)); L.push({ c, x: s.px(1) + o * s.cw * 0.28, y: s.y0, up: true, where: 'waste', top: n === ws - 1 }); });
+    s.found.forEach((p, i) => p.forEach((c, n) => L.push({ c, x: s.px(3 + i), y: s.y0, up: true, where: 'found', i, top: n === p.length - 1 })));
+    s.tab.forEach((col, i) => {
+      const nd = col.d.length, nu = col.u.length, need = nd * 0.16 + Math.max(0, nu - 1) * 0.3, k = need * s.ch > s.maxH - s.ch ? (s.maxH - s.ch) / (need * s.ch) : 1;
+      let y = s.ty;
+      col.d.forEach((c) => { L.push({ c, x: s.px(i), y, up: false, where: 'tab', i }); y += s.ch * 0.16 * k; });
+      col.u.forEach((c, n) => { L.push({ c, x: s.px(i), y, up: true, where: 'tab', i, n, top: n === nu - 1 }); y += s.ch * 0.3 * k; });
+    });
+    return L;
+  }
+  const snap = (s) => JSON.stringify({ stock: s.stock, waste: s.waste, found: s.found, tab: s.tab, passes: s.passes });
+  function restore(s, j) { const o = JSON.parse(j); Object.assign(s, o); }
+  function push(s) { s.hist.push(snap(s)); if (s.hist.length > 300) s.hist.shift(); }
+  const solverState = (s) => ({ tab: s.tab.map((c) => ({ d: c.d.slice(), u: c.u.slice() })), f: s.found.map((p) => p.length), t: [...s.waste, ...s.stock.slice().reverse()], w: s.waste.length });
+  function flipCol(g, i) { const s = g.s, col = s.tab[i]; if (!col.u.length && col.d.length) { col.u.push(col.d.pop()); s.flipFx[col.u[0]] = 1; g.addScore(5 * Math.max(1, g.lv)); Arcade.tone(700, 0.05, 'triangle', 0.05); } }
+  function toFound(g, c) { const s = g.s; s.found[S(c)].push(c); g.addScore(15 * Math.max(1, g.lv)); Arcade.tone(500 + s.found[S(c)].length * 40, 0.08, 'triangle', 0.08); s.moves++; checkWin(g); }
+  function checkWin(g) {
+    const s = g.s; if (s.done || s.found.some((p) => p.length < 13)) return;
+    s.done = true; g.confetti(90); g.addScore(800 * g.lv, g.W / 2, g.H / 2); s.bounce = 0;
+    setTimeout(() => { if (g.state === 'play') g.win(s.undos === 0 ? 3 : s.undos <= 4 ? 2 : 1); }, 1800);
+  }
+  function drawStock(g) {
+    const s = g.s; push(s);
+    if (!s.stock.length) { if (!s.waste.length) { s.hist.pop(); return; } s.stock = s.waste.reverse(); s.waste = []; s.passes++; Arcade.sfx.whoosh(); return; }
+    for (let n = 0; n < s.k && s.stock.length; n++) s.waste.push(s.stock.pop());
+    Arcade.tone(400, 0.04, 'square', 0.04);
+  }
+  // mueve la carta (y las de encima) a donde mejor quepa; devuelve true si se movió
+  function autoMove(g, src) {
+    const s = g.s;
+    if (src.where === 'waste') {
+      const c = s.waste[s.waste.length - 1];
+      if (Rk(c) === s.found[S(c)].length + 1) { push(s); s.waste.pop(); toFound(g, c); return true; }
+      const i = bestTab(s, c, -1); if (i >= 0) { push(s); s.waste.pop(); s.tab[i].u.push(c); s.moves++; Arcade.tone(420, 0.05, 'triangle', 0.06); return true; }
+      return false;
+    }
+    if (src.where === 'tab') {
+      const col = s.tab[src.i], c = col.u[src.n];
+      if (src.n === col.u.length - 1 && Rk(c) === s.found[S(c)].length + 1) { push(s); col.u.pop(); toFound(g, c); flipCol(g, src.i); return true; }
+      const i = bestTab(s, c, src.i); if (i >= 0) { push(s); const run = col.u.splice(src.n); s.tab[i].u.push(...run); s.moves++; flipCol(g, src.i); Arcade.tone(420, 0.05, 'triangle', 0.06); return true; }
+      return false;
+    }
+    if (src.where === 'found') { // de la base a la mesa (a veces hace falta)
+      const p = s.found[src.i], c = p[p.length - 1], i = bestTab(s, c, -1); if (i >= 0 && Rk(c) > 1) { push(s); p.pop(); s.tab[i].u.push(c); s.moves++; return true; }
+    }
+    return false;
+  }
+  function bestTab(s, c, from) {
+    let best = -1, bs = -1e9;
+    s.tab.forEach((col, i) => {
+      if (i === from) return; const top = col.u[col.u.length - 1];
+      if (col.u.length || col.d.length ? top == null || !fits(c, top) : Rk(c) !== 13) return;
+      const sc = (col.u.length ? 10 : 0) - (Rk(c) === 13 && from >= 0 && s.tab[from].u[0] === c && !s.tab[from].d.length ? 50 : 0);
+      if (sc > bs) { bs = sc; best = i; }
+    });
+    return best;
+  }
+  function hitCard(g, x, y) {
+    const s = g.s, L = layoutCards(g);
+    for (let k = L.length - 1; k >= 0; k--) { const o = L[k]; if (x >= o.x && x <= o.x + s.cw && y >= o.y && y <= o.y + s.ch) return o; }
+    if (x >= s.px(0) && x <= s.px(0) + s.cw && y >= s.y0 && y <= s.y0 + s.ch) return { where: 'stock' };
+    for (let i = 0; i < 7; i++) if (x >= s.px(i) && x <= s.px(i) + s.cw && y >= s.ty && y <= s.ty + s.ch) return { where: 'emptytab', i };
+    return null;
+  }
+  function act(g, o) {
+    const s = g.s; if (s.done || !o) return;
+    if (o.where === 'stock') return drawStock(g);
+    if (!o.up && o.where === 'tab') return;
+    if (o.where === 'waste' && !o.top) return;
+    if (o.where === 'found' && !o.top) return;
+    if (!autoMove(g, o)) { Arcade.sfx.bad(); s.wob = { c: o.c, t: 0.4 }; }
+  }
+  function undo(g) { const s = g.s, h = s.hist.pop(); if (!h || s.done) return; restore(s, h); s.undos++; Arcade.sfx.whoosh(); }
+  function cardFace(ctx, s, x, y, c, flipK) {
+    const w = s.cw, h = s.ch, r = w * 0.1, col = red(S(c)) ? '#e03131' : '#212529';
+    ctx.save(); if (flipK != null && flipK < 1) { ctx.translate(x + w / 2, 0); ctx.scale(Math.max(0.05, flipK), 1); ctx.translate(-(x + w / 2), 0); }
+    ctx.fillStyle = 'rgba(0,0,0,.3)'; Arcade.rr(ctx, x + 1, y + 2, w, h, r); ctx.fill();
+    ctx.fillStyle = '#fff'; Arcade.rr(ctx, x, y, w, h, r); ctx.fill(); ctx.strokeStyle = '#ced4da'; ctx.lineWidth = 1; ctx.stroke();
+    const fs = Math.max(10, w * 0.3);
+    Arcade.txt(ctx, RANK[Rk(c)], x + w * 0.06, y + fs * 0.6, fs, col, 'left', 900);
+    Arcade.txt(ctx, SUIT[S(c)], x + w * 0.94, y + fs * 0.6, fs * 0.9, col, 'right', 900);
+    Arcade.txt(ctx, SUIT[S(c)], x + w / 2, y + h * 0.62, w * 0.55, col, 'center', 900);
+    ctx.restore();
+  }
+  function cardBack(ctx, s, x, y) {
+    const w = s.cw, h = s.ch, r = w * 0.1;
+    ctx.fillStyle = 'rgba(0,0,0,.3)'; Arcade.rr(ctx, x + 1, y + 2, w, h, r); ctx.fill();
+    const gr = ctx.createLinearGradient(x, y, x + w, y + h); gr.addColorStop(0, '#4263eb'); gr.addColorStop(1, '#1c3faa');
+    ctx.fillStyle = gr; Arcade.rr(ctx, x, y, w, h, r); ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,.5)'; ctx.lineWidth = 1.5; Arcade.rr(ctx, x + 3, y + 3, w - 6, h - 6, r * 0.7); ctx.stroke();
+    ctx.strokeStyle = 'rgba(255,255,255,.15)'; ctx.lineWidth = 1; for (let k = -h; k < w; k += 7) { ctx.beginPath(); ctx.moveTo(x + Math.max(3, k), y + 3 + Math.max(0, -k)); ctx.lineTo(x + Math.min(w - 3, k + h), y + Math.min(h - 3, h + k - Math.max(0, k + h - w))); ctx.stroke(); }
+  }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'El solitario de toda la vida', deco: ['🃏', '♠️', '♥️', '♦️', '♣️', '👑'], font: 'serif', bg: ['#117a45', '#0b4d2c'],
+    music: { mode: 'major', bpm: 80, wave: 'sine', style: 'chill', root: 60 }, voice: { wave: 'sine', mul: 1.2, echo: 0.4 },
+    /*EN*/ en: { title: 'Solitaire', tag: 'The good old solitaire', help: 'Classic solitaire (Klondike). Build the four <b>foundations</b> at the top, one per suit, from A to K. On the table, cards go in <b>descending order and alternating colours</b> (a red 6 on a black 7); only a K can go into an empty column. <b>Tap</b> a card and it moves by itself to the best place (or <b>drag</b> it wherever you like). Tap the deck to draw: one card at a time in the first levels and three at a time later. ↩️ undoes. Every deal has been checked to have a solution.', tvHelp: 'D-pad to a card · OK moves it to the best place.', dict: { '↩️ Deshacer': '↩️ Undo', 'Movimientos: ': 'Moves: ', 'Saca ': 'Draw ' } },
+    /*TV*/ tvHelp: 'Cruceta hasta una carta · OK la mueve a su mejor sitio.',
+    tv: { mode: 'tap', targets: (g) => { const s = g.s; if (!s.tab) return []; const o = [{ x: s.px(0), y: s.y0, w: s.cw, h: s.ch }]; for (const c of layoutCards(g)) if (c.up && (c.where === 'tab' || c.top)) o.push({ x: c.x, y: c.y, w: s.cw, h: c.top ? s.ch : s.ch * 0.3 }); o.push({ ...s.btn, instant: true }); return o; } },
+    id: 'solitario', title: 'Solitario', emoji: '🃏', color: '#ffd43b', origin: 'Klondike / Solitaire (Lutanho)',
+    help: 'El solitario clásico (Klondike). Completa las cuatro <b>bases</b> de arriba, una por palo, del A a la K. En la mesa, las cartas van en <b>orden descendente y alternando colores</b> (un 6 rojo sobre un 7 negro); en una columna vacía solo puede ir una K. <b>Toca</b> una carta y se mueve sola a su mejor sitio (o <b>arrástrala</b> donde quieras). Toca el mazo para sacar: de una en una en los primeros niveles y de tres en tres después. ↩️ deshace. Todos los repartos están comprobados: tienen solución.',
+    lives: 0, levels: 0, cap: 20,
+    /*SC*/ demo(g) {
+      const s = g.s; if (s.done) return { wait: 0.5 };
+      // plan del solucionador; solo se recalcula si la mesa no es la esperada
+      const cur = solverState(s), kw = (st) => key({ ...st, w: 0 });
+      if (!s.plan || s.expect !== kw(cur)) { s.plan = solve(cur, s.k, 120000) || []; s.expect = kw(cur); }
+      const m = s.plan[0], tap = (x, y, a) => ({ tap: [x, y], after: a ?? 0.35 }), stockTap = () => tap(s.px(0) + s.cw / 2, s.y0 + s.ch / 2, 0.25);
+      if (!m) return s.tab.every((c) => !c.d.length) ? { wait: 0.3 } : stockTap();
+      const L = layoutCards(g), find = (c) => L.find((x) => x.c === c);
+      const dropAt = (i2) => { const tgt = s.tab[i2]; const last = tgt.u.length ? find(tgt.u[tgt.u.length - 1]) : { x: s.px(i2), y: s.ty - s.ch * 0.4 }; return [last.x + s.cw / 2, last.y + s.ch * 0.7]; };
+      if (m.a === 'mf' || m.a === 'mt') {
+        const want = cur.t[m.j]; if (s.waste[s.waste.length - 1] !== want) return { ...stockTap(), say: Arcade.T('Saca cartas del mazo', 'Draw cards from the deck') };
+        s.plan.shift(); s.expect = kw(apply(cur, m)); const o = find(want);
+        if (m.a === 'mf') return { drag: [[o.x + s.cw / 2, o.y + s.ch / 2], [s.px(3 + S(want)) + s.cw / 2, s.y0 + s.ch / 2]], dur: 0.35, after: 0.25 };
+        return { drag: [[o.x + s.cw / 2, o.y + s.ch / 2], dropAt(m.i)], dur: 0.4, after: 0.25 };
+      }
+      s.plan.shift(); s.expect = kw(apply(cur, m));
+      const col = s.tab[m.i], c = m.a === 'tf' ? col.u[col.u.length - 1] : col.u[m.n], o = find(c);
+      if (m.a === 'tf') return { drag: [[o.x + s.cw / 2, o.y + 10], [s.px(3 + S(c)) + s.cw / 2, s.y0 + s.ch / 2]], dur: 0.35, after: 0.2 };
+      return { drag: [[o.x + s.cw / 2, o.y + 10], dropAt(m.i2)], dur: 0.45, after: 0.25, say: s.moves < 2 ? Arcade.T('Bajando y alternando colores', 'Descending, alternating colours') : null };
+    },
+    setup(g) {
+      const { st, k } = deal(g.lv);
+      g.s = { k, stock: st.t.slice().reverse(), waste: [], found: [[], [], [], []], tab: st.tab.map((c) => ({ d: c.d, u: c.u })), hist: [], undos: 0, moves: 0, passes: 0, done: false, flipFx: {}, objs: {}, drag: null };
+      geo(g); g.s.btn = { x: g.W - 104, y: g.top + 6, w: 96, h: 34 };
+    },
+    layout(g) { if (g.s.tab) { geo(g); g.s.btn = { x: g.W - 104, y: g.top + 6, w: 96, h: 34 }; } },
+    down(g, p) {
+      const s = g.s; if (s.done) return; const b = s.btn;
+      if (p.x >= b.x && p.x <= b.x + b.w && p.y >= b.y && p.y <= b.y + b.h) { s.btnDown = true; return; }
+      const o = hitCard(g, p.x, p.y); if (!o || !o.up || o.where === 'stock' || (o.where === 'waste' && !o.top) || (o.where === 'found' && !o.top)) { s.press = o; return; }
+      s.press = o; s.drag = { o, dx: p.x - o.x, dy: p.y - o.y, x: p.x, y: p.y, moved: false };
+    },
+    move(g, p) { const d = g.s.drag; if (!d) return; d.x = p.x; d.y = p.y; if (Math.hypot(p.x - p.sx, p.y - p.sy) > 12) d.moved = true; },
+    up(g, p) {
+      const s = g.s, d = s.drag; s.drag = null;
+      if (s.btnDown) { s.btnDown = false; return undo(g); }
+      if (d && d.moved) { // soltar sobre una columna o una base
+        const o = d.o, cx = p.x;
+        const tgtCol = s.tab.findIndex((_, i) => cx >= s.px(i) - s.gap / 2 && cx <= s.px(i) + s.cw + s.gap / 2);
+        const c = o.where === 'tab' ? s.tab[o.i].u[o.n] : o.where === 'waste' ? s.waste[s.waste.length - 1] : s.found[o.i][s.found[o.i].length - 1];
+        const single = o.where !== 'tab' || o.n === s.tab[o.i].u.length - 1;
+        if (p.y < s.ty - 4 && single && cx >= s.px(3) - s.gap && Rk(c) === s.found[S(c)].length + 1 && o.where !== 'found') {
+          push(s); if (o.where === 'tab') { s.tab[o.i].u.pop(); flipCol(g, o.i); } else s.waste.pop(); toFound(g, c); return;
+        }
+        if (tgtCol >= 0 && (tgtCol !== o.i || o.where !== 'tab')) {
+          const col = s.tab[tgtCol], top = col.u[col.u.length - 1], empty = !col.u.length && !col.d.length;
+          if (empty ? Rk(c) === 13 : top != null && fits(c, top)) {
+            push(s);
+            if (o.where === 'tab') { const run = s.tab[o.i].u.splice(o.n); col.u.push(...run); flipCol(g, o.i); } else if (o.where === 'waste') col.u.push(s.waste.pop()); else col.u.push(s.found[o.i].pop());
+            s.moves++; Arcade.tone(420, 0.05, 'triangle', 0.06); return;
+          }
+        }
+        Arcade.sfx.bad(); return;
+      }
+      if (s.press) act(g, s.press); s.press = null;
+    },
+    key(g, k, d) { if (d && (k === 'z' || k === 'Backspace')) undo(g); },
+    update(g, dt) {
+      const s = g.s; if (!s.tab) return;
+      for (const k in s.flipFx) { s.flipFx[k] -= dt * 4; if (s.flipFx[k] <= 0) delete s.flipFx[k]; }
+      if (s.wob) { s.wob.t -= dt; if (s.wob.t <= 0) s.wob = null; }
+      // final automático: si ya está todo boca arriba y el mazo vacío, las cartas suben solas a las bases
+      if (!s.done && !s.stock.length && !s.waste.length && s.tab.every((c) => !c.d.length)) {
+        s.autoT = (s.autoT || 0) - dt;
+        if (s.autoT <= 0) { s.autoT = 0.09; for (let i = 0; i < 7; i++) { const col = s.tab[i], c = col.u[col.u.length - 1]; if (c != null && Rk(c) === s.found[S(c)].length + 1) { col.u.pop(); toFound(g, c); break; } } }
+      }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      const bg = ctx.createRadialGradient(W / 2, H * 0.4, 30, W / 2, H / 2, Math.max(W, H) * 0.8); bg.addColorStop(0, '#16a05a'); bg.addColorStop(1, '#0b4d2c');
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      if (!s.tab) return;
+      const slot = (x, y, txt) => { ctx.strokeStyle = 'rgba(255,255,255,.25)'; ctx.lineWidth = 2; Arcade.rr(ctx, x, y, s.cw, s.ch, s.cw * 0.1); ctx.stroke(); if (txt) Arcade.txt(ctx, txt, x + s.cw / 2, y + s.ch / 2, s.cw * 0.4, 'rgba(255,255,255,.25)', 'center', 900); };
+      slot(s.px(0), s.y0, s.stock.length ? '' : '↻'); slot(s.px(1), s.y0);
+      for (let i = 0; i < 4; i++) slot(s.px(3 + i), s.y0, SUIT[i]);
+      for (let i = 0; i < 7; i++) slot(s.px(i), s.ty);
+      const L = layoutCards(g), d = s.drag && s.drag.moved ? s.drag : null;
+      const dragging = new Set(); if (d) { if (d.o.where === 'tab') s.tab[d.o.i].u.slice(d.o.n).forEach((c) => dragging.add(c)); else dragging.add(d.o.c); }
+      const drawOne = (o, x, y) => { const f = s.flipFx[o.c]; if (o.up) cardFace(ctx, s, x + (s.wob && s.wob.c === o.c ? Math.sin(s.wob.t * 40) * 3 : 0), y, o.c, f != null ? 1 - f : null); else cardBack(ctx, s, x, y); };
+      for (const o of L) {
+        if (dragging.has(o.c)) continue;
+        const ob = s.objs[o.c] || (s.objs[o.c] = {}); let [x, y] = Arcade.glide(ob, o.x, o.y, 18);
+        if (s.done && o.where === 'found') { const t = g.rt * 3 + o.c; y += Math.sin(t) * 4; }
+        drawOne(o, x, y);
+      }
+      if (d) { let k = 0; for (const o of L) if (dragging.has(o.c)) { const ob = s.objs[o.c] || (s.objs[o.c] = {}), x = d.x - d.dx, y = d.y - d.dy + k * s.ch * 0.3; ob.__gl = { x, y, a: 1, f: Arcade.fno }; drawOne(o, x, y); k++; } }
+      const b = s.btn; ctx.fillStyle = 'rgba(0,0,0,.25)'; Arcade.rr(ctx, b.x, b.y, b.w, b.h, 10); ctx.fill(); Arcade.txt(ctx, '↩️ Deshacer', b.x + b.w / 2, b.y + b.h / 2, 13, '#fff', 'center', 800);
+      Arcade.txt(ctx, 'Saca ' + s.k + ' · ' + 'Movimientos: ' + s.moves, 12, g.top + 22, 13, '#d3f9d8', 'left', 800);
+    },
+  });
+})();

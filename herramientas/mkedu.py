@@ -71,6 +71,14 @@ ARCADE_EDU = [  # ref, asignatura, edades, título es/en, descripción es/en
      ('Cada número se estira tantas casillas como indica: cuenta casillas y planea para llegar a la meta.', 'Each number stretches as many squares as it shows: count squares and plan your way to the goal.')),
     ('fusionabolas', 'mates', (7, 14), ('Fusiona bolas', 'Fuse Balls'),
      ('Bolas numeradas que se fusionan al tocarse iguales: 2 + 2 = 4, 4 + 4 = 8… dobles y potencias de 2.', 'Numbered balls that merge when equal ones touch: 2 + 2 = 4, 4 + 4 = 8… doubles and powers of 2.')),
+    ('hanoi', 'logica', (7, 16), ('Torres de Hanói', 'Tower of Hanoi'),
+     ('El rompecabezas de los discos: planifica los movimientos para llevar la torre sin poner un disco grande sobre uno pequeño.', 'The disc puzzle: plan your moves to carry the tower without putting a big disc on a smaller one.')),
+    ('clavijas', 'logica', (8, 16), ('Clavijas', 'Peg Solitaire'),
+     ('El solitario de clavijas: piensa varios saltos por delante para dejar una sola en el tablero.', 'Peg solitaire: think several jumps ahead to leave just one on the board.')),
+    ('apagon', 'logica', (7, 16), ('Apagón', 'Lights Out'),
+     ('Cada interruptor cambia su luz y las vecinas: descubre el orden para apagarlas todas.', 'Each switch flips its light and its neighbours: find the order that switches them all off.')),
+    ('casallena', 'logica', (6, 14), ('Casa llena', 'Full House'),
+     ('La bola rueda hasta chocar: planifica el recorrido para pintar todas las casillas.', 'The ball rolls until it bumps: plan the route to paint every square.')),
 ]
 EXTRA_ARCADE = [dict(id=r, ref=r, app='arcade', subject=sj, emoji=None, ages=a, langs=['es', 'en'], url='pwa/' + r, title=t, desc=d) for r, sj, a, t, d in ARCADE_EDU]
 # Juegos sueltos (los de Brain Academy se añaden solos). ages = (mín, máx).

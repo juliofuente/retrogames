@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Hanói · Arcade Perdido</title>
+<meta name="theme-color" content="#1a1530">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css?v=6d7635e467">
+</head>
+<body class="game">
+<script src="config.js?v=d6380ae9b0"></script>
+<script src="common.js?v=207858a9a6"></script>
+<script>
+(function () {
+  const { ri, clamp } = Arcade;
+  const COLS = ['#ff6b6b', '#ff922b', '#ffd43b', '#94d82d', '#51cf66', '#22b8cf', '#4dabf7', '#845ef7', '#cc5de8'];
+  // estado compacto: en qué palo está cada disco (0 = el más pequeño)
+  const enc = (a) => a.join('');
+  function bfs(start, n, goal) {
+    const g = enc(new Array(n).fill(goal)), prev = new Map([[enc(start), null]]), q = [start];
+    while (q.length) {
+      const a = q.shift(), k = enc(a); if (k === g) { let d = 0, c = k; const path = []; while (prev.get(c)) { path.unshift(prev.get(c)); c = enc(prev.get(c).from); d++; } return path; }
+      const top = [-1, -1, -1]; for (let i = n - 1; i >= 0; i--) top[a[i]] = i;   // el disco más pequeño de cada palo
+      for (let f = 0; f < 3; f++) { if (top[f] < 0) continue; for (let t = 0; t < 3; t++) { if (t === f || (top[t] >= 0 && top[t] < top[f])) continue; const b = a.slice(); b[top[f]] = t; const kb = enc(b); if (prev.has(kb)) continue; prev.set(kb, { from: a, f, t }); q.push(b); } }
+    }
+    return [];
+  }
+  function geo(g) { const s = g.s, Ha = g.bot - g.top - 120; s.pw = Math.min((g.W - 24) / 3, 260); s.ox = (g.W - s.pw * 3) / 2; s.dh = Math.min(Ha / (s.n + 3), 34); s.base = g.top + 100 + Ha - 10; s.top = s.base - s.dh * (s.n + 1.5); }
+  const pegX = (s, p) => s.ox + (p + 0.5) * s.pw;
+  const stack = (s, p) => { const o = []; for (let i = s.n - 1; i >= 0; i--) if (s.a[i] === p) o.push(i); return o; };   // de abajo (grande) arriba (pequeño)
+  const diskW = (s, i) => s.pw * (0.28 + 0.66 * (i + 1) / s.n);
+  function tapPeg(g, p) {
+    const s = g.s; if (s.done || s.anim) return;
+    if (s.sel == null) { if (!stack(s, p).length) { Arcade.sfx.bad(); return; } s.sel = p; Arcade.tone(520, 0.05, 'triangle', 0.06); return; }
+    if (s.sel === p) { s.sel = null; return; }
+    const from = s.sel, d = stack(s, from).pop(), onto = stack(s, p).pop();
+    if (onto != null && onto < d) { Arcade.sfx.bad(); s.shake = 0.3; s.sel = null; return; }
+    const h0 = stack(s, from).length - 1, h1 = stack(s, p).length;
+    s.a[d] = p; s.moves++; s.sel = null;
+    s.anim = { d, from, to: p, h0, h1, t: 0 };
+    Arcade.tone(330 + (s.n - d) * 40, 0.08, 'triangle', 0.07);
+  }
+  function landed(g) {
+    const s = g.s; s.anim = null; Arcade.tone(200, 0.05, 'sine', 0.08);
+    if (s.a.every((v) => v === s.goal)) {
+      s.done = true; g.confetti(70); g.addScore(Math.max(50, (s.par * 2 - s.moves) * 20) * Math.max(1, Math.round(g.lv / 2)), g.W / 2, g.H / 2);
+      setTimeout(() => { if (g.state === 'play') g.win(s.moves <= s.par ? 3 : s.moves <= s.par * 1.5 + 2 ? 2 : 1); }, 900);
+    }
+  }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Mueve la torre disco a disco', deco: ['🗼', '🍩', '🧠', '🏯', '⭐', '🏆'], font: 'serif', bg: ['#2e2654', '#1a1530'],
+    music: { mode: 'phryg', bpm: 76, wave: 'sine', style: 'chill', root: 57 }, voice: { wave: 'sine', mul: 1.2, echo: 0.45 },
+    /*EN*/ en: { title: 'Tower of Hanoi', tag: 'Move the tower one disc at a time', help: 'Move every disc to the <b>marked peg</b> 🏁. <b>Tap a peg</b> to pick up its top disc and <b>tap another</b> to drop it there. You can only move one disc at a time and <b>never put a big disc on top of a smaller one</b>. Some levels start with the discs mixed up across the three pegs. "Best" shows the fewest moves possible.', tvHelp: '◀ ▶ choose a peg · OK to pick up or drop.', dict: { 'Movimientos: ': 'Moves: ', 'Mínimo: ': 'Best: ' } },
+    /*TV*/ tvHelp: '◀ ▶ elige un palo · OK para coger o soltar.',
+    tv: { mode: 'tap', targets: (g) => { const s = g.s; if (!s.a) return []; return [0, 1, 2].map((p) => ({ x: s.ox + p * s.pw + 4, y: s.top, w: s.pw - 8, h: s.base - s.top + 10 })); } },
+    id: 'hanoi', title: 'Hanói', emoji: '🗼', color: '#9775fa', origin: 'Tower of Hanoi (Lucas, 1883 · Lutanho)',
+    help: 'Lleva todos los discos al <b>palo marcado</b> 🏁. <b>Toca un palo</b> para coger el disco de arriba y <b>toca otro</b> para dejarlo allí. Solo puedes mover un disco cada vez y <b>nunca puedes poner uno grande encima de uno más pequeño</b>. En algunos niveles los discos empiezan revueltos entre los tres palos. «Mínimo» te dice los movimientos que hacen falta como poco.',
+    lives: 0, levels: 0, cap: 20,
+    /*SC*/ demo(g) {
+      const s = g.s; if (s.done || s.anim) return { wait: 0.2 };
+      const path = bfs(s.a.slice(), s.n, s.goal); const m = path[0]; if (!m) return { wait: 0.3 };
+      const y = s.base - s.dh * 2;
+      if (s.sel == null) return { tap: [pegX(s, m.f), y], after: 0.2, say: s.moves ? null : Arcade.T('Nunca un disco grande sobre uno pequeño', 'Never a big disc on a smaller one') };
+      if (s.sel !== m.f) return { tap: [pegX(s, s.sel), y], after: 0.2 };
+      return { tap: [pegX(s, m.t), y], after: 0.35 };
+    },
+    setup(g) {
+      const L = g.lv, n = clamp(3 + Math.floor((L - 1) / 3), 3, 8), classic = L % 3 === 1 || n <= 3 && L < 3;
+      let a, goal, par;
+      for (let t = 0; ; t++) {
+        if (classic) { a = new Array(n).fill(0); goal = 2; }
+        else { a = Array.from({ length: n }, () => ri(0, 2)); goal = ri(0, 2); }
+        par = bfs(a.slice(), n, goal).length; if (par >= Math.min(2 ** n - 1, 3 + L) || t > 40 || classic) break;
+      }
+      g.s = { n, a, goal, par, moves: 0, sel: null, anim: null, done: false, shake: 0 };
+      geo(g);
+    },
+    layout(g) { if (g.s.a) geo(g); },
+    tap(g, p) { const s = g.s, k = Math.floor((p.x - s.ox) / s.pw); if (k >= 0 && k < 3 && p.y > s.top - 60) tapPeg(g, k); },
+    update(g, dt) { const s = g.s; if (!s.a) return; if (s.shake > 0) s.shake -= dt; if (s.anim) { s.anim.t += dt / 0.42; if (s.anim.t >= 1) landed(g); } },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      const bg = ctx.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, '#2e2654'); bg.addColorStop(1, '#120e24');
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      if (!s.a) return;
+      const dh = s.dh;
+      ctx.fillStyle = '#7a4419'; Arcade.rr(ctx, s.ox, s.base, s.pw * 3, dh * 0.6, 8); ctx.fill();
+      for (let p = 0; p < 3; p++) {
+        const x = pegX(s, p), sel = s.sel === p;
+        ctx.fillStyle = p === s.goal ? '#ffd43b' : '#c27c3a'; Arcade.rr(ctx, x - dh * 0.16, s.top, dh * 0.32, s.base - s.top, dh * 0.16); ctx.fill();
+        if (p === s.goal) Arcade.emoji(ctx, '🏁', x, s.top - dh * 0.8, dh * 1.1);
+        if (sel) { ctx.fillStyle = 'rgba(255,255,255,.07)'; Arcade.rr(ctx, s.ox + p * s.pw + 4, s.top - dh, s.pw - 8, s.base - s.top + dh * 1.6, 12); ctx.fill(); }
+      }
+      const disk = (i, x, y) => {
+        const w = diskW(s, i), c = COLS[(i + s.n) % COLS.length];
+        const gr = ctx.createLinearGradient(0, y - dh / 2, 0, y + dh / 2); gr.addColorStop(0, '#fff'); gr.addColorStop(0.25, c); gr.addColorStop(1, 'rgba(0,0,0,.45)');
+        ctx.fillStyle = c; Arcade.rr(ctx, x - w / 2, y - dh * 0.45, w, dh * 0.9, dh * 0.45); ctx.fill();
+        ctx.globalAlpha = 0.5; ctx.fillStyle = gr; Arcade.rr(ctx, x - w / 2, y - dh * 0.45, w, dh * 0.9, dh * 0.45); ctx.fill(); ctx.globalAlpha = 1;
+      };
+      const lift = s.top - dh * 1.6;
+      for (let p = 0; p < 3; p++) {
+        const st = stack(s, p);
+        st.forEach((i, h) => {
+          if (s.anim && s.anim.d === i) return;
+          let x = pegX(s, p), y = s.base - dh * (h + 0.5);
+          if (s.sel === p && h === st.length - 1) y = lift + Math.sin(g.rt * 6) * 3;
+          if (s.shake > 0 && s.sel == null && h === st.length - 1) x += Math.sin(s.shake * 60) * 4;
+          disk(i, x, y);
+        });
+      }
+      if (s.anim) {
+        const a = s.anim, t = a.t, x0 = pegX(s, a.from), x1 = pegX(s, a.to), y1 = s.base - dh * (a.h1 + 0.5);
+        let x, y; if (t < 0.3) { x = x0; y = lift; } else if (t < 0.65) { const k = (t - 0.3) / 0.35; x = x0 + (x1 - x0) * (k * k * (3 - 2 * k)); y = lift - Math.sin(k * Math.PI) * dh; } else { const k = (t - 0.65) / 0.35; x = x1; y = lift + (y1 - lift) * k * k; }
+        disk(a.d, x, y);
+      }
+      Arcade.txt(ctx, 'Movimientos: ' + s.moves + '   ·   Mínimo: ' + s.par, W / 2, g.top + 22, 15, '#e5dbff', 'center', 900);
+    },
+  });
+})();
+</script>
+</body>
+</html>

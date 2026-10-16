@@ -1,0 +1,107 @@
+// Serpiente|#0f2416
+(function () {
+  const { ri, clamp, shuffle, pick } = Arcade;
+  const D = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] }, OPP = { up: 'down', down: 'up', left: 'right', right: 'left' };
+  const KEYS = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right' };
+
+  function build(g) {
+    const s = g.s, L = g.lv, wide = g.W > g.bot - g.top;
+    s.C = wide ? 22 : 13; s.R = wide ? 12 : 19;
+    s.wall = new Array(s.C * s.R).fill(false);
+    // obstáculos: barras simétricas que nunca cortan el tablero en trozos
+    const nb = clamp(Math.floor((L - 1) / 2), 0, 8);
+    for (let k = 0; k < nb * 3 && s.wall.filter(Boolean).length < nb * 5; k++) {
+      const hor = Math.random() < 0.5, len = ri(2, hor ? Math.floor(s.C / 3) : Math.floor(s.R / 3)), x = ri(1, s.C - 2 - (hor ? len : 0)), y = ri(1, s.R - 2 - (hor ? 0 : len));
+      const cells = []; for (let i = 0; i < len; i++) { const cx = hor ? x + i : x, cy = hor ? y : y + i; cells.push([cx, cy], [s.C - 1 - cx, s.R - 1 - cy]); }
+      const mid = (cx, cy) => Math.abs(cx - Math.floor(s.C / 2)) <= 2 && Math.abs(cy - Math.floor(s.R / 2)) <= 1;
+      if (cells.some(([cx, cy]) => mid(cx, cy))) continue;
+      const old = s.wall.slice(); cells.forEach(([cx, cy]) => (s.wall[cy * s.C + cx] = true));
+      if (!connected(s)) s.wall = old;
+    }
+  }
+  function connected(s) {
+    const free = s.wall.map((w, i) => (w ? -1 : i)).filter((i) => i >= 0), seen = new Set([free[0]]), q = [free[0]];
+    while (q.length) { const i = q.shift(), x = i % s.C, y = (i / s.C) | 0; for (const [dx, dy] of Object.values(D)) { const nx = x + dx, ny = y + dy, j = ny * s.C + nx; if (nx < 0 || ny < 0 || nx >= s.C || ny >= s.R || s.wall[j] || seen.has(j)) continue; seen.add(j); q.push(j); } }
+    return seen.size === free.length;
+  }
+  function placeFood(g) {
+    const s = g.s, body = new Set(s.body.map(([x, y]) => y * s.C + x)), free = [];
+    for (let i = 0; i < s.C * s.R; i++) if (!s.wall[i] && !body.has(i)) free.push(i);
+    if (!free.length) return;
+    const i = pick(free); s.food = { x: i % s.C, y: (i / s.C) | 0, gold: s.eaten > 0 && Math.random() < 0.15, t: 0 };
+  }
+  function geo(g) { const s = g.s, Ha = g.bot - g.top - 44; s.cs = Math.min((g.W - 12) / s.C, Ha / s.R); s.ox = (g.W - s.cs * s.C) / 2; s.oy = g.top + 38 + (Ha - s.cs * s.R) / 2; }
+  function turn(g, d) { const s = g.s, last = s.q.length ? s.q[s.q.length - 1] : s.dir; if (d === last || d === OPP[last] || s.q.length >= 2) return; s.q.push(d); }
+  function step(g) {
+    const s = g.s; if (s.q.length) s.dir = s.q.shift();
+    const [hx, hy] = s.body[0], [dx, dy] = D[s.dir], nx = hx + dx, ny = hy + dy;
+    const grow = s.food && nx === s.food.x && ny === s.food.y;
+    const tail = grow ? s.body.length : s.body.length - 1;
+    const hit = nx < 0 || ny < 0 || nx >= s.C || ny >= s.R || s.wall[ny * s.C + nx] || s.body.slice(0, tail).some(([x, y]) => x === nx && y === ny);
+    if (hit) { s.dead = 1; g.mood('hurt', 1); g.shake(0.3, 8); Arcade.sfx.hit(); const p = [s.ox + (hx + 0.5) * s.cs, s.oy + (hy + 0.5) * s.cs]; g.burst(...p, { n: 16, color: ['#51cf66', '#2b8a3e', '#fff'], speed: 200 }); return; }
+    s.prev = s.body.map((c) => c.slice()); s.body.unshift([nx, ny]);
+    if (grow) {
+      const gold = s.food.gold; s.eaten++; s.grow += gold ? 3 : 1;
+      const px = s.ox + (nx + 0.5) * s.cs, py = s.oy + (ny + 0.5) * s.cs;
+      g.addScore((gold ? 50 : 10) * Math.max(1, Math.round(g.lv / 2)), px, py); Arcade.tone(gold ? 900 : 600 + s.eaten * 15, 0.08, 'square', 0.07); g.burst(px, py, { n: 8, color: gold ? '#ffd43b' : '#ff6b6b', speed: 120 });
+      if (s.eaten >= s.goal) { s.done = true; g.confetti(60); g.addScore(200 * g.lv, g.W / 2, g.H / 2); setTimeout(() => { if (g.state === 'play') g.win(); }, 800); return; }
+      placeFood(g);
+    }
+    if (s.grow > 0) s.grow--; else s.body.pop();
+    if (s.prev.length < s.body.length) s.prev.push(s.prev[s.prev.length - 1]);
+  }
+  // demo: camino más corto a la comida sin chocar; si no hay, el movimiento con más sitio libre
+  function botDir(s) {
+    const body = new Set(s.body.slice(0, -1).map(([x, y]) => y * s.C + x)), [hx, hy] = s.body[0];
+    const ok = (x, y) => x >= 0 && y >= 0 && x < s.C && y < s.R && !s.wall[y * s.C + x] && !body.has(y * s.C + x);
+    const prev = new Map(), q = [[hx, hy]]; prev.set(hy * s.C + hx, null);
+    while (q.length) { const [x, y] = q.shift(); if (s.food && x === s.food.x && y === s.food.y) { let k = y * s.C + x, last = k; while (prev.get(k) != null) { last = k; k = prev.get(k); } const lx = last % s.C, ly = (last / s.C) | 0; return Object.keys(D).find((d) => hx + D[d][0] === lx && hy + D[d][1] === ly); }
+      for (const [dx, dy] of Object.values(D)) { const nx = x + dx, ny = y + dy, j = ny * s.C + nx; if (!ok(nx, ny) || prev.has(j)) continue; prev.set(j, y * s.C + x); q.push([nx, ny]); } }
+    let best = null, bs = -1; for (const d in D) { if (d === OPP[s.dir]) continue; const nx = hx + D[d][0], ny = hy + D[d][1]; if (!ok(nx, ny)) continue; let n = 0; const seen = new Set([ny * s.C + nx]), qq = [[nx, ny]]; while (qq.length && n < 200) { const [x, y] = qq.shift(); n++; for (const [dx, dy] of Object.values(D)) { const ax = x + dx, ay = y + dy, j = ay * s.C + ax; if (!ok(ax, ay) || seen.has(j)) continue; seen.add(j); qq.push([ax, ay]); } } if (n > bs) { bs = n; best = d; } }
+    return best || s.dir;
+  }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Come, crece y no te muerdas', deco: ['🐍', '🍎', '🍏', '⭐', '🌿', '🏆'], font: 'round', bg: ['#1b4332', '#0f2416'],
+    music: { mode: 'mixo', bpm: 128, wave: 'square', style: 'arcade', root: 60 }, voice: { wave: 'square', mul: 1, echo: 0.2 },
+    /*EN*/ en: { title: 'Snake', tag: 'Eat, grow and don\'t bite yourself', help: 'The snake never stops. <b>Swipe</b> (or use the arrows) to turn. Eat the 🍎 apples to grow; the golden 🌟 ones are worth more and make you grow more. Don\'t crash into the walls, the rocks or your own tail. Eat the apples the level asks for. With each level the snake goes faster and there are more rocks.', tvHelp: 'D-pad to turn.', dict: { 'Manzanas: ': 'Apples: ' } },
+    /*TV*/ tvHelp: 'Cruceta para girar.',
+    id: 'serpiente', title: 'Serpiente', emoji: '🐍', color: '#69db7c', origin: 'Snake / Wormy (Lutanho)',
+    help: 'La serpiente no se para nunca. <b>Desliza</b> (o usa las flechas) para girar. Come las manzanas 🍎 para crecer; las doradas 🌟 valen más y te hacen crecer más. No choques con las paredes, las rocas ni con tu propia cola. Come las manzanas que pide el nivel. En cada nivel la serpiente va más rápida y hay más rocas.',
+    lives: 3, levels: 0, cap: 20,
+    /*SC*/ demo(g) { const s = g.s; if (s.dead || s.done) return { wait: 0.2 }; const d = botDir(s); if (d !== s.dir && !s.q.length) return { key: 'Arrow' + d[0].toUpperCase() + d.slice(1), dur: 0.03, after: 0, say: s.eaten ? null : Arcade.T('Come y crece sin morderte', 'Eat and grow without biting yourself') }; return { wait: 0.03 }; },
+    setup(g) {
+      g.s = { dir: 'right', q: [], eaten: 0, grow: 2, acc: 0, dead: 0, done: false };
+      const s = g.s; build(g); geo(g);
+      const cx = Math.floor(s.C / 2) - 1, cy = Math.floor(s.R / 2); s.body = [[cx, cy], [cx - 1, cy], [cx - 2, cy]]; s.prev = s.body.map((c) => c.slice());
+      s.goal = clamp(6 + g.lv, 6, 24); s.spd = clamp(5 + g.lv * 0.3, 5, 11);
+      placeFood(g);
+    },
+    layout(g) { if (g.s.body) geo(g); },
+    swipe(g, d) { turn(g, d); },
+    key(g, k, d) { if (d && KEYS[k]) turn(g, KEYS[k]); },
+    update(g, dt) {
+      const s = g.s; if (!s.body) return;
+      if (s.food) s.food.t += dt;
+      if (s.dead) { s.dead -= dt; if (s.dead <= 0) { s.dead = 0; if (g.state === 'play' && g.die()) Arcade.current.def.setup(g); } return; }
+      if (s.done) return;
+      s.acc += dt * s.spd; while (s.acc >= 1 && !s.dead && !s.done) { s.acc -= 1; step(g); }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      ctx.fillStyle = '#0f2416'; ctx.fillRect(0, 0, W, H);
+      if (!s.body) return;
+      const cs = s.cs;
+      for (let y = 0; y < s.R; y++) for (let x = 0; x < s.C; x++) { ctx.fillStyle = (x + y) % 2 ? '#2f9e44' : '#37b24d'; ctx.fillRect(s.ox + x * cs, s.oy + y * cs, cs + 0.5, cs + 0.5); }
+      ctx.strokeStyle = '#1b4332'; ctx.lineWidth = 4; ctx.strokeRect(s.ox - 2, s.oy - 2, s.C * cs + 4, s.R * cs + 4);
+      for (let i = 0; i < s.wall.length; i++) if (s.wall[i]) { const x = s.ox + (i % s.C) * cs, y = s.oy + Math.floor(i / s.C) * cs; ctx.fillStyle = '#868e96'; Arcade.rr(ctx, x + 1, y + 1, cs - 2, cs - 2, cs * 0.3); ctx.fill(); ctx.fillStyle = '#adb5bd'; Arcade.rr(ctx, x + cs * 0.2, y + cs * 0.15, cs * 0.4, cs * 0.2, cs * 0.1); ctx.fill(); }
+      if (s.food) { const f = s.food, x = s.ox + (f.x + 0.5) * cs, y = s.oy + (f.y + 0.5) * cs, k = Math.min(1, f.t * 4); Arcade.emoji(ctx, f.gold ? '🌟' : '🍎', x, y - Math.abs(Math.sin(g.rt * 4)) * cs * 0.08, cs * 0.95 * k, { rot: f.gold ? g.rt : 0 }); }
+      // cuerpo: se interpola entre la posición anterior y la actual para que se deslice
+      const f = s.dead || s.done ? 1 : Math.min(1, s.acc), n = s.body.length;
+      const P = (i) => { const a = s.prev[i] || s.body[i], b = s.body[i]; return [s.ox + (a[0] + (b[0] - a[0]) * f + 0.5) * cs, s.oy + (a[1] + (b[1] - a[1]) * f + 0.5) * cs]; };
+      for (let i = n - 1; i >= 0; i--) { const [x, y] = P(i), k = 1 - i / n * 0.35, c = i % 2 ? '#94d82d' : '#74b816'; ctx.fillStyle = 'rgba(0,0,0,.2)'; ctx.beginPath(); ctx.arc(x + 1.5, y + 2.5, cs * 0.45 * k, 0, 6.3); ctx.fill(); ctx.fillStyle = c; ctx.beginPath(); ctx.arc(x, y, cs * 0.45 * k, 0, 6.3); ctx.fill(); if (i > 0) { const [x2, y2] = P(i - 1); ctx.strokeStyle = c; ctx.lineWidth = cs * 0.8 * k; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x2, y2); ctx.stroke(); ctx.lineCap = 'butt'; } }
+      const [hx, hy] = P(0); Arcade.emojiTo(ctx, s.dead ? '😵' : g.face(), hx, hy, cs * 1.05, D[s.dir][0], D[s.dir][1]);
+      Arcade.txt(ctx, 'Manzanas: ' + s.eaten + '/' + s.goal, W / 2, g.top + 18, 15, '#d3f9d8', 'center', 900);
+    },
+  });
+})();

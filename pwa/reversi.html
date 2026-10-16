@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Reversi · Arcade Perdido</title>
+<meta name="theme-color" content="#0b3d2e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css?v=6d7635e467">
+</head>
+<body class="game">
+<script src="config.js?v=d6380ae9b0"></script>
+<script src="common.js?v=207858a9a6"></script>
+<script>
+(function () {
+  const { rand, clamp, pick } = Arcade;
+  const DIR = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]];
+  const W8 = [[100, -20, 10, 5, 5, 10, -20, 100], [-20, -50, -2, -2, -2, -2, -50, -20], [10, -2, 1, 1, 1, 1, -2, 10], [5, -2, 1, 0, 0, 1, -2, 5]];
+  const weight = (n, x, y) => { if (n !== 8) { const c = (v) => v === 0 || v === n - 1; return c(x) && c(y) ? 100 : (c(x) || c(y)) ? 8 : ((x === 1 || x === n - 2) && (y === 1 || y === n - 2)) ? -40 : 1; } return W8[y < 4 ? y : 7 - y][x]; };
+
+  // nivel → [tamaño, profundidad de la máquina, ruido]
+  function cfg(L) { if (L <= 2) return [6, 1, 0.5]; if (L <= 4) return [6, 1, 0.2]; if (L <= 6) return [6, 2, 0.1]; if (L <= 10) return [8, 1, 0.25]; if (L <= 14) return [8, 2, 0.1]; return [8, 3, L <= 18 ? 0.08 : 0.03]; }
+  function flips(b, n, i, who) {
+    if (b[i]) return null; const x = i % n, y = (i / n) | 0, out = [];
+    for (const [dx, dy] of DIR) {
+      const run = []; let cx = x + dx, cy = y + dy;
+      while (cx >= 0 && cy >= 0 && cx < n && cy < n && b[cy * n + cx] === 3 - who) { run.push(cy * n + cx); cx += dx; cy += dy; }
+      if (run.length && cx >= 0 && cy >= 0 && cx < n && cy < n && b[cy * n + cx] === who) out.push(...run);
+    }
+    return out.length ? out : null;
+  }
+  const moves = (b, n, who) => { const o = []; for (let i = 0; i < n * n; i++) { const f = flips(b, n, i, who); if (f) o.push([i, f]); } return o; };
+  function evalB(b, n, who) {
+    let v = 0; const mo = moves(b, n, who).length - moves(b, n, 3 - who).length;
+    for (let i = 0; i < n * n; i++) if (b[i]) v += (b[i] === who ? 1 : -1) * weight(n, i % n, (i / n) | 0);
+    return v + mo * 4;
+  }
+  function search(b, n, who, depth, a, bt) {
+    const ms = moves(b, n, who);
+    if (!depth || !ms.length) {
+      if (!ms.length && !moves(b, n, 3 - who).length) { let d = 0; for (const v of b) d += v === who ? 1 : v ? -1 : 0; return [d * 1000, -1]; }
+      if (!ms.length) return [-search(b, n, 3 - who, depth, -bt, -a)[0], -1];
+      return [evalB(b, n, who), -1];
+    }
+    let best = -1e9, mv = ms[0][0];
+    for (const [i, f] of ms) {
+      b[i] = who; for (const j of f) b[j] = who;
+      const v = -search(b, n, 3 - who, depth - 1, -bt, -a)[0];
+      b[i] = 0; for (const j of f) b[j] = 3 - who;
+      if (v > best) { best = v; mv = i; } if (v > a) a = v; if (a >= bt) break;
+    }
+    return [best, mv];
+  }
+  function geo(g) { const s = g.s, Ha = g.bot - g.top - 90; s.cs = Math.min((g.W - 20) / s.n, Ha / s.n, 76); s.ox = (g.W - s.cs * s.n) / 2; s.oy = g.top + 64 + (Ha - s.cs * s.n) / 2; }
+  const count = (s, w) => s.b.filter((v) => v === w).length;
+  function put(g, i, who) {
+    const s = g.s, f = flips(s.b, s.n, i, who); if (!f) return false;
+    s.b[i] = who; s.anim[i] = { t: 0, from: 0, d: 0 }; s.last = i;
+    const x0 = i % s.n, y0 = (i / s.n) | 0;
+    for (const j of f) { s.b[j] = who; s.anim[j] = { t: 0, from: 3 - who, d: Math.hypot(j % s.n - x0, ((j / s.n) | 0) - y0) * 0.07 }; }
+    Arcade.tone(who === 1 ? 520 : 340, 0.07, 'triangle', 0.08);
+    f.forEach((j, k) => setTimeout(() => Arcade.tone(600 + k * 40, 0.04, 'sine', 0.04), 80 + s.anim[j].d * 1000));
+    if (who === 1) { g.addScore(f.length * 10 * Math.max(1, Math.round(g.lv / 2)), s.ox + (x0 + 0.5) * s.cs, s.oy + (y0 + 0.5) * s.cs); if (f.length >= 5) g.ring(s.ox + (x0 + 0.5) * s.cs, s.oy + (y0 + 0.5) * s.cs, '#ffd43b', s.cs * 2, 4); }
+    return true;
+  }
+  function nextTurn(g) {
+    const s = g.s, who = 3 - s.turn;
+    if (moves(s.b, s.n, who).length) { s.turn = who; if (who === 2) s.think = rand(0.5, 0.9); return; }
+    if (moves(s.b, s.n, s.turn).length) { g.message(who === 1 ? Arcade.T('No puedes mover: pasas', 'No moves: you pass') : Arcade.T('La máquina pasa', 'The machine passes'), 1); if (s.turn === 2) s.think = 0.9; return; }
+    // fin de partida
+    s.done = true; const me = count(s, 1), cpu = count(s, 2);
+    if (me > cpu) { g.addScore((me - cpu) * 30 * g.lv, g.W / 2, g.H / 2); g.confetti(70); setTimeout(() => { if (g.state === 'play') g.win(me - cpu >= s.n * 2 ? 3 : me - cpu >= s.n / 2 ? 2 : 1); }, 1200); }
+    else if (me < cpu) { g.message(Arcade.T('Gana la máquina', 'The machine wins'), 1.4, me + ' – ' + cpu); setTimeout(() => { if (g.state === 'play' && g.die()) Arcade.current.def.setup(g); }, 1700); }
+    else { g.message(Arcade.T('Empate: otra vez', 'Draw: again'), 1.3); setTimeout(() => { if (g.state === 'play') Arcade.current.def.setup(g); }, 1500); }
+  }
+  function tapCell(g, i) {
+    const s = g.s; if (s.done || s.turn !== 1) return;
+    if (!put(g, i, 1)) { Arcade.sfx.bad(); s.bad = { i, t: 0.4 }; return; }
+    nextTurn(g);
+  }
+  const disc = (ctx, x, y, r, who, sx) => {
+    const top = who === 1 ? ['#ffffff', '#ced4da'] : ['#495057', '#111'];
+    ctx.save(); ctx.translate(x, y); ctx.scale(Math.max(0.05, Math.abs(sx)), 1);
+    ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.beginPath(); ctx.ellipse(1, 3, r, r * 0.96, 0, 0, 6.3); ctx.fill();
+    const gr = ctx.createRadialGradient(-r * 0.3, -r * 0.35, r * 0.1, 0, 0, r); gr.addColorStop(0, top[0]); gr.addColorStop(1, top[1]);
+    ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(0, 0, r, 0, 6.3); ctx.fill();
+    ctx.restore();
+  };
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Encierra y da la vuelta', deco: ['⚪', '⚫', '♟️', '🎯', '🏆', '🧠'], font: 'serif', bg: ['#14532d', '#0b3d2e'],
+    music: { mode: 'dorian', bpm: 84, wave: 'triangle', style: 'chill', root: 57 }, voice: { wave: 'sine', mul: 1.1, echo: 0.35 },
+    /*EN*/ en: { title: 'Reversi', tag: 'Trap them and flip them', help: 'You play white against the machine. <b>Tap</b> a square (the dots show where you can) to place a disc so that it <b>traps</b> a line of black discs between it and another white one: they all <b>flip</b> to white. You can trap in any direction, even several at once. If you can\'t move, you pass. When nobody can move, whoever has more discs wins. Corners never flip: grab them! The first levels are 6×6 and then 8×8, against a smarter and smarter machine.', tvHelp: 'D-pad to a square with a dot · OK to place.', dict: { 'Tu turno': 'Your turn', 'Pensando…': 'Thinking…', 'Tú ': 'You ', ' Máquina': ' Machine' } },
+    /*TV*/ tvHelp: 'Cruceta hasta una casilla con punto · OK para poner.',
+    tv: { mode: 'tap', targets: (g) => { const s = g.s; if (!s.b || s.turn !== 1) return []; return moves(s.b, s.n, 1).map(([i]) => ({ x: s.ox + (i % s.n) * s.cs, y: s.oy + Math.floor(i / s.n) * s.cs, w: s.cs, h: s.cs })); } },
+    id: 'reversi', title: 'Reversi', emoji: '⚪', color: '#51cf66', origin: 'Reversi / Othello (Lutanho)',
+    help: 'Juegas con las blancas contra la máquina. <b>Toca</b> una casilla (los puntos te dicen dónde se puede) para poner una ficha que <b>encierre</b> una fila de negras entre ella y otra blanca: todas se <b>dan la vuelta</b>. Se puede encerrar en cualquier dirección, y en varias a la vez. Si no puedes mover, pasas. Cuando nadie puede mover, gana quien tenga más fichas. Las esquinas nunca se pueden voltear: ¡consíguelas! Los primeros niveles son de 6×6 y luego de 8×8, contra una máquina cada vez más lista.',
+    lives: 3, levels: 0, cap: 22,
+    /*SC*/ demo(g) {
+      const s = g.s; if (s.done || s.turn !== 1) return { wait: 0.3 };
+      const [, i] = search(s.b.slice(), s.n, 1, 2, -1e9, 1e9); const mv = i >= 0 ? i : (moves(s.b, s.n, 1)[0] || [-1])[0]; if (mv < 0) return { wait: 0.3 };
+      return { tap: [s.ox + (mv % s.n + 0.5) * s.cs, s.oy + (Math.floor(mv / s.n) + 0.5) * s.cs], after: 0.6, say: s.moves ? null : Arcade.T('Encierra fichas negras para darles la vuelta', 'Trap black discs to flip them') };
+    },
+    setup(g) {
+      const [n, depth, noise] = cfg(g.lv), b = new Array(n * n).fill(0), m = n / 2;
+      b[(m - 1) * n + m - 1] = b[m * n + m] = 1; b[(m - 1) * n + m] = b[m * n + m - 1] = 2;
+      g.s = { n, depth, noise, b, anim: {}, turn: 1, done: false, think: 0, last: -1, moves: 0 };
+      geo(g);
+    },
+    layout(g) { if (g.s.b) geo(g); },
+    tap(g, p) { const s = g.s, c = Math.floor((p.x - s.ox) / s.cs), r = Math.floor((p.y - s.oy) / s.cs); if (c >= 0 && r >= 0 && c < s.n && r < s.n) { s.moves++; tapCell(g, r * s.n + c); } },
+    update(g, dt) {
+      const s = g.s; if (!s.b) return;
+      for (const k in s.anim) { const a = s.anim[k]; a.t += dt; if (a.t > a.d + 0.4) delete s.anim[k]; }
+      if (s.bad) { s.bad.t -= dt; if (s.bad.t <= 0) s.bad = null; }
+      if (s.turn === 2 && !s.done) {
+        s.think -= dt; if (s.think > 0) return;
+        const ms = moves(s.b, s.n, 2); if (!ms.length) { nextTurn(g); return; }
+        let mv = Math.random() < s.noise ? pick(ms)[0] : search(s.b.slice(), s.n, 2, s.depth, -1e9, 1e9)[1];
+        if (mv < 0) mv = ms[0][0];
+        put(g, mv, 2); nextTurn(g);
+      }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      const bg = ctx.createRadialGradient(W / 2, H / 2, 30, W / 2, H / 2, Math.max(W, H) * 0.7); bg.addColorStop(0, '#1b5e3b'); bg.addColorStop(1, '#082a1f');
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      if (!s.b) return;
+      const cs = s.cs, n = s.n;
+      ctx.fillStyle = '#5c3a1a'; Arcade.rr(ctx, s.ox - 10, s.oy - 10, cs * n + 20, cs * n + 20, 14); ctx.fill();
+      ctx.fillStyle = '#2b8a3e'; ctx.fillRect(s.ox, s.oy, cs * n, cs * n);
+      ctx.strokeStyle = 'rgba(0,0,0,.35)'; ctx.lineWidth = 1.5;
+      for (let i = 0; i <= n; i++) { ctx.beginPath(); ctx.moveTo(s.ox + i * cs, s.oy); ctx.lineTo(s.ox + i * cs, s.oy + n * cs); ctx.stroke(); ctx.beginPath(); ctx.moveTo(s.ox, s.oy + i * cs); ctx.lineTo(s.ox + n * cs, s.oy + i * cs); ctx.stroke(); }
+      const hints = s.turn === 1 && !s.done ? moves(s.b, n, 1) : [];
+      for (const [i, f] of hints) { const x = s.ox + (i % n + 0.5) * cs, y = s.oy + (Math.floor(i / n) + 0.5) * cs; ctx.fillStyle = 'rgba(255,255,255,' + (0.18 + 0.04 * Math.min(6, f.length)) + ')'; ctx.beginPath(); ctx.arc(x, y, cs * 0.12, 0, 6.3); ctx.fill(); }
+      s.b.forEach((v, i) => {
+        if (!v) return; const x = s.ox + (i % n + 0.5) * cs, y = s.oy + (Math.floor(i / n) + 0.5) * cs, a = s.anim[i];
+        let who = v, sx = 1, lift = 0;
+        if (a) { const k = clamp((a.t - a.d) / 0.35, 0, 1); if (!a.from) { sx = 1; lift = (1 - k) * cs * 0.25; } else { sx = Math.cos(k * Math.PI); who = k < 0.5 ? a.from : v; lift = Math.sin(k * Math.PI) * cs * 0.15; } }
+        disc(ctx, x, y - lift, cs * 0.4, who, sx);
+        if (i === s.last && !a) { ctx.strokeStyle = '#ffd43b'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x, y, cs * 0.12, 0, 6.3); ctx.stroke(); }
+      });
+      if (s.bad) { const i = s.bad.i, x = s.ox + (i % n) * cs, y = s.oy + Math.floor(i / n) * cs; ctx.fillStyle = 'rgba(255,0,0,' + s.bad.t + ')'; ctx.fillRect(x, y, cs, cs); }
+      const me = count(s, 1), cpu = count(s, 2);
+      disc(ctx, W / 2 - 110, g.top + 30, 13, 1, 1); disc(ctx, W / 2 + 110, g.top + 30, 13, 2, 1);
+      Arcade.txt(ctx, 'Tú ' + me, W / 2 - 88, g.top + 30, 16, '#fff', 'left', 900);
+      Arcade.txt(ctx, cpu + ' Máquina', W / 2 + 88, g.top + 30, 16, '#fff', 'right', 900);
+      Arcade.txt(ctx, s.done ? '' : s.turn === 1 ? 'Tu turno' : 'Pensando…', W / 2, g.top + 52, 13, '#b2f2bb', 'center', 800);
+    },
+  });
+})();
+</script>
+</body>
+</html>

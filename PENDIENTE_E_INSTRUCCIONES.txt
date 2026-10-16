@@ -94,6 +94,26 @@ Lote 14 — repaso final
     correspondiente si se fusiona).
   · Subir ARCADE_VERSION, regenerar todo, probar y empaquetar.
 
+JUEGOS DE LUTANHO (https://www.lutanho.net/play/games.html) — mecánicas para rehacer con el motor
+--------------------------------------------------------------------------------------------------
+La web no indica licencia: NO copiar su código ni sus niveles; rehacer la mecánica y generar niveles propios
+(solo usar niveles de dominio público, p. ej. XSokoban). Desde el entorno de Claude la web no es accesible (403).
+· Ya estaban: Tetris (Bloques), Columns (Columnas), MineSweeper (Buscaminas), Sokoban (Almacén; se podrían añadir
+  los 90 niveles de XSokoban, dominio público), Sudoku (Emojidoku), Tic Tac Toe y Gomoku (En raya), Locomotion
+  (Vías), Match 2 / Match Match (Memoria), Clicky (Grupos), Puzzly / Landscape Puzzle (Puzle).
+· Lote 1 ✅ (v2.19.0): Reversi, Connect 4 (Cuatro en raya), Mancala, Yukon Klondike (Solitario), ColorLines
+  (Líneas), Lights Out (Apagón), Peggy (Clavijas), Fullhouse (Casa llena), Hanoi (Hanói), Wormy (Serpiente).
+· Lote 2 propuesto: Checkers (Damas, también en el lote 10), Mill (Molino), Spider (Araña), Free Towers, Gap Hop
+  (Montana), Gallony (Jarras), Fore & Aft / Frogs (Ranas), Nikulus, Hextris, Threefit, Hexxagon/Attaxx.
+· Lote 3 propuesto: Hex, Halma, Chinese Checkers, Backgammon, Abalone, Quarto, Fox and Dogs, Hare and Hounds,
+  Senet, Hnefatafl, Three Men's Morris, Mu Torere, Four Field Kono, Quirkat, Bridg It, Match Nim, Tic Tackle.
+· Resto por revisar: Addy, FlipFlop, PlusMinus, Rebulus, TipTop (números → también a Mates), Divi, Circles, Cosmos,
+  Balance, Blobski, CarChamp, ChinaBox, Four Corner, Kainan, Knight and Queens, Li, Mosaic, Raku, Pile Tile,
+  Monaco, Passalch, Solongg, Soonoo, Long Line, Patience 42, Penny Lane, Piracy, Speedy Eater, Noah, Animal Game,
+  Coyote and Chickens, Frog Hop, Tiger and Bull, Reflex, Magic Eye Tetris, WordGrid, WordWorm, XWord (palabras:
+  necesitan diccionario es/en), y los 3D (Blocks, Cubuild, Cubus, Hock, Laby, Pearlski, Madelinette, Qubic,
+  TicTac3D).
+
 INSTRUCCIONES PARA CONTINUAR
 ----------------------------
 Requisitos: Python 3, Node.js, y para las pruebas: pip install playwright && playwright install chromium.
