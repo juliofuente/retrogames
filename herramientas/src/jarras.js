@@ -1,0 +1,132 @@
+// Jarras|#0b2a40
+(function () {
+  const { ri, clamp, shuffle, pick } = Arcade;
+  // operaciones: { a: 'fill'|'empty'|'pour', i, j }
+  function next(st, caps, tap) {
+    const out = [];
+    st.forEach((v, i) => {
+      if (tap && v < caps[i]) out.push({ a: 'fill', i, s: st.map((x, k) => (k === i ? caps[i] : x)) });
+      if (tap && v > 0) out.push({ a: 'empty', i, s: st.map((x, k) => (k === i ? 0 : x)) });
+      st.forEach((w, j) => { if (i === j || !v || w === caps[j]) return; const m = Math.min(v, caps[j] - w); out.push({ a: 'pour', i, j, s: st.map((x, k) => (k === i ? v - m : k === j ? w + m : x)) }); });
+    });
+    return out;
+  }
+  function bfs(start, caps, tap, goal) {
+    const prev = new Map([[start.join(','), null]]), q = [start];
+    while (q.length) {
+      const st = q.shift();
+      if (goal(st)) { const path = []; let k = st.join(','); while (prev.get(k)) { const p = prev.get(k); path.unshift(p.op); k = p.from; } return path; }
+      for (const op of next(st, caps, tap)) { const k = op.s.join(','); if (prev.has(k)) continue; prev.set(k, { from: st.join(','), op }); q.push(op.s); }
+    }
+    return null;
+  }
+  function makeLevel(L) {
+    if (L === 1) return { caps: [3, 5], start: [0, 0], tap: true, target: 4 };   // el clásico
+    const split = L >= 7 && L % 4 === 3;   // sin grifo: repartir el agua de la jarra grande
+    for (let t = 0; t < 300; t++) {
+      const n = L < 6 ? 2 : L < 14 ? 3 : 4, caps = [];
+      while (caps.length < n) { const c = ri(2, clamp(5 + L, 7, 17)); if (!caps.includes(c)) caps.push(c); }
+      caps.sort((a, b) => a - b);
+      const start = split ? caps.map((c, i) => (i === n - 1 ? c : 0)) : caps.map(() => 0);
+      const target = ri(1, caps[n - 1] - 1); if (caps.includes(target) && !split) continue;
+      const path = bfs(start, caps, !split, (st) => st.includes(target)); if (!path) continue;
+      const need = clamp(2 + Math.floor(L / 3), 3, 9);
+      if (path.length < Math.min(need, 3 + L) && t < 250) continue;
+      return { caps, start, tap: !split, target };
+    }
+    return makeLevel(1);
+  }
+  function geo(g) {
+    const s = g.s, n = s.caps.length, maxC = Math.max(...s.caps), Ha = g.bot - g.top - 190;
+    s.jw = Math.min((g.W - 30) / n - 14, 120); s.unit = Math.min(Ha / maxC, 40); s.base = g.top + 130 + Ha;
+    s.jx = (i) => (g.W - n * (s.jw + 14) + 14) / 2 + i * (s.jw + 14);
+    s.tapB = { x: g.W / 2 - 120, y: g.top + 50, w: 110, h: 46 }; s.drainB = { x: g.W / 2 + 10, y: g.top + 50, w: 110, h: 46 };
+  }
+  const jugRect = (s, i) => { const h = s.caps[i] * s.unit; return [s.jx(i), s.base - h, s.jw, h]; };
+  function act(g, op) {
+    const s = g.s; s.hist.push(s.st.slice()); s.ops++; s.anim = { op, t: 0, from: s.st.slice() }; s.st = op.s; s.sel = null;
+    if (op.a === 'fill') Arcade.noise && Arcade.noise(0.4, 0.06, 1200); if (op.a === 'empty') Arcade.noise && Arcade.noise(0.35, 0.06, 500);
+    if (op.a === 'pour') for (let k = 0; k < 5; k++) setTimeout(() => Arcade.tone(500 + k * 60 + Math.random() * 40, 0.05, 'sine', 0.04), k * 70);
+  }
+  function landed(g) {
+    const s = g.s; s.anim = null;
+    if (s.st.includes(s.target) && !s.done) {
+      s.done = true; const i = s.st.indexOf(s.target), [x, y, w] = jugRect(s, i);
+      g.burst(x + w / 2, s.base - s.target * s.unit, { n: 18, color: ['#74c0fc', '#d0ebff', '#fff'], speed: 200 }); g.confetti(60);
+      g.addScore(Math.max(50, (s.par * 2 - s.ops) * 25) * Math.max(1, Math.round(g.lv / 2)), x + w / 2, y);
+      setTimeout(() => { if (g.state === 'play') g.win(s.ops <= s.par ? 3 : s.ops <= s.par + 3 ? 2 : 1); }, 1000);
+    }
+  }
+  function tapJug(g, i) {
+    const s = g.s; if (s.done || s.anim) return;
+    if (s.sel == null) { s.sel = i; Arcade.tone(600, 0.04, 'square', 0.04); return; }
+    if (s.sel === i) { s.sel = null; return; }
+    const op = next(s.st, s.caps, s.tap).find((o) => o.a === 'pour' && o.i === s.sel && o.j === i);
+    if (op) act(g, op); else { Arcade.sfx.bad(); s.sel = null; }
+  }
+  function tapBtn(g, kind) {
+    const s = g.s; if (s.done || s.anim || !s.tap) return; if (s.sel == null) { g.message(Arcade.T('Elige antes una jarra', 'Pick a jug first'), 0.9); return; }
+    const op = next(s.st, s.caps, true).find((o) => o.a === kind && o.i === s.sel); if (op) act(g, op); else Arcade.sfx.bad();
+  }
+  function undo(g) { const s = g.s, h = s.hist.pop(); if (!h || s.done || s.anim) return; s.st = h; s.undos++; Arcade.sfx.whoosh(); }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Mide el agua justa sin regla', deco: ['🏺', '💧', '🚰', '🧠', '⭐', '🏆'], font: 'round', bg: ['#14476b', '#0b2a40'],
+    music: { mode: 'lydian', bpm: 84, wave: 'sine', style: 'chill', root: 64 }, voice: { wave: 'sine', mul: 1.2, echo: 0.4 },
+    /*EN*/ en: { title: 'Jugs', tag: 'Measure exactly, without a ruler', help: 'Get <b>exactly the litres</b> the level asks for into one of the jugs. The jugs have no marks: you only know how much fits in each one. <b>Tap a jug</b> to pick it and then: <b>another jug</b> to pour into it (until the first one is empty or the second one is full), the <b>tap</b> 🚰 to fill it or the <b>drain</b> to empty it. In some levels there is no tap: you have to share out the water of the big jug. "Best" shows the fewest steps.', tvHelp: 'D-pad to a jug or button · OK.', dict: { 'Consigue ': 'Get ', ' litros': ' litres', 'Pasos: ': 'Steps: ', 'Mínimo: ': 'Best: ', '🚰 Llenar': '🚰 Fill', '🕳️ Vaciar': '🕳️ Empty', '↩️': '↩️', 'Sin grifo: reparte el agua': 'No tap: share out the water' } },
+    /*TV*/ tvHelp: 'Cruceta hasta una jarra o un botón · OK.',
+    tv: { mode: 'tap', targets: (g) => { const s = g.s; if (!s.caps) return []; const o = s.caps.map((_, i) => { const [x, y, w, h] = jugRect(s, i); return { x, y, w, h }; }); if (s.tap) o.push({ ...s.tapB, instant: true }, { ...s.drainB, instant: true }); return o; } },
+    id: 'jarras', title: 'Jarras', emoji: '🏺', color: '#74c0fc', origin: 'Water jug puzzle / Gallony (Lutanho)',
+    help: 'Consigue <b>exactamente los litros</b> que pide el nivel en alguna de las jarras. Las jarras no tienen marcas: solo sabes cuánto cabe en cada una. <b>Toca una jarra</b> para elegirla y luego: <b>otra jarra</b> para echar el agua en ella (hasta que una se vacíe o la otra se llene), el <b>grifo</b> 🚰 para llenarla o el <b>desagüe</b> para vaciarla. En algunos niveles no hay grifo: tienes que repartir el agua de la jarra grande. «Mínimo» te dice los pasos que hacen falta como poco.',
+    lives: 0, levels: 0, cap: 22,
+    /*SC*/ demo(g) {
+      const s = g.s; if (s.done || s.anim) return { wait: 0.3 };
+      const path = bfs(s.st, s.caps, s.tap, (st) => st.includes(s.target)); const op = path && path[0]; if (!op) return { wait: 0.4 };
+      const J = (i) => { const [x, y, w, h] = jugRect(s, i); return [x + w / 2, y + h / 2]; };
+      if (s.sel !== op.i) return { tap: J(op.i), after: 0.25, say: s.ops ? null : Arcade.T('Llena, vacía y trasvasa', 'Fill, empty and pour') };
+      if (op.a === 'pour') return { tap: J(op.j), after: 0.6 };
+      const b = op.a === 'fill' ? s.tapB : s.drainB; return { tap: [b.x + b.w / 2, b.y + b.h / 2], after: 0.6 };
+    },
+    setup(g) {
+      const lv = makeLevel(g.lv), par = bfs(lv.start, lv.caps, lv.tap, (st) => st.includes(lv.target)).length;
+      g.s = { ...lv, st: lv.start.slice(), par, ops: 0, sel: null, anim: null, hist: [], undos: 0, done: false };
+      geo(g);
+    },
+    layout(g) { if (g.s.caps) geo(g); },
+    tap(g, p) {
+      const s = g.s; const inR = (b) => p.x >= b.x && p.x <= b.x + b.w && p.y >= b.y && p.y <= b.y + b.h;
+      if (s.tap && inR(s.tapB)) return tapBtn(g, 'fill'); if (s.tap && inR(s.drainB)) return tapBtn(g, 'empty');
+      for (let i = 0; i < s.caps.length; i++) { const [x, y, w, h] = jugRect(s, i); if (p.x >= x - 7 && p.x <= x + w + 7 && p.y >= y - 40 && p.y <= s.base + 20) return tapJug(g, i); }
+    },
+    key(g, k, d) { if (d && (k === 'z' || k === 'Backspace')) undo(g); },
+    update(g, dt) { const s = g.s; if (s.anim) { s.anim.t += dt / 0.6; if (s.anim.t >= 1) landed(g); } },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      const bg = ctx.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, '#14476b'); bg.addColorStop(1, '#081c2c');
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      if (!s.caps) return;
+      ctx.fillStyle = '#5c3a1a'; ctx.fillRect(0, s.base + 6, W, H - s.base);
+      const a = s.anim, k = a ? Math.min(1, a.t) : 1, e = k * k * (3 - 2 * k);
+      s.caps.forEach((cap, i) => {
+        let [x, y, w, h] = jugRect(s, i); let lift = 0, tilt = 0;
+        if (s.sel === i) lift = 18 + Math.sin(g.rt * 6) * 3;
+        if (a && a.op.a === 'pour' && a.op.i === i) { lift = 30 * Math.sin(k * Math.PI); tilt = (a.op.j > i ? 1 : -1) * 0.5 * Math.sin(k * Math.PI); }
+        const vol = a ? a.from[i] + (s.st[i] - a.from[i]) * e : s.st[i];
+        ctx.save(); ctx.translate(x + w / 2, s.base - lift); ctx.rotate(tilt);
+        // agua
+        const wh = vol * s.unit; if (wh > 0) { const gr = ctx.createLinearGradient(0, -wh, 0, 0); gr.addColorStop(0, '#74c0fc'); gr.addColorStop(1, '#1971c2'); ctx.fillStyle = gr; ctx.fillRect(-w / 2 + 4, -wh, w - 8, wh); ctx.fillStyle = 'rgba(255,255,255,.35)'; ctx.fillRect(-w / 2 + 4, -wh, w - 8, 3 + Math.sin(g.rt * 4 + i) * 1.5); }
+        // vidrio
+        ctx.strokeStyle = 'rgba(208,235,255,.85)'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(-w / 2, -h - 6); ctx.lineTo(-w / 2, 0); ctx.lineTo(w / 2, 0); ctx.lineTo(w / 2, -h - 6); ctx.stroke();
+        ctx.fillStyle = 'rgba(208,235,255,.08)'; ctx.fillRect(-w / 2, -h, w, h);
+        ctx.restore();
+        Arcade.txt(ctx, vol.toFixed(a ? 1 : 0).replace('.0', '') + ' / ' + cap, x + w / 2, s.base + 20, 14, '#fff', 'center', 900);
+        if (s.st[i] === s.target && s.done) Arcade.emoji(ctx, '✅', x + w / 2, y - 26, 26);
+      });
+      if (a && a.op.a === 'pour') { const [xi, yi, wi] = jugRect(s, a.op.i), [xj, yj, wj] = jugRect(s, a.op.j), sx = a.op.j > a.op.i ? xi + wi : xi, ex = xj + wj / 2; ctx.strokeStyle = 'rgba(116,192,252,' + Math.sin(k * Math.PI) + ')'; ctx.lineWidth = 6; ctx.beginPath(); ctx.moveTo(sx, yi - 20); ctx.quadraticCurveTo((sx + ex) / 2, Math.min(yi, yj) - 60, ex, yj - 4); ctx.stroke(); }
+      if (s.tap) for (const [b, t] of [[s.tapB, '🚰 Llenar'], [s.drainB, '🕳️ Vaciar']]) { ctx.fillStyle = s.sel != null ? 'rgba(255,255,255,.18)' : 'rgba(255,255,255,.07)'; Arcade.rr(ctx, b.x, b.y, b.w, b.h, 12); ctx.fill(); Arcade.txt(ctx, t, b.x + b.w / 2, b.y + b.h / 2, 15, '#fff', 'center', 800); }
+      else Arcade.txt(ctx, 'Sin grifo: reparte el agua', W / 2, g.top + 72, 14, '#a5d8ff', 'center', 800);
+      Arcade.txt(ctx, 'Consigue ' + s.target + ' litros', W / 2, g.top + 18, 18, '#ffe066', 'center', 900);
+      Arcade.txt(ctx, 'Pasos: ' + s.ops + '  ·  Mínimo: ' + s.par, W / 2, g.top + 40, 13, '#d0ebff', 'center', 800);
+    },
+  });
+})();

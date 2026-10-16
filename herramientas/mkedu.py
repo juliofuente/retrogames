@@ -79,6 +79,10 @@ ARCADE_EDU = [  # ref, asignatura, edades, título es/en, descripción es/en
      ('Cada interruptor cambia su luz y las vecinas: descubre el orden para apagarlas todas.', 'Each switch flips its light and its neighbours: find the order that switches them all off.')),
     ('casallena', 'logica', (6, 14), ('Casa llena', 'Full House'),
      ('La bola rueda hasta chocar: planifica el recorrido para pintar todas las casillas.', 'The ball rolls until it bumps: plan the route to paint every square.')),
+    ('jarras', 'mates', (8, 16), ('Jarras', 'Jugs'),
+     ('Mide litros exactos con jarras sin marcas: sumas, restas y razonamiento con capacidades.', 'Measure exact litres with unmarked jugs: adding, subtracting and reasoning with capacities.')),
+    ('ranas', 'logica', (6, 14), ('Ranas', 'Frogs'),
+     ('Ranas y tortugas se cambian de lado sin retroceder: un clásico de planificación paso a paso.', 'Frogs and turtles swap sides without going back: a classic step-by-step planning puzzle.')),
 ]
 EXTRA_ARCADE = [dict(id=r, ref=r, app='arcade', subject=sj, emoji=None, ages=a, langs=['es', 'en'], url='pwa/' + r, title=t, desc=d) for r, sj, a, t, d in ARCADE_EDU]
 # Juegos sueltos (los de Brain Academy se añaden solos). ages = (mín, máx).

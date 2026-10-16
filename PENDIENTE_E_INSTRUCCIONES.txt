@@ -65,7 +65,7 @@ Lote 10 — palabras, cartas y lógica
   · Wheel of Fortune → "Ruleta": adivinar frase letra a letra girando una ruleta (es/en).
   · GuessNext → "Mayor o menor": carta siguiente mayor o menor, racha.
   · Pocket Snap (?) → juego de cartas tipo Snap.
-  · Space Checkers → "Damas espaciales": damas contra la máquina.
+  · Space Checkers → hecho como Damas (lote Lutanho 2).
   · Renju ya hecho en "En raya". Tic Tac Toe ya hecho.
   · A Life of Logic (?), Nodes (?), Iromeku (?) → puzles lógicos: revisar.
   · Spellfall (?) → letras que caen formando palabras (match de letras).
@@ -103,8 +103,9 @@ La web no indica licencia: NO copiar su código ni sus niveles; rehacer la mecá
   (Vías), Match 2 / Match Match (Memoria), Clicky (Grupos), Puzzly / Landscape Puzzle (Puzle).
 · Lote 1 ✅ (v2.19.0): Reversi, Connect 4 (Cuatro en raya), Mancala, Yukon Klondike (Solitario), ColorLines
   (Líneas), Lights Out (Apagón), Peggy (Clavijas), Fullhouse (Casa llena), Hanoi (Hanói), Wormy (Serpiente).
-· Lote 2 propuesto: Checkers (Damas, también en el lote 10), Mill (Molino), Spider (Araña), Free Towers, Gap Hop
-  (Montana), Gallony (Jarras), Fore & Aft / Frogs (Ranas), Nikulus, Hextris, Threefit, Hexxagon/Attaxx.
+· Lote 2 ✅ (v2.20.0): Checkers (Damas), Mill (Molino), Spider (Araña), Free Towers (Torres libres), Gap Hop (Huecos),
+  Gallony (Jarras), Fore & Aft / Frogs (Ranas), Hextris, Hexxagon/Attaxx (Ataxx). Pendientes de revisar: Nikulus,
+  Threefit (mecánica no confirmada).
 · Lote 3 propuesto: Hex, Halma, Chinese Checkers, Backgammon, Abalone, Quarto, Fox and Dogs, Hare and Hounds,
   Senet, Hnefatafl, Three Men's Morris, Mu Torere, Four Field Kono, Quirkat, Bridg It, Match Nim, Tic Tackle.
 · Resto por revisar: Addy, FlipFlop, PlusMinus, Rebulus, TipTop (números → también a Mates), Divi, Circles, Cosmos,

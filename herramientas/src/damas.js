@@ -1,0 +1,143 @@
+// Damas|#3b1f0e
+(function () {
+  const { rand, clamp, pick } = Arcade;
+  // piezas: 1 = mía, 2 = mía coronada, 3 = máquina, 4 = máquina coronada · las mías suben (y−), las de la máquina bajan
+  const own = (v, who) => (who === 1 ? v === 1 || v === 2 : v === 3 || v === 4);
+  const king = (v) => v === 2 || v === 4;
+  const cfg = (L) => [clamp(1 + Math.floor(L / 4), 1, 4), clamp(0.4 - L * 0.03, 0.08, 0.4)];
+  const dirsOf = (v) => (king(v) ? [[1, 1], [-1, 1], [1, -1], [-1, -1]] : v === 1 ? [[1, -1], [-1, -1]] : [[1, 1], [-1, 1]]);
+  const inb = (x, y) => x >= 0 && y >= 0 && x < 8 && y < 8;
+  // saltos posibles (en cadena) desde (x, y): lista de caminos [{to, caps}]
+  function jumpsFrom(b, x, y, v, caps, path) {
+    const out = [];
+    for (const [dx, dy] of dirsOf(v)) {
+      const mx = x + dx, my = y + dy, tx = x + 2 * dx, ty = y + 2 * dy;
+      if (!inb(tx, ty) || b[ty * 8 + tx] || !b[my * 8 + mx] || own(b[my * 8 + mx], own(v, 1) ? 1 : 2) || caps.includes(my * 8 + mx)) continue;
+      const nc = caps.concat(my * 8 + mx), np = path.concat(ty * 8 + tx);
+      const crowned = !king(v) && ((v === 1 && ty === 0) || (v === 3 && ty === 7));
+      const b2 = b.slice(); b2[y * 8 + x] = 0; b2[ty * 8 + tx] = v;
+      const more = crowned ? [] : jumpsFrom(b2, tx, ty, v, nc, np);
+      if (more.length) out.push(...more); else out.push({ path: np, caps: nc });
+    }
+    return out;
+  }
+  function moves(b, who) {
+    const jumps = [], steps = [];
+    for (let i = 0; i < 64; i++) {
+      const v = b[i]; if (!own(v, who)) continue; const x = i % 8, y = (i / 8) | 0;
+      for (const j of jumpsFrom(b, x, y, v, [], [])) jumps.push({ from: i, path: j.path, caps: j.caps });
+      for (const [dx, dy] of dirsOf(v)) { const tx = x + dx, ty = y + dy; if (inb(tx, ty) && !b[ty * 8 + tx]) steps.push({ from: i, path: [ty * 8 + tx], caps: [] }); }
+    }
+    return jumps.length ? jumps : steps;   // la captura es obligatoria
+  }
+  function apply(b0, m) {
+    const b = b0.slice(), v = b[m.from], to = m.path[m.path.length - 1]; b[m.from] = 0; for (const c of m.caps) b[c] = 0;
+    const ty = (to / 8) | 0; b[to] = v === 1 && ty === 0 ? 2 : v === 3 && ty === 7 ? 4 : v; return b;
+  }
+  function evalB(b) { let v = 0; for (let i = 0; i < 64; i++) { const p = b[i]; if (!p) continue; const y = (i / 8) | 0, x = i % 8, c = (x > 1 && x < 6 ? 0.3 : 0); v += p === 3 ? 10 + y * 0.6 + c : p === 4 ? 17 + c : p === 1 ? -(10 + (7 - y) * 0.6 + c) : -(17 + c); } return v; }
+  function search(b, who, depth, a, bt) {
+    const ms = moves(b, who); if (!ms.length) return [who === 2 ? -1000 - depth : 1000 + depth, null];
+    if (!depth) return [evalB(b), null];
+    let best = who === 2 ? -1e9 : 1e9, bm = ms[0];
+    for (const m of ms) {
+      const v = search(apply(b, m), 3 - who, depth - 1, a, bt)[0];
+      if (who === 2 ? v > best : v < best) { best = v; bm = m; }
+      if (who === 2) a = Math.max(a, v); else bt = Math.min(bt, v); if (a >= bt) break;
+    }
+    return [best, bm];
+  }
+  function geo(g) { const s = g.s, Ha = g.bot - g.top - 80; s.cs = Math.min((g.W - 20) / 8, Ha / 8, 80); s.ox = (g.W - s.cs * 8) / 2; s.oy = g.top + 64 + (Ha - s.cs * 8) / 2; }
+  const XY = (s, i) => [s.ox + (i % 8 + 0.5) * s.cs, s.oy + (((i / 8) | 0) + 0.5) * s.cs];
+  function play(g, m, who) {
+    const s = g.s; s.anim = { m, k: 0, t: 0, v: s.b[m.from], who }; s.busy = true;
+    Arcade.tone(who === 1 ? 480 : 320, 0.06, 'triangle', 0.06);
+  }
+  function animDone(g) {
+    const s = g.s, a = s.anim; s.anim = null; s.busy = false;
+    const was = s.b[a.m.from]; s.b = apply(s.b, a.m); s.last = a.m.path[a.m.path.length - 1];
+    if (a.m.caps.length) { for (const c of a.m.caps) { const [x, y] = XY(s, c); g.burst(x, y, { n: 10, color: a.who === 1 ? ['#343a40', '#868e96'] : ['#fa5252', '#ffc9c9'], speed: 160 }); } Arcade.sfx.pop(); if (a.who === 1) g.addScore(40 * a.m.caps.length * Math.max(1, Math.round(g.lv / 2)), ...XY(s, s.last)); }
+    if (!king(was) && king(s.b[s.last])) { const [x, y] = XY(s, s.last); g.ring(x, y, '#ffd43b', s.cs, 5); Arcade.sfx.up(); if (a.who === 1) g.float(Arcade.T('¡Dama!', 'King!'), x, y - 20, '#ffd43b', 20); }
+    const next = 3 - a.who;
+    if (!moves(s.b, next).length) {
+      s.done = true;
+      if (next === 2) { g.confetti(70); g.addScore(500 * g.lv, g.W / 2, g.H / 2); const mine = s.b.filter((v) => own(v, 1)).length; setTimeout(() => { if (g.state === 'play') g.win(mine >= 8 ? 3 : mine >= 4 ? 2 : 1); }, 1100); }
+      else { g.message(Arcade.T('Gana la máquina', 'The machine wins'), 1.4); setTimeout(() => { if (g.state === 'play' && g.die()) Arcade.current.def.setup(g); }, 1700); }
+      return;
+    }
+    s.turn = next; s.plies++; s.quiet = a.m.caps.length ? 0 : (s.quiet || 0) + 1; if (next === 2) s.think = rand(0.4, 0.8);
+    if (s.quiet > 40) { s.done = true; g.message(Arcade.T('Empate: otra vez', 'Draw: again'), 1.3); setTimeout(() => { if (g.state === 'play') Arcade.current.def.setup(g); }, 1500); }
+  }
+  function tapCell(g, i) {
+    const s = g.s; if (s.done || s.turn !== 1 || s.busy) return;
+    const ms = moves(s.b, 1);
+    if (own(s.b[i], 1)) { if (ms.some((m) => m.from === i)) { s.sel = i; Arcade.tone(600, 0.04, 'square', 0.04); } else { Arcade.sfx.bad(); s.must = 0.8; } return; }
+    if (s.sel == null) return;
+    const m = ms.filter((m) => m.from === s.sel && m.path[m.path.length - 1] === i).sort((a, b) => b.caps.length - a.caps.length)[0];
+    if (!m) { Arcade.sfx.bad(); return; }
+    s.sel = null; play(g, m, 1);
+  }
+  function piece(ctx, x, y, r, v) {
+    const me = own(v, 1), c = me ? ['#ffa8a8', '#e03131', '#a61e1e'] : ['#868e96', '#343a40', '#111'];
+    ctx.fillStyle = 'rgba(0,0,0,.4)'; ctx.beginPath(); ctx.ellipse(x + 1, y + r * 0.25, r, r * 0.9, 0, 0, 6.3); ctx.fill();
+    const gr = ctx.createRadialGradient(x - r * 0.3, y - r * 0.35, r * 0.1, x, y, r); gr.addColorStop(0, c[0]); gr.addColorStop(0.6, c[1]); gr.addColorStop(1, c[2]);
+    ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(x, y, r, 0, 6.3); ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,.18)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x, y, r * 0.65, 0, 6.3); ctx.stroke();
+    if (king(v)) Arcade.emoji(ctx, '👑', x, y, r * 1.05);
+  }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Salta, captura y corona', deco: ['🔴', '⚫', '👑', '♟️', '🏆', '🧠'], font: 'serif', bg: ['#5c3a1a', '#3b1f0e'],
+    music: { mode: 'dorian', bpm: 84, wave: 'triangle', style: 'chill', root: 55 }, voice: { wave: 'sine', mul: 1.1, echo: 0.35 },
+    /*EN*/ en: { title: 'Checkers', tag: 'Jump, capture and crown', help: 'You play red against the machine (black). Pieces move <b>one square diagonally forwards</b>. <b>Tap</b> one of your pieces and then the square where it goes (the lit ones). To capture, <b>jump over</b> an enemy piece into the empty square behind it; you can chain several jumps. <b>Capturing is compulsory</b>. If you reach the far row your piece becomes a <b>king</b> 👑 and can move backwards too. Win by capturing all the machine\'s pieces or leaving it without moves.', tvHelp: 'D-pad to a piece · OK · then to a lit square · OK.', dict: { 'Tu turno': 'Your turn', 'Pensando…': 'Thinking…', '¡Tienes que capturar!': 'You must capture!' } },
+    /*TV*/ tvHelp: 'Cruceta hasta una pieza · OK · luego a una casilla iluminada · OK.',
+    tv: { mode: 'tap', targets: (g) => { const s = g.s; if (!s.b || s.turn !== 1) return []; const ms = moves(s.b, 1), set = new Set(ms.map((m) => m.from)); if (s.sel != null) ms.filter((m) => m.from === s.sel).forEach((m) => set.add(m.path[m.path.length - 1])); return [...set].map((i) => ({ x: s.ox + (i % 8) * s.cs, y: s.oy + Math.floor(i / 8) * s.cs, w: s.cs, h: s.cs })); } },
+    id: 'damas', title: 'Damas', emoji: '👑', color: '#ff6b6b', origin: 'Checkers / Draughts (Lutanho)',
+    help: 'Juegas con las rojas contra la máquina (negras). Las piezas avanzan <b>una casilla en diagonal hacia delante</b>. <b>Toca</b> una pieza tuya y luego la casilla a la que va (se iluminan). Para capturar, <b>salta por encima</b> de una pieza rival hasta la casilla vacía de detrás; puedes encadenar varios saltos. <b>Capturar es obligatorio</b>. Si llegas a la última fila, tu pieza se <b>corona</b> 👑 y ya puede ir también hacia atrás. Ganas si capturas todas las de la máquina o la dejas sin movimientos.',
+    lives: 3, levels: 0, cap: 20,
+    /*SC*/ demo(g) {
+      const s = g.s; if (s.done || s.turn !== 1 || s.busy) return { wait: 0.3 };
+      const [, m] = search(s.b, 1, 3, -1e9, 1e9); if (!m) return { wait: 0.3 };
+      if (s.sel !== m.from) return { tap: XY(s, m.from), after: 0.25, say: s.plies ? null : Arcade.T('Salta por encima para capturar', 'Jump over to capture') };
+      return { tap: XY(s, m.path[m.path.length - 1]), after: 0.5 };
+    },
+    setup(g) {
+      const [depth, noise] = cfg(g.lv), b = new Array(64).fill(0);
+      for (let y = 0; y < 8; y++) for (let x = 0; x < 8; x++) if ((x + y) % 2) { if (y < 3) b[y * 8 + x] = 3; else if (y > 4) b[y * 8 + x] = 1; }
+      g.s = { b, depth, noise, turn: 1, sel: null, anim: null, busy: false, done: false, think: 0, plies: 0, last: -1, must: 0 };
+      geo(g);
+    },
+    layout(g) { if (g.s.b) geo(g); },
+    tap(g, p) { const s = g.s, c = Math.floor((p.x - s.ox) / s.cs), r = Math.floor((p.y - s.oy) / s.cs); if (c >= 0 && r >= 0 && c < 8 && r < 8) tapCell(g, r * 8 + c); },
+    update(g, dt) {
+      const s = g.s; if (!s.b) return; if (s.must > 0) s.must -= dt;
+      if (s.anim) { const a = s.anim; a.t += dt / 0.22; if (a.t >= 1) { a.t = 0; a.k++; Arcade.tone(400 + a.k * 60, 0.04, 'sine', 0.05); if (a.k >= a.m.path.length) animDone(g); } return; }
+      if (s.turn === 2 && !s.done) {
+        s.think -= dt; if (s.think > 0) return;
+        const ms = moves(s.b, 2); let m = Math.random() < s.noise ? pick(ms) : search(s.b, 2, s.depth, -1e9, 1e9)[1];
+        if (!m) m = ms[0]; play(g, m, 2);
+      }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      ctx.fillStyle = '#2b1608'; ctx.fillRect(0, 0, W, H);
+      if (!s.b) return;
+      const cs = s.cs, r = cs * 0.38;
+      ctx.fillStyle = '#5c3a1a'; Arcade.rr(ctx, s.ox - 10, s.oy - 10, cs * 8 + 20, cs * 8 + 20, 12); ctx.fill();
+      for (let i = 0; i < 64; i++) { const x = s.ox + (i % 8) * cs, y = s.oy + Math.floor(i / 8) * cs; ctx.fillStyle = ((i % 8) + ((i / 8) | 0)) % 2 ? '#8b5a2b' : '#f1d9a8'; ctx.fillRect(x, y, cs, cs); }
+      const ms = s.turn === 1 && !s.busy && !s.done ? moves(s.b, 1) : [];
+      if (s.last >= 0) { const [x, y] = XY(s, s.last); ctx.fillStyle = 'rgba(255,212,59,.25)'; ctx.fillRect(x - cs / 2, y - cs / 2, cs, cs); }
+      for (const m of ms) { if (s.sel === m.from) for (const t of m.path.slice(-1)) { const [x, y] = XY(s, t); ctx.fillStyle = 'rgba(105,219,124,.5)'; ctx.beginPath(); ctx.arc(x, y, cs * 0.18, 0, 6.3); ctx.fill(); } else if (s.sel == null) { const [x, y] = XY(s, m.from); ctx.strokeStyle = 'rgba(255,255,255,' + (0.25 + 0.15 * Math.sin(g.rt * 5)) + ')'; ctx.lineWidth = 2; ctx.strokeRect(x - cs / 2 + 2, y - cs / 2 + 2, cs - 4, cs - 4); } }
+      for (let i = 0; i < 64; i++) {
+        const v = s.b[i]; if (!v || (s.anim && s.anim.m.from === i)) continue;
+        if (s.anim && s.anim.m.caps.includes(i) && s.anim.k > s.anim.m.caps.indexOf(i)) continue;
+        const [x, y] = XY(s, i), sel = s.sel === i, lift = sel ? cs * 0.08 + Math.sin(g.rt * 7) * 2 : 0;
+        piece(ctx, x, y - lift, r, v);
+      }
+      if (s.anim) { const a = s.anim, pts = [a.m.from, ...a.m.path], [x0, y0] = XY(s, pts[a.k]), [x1, y1] = XY(s, pts[Math.min(a.k + 1, pts.length - 1)]), t = a.t; piece(ctx, x0 + (x1 - x0) * t, y0 + (y1 - y0) * t - (a.m.caps.length ? Math.sin(t * Math.PI) * cs * 0.45 : 0), r, a.v); }
+      Arcade.txt(ctx, s.done ? '' : s.must > 0 ? '¡Tienes que capturar!' : s.turn === 1 ? 'Tu turno' : 'Pensando…', W / 2, g.top + 26, 16, s.must > 0 ? '#ffa8a8' : '#ffe8cc', 'center', 900);
+      const mine = s.b.filter((v) => own(v, 1)).length, cpu = s.b.filter((v) => own(v, 2)).length;
+      piece(ctx, W / 2 - 110, g.top + 48, 9, 1); piece(ctx, W / 2 + 110, g.top + 48, 9, 3);
+      Arcade.txt(ctx, String(mine), W / 2 - 92, g.top + 48, 14, '#fff', 'left', 900); Arcade.txt(ctx, String(cpu), W / 2 + 92, g.top + 48, 14, '#fff', 'right', 900);
+    },
+  });
+})();

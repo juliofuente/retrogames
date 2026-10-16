@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Ataxx · Arcade Perdido</title>
+<meta name="theme-color" content="#1a1033">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css?v=6d7635e467">
+</head>
+<body class="game">
+<script src="config.js?v=d6380ae9b0"></script>
+<script src="common.js?v=207858a9a6"></script>
+<script>
+(function () {
+  const { rand, clamp, pick, shuffle } = Arcade;
+  // nivel → [tamaño, profundidad, ruido]
+  const cfg = (L) => [L <= 3 ? 5 : 7, L <= 8 ? 1 : 2, clamp(0.45 - L * 0.035, 0.1, 0.45)];
+  function blocks(n, L) { // casillas bloqueadas simétricas a partir del nivel 5
+    const b = new Set(); if (L < 5 || n < 7) return b;
+    const pats = [[], [[3, 3]], [[2, 2], [4, 2], [2, 4], [4, 4]], [[3, 1], [1, 3], [5, 3], [3, 5]], [[2, 3], [4, 3], [3, 2], [3, 4]], [[1, 1], [5, 1], [1, 5], [5, 5], [3, 3]]];
+    for (const [x, y] of pats[L % pats.length]) b.add(y * n + x);
+    return b;
+  }
+  function moves(s, b, who) {
+    const n = s.n, out = [];
+    for (let i = 0; i < n * n; i++) {
+      if (b[i] !== who) continue; const x = i % n, y = (i / n) | 0;
+      for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) {
+        if (!dx && !dy) continue; const tx = x + dx, ty = y + dy; if (tx < 0 || ty < 0 || tx >= n || ty >= n) continue; const t = ty * n + tx;
+        if (b[t] !== 0) continue; const jump = Math.max(Math.abs(dx), Math.abs(dy)) === 2; out.push({ from: i, to: t, jump });
+      }
+    }
+    // los clones a la misma casilla son iguales: quita repetidos
+    const seen = new Set(); return out.filter((m) => { if (m.jump) return true; if (seen.has(m.to)) return false; seen.add(m.to); return true; });
+  }
+  function apply(s, b0, m, who) {
+    const n = s.n, b = b0.slice(); if (m.jump) b[m.from] = 0; b[m.to] = who; const x = m.to % n, y = (m.to / n) | 0, flips = [];
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { const tx = x + dx, ty = y + dy; if (tx < 0 || ty < 0 || tx >= n || ty >= n) continue; const t = ty * n + tx; if (b[t] === 3 - who) { b[t] = who; flips.push(t); } }
+    return { b, flips };
+  }
+  const score = (b, who) => b.filter((v) => v === who).length - b.filter((v) => v === 3 - who).length;
+  function search(s, b, who, depth) {
+    const ms = moves(s, b, who); if (!ms.length) return [score(b, 2), null];
+    let best = who === 2 ? -1e9 : 1e9, bm = ms[0];
+    for (const m of ms) {
+      const r = apply(s, b, m, who); let v;
+      if (depth <= 1) v = score(r.b, 2) - (m.jump ? 0.6 : 0) * (who === 2 ? 1 : -1);
+      else v = search(s, r.b, 3 - who, depth - 1)[0];
+      if (who === 2 ? v > best : v < best) { best = v; bm = m; }
+    }
+    return [best, bm];
+  }
+  function geo(g) { const s = g.s, Ha = g.bot - g.top - 90; s.cs = Math.min((g.W - 20) / s.n, Ha / s.n, 84); s.ox = (g.W - s.cs * s.n) / 2; s.oy = g.top + 76 + (Ha - s.cs * s.n) / 2; }
+  const XY = (s, i) => [s.ox + (i % s.n + 0.5) * s.cs, s.oy + (((i / s.n) | 0) + 0.5) * s.cs];
+  function play(g, m, who) {
+    const s = g.s, r = apply(s, s.b, m, who); s.anim = { m, who, t: 0, flips: r.flips }; s.nb = r.b; s.sel = null;
+    Arcade.tone(m.jump ? 620 : 440, 0.07, 'triangle', 0.07, m.jump ? 200 : 0);
+  }
+  function animDone(g) {
+    const s = g.s, a = s.anim; s.anim = null; s.b = s.nb; s.flipT = {}; a.flips.forEach((f, k) => { s.flipT[f] = -k * 0.04; });
+    if (a.flips.length) { a.flips.forEach((f, k) => setTimeout(() => Arcade.tone(500 + k * 50, 0.05, 'sine', 0.05), 60 + k * 40)); if (a.who === 1) g.addScore(a.flips.length * 10 * Math.max(1, Math.round(g.lv / 2)), ...XY(s, a.m.to)); }
+    advance(g, 3 - a.who);
+  }
+  function advance(g, who) {
+    const s = g.s, me = moves(s, s.b, who).length, other = moves(s, s.b, 3 - who).length;
+    const mine = s.b.filter((v) => v === 1).length, cpu = s.b.filter((v) => v === 2).length;
+    if (!mine || !cpu || (!me && !other) || !s.b.includes(0)) return finish(g);
+    if (!me) { // pasa: si el otro puede seguir, se rellenan para él los huecos que queden al final
+      g.message(who === 1 ? Arcade.T('No puedes mover: pasas', 'No moves: you pass') : Arcade.T('La máquina pasa', 'The machine passes'), 0.9); who = 3 - who;
+    }
+    s.turn = who; if (who === 2) s.think = rand(0.45, 0.85);
+  }
+  function finish(g) {
+    const s = g.s; s.done = true; const me = s.b.filter((v) => v === 1).length, cpu = s.b.filter((v) => v === 2).length;
+    if (me > cpu) { g.confetti(70); g.addScore((me - cpu) * 30 * g.lv, g.W / 2, g.H / 2); setTimeout(() => { if (g.state === 'play') g.win(me >= cpu * 2 ? 3 : me - cpu >= 4 ? 2 : 1); }, 1100); }
+    else if (me < cpu) { g.message(Arcade.T('Gana la máquina', 'The machine wins'), 1.4, me + ' – ' + cpu); setTimeout(() => { if (g.state === 'play' && g.die()) Arcade.current.def.setup(g); }, 1700); }
+    else { g.message(Arcade.T('Empate: otra vez', 'Draw: again'), 1.3); setTimeout(() => { if (g.state === 'play') Arcade.current.def.setup(g); }, 1500); }
+  }
+  function tapCell(g, i) {
+    const s = g.s; if (s.done || s.turn !== 1 || s.anim) return;
+    if (s.b[i] === 1) { s.sel = i; Arcade.tone(600, 0.04, 'square', 0.04); return; }
+    if (s.sel == null) return;
+    const m = moves(s, s.b, 1).find((m) => m.from === s.sel && m.to === i);
+    if (!m) { Arcade.sfx.bad(); return; } play(g, m, 1);
+  }
+  function blob(ctx, x, y, r, who, k) {
+    const c = who === 1 ? ['#a5d8ff', '#339af0', '#1864ab'] : ['#ffc9c9', '#f03e3e', '#a61e1e'];
+    ctx.save(); ctx.translate(x, y); ctx.scale(k ?? 1, k ?? 1);
+    ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.beginPath(); ctx.ellipse(1, r * 0.3, r, r * 0.85, 0, 0, 6.3); ctx.fill();
+    const gr = ctx.createRadialGradient(-r * 0.3, -r * 0.35, r * 0.1, 0, 0, r); gr.addColorStop(0, c[0]); gr.addColorStop(0.6, c[1]); gr.addColorStop(1, c[2]);
+    ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(0, 0, r, 0, 6.3); ctx.fill();
+    ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(-r * 0.3, -r * 0.1, r * 0.17, 0, 6.3); ctx.arc(r * 0.3, -r * 0.1, r * 0.17, 0, 6.3); ctx.fill();
+    ctx.fillStyle = '#111'; ctx.beginPath(); ctx.arc(-r * 0.27, -r * 0.08, r * 0.08, 0, 6.3); ctx.arc(r * 0.33, -r * 0.08, r * 0.08, 0, 6.3); ctx.fill();
+    ctx.restore();
+  }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Clónate, salta y contagia', deco: ['🔵', '🔴', '🦠', '🧫', '🏆', '🧠'], font: 'round', bg: ['#2b1a5c', '#1a1033'],
+    music: { mode: 'phryg', bpm: 104, wave: 'square', style: 'arcade', root: 57 }, voice: { wave: 'square', mul: 1, echo: 0.25 },
+    /*EN*/ en: { title: 'Ataxx', tag: 'Clone, jump and infect', help: 'You are the blue blobs against the red machine. <b>Tap</b> one of yours and then an empty square: one square away it <b>clones</b> itself (a new blob appears); two squares away it <b>jumps</b> (it moves and leaves its square empty). On arrival, all the enemy blobs touching it <b>turn blue</b>. When the board is full or someone can\'t move, whoever has more blobs wins. Later levels have blocked squares.', tvHelp: 'D-pad to one of your blobs · OK · then an empty square · OK.', dict: { 'Tu turno': 'Your turn', 'Pensando…': 'Thinking…', 'Tú ': 'You ', ' Máquina': ' Machine', 'clonar': 'clone', 'saltar': 'jump' } },
+    /*TV*/ tvHelp: 'Cruceta hasta una burbuja tuya · OK · luego a una casilla vacía · OK.',
+    tv: { mode: 'tap', targets: (g) => { const s = g.s; if (!s.b) return []; return s.b.map((v, i) => (v >= 0 ? i : -1)).filter((i) => i >= 0).map((i) => ({ x: s.ox + (i % s.n) * s.cs, y: s.oy + Math.floor(i / s.n) * s.cs, w: s.cs, h: s.cs })); } },
+    id: 'ataxx', title: 'Ataxx', emoji: '🦠', color: '#4dabf7', origin: 'Ataxx / Attaxx / Hexxagon (Lutanho)',
+    help: 'Eres las burbujas azules contra la máquina (rojas). <b>Toca</b> una tuya y luego una casilla vacía: a una casilla de distancia se <b>clona</b> (aparece una nueva); a dos casillas <b>salta</b> (se mueve y deja su casilla vacía). Al llegar, todas las burbujas rivales que la tocan <b>se vuelven azules</b>. Cuando el tablero se llena o alguien no puede mover, gana quien tenga más. En los niveles avanzados hay casillas bloqueadas.',
+    lives: 3, levels: 0, cap: 20,
+    /*SC*/ demo(g) {
+      const s = g.s; if (s.done || s.turn !== 1 || s.anim) return { wait: 0.3 };
+      let best = null, bs = -1e9; for (const m of moves(s, s.b, 1)) { const r = apply(s, s.b, m, 1), v = r.flips.length * 2 + (m.jump ? -1 : 1) + Math.random() * 0.3; if (v > bs) { bs = v; best = m; } }
+      if (!best) return { wait: 0.3 };
+      if (s.sel !== best.from) return { tap: XY(s, best.from), after: 0.2, say: s.plies ? null : Arcade.T('Al lado se clona; a dos casillas salta', 'Next door it clones; two away it jumps') };
+      s.plies = (s.plies || 0) + 1; return { tap: XY(s, best.to), after: 0.4 };
+    },
+    setup(g) {
+      const [n, depth, noise] = cfg(g.lv), b = new Array(n * n).fill(0); for (const i of blocks(n, g.lv)) b[i] = -1;
+      b[0] = 1; b[n * n - 1] = 1; b[n - 1] = 2; b[n * (n - 1)] = 2;
+      g.s = { n, b, depth, noise, turn: 1, sel: null, anim: null, done: false, think: 0, flipT: {}, plies: 0 };
+      geo(g);
+    },
+    layout(g) { if (g.s.b) geo(g); },
+    tap(g, p) { const s = g.s, c = Math.floor((p.x - s.ox) / s.cs), r = Math.floor((p.y - s.oy) / s.cs); if (c >= 0 && r >= 0 && c < s.n && r < s.n) tapCell(g, r * s.n + c); },
+    update(g, dt) {
+      const s = g.s; if (!s.b) return;
+      for (const k in s.flipT) { s.flipT[k] += dt * 3; if (s.flipT[k] >= 1) delete s.flipT[k]; }
+      if (s.anim) { s.anim.t += dt / (s.anim.m.jump ? 0.35 : 0.22); if (s.anim.t >= 1) animDone(g); return; }
+      if (s.turn === 2 && !s.done) {
+        s.think -= dt; if (s.think > 0) return;
+        const ms = moves(s, s.b, 2); if (!ms.length) return advance(g, 1);
+        let m = Math.random() < s.noise ? pick(ms) : search(s, s.b, 2, s.depth)[1]; if (!m) m = ms[0]; play(g, m, 2);
+      }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      const bg = ctx.createRadialGradient(W / 2, H / 2, 30, W / 2, H / 2, Math.max(W, H) * 0.7); bg.addColorStop(0, '#3b2a7a'); bg.addColorStop(1, '#120a26');
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      if (!s.b) return;
+      const cs = s.cs, n = s.n, r = cs * 0.36;
+      const sm = s.sel != null ? moves(s, s.b, 1).filter((m) => m.from === s.sel) : [], near = new Set(sm.filter((m) => !m.jump).map((m) => m.to)), far = new Set(sm.filter((m) => m.jump).map((m) => m.to));
+      for (let i = 0; i < n * n; i++) {
+        const x = s.ox + (i % n) * cs, y = s.oy + Math.floor(i / n) * cs;
+        if (s.b[i] === -1) { ctx.fillStyle = '#0b0618'; Arcade.rr(ctx, x + 2, y + 2, cs - 4, cs - 4, cs * 0.15); ctx.fill(); continue; }
+        ctx.fillStyle = (i % n + ((i / n) | 0)) % 2 ? '#4c3a8f' : '#43327f'; Arcade.rr(ctx, x + 2, y + 2, cs - 4, cs - 4, cs * 0.15); ctx.fill();
+        if (near.has(i)) { ctx.fillStyle = 'rgba(105,219,124,.45)'; Arcade.rr(ctx, x + 4, y + 4, cs - 8, cs - 8, cs * 0.15); ctx.fill(); }
+        else if (far.has(i)) { ctx.fillStyle = 'rgba(255,212,59,.35)'; Arcade.rr(ctx, x + 4, y + 4, cs - 8, cs - 8, cs * 0.15); ctx.fill(); }
+      }
+      s.b.forEach((v, i) => {
+        if (v <= 0 || (s.anim && s.anim.m.jump && s.anim.m.from === i)) return; const [x, y] = XY(s, i);
+        let who = v, k = 1; const f = s.flipT[i]; if (f != null && f >= 0) { k = Math.abs(Math.cos(f * Math.PI)); if (f < 0.5) who = 3 - v; } else if (f != null) who = 3 - v;
+        if (s.anim && s.anim.flips.includes(i)) who = 3 - s.anim.who;
+        const sel = s.sel === i; blob(ctx, x, y - (sel ? cs * 0.08 + Math.sin(g.rt * 7) * 2 : Math.sin(g.rt * 2 + i) * 1.2), r, who, Math.max(0.15, k) * (sel ? 1.08 : 1));
+      });
+      if (s.anim) { const a = s.anim, [x0, y0] = XY(s, a.m.from), [x1, y1] = XY(s, a.m.to), t = Math.min(1, a.t); blob(ctx, x0 + (x1 - x0) * t, y0 + (y1 - y0) * t - (a.m.jump ? Math.sin(t * Math.PI) * cs * 0.5 : 0), r, a.who, a.m.jump ? 1 : 0.4 + t * 0.6); }
+      const me = s.b.filter((v) => v === 1).length, cpu = s.b.filter((v) => v === 2).length;
+      blob(ctx, W / 2 - 110, g.top + 28, 12, 1); blob(ctx, W / 2 + 110, g.top + 28, 12, 2);
+      Arcade.txt(ctx, 'Tú ' + me, W / 2 - 92, g.top + 28, 16, '#fff', 'left', 900); Arcade.txt(ctx, cpu + ' Máquina', W / 2 + 92, g.top + 28, 16, '#fff', 'right', 900);
+      Arcade.txt(ctx, s.done ? '' : s.turn === 1 ? 'Tu turno' : 'Pensando…', W / 2, g.top + 52, 13, '#d0bfff', 'center', 800);
+    },
+  });
+})();
+</script>
+</body>
+</html>

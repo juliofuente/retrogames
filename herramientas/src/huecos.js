@@ -1,0 +1,122 @@
+// Huecos|#2a1b3d
+(function () {
+  const { shuffle, clamp } = Arcade;
+  const SUIT = ['♠', '♥', '♦', '♣'], RANK = ['', 'A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+  const S = (c) => (c / 13) | 0, Rk = (c) => (c % 13) + 1, red = (c) => S(c) === 1 || S(c) === 2;
+  const NR = 4, NCOL = 13;
+  // b[r][c] = carta o null (hueco)
+  const prefix = (row) => { if (row[0] == null || Rk(row[0]) !== 2) return 0; let n = 1; while (n < 12 && row[n] != null && S(row[n]) === S(row[0]) && Rk(row[n]) === n + 2) n++; return n; };
+  // carta que puede ir en el hueco (r, c): la siguiente del mismo palo que la de su izquierda (o un 2 en la primera columna)
+  function wants(b, r, c) {
+    if (c === 0) return 'two';
+    const L = b[r][c - 1]; if (L == null || Rk(L) === 13) return null; return L + 1;
+  }
+  function find(b, card) { for (let r = 0; r < NR; r++) for (let c = 0; c < NCOL; c++) if (b[r][c] === card) return [r, c]; return null; }
+  function moves(b) {
+    const out = [];
+    for (let r = 0; r < NR; r++) for (let c = 0; c < NCOL; c++) {
+      if (b[r][c] != null) continue; const w = wants(b, r, c); if (w == null) continue;
+      if (w === 'two') { for (let s = 0; s < 4; s++) { const p = find(b, s * 13 + 1); if (p && p[1] !== 0) out.push({ to: [r, c], from: p }); } }
+      else { const p = find(b, w); if (p) out.push({ to: [r, c], from: p }); }
+    }
+    return out;
+  }
+  const done = (b) => b.every((row) => prefix(row) === 12);
+  function deal(L) {
+    const cards = shuffle([...Array(52).keys()]), b = [];
+    // en los primeros niveles algunas filas ya empiezan ordenadas
+    const pre = clamp(5 - Math.floor(L / 2), 0, 5), suits = shuffle([0, 1, 2, 3]);
+    const placed = new Set(); for (let r = 0; r < NR; r++) for (let k = 0; k < pre; k++) placed.add(suits[r] * 13 + 1 + k);
+    const rest = cards.filter((c) => !placed.has(c));
+    for (let r = 0; r < NR; r++) { const row = []; for (let k = 0; k < pre; k++) row.push(suits[r] * 13 + 1 + k); while (row.length < NCOL) row.push(rest.pop()); b.push(row); }
+    for (const row of b) for (let c = 0; c < NCOL; c++) if (Rk(row[c]) === 1) row[c] = null;
+    return b;
+  }
+  // vuelve a barajar lo que no está colocado; los huecos quedan justo después de cada fila ordenada
+  function redeal(b) {
+    const keep = b.map(prefix), loose = [];
+    b.forEach((row, r) => row.forEach((c, k) => { if (k >= keep[r] && c != null) loose.push(c); }));
+    shuffle(loose);
+    return b.map((row, r) => { const nr = row.slice(0, keep[r]); if (keep[r] < 12) { nr.push(null); while (nr.length < NCOL) nr.push(loose.pop()); } else nr.push(null); return nr; });
+  }
+  function geo(g) {
+    const s = g.s, top = g.top + 50, Ha = g.bot - top - 6; s.vert = g.W < g.H;
+    if (s.vert) { s.cw = Math.min((g.W - 20) / NR - 6, 120); s.chh = Math.min(Ha / NCOL - 2, s.cw * 0.62); s.ox = (g.W - (s.cw + 6) * NR + 6) / 2; s.oy = top + (Ha - (s.chh + 2) * NCOL) / 2; }
+    else { s.cw = Math.min((g.W - 16) / NCOL - 3, 70); s.chh = Math.min(Ha / NR - 8, s.cw * 1.45); s.ox = (g.W - (s.cw + 3) * NCOL + 3) / 2; s.oy = top + (Ha - (s.chh + 8) * NR) / 2; }
+    s.btn = { x: g.W - 132, y: g.top + 6, w: 124, h: 34 };
+  }
+  // en vertical cada fila del juego es una columna de la pantalla
+  const cellRect = (s, r, c) => (s.vert ? [s.ox + r * (s.cw + 6), s.oy + c * (s.chh + 2), s.cw, s.chh] : [s.ox + c * (s.cw + 3), s.oy + r * (s.chh + 8), s.cw, s.chh]);
+  function doMove(g, m) {
+    const s = g.s, card = s.b[m.from[0]][m.from[1]];
+    s.b[m.to[0]][m.to[1]] = card; s.b[m.from[0]][m.from[1]] = null; s.moves++;
+    const ok = prefix(s.b[m.to[0]]) > m.to[1];
+    Arcade.tone(ok ? 520 + m.to[1] * 30 : 380, 0.06, 'triangle', 0.07);
+    if (ok) g.addScore(10 * Math.max(1, Math.round(g.lv / 2)));
+    if (done(s.b)) { s.over = true; g.confetti(90); g.addScore(800 * g.lv, g.W / 2, g.H / 2); setTimeout(() => { if (g.state === 'play') { const base = g.lv < 6 ? 1 : g.lv < 12 ? 2 : 3; g.win(s.redeals <= base ? 3 : s.redeals <= base + 2 ? 2 : 1); } }, 1300); }
+    else if (!moves(s.b).length) g.message(Arcade.T('Sin jugadas: baraja', 'No moves: shuffle'), 1.4);
+  }
+  function tapAt(g, x, y) {
+    const s = g.s; if (s.over) return; const b = s.btn;
+    if (x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h) { s.b = redeal(s.b); s.redeals++; Arcade.sfx.whoosh(); g.message(Arcade.T('Barajado', 'Shuffled'), 0.8); return; }
+    for (let r = 0; r < NR; r++) for (let c = 0; c < NCOL; c++) {
+      const [cx, cy, w, h] = cellRect(s, r, c); if (x < cx || x > cx + w || y < cy || y > cy + h) continue;
+      const ms = moves(s.b);
+      if (s.b[r][c] == null) { const m = ms.find((m) => m.to[0] === r && m.to[1] === c && (wants(s.b, r, c) !== 'two' || true)); if (m) return doMove(g, m); }
+      else { const m = ms.find((m) => m.from[0] === r && m.from[1] === c); if (m) return doMove(g, m); }
+      Arcade.sfx.bad(); s.wob = { r, c, t: 0.4 }; return;
+    }
+  }
+  function card(ctx, s, x, y, w, h, c) {
+    const col = red(c) ? '#e03131' : '#212529', rr = Math.min(w, h) * 0.14;
+    ctx.fillStyle = 'rgba(0,0,0,.3)'; Arcade.rr(ctx, x + 1, y + 2, w, h, rr); ctx.fill();
+    ctx.fillStyle = '#fff'; Arcade.rr(ctx, x, y, w, h, rr); ctx.fill();
+    const fs = Math.min(h * 0.62, w * 0.42);
+    Arcade.txt(ctx, RANK[Rk(c)], x + w * 0.3, y + h / 2, fs, col, 'center', 900);
+    Arcade.txt(ctx, SUIT[S(c)], x + w * 0.72, y + h / 2, fs * 0.95, col, 'center', 900);
+  }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Ordena cada fila del 2 a la K', deco: ['🃏', '♠️', '♥️', '♦️', '♣️', '🔀'], font: 'serif', bg: ['#45306b', '#2a1b3d'],
+    music: { mode: 'lydian', bpm: 84, wave: 'sine', style: 'chill', root: 62 }, voice: { wave: 'sine', mul: 1.2, echo: 0.4 },
+    /*EN*/ en: { title: 'Gaps', tag: 'Sort every row from 2 to K', help: 'Montana solitaire. The aces are removed and leave <b>gaps</b>. A gap can only be filled by the card <b>of the same suit and one rank higher</b> than the one on its left (after a 7♥, only the 8♥); in the first spot of a row, only a <b>2</b>. <b>Tap a gap</b> (or the card you want to move) and it moves by itself. Leave each row in order from 2 to K of a single suit. If you get stuck, <b>shuffle</b>: the cards already in order stay put. The fewer shuffles, the more stars.', tvHelp: 'D-pad to a gap or a card · OK to move it.', dict: { '🔀 Barajar': '🔀 Shuffle', 'Barajados: ': 'Shuffles: ' } },
+    /*TV*/ tvHelp: 'Cruceta hasta un hueco o una carta · OK para moverla.',
+    tv: { mode: 'tap', targets: (g) => { const s = g.s; if (!s.b) return []; const o = []; for (let r = 0; r < NR; r++) for (let c = 0; c < NCOL; c++) { const [x, y, w, h] = cellRect(s, r, c); o.push({ x, y, w, h }); } o.push({ ...s.btn, instant: true }); return o; } },
+    id: 'huecos', title: 'Huecos', emoji: '🔀', color: '#cc5de8', origin: 'Montana / Gaps / Gap Hop (Lutanho)',
+    help: 'El solitario Montana. Se quitan los ases y quedan <b>huecos</b>. Un hueco solo se puede llenar con la carta <b>del mismo palo y un número más</b> que la de su izquierda (tras un 7♥, solo el 8♥); en el primer sitio de una fila, solo un <b>2</b>. <b>Toca un hueco</b> (o la carta que quieres mover) y se coloca sola. Deja cada fila ordenada del 2 a la K de un mismo palo. Si te atascas, <b>baraja</b>: las cartas que ya están en orden se quedan donde están. Cuantas menos veces barajes, más estrellas.',
+    lives: 0, levels: 0, cap: 16,
+    /*SC*/ demo(g) {
+      const s = g.s; if (s.over) return { wait: 0.4 };
+      const ms = moves(s.b); if (!ms.length) return { tap: [s.btn.x + s.btn.w / 2, s.btn.y + s.btn.h / 2], after: 0.6, say: Arcade.T('Sin jugadas: barajo lo desordenado', 'No moves: shuffle what is out of order') };
+      // prefiere jugadas que alargan una fila ordenada y no rompen ninguna
+      const sc = (m) => { const b = s.b.map((r) => r.slice()); const before = b.reduce((a, r) => a + prefix(r), 0); b[m.to[0]][m.to[1]] = b[m.from[0]][m.from[1]]; b[m.from[0]][m.from[1]] = null; return b.reduce((a, r) => a + prefix(r), 0) - before + moves(b).length * 0.05 + Math.random() * 0.01; };
+      const m = ms.sort((a, b) => sc(b) - sc(a))[0], [x, y, w, h] = cellRect(s, m.to[0], m.to[1]);
+      return { tap: [x + w / 2, y + h / 2], after: 0.35, say: s.moves ? null : Arcade.T('El hueco pide la siguiente del mismo palo', 'A gap wants the next card of the same suit') };
+    },
+    setup(g) { g.s = { b: deal(g.lv), moves: 0, redeals: 0, over: false, objs: {} }; geo(g); },
+    layout(g) { if (g.s.b) geo(g); },
+    tap(g, p) { tapAt(g, p.x, p.y); },
+    key(g, k, d) { if (d && k === 'r') { const s = g.s; tapAt(g, s.btn.x + 5, s.btn.y + 5); } },
+    update(g, dt) { const s = g.s; if (s.wob) { s.wob.t -= dt; if (s.wob.t <= 0) s.wob = null; } },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      const bg = ctx.createRadialGradient(W / 2, H * 0.4, 30, W / 2, H / 2, Math.max(W, H) * 0.8); bg.addColorStop(0, '#5f3dc4'); bg.addColorStop(1, '#1f1430');
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      if (!s.b) return;
+      const ms = moves(s.b), want = new Set(ms.map((m) => m.to.join(','))), from = new Set(ms.map((m) => m.from.join(',')));
+      for (let r = 0; r < NR; r++) {
+        const pre = prefix(s.b[r]);
+        for (let c = 0; c < NCOL; c++) {
+          const [x, y, w, h] = cellRect(s, r, c), v = s.b[r][c];
+          if (c < pre) { ctx.fillStyle = 'rgba(105,219,124,.25)'; Arcade.rr(ctx, x - 2, y - 1, w + 4, h + 2, 6); ctx.fill(); }
+          if (v == null) { ctx.strokeStyle = want.has(r + ',' + c) ? 'rgba(255,212,59,' + (0.6 + 0.3 * Math.sin(g.rt * 6)) + ')' : 'rgba(255,255,255,.2)'; ctx.lineWidth = want.has(r + ',' + c) ? 3 : 1.5; ctx.setLineDash([5, 4]); Arcade.rr(ctx, x + 1, y + 1, w - 2, h - 2, 6); ctx.stroke(); ctx.setLineDash([]); continue; }
+          const ob = s.objs[v] || (s.objs[v] = {}), [gx, gy] = Arcade.glide(ob, x, y, 16);
+          card(ctx, s, gx + (s.wob && s.wob.r === r && s.wob.c === c ? Math.sin(s.wob.t * 40) * 3 : 0), gy, w, h, v);
+          if (from.has(r + ',' + c)) { ctx.strokeStyle = 'rgba(255,212,59,.55)'; ctx.lineWidth = 2; Arcade.rr(ctx, gx, gy, w, h, 6); ctx.stroke(); }
+        }
+      }
+      const b = s.btn; ctx.fillStyle = 'rgba(0,0,0,.3)'; Arcade.rr(ctx, b.x, b.y, b.w, b.h, 10); ctx.fill(); Arcade.txt(ctx, '🔀 Barajar', b.x + b.w / 2, b.y + b.h / 2, 14, '#fff', 'center', 800);
+      Arcade.txt(ctx, 'Barajados: ' + s.redeals, 12, g.top + 22, 14, '#e5dbff', 'left', 800);
+    },
+  });
+})();
