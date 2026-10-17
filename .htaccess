@@ -28,7 +28,7 @@ AddDefaultCharset utf-8
   RewriteRule (^|/)\.(?!well-known) - [F,L]
   RewriteRule \.(sqlite|sqlite3|db|py|md|txt|sh|json\.bak)$ - [F,L,NC]
 
-  # /index.html de la raíz (portada estática de GitHub Pages) → index.php lo redirige a /
+  # /index.html (la antigua portada estática) → index.php lo redirige a /
   RewriteRule ^index\.html$ index.php [L]
 
   # Sin .html en las URLs: /carpeta/index.html → /carpeta/ y /pagina.html → /pagina (solo lo que pide el navegador;
@@ -83,7 +83,7 @@ AddDefaultCharset utf-8
   <FilesMatch "\.(html|php|json)$">
     Header set Cache-Control "no-cache"
   </FilesMatch>
-  # .js y .css: con huella (?v=…, la pone stamp.py y también index.php al servir cada juego) se guardan un año,
+  # .js y .css: con huella (?v=…, la pone «arcade.php huellas» y también index.php al servir cada juego) se guardan un año,
   # porque si el archivo cambia cambia la URL; sin huella siempre se revalidan, para no usar nunca uno viejo.
   <FilesMatch "\.(js|css)$">
     Header set Cache-Control "no-cache"

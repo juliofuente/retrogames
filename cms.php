@@ -4,7 +4,7 @@
    Panel para añadir, editar y borrar juegos, cambiarlos de categoría y editar categorías y colecciones.
    Se entra en /cms (o /cms.php). La primera vez pide crear la contraseña.
 
-   Los cambios NO se escriben en data/arcade.sqlite (ese archivo lo regenera herramientas/mkdb.py y se perderían):
+   Los cambios NO se escriben en data/arcade.sqlite (ese archivo lo regenera herramientas/arcade.php y se perderían):
    se guardan en data/cms.sqlite, y index.php los aplica encima del catálogo en cada visita. Así sobreviven a cada
    nueva versión del catálogo. data/cms.sqlite no se sube a git (.gitignore): haz copias desde «Copia de seguridad».
 

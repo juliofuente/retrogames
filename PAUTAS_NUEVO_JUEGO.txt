@@ -61,29 +61,29 @@ REGLAS DEL SISTEMA (obligatorias)
  8. Nada de window.withpwa ni de service workers propios: la PWA está desactivada. El juego debe funcionar solo
     con window.isSingleGame = true (sin 🏠, sin favoritos y sin estadísticas, p. ej. dentro de una app Android).
 
-CONSTRUIR Y REGISTRAR (arcade)
-  cd herramientas
-  · Añade la descripción en mkgames.py (diccionario D) y el id en la lista que toque.
-  · Añade el id a su categoría en CAT y a ADDED con la versión nueva (ambos en mkdb.py).
-  · node --check src/<id>.js
-  · python3 mk.py <id> && rm -rf sueltos_sin_config
-  · python3 mkgames.py
-  · python3 mkedu.py
-  · Sube ARCADE_VERSION en pwa/games.js.
-  · python3 stamp.py   ← SIEMPRE, después de cambiar cualquier .js/.css o .html
-  · (cd ../pwa && python3 build.py)
-  · python3 mkdb.py
+CONSTRUIR Y REGISTRAR (arcade)  — solo PHP, sin Python ni Node
+  · El juego: herramientas/src/<id>.js (primera línea «// Título|#colorDeTema»).
+  · Regístralo en herramientas/datos/juegos.json, una línea por juego (el orden es el de las portadas):
+      {"id":"<id>","coleccion":"pro","categoria":"puzles","control":"Tocar","tv":"cursor",
+       "desc":{"es":"…","en":"…"},"version":"2.24.0"}
+    coleccion: main | pro | mesa · categoria: la de datos/catalogo.json · control: Tocar, Arrastrar, Deslizar,
+    Mantener, Dos dedos o Dos pulgares · tv: false, "cursor" o "cruceta" · version: la versión en que se añade.
+    Si es de mesa, añade también su id a "portada_mesa" en datos/catalogo.json.
+  · Sube "version" en herramientas/datos/catalogo.json.
+  · php herramientas/arcade.php todo
+      (comprueba los datos, crea pwa/<id>.html, pwa/games.js, las huellas ?v=, data/arcade.sqlite y autonomos/)
+  · Si solo quieres revisar los JSON sin escribir nada: php herramientas/arcade.php comprobar
 
 CONSTRUIR Y REGISTRAR (educativo o app propia)
   · Carpeta educativos/<carpeta>/ con su index.html. Todo con rutas relativas y sin enlaces a .html.
-  · Añade la entrada a EXTRA (y, si es una app con varios juegos, a APPS) en herramientas/mkedu.py.
-    La url no lleva .html (p. ej. 'educativos/<carpeta>/').
-  · Añade la carpeta a PAGES en herramientas/stamp.py si tiene .js/.css propios.
+  · Añade la entrada a "sueltos" (y, si es una app con varios juegos, a "apps") en herramientas/datos/educativos.json.
+    La url no lleva .html (p. ej. "educativos/<carpeta>/").
+  · Si tiene .js/.css propios, añade su carpeta a la lista de cmd_huellas() en herramientas/arcade.php.
   · Pon el botón 🏠 flotante que vuelve a 'arc_back' con el atributo data-sitehome y, antes de </body>, el script
     que lo quita con window.isSingleGame = true (cópialos de educativos/fabrica-frases/index.html, al final).
   · Favoritos y tiempo de juego: cópialo de educativos/problemas-primaria/index.html (busca uid, api/fav y
-    api/play). El id del juego tiene que ser el mismo que en EXTRA.
-  · Después: python3 mkedu.py && python3 stamp.py && python3 mkdb.py
+    api/play). El id del juego tiene que ser el mismo que en educativos.json.
+  · Después: php herramientas/arcade.php todo
 
 PROBAR ANTES DEL COMMIT
   · Levanta la web con PHP:

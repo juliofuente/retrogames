@@ -18,19 +18,19 @@ Pendiente también: demos propias para los juegos de acción, plataformas, un to
 (hoy usan la demo genérica, que enseña el control pero no juega bien). Quedan unos 50 títulos (lotes 9–14).
 
 IMPORTANTE AL GENERAR O SUBIR CAMBIOS
-· Después de mk.py / mkgames.py / mkedu.py ejecuta SIEMPRE: python3 herramientas/stamp.py && python3 pwa/build.py
-  stamp.py pone ?v=<hash> en los .js/.css de todas las páginas; sin eso el navegador puede mezclar un HTML nuevo con un
+· Después de cualquier cambio ejecuta SIEMPRE: php herramientas/arcade.php todo
+  (entre otras cosas pone ?v=<hash> en los .js/.css de todas las páginas; sin eso el navegador puede mezclar un HTML nuevo con un
   common.js viejo de su caché (pasa: no salen los sprites, ni la demo, error «Arcade.foe is not a function»).
 · Sube SIEMPRE juntos pwa/common.js, pwa/common.css y los .html: si en el servidor queda un common.js viejo, falla igual.
 
 JUEGOS EDUCATIVOS (o cualquier juego hecho aparte) — CÓMO AÑADIR MÁS
 · Copia la carpeta del juego en educativos/<nombre>/ tal cual (no hace falta que use common.js).
-· Añade una entrada a EXTRA en herramientas/mkedu.py (id, app, subject: mates|lengua|logica|ingles, emoji,
-  ages=(mín, máx), langs, url, title es/en, desc es/en) y, si es una app nueva, otra a APPS.
-  Asignaturas y tramos de edad nuevos: SUBJECTS y BANDS en el mismo archivo.
-· Regenera: cd herramientas && python3 mkedu.py && python3 mkdb.py
-· Si no es educativo (otra colección), habría que añadir una colección en mkdb.py (COLLECTIONS) siguiendo el mismo
-  esquema que 'edu' (games.url = dónde se juega).
+· Añade una entrada a "sueltos" en herramientas/datos/educativos.json (id, app, asignatura: mates|lengua|logica|ingles,
+  emoji, edades [mín, máx], idiomas, url, titulo es/en, desc es/en) y, si es una app nueva, otra a "apps".
+  Asignaturas y tramos de edad nuevos: "asignaturas" y "edades" en el mismo archivo.
+  Un juego arcade que también sirve como educativo: entrada en "arcade" (ref = id del juego).
+· Regenera: php herramientas/arcade.php todo
+· Colecciones y categorías: herramientas/datos/catalogo.json (o, sin tocar archivos, desde el CMS en /cms).
 
 Criterios ya decididos:
 · Si varios títulos comparten mecánica se fusionan en un juego (el campo "origin" lista todos los títulos).
@@ -128,7 +128,8 @@ La web no indica licencia: NO copiar su código ni sus niveles; rehacer la mecá
 
 INSTRUCCIONES PARA CONTINUAR
 ----------------------------
-Requisitos: Python 3, Node.js, y para las pruebas: pip install playwright && playwright install chromium.
+Requisitos: solo PHP 7.4+ con pdo_sqlite y mbstring (la web y las herramientas). Nada de Python ni Node.
+Los datos del catálogo están en JSON (herramientas/datos/) y la web lee SQLite (data/arcade.sqlite, que se genera).
 
 1) Crear un juego nuevo
    · Copiar un juego parecido de herramientas/src/ como plantilla (p. ej. torreta.js = toque simple,
@@ -166,37 +167,32 @@ Requisitos: Python 3, Node.js, y para las pruebas: pip install playwright && pla
    · Para reiniciar nivel tras perder vida: setTimeout(() => { if (g.state==='play' && g.die()) Arcade.current.def.setup(g); }, 1200).
 
 2) Registrar y construir
-   · Añadir la descripción en herramientas/mkgames.py (diccionario D: id → (desc ES, control ES, desc EN, control EN,
-     tv: 'cruceta'|'cursor'|False)) y el id al principio de la lista PRO.
-   · cd herramientas && python3 mkgames.py      → reescribe GAMES_PRO en pwa/games.js
-   · python3 mk.py id1 id2 …                    → crea pwa/<id>.html
-   · Subir ARCADE_VERSION en pwa/games.js (p. ej. 2.5.0) para que la PWA se actualice en los móviles.
-   · python3 ../pwa/build.py                     → regenera autonomos/ (todos los .html autónomos)
-   · Añade el id del juego a su categoría en CAT (herramientas/mkdb.py) y, si es nuevo, a ADDED con la versión.
-   · python3 mkdb.py                             → regenera data/arcade.sqlite (la web PHP lee de ahí)
-   · node --check src/<id>.js para comprobar sintaxis.
+   · Añade una línea a herramientas/datos/juegos.json:
+       {"id":"<id>","coleccion":"pro","categoria":"<categoría>","control":"Tocar","tv":"cursor",
+        "desc":{"es":"…","en":"…"},"version":"<versión nueva>"}
+     (coleccion: main | pro | mesa; tv: false | "cursor" | "cruceta"; el orden del archivo es el de las portadas).
+     Opcional: "tag":{"es","en"}, "emoji" u "origen" para que la portada muestre otra cosa que el juego.
+   · Sube "version" en herramientas/datos/catalogo.json para que la PWA se actualice en los móviles.
+   · php herramientas/arcade.php todo → comprueba los JSON, crea pwa/<id>.html, pwa/games.js, las huellas ?v=,
+     data/arcade.sqlite (la web PHP lee de ahí) y autonomos/. Con «comprobar» solo revisa, sin escribir.
+   · Título, emoji, color, origen, ayuda es/en, vidas y niveles salen del propio src/<id>.js (Arcade.game({…})):
+     no se repiten en los JSON.
 
 3) Probar
-   · Si Playwright no encuentra su Chromium (p. ej. en Claude Code en la nube) usa una copia de los scripts con
-     p.chromium.launch(executable_path='/opt/pw-browsers/chromium') en lugar de "playwright install".
-   · mk.py deja una carpeta herramientas/sueltos_sin_config/ (copias autónomas sin config.js): bórrala, no se usa.
-   · python3 tall.py <carpeta_para_capturas> file://$(pwd)/../autonomos id1,id2   (táctil; crea shots/ antes)
-   · python3 ttv.py id1,id2 <carpeta>                                              (TV, 1 y 2 jugadores)
-   · python3 t8n.py <carpeta>   (editar NEWG con los ids) → avisa de textos en español en la versión inglesa
-   · Para balance/solubilidad: require('./mock.js')(ruta_src) y simular con mkG(nivel) + DEF.update(g, 1/60).
-   · Revisar las capturas: que se vea bien en vertical (390×780) y en TV (960×540).
+   · Abre la web con: php -S 127.0.0.1:8080 -t . herramientas/router.php
+   · En el navegador: /<id> y /<id>/en, la consola sin errores, la demo (👀 Ver demo), el modo TV (?tv=1) y las
+     capturas en vertical (390×780) y en TV (960×540).
 
 4) Publicar
    · Se trabaja directamente en la rama main (sin ramas).
-   · GitHub Pages: sirve index.html (estático) → https://juliofuente.github.io/retrogames/
-   · Hosting con PHP + Apache: sube todo el repositorio (index.php, .htaccess, data/, pwa/, autonomos/). Necesita
-     mod_rewrite y la extensión pdo_sqlite. Si va en una subcarpeta y las URLs fallan, activa RewriteBase en .htaccess.
+   · Solo hosting con PHP + Apache (ya no hay versión estática para GitHub Pages): sube todo el repositorio
+     (index.php, cms.php, .htaccess, data/, pwa/, educativos/, autonomos/). Necesita mod_rewrite y pdo_sqlite. Si va en una subcarpeta y las URLs fallan, activa RewriteBase en .htaccess.
      Después, da de alta https://tudominio/sitemap.xml en Google Search Console.
 
 PROMPT SUGERIDO PARA CLAUDE CODE
 --------------------------------
 "Lee HECHO.txt, PENDIENTE_E_INSTRUCCIONES.txt y pwa/README.md. Continúa la colección Arcade Pro con el lote 8:
 crea cada juego en herramientas/src siguiendo la estructura de los existentes (es/en, niveles infinitos, tvHelp/tv,
-home:'indexpro.html'), regístralos en mkgames.py, constrúyelos con mk.py, sube ARCADE_VERSION, ejecuta build.py y
-las pruebas (tall.py, ttv.py, t8n.py) y corrige errores. Para los títulos marcados con (?) busca primero
+home:'indexpro.html'), regístralos en herramientas/datos/juegos.json, sube la versión en datos/catalogo.json,
+ejecuta «php herramientas/arcade.php todo», pruébalos en el navegador y corrige errores. Para los títulos marcados con (?) busca primero
 información del juego original para entender la mecánica."

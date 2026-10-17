@@ -95,7 +95,7 @@ Cada juego lleva sus textos en inglés en `en: { title, tag, help, tvHelp, dict 
 
 ## Versión autónoma
 
-`build.py` (en la carpeta de trabajo) genera en `arcade-perdido-html/` cada juego con el CSS y el JS comunes incrustados: un solo archivo por juego que se abre sin nada más.
+`php herramientas/arcade.php autonomos` genera en `autonomos/` cada juego con el CSS y el JS comunes incrustados: un solo archivo por juego que se abre sin nada más (también lo hace `arcade.php todo`).
 
 ## PWA y juego suelto (v2.12)
 
@@ -111,7 +111,7 @@ Cada página puede definir, **antes** de cargar `config.js` y `common.js`:
 - Sin `withpwa` (o `false`) no hay PWA: se dan de baja el service worker de esa carpeta y las cachés antiguas.
 - Con `isSingleGame` el motor oculta «Todos los juegos», el botón de favoritos y no envía estadísticas; el botón
   Atrás del mando no sale del juego. En el código: `Arcade.single`.
-- `python3 build.py --solo pivote,gemas` (o `--solo` sin lista para todos) genera `../autonomos/solo/<id>.html`:
+- `php herramientas/arcade.php autonomos --solo pivote,gemas` (o `--solo` sin lista para todos) genera `autonomos/solo/<id>.html`:
   el juego en un solo archivo con `window.isSingleGame = true`, listo para un WebView.
 
 ## Modos de dificultad y niveles (v2.11)
@@ -121,7 +121,9 @@ Cada página puede definir, **antes** de cargar `config.js` y `common.js`:
 
 ## Probar en local
 
+Desde la raíz del repositorio:
+
 ```
-python3 -m http.server 8000
+php -S 127.0.0.1:8000 -t . herramientas/router.php
 ```
 y abre `http://localhost:8000`. Para instalarla en el móvil hay que servirla por HTTPS.

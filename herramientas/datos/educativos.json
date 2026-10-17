@@ -1,0 +1,586 @@
+{
+ "asignaturas": [
+  {
+   "id": "mates",
+   "slug": {
+    "es": "mates",
+    "en": "maths"
+   },
+   "nombre": {
+    "es": "Mates",
+    "en": "Maths"
+   },
+   "emoji": "🔢",
+   "color": "#ff9f43",
+   "desc": {
+    "es": "Juegos de matemáticas para niños: contar, sumar, restar, multiplicar y dividir (también con el método ABN), relojes, dinero, recta numérica, geometría y cálculo mental.",
+    "en": "Maths games for kids: counting, adding, subtracting, multiplying and dividing (also with the ABN method), clocks, money, the number line, geometry and mental maths."
+   }
+  },
+  {
+   "id": "lengua",
+   "slug": {
+    "es": "lengua",
+    "en": "language"
+   },
+   "nombre": {
+    "es": "Lengua",
+    "en": "Language"
+   },
+   "emoji": "📖",
+   "color": "#3cc36e",
+   "desc": {
+    "es": "Juegos de lectura y vocabulario: sílabas, comprensión lectora, frases con huecos y palabras nuevas según la edad.",
+    "en": "Reading and vocabulary games: syllables, reading comprehension, gap-fill sentences and new words for every age."
+   }
+  },
+  {
+   "id": "logica",
+   "slug": {
+    "es": "logica",
+    "en": "logic"
+   },
+   "nombre": {
+    "es": "Lógica",
+    "en": "Logic"
+   },
+   "emoji": "🧩",
+   "color": "#9b5cff",
+   "desc": {
+    "es": "Juegos de razonamiento: series, reglas secretas, balanzas, pistas de detective, simetrías y programar caminos de robots.",
+    "en": "Reasoning games: sequences, secret rules, balances, detective clues, symmetry and programming robot paths."
+   }
+  },
+  {
+   "id": "ingles",
+   "slug": {
+    "es": "ingles",
+    "en": "english"
+   },
+   "nombre": {
+    "es": "Inglés",
+    "en": "English"
+   },
+   "emoji": "🇬🇧",
+   "color": "#4dabf7",
+   "desc": {
+    "es": "Juegos para aprender inglés desde el español: montar frases, tiempos verbales y preguntas.",
+    "en": "Games to learn English for Spanish speakers: building sentences, verb tenses and questions."
+   }
+  }
+ ],
+ "edades": [
+  {
+   "id": "3-6",
+   "slug": {
+    "es": "3-a-6-anos",
+    "en": "3-to-6-years"
+   },
+   "nombre": {
+    "es": "De 3 a 6 años",
+    "en": "3 to 6 years"
+   },
+   "min": 3,
+   "max": 6,
+   "emoji": "🐣"
+  },
+  {
+   "id": "7-12",
+   "slug": {
+    "es": "7-a-12-anos",
+    "en": "7-to-12-years"
+   },
+   "nombre": {
+    "es": "De 7 a 12 años",
+    "en": "7 to 12 years"
+   },
+   "min": 7,
+   "max": 12,
+   "emoji": "🚀"
+  },
+  {
+   "id": "13-16",
+   "slug": {
+    "es": "13-a-16-anos",
+    "en": "13-to-16-years"
+   },
+   "nombre": {
+    "es": "De 13 a 16 años",
+    "en": "13 to 16 years"
+   },
+   "min": 13,
+   "max": 16,
+   "emoji": "🧠"
+  }
+ ],
+ "apps": [
+  {
+   "id": "brain",
+   "nombre": "Emoji Brain Academy",
+   "emoji": "🧠",
+   "url": "educativos/brain-academy/",
+   "idiomas": [
+    "es",
+    "en",
+    "fr"
+   ],
+   "desc": {
+    "es": "69 minijuegos de mates, lectura y lógica para 3 a 12 años, con perfiles y niveles que suben poco a poco.",
+    "en": "69 maths, reading and logic mini-games for ages 3 to 12, with profiles and gradually rising levels."
+   }
+  },
+  {
+   "id": "abn",
+   "nombre": "Emoji Brain Academy · ABN",
+   "emoji": "🧮",
+   "url": "educativos/brain-academy/indexinnovabn",
+   "idiomas": [
+    "es",
+    "en",
+    "fr"
+   ],
+   "desc": {
+    "es": "Solo los juegos de mates manipulativas y método ABN: doble recta, saltos en la recta, detracción, haces y palillos, problemas, regletas, base 10…",
+    "en": "Only the hands-on maths and ABN-method games: double number line, number-line jumps, take-away, bundles and sticks, word problems, rods, base 10…"
+   }
+  },
+  {
+   "id": "aventura",
+   "nombre": "Aventura de Palabras",
+   "emoji": "🎮",
+   "url": "educativos/aventura-palabras/juego_vocabulario_infinito",
+   "idiomas": [
+    "es"
+   ],
+   "desc": {
+    "es": "Vocabulario en español para 7 a 14 años: más de 800 palabras con definición, ejemplo y situaciones.",
+    "en": "Spanish vocabulary for ages 7 to 14: 800+ words with definition, example and situations."
+   }
+  },
+  {
+   "id": "problemas",
+   "nombre": "Problemas de mates",
+   "emoji": "📝",
+   "url": "educativos/problemas-primaria/",
+   "idiomas": [
+    "es"
+   ],
+   "desc": {
+    "es": "Problemas de matemáticas de 1.º a 6.º de Primaria con datos, operaciones y resultado: 30 fichas por curso.",
+    "en": "Maths word problems for Spanish primary years 1 to 6 with data, operations and result: 30 worksheets per year."
+   }
+  },
+  {
+   "id": "fabrica",
+   "nombre": "Fábrica de Frases",
+   "emoji": "🏭",
+   "url": "educativos/fabrica-frases/",
+   "idiomas": [
+    "es"
+   ],
+   "desc": {
+    "es": "Monta frases en inglés pieza a pieza: presente, negativas, preguntas, pasado, futuro y más.",
+    "en": "Build English sentences piece by piece: present, negatives, questions, past, future and more."
+   }
+  },
+  {
+   "id": "arcade",
+   "nombre": "Arcade Perdido",
+   "emoji": "🕹️",
+   "url": "pwa/",
+   "idiomas": [
+    "es",
+    "en"
+   ],
+   "desc": {
+    "es": "Juegos arcade de números de Arcade Perdido y Arcade Pro que también sirven para practicar mates.",
+    "en": "Number arcade games from Arcade Perdido and Arcade Pro that are also good maths practice."
+   }
+  }
+ ],
+ "brain": {
+  "asignatura": {
+   "math": "mates",
+   "reading": "lengua",
+   "logic": "logica"
+  },
+  "edades": {
+   "3": [
+    3,
+    5
+   ],
+   "6": [
+    6,
+    8
+   ],
+   "9": [
+    9,
+    12
+   ]
+  }
+ },
+ "sueltos": [
+  {
+   "id": "aventura-de-palabras",
+   "app": "aventura",
+   "asignatura": "lengua",
+   "emoji": "📚",
+   "edades": [
+    7,
+    14
+   ],
+   "idiomas": [
+    "es"
+   ],
+   "url": "educativos/aventura-palabras/juego_vocabulario_infinito",
+   "titulo": {
+    "es": "Aventura de Palabras",
+    "en": "Word Adventure"
+   },
+   "desc": {
+    "es": "Lee la definición y el ejemplo y elige en qué situación se usa la palabra. Más de 800 palabras por edades (7 a 14 años).",
+    "en": "Read the definition and example and pick the situation where the word fits. 800+ Spanish words by age (7 to 14)."
+   }
+  },
+  {
+   "id": "palabras-por-repeticion",
+   "app": "aventura",
+   "asignatura": "lengua",
+   "emoji": "🎓",
+   "edades": [
+    7,
+    14
+   ],
+   "idiomas": [
+    "es"
+   ],
+   "url": "educativos/aventura-palabras/juego_aprendizaje_repeticion",
+   "titulo": {
+    "es": "Palabras por repetición",
+    "en": "Words by Repetition"
+   },
+   "desc": {
+    "es": "Aprende vocabulario repasando: las palabras que fallas vuelven hasta que las dominas, con progreso por niveles.",
+    "en": "Learn vocabulary by reviewing: the words you miss come back until you master them, with progress by level."
+   }
+  },
+  {
+   "id": "problemas-primaria",
+   "app": "problemas",
+   "asignatura": "mates",
+   "emoji": "📝",
+   "edades": [
+    6,
+    12
+   ],
+   "idiomas": [
+    "es"
+   ],
+   "url": "educativos/problemas-primaria/",
+   "titulo": {
+    "es": "Problemas de mates (1.º a 6.º de Primaria)",
+    "en": "Maths Word Problems (Years 1–6)"
+   },
+   "desc": {
+    "es": "Problemas de matemáticas por cursos, de 1.º a 6.º de Primaria: lee, saca los datos, haz las operaciones y escribe el resultado. Con pistas y solución.",
+    "en": "Maths word problems by school year, from 1st to 6th of Spanish Primary: read, find the data, do the operations and write the result. With hints and solutions."
+   }
+  },
+  {
+   "id": "fabrica-de-frases",
+   "app": "fabrica",
+   "asignatura": "ingles",
+   "emoji": "🏭",
+   "edades": [
+    7,
+    12
+   ],
+   "idiomas": [
+    "es"
+   ],
+   "url": "educativos/fabrica-frases/",
+   "titulo": {
+    "es": "Fábrica de Frases",
+    "en": "Sentence Factory"
+   },
+   "desc": {
+    "es": "Monta frases en inglés pieza a pieza: sujeto, verbo y complemento, negativas, preguntas, pasado, futuro y presente continuo.",
+    "en": "Build English sentences piece by piece: subject, verb and object, negatives, questions, past, future and present continuous."
+   }
+  }
+ ],
+ "arcade": [
+  {
+   "ref": "sumas",
+   "asignatura": "mates",
+   "edades": [
+    6,
+    12
+   ],
+   "titulo": {
+    "es": "Sumas",
+    "en": "Sums"
+   },
+   "desc": {
+    "es": "Cálculo mental contrarreloj: elige el resultado correcto de cada suma antes de que se acabe el tiempo.",
+    "en": "Mental maths against the clock: pick the right answer to each sum before time runs out."
+   }
+  },
+  {
+   "ref": "sumacamino",
+   "asignatura": "mates",
+   "edades": [
+    7,
+    14
+   ],
+   "titulo": {
+    "es": "Sumacamino",
+    "en": "Sum Path"
+   },
+   "desc": {
+    "es": "Dibuja caminos por números vecinos que sumen exactamente el objetivo: sumas de varias cifras sin parar.",
+    "en": "Draw paths through neighbouring numbers that add up exactly to the target: non-stop multi-number sums."
+   }
+  },
+  {
+   "ref": "treses",
+   "asignatura": "mates",
+   "edades": [
+    7,
+    16
+   ],
+   "titulo": {
+    "es": "Treses",
+    "en": "Threes"
+   },
+   "desc": {
+    "es": "Desliza las cartas: 1 + 2 hacen 3 y las iguales se suman (3, 6, 12, 24…). Practica sumas y dobles.",
+    "en": "Slide the cards: 1 + 2 make 3 and equal cards add up (3, 6, 12, 24…). Practise sums and doubles."
+   }
+  },
+  {
+   "ref": "cambio",
+   "asignatura": "mates",
+   "edades": [
+    6,
+    12
+   ],
+   "titulo": {
+    "es": "Cambio",
+    "en": "Change"
+   },
+   "desc": {
+    "es": "Cinco monedas de 1 hacen 5, dos de 5 hacen 10…: cambia monedas y aprende cómo se combinan los valores del dinero.",
+    "en": "Five 1 coins make 5, two 5s make 10…: change coins and learn how money values combine."
+   }
+  },
+  {
+   "ref": "cientos",
+   "asignatura": "mates",
+   "edades": [
+    7,
+    12
+   ],
+   "titulo": {
+    "es": "Cientos",
+    "en": "Hundreds"
+   },
+   "desc": {
+    "es": "Haz crecer los círculos hasta que sus números sumen 100, sin que se toquen: calcula cuánto falta para llegar.",
+    "en": "Grow the circles until their numbers add up to 100 without touching: work out how much is left."
+   }
+  },
+  {
+   "ref": "dados",
+   "asignatura": "mates",
+   "edades": [
+    6,
+    10
+   ],
+   "titulo": {
+    "es": "Dados",
+    "en": "Dice"
+   },
+   "desc": {
+    "es": "Haz rodar los dados y junta tantos como indica su número (tres 3, cuatro 4…): contar y agrupar.",
+    "en": "Roll the dice and group as many as their number says (three 3s, four 4s…): counting and grouping."
+   }
+  },
+  {
+   "ref": "expande",
+   "asignatura": "mates",
+   "edades": [
+    7,
+    14
+   ],
+   "titulo": {
+    "es": "Expande",
+    "en": "Expand"
+   },
+   "desc": {
+    "es": "Cada número se estira tantas casillas como indica: cuenta casillas y planea para llegar a la meta.",
+    "en": "Each number stretches as many squares as it shows: count squares and plan your way to the goal."
+   }
+  },
+  {
+   "ref": "fusionabolas",
+   "asignatura": "mates",
+   "edades": [
+    7,
+    14
+   ],
+   "titulo": {
+    "es": "Fusiona bolas",
+    "en": "Fuse Balls"
+   },
+   "desc": {
+    "es": "Bolas numeradas que se fusionan al tocarse iguales: 2 + 2 = 4, 4 + 4 = 8… dobles y potencias de 2.",
+    "en": "Numbered balls that merge when equal ones touch: 2 + 2 = 4, 4 + 4 = 8… doubles and powers of 2."
+   }
+  },
+  {
+   "ref": "hanoi",
+   "asignatura": "logica",
+   "edades": [
+    7,
+    16
+   ],
+   "titulo": {
+    "es": "Torres de Hanói",
+    "en": "Tower of Hanoi"
+   },
+   "desc": {
+    "es": "El rompecabezas de los discos: planifica los movimientos para llevar la torre sin poner un disco grande sobre uno pequeño.",
+    "en": "The disc puzzle: plan your moves to carry the tower without putting a big disc on a smaller one."
+   }
+  },
+  {
+   "ref": "clavijas",
+   "asignatura": "logica",
+   "edades": [
+    8,
+    16
+   ],
+   "titulo": {
+    "es": "Clavijas",
+    "en": "Peg Solitaire"
+   },
+   "desc": {
+    "es": "El solitario de clavijas: piensa varios saltos por delante para dejar una sola en el tablero.",
+    "en": "Peg solitaire: think several jumps ahead to leave just one on the board."
+   }
+  },
+  {
+   "ref": "apagon",
+   "asignatura": "logica",
+   "edades": [
+    7,
+    16
+   ],
+   "titulo": {
+    "es": "Apagón",
+    "en": "Lights Out"
+   },
+   "desc": {
+    "es": "Cada interruptor cambia su luz y las vecinas: descubre el orden para apagarlas todas.",
+    "en": "Each switch flips its light and its neighbours: find the order that switches them all off."
+   }
+  },
+  {
+   "ref": "casallena",
+   "asignatura": "logica",
+   "edades": [
+    6,
+    14
+   ],
+   "titulo": {
+    "es": "Casa llena",
+    "en": "Full House"
+   },
+   "desc": {
+    "es": "La bola rueda hasta chocar: planifica el recorrido para pintar todas las casillas.",
+    "en": "The ball rolls until it bumps: plan the route to paint every square."
+   }
+  },
+  {
+   "ref": "jarras",
+   "asignatura": "mates",
+   "edades": [
+    8,
+    16
+   ],
+   "titulo": {
+    "es": "Jarras",
+    "en": "Jugs"
+   },
+   "desc": {
+    "es": "Mide litros exactos con jarras sin marcas: sumas, restas y razonamiento con capacidades.",
+    "en": "Measure exact litres with unmarked jugs: adding, subtracting and reasoning with capacities."
+   }
+  },
+  {
+   "ref": "ranas",
+   "asignatura": "logica",
+   "edades": [
+    6,
+    14
+   ],
+   "titulo": {
+    "es": "Ranas",
+    "en": "Frogs"
+   },
+   "desc": {
+    "es": "Ranas y tortugas se cambian de lado sin retroceder: un clásico de planificación paso a paso.",
+    "en": "Frogs and turtles swap sides without going back: a classic step-by-step planning puzzle."
+   }
+  },
+  {
+   "ref": "nim",
+   "asignatura": "mates",
+   "edades": [
+    8,
+    16
+   ],
+   "titulo": {
+    "es": "Nim",
+    "en": "Nim"
+   },
+   "desc": {
+    "es": "Filas de cerillas: descubre la estrategia ganadora pensando en parejas y en números pares e impares.",
+    "en": "Rows of matches: discover the winning strategy by thinking in pairs and odd and even numbers."
+   }
+  },
+  {
+   "ref": "liebre",
+   "asignatura": "logica",
+   "edades": [
+    6,
+    14
+   ],
+   "titulo": {
+    "es": "Liebre y perros",
+    "en": "Hare and Hounds"
+   },
+   "desc": {
+    "es": "Tres perros acorralan a una liebre: anticipa sus salidas y avanza sin dejar huecos.",
+    "en": "Three hounds corner a hare: predict its escapes and advance without leaving gaps."
+   }
+  },
+  {
+   "ref": "tres",
+   "asignatura": "logica",
+   "edades": [
+    6,
+    14
+   ],
+   "titulo": {
+    "es": "Molino de tres",
+    "en": "Three Men's Morris"
+   },
+   "desc": {
+    "es": "El tres en raya que se mueve: anticipa las jugadas de la máquina para hacer línea.",
+    "en": "Noughts and crosses that moves: think ahead of the machine to make a line."
+   }
+  }
+ ]
+}
