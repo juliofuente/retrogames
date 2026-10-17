@@ -63,26 +63,28 @@ REGLAS DEL SISTEMA (obligatorias)
 
 CONSTRUIR Y REGISTRAR (arcade)  — solo PHP, sin Python ni Node
   · El juego: herramientas/src/<id>.js (primera línea «// Título|#colorDeTema»).
-  · Regístralo en herramientas/datos/juegos.json, una línea por juego (el orden es el de las portadas):
-      {"id":"<id>","coleccion":"pro","categoria":"puzles","control":"Tocar","tv":"cursor",
-       "desc":{"es":"…","en":"…"},"version":"2.24.0"}
-    coleccion: main | pro | mesa · categoria: la de datos/catalogo.json · control: Tocar, Arrastrar, Deslizar,
-    Mantener, Dos dedos o Dos pulgares · tv: false, "cursor" o "cruceta" · version: la versión en que se añade.
-    Si es de mesa, añade también su id a "portada_mesa" en datos/catalogo.json.
-  · Sube "version" en herramientas/datos/catalogo.json.
+  · Toda la configuración vive en data/arcade.sqlite (no hay archivos JSON). Da de alta el juego en la base de datos:
+      php herramientas/arcade.php nuevo <id> coleccion=pro categoria=puzles control=tocar tv=cursor \
+          desc_es="…" desc_en="…"
+    coleccion: main | pro | mesa · categoria: un id de la tabla categories · control: tocar, arrastrar, deslizar,
+    mantener, dos-dedos o dos-pulgares · tv: (vacío), cursor o cruceta. Título, emoji, color, ayuda, vidas, niveles,
+    colores y adornos salen del propio src/<id>.js. El orden de las portadas es la columna sort (set <id> sort=…).
+    O, sin consola, desde el CMS (/cms → Juegos → Nuevo).
+  · Sube la versión: php herramientas/arcade.php ajuste version 2.24.0   (o CMS → Ajustes)
   · php herramientas/arcade.php todo
-      (comprueba los datos, crea pwa/<id>.html, pwa/games.js, las huellas ?v=, data/arcade.sqlite y autonomos/)
-  · Si solo quieres revisar los JSON sin escribir nada: php herramientas/arcade.php comprobar
+      (comprueba la base de datos, crea pwa/<id>.html, copia a la BD lo que sale del código, genera pwa/games.js y
+       pwa/config.js, las huellas ?v= y autonomos/)
+  · Si solo quieres revisar sin escribir nada: php herramientas/arcade.php comprobar
 
 CONSTRUIR Y REGISTRAR (educativo o app propia)
   · Carpeta educativos/<carpeta>/ con su index.html. Todo con rutas relativas y sin enlaces a .html.
-  · Añade la entrada a "sueltos" (y, si es una app con varios juegos, a "apps") en herramientas/datos/educativos.json.
-    La url no lleva .html (p. ej. "educativos/<carpeta>/").
+  · Dalo de alta en el CMS (/cms → Juegos → Nuevo, colección Educativos, «Dirección» = educativos/<carpeta>/,
+    asignatura, edades e idiomas). La url no lleva .html. Las apps con varios juegos están en la tabla apps.
   · Si tiene .js/.css propios, añade su carpeta a la lista de cmd_huellas() en herramientas/arcade.php.
   · Pon el botón 🏠 flotante que vuelve a 'arc_back' con el atributo data-sitehome y, antes de </body>, el script
     que lo quita con window.isSingleGame = true (cópialos de educativos/fabrica-frases/index.html, al final).
   · Favoritos y tiempo de juego: cópialo de educativos/problemas-primaria/index.html (busca uid, api/fav y
-    api/play). El id del juego tiene que ser el mismo que en educativos.json.
+    api/play). El id del juego tiene que ser el mismo que en la base de datos.
   · Después: php herramientas/arcade.php todo
 
 PROBAR ANTES DEL COMMIT

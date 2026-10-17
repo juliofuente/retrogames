@@ -20,17 +20,16 @@
      /icono/{id}.svg                                       icono del juego (emoji)
      /sitemap.xml  /robots.txt
      /cms                                                  panel de gestión (cms.php; cambios en data/cms.sqlite)
-   Datos: data/arcade.sqlite (se genera con «php herramientas/arcade.php todo» desde herramientas/datos/*.json).                       */
+   Datos y configuración: data/arcade.sqlite (se edita con el CMS en /cms; herramientas/arcade.php genera los archivos).                       */
 
 declare(strict_types=1);
 error_reporting(E_ALL);
 ini_set('display_errors', '0');
 
-/* PORTADA = false → web solo de juegos: la portada («/», «/en/») y todas las páginas de listado (categorías, /juegos,
-   colecciones, asignaturas, edades, controles, TV, búsqueda y los índices estáticos /pwa/, /pwa/indexpro,
-   /pwa/indextv) responden un 404 sencillo. Solo se entra directamente a cada juego (/<id>, /<id>/es, /<id>/en).
-   Para volver a la normalidad (portada y listados), pon PORTADA en true. */
-const PORTADA = true;
+/* PORTADA (ajuste «portada» de la base de datos, en el CMS → Ajustes) = 0 → web solo de juegos: la portada («/»,
+   «/en/») y todas las páginas de listado (categorías, /juegos, colecciones, asignaturas, edades, controles, TV,
+   búsqueda y los índices /pwa/, /pwa/indexpro, /pwa/indextv) responden un 404 sencillo. Solo se entra directamente
+   a cada juego (/<id>, /<id>/es, /<id>/en). Con 1, portada y listados normales. Se define al leer los ajustes. */
 
 /* ---------- base URL ---------- */
 $https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https') || (($_SERVER['SERVER_PORT'] ?? '') === '443');
@@ -53,7 +52,7 @@ if ($path === '/index.php' || $path === '/index.html') redirect(url('/'));
 if ($path === '/en') redirect(url('/en/'));
 if ($path !== '/' && $path !== '/en/' && $path !== '/pwa/' && substr($path, -1) === '/') redirect(url(rtrim($path, '/')) . (isset($_SERVER['QUERY_STRING']) && $_SERVER['QUERY_STRING'] !== '' ? '?' . $_SERVER['QUERY_STRING'] : ''));
 
-/* ---------- CMS (/cms): panel para editar el catálogo; sus cambios viven en data/cms.sqlite ---------- */
+/* ---------- CMS (/cms): panel para editar el catálogo y los ajustes (todo en data/arcade.sqlite) ---------- */
 if ($path === '/cms') { $CMS_URL = url('/cms'); $SITE_URL = url('/'); require __DIR__ . '/cms.php'; exit; }
 
 /* ---------- datos ---------- */
@@ -62,20 +61,19 @@ if (!is_file($dbFile) || !class_exists('PDO')) { http_response_code(503); header
 try {
   $db = new PDO('sqlite:' . $dbFile, null, null, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC]);
 } catch (Throwable $e) { http_response_code(503); echo 'DB error'; exit; }
-$META = [];
-foreach ($db->query('SELECT key, value FROM meta') as $r) $META[$r['key']] = $r['value'];
+$META = [];   // ajustes: version, portada, modo, idioma… (CMS → Ajustes)
+foreach ($db->query('SELECT key, value FROM settings') as $r) $META[$r['key']] = $r['value'];
+define('PORTADA', ($META['portada'] ?? '1') !== '0');
 $COLS = []; foreach ($db->query('SELECT * FROM collections ORDER BY sort') as $r) $COLS[$r['id']] = $r;
-$CATS = []; foreach ($db->query('SELECT * FROM categories ORDER BY sort') as $r) $CATS[$r['id']] = $r;
+$CATS = []; foreach ($db->query('SELECT * FROM categories WHERE deleted_at IS NULL ORDER BY sort') as $r) $CATS[$r['id']] = $r;
 $CTRLS = []; foreach ($db->query('SELECT * FROM controls') as $r) $CTRLS[$r['id']] = $r;
 $SUBJS = []; foreach ($db->query('SELECT * FROM subjects ORDER BY sort') as $r) $SUBJS[$r['id']] = $r;
 $AGES = []; foreach ($db->query('SELECT * FROM age_groups ORDER BY sort') as $r) $AGES[$r['id']] = $r;
-$GAMES = []; foreach ($db->query('SELECT * FROM games ORDER BY sort') as $r) { $r['based'] = []; $r['ages'] = []; $GAMES[$r['id']] = $r; }
+$GAMES = []; foreach ($db->query('SELECT * FROM games WHERE deleted_at IS NULL ORDER BY sort') as $r) { $r['based'] = []; $r['ages'] = []; $GAMES[$r['id']] = $r; }
 foreach ($db->query('SELECT * FROM game_age_groups') as $r) if (isset($GAMES[$r['game_id']])) $GAMES[$r['game_id']]['ages'][] = $r['age_group_id'];
 foreach ($db->query('SELECT * FROM based_on ORDER BY game_id, sort') as $r) if (isset($GAMES[$r['game_id']])) $GAMES[$r['game_id']]['based'][] = $r;
-// cambios hechos en el CMS (añadir, editar, borrar, cambiar de categoría…), guardados aparte en data/cms.sqlite
-if (is_file(__DIR__ . '/data/cms.sqlite') && is_file(__DIR__ . '/cms.php')) { if (!defined('CMS_LIB')) define('CMS_LIB', 1); require_once __DIR__ . '/cms.php'; cms_overlay($GAMES, $CATS, $COLS); }
 $VERSION = $META['version'] ?? '';
-$LASTMOD = $META['generated'] ?? date('Y-m-d');
+$LASTMOD = $META['actualizado'] ?? date('Y-m-d');
 $SITE = 'Arcade Perdido';
 
 /* ---------- idioma ---------- */
@@ -85,7 +83,7 @@ function T(string $es, string $en): string { global $L; return $L === 'en' ? $en
 function f(array $row, string $field): string { global $L; return (string)($row[$field . '_' . $L] ?? $row[$field . '_es'] ?? ''); }
 function home_url(?string $lang = null): string { global $L; return url(($lang ?? $L) === 'en' ? '/en/' : '/'); }
 function game_path(array $g, ?string $lang = null): string { global $L; return ($lang ?? $L) === 'en' ? '/en/game/' . $g['slug_en'] : '/juego/' . $g['id']; }
-// educativos que en realidad son juegos arcade (url pwa/<id>, ver «arcade» en herramientas/datos/educativos.json): se juegan en el juego de siempre
+// educativos que en realidad son juegos arcade (url pwa/<id>, app «Arcade Perdido»): se juegan en el juego de siempre
 function edu_ref(array $g): ?string { return $g['collection_id'] === 'edu' && strpos((string)$g['url'], 'pwa/') === 0 ? substr($g['url'], 4) : null; }
 function play_path(array $g, ?string $lang = null): string { global $L; return '/' . (edu_ref($g) ?? $g['id']) . (($lang ?? $L) === 'en' ? '/en' : ''); }
 function cat_path(array $c, ?string $lang = null): string { global $L; return ($lang ?? $L) === 'en' ? '/en/category/' . $c['slug_en'] : '/categoria/' . $c['slug_es']; }

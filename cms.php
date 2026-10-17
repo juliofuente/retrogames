@@ -1,73 +1,58 @@
 <?php
 /* Arcade Perdido · CMS
    ─────────────────────────────────────────────────────────────────────────────
-   Panel para añadir, editar y borrar juegos, cambiarlos de categoría y editar categorías y colecciones.
-   Se entra en /cms (o /cms.php). La primera vez pide crear la contraseña.
+   Panel para añadir, editar y borrar juegos, cambiarlos de categoría o colección, editar categorías y colecciones y
+   cambiar los ajustes de la web (versión, portada, modo TV, idioma…). Se entra en /cms (o /cms.php). La primera vez
+   pide crear la contraseña.
 
-   Los cambios NO se escriben en data/arcade.sqlite (ese archivo lo regenera herramientas/arcade.php y se perderían):
-   se guardan en data/cms.sqlite, y index.php los aplica encima del catálogo en cada visita. Así sobreviven a cada
-   nueva versión del catálogo. data/cms.sqlite no se sube a git (.gitignore): haz copias desde «Copia de seguridad».
-
-   Este archivo también lo incluye index.php (con CMS_LIB definido) solo para usar cms_overlay().            */
+   Todo se guarda directamente en data/arcade.sqlite, que es donde vive toda la configuración del catálogo. Tras cada
+   cambio se regeneran pwa/games.js y pwa/config.js (con herramientas/arcade.php) para que las portadas de la PWA y la
+   tele lo vean al momento. La contraseña y el historial del CMS van aparte, en data/cms.sqlite (fuera de git).   */
 
 declare(strict_types=1);
 
 const CMS_INT = ['sort', 'lives', 'cap', 'physics', 'age_min', 'age_max'];
 const CMS_KINDS = ['game' => 'games', 'category' => 'categories', 'collection' => 'collections'];
+// lo que sale del código del juego (src/<id>.js): se copia solo con «arcade.php sincronizar» y no se edita aquí
+const CMS_CODE = ['help_es', 'help_en', 'tvhelp_es', 'tvhelp_en', 'lives', 'levels', 'cap', 'physics', 'theme_color', 'bg1', 'bg2', 'font', 'deco'];
 
-function cms_file(): string { return __DIR__ . '/data/cms.sqlite'; }
-
-function cms_db(bool $create = false): ?PDO {
+function cms_db(): PDO {   // solo contraseña, intentos de entrada e historial
   static $db = null; if ($db) return $db;
-  $f = cms_file(); if (!$create && !is_file($f)) return null;
-  $db = new PDO('sqlite:' . $f, null, null, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC]);
-  $db->exec('PRAGMA journal_mode=WAL');
-  $db->exec('CREATE TABLE IF NOT EXISTS overrides (kind TEXT, id TEXT, state TEXT, data TEXT, updated INTEGER, PRIMARY KEY (kind, id))');
+  $db = new PDO('sqlite:' . __DIR__ . '/data/cms.sqlite', null, null, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC]);
   $db->exec('CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT)');
   $db->exec('CREATE TABLE IF NOT EXISTS log (ts INTEGER, kind TEXT, id TEXT, action TEXT, summary TEXT)');
   $db->exec('CREATE TABLE IF NOT EXISTS logins (ip TEXT, ts INTEGER)');
   return $db;
 }
-
-/* state: 'edit' (cambios sobre uno del catálogo), 'new' (creado en el CMS), 'deleted' (en la papelera) */
-function cms_overrides(): array {
-  $db = cms_db(); if (!$db) return [];
-  $out = [];
-  foreach ($db->query('SELECT * FROM overrides') as $r) { $r['data'] = json_decode((string)$r['data'], true) ?: []; $out[$r['kind']][$r['id']] = $r; }
-  return $out;
+function arcade_db(): PDO {
+  static $db = null; if ($db) return $db;
+  $f = __DIR__ . '/data/arcade.sqlite';
+  if (!is_file($f)) { http_response_code(503); exit('Falta data/arcade.sqlite'); }
+  $db = new PDO('sqlite:' . $f, null, null, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC]);
+  $db->exec('PRAGMA busy_timeout = 4000');
+  return $db;
 }
-
 function cms_cast(array $row): array {
-  foreach (CMS_INT as $k) if (array_key_exists($k, $row) && $row[$k] !== null && $row[$k] !== '') $row[$k] = (int)$row[$k]; elseif (array_key_exists($k, $row) && $row[$k] === '') $row[$k] = null;
+  foreach (CMS_INT as $k) if (array_key_exists($k, $row)) $row[$k] = $row[$k] === '' || $row[$k] === null ? null : (int)$row[$k];
   return $row;
 }
-
-/* Aplica los cambios del CMS a los arrays que carga index.php */
-function cms_overlay(array &$GAMES, array &$CATS, array &$COLS): void {
-  try { $ov = cms_overrides(); } catch (Throwable $e) { return; }
-  if (!$ov) return;
-  foreach (['category' => 'CATS', 'collection' => 'COLS', 'game' => 'GAMES'] as $kind => $var) {
-    $arr = &$$var;
-    foreach ($ov[$kind] ?? [] as $id => $o) {
-      if ($o['state'] === 'deleted') { unset($arr[$id]); continue; }
-      $d = cms_cast($o['data']);
-      if ($o['state'] === 'new') { $base = $kind === 'game' ? ['based' => [], 'ages' => []] : []; $arr[$id] = array_merge($base, $d, ['id' => $id]); }
-      elseif (isset($arr[$id])) $arr[$id] = array_merge($arr[$id], $d);
-    }
-    uasort($arr, function ($a, $b) { return ((int)($a['sort'] ?? 0)) <=> ((int)($b['sort'] ?? 0)); });
-    unset($arr);
+/* migración: los cambios que guardaba la primera versión del CMS en data/cms.sqlite pasan a arcade.sqlite */
+function cms_migrar(): void {
+  $db = cms_db();
+  if (!$db->query("SELECT COUNT(*) FROM sqlite_master WHERE name = 'overrides'")->fetchColumn()) return;
+  $a = arcade_db(); $a->beginTransaction();
+  foreach ($db->query('SELECT * FROM overrides') as $o) {
+    $t = CMS_KINDS[$o['kind']] ?? null; if (!$t) continue; $d = json_decode((string)$o['data'], true) ?: [];
+    $ages = $d['ages'] ?? null; unset($d['ages'], $d['_st'], $d['_was_new'], $d['based']);
+    $cols = array_column($a->query("PRAGMA table_info($t)")->fetchAll(), 'name'); $d = array_intersect_key($d, array_flip($cols));
+    $exists = (bool)$a->query("SELECT COUNT(*) FROM $t WHERE id = " . $a->quote($o['id']))->fetchColumn();
+    if ($o['state'] === 'deleted') { if ($exists) $a->prepare("UPDATE $t SET deleted_at = ? WHERE id = ?")->execute([(int)$o['updated'], $o['id']]); continue; }
+    if ($exists && $d) { $a->prepare("UPDATE $t SET " . implode(', ', array_map(function ($k) { return "$k = ?"; }, array_keys($d))) . ' WHERE id = ?')->execute(array_merge(array_values($d), [$o['id']])); }
+    elseif (!$exists) { $d['id'] = $o['id']; $a->prepare("INSERT INTO $t (" . implode(',', array_keys($d)) . ') VALUES (' . implode(',', array_fill(0, count($d), '?')) . ')')->execute(array_values($d)); }
+    if ($t === 'games' && is_array($ages)) { $a->prepare('DELETE FROM game_age_groups WHERE game_id = ?')->execute([$o['id']]); foreach ($ages as $g) $a->prepare('INSERT INTO game_age_groups VALUES (?, ?)')->execute([$o['id'], $g]); }
   }
-  $firstCat = array_key_first($CATS); $firstCol = array_key_first($COLS);
-  foreach ($GAMES as $id => $g) {
-    if (!isset($CATS[$g['category_id'] ?? ''])) $GAMES[$id]['category_id'] = $firstCat;
-    if (!isset($COLS[$g['collection_id'] ?? ''])) $GAMES[$id]['collection_id'] = $firstCol;
-    if (!is_array($GAMES[$id]['ages'] ?? null)) $GAMES[$id]['ages'] = [];
-  }
+  $a->commit(); $db->exec('DROP TABLE overrides');
 }
-
-if (defined('CMS_LIB')) return;
-
-/* ═════════════════════════════════════════ panel ═════════════════════════════════════════ */
 
 ini_set('display_errors', '0');
 $CMS_URL = $CMS_URL ?? ($_SERVER['SCRIPT_NAME'] ?? '/cms.php');
@@ -82,78 +67,71 @@ header('X-Frame-Options: DENY');
 
 function e($s): string { return htmlspecialchars((string)$s, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); }
 function cms_url(array $q = []): string { global $CMS_URL; return $CMS_URL . ($q ? '?' . http_build_query($q) : ''); }
-function go(array $q = [], string $flash = ''): void { if ($flash !== '') $_SESSION['flash'] = $flash; header('Location: ' . cms_url($q), true, 303); exit; }
+function go(array $q = [], string $flash = ''): void { $w = cms_regen(); if ($w) $flash = trim($flash . ' ⚠️ ' . $w); if ($flash !== '') $_SESSION['flash'] = $flash; header('Location: ' . cms_url($q), true, 303); exit; }
 function csrf(): string { if (empty($_SESSION['csrf'])) $_SESSION['csrf'] = bin2hex(random_bytes(16)); return $_SESSION['csrf']; }
 function csrf_field(): string { return '<input type="hidden" name="csrf" value="' . e(csrf()) . '">'; }
 function check_csrf(): void { if (!hash_equals(csrf(), (string)($_POST['csrf'] ?? ''))) { http_response_code(400); exit('Sesión caducada: vuelve atrás y recarga la página.'); } }
-function setting(string $k): ?string { $db = cms_db(true); $s = $db->prepare('SELECT value FROM settings WHERE key = ?'); $s->execute([$k]); $v = $s->fetchColumn(); return $v === false ? null : (string)$v; }
-function set_setting(string $k, string $v): void { cms_db(true)->prepare('REPLACE INTO settings (key, value) VALUES (?, ?)')->execute([$k, $v]); }
-function cms_log(string $kind, string $id, string $action, string $summary = ''): void { cms_db(true)->prepare('INSERT INTO log VALUES (?, ?, ?, ?, ?)')->execute([time(), $kind, $id, $action, mb_substr($summary, 0, 300)]); }
+function setting(string $k): ?string { $db = cms_db(); $s = $db->prepare('SELECT value FROM settings WHERE key = ?'); $s->execute([$k]); $v = $s->fetchColumn(); return $v === false ? null : (string)$v; }
+function set_setting(string $k, string $v): void { cms_db()->prepare('REPLACE INTO settings (key, value) VALUES (?, ?)')->execute([$k, $v]); }
+function cms_log(string $kind, string $id, string $action, string $summary = ''): void { cms_db()->prepare('INSERT INTO log VALUES (?, ?, ?, ?, ?)')->execute([time(), $kind, $id, $action, mb_substr($summary, 0, 300)]); }
 
-function arcade_db(): PDO {
-  static $db = null; if ($db) return $db;
-  $f = __DIR__ . '/data/arcade.sqlite';
-  if (!is_file($f)) { http_response_code(503); exit('Falta data/arcade.sqlite'); }
-  return $db = new PDO('sqlite:' . $f, null, null, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC]);
-}
-function base_rows(string $kind): array {
-  $t = CMS_KINDS[$kind]; $out = [];
-  foreach (arcade_db()->query("SELECT * FROM $t ORDER BY sort") as $r) { if ($kind === 'game') $r['ages'] = []; $out[$r['id']] = $r; }
-  if ($kind === 'game') foreach (arcade_db()->query('SELECT * FROM game_age_groups') as $r) if (isset($out[$r['game_id']])) $out[$r['game_id']]['ages'][] = $r['age_group_id'];
+function ages_of(string $id): array { $s = arcade_db()->prepare('SELECT age_group_id FROM game_age_groups WHERE game_id = ?'); $s->execute([$id]); return $s->fetchAll(PDO::FETCH_COLUMN); }
+/* filas de una tabla (games/categories/collections), sin las de la papelera salvo que se pidan */
+function rows(string $kind, bool $deleted = false): array {
+  $t = CMS_KINDS[$kind]; $hasDel = $kind !== 'collection'; $out = [];
+  $w = $hasDel ? ($deleted ? ' WHERE deleted_at IS NOT NULL' : ' WHERE deleted_at IS NULL') : '';
+  foreach (arcade_db()->query("SELECT * FROM $t$w ORDER BY sort, id") as $r) { if ($kind === 'game') $r['ages'] = []; $out[$r['id']] = $r; }
+  if ($kind === 'game' && $out) foreach (arcade_db()->query('SELECT * FROM game_age_groups') as $r) if (isset($out[$r['game_id']])) $out[$r['game_id']]['ages'][] = $r['age_group_id'];
   return $out;
 }
-function columns(string $kind): array { $c = []; foreach (arcade_db()->query('PRAGMA table_info(' . CMS_KINDS[$kind] . ')') as $r) $c[] = $r['name']; return $c; }
-/* filas combinadas, con _st = orig | edit | new | deleted */
-function rows(string $kind, bool $withDeleted = false): array {
-  $base = base_rows($kind); $ov = cms_overrides()[$kind] ?? []; $out = [];
-  foreach ($base as $id => $r) {
-    $o = $ov[$id] ?? null;
-    if ($o && $o['state'] === 'deleted') { if ($withDeleted) $out[$id] = $r + ['_st' => 'deleted']; continue; }
-    $out[$id] = $o ? array_merge($r, cms_cast($o['data']), ['_st' => 'edit']) : $r + ['_st' => 'orig'];
-  }
-  foreach ($ov as $id => $o) {
-    if (isset($base[$id])) continue;
-    if ($o['state'] === 'new') $out[$id] = array_merge(['ages' => []], cms_cast($o['data']), ['id' => $id, '_st' => 'new']);
-    elseif ($o['state'] === 'deleted' && $withDeleted) $out[$id] = array_merge(['ages' => []], cms_cast($o['data']), ['id' => $id, '_st' => 'deleted', '_was_new' => 1]);
-  }
-  uasort($out, function ($a, $b) { return ((int)($a['sort'] ?? 0)) <=> ((int)($b['sort'] ?? 0)); });
-  return $out;
-}
-/* guarda un elemento: si es del catálogo solo se guarda la diferencia */
+function row(string $kind, string $id): ?array { $s = arcade_db()->prepare('SELECT * FROM ' . CMS_KINDS[$kind] . ' WHERE id = ?'); $s->execute([$id]); $r = $s->fetch(); if ($r && $kind === 'game') $r['ages'] = ages_of($id); return $r ?: null; }
+/* guarda (crea o actualiza) y apunta en el historial qué ha cambiado */
 function save_item(string $kind, string $id, array $row, string $action): void {
-  $db = cms_db(true); $base = base_rows($kind)[$id] ?? null; $row = cms_cast($row); unset($row['_st'], $row['id']);
-  if ($base) {
-    $diff = []; foreach ($row as $k => $v) { $b = $base[$k] ?? null; if (is_array($v) || is_array($b)) { $x = is_array($v) ? $v : []; $y = is_array($b) ? $b : []; sort($x); sort($y); if ($x !== $y) $diff[$k] = $v; } elseif (($v === null ? '' : (string)$v) !== ($b === null ? '' : (string)$b)) $diff[$k] = $v; }
-    if (!$diff) $db->prepare('DELETE FROM overrides WHERE kind = ? AND id = ?')->execute([$kind, $id]);
-    else $db->prepare('REPLACE INTO overrides VALUES (?, ?, ?, ?, ?)')->execute([$kind, $id, 'edit', json_encode($diff, JSON_UNESCAPED_UNICODE), time()]);
-    cms_log($kind, $id, $action, implode(', ', array_keys($diff)) ?: 'sin cambios respecto al original');
-  } else {
-    $db->prepare('REPLACE INTO overrides VALUES (?, ?, ?, ?, ?)')->execute([$kind, $id, 'new', json_encode($row, JSON_UNESCAPED_UNICODE), time()]);
-    cms_log($kind, $id, $action);
+  $t = CMS_KINDS[$kind]; $a = arcade_db(); $old = row($kind, $id); $row = cms_cast($row);
+  $ages = $row['ages'] ?? null; unset($row['ages'], $row['id']);
+  $cols = array_column($a->query("PRAGMA table_info($t)")->fetchAll(), 'name'); $row = array_intersect_key($row, array_flip($cols));
+  $a->beginTransaction();
+  if ($old) {
+    $diff = []; foreach ($row as $k => $v) if (($v === null ? '' : (string)$v) !== ($old[$k] === null ? '' : (string)$old[$k])) $diff[$k] = $v;
+    if ($diff) $a->prepare("UPDATE $t SET " . implode(', ', array_map(function ($k) { return "$k = ?"; }, array_keys($diff))) . ' WHERE id = ?')->execute(array_merge(array_values($diff), [$id]));
+    $chg = array_keys($diff);
+  } else { $row['id'] = $id; $a->prepare("INSERT INTO $t (" . implode(',', array_keys($row)) . ') VALUES (' . implode(',', array_fill(0, count($row), '?')) . ')')->execute(array_values($row)); $chg = []; }
+  if ($kind === 'game' && is_array($ages)) { $x = $ages; $y = $old['ages'] ?? []; sort($x); sort($y); if ($x !== $y) { $a->prepare('DELETE FROM game_age_groups WHERE game_id = ?')->execute([$id]); foreach ($ages as $g) $a->prepare('INSERT INTO game_age_groups VALUES (?, ?)')->execute([$id, $g]); $chg[] = 'edades'; } }
+  if ($kind === 'game' && isset($row['origin']) && (!$old || $row['origin'] !== $old['origin'])) { $a->prepare('DELETE FROM based_on WHERE game_id = ?')->execute([$id]); foreach (cms_based_on((string)$row['origin']) as $k => [$n, $w, $y2]) $a->prepare('INSERT INTO based_on VALUES (?,?,?,?,?)')->execute([$id, $k, $n, $w, $y2]); }
+  $a->commit();
+  cms_log($kind, $id, $action, $old ? (implode(', ', $chg) ?: 'sin cambios') : ''); if (!$old || $chg) cms_changed();
+}
+function patch_item(string $kind, string $id, array $changes, string $action): void { $r = row($kind, $id); if ($r) save_item($kind, $id, array_merge($r, $changes), $action); }
+function delete_item(string $kind, string $id): void { $r = row($kind, $id); if (!$r) return; arcade_db()->prepare('UPDATE ' . CMS_KINDS[$kind] . ' SET deleted_at = ? WHERE id = ?')->execute([time(), $id]); cms_log($kind, $id, 'a la papelera', (string)($r['title_es'] ?? $r['name_es'] ?? '')); cms_changed(); }
+function restore_item(string $kind, string $id): void { arcade_db()->prepare('UPDATE ' . CMS_KINDS[$kind] . ' SET deleted_at = NULL WHERE id = ?')->execute([$id]); cms_log($kind, $id, 'recuperado'); cms_changed(); }
+function purge_item(string $kind, string $id): void {   // borrar para siempre (solo desde la papelera)
+  $a = arcade_db(); $r = row($kind, $id); if (!$r || $r['deleted_at'] === null) return;
+  $a->beginTransaction();
+  if ($kind === 'game') { $a->prepare('DELETE FROM game_age_groups WHERE game_id = ?')->execute([$id]); $a->prepare('DELETE FROM based_on WHERE game_id = ?')->execute([$id]); }
+  $a->prepare('DELETE FROM ' . CMS_KINDS[$kind] . ' WHERE id = ?')->execute([$id]); $a->commit(); cms_log($kind, $id, 'eliminado del todo');
+}
+function cms_based_on(string $origin): array {   // «Pac-Man (Namco, 1980) / Ms. Pac-Man» → [[nombre, empresa, año], …]
+  $out = [];
+  foreach (preg_split('/\s*\/\s*|\s*·\s*/u', $origin) as $part) {
+    $part = trim($part); if ($part === '') continue; $name = $part; $who = null; $year = null;
+    if (preg_match('/^(.*?)\s*\((.*)\)\s*$/su', $part, $m)) { $name = trim($m[1]); if (preg_match('/\b(19|20)\d\d\b/', $m[2], $y)) $year = (int)$y[0]; $who = trim((string)preg_replace('/,?\s*\b(19|20)\d\d\b/', '', $m[2]), ' ,') ?: null; }
+    $out[] = [$name, $who, $year];
   }
+  return $out;
 }
-function patch_item(string $kind, string $id, array $changes, string $action): void {
-  $all = rows($kind); if (!isset($all[$id])) return; save_item($kind, $id, array_merge($all[$id], $changes), $action);
+function cms_ajustes(): array { $o = []; foreach (arcade_db()->query('SELECT * FROM settings ORDER BY sort') as $r) $o[$r['key']] = $r; return $o; }
+/* tras cada cambio: fecha del catálogo y archivos de la PWA (games.js, config.js y huellas ?v=) al día */
+function cms_changed(): void {
+  arcade_db()->prepare("UPDATE settings SET value = ? WHERE key = 'actualizado'")->execute([date('Y-m-d')]);
+  $GLOBALS['cms_regen'] = true;
 }
-function delete_item(string $kind, string $id): void {
-  $db = cms_db(true); $all = rows($kind, true); $r = $all[$id] ?? null; if (!$r) return;
-  $isBase = isset(base_rows($kind)[$id]);
-  $data = $isBase ? [] : $r; unset($data['_st']);
-  $db->prepare('REPLACE INTO overrides VALUES (?, ?, ?, ?, ?)')->execute([$kind, $id, 'deleted', json_encode($data, JSON_UNESCAPED_UNICODE), time()]);
-  cms_log($kind, $id, 'borrado', (string)($r['title_es'] ?? $r['name_es'] ?? ''));
+function cms_regen(): ?string {
+  if (empty($GLOBALS['cms_regen'])) return null; $GLOBALS['cms_regen'] = false;
+  $tool = __DIR__ . '/herramientas/arcade.php'; if (!is_file($tool)) return 'no está herramientas/arcade.php: las portadas de la PWA no se han actualizado';
+  try { if (!defined('ARCADE_LIB')) define('ARCADE_LIB', 1); if (!defined('ARCADE_QUIET')) define('ARCADE_QUIET', 1); require_once $tool; cmd_catalogo(); cmd_huellas(); return null; }
+  catch (Throwable $e) { return 'Guardado, pero no se han podido regenerar los archivos de la PWA: ' . $e->getMessage(); }
 }
-function restore_item(string $kind, string $id): void {
-  $db = cms_db(true); $s = $db->prepare('SELECT * FROM overrides WHERE kind = ? AND id = ?'); $s->execute([$kind, $id]); $o = $s->fetch(); if (!$o) return;
-  if (isset(base_rows($kind)[$id])) $db->prepare('DELETE FROM overrides WHERE kind = ? AND id = ?')->execute([$kind, $id]);
-  else $db->prepare('UPDATE overrides SET state = ?, updated = ? WHERE kind = ? AND id = ?')->execute(['new', time(), $kind, $id]);
-  cms_log($kind, $id, 'recuperado');
-}
-function purge_item(string $kind, string $id): void { // borrar para siempre (solo los creados en el CMS)
-  $db = cms_db(true); if (isset(base_rows($kind)[$id])) return;
-  $db->prepare('DELETE FROM overrides WHERE kind = ? AND id = ?')->execute([$kind, $id]); cms_log($kind, $id, 'eliminado del todo');
-}
-function revert_item(string $kind, string $id): void { cms_db(true)->prepare("DELETE FROM overrides WHERE kind = ? AND id = ? AND state = 'edit'")->execute([$kind, $id]); cms_log($kind, $id, 'vuelve al original'); }
-function slugify(string $s): string { $s = mb_strtolower(trim($s)); $s = strtr($s, ['á' => 'a', 'é' => 'e', 'í' => 'i', 'ó' => 'o', 'ú' => 'u', 'ü' => 'u', 'ñ' => 'n', 'à' => 'a', 'è' => 'e', 'ç' => 'c']); $s = preg_replace('/[^a-z0-9]+/', '-', $s); return trim((string)$s, '-'); }
+function cms_slug(string $s): string { $s = mb_strtolower(trim($s)); $s = strtr($s, ['á' => 'a', 'é' => 'e', 'í' => 'i', 'ó' => 'o', 'ú' => 'u', 'ü' => 'u', 'ñ' => 'n', 'à' => 'a', 'è' => 'e', 'ç' => 'c']); $s = preg_replace('/[^a-z0-9]+/', '-', $s); return trim((string)$s, '-'); }
 function client_ip(): string { return (string)($_SERVER['REMOTE_ADDR'] ?? '?'); }
 function lists(): array { static $l = null; if ($l) return $l; $l = ['cat' => rows('category'), 'col' => rows('collection'), 'ctrl' => [], 'subj' => [], 'age' => []]; foreach (arcade_db()->query('SELECT * FROM controls') as $r) $l['ctrl'][$r['id']] = $r; foreach (arcade_db()->query('SELECT * FROM subjects ORDER BY sort') as $r) $l['subj'][$r['id']] = $r; foreach (arcade_db()->query('SELECT * FROM age_groups ORDER BY sort') as $r) $l['age'][$r['id']] = $r; return $l; }
 function options(array $items, ?string $sel, string $label = 'name_es', bool $empty = false): string {
@@ -166,7 +144,7 @@ function pwa_files(): array { $o = []; foreach (glob(__DIR__ . '/pwa/*.html') ?:
 /* ───────── página ───────── */
 function page(string $title, string $body, string $tab = ''): void {
   global $SITE_URL; $flash = $_SESSION['flash'] ?? ''; unset($_SESSION['flash']); $logged = !empty($_SESSION['cms_ok']);
-  $tabs = ['games' => '🎮 Juegos', 'cats' => '🗂️ Categorías', 'cols' => '📚 Colecciones', 'trash' => '🗑️ Papelera', 'log' => '🕓 Historial', 'backup' => '💾 Copia'];
+  $tabs = ['games' => '🎮 Juegos', 'cats' => '🗂️ Categorías', 'cols' => '📚 Colecciones', 'ajustes' => '⚙️ Ajustes', 'trash' => '🗑️ Papelera', 'log' => '🕓 Historial', 'backup' => '💾 Copia'];
   header('Content-Type: text/html; charset=utf-8'); ?>
 <!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow">
 <title><?= e($title) ?> · CMS Arcade Perdido</title>
@@ -214,7 +192,7 @@ document.addEventListener('change', async (ev) => { // cambios rápidos desde la
   el.disabled = true;
   try { const r = await fetch(<?= json_encode(cms_url(['p' => 'quick'])) ?>, { method: 'POST', body: fd }); const j = await r.json(); if (!j.ok) throw new Error(j.error || 'error');
     let s = el.parentNode.querySelector('.saved'); if (!s) { s = document.createElement('span'); s.className = 'saved'; el.parentNode.appendChild(s); } s.textContent = '✓ guardado'; setTimeout(() => s.remove(), 1600);
-    const row = el.closest('tr'); if (row && row.querySelector('.stcell') && !row.querySelector('.st.new')) row.querySelector('.stcell').innerHTML = '<span class="st edit">editado</span>';
+    if (j.warn) alert(j.warn);
   } catch (e) { alert('No se ha podido guardar: ' + e.message); } finally { el.disabled = false; }
 });
 document.addEventListener('click', (ev) => { const b = ev.target.closest('[data-confirm]'); if (b && !confirm(b.dataset.confirm)) ev.preventDefault(); });
@@ -242,7 +220,7 @@ if ($hash === null) { // primera vez: crear contraseña
 if (empty($_SESSION['cms_ok'])) {
   $err = '';
   if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    check_csrf(); $db = cms_db(true); $ip = client_ip();
+    check_csrf(); $db = cms_db(); $ip = client_ip();
     $db->prepare('DELETE FROM logins WHERE ts < ?')->execute([time() - 900]);
     $s = $db->prepare('SELECT COUNT(*) FROM logins WHERE ip = ?'); $s->execute([$ip]);
     if ((int)$s->fetchColumn() >= 6) $err = 'Demasiados intentos. Espera unos minutos.';
@@ -253,6 +231,7 @@ if (empty($_SESSION['cms_ok'])) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') check_csrf();
+cms_migrar();
 
 /* ───────── acciones ───────── */
 if ($p === 'logout') { $_SESSION = []; session_destroy(); header('Location: ' . cms_url(), true, 303); exit; }
@@ -273,7 +252,7 @@ if ($p === 'quick' && $_SERVER['REQUEST_METHOD'] === 'POST') { // cambio rápido
   $okv = ['category_id' => $L['cat'], 'collection_id' => $L['col']];
   if (!isset($okv[$f]) || !isset($okv[$f][$v]) || !isset(rows('game')[$id])) { echo json_encode(['ok' => false, 'error' => 'datos no válidos']); exit; }
   patch_item('game', $id, [$f => $v], $f === 'category_id' ? 'cambio de categoría' : 'cambio de colección');
-  echo json_encode(['ok' => true]); exit;
+  echo json_encode(['ok' => true, 'warn' => cms_regen()]); exit;
 }
 
 if ($p === 'bulk' && $_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -287,7 +266,7 @@ if ($p === 'bulk' && $_SERVER['REQUEST_METHOD'] === 'POST') {
   go(['p' => 'games'] + array_intersect_key($_GET, ['cat' => 1, 'col' => 1, 'st' => 1]), $n ? "Hecho en $n juegos." : 'No se ha cambiado nada (¿has marcado algún juego y elegido el destino?).');
 }
 
-if (in_array($p, ['delete', 'restore', 'purge', 'revert'], true) && $_SERVER['REQUEST_METHOD'] === 'POST') {
+if (in_array($p, ['delete', 'restore', 'purge'], true) && $_SERVER['REQUEST_METHOD'] === 'POST') {
   $kind = (string)($_POST['kind'] ?? 'game'); $id = (string)($_POST['id'] ?? ''); if (!isset(CMS_KINDS[$kind])) go();
   if ($p === 'delete' && $kind === 'category') {
     $to = (string)($_POST['to'] ?? ''); $cats = rows('category');
@@ -295,8 +274,8 @@ if (in_array($p, ['delete', 'restore', 'purge', 'revert'], true) && $_SERVER['RE
     $n = 0; foreach (rows('game') as $gid => $g) if (($g['category_id'] ?? '') === $id) { patch_item('game', $gid, ['category_id' => $to], 'cambio de categoría (se borró «' . ($cats[$id]['name_es'] ?? $id) . '»)'); $n++; }
     delete_item('category', $id); go(['p' => 'cats'], "Categoría borrada. $n juegos pasan a «" . $cats[$to]['name_es'] . '».');
   }
-  if ($p === 'delete') delete_item($kind, $id); elseif ($p === 'restore') restore_item($kind, $id); elseif ($p === 'purge') purge_item($kind, $id); else revert_item($kind, $id);
-  $msg = ['delete' => 'Enviado a la papelera (se puede recuperar).', 'restore' => 'Recuperado.', 'purge' => 'Eliminado del todo.', 'revert' => 'Vuelve a estar como en el catálogo original.'][$p];
+  if ($p === 'delete') delete_item($kind, $id); elseif ($p === 'restore') restore_item($kind, $id); else purge_item($kind, $id);
+  $msg = ['delete' => 'Enviado a la papelera (se puede recuperar).', 'restore' => 'Recuperado.', 'purge' => 'Eliminado del todo.'][$p];
   $back = (string)($_POST['back'] ?? ''); go($back === 'trash' ? ['p' => 'trash'] : ($kind === 'category' ? ['p' => 'cats'] : ($kind === 'collection' ? ['p' => 'cols'] : ['p' => 'games'])), $msg);
 }
 
@@ -304,7 +283,7 @@ if (in_array($p, ['delete', 'restore', 'purge', 'revert'], true) && $_SERVER['RE
 if ($p === 'games') {
   $L = lists(); $games = rows('game');
   $fc = (string)($_GET['cat'] ?? ''); $fl = (string)($_GET['col'] ?? ''); $fs = (string)($_GET['st'] ?? '');
-  $list = array_filter($games, function ($g) use ($fc, $fl, $fs) { return ($fc === '' || $g['category_id'] === $fc) && ($fl === '' || $g['collection_id'] === $fl) && ($fs === '' || $g['_st'] === $fs); });
+  $list = array_filter($games, function ($g) use ($fc, $fl, $fs) { return ($fc === '' || $g['category_id'] === $fc) && ($fl === '' || $g['collection_id'] === $fl) && ($fs === '' || ($fs === 'ext' ? preg_match('#^https?://#', (string)$g['url']) : ($fs === 'edu' ? $g['collection_id'] === 'edu' : $g['collection_id'] !== 'edu'))); });
   $catsOpt = function ($sel) use ($L) { return options($L['cat'], $sel); };
   ob_start(); ?>
   <h1>Juegos <span class="count">(<span id="cnt"><?= count($list) ?></span> de <?= count($games) ?>)</span></h1>
@@ -312,7 +291,7 @@ if ($p === 'games') {
     <input type="search" id="q" placeholder="🔎 Buscar por nombre o id…" autocomplete="off">
     <select name="col" onchange="this.form.submit()"><option value="">Todas las colecciones</option><?= options($L['col'], $fl) ?></select>
     <select name="cat" onchange="this.form.submit()"><option value="">Todas las categorías</option><?= options($L['cat'], $fc) ?></select>
-    <select name="st" onchange="this.form.submit()"><option value="">Todos</option><option value="edit"<?= $fs === 'edit' ? ' selected' : '' ?>>Editados</option><option value="new"<?= $fs === 'new' ? ' selected' : '' ?>>Creados aquí</option><option value="orig"<?= $fs === 'orig' ? ' selected' : '' ?>>Sin cambios</option></select>
+    <select name="st" onchange="this.form.submit()"><option value="">Todos</option><option value="arc"<?= $fs === 'arc' ? ' selected' : '' ?>>Solo arcade</option><option value="edu"<?= $fs === 'edu' ? ' selected' : '' ?>>Solo educativos</option><option value="ext"<?= $fs === 'ext' ? ' selected' : '' ?>>Externos</option></select>
     <a class="btn pri" href="<?= e(cms_url(['p' => 'edit'])) ?>">＋ Añadir juego</a>
   </form>
   <form method="post" action="<?= e(cms_url(['p' => 'bulk'] + array_filter(['cat' => $fc, 'col' => $fl, 'st' => $fs]))) ?>">
@@ -325,7 +304,7 @@ if ($p === 'games') {
     </div>
   </div>
   <div class="card" style="padding:4px 10px">
-  <table class="resp"><thead><tr><th><input type="checkbox" id="selall"></th><th></th><th>Juego</th><th>Categoría</th><th>Colección</th><th>Estado</th><th></th></tr></thead><tbody>
+  <table class="resp"><thead><tr><th><input type="checkbox" id="selall"></th><th></th><th>Juego</th><th>Categoría</th><th>Colección</th><th>Orden</th><th></th></tr></thead><tbody>
   <?php foreach ($list as $id => $g): ?>
     <tr data-s="<?= e(mb_strtolower($id . ' ' . $g['title_es'] . ' ' . $g['title_en'])) ?>">
       <td class="ck"><input type="checkbox" name="ids[]" value="<?= e($id) ?>"></td>
@@ -333,12 +312,12 @@ if ($p === 'games') {
       <td class="t"><b><?= e($g['title_es']) ?></b><small><?= e($id) ?><?= $g['added_version'] ? ' · v' . e($g['added_version']) : '' ?></small></td>
       <td class="wide"><select data-quick="category_id" data-id="<?= e($id) ?>"><?= $catsOpt($g['category_id']) ?></select></td>
       <td class="hide-m"><select data-quick="collection_id" data-id="<?= e($id) ?>"><?= options($L['col'], $g['collection_id']) ?></select></td>
-      <td class="stcell"><?= $g['_st'] === 'edit' ? '<span class="st edit">editado</span>' : ($g['_st'] === 'new' ? '<span class="st new">creado aquí</span>' : '') ?></td>
+      <td class="hide-m mut"><?= e($g['sort']) ?><?= preg_match('#^https?://#', (string)$g['url']) ? ' <span class="st new">externo</span>' : '' ?></td>
       <td class="acts"><a class="btn sm" href="<?= e(cms_url(['p' => 'edit', 'id' => $id])) ?>">✏️ Editar</a> <a class="btn sm" target="_blank" href="<?= e($GLOBALS['SITE_URL'] . $id) ?>">▶</a></td>
     </tr>
   <?php endforeach ?>
   </tbody></table></div></form>
-  <p class="hint">Los cambios de categoría y colección de la tabla se guardan solos. La web pública los muestra al momento.</p>
+  <p class="hint">Los cambios de categoría y colección de la tabla se guardan solos. La web, las portadas de la PWA y la de la tele los muestran al momento.</p>
   <?php page('Juegos', (string)ob_get_clean(), 'games');
 }
 
@@ -346,7 +325,7 @@ if ($p === 'games') {
 if ($p === 'edit') {
   $L = lists(); $id = (string)($_GET['id'] ?? ''); $games = rows('game'); $isNew = $id === ''; $err = '';
   if (!$isNew && !isset($games[$id])) go(['p' => 'games'], 'Ese juego no existe.');
-  $base = isset(base_rows('game')[$id]); $g = $isNew ? ['id' => '', 'slug_en' => '', 'collection_id' => 'pro', 'category_id' => array_key_first($L['cat']), 'control_id' => 'tocar', 'file' => '', 'url' => '', 'emoji' => '🎮', 'color' => '#ff6b6b', 'theme_color' => '#1a1033', 'bg1' => '#2b1a5c', 'bg2' => '#1a1033', 'font' => 'round', 'deco' => '[]', 'title_es' => '', 'title_en' => '', 'tag_es' => '', 'tag_en' => '', 'desc_es' => '', 'desc_en' => '', 'help_es' => '', 'help_en' => '', 'tvhelp_es' => '', 'tvhelp_en' => '', 'tv' => null, 'origin' => '', 'lives' => 3, 'levels' => 'endless', 'cap' => null, 'physics' => 0, 'added_version' => 'cms', 'sort' => 5000, 'subject_id' => null, 'age_min' => null, 'age_max' => null, 'langs' => 'es,en', 'app' => null, 'ages' => [], '_st' => 'new'] : $games[$id];
+  $hasSrc = !$isNew && is_file(__DIR__ . '/herramientas/src/' . $id . '.js'); $g = $isNew ? ['id' => '', 'slug_en' => '', 'collection_id' => 'pro', 'category_id' => array_key_first($L['cat']), 'control_id' => 'tocar', 'file' => '', 'url' => '', 'emoji' => '🎮', 'color' => '#ff6b6b', 'theme_color' => '#1a1033', 'bg1' => '#2b1a5c', 'bg2' => '#1a1033', 'font' => 'round', 'deco' => '[]', 'title_es' => '', 'title_en' => '', 'tag_es' => '', 'tag_en' => '', 'desc_es' => '', 'desc_en' => '', 'help_es' => '', 'help_en' => '', 'tvhelp_es' => '', 'tvhelp_en' => '', 'tv' => null, 'origin' => '', 'lives' => 3, 'levels' => 'endless', 'cap' => null, 'physics' => 0, 'added_version' => 'cms', 'sort' => 5000, 'subject_id' => null, 'age_min' => null, 'age_max' => null, 'langs' => 'es,en', 'app' => null, 'ages' => []] : $games[$id];
   if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $in = $_POST; $row = $g;
     foreach (['title_es', 'title_en', 'tag_es', 'tag_en', 'desc_es', 'desc_en', 'help_es', 'help_en', 'tvhelp_es', 'tvhelp_en', 'origin', 'emoji', 'color', 'theme_color', 'bg1', 'bg2', 'levels', 'langs', 'app', 'added_version'] as $k) if (isset($in[$k])) $row[$k] = trim((string)$in[$k]);
@@ -357,8 +336,8 @@ if ($p === 'edit') {
     $row['ages'] = array_values(array_intersect((array)($in['ages'] ?? []), array_keys($L['age'])));
     if ($row['added_version'] === '') $row['added_version'] = null;
     if ($row['app'] === '') $row['app'] = null;
-    if ($isNew) { $id = slugify((string)($in['id'] ?? '')); $row['slug_en'] = slugify((string)($in['slug_en'] ?? '')) ?: $id; }
-    if ($isNew) { if ($id === '' || !preg_match('/^[a-z0-9][a-z0-9-]*$/', $id)) $err = 'El identificador solo puede tener letras minúsculas, números y guiones.'; elseif (isset(rows('game', true)[$id]) || in_array($id, ['cms', 'api', 'pwa', 'juego', 'juegos', 'categoria', 'coleccion', 'buscar', 'tv', 'en', 'icono', 'data', 'educativos', 'herramientas'], true)) $err = 'Ya hay un juego (o una página) con ese identificador.'; foreach (rows('game', true) as $o) if (($o['slug_en'] ?? '') === $row['slug_en']) $err = 'Ya hay un juego con ese nombre en inglés para la URL.'; }
+    if ($isNew) { $id = cms_slug((string)($in['id'] ?? '')); $row['slug_en'] = cms_slug((string)($in['slug_en'] ?? '')) ?: $id; }
+    if ($isNew) { if ($id === '' || !preg_match('/^[a-z0-9][a-z0-9-]*$/', $id)) $err = 'El identificador solo puede tener letras minúsculas, números y guiones.'; elseif (row('game', $id) || in_array($id, ['cms', 'api', 'pwa', 'juego', 'juegos', 'categoria', 'coleccion', 'buscar', 'tv', 'en', 'icono', 'data', 'educativos', 'herramientas'], true)) $err = 'Ya hay un juego (o una página) con ese identificador.'; if (arcade_db()->query('SELECT COUNT(*) FROM games WHERE slug_en = ' . arcade_db()->quote($row['slug_en']))->fetchColumn()) $err = 'Ya hay un juego con ese nombre en inglés para la URL.'; }
     // dónde se juega: archivo de pwa/, archivo subido o dirección externa
     $src = (string)($in['src'] ?? 'file');
     if ($err) { /* nada */ } elseif ($src === 'upload' && !empty($_FILES['upload']['tmp_name']) && is_uploaded_file($_FILES['upload']['tmp_name'])) {
@@ -370,17 +349,22 @@ if ($p === 'edit') {
     } elseif ($src === 'url') { $u = trim((string)($in['ext'] ?? '')); if (!preg_match('#^https?://[^\s<>"]+$#', $u)) $err = 'La dirección externa tiene que empezar por http:// o https://'; else { $row['url'] = $u; $row['file'] = null; } }
     elseif ($src === 'file') { $f = (string)($in['file'] ?? ''); if ($f !== '' && in_array($f, pwa_files(), true)) { $row['file'] = $f; $row['url'] = 'pwa/' . $f; } elseif ($isNew || ($row['collection_id'] !== 'edu' && !$row['file'])) $err = 'Elige el archivo del juego, súbelo o pon una dirección.'; }
     if (!$err && $isNew && empty($row['file']) && !preg_match('#^https?://#', (string)$row['url'])) $err = 'Elige el archivo del juego, súbelo o pon una dirección.';
+    if ($hasSrc) foreach (CMS_CODE as $k) $row[$k] = $g[$k];   // lo que manda el código del juego no se toca aquí
     if (!$err && $row['title_es'] === '') $err = 'Falta el título en español.';
-    if (!$err) { if ($row['title_en'] === '') $row['title_en'] = $row['title_es']; save_item('game', $id, $row, $isNew ? 'creado' : 'editado'); go(['p' => 'edit', 'id' => $id], $isNew ? 'Juego creado.' : 'Cambios guardados.'); }
+    if (!$err) { if ($row['title_en'] === '') $row['title_en'] = $row['title_es']; save_item('game', $id, $row, $isNew ? 'creado' : 'editado');
+      if ($isNew && is_file(__DIR__ . '/herramientas/src/' . $id . '.js')) { try { cms_regen(); $GLOBALS['cms_regen'] = true; cmd_sincronizar([$id]); } catch (Throwable $e) { /* se queda con lo del formulario */ } }
+      go(['p' => 'edit', 'id' => $id], $isNew ? 'Juego creado.' : 'Cambios guardados.'); }
     $g = $row; $g['id'] = $id;
   }
   $src = preg_match('#^https?://#', (string)$g['url']) ? 'url' : 'file';
-  $t = function ($k, $label, $hint = '', $cls = '') use ($g) { return '<div class="' . $cls . '"><label>' . e($label) . '</label><input name="' . $k . '" value="' . e($g[$k] ?? '') . '">' . ($hint ? '<p class="hint">' . $hint . '</p>' : '') . '</div>'; };
-  $ta = function ($k, $label, $hint = '') use ($g) { return '<div class="w2"><label>' . e($label) . '</label><textarea name="' . $k . '">' . e($g[$k] ?? '') . '</textarea>' . ($hint ? '<p class="hint">' . $hint . '</p>' : '') . '</div>'; };
-  $n = function ($k, $label, $hint = '') use ($g) { return '<div><label>' . e($label) . '</label><input type="number" name="' . $k . '" value="' . e($g[$k] ?? '') . '">' . ($hint ? '<p class="hint">' . $hint . '</p>' : '') . '</div>'; };
+  $ro = function ($k) use ($hasSrc) { return $hasSrc && in_array($k, CMS_CODE, true) ? ' disabled title="Sale del código del juego"' : ''; };
+  $t = function ($k, $label, $hint = '', $cls = '') use ($g, $ro) { return '<div class="' . $cls . '"><label>' . e($label) . '</label><input name="' . $k . '" value="' . e($g[$k] ?? '') . '"' . $ro($k) . '>' . ($hint ? '<p class="hint">' . $hint . '</p>' : '') . '</div>'; };
+  $ta = function ($k, $label, $hint = '') use ($g, $ro) { return '<div class="w2"><label>' . e($label) . '</label><textarea name="' . $k . '"' . $ro($k) . '>' . e($g[$k] ?? '') . '</textarea>' . ($hint ? '<p class="hint">' . $hint . '</p>' : '') . '</div>'; };
+  $n = function ($k, $label, $hint = '') use ($g, $ro) { return '<div><label>' . e($label) . '</label><input type="number" name="' . $k . '" value="' . e($g[$k] ?? '') . '"' . $ro($k) . '>' . ($hint ? '<p class="hint">' . $hint . '</p>' : '') . '</div>'; };
   ob_start(); ?>
   <p><a href="<?= e(cms_url(['p' => 'games'])) ?>">← Juegos</a></p>
-  <h1><?= $isNew ? 'Añadir juego' : e($g['emoji'] . ' ' . $g['title_es']) ?> <?= $g['_st'] === 'edit' ? '<span class="st edit">editado</span>' : ($g['_st'] === 'new' && !$isNew ? '<span class="st new">creado aquí</span>' : '') ?></h1>
+  <h1><?= $isNew ? 'Añadir juego' : e($g['emoji'] . ' ' . $g['title_es']) ?></h1>
+  <?php if ($hasSrc): ?><p class="hint">Cómo se juega, controles con mando, vidas, niveles, fondo y física salen del código del juego (<code>herramientas/src/<?= e($id) ?>.js</code>) y se copian con <code>php herramientas/arcade.php sincronizar</code>: aquí solo se ven.</p><?php endif ?>
   <?php if ($err): ?><div class="flash err"><?= e($err) ?></div><?php endif ?>
   <form method="post" enctype="multipart/form-data"><?= csrf_field() ?>
   <div class="card"><h2 style="margin-top:0">Lo básico</h2><div class="grid">
@@ -417,8 +401,8 @@ if ($p === 'edit') {
   <div class="card"><h2 style="margin-top:0">Detalles</h2><div class="grid">
     <?= $n('lives', 'Vidas') ?><?= $t('levels', 'Niveles', 'Un número, «endless» (por récord) o «infinite».') ?><?= $n('cap', 'Nivel máximo de dificultad') ?>
     <?= $t('langs', 'Idiomas', 'Separados por comas: es,en') ?>
-    <div><label>Fondo (arriba / abajo)</label><div style="display:flex;gap:6px"><input type="color" name="bg1" value="<?= e(preg_match('/^#[0-9a-f]{6}$/i', (string)$g['bg1']) ? $g['bg1'] : '#2b1a5c') ?>" style="height:40px;padding:3px"><input type="color" name="bg2" value="<?= e(preg_match('/^#[0-9a-f]{6}$/i', (string)$g['bg2']) ? $g['bg2'] : '#1a1033') ?>" style="height:40px;padding:3px"><input type="color" name="theme_color" value="<?= e(preg_match('/^#[0-9a-f]{6}$/i', (string)$g['theme_color']) ? $g['theme_color'] : '#1a1033') ?>" style="height:40px;padding:3px" title="Color de la barra del móvil"></div></div>
-    <div><label style="display:flex;gap:8px;align-items:center;margin-top:24px;color:var(--ink)"><input type="checkbox" name="physics" value="1" <?= !empty($g['physics']) ? 'checked' : '' ?>> Usa física</label></div>
+    <div><label>Fondo (arriba / abajo)</label><div style="display:flex;gap:6px"><input type="color"<?= $ro('bg1') ?> name="bg1" value="<?= e(preg_match('/^#[0-9a-f]{6}$/i', (string)$g['bg1']) ? $g['bg1'] : '#2b1a5c') ?>" style="height:40px;padding:3px"><input type="color"<?= $ro('bg2') ?> name="bg2" value="<?= e(preg_match('/^#[0-9a-f]{6}$/i', (string)$g['bg2']) ? $g['bg2'] : '#1a1033') ?>" style="height:40px;padding:3px"><input type="color"<?= $ro('theme_color') ?> name="theme_color" value="<?= e(preg_match('/^#[0-9a-f]{6}$/i', (string)$g['theme_color']) ? $g['theme_color'] : '#1a1033') ?>" style="height:40px;padding:3px" title="Color de la barra del móvil"></div></div>
+    <div><label style="display:flex;gap:8px;align-items:center;margin-top:24px;color:var(--ink)"><input type="checkbox" name="physics" value="1" <?= !empty($g['physics']) ? 'checked' : '' ?><?= $ro('physics') ?>> Usa física</label></div>
   </div>
   <h2>Solo educativos</h2><div class="grid">
     <div><label>Asignatura</label><select name="subject_id"><?= options($L['subj'], $g['subject_id'], 'name_es', true) ?></select></div>
@@ -429,7 +413,6 @@ if ($p === 'edit') {
   </form>
   <?php if (!$isNew): ?>
   <div class="bar" style="margin-top:20px">
-    <?php if ($g['_st'] === 'edit'): ?><form method="post" action="<?= e(cms_url(['p' => 'revert'])) ?>"><?= csrf_field() ?><input type="hidden" name="kind" value="game"><input type="hidden" name="id" value="<?= e($g['id']) ?>"><button data-confirm="¿Deshacer todos los cambios y dejarlo como en el catálogo original?">↩️ Volver al original</button></form><?php endif ?>
     <form method="post" action="<?= e(cms_url(['p' => 'delete'])) ?>"><?= csrf_field() ?><input type="hidden" name="kind" value="game"><input type="hidden" name="id" value="<?= e($g['id']) ?>"><button class="bad" data-confirm="¿Mandar «<?= e($g['title_es']) ?>» a la papelera? Desaparecerá de la web (se puede recuperar).">🗑️ Borrar juego</button></form>
   </div>
   <?php endif ?>
@@ -446,7 +429,7 @@ if ($p === 'cats' || $p === 'cols') {
   <?php foreach ($items as $id => $c): ?>
     <tr><td class="em"><?= e($c['emoji']) ?></td><td class="t"><b><?= e($c['name_es']) ?></b><small><?= e($c['name_en']) ?></small></td><td class="hide-m mut">/<?= $kind === 'category' ? 'categoria' : 'coleccion' ?>/<?= e($c['slug_es']) ?></td>
       <td class="right"><a href="<?= e(cms_url(['p' => 'games', $kind === 'category' ? 'cat' : 'col' => $id])) ?>"><?= (int)($count[$id] ?? 0) ?></a></td><td class="right mut hide-m"><?= e($c['sort']) ?></td>
-      <td class="acts"><?= $c['_st'] === 'edit' ? '<span class="st edit">editada</span> ' : ($c['_st'] === 'new' ? '<span class="st new">nueva</span> ' : '') ?><a class="btn sm" href="<?= e(cms_url(['p' => 'item', 'kind' => $kind, 'id' => $id])) ?>">✏️ Editar</a></td></tr>
+      <td class="acts"><a class="btn sm" href="<?= e(cms_url(['p' => 'item', 'kind' => $kind, 'id' => $id])) ?>">✏️ Editar</a></td></tr>
   <?php endforeach ?></tbody></table></div>
   <?php if ($kind === 'category'): ?><a class="btn pri" href="<?= e(cms_url(['p' => 'item', 'kind' => 'category'])) ?>">＋ Nueva categoría</a><?php else: ?><p class="hint">Las colecciones tienen su propia portada, por eso aquí solo se editan sus textos, emoji y orden.</p><?php endif ?>
   <?php page($kind === 'category' ? 'Categorías' : 'Colecciones', (string)ob_get_clean(), $p);
@@ -457,11 +440,11 @@ if ($p === 'item') {
   $id = (string)($_GET['id'] ?? ''); $items = rows($kind); $isNew = $id === ''; $err = ''; $tab = $kind === 'category' ? 'cats' : 'cols';
   if ($isNew && $kind !== 'category') go(['p' => 'cols']);
   if (!$isNew && !isset($items[$id])) go(['p' => $tab], 'No existe.');
-  $c = $isNew ? ['slug_es' => '', 'slug_en' => '', 'name_es' => '', 'name_en' => '', 'emoji' => '📁', 'genre' => 'Arcade', 'desc_es' => '', 'desc_en' => '', 'sort' => count($items), '_st' => 'new'] : $items[$id];
+  $c = $isNew ? ['slug_es' => '', 'slug_en' => '', 'name_es' => '', 'name_en' => '', 'emoji' => '📁', 'genre' => 'Arcade', 'desc_es' => '', 'desc_en' => '', 'sort' => count($items)] : $items[$id];
   if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $row = $c; foreach (['name_es', 'name_en', 'emoji', 'desc_es', 'desc_en', 'genre'] as $k) if (isset($_POST[$k])) $row[$k] = trim((string)$_POST[$k]);
     $row['sort'] = (int)($_POST['sort'] ?? 0); if ($kind === 'collection') unset($row['genre']);
-    if ($isNew) { $row['slug_es'] = slugify((string)($_POST['slug_es'] ?? '') ?: $row['name_es']); $row['slug_en'] = slugify((string)($_POST['slug_en'] ?? '') ?: ($row['name_en'] ?: $row['name_es'])); $id = $row['slug_es']; foreach (rows($kind, true) as $oid => $o) if ($oid === $id || $o['slug_es'] === $row['slug_es'] || $o['slug_en'] === $row['slug_en']) $err = 'Ya hay una categoría con ese nombre o esa URL.'; }
+    if ($isNew) { $row['slug_es'] = cms_slug((string)($_POST['slug_es'] ?? '') ?: $row['name_es']); $row['slug_en'] = cms_slug((string)($_POST['slug_en'] ?? '') ?: ($row['name_en'] ?: $row['name_es'])); $id = $row['slug_es']; foreach (arcade_db()->query('SELECT id, slug_es, slug_en FROM ' . CMS_KINDS[$kind]) as $o) if ($o['id'] === $id || $o['slug_es'] === $row['slug_es'] || $o['slug_en'] === $row['slug_en']) $err = 'Ya hay una categoría con ese nombre o esa URL.'; }
     if ($row['name_es'] === '') $err = 'Falta el nombre en español.';
     if (!$err) { if ($row['name_en'] === '') $row['name_en'] = $row['name_es']; save_item($kind, $id, $row, $isNew ? 'creada' : 'editada'); go(['p' => $tab], $isNew ? 'Categoría creada.' : 'Guardado.'); }
     $c = $row;
@@ -484,7 +467,6 @@ if ($p === 'item') {
   </div><p><button class="pri"><?= $isNew ? '＋ Crear' : '💾 Guardar' ?></button></p></form>
   <?php if (!$isNew): ?>
     <div class="bar">
-    <?php if ($c['_st'] === 'edit'): ?><form method="post" action="<?= e(cms_url(['p' => 'revert'])) ?>"><?= csrf_field() ?><input type="hidden" name="kind" value="<?= e($kind) ?>"><input type="hidden" name="id" value="<?= e($id) ?>"><button data-confirm="¿Volver a los textos originales?">↩️ Volver al original</button></form><?php endif ?>
     <?php if ($kind === 'category' && $others): ?>
       <form method="post" action="<?= e(cms_url(['p' => 'delete'])) ?>" class="bar" style="margin:0"><?= csrf_field() ?><input type="hidden" name="kind" value="category"><input type="hidden" name="id" value="<?= e($id) ?>">
         <span>Borrar y pasar sus juegos a</span><select name="to"><?= options($others, null) ?></select><button class="bad" data-confirm="¿Borrar esta categoría y mover sus juegos?">🗑️ Borrar categoría</button></form>
@@ -496,26 +478,52 @@ if ($p === 'item') {
 
 /* ───────── papelera ───────── */
 if ($p === 'trash') {
-  $del = []; foreach (['game', 'category'] as $k) foreach (rows($k, true) as $id => $r) if ($r['_st'] === 'deleted') $del[] = [$k, $id, $r];
+  $del = []; foreach (['game', 'category'] as $k) foreach (rows($k, true) as $id => $r) $del[] = [$k, $id, $r];
   ob_start(); ?>
   <h1>Papelera</h1>
   <?php if (!$del): ?><div class="card mut">No hay nada en la papelera.</div><?php else: ?>
   <div class="card" style="padding:4px 10px"><table class="resp"><tbody>
   <?php foreach ($del as [$k, $id, $r]): ?>
-    <tr><td class="em"><?= e($r['emoji'] ?? '') ?></td><td class="t"><b><?= e($r['title_es'] ?? $r['name_es'] ?? $id) ?></b><small><?= $k === 'game' ? 'Juego' : 'Categoría' ?> · <?= e($id) ?></small></td>
+    <tr><td class="em"><?= e($r['emoji'] ?? '') ?></td><td class="t"><b><?= e($r['title_es'] ?? $r['name_es'] ?? $id) ?></b><small><?= $k === 'game' ? 'Juego' : 'Categoría' ?> · <?= e($id) ?> · <?= e(date('d/m/Y', (int)$r['deleted_at'])) ?></small></td>
       <td class="acts">
         <form method="post" action="<?= e(cms_url(['p' => 'restore'])) ?>" style="display:inline"><?= csrf_field() ?><input type="hidden" name="kind" value="<?= e($k) ?>"><input type="hidden" name="id" value="<?= e($id) ?>"><input type="hidden" name="back" value="trash"><button class="sm blue">♻️ Recuperar</button></form>
-        <?php if (!empty($r['_was_new'])): ?><form method="post" action="<?= e(cms_url(['p' => 'purge'])) ?>" style="display:inline"><?= csrf_field() ?><input type="hidden" name="kind" value="<?= e($k) ?>"><input type="hidden" name="id" value="<?= e($id) ?>"><input type="hidden" name="back" value="trash"><button class="sm bad" data-confirm="Se eliminará para siempre. ¿Seguro?">Eliminar del todo</button></form><?php endif ?>
+        <form method="post" action="<?= e(cms_url(['p' => 'purge'])) ?>" style="display:inline"><?= csrf_field() ?><input type="hidden" name="kind" value="<?= e($k) ?>"><input type="hidden" name="id" value="<?= e($id) ?>"><input type="hidden" name="back" value="trash"><button class="sm bad" data-confirm="Se eliminará de la base de datos para siempre. ¿Seguro?">Eliminar del todo</button></form>
       </td></tr>
   <?php endforeach ?></tbody></table></div>
-  <p class="hint">Los juegos del catálogo original solo se pueden recuperar; los creados aquí también se pueden eliminar del todo (su archivo en pwa/ no se borra).</p>
+  <p class="hint">Lo que está aquí no sale en la web. «Eliminar del todo» lo quita de la base de datos (el archivo del juego en pwa/ no se borra).</p>
   <?php endif ?>
   <?php page('Papelera', (string)ob_get_clean(), 'trash');
 }
 
+/* ───────── ajustes ───────── */
+if ($p === 'ajustes') {
+  $A = cms_ajustes(); $err = '';
+  $valid = ['portada' => ['0', '1'], 'modo' => ['automatico', 'seleccionable', 'modonormal', 'modotv'], 'idioma' => ['auto', 'es', 'en'], 'jugadores_max' => ['1', '2', '3', '4']];
+  if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!empty($_POST['regen'])) { cms_changed(); go(['p' => 'ajustes'], 'Archivos de la PWA regenerados.'); }
+    $new = []; foreach ($A as $k => $r) { if ($k === 'actualizado' || !isset($_POST[$k])) continue; $v = trim((string)$_POST[$k]); if (isset($valid[$k]) && !in_array($v, $valid[$k], true)) $err = "Valor no válido para «$k»."; if ($k === 'version' && !preg_match('/^\d+\.\d+\.\d+$/', $v)) $err = 'La versión tiene que ser del tipo 2.23.1'; if ($k === 'rondas_multijugador' && !ctype_digit($v)) $err = 'Las rondas tienen que ser un número.'; $new[$k] = $v; }
+    if (!$err) { $chg = []; foreach ($new as $k => $v) if ($v !== $A[$k]['value']) { arcade_db()->prepare('UPDATE settings SET value = ? WHERE key = ?')->execute([$v, $k]); $chg[] = "$k = $v"; }
+      if ($chg) { cms_log('cms', 'ajustes', 'cambiados', implode(', ', $chg)); cms_changed(); } go(['p' => 'ajustes'], $chg ? 'Ajustes guardados.' : 'No había nada que cambiar.'); }
+  }
+  $sel = function ($k, $opts) use ($A) { $h = '<select name="' . $k . '">'; foreach ($opts as $v => $t) $h .= '<option value="' . e($v) . '"' . ((string)$A[$k]['value'] === (string)$v ? ' selected' : '') . '>' . e($t) . '</option>'; return $h . '</select>'; };
+  ob_start(); ?>
+  <h1>Ajustes</h1>
+  <?php if ($err): ?><div class="flash err"><?= e($err) ?></div><?php endif ?>
+  <form method="post" class="card"><?= csrf_field() ?><div class="grid">
+    <div><label>Versión</label><input name="version" value="<?= e($A['version']['value']) ?>" pattern="\d+\.\d+\.\d+"><p class="hint">Súbela (p. ej. 2.23.1) cuando cambies juegos para que los móviles descarguen lo nuevo.</p></div>
+    <div><label>Portada y listados</label><?= $sel('portada', ['1' => 'Sí: portada, categorías y colecciones', '0' => 'No: web solo de juegos (/<id>)']) ?></div>
+    <div><label>Modo de pantalla</label><?= $sel('modo', ['automatico' => 'Automático (detecta la tele)', 'seleccionable' => 'Seleccionable (botón 📺 / 📱)', 'modonormal' => 'Siempre táctil', 'modotv' => 'Siempre tele (mando)']) ?></div>
+    <div><label>Idioma</label><?= $sel('idioma', ['auto' => 'Automático, con botón para cambiar', 'es' => 'Siempre español', 'en' => 'Siempre inglés']) ?></div>
+    <div><label>Jugadores por turnos en la tele</label><?= $sel('jugadores_max', ['1' => '1', '2' => '2', '3' => '3', '4' => '4']) ?></div>
+    <div><label>Rondas en partidas por turnos</label><input type="number" min="1" max="20" name="rondas_multijugador" value="<?= e($A['rondas_multijugador']['value']) ?>"></div>
+  </div><p><button class="pri">💾 Guardar ajustes</button></p></form>
+  <form method="post" class="card"><?= csrf_field() ?><b>Archivos de la PWA</b><p class="mut" style="margin:6px 0 10px">Se regeneran solos tras cada cambio (<code>pwa/games.js</code>, <code>pwa/config.js</code> y las huellas <code>?v=</code>). Último cambio del catálogo: <?= e($A['actualizado']['value'] ?? '') ?>.</p><button name="regen" value="1">🔄 Regenerar ahora</button></form>
+  <?php page('Ajustes', (string)ob_get_clean(), 'ajustes');
+}
+
 /* ───────── historial ───────── */
 if ($p === 'log') {
-  $rows = cms_db(true)->query('SELECT * FROM log ORDER BY ts DESC LIMIT 300')->fetchAll(); $names = ['game' => '🎮', 'category' => '🗂️', 'collection' => '📚', 'cms' => '🔑'];
+  $rows = cms_db()->query('SELECT * FROM log ORDER BY ts DESC LIMIT 300')->fetchAll(); $names = ['game' => '🎮', 'category' => '🗂️', 'collection' => '📚', 'cms' => '🔑'];
   ob_start(); ?>
   <h1>Historial</h1>
   <div class="card" style="padding:4px 10px"><table><tbody>
@@ -527,29 +535,31 @@ if ($p === 'log') {
 
 /* ───────── copia de seguridad ───────── */
 if ($p === 'backup') {
-  if (($_GET['do'] ?? '') === 'export') {
-    $data = ['app' => 'arcade-perdido-cms', 'version' => 1, 'exported' => date('c'), 'overrides' => cms_db(true)->query('SELECT kind, id, state, data, updated FROM overrides')->fetchAll()];
-    header('Content-Type: application/json; charset=utf-8'); header('Content-Disposition: attachment; filename="cms-arcade-' . date('Ymd-His') . '.json"');
-    echo json_encode($data, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT); exit;
+  $f = __DIR__ . '/data/arcade.sqlite';
+  if (($_GET['do'] ?? '') === 'export') {   // copia coherente aunque alguien esté escribiendo
+    $tmp = tempnam(sys_get_temp_dir(), 'arc'); @unlink($tmp); arcade_db()->exec('VACUUM INTO ' . arcade_db()->quote($tmp));
+    header('Content-Type: application/vnd.sqlite3'); header('Content-Disposition: attachment; filename="arcade-' . date('Ymd-His') . '.sqlite"'); header('Content-Length: ' . filesize($tmp));
+    readfile($tmp); @unlink($tmp); exit;
   }
   $msg = '';
-  if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_FILES['json']['tmp_name']) && is_uploaded_file($_FILES['json']['tmp_name'])) {
-    $j = json_decode((string)file_get_contents($_FILES['json']['tmp_name']), true);
-    if (!is_array($j) || ($j['app'] ?? '') !== 'arcade-perdido-cms' || !is_array($j['overrides'] ?? null)) $msg = 'Ese archivo no es una copia del CMS.';
+  if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_FILES['db']['tmp_name']) && is_uploaded_file($_FILES['db']['tmp_name'])) {
+    $up = $_FILES['db']['tmp_name'];
+    try { $t = new PDO('sqlite:' . $up, null, null, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]); $tabs = $t->query("SELECT name FROM sqlite_master WHERE type = 'table'")->fetchAll(PDO::FETCH_COLUMN); $n = (int)$t->query('SELECT COUNT(*) FROM games')->fetchColumn(); $t = null; }
+    catch (Throwable $e) { $tabs = []; $n = 0; }
+    if (array_diff(['games', 'categories', 'collections', 'settings', 'controls'], $tabs)) $msg = 'Ese archivo no es una base de datos del Arcade (le faltan tablas).';
     else {
-      $db = cms_db(true); $db->beginTransaction(); if (!empty($_POST['replace'])) $db->exec('DELETE FROM overrides');
-      $st = $db->prepare('REPLACE INTO overrides VALUES (?, ?, ?, ?, ?)'); $n = 0;
-      foreach ($j['overrides'] as $o) { if (!isset(CMS_KINDS[$o['kind'] ?? '']) || !in_array($o['state'] ?? '', ['edit', 'new', 'deleted'], true) || !is_string($o['id'] ?? null)) continue; $st->execute([$o['kind'], $o['id'], $o['state'], is_string($o['data']) ? $o['data'] : json_encode($o['data'], JSON_UNESCAPED_UNICODE), (int)($o['updated'] ?? time())]); $n++; }
-      $db->commit(); cms_log('cms', '-', 'copia importada', "$n cambios"); go(['p' => 'backup'], "Copia importada: $n cambios.");
+      @copy($f, __DIR__ . '/data/arcade.anterior.sqlite');   // por si acaso: la de antes se queda al lado
+      if (!@move_uploaded_file($up, $f)) $msg = 'No se ha podido reemplazar data/arcade.sqlite (¿permisos de escritura?).';
+      else { cms_log('cms', '-', 'base de datos restaurada', "$n juegos"); cms_changed(); go(['p' => 'backup'], "Base de datos restaurada: $n juegos. La anterior se ha guardado como data/arcade.anterior.sqlite."); }
     }
   }
-  $n = (int)cms_db(true)->query('SELECT COUNT(*) FROM overrides')->fetchColumn();
+  $n = (int)arcade_db()->query('SELECT COUNT(*) FROM games WHERE deleted_at IS NULL')->fetchColumn();
   ob_start(); ?>
   <h1>Copia de seguridad</h1>
   <?php if ($msg): ?><div class="flash err"><?= e($msg) ?></div><?php endif ?>
-  <div class="card"><h2 style="margin-top:0">Descargar</h2><p>Hay <b><?= $n ?></b> cambios guardados en el CMS. Descárgalos en un archivo para tener copia o llevarlos a otro servidor.</p><a class="btn blue" href="<?= e(cms_url(['p' => 'backup', 'do' => 'export'])) ?>">💾 Descargar copia (.json)</a></div>
-  <div class="card"><h2 style="margin-top:0">Restaurar</h2><form method="post" enctype="multipart/form-data"><?= csrf_field() ?><p><input type="file" name="json" accept=".json,application/json" required></p><p><label style="display:flex;gap:8px;align-items:center;color:var(--ink)"><input type="checkbox" name="replace" value="1"> Borrar antes los cambios actuales (si no, se mezclan)</label></p><button class="pri" data-confirm="¿Importar esta copia?">Importar</button></form></div>
-  <div class="card mut"><b>Dónde se guarda:</b> en <code>data/cms.sqlite</code>, aparte del catálogo (<code>data/arcade.sqlite</code>), para que no se pierda al publicar juegos nuevos. Ese archivo no está en git: si subes la web desde cero, recuerda conservarlo o importar una copia.</div>
+  <div class="card"><h2 style="margin-top:0">Descargar la base de datos</h2><p>Toda la configuración de la web (<b><?= $n ?></b> juegos, categorías, colecciones y ajustes) está en <code>data/arcade.sqlite</code>. Descárgala para tener copia o para llevarte al repositorio los cambios que hagas aquí.</p><a class="btn blue" href="<?= e(cms_url(['p' => 'backup', 'do' => 'export'])) ?>">💾 Descargar arcade.sqlite</a></div>
+  <div class="card"><h2 style="margin-top:0">Restaurar</h2><form method="post" enctype="multipart/form-data"><?= csrf_field() ?><p><input type="file" name="db" accept=".sqlite,.db,application/vnd.sqlite3,application/octet-stream" required></p><p class="hint">Sustituye la base de datos entera por la que subas (la actual se guarda como data/arcade.anterior.sqlite).</p><p><button class="pri" data-confirm="¿Sustituir la base de datos por este archivo?">Restaurar</button></p></form></div>
+  <div class="card mut"><b>Importante:</b> si publicas la web subiendo el repositorio, <code>data/arcade.sqlite</code> del repositorio sustituye a la del servidor. Antes de publicar, descarga aquí la del servidor si has hecho cambios en el CMS y ponla en el repositorio.</div>
   <?php page('Copia de seguridad', (string)ob_get_clean(), 'backup');
 }
 

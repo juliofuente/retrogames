@@ -25,12 +25,11 @@ IMPORTANTE AL GENERAR O SUBIR CAMBIOS
 
 JUEGOS EDUCATIVOS (o cualquier juego hecho aparte) — CÓMO AÑADIR MÁS
 · Copia la carpeta del juego en educativos/<nombre>/ tal cual (no hace falta que use common.js).
-· Añade una entrada a "sueltos" en herramientas/datos/educativos.json (id, app, asignatura: mates|lengua|logica|ingles,
-  emoji, edades [mín, máx], idiomas, url, titulo es/en, desc es/en) y, si es una app nueva, otra a "apps".
-  Asignaturas y tramos de edad nuevos: "asignaturas" y "edades" en el mismo archivo.
-  Un juego arcade que también sirve como educativo: entrada en "arcade" (ref = id del juego).
+· Dalo de alta en el CMS (/cms → Juegos → Nuevo): colección Educativos, dirección educativos/<nombre>/, asignatura
+  (mates|lengua|logica|ingles), edades, idiomas, título y descripción es/en. Todo se guarda en data/arcade.sqlite
+  (tablas games, game_age_groups, subjects, age_groups y apps); no hay archivos JSON.
 · Regenera: php herramientas/arcade.php todo
-· Colecciones y categorías: herramientas/datos/catalogo.json (o, sin tocar archivos, desde el CMS en /cms).
+· Colecciones, categorías y ajustes: desde el CMS en /cms (o «php herramientas/arcade.php set / ajuste»).
 
 Criterios ya decididos:
 · Si varios títulos comparten mecánica se fusionan en un juego (el campo "origin" lista todos los títulos).
@@ -129,7 +128,8 @@ La web no indica licencia: NO copiar su código ni sus niveles; rehacer la mecá
 INSTRUCCIONES PARA CONTINUAR
 ----------------------------
 Requisitos: solo PHP 7.4+ con pdo_sqlite y mbstring (la web y las herramientas). Nada de Python ni Node.
-Los datos del catálogo están en JSON (herramientas/datos/) y la web lee SQLite (data/arcade.sqlite, que se genera).
+Toda la configuración (juegos, colecciones, categorías, ajustes) está en data/arcade.sqlite; se edita con el CMS (/cms)
+o con herramientas/arcade.php. No hay archivos JSON de configuración.
 
 1) Crear un juego nuevo
    · Copiar un juego parecido de herramientas/src/ como plantilla (p. ej. torreta.js = toque simple,
@@ -167,16 +167,16 @@ Los datos del catálogo están en JSON (herramientas/datos/) y la web lee SQLite
    · Para reiniciar nivel tras perder vida: setTimeout(() => { if (g.state==='play' && g.die()) Arcade.current.def.setup(g); }, 1200).
 
 2) Registrar y construir
-   · Añade una línea a herramientas/datos/juegos.json:
-       {"id":"<id>","coleccion":"pro","categoria":"<categoría>","control":"Tocar","tv":"cursor",
-        "desc":{"es":"…","en":"…"},"version":"<versión nueva>"}
-     (coleccion: main | pro | mesa; tv: false | "cursor" | "cruceta"; el orden del archivo es el de las portadas).
-     Opcional: "tag":{"es","en"}, "emoji" u "origen" para que la portada muestre otra cosa que el juego.
-   · Sube "version" en herramientas/datos/catalogo.json para que la PWA se actualice en los móviles.
-   · php herramientas/arcade.php todo → comprueba los JSON, crea pwa/<id>.html, pwa/games.js, las huellas ?v=,
-     data/arcade.sqlite (la web PHP lee de ahí) y autonomos/. Con «comprobar» solo revisa, sin escribir.
-   · Título, emoji, color, origen, ayuda es/en, vidas y niveles salen del propio src/<id>.js (Arcade.game({…})):
-     no se repiten en los JSON.
+   · Alta en la base de datos:
+       php herramientas/arcade.php nuevo <id> coleccion=pro categoria=<categoría> control=tocar tv=cursor \
+           desc_es="…" desc_en="…"
+     (coleccion: main | pro | mesa; tv: vacío | cursor | cruceta; el orden de las portadas es la columna sort).
+     Opcional: tag_es/tag_en, emoji u origin. Cambios después: «arcade.php set <id> campo=valor» o el CMS (/cms).
+   · Sube la versión para que la PWA se actualice en los móviles: php herramientas/arcade.php ajuste version <nueva>
+   · php herramientas/arcade.php todo → comprueba la BD, crea pwa/<id>.html, copia a la BD lo que sale del código,
+     genera pwa/games.js y pwa/config.js, las huellas ?v= y autonomos/. Con «comprobar» solo revisa, sin escribir.
+   · Título, emoji, color, origen, ayuda es/en, vidas, niveles, colores y adornos salen del propio src/<id>.js
+     (Arcade.game({…})); en el CMS se ven pero no se editan.
 
 3) Probar
    · Abre la web con: php -S 127.0.0.1:8080 -t . herramientas/router.php
@@ -186,13 +186,15 @@ Los datos del catálogo están en JSON (herramientas/datos/) y la web lee SQLite
 4) Publicar
    · Se trabaja directamente en la rama main (sin ramas).
    · Solo hosting con PHP + Apache (ya no hay versión estática para GitHub Pages): sube todo el repositorio
-     (index.php, cms.php, .htaccess, data/, pwa/, educativos/, autonomos/). Necesita mod_rewrite y pdo_sqlite. Si va en una subcarpeta y las URLs fallan, activa RewriteBase en .htaccess.
+     (index.php, cms.php, .htaccess, data/, pwa/, educativos/, autonomos/). Necesita mod_rewrite y pdo_sqlite.
+     OJO: si has editado en el CMS del servidor, descarga antes su base de datos (CMS → Copia) y súbela al repositorio;
+     si no, al desplegar el data/arcade.sqlite del repositorio se pierden esos cambios. Si va en una subcarpeta y las URLs fallan, activa RewriteBase en .htaccess.
      Después, da de alta https://tudominio/sitemap.xml en Google Search Console.
 
 PROMPT SUGERIDO PARA CLAUDE CODE
 --------------------------------
 "Lee HECHO.txt, PENDIENTE_E_INSTRUCCIONES.txt y pwa/README.md. Continúa la colección Arcade Pro con el lote 8:
 crea cada juego en herramientas/src siguiendo la estructura de los existentes (es/en, niveles infinitos, tvHelp/tv,
-home:'indexpro.html'), regístralos en herramientas/datos/juegos.json, sube la versión en datos/catalogo.json,
+home:'indexpro.html'), dalos de alta con «php herramientas/arcade.php nuevo …», sube la versión con «arcade.php ajuste version …»,
 ejecuta «php herramientas/arcade.php todo», pruébalos en el navegador y corrige errores. Para los títulos marcados con (?) busca primero
 información del juego original para entender la mecánica."

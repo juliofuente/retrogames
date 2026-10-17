@@ -1,6 +1,11 @@
 ARCADE PERDIDO + ARCADE PRO — LO QUE ESTÁ HECHO
 ================================================
-Fecha: 16-10-2026 · Versión de la PWA (games.js → ARCADE_VERSION): 2.23.0
+Fecha: 17-10-2026 · Versión de la PWA (games.js → ARCADE_VERSION): 2.23.0
+· Toda la configuración en la base de datos (data/arcade.sqlite), sin archivos JSON: fuera herramientas/datos/*.json.
+  Tabla settings (versión, portada, modo TV, idioma, jugadores, rondas), tabla apps y papelera (deleted_at en games y
+  categories). El CMS edita arcade.sqlite directamente (pestañas Juegos, Categorías, Colecciones, Ajustes, Papelera,
+  Historial y Copia para descargar/restaurar la BD) y regenera pwa/games.js y pwa/config.js tras cada cambio.
+  arcade.php: nuevo, set, ajuste y sincronizar (los campos que salen del código del juego se copian a la BD solos).
 · Herramientas solo con PHP + JSON + SQLite: herramientas/arcade.php sustituye a mk.py, mkgames.py, mkedu.py, mkdb.py,
   stamp.py, pwa/build.py y extract.js (lee el Arcade.game({…}) de cada juego con un lector propio en PHP). Los datos que
   estaban dentro del código Python pasan a herramientas/datos/catalogo.json, juegos.json y educativos.json.

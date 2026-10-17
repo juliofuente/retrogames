@@ -1,5 +1,7 @@
 /* Arcade Perdido · configuración
    ─────────────────────────────────────────────────────────────────────────────
+   Los valores de ARCADE_CONFIG salen de los ajustes de data/arcade.sqlite (CMS → Ajustes, o
+   «php herramientas/arcade.php ajuste modo seleccionable»): no los cambies aquí, se sobrescriben.
    modo:
      'modonormal'    → siempre modo táctil (móvil / tablet), aunque se abra en una tele.
      'modotv'        → siempre modo TV (se juega con el mando: cruceta + OK + Atrás).
