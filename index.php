@@ -19,6 +19,7 @@
      /buscar?q=                /en/search?q=               búsqueda (noindex)
      /icono/{id}.svg                                       icono del juego (emoji)
      /sitemap.xml  /robots.txt
+     /cms                                                  panel de gestión (cms.php; cambios en data/cms.sqlite)
    Datos: data/arcade.sqlite (se genera con herramientas/mkdb.py).                       */
 
 declare(strict_types=1);
@@ -52,6 +53,9 @@ if ($path === '/index.php' || $path === '/index.html') redirect(url('/'));
 if ($path === '/en') redirect(url('/en/'));
 if ($path !== '/' && $path !== '/en/' && $path !== '/pwa/' && substr($path, -1) === '/') redirect(url(rtrim($path, '/')) . (isset($_SERVER['QUERY_STRING']) && $_SERVER['QUERY_STRING'] !== '' ? '?' . $_SERVER['QUERY_STRING'] : ''));
 
+/* ---------- CMS (/cms): panel para editar el catálogo; sus cambios viven en data/cms.sqlite ---------- */
+if ($path === '/cms') { $CMS_URL = url('/cms'); $SITE_URL = url('/'); require __DIR__ . '/cms.php'; exit; }
+
 /* ---------- datos ---------- */
 $dbFile = __DIR__ . '/data/arcade.sqlite';
 if (!is_file($dbFile) || !class_exists('PDO')) { http_response_code(503); header('Content-Type: text/plain; charset=utf-8'); echo "Falta data/arcade.sqlite o la extensión pdo_sqlite.\n"; exit; }
@@ -68,6 +72,8 @@ $AGES = []; foreach ($db->query('SELECT * FROM age_groups ORDER BY sort') as $r)
 $GAMES = []; foreach ($db->query('SELECT * FROM games ORDER BY sort') as $r) { $r['based'] = []; $r['ages'] = []; $GAMES[$r['id']] = $r; }
 foreach ($db->query('SELECT * FROM game_age_groups') as $r) if (isset($GAMES[$r['game_id']])) $GAMES[$r['game_id']]['ages'][] = $r['age_group_id'];
 foreach ($db->query('SELECT * FROM based_on ORDER BY game_id, sort') as $r) if (isset($GAMES[$r['game_id']])) $GAMES[$r['game_id']]['based'][] = $r;
+// cambios hechos en el CMS (añadir, editar, borrar, cambiar de categoría…), guardados aparte en data/cms.sqlite
+if (is_file(__DIR__ . '/data/cms.sqlite') && is_file(__DIR__ . '/cms.php')) { if (!defined('CMS_LIB')) define('CMS_LIB', 1); require_once __DIR__ . '/cms.php'; cms_overlay($GAMES, $CATS, $COLS); }
 $VERSION = $META['version'] ?? '';
 $LASTMOD = $META['generated'] ?? date('Y-m-d');
 $SITE = 'Arcade Perdido';
@@ -957,6 +963,7 @@ juego:
 if (!$EN && (count($seg) === 1 || (count($seg) === 2 && ($arg === 'es' || $arg === 'en'))) && isset($GAMES[$k])) {
   $g = $GAMES[$k];
   if (is_edu($g) && ($r = edu_ref($g)) !== null) redirect(url('/' . $r . ($arg ? '/' . $arg : '')));
+  if (preg_match('#^https?://#', (string)$g['url'])) redirect($g['url'], 302);   // juego externo (añadido desde el CMS)
   if (is_edu($g)) serve_edu($g, $arg);
   serve_game($g, $arg);
 }

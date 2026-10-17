@@ -1,3 +1,5 @@
 data/stats.sqlite
 data/stats.sqlite-*
 autonomos/
+data/cms.sqlite
+data/cms.sqlite-*

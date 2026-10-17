@@ -1,4 +1,12 @@
-ARCADE PRO — LO QUE QUEDA POR HACER E INSTRUCCIONES PARA CONTINUAR (Claude Code)
+ARCADE PRO — LO QUE QUEDA POR HACER E CMS (/cms)
+----------
+· cms.php: entra en https://tu-dominio/cms. La primera visita pide crear la contraseña (hazlo nada más subirlo).
+· Guarda los cambios en data/cms.sqlite (no está en git; la bloquea el .htaccess). Haz copia desde «💾 Copia».
+· index.php aplica esos cambios encima de data/arcade.sqlite con cms_overlay(): borrar data/cms.sqlite = volver al
+  catálogo original. Los juegos del catálogo no se pueden cambiar de identificador (rompería las URLs).
+· El servidor necesita permiso de escritura en data/ (y en pwa/ para subir .html).
+
+INSTRUCCIONES PARA CONTINUAR (Claude Code)
 ================================================================================
 
 OBJETIVO
