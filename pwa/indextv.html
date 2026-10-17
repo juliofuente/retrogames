@@ -54,7 +54,7 @@
   <main class="grid" id="grid"></main>
   <p class="hint" id="hint">🎮 <b>Cruceta</b> para elegir · <b>OK</b> para jugar · En partida, <b>Atrás</b> pausa · Varios jugadores juegan <b>por turnos</b></p>
 </div>
-<script src="games.js?v=674763d966"></script>
+<script src="games.js?v=ae216ba576"></script>
 <script>
 (function () {
   const get = (k, d) => { try { const v = localStorage.getItem('arc_' + k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } };
@@ -107,7 +107,7 @@
     document.querySelector('h1').textContent = sec === 'pro' ? 'Arcade Pro' : sec === 'mesa' ? (EN ? 'Board games' : 'Juegos de mesa') : 'Arcade Perdido';
     document.querySelector('.logo').textContent = sec === 'pro' ? '✨' : sec === 'mesa' ? '♟️' : '🕹️';
     document.getElementById('sub').textContent = SECS[sec][1];
-    const ALL = GAMES.concat(GAMES_PRO), list = sec === 'mesa' ? GAMES_MESA.map((id) => ALL.find((g) => g.id === id)).filter(Boolean) : (sec === 'pro' ? GAMES_PRO : GAMES);
+    const ALL = GAMES.concat(GAMES_PRO), MS = HAS_MESA ? GAMES_MESA : [], list = sec === 'mesa' ? MS.map((id) => ALL.find((g) => g.id === id)).filter(Boolean) : (sec === 'pro' ? GAMES_PRO.filter((g) => MS.indexOf(g.id) < 0) : GAMES);
     list.filter((g) => g.tv).forEach((g) => {
       const a = document.createElement('a');
       a.className = 'gc'; a.href = g.id + q; a.dataset.id = g.id; a.style.setProperty('--c', g.color);

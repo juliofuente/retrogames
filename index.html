@@ -79,6 +79,12 @@
       <p data-es="Los grandes éxitos de los juegos de móvil, hechos con el mismo motor y emojis." data-en="The big mobile game hits, built with the same engine and emojis."></p>
       <div class="count" id="c2"></div>
     </a>
+    <a class="card" href="pwa/indexmesa" style="--glow:#e8b16a">
+      <div class="em">♟️</div>
+      <h2 data-es="Juegos de mesa" data-en="Board games"></h2>
+      <p data-es="Damas, backgammon, molino, reversi, damas chinas y más clásicos de tablero, también con el mando de la tele." data-en="Checkers, backgammon, mill, reversi, Chinese checkers and more board classics, also with the TV remote."></p>
+      <div class="count" id="c5"></div>
+    </a>
     <a class="card" href="pwa/indextv?tv=1" style="--glow:#4dabf7">
       <div class="em">📺</div>
       <h2 data-es="Modo TV" data-en="TV mode"></h2>
@@ -97,7 +103,7 @@
 
   <footer id="foot"></footer>
 </div>
-<script src="pwa/games.js?v=674763d966"></script>
+<script src="pwa/games.js?v=ae216ba576"></script>
 <script src="educativos/juegos.js?v=1655332fcc"></script>
 <script>
   (function () {
@@ -109,16 +115,17 @@
       var EN = lang === 'en';
       document.documentElement.lang = lang;
       document.querySelectorAll('[data-es]').forEach(function (el) { el.textContent = el.getAttribute(EN ? 'data-en' : 'data-es'); });
-      var n1 = (window.GAMES || []).length, n2 = (window.GAMES_PRO || []).length;
+      var MS = window.GAMES_MESA || [], n5 = MS.length, n1 = (window.GAMES || []).length, n2 = (window.GAMES_PRO || []).filter(function (g) { return MS.indexOf(g.id) < 0; }).length;
       var tv = (window.GAMES || []).concat(window.GAMES_PRO || []).filter(function (g) { return g.tv; }).length;
       var j = EN ? ' games' : ' juegos';
       document.getElementById('c1').textContent = n1 + j + ' ▶';
       document.getElementById('c2').textContent = n2 + j + ' ▶';
+      document.getElementById('c5').textContent = n5 + j + ' ▶';
       var n3 = window.EDU ? EDU.games.length : 0;
       document.getElementById('c4').textContent = n3 + (EN ? ' educational games ▶' : ' juegos educativos ▶');
       document.getElementById('c3').textContent = tv + (EN ? ' games playable with a remote ▶' : ' juegos con mando ▶');
       document.getElementById('lang').textContent = EN ? '🇪🇸 Español' : '🇬🇧 English';
-      document.getElementById('foot').innerHTML = (n1 + n2 + n3) + j + (window.ARCADE_VERSION ? ' · v' + ARCADE_VERSION : '') + '<br>' +
+      document.getElementById('foot').innerHTML = (n1 + n2 + n5 + n3) + j + (window.ARCADE_VERSION ? ' · v' + ARCADE_VERSION : '') + '<br>' +
         (EN ? 'Free games, no ads.' : 'Juegos gratis y sin anuncios.');
       try { localStorage.setItem('arc_lang', lang); sessionStorage.setItem('arc_back', location.pathname); } catch (e) {}   // el 🏠 de los juegos vuelve aquí y en este idioma
     }
@@ -129,7 +136,7 @@
       var EN = lang === 'en', words = norm(qi.value).split(/\s+/).filter(Boolean);
       qi.placeholder = qi.getAttribute(EN ? 'data-ph-en' : 'data-ph-es'); qi.setAttribute('aria-label', EN ? 'Search' : 'Buscar');
       if (!words.length) { res.hidden = true; res.innerHTML = ''; return; }
-      var all = (window.GAMES || []).map(function (g) { return [g, 'Arcade Perdido']; }).concat((window.GAMES_PRO || []).map(function (g) { return [g, 'Arcade Pro']; }));
+      var all = (window.GAMES || []).map(function (g) { return [g, 'Arcade Perdido']; }).concat((window.GAMES_PRO || []).map(function (g) { return [g, (window.GAMES_MESA || []).indexOf(g.id) >= 0 ? (lang === 'en' ? '♟️ Board games' : '♟️ Juegos de mesa') : 'Arcade Pro']; }));
       var hits = all.filter(function (x) { var g = x[0], h = norm([g.title, g.tag, g.desc, g.origin, g.ctrl, g.en && g.en.title, g.en && g.en.tag, g.en && g.en.desc].join(' ')); return words.every(function (w) { return h.indexOf(w) >= 0; }); });
       var edu = window.EDU ? EDU.games.filter(function (g) { var h = norm([g.title.es, g.title.en, g.desc.es, g.desc.en, g.subject, 'educativo educational'].join(' ')); return words.every(function (w) { return h.indexOf(w) >= 0; }); }) : [];
       res.hidden = false;

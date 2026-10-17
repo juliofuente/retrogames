@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Juegos de mesa · Arcade Perdido</title>
+<meta name="description" content="Damas, backgammon, molino, reversi, damas chinas y más juegos de mesa clásicos contra la máquina, para el móvil y para la tele con el mando.">
+<meta name="theme-color" content="#0d1b2a">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Arcade Perdido">
+<link rel="stylesheet" href="common.css?v=6d7635e467">
+<script src="config.js?v=d6380ae9b0"></script>
+<script>if (arcadeEsTV()) location.replace('indextv' + (location.search ? location.search + '&' : '?') + 'sec=mesa');</script>
+</head>
+<body class="home mesa">
+<style>body.mesa{--bg1:#4a2e14;--bg2:#1e1208;--accent:#ffc078}body.mesa .brand h1{background:linear-gradient(90deg,#ffd8a8,#e8b16a,#ff8787);-webkit-background-clip:text;background-clip:text;color:transparent}.chip.link{text-decoration:none}</style>
+<div class="wrap">
+  <header class="brand" id="hdr"><div class="logo">♟️</div><h1 data-i="title">Juegos de mesa</h1></header>
+  <p class="tagline" data-i="tagline">Clásicos de tablero de todo el mundo contra la máquina: damas, backgammon, molino, reversi, damas chinas, tafl, senet… Por turnos y también con el mando de la tele.</p>
+  <div class="search"><input type="search" id="q" placeholder="🔎 Buscar juego…" aria-label="Buscar" autocomplete="off" enterkeyhint="search"></div>
+  <div class="bar" id="filters">
+    <button class="chip on" data-f="" data-i="all">Todos</button>
+    <a class="chip link" href="./" data-i="other">🕹️ Arcade Perdido</a>
+    <a class="chip link" href="indexpro" data-i="other2">✨ Arcade Pro</a>
+    <button class="chip" data-f="❤" data-i="favs">❤️ Favoritos</button>
+    <button class="chip" id="tvmode" style="display:none" data-i="tv">📺 Modo TV</button>
+    <button class="chip" id="lang" style="display:none"></button>
+    <button class="chip" id="install" data-i="install">📲 Instalar</button>
+  </div>
+  <main class="grid" id="grid"></main>
+  <p class="foot" id="foot"></p>
+</div>
+<script src="games.js?v=ae216ba576"></script>
+<script>
+(function () {
+  const get = (k, d) => { try { const v = localStorage.getItem('arc_' + k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } };
+  const grid = document.getElementById('grid');
+  const EN = arcadeIdioma() === 'en';
+  document.documentElement.lang = EN ? 'en' : 'es';
+  const TX = { title: 'Board games', tagline: 'Board classics from around the world against the machine: checkers, backgammon, mill, reversi, Chinese checkers, tafl, senet… Turn-based, and playable with the TV remote too.', all: 'All', other: '🕹️ Arcade Perdido', other2: '✨ Arcade Pro', favs: '❤️ Favourites', tv: '📺 TV mode', install: '📲 Install' };
+  if (EN) { document.querySelectorAll('[data-i]').forEach(e => { if (TX[e.dataset.i]) e.textContent = TX[e.dataset.i]; }); document.title = 'Board games · Arcade Perdido'; }
+  const loc = (g, k) => (EN && g.en && g.en[k]) || g[k];
+  if ((ARCADE_CONFIG.idioma || 'auto') === 'auto') {
+    const lb = document.getElementById('lang'); lb.style.display = 'inline-flex'; lb.textContent = EN ? '🇪🇸 Español' : '🇬🇧 English';
+    lb.addEventListener('click', () => { const nl = EN ? 'es' : 'en'; arcadeElegirIdioma(nl); location.reload(); });
+  }
+  const ALL = (window.GAMES || []).concat(window.GAMES_PRO || []), MESA = (window.GAMES_MESA || []).map((id) => ALL.find((g) => g.id === id)).filter(Boolean);
+  const norm = (t) => String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  const hay = (g) => norm([g.title, g.tag, g.desc, g.origin, g.ctrl, g.en && g.en.title, g.en && g.en.tag, g.en && g.en.desc].join(' '));
+  let curF = '', curQ = '';
+  function card(g, other) {
+    const best = get('best_' + g.id, 0), done = get('done_' + g.id, false);
+    const a = document.createElement('a');
+    a.className = 'gc'; a.href = g.id; a.style.setProperty('--c', g.color);
+    a.innerHTML = `${other ? `<span class="new" style="background:#9775fa">${other}</span>` : best ? '' : `<span class="new">${EN ? 'NEW' : 'NUEVO'}</span>`}
+      <div class="em">${g.emoji}</div><h3>${loc(g, 'title')}</h3><div class="or">${g.origin}</div>
+      <p>${loc(g, 'desc')}</p>
+      <div class="ft"><span>${loc(g, 'ctrl')}</span><span>${done ? '🏆 ' : '⭐ '}${best}</span></div>`;
+    return a;
+  }
+  function render(filter) {
+    if (filter !== undefined) curF = filter;
+    const words = norm(curQ).split(/\s+/).filter(Boolean);
+    let favs = []; try { favs = JSON.parse(localStorage.getItem('arc_favs') || '[]'); } catch (e) {}
+    const ok = (g) => (!curF || (curF === '❤' && favs.indexOf(g.id) >= 0)) && words.every((w) => hay(g).indexOf(w) >= 0);
+    grid.innerHTML = '';
+    const mine = MESA.filter(ok);
+    mine.forEach((g) => grid.appendChild(card(g)));
+    // con búsqueda, también enseña los de la otra colección
+    const others = words.length ? ALL.filter((g) => MESA.indexOf(g) < 0).filter(ok) : [];
+    others.forEach((g) => grid.appendChild(card(g, (window.GAMES || []).indexOf(g) >= 0 ? '🕹️ Arcade Perdido' : '✨ Arcade Pro')));
+    if (!mine.length && !others.length) { const p = document.createElement('p'); p.className = 'empty'; p.textContent = EN ? 'No games found. Try another word (e.g. checkers, backgammon, chess).' : 'No hay juegos con eso. Prueba otra palabra (por ejemplo: damas, backgammon, molino).'; grid.appendChild(p); }
+  }
+  const qi = document.getElementById('q');
+  if (EN) { qi.placeholder = '🔎 Search games…'; qi.setAttribute('aria-label', 'Search'); }
+  try { const u = new URLSearchParams(location.search).get('q'); if (u) { qi.value = u; curQ = u; } } catch (_) {}
+  qi.addEventListener('input', () => { curQ = qi.value; render(); });
+  qi.addEventListener('keydown', (e) => { if (e.key === 'Enter') { const f = grid.querySelector('a.gc'); if (f && qi.value.trim()) location.href = f.href; } });
+  render();
+  document.getElementById('filters').addEventListener('click', e => {
+    const b = e.target.closest('[data-f]'); if (!b) return;
+    document.querySelectorAll('[data-f]').forEach(x => x.classList.toggle('on', x === b));
+    render(b.dataset.f);
+  });
+  document.getElementById('foot').innerHTML = MESA.length + (EN ? ' games · v' : ' juegos · v') + ARCADE_VERSION + (EN ? '<br>Works offline once loaded.' : '<br>Funciona sin conexión una vez cargado.');
+
+  // Cambio a modo TV (solo si la configuración lo permite)
+  if (ARCADE_CONFIG.modo === 'seleccionable') {
+    const tb = document.getElementById('tvmode'); tb.style.display = 'inline-flex';
+    tb.addEventListener('click', () => { arcadeElegirTV(true); location.href = 'indextv?sec=mesa'; });
+  }
+  // Instalación como app
+  let deferred = null;
+  const ib = document.getElementById('install');
+  window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferred = e; ib.style.display = 'inline-flex'; });
+  ib.addEventListener('click', async () => {
+    if (deferred) { deferred.prompt(); await deferred.userChoice; deferred = null; ib.style.display = 'none'; }
+    else alert(EN ? 'On iPhone: tap Share and then “Add to Home Screen”.' : 'En iPhone: pulsa Compartir y luego «Añadir a pantalla de inicio».');
+  });
+  const ios = /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.navigator.standalone;
+  if (ios) ib.style.display = 'inline-flex';
+  window.addEventListener('pageshow', () => render(document.querySelector('[data-f].on').dataset.f));
+  try { sessionStorage.setItem('arc_back', location.pathname + location.search); } catch (e) {}   /* 🏠 de los juegos vuelve aquí */
+  try { if (window.arcadePWA) arcadePWA(); } catch (e) {}   /* PWA solo con window.withpwa = true */
+})();
+</script>
+</body>
+</html>

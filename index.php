@@ -402,7 +402,7 @@ header.top .wrap{display:flex;align-items:center;gap:12px;min-height:58px;flex-w
 .brand{display:flex;align-items:center;gap:8px;text-decoration:none;font-weight:900;font-size:19px;white-space:nowrap}
 .brand span{font-size:26px}
 nav.main{display:flex;gap:4px;flex-wrap:wrap;flex:1}
-nav.main a,.lang{text-decoration:none;padding:6px 10px;border-radius:999px;font-size:14px;color:var(--mu)}
+nav.main a,.lang{text-decoration:none;padding:6px 10px;border-radius:999px;font-size:14px;color:var(--mu)}nav.main a{white-space:nowrap;padding:6px 8px}
 nav.main a:hover,nav.main a[aria-current]{background:var(--card);color:var(--tx)}
 .lang{border:1px solid var(--line);color:var(--tx)}
 form.search{display:flex;gap:6px;margin:0}
@@ -444,6 +444,7 @@ details.faq{border-bottom:1px solid var(--line);padding:10px 0}details.faq summa
 .az{columns:3 220px;padding:0;list-style:none}.az li{break-inside:avoid;padding:3px 0}.az a{text-decoration:none}.az a:hover{text-decoration:underline}
 footer{border-top:1px solid var(--line);color:var(--mu);font-size:14px;padding:26px 0 40px}
 footer .links{display:flex;flex-wrap:wrap;gap:6px 16px;margin-bottom:12px}footer a{color:var(--mu)}
+@media (min-width:721px){form.search input{width:110px}nav.main{gap:0}}
 @media (max-width:720px){header.top{position:static}header.top .wrap{gap:8px}.brand{flex:1}nav.main{order:3;flex:0 0 100%;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin:0 -6px}nav.main a{white-space:nowrap}form.search{order:4;flex:0 0 100%}form.search input{flex:1;max-width:none;width:auto}.hero{grid-template-columns:1fr}.big{width:110px;height:110px;font-size:64px;border-radius:28px}.two{grid-template-columns:1fr}main{padding-top:14px}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
@@ -604,9 +605,9 @@ function page_tv(): void {
   $games = array_values(array_filter($GAMES, function ($g) { return (bool)$g['tv']; }));
   $p = list_path('tv');
   $lead = T('Juegos que se juegan con el mando de Android TV, Google TV o Fire TV (cruceta + OK). Abre la web en el navegador de la tele y juega solo o hasta con 4 jugadores por turnos.', 'Games you can play with an Android TV, Google TV or Fire TV remote (D-pad + OK). Open the site in your TV browser and play alone or with up to 4 players taking turns.');
-  global $CATS; $mesa = $CATS['mesa'] ?? null;
+  global $COLS; $mesa = $COLS['mesa'] ?? null;
   $btn = '<div class="btns" style="margin-bottom:18px"><a class="btn pri" href="' . h(url('/pwa/indextv')) . '?tv=1">📺 ' . h(T('Abrir la portada para TV', 'Open the TV home screen')) . '</a>'
-    . ($mesa ? ' <a class="btn" href="' . h(url(cat_path($mesa))) . '">♟️ ' . h(f($mesa, 'name')) . '</a>' : '') . '</div>';
+    . ($mesa ? ' <a class="btn" href="' . h(url(col_path($mesa))) . '">♟️ ' . h(f($mesa, 'name')) . '</a>' : '') . '</div>';
   page_list($p, [list_path('tv', 'es'), list_path('tv', 'en')], T('Juegos para la tele con mando', 'TV games you play with the remote'), $lead, $games,
     [[T('Inicio', 'Home'), home_path()], ['TV', $p]], T(count($games) . ' juegos para Android TV y Fire TV gratis', count($games) . ' free games for Android TV and Fire TV') . ' · ' . $SITE, $lead, ['before' => $btn]);
 }
@@ -934,7 +935,7 @@ if ($L === 'es' && $path === '/robots.txt') out_robots();
 if ($L === 'es' && $k === 'icono' && $arg && count($seg) === 2 && preg_match('/^([a-z0-9-]+)\.svg$/', $arg, $m) && isset($GAMES[$m[1]])) out_svg($GAMES[$m[1]]);
 
 // índices estáticos de la PWA (/pwa/, /pwa/indexpro, /pwa/indextv): .htaccess los pasa por aquí para poder cerrarlos
-if (preg_match('#^/pwa/(index(pro|tv)?(\.html)?)?$#', $path, $m)) {
+if (preg_match('#^/pwa/(index(pro|tv|mesa)?(\.html)?)?$#', $path, $m)) {
   if (!PORTADA) page_404();
   if (!empty($m[3]) || ($m[1] ?? '') === 'index') redirect(url('/pwa/' . (($m[2] ?? '') !== '' ? 'index' . $m[2] : '')));
   header('Content-Type: text/html; charset=utf-8'); header('Cache-Control: no-cache');
@@ -954,7 +955,8 @@ if (count($seg) === 2) {
   if ($k === ($EN ? 'game' : 'juego')) { $g = $EN ? find_by($GAMES, 'slug_en', $arg) : ($GAMES[$arg] ?? null); if ($g) { page_game($g); exit; } }
   if ($k === ($EN ? 'play' : 'jugar')) { $g = $EN ? find_by($GAMES, 'slug_en', $arg) : ($GAMES[$arg] ?? null); if ($g) redirect(url(play_path($g)) . (isset($_SERVER['QUERY_STRING']) && $_SERVER['QUERY_STRING'] !== '' ? '?' . $_SERVER['QUERY_STRING'] : '')); }
   if ($k === ($EN ? 'category' : 'categoria')) { $c = find_by($CATS, $EN ? 'slug_en' : 'slug_es', $arg); if ($c) { page_category($c); exit; } }
-  if ($k === ($EN ? 'category' : 'categoria') && ($to = ['tablero-cartas-y-palabras' => 'cartas-y-palabras', 'board-cards-and-words' => 'cards-and-words'][$arg] ?? null) && ($c = find_by($CATS, $EN ? 'slug_en' : 'slug_es', $to))) redirect(url(cat_path($c)));   // URLs antiguas de la categoría
+  if ($k === ($EN ? 'category' : 'categoria') && ($to = ['cartas-y-palabras' => 'tablero-cartas-y-palabras', 'cards-and-words' => 'board-cards-and-words'][$arg] ?? null) && ($c = find_by($CATS, $EN ? 'slug_en' : 'slug_es', $to))) redirect(url(cat_path($c)));   // nombres que tuvo la categoría unas horas
+  if ($k === ($EN ? 'category' : 'categoria') && $arg === ($EN ? 'board-games' : 'juegos-de-mesa') && isset($COLS['mesa'])) redirect(url(col_path($COLS['mesa'])));   // antes fue categoría; ahora es colección
   if ($k === ($EN ? 'collection' : 'coleccion')) { $c = find_by($COLS, $EN ? 'slug_en' : 'slug_es', $arg); if ($c) { page_collection($c); exit; } }
   if ($k === ($EN ? 'subject' : 'asignatura')) { $c = find_by($SUBJS, $EN ? 'slug_en' : 'slug_es', $arg); if ($c) { page_subject($c); exit; } }
   if ($k === ($EN ? 'age' : 'edad')) { $c = find_by($AGES, $EN ? 'slug_en' : 'slug_es', $arg); if ($c) { page_age($c); exit; } }

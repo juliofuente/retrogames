@@ -19,6 +19,9 @@ COLLECTIONS = [  # id, slug es, slug en, nombre es, nombre en, portada (desde la
     ('pro', 'arcade-pro', 'arcade-pro', 'Arcade Pro', 'Arcade Pro', 'pwa/indexpro',
      'Los grandes éxitos de los juegos de móvil hechos con emojis, de 60 a 120 niveles con tres modos de dificultad y sin anuncios.',
      'The big mobile game hits made with emojis, 60 to 120 levels with three difficulty modes and no ads.', '✨'),
+    ('mesa', 'juegos-de-mesa', 'board-games', 'Juegos de mesa', 'Board games', 'pwa/indexmesa',
+     'Damas, backgammon, molino, reversi, damas chinas, tafl, senet y más clásicos de tablero de todo el mundo contra la máquina. Por turnos y con el mando de la tele (cruceta + OK): ideales para el sofá.',
+     'Checkers, backgammon, mill, reversi, Chinese checkers, tafl, senet and more board classics from around the world against the machine. Turn-based and played with the TV remote (D-pad + OK): perfect for the sofa.', '♟️'),
     ('edu', 'educativos', 'educational', 'Educativos', 'Educational', 'coleccion/educativos',
      'Juegos para aprender jugando, de 3 a 16 años: mates (también con método ABN), lengua y vocabulario, lógica e inglés. Organizados por asignatura y por edad.',
      'Games to learn through play, ages 3 to 16: maths (including the ABN method), language and vocabulary, logic and English. Organised by subject and age.', '🎓'),
@@ -47,12 +50,9 @@ CATEGORIES = [
     ('estrategia', 'estrategia', 'strategy', 'Estrategia', 'Strategy', '🏰', 'Strategy',
      'Defensa de torres, conquistas y duelos por turnos: piensa antes de actuar.',
      'Tower defence, conquest and turn-based duels: think before you act.'),
-    ('mesa', 'juegos-de-mesa', 'board-games', 'Juegos de mesa para la tele', 'Board games for TV', '♟️', 'Board game',
-     'Damas, backgammon, molino, reversi, damas chinas y más clásicos de tablero de todo el mundo contra la máquina. Se juegan por turnos y con el mando de la tele (cruceta + OK): ideales para el sofá, solos o con la familia.',
-     'Checkers, backgammon, mill, reversi, Chinese checkers and more board classics from around the world against the machine. Turn-based and played with the TV remote (D-pad + OK): perfect for the sofa, alone or with the family.'),
-    ('tablero', 'cartas-y-palabras', 'cards-and-words', 'Cartas, palabras y memoria', 'Cards, words and memory', '🃏', 'Card game',
-     'Solitarios de cartas, póker, palabras, fichas y juegos de memoria contra la máquina.',
-     'Card solitaires, poker, words, tiles and memory games against the machine.'),
+    ('tablero', 'tablero-cartas-y-palabras', 'board-cards-and-words', 'Tablero, cartas y palabras', 'Board, cards and words', '🃏', 'Board game',
+     'Clásicos de mesa contra la máquina: juegos de tablero, cartas, palabras, fichas y juegos de memoria.',
+     'Table-top classics against the machine: board games, cards, words, tiles and memory games.'),
     ('deportes', 'deportes-y-carreras', 'sports-and-racing', 'Deportes y carreras', 'Sports and racing', '🏁', 'Sports',
      'Billar, minigolf, tiro con arco, esquí y circuitos de carreras.',
      'Pool, mini golf, archery, skiing and racing circuits.'),
@@ -72,9 +72,6 @@ CAT = {
     'tablero': 'senet tigres coyote alquerque kono mutorere tres backgammon chinas halma abalone hex quarto tafl zorro liebre puentes damas molino ataxx arana torreslibres huecos reversi cuatro mancala solitario ishido palabra poker enraya memoria',
     'deportes': 'esqui circuito billar arquero minigolf',
 }
-# los juegos de mesa salen de su categoría de antes y van a «Juegos de mesa para la tele»
-CAT = {k: ' '.join(x for x in v.split() if x not in MESA) for k, v in CAT.items()}
-CAT['mesa'] = ' '.join(MESA)
 CTRL = {  # control (como en games.js) → slug es, slug en, nombre en
     'Tocar': ('tocar', 'tap', 'Tap'), 'Arrastrar': ('arrastrar', 'drag', 'Drag'), 'Deslizar': ('deslizar', 'swipe', 'Swipe'),
     'Mantener': ('mantener', 'hold', 'Hold'), 'Dos dedos': ('dos-dedos', 'two-fingers', 'Two fingers'), 'Dos pulgares': ('dos-pulgares', 'two-thumbs', 'Two thumbs'),
@@ -109,6 +106,8 @@ def based_on(origin):
 
 def main():
     games = json.loads(subprocess.check_output(['node', os.path.join(HERE, 'extract.js')]))
+    for g in games:   # los juegos de mesa (mesa.py) forman su propia colección
+        if g['id'] in MESA: g['collection'] = 'mesa'
     version = re.search(r"ARCADE_VERSION = '([^']+)'", open(os.path.join(ROOT, 'pwa', 'games.js')).read()).group(1)
     cat_of = {}
     for c, ids in CAT.items():
