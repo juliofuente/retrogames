@@ -1,7 +1,7 @@
 /* Arcade Perdido · lista de juegos.
    Para añadir un juego: crea su archivo .html y añade aquí una línea.
    Sube VERSION cada vez que cambies archivos para que el móvil descargue la versión nueva. */
-var ARCADE_VERSION = '2.22.0';
+var ARCADE_VERSION = '2.22.1';
 var GAMES = [
   { file: 'lazo.html',      id: 'lazo',      title: 'Lazo',      emoji: '🪢', color: '#ffb703', origin: 'Libble Rabble (Namco, 1983)',   desc: 'Dos dedos, una cuerda. Rodea las setas y junta los extremos para atraparlas.', ctrl: 'Dos dedos', tv: false, tag: "Atrapa setas con una cuerda encantada", en: {"title": "Lasso", "desc": "Two fingers, one rope. Surround the mushrooms and join both ends to catch them.", "tag": "Catch mushrooms with an enchanted rope", "ctrl": "Two fingers"} },
   { file: 'pivote.html',    id: 'pivote',    title: 'Pivote',    emoji: '🐡', color: '#4cc9f0', origin: 'Clu Clu Land (Nintendo, 1984)', desc: 'Nunca te paras. Gira en los postes para descubrir el oro escondido… sin pasar dos veces.', ctrl: 'Deslizar', tv: 'cruceta', tag: "El pez globo que nunca se para", en: {"title": "Pivot", "desc": "You never stop. Swing around the posts to uncover hidden gold… without passing twice.", "tag": "The pufferfish that never stops", "ctrl": "Swipe"} },
@@ -185,3 +185,5 @@ var GAMES_PRO = [
   {"file": "memoria.html", "id": "memoria", "title": "Memoria", "emoji": "🃏", "color": "#3bc9db", "origin": "Concentration", "desc": "Da la vuelta a las cartas de dos en dos y encuentra todas las parejas.", "ctrl": "Tocar", "tv": "cursor", "tag": "Encuentra las parejas", "en": {"title": "Memory", "desc": "Turn the cards over two at a time and find every pair.", "tag": "Find the pairs", "ctrl": "Tap"}},
   {"file": "emojidoku.html", "id": "emojidoku", "title": "Emojidoku", "emoji": "🧩", "color": "#9775fa", "origin": "Sudoku", "desc": "Sudoku con emojis: 4×4, 6×6 y 9×9. Cada fila, columna y caja, sin repetir.", "ctrl": "Tocar", "tv": "cursor", "tag": "Sudoku sin números", "en": {"title": "Emojidoku", "desc": "Sudoku with emojis: 4×4, 6×6 and 9×9. Every row, column and box, no repeats.", "tag": "Sudoku without numbers", "ctrl": "Tap"}},
 ];
+// juegos de mesa por turnos (sección ♟️ de la portada de TV)
+var GAMES_MESA = ["damas", "reversi", "cuatro", "enraya", "tres", "molino", "backgammon", "senet", "mancala", "chinas", "halma", "abalone", "quarto", "hex", "puentes", "ataxx", "tafl", "alquerque", "kono", "mutorere", "tigres", "zorro", "liebre", "coyote", "nim"];

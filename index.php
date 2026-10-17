@@ -562,8 +562,10 @@ function page_category(array $c): void {
   global $GAMES, $SITE;
   $games = array_values(array_filter($GAMES, function ($g) use ($c) { return $g['category_id'] === $c['id']; }));
   $p = cat_path($c); $n = f($c, 'name');
-  page_list($p, [cat_path($c, 'es'), cat_path($c, 'en')], $c['emoji'] . ' ' . T('Juegos de ', '') . mb_strtolower($n, 'UTF-8') . T('', ' games'), f($c, 'desc'), $games,
-    [[T('Inicio', 'Home'), home_path()], [$n, $p]], T('Juegos de ' . mb_strtolower($n, 'UTF-8') . ' gratis online (' . count($games) . ')', 'Free online ' . mb_strtolower($n, 'UTF-8') . ' games (' . count($games) . ')') . ' · ' . $SITE, f($c, 'desc'));
+  $low = mb_strtolower($n, 'UTF-8'); $own = preg_match('/^juegos\b|\bgames\b/u', $low);   // «Juegos de mesa…» ya lleva la palabra
+  $hd = $own ? $n : T('Juegos de ' . $low, $n . ' games');
+  page_list($p, [cat_path($c, 'es'), cat_path($c, 'en')], $c['emoji'] . ' ' . $hd, f($c, 'desc'), $games,
+    [[T('Inicio', 'Home'), home_path()], [$n, $p]], ($own ? $n . T(' gratis online', ', free online') . ' (' . count($games) . ')' : T('Juegos de ' . $low . ' gratis online (' . count($games) . ')', 'Free online ' . $low . ' games (' . count($games) . ')')) . ' · ' . $SITE, f($c, 'desc'));
 }
 
 function page_subject(array $c): void {
@@ -602,7 +604,9 @@ function page_tv(): void {
   $games = array_values(array_filter($GAMES, function ($g) { return (bool)$g['tv']; }));
   $p = list_path('tv');
   $lead = T('Juegos que se juegan con el mando de Android TV, Google TV o Fire TV (cruceta + OK). Abre la web en el navegador de la tele y juega solo o hasta con 4 jugadores por turnos.', 'Games you can play with an Android TV, Google TV or Fire TV remote (D-pad + OK). Open the site in your TV browser and play alone or with up to 4 players taking turns.');
-  $btn = '<div class="btns" style="margin-bottom:18px"><a class="btn pri" href="' . h(url('/pwa/indextv')) . '?tv=1">📺 ' . h(T('Abrir la portada para TV', 'Open the TV home screen')) . '</a></div>';
+  global $CATS; $mesa = $CATS['mesa'] ?? null;
+  $btn = '<div class="btns" style="margin-bottom:18px"><a class="btn pri" href="' . h(url('/pwa/indextv')) . '?tv=1">📺 ' . h(T('Abrir la portada para TV', 'Open the TV home screen')) . '</a>'
+    . ($mesa ? ' <a class="btn" href="' . h(url(cat_path($mesa))) . '">♟️ ' . h(f($mesa, 'name')) . '</a>' : '') . '</div>';
   page_list($p, [list_path('tv', 'es'), list_path('tv', 'en')], T('Juegos para la tele con mando', 'TV games you play with the remote'), $lead, $games,
     [[T('Inicio', 'Home'), home_path()], ['TV', $p]], T(count($games) . ' juegos para Android TV y Fire TV gratis', count($games) . ' free games for Android TV and Fire TV') . ' · ' . $SITE, $lead, ['before' => $btn]);
 }
@@ -950,6 +954,7 @@ if (count($seg) === 2) {
   if ($k === ($EN ? 'game' : 'juego')) { $g = $EN ? find_by($GAMES, 'slug_en', $arg) : ($GAMES[$arg] ?? null); if ($g) { page_game($g); exit; } }
   if ($k === ($EN ? 'play' : 'jugar')) { $g = $EN ? find_by($GAMES, 'slug_en', $arg) : ($GAMES[$arg] ?? null); if ($g) redirect(url(play_path($g)) . (isset($_SERVER['QUERY_STRING']) && $_SERVER['QUERY_STRING'] !== '' ? '?' . $_SERVER['QUERY_STRING'] : '')); }
   if ($k === ($EN ? 'category' : 'categoria')) { $c = find_by($CATS, $EN ? 'slug_en' : 'slug_es', $arg); if ($c) { page_category($c); exit; } }
+  if ($k === ($EN ? 'category' : 'categoria') && ($to = ['tablero-cartas-y-palabras' => 'cartas-y-palabras', 'board-cards-and-words' => 'cards-and-words'][$arg] ?? null) && ($c = find_by($CATS, $EN ? 'slug_en' : 'slug_es', $to))) redirect(url(cat_path($c)));   // URLs antiguas de la categoría
   if ($k === ($EN ? 'collection' : 'coleccion')) { $c = find_by($COLS, $EN ? 'slug_en' : 'slug_es', $arg); if ($c) { page_collection($c); exit; } }
   if ($k === ($EN ? 'subject' : 'asignatura')) { $c = find_by($SUBJS, $EN ? 'slug_en' : 'slug_es', $arg); if ($c) { page_subject($c); exit; } }
   if ($k === ($EN ? 'age' : 'edad')) { $c = find_by($AGES, $EN ? 'slug_en' : 'slug_es', $arg); if ($c) { page_age($c); exit; } }

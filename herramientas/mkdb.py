@@ -6,6 +6,7 @@ import json, os, re, sqlite3, subprocess, sys, unicodedata, datetime
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import mkedu
+from mesa import MESA
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.join(HERE, '..')
@@ -46,9 +47,12 @@ CATEGORIES = [
     ('estrategia', 'estrategia', 'strategy', 'Estrategia', 'Strategy', '🏰', 'Strategy',
      'Defensa de torres, conquistas y duelos por turnos: piensa antes de actuar.',
      'Tower defence, conquest and turn-based duels: think before you act.'),
-    ('tablero', 'tablero-cartas-y-palabras', 'board-cards-and-words', 'Tablero, cartas y palabras', 'Board, cards and words', '🃏', 'Board game',
-     'Clásicos de mesa contra la máquina: cartas, palabras, fichas y juegos de memoria.',
-     'Table-top classics against the machine: cards, words, tiles and memory games.'),
+    ('mesa', 'juegos-de-mesa', 'board-games', 'Juegos de mesa para la tele', 'Board games for TV', '♟️', 'Board game',
+     'Damas, backgammon, molino, reversi, damas chinas y más clásicos de tablero de todo el mundo contra la máquina. Se juegan por turnos y con el mando de la tele (cruceta + OK): ideales para el sofá, solos o con la familia.',
+     'Checkers, backgammon, mill, reversi, Chinese checkers and more board classics from around the world against the machine. Turn-based and played with the TV remote (D-pad + OK): perfect for the sofa, alone or with the family.'),
+    ('tablero', 'cartas-y-palabras', 'cards-and-words', 'Cartas, palabras y memoria', 'Cards, words and memory', '🃏', 'Card game',
+     'Solitarios de cartas, póker, palabras, fichas y juegos de memoria contra la máquina.',
+     'Card solitaires, poker, words, tiles and memory games against the machine.'),
     ('deportes', 'deportes-y-carreras', 'sports-and-racing', 'Deportes y carreras', 'Sports and racing', '🏁', 'Sports',
      'Billar, minigolf, tiro con arco, esquí y circuitos de carreras.',
      'Pool, mini golf, archery, skiing and racing circuits.'),
@@ -68,6 +72,9 @@ CAT = {
     'tablero': 'senet tigres coyote alquerque kono mutorere tres backgammon chinas halma abalone hex quarto tafl zorro liebre puentes damas molino ataxx arana torreslibres huecos reversi cuatro mancala solitario ishido palabra poker enraya memoria',
     'deportes': 'esqui circuito billar arquero minigolf',
 }
+# los juegos de mesa salen de su categoría de antes y van a «Juegos de mesa para la tele»
+CAT = {k: ' '.join(x for x in v.split() if x not in MESA) for k, v in CAT.items()}
+CAT['mesa'] = ' '.join(MESA)
 CTRL = {  # control (como en games.js) → slug es, slug en, nombre en
     'Tocar': ('tocar', 'tap', 'Tap'), 'Arrastrar': ('arrastrar', 'drag', 'Drag'), 'Deslizar': ('deslizar', 'swipe', 'Swipe'),
     'Mantener': ('mantener', 'hold', 'Hold'), 'Dos dedos': ('dos-dedos', 'two-fingers', 'Two fingers'), 'Dos pulgares': ('dos-pulgares', 'two-thumbs', 'Two thumbs'),

@@ -155,5 +155,6 @@ PRO = ['senet','tigres','coyote','alquerque','kono','mutorere','tres','backgammo
 import sys
 out = {'cinta': entry('cinta'), 'pro': '\n'.join(entry(n) for n in PRO)}
 json.dump(out, open('gentries.json','w'), ensure_ascii=False)
-import os; g=os.path.join(os.path.dirname(os.path.abspath(__file__)),'..','pwa','games.js'); t=open(g).read(); a=t.index('var GAMES_PRO = ['); t=t[:a]+'var GAMES_PRO = [\n'+out['pro']+'\n];\n'; open(g,'w').write(t)
+import os; g=os.path.join(os.path.dirname(os.path.abspath(__file__)),'..','pwa','games.js'); t=open(g).read(); a=t.index('var GAMES_PRO = ['); from mesa import MESA
+t=t[:a]+'var GAMES_PRO = [\n'+out['pro']+'\n];\n// juegos de mesa por turnos (sección ♟️ de la portada de TV)\nvar GAMES_MESA = '+json.dumps(MESA)+';\n'; open(g,'w').write(t)
 print(len(PRO))

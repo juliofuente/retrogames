@@ -1,6 +1,10 @@
 ARCADE PERDIDO + ARCADE PRO — LO QUE ESTÁ HECHO
 ================================================
-Fecha: 16-10-2026 · Versión de la PWA (games.js → ARCADE_VERSION): 2.22.0
+Fecha: 16-10-2026 · Versión de la PWA (games.js → ARCADE_VERSION): 2.22.1
+· v2.22.1: categoría nueva «Juegos de mesa para la tele» (/categoria/juegos-de-mesa, /en/category/board-games) con los
+  25 clásicos de tablero por turnos que se juegan con el mando (lista en herramientas/mesa.py). «Tablero, cartas y
+  palabras» pasa a «Cartas, palabras y memoria» (/categoria/cartas-y-palabras; las URLs antiguas redirigen con 301).
+  La portada de TV tiene una sección nueva ♟️ Juegos de mesa (?sec=mesa) y /tv enlaza a la categoría.
 · CMS (/cms, archivo cms.php): panel con contraseña para añadir juegos (archivo de pwa/, .html subido o dirección
   externa), editarlos, borrarlos (papelera recuperable), cambiarlos de categoría o colección (uno a uno desde la tabla o
   varios a la vez), crear, editar y borrar categorías y editar colecciones. Historial de cambios y copia de seguridad en

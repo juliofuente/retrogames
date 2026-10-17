@@ -54,7 +54,7 @@
   <main class="grid" id="grid"></main>
   <p class="hint" id="hint">🎮 <b>Cruceta</b> para elegir · <b>OK</b> para jugar · En partida, <b>Atrás</b> pausa · Varios jugadores juegan <b>por turnos</b></p>
 </div>
-<script src="games.js?v=d1860777bd"></script>
+<script src="games.js?v=674763d966"></script>
 <script>
 (function () {
   const get = (k, d) => { try { const v = localStorage.getItem('arc_' + k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } };
@@ -89,11 +89,13 @@
     bar.appendChild(b);
   }
   const q = ARCADE_CONFIG.modo === 'modonormal' || ARCADE_CONFIG.modo === 'modotv' ? '' : '?tv=1';
-  let sec = new URLSearchParams(location.search).get('sec') === 'pro' ? 'pro' : 'main';
+  const HAS_MESA = typeof GAMES_MESA !== 'undefined' && GAMES_MESA.length;
+  let sec = ({ pro: 'pro', mesa: HAS_MESA ? 'mesa' : 'main' })[new URLSearchParams(location.search).get('sec')] || 'main';
   const secs = document.createElement('div'); secs.className = 'secs';
   const SECS = { main: ['🕹️ Arcade Perdido', EN ? 'Forgotten arcade mechanics · played with the remote' : 'Mecánicas de arcade olvidadas · para jugar con el mando'],
-    pro: ['✨ Arcade Pro', EN ? 'Mobile hits remade with emojis · played with the remote' : 'Éxitos de móvil rehechos con emojis · para jugar con el mando'] };
-  for (const k of ['main', 'pro']) {
+    pro: ['✨ Arcade Pro', EN ? 'Mobile hits remade with emojis · played with the remote' : 'Éxitos de móvil rehechos con emojis · para jugar con el mando'],
+    mesa: [EN ? '♟️ Board games' : '♟️ Juegos de mesa', EN ? 'Board classics against the machine · turn by turn, from the sofa' : 'Clásicos de tablero contra la máquina · por turnos, desde el sofá'] };
+  for (const k of HAS_MESA ? ['main', 'pro', 'mesa'] : ['main', 'pro']) {
     const b = document.createElement('button'); b.className = 'chip sec'; b.dataset.sec = k; b.textContent = SECS[k][0];
     b.addEventListener('click', () => { if (sec === k) return; sec = k; render(); setFocus(grid.firstElementChild); history.replaceState(null, '', '?sec=' + k); try { sessionStorage.setItem('arc_back', location.pathname + location.search); } catch (e) {} });
     secs.appendChild(b);
@@ -102,10 +104,11 @@
   function render() {
     grid.innerHTML = '';
     secs.querySelectorAll('.sec').forEach((x) => x.classList.toggle('on', x.dataset.sec === sec));
-    document.querySelector('h1').textContent = sec === 'pro' ? 'Arcade Pro' : 'Arcade Perdido';
-    document.querySelector('.logo').textContent = sec === 'pro' ? '✨' : '🕹️';
+    document.querySelector('h1').textContent = sec === 'pro' ? 'Arcade Pro' : sec === 'mesa' ? (EN ? 'Board games' : 'Juegos de mesa') : 'Arcade Perdido';
+    document.querySelector('.logo').textContent = sec === 'pro' ? '✨' : sec === 'mesa' ? '♟️' : '🕹️';
     document.getElementById('sub').textContent = SECS[sec][1];
-    (sec === 'pro' ? GAMES_PRO : GAMES).filter((g) => g.tv).forEach((g) => {
+    const ALL = GAMES.concat(GAMES_PRO), list = sec === 'mesa' ? GAMES_MESA.map((id) => ALL.find((g) => g.id === id)).filter(Boolean) : (sec === 'pro' ? GAMES_PRO : GAMES);
+    list.filter((g) => g.tv).forEach((g) => {
       const a = document.createElement('a');
       a.className = 'gc'; a.href = g.id + q; a.dataset.id = g.id; a.style.setProperty('--c', g.color);
       const best = get('best_' + g.id, 0), lv = get('lv_' + g.id, 1);
