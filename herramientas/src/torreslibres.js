@@ -1,186 +1,25 @@
 // Torres libres|#123a5c
+// @cartas
 (function () {
-  const { shuffle } = Arcade;
-  const SUIT = ['♠', '♥', '♦', '♣'], RANK = ['', 'A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
-  const S = (c) => (c / 13) | 0, Rk = (c) => (c % 13) + 1, red = (c) => S(c) === 1 || S(c) === 2;
-  const NC = 10, NT = 4;
-
-  /* ---------- solucionador ---------- */
-  const key = (st) => st.cols.map((c) => c.join(',')).sort().join('|') + '#' + st.cells.filter((x) => x != null).sort((a, b) => a - b).join(',') + '#' + st.f.join(',');
-  const clone = (st) => ({ cols: st.cols.map((c) => c.slice()), cells: st.cells.slice(), f: st.f.slice() });
-  const runLen = (c) => { let n = 1; while (n < c.length && S(c[c.length - n - 1]) === S(c[c.length - n]) && Rk(c[c.length - n - 1]) === Rk(c[c.length - n]) + 1) n++; return n; };
-  function autoF(st) { // sube a la base todo lo que se pueda (siempre es seguro: no hay colores alternos)
-    let moved = true;
-    while (moved) { moved = false;
-      for (const c of st.cols) { const x = c[c.length - 1]; if (x != null && Rk(x) === st.f[S(x)] + 1) { c.pop(); st.f[S(x)]++; moved = true; } }
-      st.cells.forEach((x, i) => { if (x != null && Rk(x) === st.f[S(x)] + 1) { st.cells[i] = null; st.f[S(x)]++; moved = true; } });
-    }
-    return st;
-  }
-  function genMoves(st) {
-    const out = [], free = st.cells.filter((x) => x == null).length;
-    st.cols.forEach((c, i) => {
-      if (!c.length) return; const rl = runLen(c);
-      for (let n = 1; n <= Math.min(rl, free + 1); n++) {
-        const x = c[c.length - n];
-        st.cols.forEach((c2, j) => {
-          if (j === i) return; const top = c2[c2.length - 1];
-          if (top == null ? Rk(x) === 13 && n < c.length : S(top) === S(x) && Rk(top) === Rk(x) + 1) out.push({ a: 'tt', i, n, j, p: top == null ? 2 : 0 });
-        });
-      }
-      if (free) out.push({ a: 'tc', i, p: 3 });
-    });
-    st.cells.forEach((x, k) => { if (x == null) return; st.cols.forEach((c2, j) => { const top = c2[c2.length - 1]; if (top == null ? Rk(x) === 13 : S(top) === S(x) && Rk(top) === Rk(x) + 1) out.push({ a: 'ct', k, j, p: 1 }); }); });
-    return out.sort((a, b) => a.p - b.p);
-  }
-  function apply(st, m) {
-    const s = clone(st);
-    if (m.a === 'tt') s.cols[m.j].push(...s.cols[m.i].splice(s.cols[m.i].length - m.n));
-    else if (m.a === 'tc') { const k = s.cells.indexOf(null); s.cells[k] = s.cols[m.i].pop(); }
-    else { s.cols[m.j].push(s.cells[m.k]); s.cells[m.k] = null; }
-    return autoF(s);
-  }
-  function solve(st0, budget) {
-    const start = autoF(clone(st0)), seen = new Set([key(start)]), stack = [{ st: start, ms: null, k: 0, m: null }]; let nodes = 0;
-    while (stack.length) {
-      const top = stack[stack.length - 1];
-      if (top.st.f.every((x) => x === 13)) return stack.slice(1).map((f) => f.m);
-      if (!top.ms) top.ms = genMoves(top.st);
-      if (top.k >= top.ms.length || stack.length > 250) { stack.pop(); continue; }
-      const m = top.ms[top.k++], ns = apply(top.st, m), kk = key(ns); if (seen.has(kk)) continue; seen.add(kk);
-      if (++nodes > budget) return null;
-      stack.push({ st: ns, ms: null, k: 0, m });
-    }
-    return null;
-  }
-  function deal() {
-    for (let t = 0; t < 60; t++) {
-      const d = shuffle([...Array(52).keys()]), cols = []; for (let i = 0; i < NC; i++) cols.push(d.slice(i * 5, i * 5 + 5));
-      const st = { cols, cells: [d[50], d[51], null, null], f: [0, 0, 0, 0] };
-      if (solve(st, 15000)) return st;
-    }
-    return null;
-  }
-
-  /* ---------- juego ---------- */
-  function geo(g) {
-    const s = g.s, W = g.W; s.cw = Math.min((W - 10) / NC - 3, 72); s.ch = s.cw * 1.45; s.gap = (W - s.cw * NC) / (NC + 1);
-    s.px = (i) => s.gap + i * (s.cw + s.gap);
-    s.y0 = g.top + 44; s.ty = s.y0 + s.ch + 14; s.maxH = g.bot - 8 - s.ty;
-    s.cellX = (k) => s.px(k + (k >= 2 ? 6 : 0)); s.fX = (k) => s.px(3 + k) + s.cw * 0.0;   // 2 torres a cada lado y las 4 bases en medio
-    s.btn = { x: 8, y: g.top + 4, w: 96, h: 32 };
-  }
-  function layoutCards(g) {
-    const s = g.s, L = [];
-    s.cells.forEach((c, k) => { if (c != null) L.push({ c, x: s.cellX(k), y: s.y0, where: 'cell', k, top: true }); });
-    s.found.forEach((p, k) => p.forEach((c, n) => L.push({ c, x: s.fX(k), y: s.y0, where: 'found', k, top: n === p.length - 1 })));
-    s.cols.forEach((col, i) => { const k = col.length * 0.3 * s.ch > s.maxH - s.ch * 0.7 ? (s.maxH - s.ch) / ((col.length - 1) * s.ch) : 0.3; col.forEach((c, n) => L.push({ c, x: s.px(i), y: s.ty + n * s.ch * k, where: 'col', i, n, top: n === col.length - 1 })); });
-    return L;
-  }
-  const stObj = (s) => ({ cols: s.cols.map((c) => c.slice()), cells: s.cells.slice(), f: s.found.map((p) => p.length) });
-  const push = (s) => { s.hist.push(JSON.stringify({ cols: s.cols, cells: s.cells, found: s.found })); if (s.hist.length > 300) s.hist.shift(); };
-  function settle(g) { // sube a la base sola lo que pueda, con un pequeño retardo para que se vea
-    const s = g.s;
-    for (const col of s.cols) { const x = col[col.length - 1]; if (x != null && Rk(x) === s.found[S(x)].length + 1) { col.pop(); s.found[S(x)].push(x); return bump(g, x); } }
-    for (let k = 0; k < NT; k++) { const x = s.cells[k]; if (x != null && Rk(x) === s.found[S(x)].length + 1) { s.cells[k] = null; s.found[S(x)].push(x); return bump(g, x); } }
-    if (!s.over && s.found.every((p) => p.length === 13)) { s.over = true; g.confetti(90); g.addScore(900 * g.lv, g.W / 2, g.H / 2); setTimeout(() => { if (g.state === 'play') g.win(s.undos === 0 ? 3 : s.undos <= 4 ? 2 : 1); }, 1500); }
-  }
-  function bump(g, x) { const s = g.s; g.addScore(15 * Math.max(1, Math.round(g.lv / 2))); Arcade.tone(500 + s.found[S(x)].length * 40, 0.08, 'triangle', 0.07); s.settleT = 0.12; }
-  function freeCells(s) { return s.cells.filter((x) => x == null).length; }
-  function moveColCol(g, i, n, j) { const s = g.s; push(s); s.cols[j].push(...s.cols[i].splice(s.cols[i].length - n)); s.moves++; Arcade.tone(420, 0.05, 'triangle', 0.06); s.settleT = 0.15; }
-  function canColCol(s, i, n, j) { const c = s.cols[i]; if (i === j || n > runLen(c) || n > freeCells(s) + 1) return false; const x = c[c.length - n], top = s.cols[j][s.cols[j].length - 1]; return top == null ? Rk(x) === 13 : S(top) === S(x) && Rk(top) === Rk(x) + 1; }
-  function tapCard(g, o) {
-    const s = g.s; if (s.over || !o) return;
-    if (o.where === 'col') {
-      const col = s.cols[o.i], n = col.length - o.n;
-      if (n === 1 && Rk(o.c) === s.found[S(o.c)].length + 1) { push(s); col.pop(); s.found[S(o.c)].push(o.c); bump(g, o.c); return; }
-      for (let j = 0; j < NC; j++) if (canColCol(s, o.i, n, j) && s.cols[j].length) return moveColCol(g, o.i, n, j);
-      for (let j = 0; j < NC; j++) if (canColCol(s, o.i, n, j)) return moveColCol(g, o.i, n, j);
-      if (n === 1 && freeCells(s)) { push(s); s.cells[s.cells.indexOf(null)] = col.pop(); s.moves++; Arcade.tone(380, 0.05, 'square', 0.04); s.settleT = 0.15; return; }
-    } else if (o.where === 'cell') {
-      const x = s.cells[o.k];
-      if (Rk(x) === s.found[S(x)].length + 1) { push(s); s.cells[o.k] = null; s.found[S(x)].push(x); bump(g, x); return; }
-      for (let j = 0; j < NC; j++) { const top = s.cols[j][s.cols[j].length - 1]; if (top == null ? Rk(x) === 13 : S(top) === S(x) && Rk(top) === Rk(x) + 1) { push(s); s.cols[j].push(x); s.cells[o.k] = null; s.moves++; Arcade.tone(420, 0.05, 'triangle', 0.06); s.settleT = 0.15; return; } }
-    }
-    Arcade.sfx.bad(); s.wob = { c: o.c, t: 0.4 };
-  }
-  function undo(g) { const s = g.s, h = s.hist.pop(); if (!h || s.over) return; Object.assign(s, JSON.parse(h)); s.undos++; Arcade.sfx.whoosh(); }
-  function hit(g, x, y) { const s = g.s, L = layoutCards(g); for (let k = L.length - 1; k >= 0; k--) { const o = L[k]; if (x >= o.x && x <= o.x + s.cw && y >= o.y && y <= o.y + s.ch) return o; } return null; }
-  function face(ctx, s, x, y, c) {
-    const w = s.cw, h = s.ch, r = w * 0.12, col = red(c) ? '#e03131' : '#212529';
-    ctx.fillStyle = 'rgba(0,0,0,.3)'; Arcade.rr(ctx, x + 1, y + 2, w, h, r); ctx.fill();
-    ctx.fillStyle = '#fff'; Arcade.rr(ctx, x, y, w, h, r); ctx.fill(); ctx.strokeStyle = '#ced4da'; ctx.lineWidth = 1; ctx.stroke();
-    const fs = Math.max(9, w * 0.36);
-    Arcade.txt(ctx, RANK[Rk(c)], x + w * 0.08, y + fs * 0.62, fs, col, 'left', 900); Arcade.txt(ctx, SUIT[S(c)], x + w * 0.92, y + fs * 0.62, fs * 0.8, col, 'right', 900);
-    Arcade.txt(ctx, SUIT[S(c)], x + w / 2, y + h * 0.62, w * 0.6, col, 'center', 900);
-  }
-
+  const P = Arcade.paciencia;
+  const V = {
+    supermove: true, solvable: true, solveTries: 3, solveBudget: 2500,
+    tab: { build: 'suit', move: 'one', empty: 'K' },
+    piles: () => P.mk([['cell', 4, { label: '🗼' }], ['found', 4], ['tab', 10]]),
+    deal: (st, D, deck) => P.dealStd(st, D, deck, { cells: 2, ds: Array(10).fill('UUUUU') }),
+    place: (g, s, D, y0) => P.autoPlace(g, s, D, y0, {}),
+    status: (st, D) => Arcade.T('Torres libres: ', 'Free towers: ') + P.of(D, 'cell').filter((i) => !st.p[i].length).length,
+    demoSay: Arcade.T('Del mismo palo, un número menos', 'Same suit, one rank lower'),
+    felt: ['#1c5d8f', '#123a5c'], back: ['#e8590c', '#8a2e00'], backEmoji: '🗼',
+  };
   Arcade.game({
+    ...P(V),
     /*THEME*/ home: 'indexsolitarios.html', tag: 'Diez columnas y cuatro torres', deco: ['🗼', '🃏', '♠️', '♥️', '♦️', '♣️'], font: 'serif', bg: ['#1c5d8f', '#123a5c'],
     music: { mode: 'lydian', bpm: 80, wave: 'sine', style: 'chill', root: 60 }, voice: { wave: 'sine', mul: 1.2, echo: 0.4 },
-    /*EN*/ en: { title: 'Free Towers', tag: 'Ten columns and four towers', help: 'Seahaven-style solitaire: all the cards are face up. Build the four <b>foundations</b> (in the middle at the top) from A to K. On the table, a card goes on another of the <b>same suit and one rank higher</b>; only a K can go into an empty column. The four <b>towers</b> (the side boxes) each hold one card. You can move several cards of a run together if there are enough free towers. <b>Tap</b> a card and it moves to the best place; cards that can go up go by themselves. Every deal has been checked to have a solution.', tvHelp: 'D-pad to a card · OK moves it.', dict: { '↩️ Deshacer': '↩️ Undo', 'Torres': 'Towers', 'Bases': 'Foundations' } },
+    /*EN*/ en: { title: 'Free Towers', tag: 'Ten columns and four towers', help: 'Seahaven-style solitaire: all the cards are face up. Build the four <b>foundations</b> from A to K. On the table, a card goes on another of the <b>same suit and one rank higher</b>; only a K can go into an empty column. The four <b>towers</b> (two of them start full) each hold one card. You can move several cards of a run together if there are enough free towers. <b>Tap</b> a card and it moves to the best place; cards that can go up go by themselves. 💡 gives a hint, ↩️ undoes and 📖 opens the tutorial.', tvHelp: 'D-pad to a card · OK moves it.', dict: { 'Torres libres: ': 'Free towers: ', 'Del mismo palo, un número menos': 'Same suit, one rank lower' } },
     /*TV*/ tvHelp: 'Cruceta hasta una carta · OK la mueve.',
-    tv: { mode: 'tap', targets: (g) => { const s = g.s; if (!s.cols) return []; const o = layoutCards(g).filter((c) => (c.where === 'col' && c.n >= s.cols[c.i].length - runLen(s.cols[c.i])) || c.where === 'cell').map((c) => ({ x: c.x, y: c.y, w: s.cw, h: c.top ? s.ch : s.ch * 0.3 })); o.push({ ...s.btn, instant: true }); return o; } },
     id: 'torreslibres', title: 'Torres libres', emoji: '🗼', color: '#74c0fc', origin: 'Seahaven Towers / Free Towers (Lutanho)',
-    help: 'Un solitario a lo Seahaven: todas las cartas se ven. Completa las cuatro <b>bases</b> (en el centro, arriba) del A a la K. En la mesa, una carta va sobre otra <b>del mismo palo y un número más</b>; en una columna vacía solo puede ir una K. Las cuatro <b>torres</b> (las casillas de los lados) guardan una carta cada una. Puedes mover varias cartas seguidas de golpe si hay torres libres suficientes. <b>Toca</b> una carta y se mueve a su mejor sitio; las que pueden subir a la base suben solas. Todos los repartos están comprobados: tienen solución.',
-    lives: 0, levels: 0, cap: 16,
-    /*SC*/ demo(g) {
-      const s = g.s; if (s.over || s.settleT > 0) return { wait: 0.25 };
-      const cur = autoF(stObj(s));
-      if (!s.plan || s.expect !== key(cur)) s.plan = solve(cur, 60000) || [];
-      const m = s.plan.shift(); if (!m) return { wait: 0.4 };
-      s.expect = key(apply(cur, m));
-      const L = layoutCards(g), P = (o) => [o.x + s.cw / 2, o.y + 10];
-      if (m.a === 'tt') { const col = s.cols[m.i], o = L.find((x) => x.where === 'col' && x.i === m.i && x.n === col.length - m.n), tgt = s.cols[m.j], last = tgt.length ? L.find((x) => x.where === 'col' && x.i === m.j && x.top) : { x: s.px(m.j), y: s.ty - s.ch * 0.3 }; return { drag: [P(o), [last.x + s.cw / 2, last.y + s.ch * 0.6]], dur: 0.45, after: 0.3, say: s.moves ? null : Arcade.T('Mismo palo, un número menos', 'Same suit, one rank lower') }; }
-      if (m.a === 'tc') { const o = L.find((x) => x.where === 'col' && x.i === m.i && x.top); const k = s.cells.indexOf(null); return { drag: [P(o), [s.cellX(k) + s.cw / 2, s.y0 + s.ch / 2]], dur: 0.4, after: 0.3, say: Arcade.T('Guarda una carta en una torre', 'Park a card in a tower') }; }
-      const k = s.cells.indexOf(cur.cells[m.k]); const o = L.find((x) => x.where === 'cell' && x.k === (k >= 0 ? k : m.k)), tgt = s.cols[m.j], last = tgt.length ? L.find((x) => x.where === 'col' && x.i === m.j && x.top) : { x: s.px(m.j), y: s.ty - s.ch * 0.3 };
-      return { drag: [P(o), [last.x + s.cw / 2, last.y + s.ch * 0.6]], dur: 0.4, after: 0.3 };
-    },
-    setup(g) {
-      const st = deal() || deal();
-      g.s = { cols: st.cols, cells: st.cells, found: [[], [], [], []], hist: [], undos: 0, moves: 0, objs: {}, over: false, settleT: 0.6 };
-      geo(g);
-    },
-    layout(g) { if (g.s.cols) geo(g); },
-    down(g, p) {
-      const s = g.s; if (s.over) return; const b = s.btn;
-      if (p.x >= b.x && p.x <= b.x + b.w && p.y >= b.y && p.y <= b.y + b.h) { s.tapBtn = true; return; }
-      const o = hit(g, p.x, p.y); s.drag = o && (o.where === 'cell' || (o.where === 'col' && o.n >= s.cols[o.i].length - runLen(s.cols[o.i]))) ? { o, dx: p.x - o.x, dy: p.y - o.y, x: p.x, y: p.y, moved: false } : null;
-    },
-    move(g, p) { const d = g.s.drag; if (!d) return; d.x = p.x; d.y = p.y; if (Math.hypot(p.x - p.sx, p.y - p.sy) > 12) d.moved = true; },
-    up(g, p) {
-      const s = g.s, d = s.drag; s.drag = null; if (s.tapBtn) { s.tapBtn = false; return undo(g); } if (!d) return;
-      if (!d.moved) return tapCard(g, d.o);
-      const o = d.o, inTop = p.y < s.ty - 4;
-      if (inTop) { // a una torre libre o a la base
-        const x = o.where === 'cell' ? s.cells[o.k] : s.cols[o.i][s.cols[o.i].length - 1], single = o.where === 'cell' || o.n === s.cols[o.i].length - 1;
-        if (single && Rk(x) === s.found[S(x)].length + 1 && p.x > s.fX(0) - s.gap && p.x < s.fX(3) + s.cw + s.gap) { push(s); if (o.where === 'cell') s.cells[o.k] = null; else s.cols[o.i].pop(); s.found[S(x)].push(x); bump(g, x); return; }
-        const k = [0, 1, 2, 3].find((k) => p.x >= s.cellX(k) - s.gap && p.x <= s.cellX(k) + s.cw + s.gap);
-        if (single && k != null && s.cells[k] == null && o.where === 'col') { push(s); s.cells[k] = s.cols[o.i].pop(); s.moves++; s.settleT = 0.15; return; }
-        Arcade.sfx.bad(); return;
-      }
-      const j = s.cols.findIndex((_, k) => p.x >= s.px(k) - s.gap / 2 && p.x <= s.px(k) + s.cw + s.gap / 2); if (j < 0) return Arcade.sfx.bad();
-      if (o.where === 'col') { const n = s.cols[o.i].length - o.n; if (canColCol(s, o.i, n, j)) return moveColCol(g, o.i, n, j); }
-      else { const x = s.cells[o.k], top = s.cols[j][s.cols[j].length - 1]; if (top == null ? Rk(x) === 13 : S(top) === S(x) && Rk(top) === Rk(x) + 1) { push(s); s.cols[j].push(x); s.cells[o.k] = null; s.moves++; s.settleT = 0.15; return; } }
-      Arcade.sfx.bad();
-    },
-    key(g, k, d) { if (d && (k === 'z' || k === 'Backspace')) undo(g); },
-    update(g, dt) { const s = g.s; if (!s.cols) return; if (s.wob) { s.wob.t -= dt; if (s.wob.t <= 0) s.wob = null; } if (s.settleT > 0) { s.settleT -= dt; if (s.settleT <= 0) { s.settleT = 0; settle(g); } } },
-    draw(g, ctx) {
-      const s = g.s, W = g.W, H = g.H;
-      const bg = ctx.createRadialGradient(W / 2, H * 0.4, 30, W / 2, H / 2, Math.max(W, H) * 0.8); bg.addColorStop(0, '#2378b5'); bg.addColorStop(1, '#0e2c47');
-      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
-      if (!s.cols) return;
-      const slot = (x, y, t, col) => { ctx.fillStyle = col || 'rgba(255,255,255,.06)'; Arcade.rr(ctx, x, y, s.cw, s.ch, s.cw * 0.12); ctx.fill(); ctx.strokeStyle = 'rgba(255,255,255,.25)'; ctx.lineWidth = 1.5; ctx.stroke(); if (t) Arcade.txt(ctx, t, x + s.cw / 2, y + s.ch / 2, s.cw * 0.45, 'rgba(255,255,255,.3)', 'center', 900); };
-      for (let k = 0; k < NT; k++) slot(s.cellX(k), s.y0, '🗼', 'rgba(255,212,59,.08)');
-      for (let k = 0; k < 4; k++) slot(s.fX(k), s.y0, SUIT[k]);
-      for (let i = 0; i < NC; i++) slot(s.px(i), s.ty, 'K');
-      const L = layoutCards(g), d = s.drag && s.drag.moved ? s.drag : null, dragC = new Set();
-      if (d) { if (d.o.where === 'cell') dragC.add(s.cells[d.o.k]); else s.cols[d.o.i].slice(d.o.n).forEach((c) => dragC.add(c)); }
-      for (const o of L) { if (dragC.has(o.c)) continue; const ob = s.objs[o.c] || (s.objs[o.c] = {}), [x, y] = Arcade.glide(ob, o.x, o.y, 18); face(ctx, s, x + (s.wob && s.wob.c === o.c ? Math.sin(s.wob.t * 40) * 3 : 0), y + (s.over && o.where === 'found' ? Math.sin(g.rt * 3 + o.c) * 4 : 0), o.c); }
-      if (d) { let k = 0; for (const o of L) if (dragC.has(o.c)) { const x = d.x - d.dx, y = d.y - d.dy + k * s.ch * 0.3; (s.objs[o.c] || (s.objs[o.c] = {})).__gl = { x, y, a: 1, f: Arcade.fno }; face(ctx, s, x, y, o.c); k++; } }
-      const b = s.btn; ctx.fillStyle = 'rgba(0,0,0,.25)'; Arcade.rr(ctx, b.x, b.y, b.w, b.h, 10); ctx.fill(); Arcade.txt(ctx, '↩️ Deshacer', b.x + b.w / 2, b.y + b.h / 2, 13, '#fff', 'center', 800);
-      Arcade.txt(ctx, 'Torres', s.cellX(0) + s.cw, s.y0 - 8, 11, '#d0ebff', 'center', 800); Arcade.txt(ctx, 'Bases', s.fX(0) + s.cw * 2 + s.gap * 1.5, s.y0 - 8, 11, '#d0ebff', 'center', 800);
-    },
+    help: 'Un solitario a lo Seahaven: todas las cartas se ven. Completa las cuatro <b>bases</b> del A a la K. En la mesa, una carta va sobre otra <b>del mismo palo y un número más</b>; en una columna vacía solo puede ir una K. Las cuatro <b>torres</b> (dos empiezan ocupadas) guardan una carta cada una. Puedes mover varias cartas seguidas de golpe si hay torres libres suficientes. <b>Toca</b> una carta y se mueve a su mejor sitio; las que pueden subir a la base suben solas. 💡 te da una pista, ↩️ deshace y 📖 abre el tutorial.',
+    lives: 0, levels: 0, cap: 20,
   });
 })();

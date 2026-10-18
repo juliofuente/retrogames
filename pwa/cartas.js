@@ -278,7 +278,7 @@
     function layoutCards(g) {
       const s = g.s, st = s.st, D = s.D, out = [];
       D.forEach((d, i) => {
-        const p = st.p[i], n = p.length; if (!n) return;
+        const p = st.p[i], n = p.length; if (!n || d.hide) return;
         const fan = d.fan || (d.k === 'tab' ? 'down' : d.k === 'waste' ? 'waste' : 'none');
         if (fan === 'down') {
           const maxH = (d.maxH != null ? d.maxH : g.bot - 6 - d.y) - s.ch;
@@ -446,7 +446,7 @@
       let best = null, bs = -1e9;
       for (const m of moves(s.st, s.D)) {
         let sc = score(s.st, s.D, m); const k2 = vkey(apply(s.st, s.D, m));
-        if ((s.idle || 0) > 25 && sc < 40 && !m.stock) continue;   // dando vueltas sin avanzar: solo jugadas que avanzan
+        if ((s.idle || 0) > 25 && sc < 40 && !m.stock && !m.rdl) continue;   // dando vueltas sin avanzar: solo jugadas que avanzan
         if (s.seen.has(k2)) sc -= m.stock && !m.redeal ? 120 : 400;
         if (sc > bs) { bs = sc; best = m; }
       }
@@ -464,7 +464,7 @@
         if (V.pair(top(s.st, s.sel), c, D[s.sel], d, s.st)) return commit(g, { pair: [s.sel, i] });
         s.sel = i; A.sfx.bad(); return;
       }
-      if (!p.length) return;
+      if (!p.length) { if (V.tapFill) { let best = null, bs = -1e9; for (const m of moves(s.st, D)) if (m.t === i) { const sc = score(s.st, D, m); if (sc > bs) { bs = sc; best = m; } } if (best) return commit(g, best); A.sfx.bad(); } return; }
       const n = p.length - k;
       if (!canTake(s.st, D, i, n)) { s.wob = { pile: i, t: 0.35 }; return A.sfx.bad(); }
       const m = bestMoveFor(g, i, n);
@@ -522,7 +522,9 @@
 
     /* ---------- tutorial: se escribe solo a partir de las reglas de la variante ---------- */
     function tutSteps(g) {
-      const s = g.s, D = s.D, st = s.st, all = (k) => kinds(D, k), out = [];
+      const s = g.s, D = s.D, st = s.st, all = (k) => kinds(D, k), out = V.tutorial ? V.tutorial(g, all) : [];
+      if (V.tutorial) { if (V.redeal) out.push({ btns: ['rdl'], t: T('🔀 Barajar: cuando te atasques, recoge las cartas que no están en su sitio, las baraja y las reparte otra vez. Te quedan ' + (V.redeal.times - (st.rr || 0)) + '.', '🔀 Shuffle: when you get stuck, it gathers the cards that are not in place, shuffles and deals them again. You have ' + (V.redeal.times - (st.rr || 0)) + ' left.') }); }
+      else {
       const nf = all('found').length, rk = (r) => RANK[r];
       const cond = { alt: T('de color distinto', 'of the other colour'), suit: T('del mismo palo', 'of the same suit'), any: T('de cualquier palo', 'of any suit'), color: T('del mismo color', 'of the same colour'), notsuit: T('de un palo distinto al suyo', 'of a different suit') };
       const btn = (id) => s.btns.find((b) => b.id === id);
@@ -567,6 +569,7 @@
         out.push({ piles: sk.concat(all('waste')), t });
       }
       if (V.redeal) out.push({ btns: ['rdl'], t: T('🔀 Barajar: cuando te atasques, recoge las cartas de la mesa, las baraja y las reparte otra vez. Tienes ' + (V.redeal.times - (st.rr || 0)) + '.', '🔀 Shuffle: when you get stuck, it gathers the table cards, shuffles and deals them again. You have ' + (V.redeal.times - (st.rr || 0)) + '.') });
+      }
       // 5. controles y una jugada de ejemplo
       out.push({ btns: ['hint', 'undo'], t: T('Toca una carta y va sola a su mejor sitio, o arrástrala tú. 💡 te enseña una jugada y ↩️ deshace la última. 📖 vuelve a abrir este tutorial.', 'Tap a card and it goes to its best place, or drag it yourself. 💡 shows you a move and ↩️ undoes the last one. 📖 opens this tutorial again.') });
       const m = hint(g);
@@ -712,7 +715,8 @@
         drawCascade(g, ctx);
         // franja de arriba
         const txt = V.status ? V.status(s.st, s.D, g) : '';
-        A.txt(ctx, txt, 10, g.top + 22, Math.min(14, g.W / 30), '#fff', 'left', 800, 'rgba(0,0,0,.35)');
+        let fz = Math.min(14, g.W / 30); const room = s.btns[0].x - 18; ctx.font = '800 ' + fz + 'px ' + A.FONT; const tw = ctx.measureText(A.L(txt)).width; if (tw > room) fz = Math.max(9, fz * room / tw);
+        A.txt(ctx, txt, 10, g.top + 22, fz, '#fff', 'left', 800, 'rgba(0,0,0,.35)');
         for (const b of s.btns) {
           const on = b.id === 'rdl' ? (s.st.rr || 0) < V.redeal.times : true;
           ctx.fillStyle = s.btnDown === b.id ? 'rgba(255,255,255,.35)' : 'rgba(0,0,0,.28)'; A.rr(ctx, b.x, b.y, b.w, b.h, 11); ctx.fill();

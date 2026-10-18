@@ -1,6 +1,10 @@
 ARCADE PERDIDO + ARCADE PRO — LO QUE ESTÁ HECHO
 ================================================
-Fecha: 18-10-2026 · Versión de la PWA (games.js → ARCADE_VERSION): 2.26.1
+Fecha: 18-10-2026 · Versión de la PWA (games.js → ARCADE_VERSION): 2.27.0
+· v2.27.0: Solitario, Araña, Torres libres y Huecos pasan al motor de cartas (con tutorial, pista y demo como los demás;
+  Huecos con barajadas según el nivel: 8, 5 y 3). Nueva categoría «Juegos de cartas» (los 100 solitarios y el póker);
+  «Tablero, cartas y palabras» pasa a llamarse «Tablero y palabras» (misma URL). En la web, Solitarios destaca como
+  colección: chip arriba de la portada, sección propia con 10 juegos, botón en la barra del móvil y enlace en el pie.
 · v2.26.1: tutorial 📖 en los 96 solitarios del motor de cartas. Se escribe solo a partir de las reglas de cada
   variante: oscurece la mesa e ilumina cada zona (objetivo y bases, mesa, celdas, reserva, mazo, 🔀, botones) con su
   regla, y acaba enseñando una jugada posible. Sale solo la primera vez que se abre cada juego y luego con el botón 📖.

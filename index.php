@@ -457,7 +457,7 @@ h2 a{text-decoration:none}h2 small,.cnt{color:var(--mu);font-size:.6em;font-weig
 .hello h1{font-size:clamp(26px,4.2vw,38px);margin-bottom:0}.hello h1 em{font-style:normal;background:linear-gradient(transparent 62%,var(--ac) 62%)}
 .chips{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding:4px 0 2px;margin:14px 0 0}.chips::-webkit-scrollbar{display:none}
 .chips a{flex:none;text-decoration:none;font-weight:800;font-size:15px;background:var(--sf);border:1px solid var(--line);border-radius:999px;padding:8px 15px;white-space:nowrap}
-.chips a:hover{border-color:var(--ac2);background:#fffaeb}.chips a b{color:var(--mu);font-weight:800;margin-left:4px;font-size:13px}
+.chips a:hover{border-color:var(--ac2);background:#fffaeb}.chips a.col-chip{background:#fff3c4;border-color:#ffe08a}.chips a b{color:var(--mu);font-weight:800;margin-left:4px;font-size:13px}
 .tiles{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
 .tile{display:flex;gap:12px;align-items:center;text-decoration:none;background:var(--sf);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;box-shadow:var(--sh);transition:transform .15s}
 .tile:hover{transform:translateY(-2px);border-color:var(--ac2)}.tile .e{font-size:30px}.tile b{font-weight:900}.tile small{display:block;color:var(--mu);font-weight:700}
@@ -531,11 +531,15 @@ footer .fb{display:flex;align-items:center;gap:9px;font-weight:900;color:var(--t
 <nav class="tabbar" aria-label="<?= h(T('Accesos rápidos', 'Quick links')) ?>">
   <a href="<?= h(home_url()) ?>"<?= $p === home_path() ? ' aria-current="page"' : '' ?>><span aria-hidden="true">🏠</span><?= h(T('Inicio', 'Home')) ?></a>
   <a href="<?= h(url(list_path('games'))) ?>"<?= $p === list_path('games') ? ' aria-current="page"' : '' ?>><span aria-hidden="true">🎮</span><?= h(T('Juegos', 'Games')) ?></a>
+  <?php if (isset($COLS['soli'])): ?><a href="<?= h(url(col_path($COLS['soli']))) ?>"<?= $p === col_path($COLS['soli']) ? ' aria-current="page"' : '' ?>><span aria-hidden="true">🃏</span><?= h(T('Solitarios', 'Solitaire')) ?></a><?php endif; ?>
   <?php if (isset($COLS['edu'])): ?><a href="<?= h(url(col_path($COLS['edu']))) ?>"<?= $p === col_path($COLS['edu']) ? ' aria-current="page"' : '' ?>><span aria-hidden="true">🎓</span><?= h(T('Educativos', 'Learning')) ?></a><?php endif; ?>
   <a href="<?= h(url(list_path('tv'))) ?>"<?= $p === list_path('tv') ? ' aria-current="page"' : '' ?>><span aria-hidden="true">📺</span>TV</a>
 </nav>
 <footer><div class="wrap">
   <div class="fb"><span aria-hidden="true">🕹️</span><?= h($SITE) ?></div>
+  <div class="links">
+    <?php foreach ($COLS as $c): ?><a href="<?= h(url(col_path($c))) ?>"><b><?= h($c['emoji'] . ' ' . f($c, 'name')) ?></b></a><?php endforeach; ?>
+  </div>
   <div class="links">
     <?php foreach ($CATS as $c): ?><a href="<?= h(url(cat_path($c))) ?>"><?= h($c['emoji'] . ' ' . f($c, 'name')) ?></a><?php endforeach; ?>
   </div>
@@ -565,6 +569,7 @@ function page_home(): void {
   <?php $ft = top_games(array_values(array_filter($GAMES, function ($g) { return !is_edu($g) && shot_url($g, false); })), 'all', 1)[0] ?? ($new[0] ?? null) ?? array_values(array_filter($GAMES, function ($g) { return shot_url($g, false); }))[0] ?? null; ?>
   <div class="hello"><h1><?= T('Juega un rato. <em>Sin anuncios.</em>', 'Play a little. <em>No ads.</em>') ?></h1></div>
   <nav class="chips" aria-label="<?= h(T('Categorías', 'Categories')) ?>">
+    <?php foreach (['soli', 'mesa', 'edu'] as $k): if (empty($COLS[$k]) || empty($byCol[$k])) continue; ?><a class="col-chip" href="<?= h(url(col_path($COLS[$k]))) ?>"><?= h($COLS[$k]['emoji'] . ' ' . f($COLS[$k], 'name')) ?><b><?= count($byCol[$k]) ?></b></a><?php endforeach; ?>
     <?php foreach ($CATS as $c): if (empty($byCat[$c['id']])) continue; ?><a href="<?= h(url(cat_path($c))) ?>"><?= h($c['emoji'] . ' ' . f($c, 'name')) ?><b><?= count($byCat[$c['id']]) ?></b></a><?php endforeach; ?>
     <a href="<?= h(url(list_path('tv'))) ?>">📺 TV</a>
   </nav>
@@ -579,6 +584,12 @@ function page_home(): void {
   <?php endif; ?>
   <p class="lead" style="margin-top:18px"><?= h(T($na . ' juegos HTML5 hechos con emojis: mecánicas de recreativa olvidadas y los grandes éxitos de móvil. Sin anuncios, sin descargas, con hasta 120 niveles, tres modos de dificultad y funcionan sin conexión. Se juegan con el dedo o con el mando de la tele. Y además ' . $ne . ' juegos educativos de mates, lengua, lógica e inglés para niños de 3 a 16 años.', $na . ' HTML5 games made with emojis: forgotten arcade mechanics and the big mobile hits. No ads, no downloads, up to 120 levels, three difficulty modes and they work offline. Play with your finger or with the TV remote. Plus ' . $ne . ' educational games for maths, language, logic and English for kids aged 3 to 16.')) ?></p>
   <?php if ($new): ?><h2><?= h(T('✨ Novedades', '✨ New games')) ?> <span class="cnt"><?= count($new) ?></span></h2><?= grid(array_slice($new, 0, 10)) ?><?php endif; ?>
+  <?php if (!empty($byCol['soli'])): $sc = $COLS['soli']; ?>
+  <h2><a href="<?= h(url(col_path($sc))) ?>"><?= h($sc['emoji'] . ' ' . f($sc, 'name')) ?></a> <span class="cnt"><?= count($byCol['soli']) ?></span></h2>
+  <p class="lead" style="margin-top:-6px"><?= h(T('Cien variantes del solitario con cartas grandes, pistas, deshacer y un tutorial en cada juego que te enseña sus reglas paso a paso.', 'A hundred solitaire variants with big cards, hints, undo and a tutorial in every game that teaches you its rules step by step.')) ?></p>
+  <?= grid(array_slice($byCol['soli'], 0, 10)) ?>
+  <p><a class="more" href="<?= h(url(col_path($sc))) ?>"><?= h(T('Ver los ' . count($byCol['soli']) . ' solitarios', 'See all ' . count($byCol['soli']) . ' solitaire games')) ?> →</a></p>
+  <?php endif; ?>
   <?= rank_html(array_values($GAMES), 10) ?>
   <h2><?= h(T('Colecciones', 'Collections')) ?></h2>
   <div class="cols">

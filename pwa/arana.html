@@ -15,217 +15,33 @@
 <body class="game">
 <script src="config.js?v=84fed7f189"></script>
 <script src="common.js?v=403408c295"></script>
+<script src="cartas.js?v=64c30d1368"></script>
 <script>
+// @cartas
 (function () {
-  
-  const SUIT = ['♠', '♥', '♦', '♣'], RANK = ['', 'A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
-  const S = (c) => (c / 13) | 0, Rk = (c) => (c % 13) + 1, red = (c) => S(c) === 1 || S(c) === 2;
-  const NC = 10;
-
-  // ¿desde qué índice de la columna hay una escalera del mismo palo hasta arriba?
-  const runStart = (u) => { let i = u.length - 1; while (i > 0 && S(u[i - 1]) === S(u[i]) && Rk(u[i - 1]) === Rk(u[i]) + 1) i--; return i; };
-  /* ---------- solucionador ---------- */
-  const key = (st) => st.cols.map((c) => c.d.length + ':' + c.u.join(',')).join('|') + '#' + st.stock.length;
-  const clone = (st) => ({ cols: st.cols.map((c) => ({ d: c.d.slice(), u: c.u.slice() })), stock: st.stock.map((r) => r.slice()), done: st.done });
-  function fix(st, i) { // quita escaleras completas y da la vuelta a la de abajo
-    const c = st.cols[i];
-    if (c.u.length >= 13) { const r = runStart(c.u); if (c.u.length - r >= 13 && Rk(c.u[c.u.length - 13]) === 13) { c.u.splice(c.u.length - 13, 13); st.done++; } }
-    if (!c.u.length && c.d.length) c.u.push(c.d.pop());
-  }
-  function genMoves(st) {
-    const out = [];
-    st.cols.forEach((c, i) => {
-      if (!c.u.length) return; const r0 = runStart(c.u);
-      for (let n = r0; n < c.u.length; n++) {
-        const x = c.u[n], below = n > 0 ? c.u[n - 1] : null;
-        if (below != null && n !== r0) continue;   // solo trozos que empiezan donde empieza la escalera… (o partidas, abajo)
-        const sitsWell = below != null && Rk(below) === Rk(x) + 1;
-        st.cols.forEach((c2, j) => {
-          if (j === i) return; const top = c2.u[c2.u.length - 1];
-          const reveals = n === 0 && c.d.length > 0;
-          if (top == null) { if (reveals || (n > 0 && !sitsWell)) out.push({ i, n, j, p: 6 }); return; }
-          if (Rk(top) !== Rk(x) + 1) return;
-          const same = S(top) === S(x);
-          if (sitsWell && !(same && S(below) !== S(x))) return;   // ya está bien colocada
-          if (!same && !reveals && n > 0) return;
-          out.push({ i, n, j, p: (same ? 0 : 3) + (reveals ? -1 : 0) });
-        });
-      }
-      // partir una escalera para dejar una carta del mismo palo encima de otra
-      for (let n = r0 + 1; n < c.u.length; n++) { const x = c.u[n]; st.cols.forEach((c2, j) => { const top = c2.u[c2.u.length - 1]; if (j !== i && top != null && Rk(top) === Rk(x) + 1 && S(top) === S(x) && S(c.u[n - 1]) !== S(x)) out.push({ i, n, j, p: 1 }); }); }
-    });
-    return out.sort((a, b) => a.p - b.p);
-  }
-  function apply(st, m) { const s = clone(st); const run = s.cols[m.i].u.splice(m.n); s.cols[m.j].u.push(...run); fix(s, m.i); fix(s, m.j); return s; }
-  function deal(st) { const s = clone(st), row = s.stock.pop(); s.cols.forEach((c, i) => { c.u.push(row[i]); }); for (let i = 0; i < NC; i++) fix(s, i); return s; }
-  function solve(st0, budget) {   // búsqueda en profundidad sin recursión
-    const seen = new Set([key(st0)]), stack = [{ st: st0, ms: null, k: 0, m: null }]; let nodes = 0;
-    while (stack.length) {
-      const top = stack[stack.length - 1];
-      if (top.st.done === 8) return stack.slice(1).map((f) => f.m);
-      if (!top.ms) { top.ms = genMoves(top.st); if (top.st.stock.length && top.st.cols.every((c) => c.u.length)) top.ms.push({ deal: true }); }
-      if (top.k >= top.ms.length || stack.length > 400) { stack.pop(); continue; }
-      const m = top.ms[top.k++], ns = m.deal ? deal(top.st) : apply(top.st, m), kk = key(ns);
-      if (seen.has(kk)) continue; seen.add(kk);
-      if (++nodes > budget) return null;
-      stack.push({ st: ns, ms: null, k: 0, m });
-    }
-    return null;
-  }
-  // barajado con semilla: los repartos de dos palos salen de semillas ya comprobadas (resolverlos al momento tarda)
-  const rng = (seed) => () => { seed |= 0; seed = (seed + 0x6d2b79f5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
-  const SEEDS2 = [4055616904,147926525,4203543429,2563011894,922480359,295853050,683129967,2084311110,831056492,204429183,2232237635,3246141861,352355708,3006791469,1753536851,2288740293,3302644519,1662112984,2676017210,796135283,1183412200,3837847961,556784891,4225124878,2584593343,317434499,2971870260,2345242951,78084107,3267723310,134586765,2789022526,909140599,3324225968,1831620958,191089423,2845525184,578366340,3620079018,874219390,3528655151,1888123616,1261496307,3676581676,395518606,782795523,3585157809,2958530500,1317998965,3106457025,212670872,1226575098,121247005,2149055457,3162959683,895800839,3550236600,2923609291,2296981982,2684258899,3698163125,804376972,952303497,3606739258,1966207723,2980111949,2740761557,860879630,1248156547,3275964999,4289869225,3663241916,769455763,2170636906,3571818049,1931286514,2945190740,2318563431,3093117265,1987789172];
-  function build(suits, r) {
-    const deck = []; for (let k = 0; k < 8; k++) for (let x = 0; x < 13; x++) deck.push((suits === 1 ? 0 : k % 2 ? 1 : 0) * 13 + x);
-    for (let i = deck.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [deck[i], deck[j]] = [deck[j], deck[i]]; }
-    let p = 0; const cols = [];
-    for (let i = 0; i < NC; i++) { const n = i < 4 ? 6 : 5; cols.push({ d: deck.slice(p, p + n - 1), u: [deck[p + n - 1]] }); p += n; }
-    const stock = []; for (let k = 0; k < 5; k++) { stock.push(deck.slice(p, p + NC)); p += NC; }
-    return { cols, stock, done: 0 };
-  }
-  function newDeal(L) {
-    const suits = L < 8 ? 1 : 2;
-    if (suits === 2 && SEEDS2.length) return { st: build(2, rng(SEEDS2[Math.floor(Math.random() * SEEDS2.length)])), suits };
-    for (let t = 0; t < 40; t++) { const st = build(suits, Math.random); if (solve(st, 30000)) return { st, suits }; }
-    return newDeal(1);
-  }
-  /* ---------- juego ---------- */
-  function geo(g) {
-    const s = g.s, W = g.W; s.cw = Math.min((W - 10) / NC - 3, 70); s.ch = s.cw * 1.45; s.gap = (W - s.cw * NC) / (NC + 1);
-    s.ty = g.top + 52; s.maxH = g.bot - 8 - s.ty; s.px = (i) => s.gap + i * (s.cw + s.gap);
-    s.btn = { x: 8, y: g.top + 6, w: 96, h: 34 }; s.stockR = { x: W - s.cw * 1.4 - 10, y: g.top + 4, w: s.cw * 1.4, h: 40 };
-  }
-  function layoutCards(g) {
-    const s = g.s, L = [];
-    s.cols.forEach((col, i) => {
-      const nd = col.d.length, nu = col.u.length, need = nd * 0.13 + Math.max(0, nu - 1) * 0.27, k = need * s.ch > s.maxH - s.ch ? (s.maxH - s.ch) / (need * s.ch) : 1;
-      let y = s.ty;
-      col.d.forEach((c, n) => { L.push({ c, id: col.ids.d[n], x: s.px(i), y, up: false, i }); y += s.ch * 0.13 * k; });
-      col.u.forEach((c, n) => { L.push({ c, id: col.ids.u[n], x: s.px(i), y, up: true, i, n }); y += s.ch * 0.27 * k; });
-    });
-    return L;
-  }
-  // cada carta lleva un id fijo para que se deslice al cambiar de sitio
-  const pushHist = (s) => { s.hist.push(JSON.stringify({ cols: s.cols, stock: s.stock, done: s.done })); if (s.hist.length > 200) s.hist.shift(); };
-  function afterMove(g, i) {
-    const s = g.s, c = s.cols[i];
-    if (c.u.length >= 13) { const r = runStart(c.u); if (c.u.length - r >= 13 && Rk(c.u[c.u.length - 13]) === 13) {
-      const removed = c.u.splice(c.u.length - 13, 13), rid = c.ids.u.splice(c.ids.u.length - 13, 13); s.done++;
-      s.flying.push({ ids: rid, cards: removed, t: 0, x0: s.px(i), y0: s.ty + s.ch, slot: s.done - 1 });
-      g.addScore(200 * Math.max(1, Math.round(g.lv / 2)), s.px(i) + s.cw / 2, s.ty + s.ch); Arcade.sfx.combo ? Arcade.sfx.combo(6) : Arcade.sfx.win();
-      if (s.done === 8 && !s.over) { s.over = true; g.confetti(90); g.addScore(1000 * g.lv, g.W / 2, g.H / 2); setTimeout(() => { if (g.state === 'play') g.win(s.undos === 0 ? 3 : s.undos <= 5 ? 2 : 1); }, 1500); }
-    } }
-    if (!c.u.length && c.d.length) { c.u.push(c.d.pop()); c.ids.u.push(c.ids.d.pop()); s.flipFx[c.ids.u[0]] = 1; Arcade.tone(700, 0.05, 'triangle', 0.05); }
-  }
-  function moveRun(g, i, n, j) {
-    const s = g.s; pushHist(s);
-    s.cols[j].u.push(...s.cols[i].u.splice(n)); s.cols[j].ids.u.push(...s.cols[i].ids.u.splice(n)); s.moves++;
-    Arcade.tone(420, 0.05, 'triangle', 0.06); afterMove(g, i); afterMove(g, j);
-  }
-  function canMove(s, i, n, j) {
-    const c = s.cols[i], x = c.u[n]; if (n < runStart(c.u) || i === j) return false;
-    const top = s.cols[j].u[s.cols[j].u.length - 1]; return top == null ? !s.cols[j].d.length : Rk(top) === Rk(x) + 1;
-  }
-  function bestDest(s, i, n) {
-    const x = s.cols[i].u[n]; let best = -1, bs = -1e9;
-    for (let j = 0; j < NC; j++) { if (!canMove(s, i, n, j)) continue; const top = s.cols[j].u[s.cols[j].u.length - 1]; const sc = top == null ? (n === 0 && !s.cols[i].d.length ? -50 : -5) : S(top) === S(x) ? 10 : 2; if (sc > bs) { bs = sc; best = j; } }
-    return best;
-  }
-  function dealRow(g) {
-    const s = g.s; if (!s.stock.length) return;
-    if (s.cols.some((c) => !c.u.length)) { g.message(Arcade.T('Llena antes las columnas vacías', 'Fill the empty columns first'), 1.2); Arcade.sfx.bad(); return; }
-    pushHist(s); const row = s.stock.pop(), ids = s.stockIds.pop();
-    s.cols.forEach((c, i) => { c.u.push(row[i]); c.ids.u.push(ids[i]); s.flipFx[ids[i]] = 1; });
-    for (let i = 0; i < NC; i++) afterMove(g, i);
-    Arcade.sfx.whoosh();
-  }
-  function undo(g) { const s = g.s, h = s.hist.pop(); if (!h || s.over) return; const o = JSON.parse(h); s.cols = o.cols; s.stock = o.stock; s.done = o.done; s.undos++; s.stockIds = s.stockIds0.slice(0, s.stock.length); Arcade.sfx.whoosh(); }
-  function hit(g, x, y) { const s = g.s, L = layoutCards(g); for (let k = L.length - 1; k >= 0; k--) { const o = L[k]; if (x >= o.x && x <= o.x + s.cw && y >= o.y && y <= o.y + s.ch) return o; } return null; }
-  function face(ctx, s, x, y, c, flipK) {
-    const w = s.cw, h = s.ch, r = w * 0.12, col = red(c) ? '#e03131' : '#212529';
-    ctx.save(); if (flipK != null && flipK < 1) { ctx.translate(x + w / 2, 0); ctx.scale(Math.max(0.05, flipK), 1); ctx.translate(-(x + w / 2), 0); }
-    ctx.fillStyle = 'rgba(0,0,0,.3)'; Arcade.rr(ctx, x + 1, y + 2, w, h, r); ctx.fill();
-    ctx.fillStyle = '#fff'; Arcade.rr(ctx, x, y, w, h, r); ctx.fill(); ctx.strokeStyle = '#ced4da'; ctx.lineWidth = 1; ctx.stroke();
-    const fs = Math.max(9, w * 0.36);
-    Arcade.txt(ctx, RANK[Rk(c)], x + w * 0.08, y + fs * 0.62, fs, col, 'left', 900);
-    Arcade.txt(ctx, SUIT[S(c)], x + w * 0.92, y + fs * 0.62, fs * 0.8, col, 'right', 900);
-    Arcade.txt(ctx, SUIT[S(c)], x + w / 2, y + h * 0.62, w * 0.6, col, 'center', 900);
-    ctx.restore();
-  }
-  function back(ctx, s, x, y) {
-    const w = s.cw, h = s.ch, r = w * 0.12; ctx.fillStyle = 'rgba(0,0,0,.3)'; Arcade.rr(ctx, x + 1, y + 2, w, h, r); ctx.fill();
-    const gr = ctx.createLinearGradient(x, y, x + w, y + h); gr.addColorStop(0, '#862e9c'); gr.addColorStop(1, '#5f3dc4'); ctx.fillStyle = gr; Arcade.rr(ctx, x, y, w, h, r); ctx.fill();
-    ctx.strokeStyle = 'rgba(255,255,255,.4)'; ctx.lineWidth = 1.2; Arcade.rr(ctx, x + 2.5, y + 2.5, w - 5, h - 5, r * 0.7); ctx.stroke();
-    ctx.fillStyle = 'rgba(255,255,255,.2)'; ctx.beginPath(); ctx.arc(x + w / 2, y + h / 2, w * 0.18, 0, 6.3); ctx.fill();
-  }
-
+  const P = Arcade.paciencia;
+  let SUITS = 1;
+  const V = {
+    decks: 2, found: { mode: 'run' }, stock: { to: 'tab', needAll: true },
+    tab: { build: 'any', move: 'run', empty: 'any' },
+    init(lv) { SUITS = lv < 8 ? 1 : 2; },
+    planHint: true, demoBudget: 600,
+    piles: () => P.mk([['stock', 1], ['found', 8], ['tab', 10]]),
+    deal: (st, D, deck) => P.dealStd(st, D, deck, { suits: SUITS, ds: ['DDDDDU', 'DDDDDU', 'DDDDDU', 'DDDDDU', 'DDDDU', 'DDDDU', 'DDDDU', 'DDDDU', 'DDDDU', 'DDDDU'] }),
+    place: (g, s, D, y0) => P.autoPlace(g, s, D, y0, {}),
+    status: (st, D) => Arcade.T('Escaleras: ', 'Runs: ') + (st.runs || 0) + '/8 · ' + P.autoStatus(st, D),
+    demoSay: Arcade.T('Escaleras del mismo palo', 'Same-suit runs'),
+    felt: ['#147a52', '#0d3b2e'], back: ['#862e9c', '#5f3dc4'], backEmoji: '🕷️',
+  };
   Arcade.game({
+    ...P(V),
     /*THEME*/ home: 'indexsolitarios.html', tag: 'Ocho escaleras del K al A', deco: ['🕷️', '🃏', '♠️', '♥️', '🕸️', '👑'], font: 'serif', bg: ['#147a52', '#0d3b2e'],
     music: { mode: 'dorian', bpm: 78, wave: 'sine', style: 'chill', root: 57 }, voice: { wave: 'sine', mul: 1.2, echo: 0.4 },
-    /*EN*/ en: { title: 'Spider', tag: 'Eight runs from K to A', help: 'Spider solitaire with two decks. Put a card on another one rank higher (a 6 on a 7, any suit). You can move several cards together if they form a <b>run of the same suit</b>. When you complete a run <b>from K down to A of one suit</b>, it leaves the table. Clear the 8 runs. <b>Tap</b> a card and it goes to the best place (or <b>drag</b> it). The deck at the top deals one card to each column (only when there are no empty columns). It starts with one suit (♠) and later uses two (♠ ♥). Every deal has been checked to have a solution.', tvHelp: 'D-pad to a card · OK moves it to the best place.', dict: { '↩️ Deshacer': '↩️ Undo', 'Escaleras: ': 'Runs: ', 'Llena antes las columnas vacías': 'Fill the empty columns first' } },
+    /*EN*/ en: { title: 'Spider', tag: 'Eight runs from K to A', help: 'Spider solitaire with two decks. Put a card on another one rank higher (a 6 on a 7, any suit). You can move several cards together if they form a <b>run of the same suit</b>. When you complete a run <b>from K down to A of one suit</b>, it leaves the table. Clear the 8 runs. <b>Tap</b> a card and it goes to the best place (or <b>drag</b> it). The deck at the top deals one card to each column (only when there are no empty columns). It starts with one suit (♠) and from level 8 uses two (♠ ♥). 💡 gives a hint, ↩️ undoes and 📖 opens the tutorial.', tvHelp: 'D-pad to a card · OK moves it to the best place.', dict: { 'Escaleras: ': 'Runs: ', 'Escaleras del mismo palo': 'Same-suit runs', 'Mazo: ': 'Stock: ' } },
     /*TV*/ tvHelp: 'Cruceta hasta una carta · OK la mueve a su mejor sitio.',
-    tv: { mode: 'tap', targets: (g) => { const s = g.s; if (!s.cols) return []; const o = layoutCards(g).filter((c) => c.up && c.n >= runStart(s.cols[c.i].u)).map((c) => ({ x: c.x, y: c.y, w: s.cw, h: c.n === s.cols[c.i].u.length - 1 ? s.ch : s.ch * 0.27 })); if (s.stock.length) o.push({ ...s.stockR, instant: true }); o.push({ ...s.btn, instant: true }); return o; } },
     id: 'arana', title: 'Araña', emoji: '🕷️', color: '#b197fc', origin: 'Spider Solitaire (Lutanho)',
-    help: 'El solitario Araña, con dos barajas. Pon una carta sobre otra de un número más (un 6 sobre un 7, de cualquier palo). Puedes mover varias juntas si forman una <b>escalera del mismo palo</b>. Cuando completas una escalera <b>del K al A de un mismo palo</b>, sale de la mesa. Quita las 8 escaleras. <b>Toca</b> una carta y va sola a su mejor sitio (o <b>arrástrala</b>). El mazo de arriba reparte una carta a cada columna (solo si no hay columnas vacías). Empieza con un palo (♠) y luego con dos (♠ ♥). Todos los repartos están comprobados: tienen solución.',
-    lives: 0, levels: 0, cap: 16,
-    /*SC*/ demo(g) {
-      const s = g.s; if (s.over || s.flying.length) return { wait: 0.4 };
-      const cur = { cols: s.cols.map((c) => ({ d: c.d.slice(), u: c.u.slice() })), stock: s.stock.map((r) => r.slice()), done: s.done };
-      if (!s.plan || s.expect !== key(cur)) { s.plan = solve(cur, 80000) || []; }
-      const m = s.plan.shift(); if (!m) return { wait: 0.5 };
-      s.expect = key(m.deal ? deal(cur) : apply(cur, m));
-      if (m.deal) return { tap: [s.stockR.x + s.stockR.w / 2, s.stockR.y + s.stockR.h / 2], after: 0.5, say: Arcade.T('El mazo reparte una carta a cada columna', 'The deck deals a card to every column') };
-      const L = layoutCards(g), o = L.find((x) => x.i === m.i && x.n === m.n), tgt = s.cols[m.j], last = tgt.u.length ? L.find((x) => x.i === m.j && x.n === tgt.u.length - 1) : { x: s.px(m.j), y: s.ty - s.ch * 0.3 };
-      return { drag: [[o.x + s.cw / 2, o.y + 8], [last.x + s.cw / 2, last.y + s.ch * 0.6]], dur: 0.45, after: 0.25, say: s.moves ? null : Arcade.T('Ordena del K al A del mismo palo', 'Build from K to A in one suit') };
-    },
-    setup(g) {
-      const { st, suits } = newDeal(g.lv); let id = 0;
-      const cols = st.cols.map((c) => ({ d: c.d, u: c.u, ids: { d: c.d.map(() => id++), u: c.u.map(() => id++) } }));
-      const stockIds = st.stock.map((r) => r.map(() => id++));
-      g.s = { cols, stock: st.stock, stockIds, stockIds0: stockIds.map((r) => r.slice()), suits, done: 0, hist: [], undos: 0, moves: 0, flipFx: {}, objs: {}, flying: [], over: false };
-      geo(g);
-    },
-    layout(g) { if (g.s.cols) geo(g); },
-    down(g, p) {
-      const s = g.s; if (s.over) return; s.drag = null;
-      const b = s.btn, k = s.stockR; if (p.x >= b.x && p.x <= b.x + b.w && p.y >= b.y && p.y <= b.y + b.h) { s.tapBtn = 'undo'; return; }
-      if (p.x >= k.x && p.x <= k.x + k.w && p.y >= k.y && p.y <= k.y + k.h) { s.tapBtn = 'deal'; return; }
-      const o = hit(g, p.x, p.y); if (!o || !o.up || o.n < runStart(s.cols[o.i].u)) { s.tapBtn = null; return; }
-      s.drag = { o, dx: p.x - o.x, dy: p.y - o.y, x: p.x, y: p.y, moved: false };
-    },
-    move(g, p) { const d = g.s.drag; if (!d) return; d.x = p.x; d.y = p.y; if (Math.hypot(p.x - p.sx, p.y - p.sy) > 12) d.moved = true; },
-    up(g, p) {
-      const s = g.s, d = s.drag; s.drag = null;
-      if (s.tapBtn) { const t = s.tapBtn; s.tapBtn = null; if (t === 'undo') undo(g); else dealRow(g); return; }
-      if (!d) return; const o = d.o;
-      if (d.moved) { const j = s.cols.findIndex((_, k) => p.x >= s.px(k) - s.gap / 2 && p.x <= s.px(k) + s.cw + s.gap / 2); if (j >= 0 && canMove(s, o.i, o.n, j)) moveRun(g, o.i, o.n, j); else Arcade.sfx.bad(); return; }
-      const j = bestDest(s, o.i, o.n); if (j >= 0) moveRun(g, o.i, o.n, j); else { Arcade.sfx.bad(); s.wob = { id: o.id, t: 0.4 }; }
-    },
-    key(g, k, d) { if (d && (k === 'z' || k === 'Backspace')) undo(g); },
-    update(g, dt) {
-      const s = g.s; if (!s.cols) return;
-      for (const k in s.flipFx) { s.flipFx[k] -= dt * 4; if (s.flipFx[k] <= 0) delete s.flipFx[k]; }
-      for (const f of s.flying) f.t += dt; s.flying = s.flying.filter((f) => f.t < 1.2);
-      if (s.wob) { s.wob.t -= dt; if (s.wob.t <= 0) s.wob = null; }
-    },
-    draw(g, ctx) {
-      const s = g.s, W = g.W, H = g.H;
-      const bg = ctx.createRadialGradient(W / 2, H * 0.4, 30, W / 2, H / 2, Math.max(W, H) * 0.8); bg.addColorStop(0, '#1a9a68'); bg.addColorStop(1, '#0d3b2e');
-      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
-      if (!s.cols) return;
-      for (let i = 0; i < NC; i++) { ctx.strokeStyle = 'rgba(255,255,255,.18)'; ctx.lineWidth = 1.5; Arcade.rr(ctx, s.px(i), s.ty, s.cw, s.ch, s.cw * 0.12); ctx.stroke(); }
-      const L = layoutCards(g), d = s.drag && s.drag.moved ? s.drag : null, dragIds = new Set();
-      if (d) s.cols[d.o.i].ids.u.slice(d.o.n).forEach((x) => dragIds.add(x));
-      const one = (o, x, y) => { if (o.up) face(ctx, s, x + (s.wob && s.wob.id === o.id ? Math.sin(s.wob.t * 40) * 3 : 0), y, o.c, s.flipFx[o.id] != null ? 1 - s.flipFx[o.id] : null); else back(ctx, s, x, y); };
-      for (const o of L) { if (dragIds.has(o.id)) continue; const ob = s.objs[o.id] || (s.objs[o.id] = {}), [x, y] = Arcade.glide(ob, o.x, o.y, 18); one(o, x, y); }
-      if (d) { let k = 0; for (const o of L) if (dragIds.has(o.id)) { const x = d.x - d.dx, y = d.y - d.dy + k * s.ch * 0.27; (s.objs[o.id] || (s.objs[o.id] = {})).__gl = { x, y, a: 1, f: Arcade.fno }; one(o, x, y); k++; } }
-      // escaleras completas volando a su sitio
-      for (const f of s.flying) { const tx = 8 + f.slot * (s.cw * 0.5), ty = g.bot - s.ch - 6; f.cards.forEach((c, k) => { const t = Math.min(1, Math.max(0, f.t * 1.4 - k * 0.04)), e = t * t * (3 - 2 * t); face(ctx, s, f.x0 + (tx - f.x0) * e, f.y0 + k * 6 * (1 - e) + (ty - f.y0) * e, c); }); }
-      // mazo y botones
-      for (let k = 0; k < s.stock.length; k++) back(ctx, s, s.stockR.x + k * 4, s.stockR.y + 2);
-      const b = s.btn; ctx.fillStyle = 'rgba(0,0,0,.25)'; Arcade.rr(ctx, b.x, b.y, b.w, b.h, 10); ctx.fill(); Arcade.txt(ctx, '↩️ Deshacer', b.x + b.w / 2, b.y + b.h / 2, 13, '#fff', 'center', 800);
-      Arcade.txt(ctx, 'Escaleras: ' + s.done + '/8', W / 2, g.top + 22, 14, '#d3f9d8', 'center', 900);
-    },
+    help: 'El solitario Araña, con dos barajas. Pon una carta sobre otra de un número más (un 6 sobre un 7, de cualquier palo). Puedes mover varias juntas si forman una <b>escalera del mismo palo</b>. Cuando completas una escalera <b>del K al A de un mismo palo</b>, sale de la mesa. Quita las 8 escaleras. <b>Toca</b> una carta y va sola a su mejor sitio (o <b>arrástrala</b>). El mazo de arriba reparte una carta a cada columna (solo si no hay columnas vacías). Empieza con un palo (♠) y desde el nivel 8 con dos (♠ ♥). 💡 te da una pista, ↩️ deshace y 📖 abre el tutorial.',
+    lives: 0, levels: 0, cap: 20,
   });
 })();
 </script>
