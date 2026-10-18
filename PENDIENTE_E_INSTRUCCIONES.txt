@@ -161,6 +161,8 @@ o con herramientas/arcade.php. No hay archivos JSON de configuración.
      Arcade.FOES / Arcade.foe(n). Lo que se mueva, dibújalo con Arcade.emojiTo(ctx, e, x, y, tam, dx, dy) y, si el emoji
      es nuevo, añade hacia dónde mira en Arcade.FACING (common.js). El pad virtual 🎮 sale solo si el juego tiene key()
      o tv.targets (pad: false para quitarlo).
+   · La demo es guiada: sus textos salen de las primeras frases de help (sin las de 💡, ↩️, niveles…) y de los say
+     de cada paso; escribe help con frases cortas, una regla por frase.
    · Demo: añade demo(g) que devuelva pasos ({ tap }, { drag }, { swipe }, { hold }, { key }, { wait }, con say/after);
      ver pwa/README.md («Demo automática»). Pruébala con el botón 👀 Ver demo: debería jugar con sentido y explicar
      la mecánica con 1–3 frases cortas.

@@ -603,7 +603,7 @@
       let top = rs.length ? Math.min(...rs.map((r) => r.y)) : g.H / 2, bot = rs.length ? Math.max(...rs.map((r) => r.y + r.h)) : g.H / 2;
       let y = bot + 12 + bh < g.bot ? bot + 12 : top - 12 - bh > g.top ? top - 12 - bh : g.bot - bh - 8;
       const x = (W - bw) / 2;
-      return { x, y, w: bw, h: bh, lines, size, rs, pad, next: { x: x + bw - 132, y: y + bh - 44, w: 120, h: 34 }, skip: { x: x + 12, y: y + bh - 44, w: 100, h: 34 } };
+      return { x, y, w: bw, h: bh, lines, size, rs, pad, next: { x: x + bw - 132, y: y + bh - 44, w: 120, h: 34 }, skip: { x: x + 12, y: y + bh - 44, w: tu.guided ? 70 : 100, h: 34 }, auto: tu.guided ? { x: x + 88, y: y + bh - 44, w: 100, h: 34 } : null };
     }
     function drawTut(g, ctx) {
       const s = g.s, tu = s.tut; if (!tu) return; tu.t += A.fdt;
@@ -621,7 +621,7 @@
       const gd = tu.guided;
       A.txt(ctx, gd ? (last ? T('Ver jugada ▶', 'Show me ▶') : T('Siguiente ▶', 'Next ▶')) : last ? T('¡A jugar!', "Let's play!") : T('Siguiente ▶', 'Next ▶'), b.next.x + b.next.w / 2, b.next.y + b.next.h / 2, 15, '#2a2100', 'center', 900);
       if (!last || gd) A.txt(ctx, gd ? T('Salir', 'Exit') : T('Saltar', 'Skip'), b.skip.x + b.skip.w / 2, b.skip.y + b.skip.h / 2, 14, '#868e96', 'center', 800);
-      if (gd) A.txt(ctx, '👀 DEMO', b.x + 16, b.y + 14, 12, '#e8590c', 'left', 900);
+      if (gd) { A.txt(ctx, '👀 DEMO', b.x + 16, b.y + 14, 12, '#e8590c', 'left', 900); ctx.strokeStyle = '#ced4da'; ctx.lineWidth = 2; A.rr(ctx, b.auto.x, b.auto.y, b.auto.w, b.auto.h, 17); ctx.stroke(); A.txt(ctx, '▶▶ Auto', b.auto.x + b.auto.w / 2, b.auto.y + b.auto.h / 2, 14, '#495057', 'center', 900); }
       ctx.globalAlpha = 1;
     }
     function tutTap(g, p) {
@@ -681,9 +681,9 @@
 
     return {
       lives: 0, levels: 0, cap: 20, demoTime: 3600,
-      demoQuiet: (g) => SHOTM ? false : g.s && g.s.tut && g.s.tut.guided ? 'all' : true,
-      demoTap(g, x, y) { const s = g.s; if (!s || !s.tut || !s.tut.guided) return !!(s && s.D && !s.done); const b = tutBox(g), inR = (r) => x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h; if (inR(b.skip)) return guideNext(g, true); return guideNext(g); },
-      demoKey(g, k) { const s = g.s; if (k === 'BACK' || k === 'Escape' || k === 'Backspace') { if (s && s.tut && s.tut.guided) guideNext(g, true); return false; } if (s && s.tut && s.tut.guided && (k === 'OK' || k === 'Enter' || k === ' ' || k === 'ArrowRight')) return guideNext(g); return true; },
+      demoQuiet: (g) => SHOTM || g.demoAuto ? false : g.s && g.s.tut && g.s.tut.guided ? 'all' : true,
+      demoTap(g, x, y) { const s = g.s; if (g.demoAuto) return false; if (!s || !s.tut || !s.tut.guided) return !!(s && s.D && !s.done); const b = tutBox(g), inR = (r) => x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h; if (inR(b.skip)) return guideNext(g, true); if (b.auto && inR(b.auto)) { g.demoAuto = true; s.tut = null; s.hl = null; s.dgReady = true; return true; } return guideNext(g); },
+      demoKey(g, k) { const s = g.s; if (k === 'BACK' || k === 'Escape' || k === 'Backspace') { if (s && s.tut && s.tut.guided) guideNext(g, true); return false; } if (s && s.tut && s.tut.guided && k === 'ArrowRight') { g.demoAuto = true; s.tut = null; s.hl = null; s.dgReady = true; return true; } if (s && s.tut && s.tut.guided && (k === 'OK' || k === 'Enter' || k === ' ')) return guideNext(g); return !g.demoAuto; },
       setup(g) {
         const { D, st } = newDeal(g);
         g.s = { D, st, hist: [], undos: 0, hints: 0, moves: 0, seen: new Set([vkey(st)]), sel: null, done: false, objs: {}, drag: null, stuck: false, pend: 0 };
@@ -782,7 +782,7 @@
       demo(g) {
         const s = g.s; if (!s.D || s.done) return { wait: 0.5 };
         const m = hint(g); if (!m) return { wait: 1 };
-        if (!SHOTM) return guidedDemo(g, m);
+        if (!SHOTM && !g.demoAuto) return guidedDemo(g, m);
         const say = s.moves === 0 && V.demoSay ? V.demoSay : null;
         if (m.stock) { const i = kinds(s.D, 'stock')[0]; return { tap: center(g, i, s.st.p[i].length - 1), after: 0.35, say }; }
         if (m.rdl) { const b = s.btns.find((q) => q.id === 'rdl'); return { tap: [b.x + b.w / 2, b.y + b.h / 2], after: 0.5, say }; }

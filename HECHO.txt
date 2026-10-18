@@ -1,6 +1,11 @@
 ARCADE PERDIDO + ARCADE PRO — LO QUE ESTÁ HECHO
 ================================================
-Fecha: 18-10-2026 · Versión de la PWA (games.js → ARCADE_VERSION): 2.27.1
+Fecha: 18-10-2026 · Versión de la PWA (games.js → ARCADE_VERSION): 2.28.0
+· v2.28.0: demo guiada en todos los juegos (common.js). Al pulsar «👀 Ver demo» sale un texto corto de cómo se juega
+  (las frases de la ayuda del juego, o el texto de cada paso de su demo) con «Salir», «▶▶ Auto» y «Ver ▶»; mientras se
+  lee, la partida se congela. Con «Ver ▶» se juega despacio unos segundos y vuelve a parar con la siguiente regla;
+  acabadas las reglas sigue sola. «▶▶ Auto» la deja seguir sola y más rápida hasta el final o hasta que se toque la
+  pantalla. En los solitarios, «▶▶ Auto» está en su propia caja. Mando: OK = Ver, → = Auto, Atrás = Salir.
 · v2.27.1: la demo de los solitarios es guiada: antes de cada jugada sale un texto corto que la explica («Pon el 8♠
   sobre el 9♦: uno menos y de otro color. Así se destapa una carta.») con las cartas iluminadas y los botones «Ver
   jugada ▶» / «Salir»; luego la jugada se hace despacio. La primera vez dice el objetivo. common.js admite demos

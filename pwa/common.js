@@ -765,9 +765,22 @@
        Si no lo define, se usa una demo genérica según sus controles. */
     const SHOT = /[?&]shot=1/.test(location.search);   // herramientas/arcade.php capturas
     const DM = { q: [], cur: null, fx: 0, fy: 0, press: 0, say: null, sayT: 0, t: 0, p: null };
+    /* demo guiada: primero un texto corto (de la ayuda del juego o del paso de la demo) y «Ver ▶»; la partida se congela
+       mientras se lee y luego se juega despacio. «▶▶ Auto» la deja seguir sola y más rápida hasta el final.
+       Los juegos con su propia demo guiada (def.demoTap, p. ej. los solitarios) pintan y gestionan sus textos. */
+    const CUSTOM = !!def.demoTap;
+    Object.defineProperty(g, 'demoAuto', { get() { return DM.auto; }, set(v) { DM.auto = !!v; if (v) DM.pause = null; } });
+    function helpSentences() {
+      const txt = (s) => String(s || '').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+      const out = [];
+      if (TV && def.tvHelp) out.push(txt(def.tvHelp));
+      for (const x of txt(def.help).split(/(?<=[.!?])\s+/)) { if (!x || /[↩💡📖⭐]|nivel|level|estrella|star|record|récord/i.test(x) || x.length > 170) continue; out.push(x); if (out.length >= 4) break; }
+      return out;
+    }
     function startDemo() {
       g.mp = null; g.level = 1; g.score = 0; g.lives = def.lives ?? 3; g.t = 0; g.demoOn = true;
-      Object.assign(DM, { end: false, said: false, q: [], cur: null, fx: g.W / 2, fy: g.bot - 40, press: 0, say: null, sayT: 0, t: 0, p: null });
+      Object.assign(DM, { end: false, said: false, q: [], cur: null, fx: g.W / 2, fy: g.bot - 40, press: 0, say: null, sayT: 0, t: 0, p: null, auto: SHOT, pause: null, chunkT: 0, lastPause: null, btns: null });
+      if (!SHOT && !CUSTOM) { DM.sent = helpSentences(); DM.si = 1; DM.pause = { text: DM.sent[0] || T('Mira cómo se juega.', 'Watch how to play.') }; }
       begin(); if (def.onStart) def.onStart(g);
     }
     function endDemo() { if (!g.demoOn) return; g.demoOn = false; if (DM.p) { g.pointers.delete(DM.p.id); DM.p = null; } menu(); }
@@ -814,10 +827,19 @@
     }
     function updDemo(dt) {
       if (g.state !== 'play') return;
+      if (DM.pause) return;   // leyendo el texto: todo quieto
+      const manual = !DM.auto && !CUSTOM;
+      if (manual) { DM.chunkT += dt; dt *= 0.6; }   // guiada: el dedo va más despacio
       DM.press = Math.max(0, DM.press - (DM.p ? 0 : dt * 4)); if (DM.sayT > 0) DM.sayT -= dt;
-      DM.t += dt; if (!DM.end && DM.t > (def.demoTime || 45)) { DM.end = true; if (DM.p) dUp(false); g.message(T('Fin de la demo', 'End of demo'), 1.2); setTimeout(() => endDemo(), 1300); }
+      DM.t += dt; if (!DM.end && DM.t > (def.demoTime || 60)) { DM.end = true; if (DM.p) dUp(false); g.message(T('Fin de la demo', 'End of demo'), 1.2); setTimeout(() => endDemo(), 1300); }
       if (DM.end) return;
-      if (!DM.cur) { if (!DM.q.length) demoNext(); DM.cur = DM.q.shift(); if (!DM.cur) return; const c = DM.cur; c.ph = 'go'; c.t = 0; if (c.say) g.demoSay(c.say);
+      if (manual && !DM.cur && DM.chunkT > 5.5) {   // cada pocos segundos, la siguiente regla de la ayuda
+        DM.chunkT = 0; const nx = DM.sent && DM.sent[DM.si];
+        if (nx) { DM.si++; DM.pause = { text: nx }; return; }
+        DM.auto = true; g.demoSay(T('▶▶ Ahora sigue sola', '▶▶ Now it plays by itself'), 2.5);
+      }
+      if (!DM.cur) { if (!DM.q.length) demoNext(); DM.cur = DM.q.shift(); if (!DM.cur) return; const c = DM.cur; c.ph = 'go'; c.t = 0;
+        if (c.say) { const s2 = A.L(String(c.say)); if (manual && s2 !== DM.lastPause && DM.chunkT > 2) { DM.lastPause = s2; DM.pause = { text: s2 }; DM.chunkT = 0; } else g.demoSay(c.say); }
         if (c.swipe) { const [x, y, dir] = c.swipe, L = c.len || 90, D = { left: [-1, 0], right: [1, 0], up: [0, -1], down: [0, 1] }[dir]; c.drag = [[x, y], [x + D[0] * L, y + D[1] * L]]; c.dur = c.dur || 0.16; }
         c.at = c.tap || c.hold || (c.drag && c.drag[0]) || null; }
       const c = DM.cur; c.t += dt;
@@ -840,8 +862,26 @@
       }
       if (c.ph === 'rest' && c.t >= c.rest) DM.cur = null;
     }
+    function wrapLines(text, maxW, size) { ctx.font = '700 ' + size + 'px ' + A.FONT; const ws = String(text).split(' '), L = []; let cur = ''; for (const w of ws) { const t2 = cur ? cur + ' ' + w : w; if (ctx.measureText(t2).width > maxW && cur) { L.push(cur); cur = w; } else cur = t2; } if (cur) L.push(cur); return L; }
+    function drawPause() {
+      const bw = Math.min(g.W - 24, 470), size = g.W < 420 ? 15 : 17, lines = wrapLines(DM.pause.text, bw - 32, size), bh = 40 + lines.length * size * 1.35 + 56;
+      const x = (g.W - bw) / 2, y = Math.max(g.top + 8, g.bot - bh - 18);
+      ctx.fillStyle = 'rgba(10,8,30,.45)'; ctx.fillRect(0, 0, g.W, g.H);
+      ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.4)'; ctx.shadowBlur = 18; ctx.fillStyle = '#fffdf5'; A.rr(ctx, x, y, bw, bh, 16); ctx.fill(); ctx.restore();
+      A.txt(ctx, '👀 ' + T('DEMO · así se juega', 'DEMO · how to play'), x + 16, y + 18, 12, '#e8590c', 'left', 900);
+      lines.forEach((ln, n) => A.txt(ctx, ln, x + 16, y + 40 + n * size * 1.35 + size * 0.2, size, '#212529', 'left', 700));
+      const by = y + bh - 46, bwid = Math.min(130, (bw - 40) / 3);
+      DM.btns = { exit: { x: x + 10, y: by, w: bwid * 0.75, h: 36 }, auto: { x: x + bw / 2 - bwid / 2 + 8, y: by, w: bwid, h: 36 }, go: { x: x + bw - bwid - 12, y: by, w: bwid, h: 36 } };
+      const B = DM.btns;
+      A.txt(ctx, T('Salir', 'Exit'), B.exit.x + B.exit.w / 2, B.exit.y + 18, 14, '#868e96', 'center', 800);
+      ctx.strokeStyle = '#ced4da'; ctx.lineWidth = 2; A.rr(ctx, B.auto.x, B.auto.y, B.auto.w, B.auto.h, 18); ctx.stroke(); A.txt(ctx, '▶▶ ' + T('Auto', 'Auto'), B.auto.x + B.auto.w / 2, B.auto.y + 18, 14, '#495057', 'center', 900);
+      ctx.fillStyle = '#ffd43b'; A.rr(ctx, B.go.x, B.go.y, B.go.w, B.go.h, 18); ctx.fill(); A.txt(ctx, T('Ver ▶', 'Show me ▶'), B.go.x + B.go.w / 2, B.go.y + 18, 15, '#2a2100', 'center', 900);
+    }
+    function demoPauseAct(a) { if (a === 'exit') return endDemo(); if (a === 'auto') { DM.auto = true; DM.pause = null; g.demoSay(T('▶▶ Automática · toca para salir', '▶▶ Auto · tap to exit'), 2.5); return; } DM.pause = null; DM.chunkT = 0; }
+    function demoPauseTap(px, py) { const B = DM.btns, inR = (r) => r && px >= r.x && px <= r.x + r.w && py >= r.y && py <= r.y + r.h; demoPauseAct(inR(B && B.exit) ? 'exit' : inR(B && B.auto) ? 'auto' : 'go'); }
     function drawDemo() {
       if (SHOT) return;   // captura para la web: sin dedo ni rótulos
+      if (DM.pause && !CUSTOM) return drawPause();
       const sz = 46, pr = DM.press;
       if (def.demoQuiet && def.demoQuiet(g) === 'all') return;   // pausa de una demo guiada: ni dedo ni rótulos
       if (pr > 0) { ctx.globalAlpha = 0.5 * pr; ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(DM.fx, DM.fy, 14 + (1 - pr) * 18, 0, TAU); ctx.stroke(); ctx.globalAlpha = 1; }
@@ -850,7 +890,7 @@
       const y = g.top + 4, bw = 86, blink = 0.75 + 0.25 * Math.sin(g.rt * 4);
       ctx.globalAlpha = blink; ctx.fillStyle = 'rgba(0,0,0,.6)'; A.rr(ctx, g.W - bw - 8, y, bw, 24, 12); ctx.fill();
       A.txt(ctx, '👀 DEMO', g.W - 8 - bw / 2, y + 12, 13, '#ffd43b', 'center', 900); ctx.globalAlpha = 1;
-      const say = DM.say && DM.sayT > 0 ? DM.say : T('Toca la pantalla para jugar tú', 'Tap the screen to play yourself'), a = DM.say && DM.sayT > 0 ? Math.min(1, DM.sayT * 3) : 0.75;
+      const say = DM.say && DM.sayT > 0 ? DM.say : DM.auto ? T('▶▶ Automática · toca para salir', '▶▶ Auto · tap to exit') : T('Mirando… (⏸ para salir)', 'Watching… (⏸ to exit)'), a = DM.say && DM.sayT > 0 ? Math.min(1, DM.sayT * 3) : 0.75;
       ctx.globalAlpha = a; ctx.font = '800 15px ' + A.FONT; const w = Math.min(g.W - 24, ctx.measureText(say).width + 30), yy = g.bot - 54;
       ctx.fillStyle = 'rgba(0,0,0,.72)'; A.rr(ctx, g.W / 2 - w / 2, yy, w, 34, 17); ctx.fill(); A.txt(ctx, say, g.W / 2, yy + 17, 15, '#fff', 'center', 800); ctx.globalAlpha = 1;
     }
@@ -913,7 +953,10 @@
     /* --- entrada táctil --- */
     canvas.addEventListener('pointerdown', (e) => {
       actx(); e.preventDefault();
-      if (g.demoOn) { if (def.demoTap && g.state === 'play' && def.demoTap(g, e.clientX, e.clientY)) return; endDemo(); return; }   // demoTap: demos guiadas con botones
+      if (g.demoOn) {
+        if (!CUSTOM && g.state === 'play' && !SHOT) { if (DM.pause) { demoPauseTap(e.clientX, e.clientY); return; } if (!DM.auto) return; }
+        if (def.demoTap && g.state === 'play' && def.demoTap(g, e.clientX, e.clientY)) return; endDemo(); return;
+      }   // demoTap: demos guiadas con botones
       try { canvas.setPointerCapture(e.pointerId); } catch (_) {}
       const p = { id: e.pointerId, x: e.clientX, y: e.clientY, sx: e.clientX, sy: e.clientY, t0: performance.now(), type: e.pointerType };
       g.pointers.set(e.pointerId, p);
@@ -1071,7 +1114,9 @@
     }
     const held = new Set();
     window.addEventListener('keydown', (e) => {
-      if (g.demoOn && g.state === 'play') { e.preventDefault(); if (def.demoKey && def.demoKey(g, keyName(e))) return; endDemo(); return; }
+      if (g.demoOn && g.state === 'play') { e.preventDefault(); const kn = keyName(e);
+        if (!CUSTOM && !SHOT) { if (DM.pause) { demoPauseAct(kn === 'BACK' || kn === 'Escape' || kn === 'Backspace' ? 'exit' : kn === 'ArrowRight' ? 'auto' : 'go'); return; } if (!DM.auto && kn !== 'BACK' && kn !== 'Escape' && kn !== 'Backspace') return; }
+        if (def.demoKey && def.demoKey(g, kn)) return; endDemo(); return; }
       const k = keyName(e);
       if (TV) {
         const nav = k.startsWith('Arrow') || k === 'OK' || k === 'BACK' || k === ' ';
@@ -1184,7 +1229,7 @@
       if (g.state === 'play') updFace(dt);
       if (g.demoOn) updDemo(dt);
       const live = g.state === 'play' || g.state === 'dying';
-      if (g.state === 'play') { g.lt = (g.lt || 0) + dt; const sdt = dt * g.speed; g.t += sdt; def.update(g, sdt); }
+      if (g.state === 'play' && !(g.demoOn && DM.pause)) { g.lt = (g.lt || 0) + dt; const sdt = dt * g.speed; g.t += sdt; def.update(g, sdt); }
       updAmbient(dt);
       if (live || g.state === 'win' || g.state === 'over' || g.state === 'final') {
         for (const p of g.parts) { p.life -= dt; p.vy += p.grav * dt; p.x += p.vx * dt; p.y += p.vy * dt; p.rot += dt * 4; }
