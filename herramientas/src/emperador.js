@@ -1,0 +1,26 @@
+// Emperador|#0a3d24
+// @cartas
+(function () {
+  const P = Arcade.paciencia;
+  const V = {
+    decks: 2,
+    tab: {"build":"alt","move":"one","empty":"any"},
+    stock: { to: 'waste', n: 1, redeals: 0 },
+    init(lv) { this.stock.redeals = 0 + (lv < 6 ? 1 : 0); },
+    piles: (lv) => P.mk([['stock', 1], ['waste', 1], ['found', 8], ['tab', 10]]),
+    deal: (st, D, deck) => P.dealStd(st, D, deck, {"ds":["DDDU","DDDU","DDDU","DDDU","DDDU","DDDU","DDDU","DDDU","DDDU","DDDU"]}),
+    place: (g, s, D, y0) => P.autoPlace(g, s, D, y0, {}),
+    status: P.autoStatus,
+    felt: ["#1b8a4c","#0a3d24"], back: ["#e67700","#8a4200"], backEmoji: '🏛️',
+  };
+  Arcade.game({
+    ...P(V),
+    /*THEME*/ home: 'indexsolitarios.html', tag: 'Fila y columna sin escaleras', deco: ["🃏","🏛️","♠️","♥️","♦️","♣️"], font: 'serif', bg: ["#1b8a4c","#0a3d24"],
+    music: { mode: 'minor', bpm: 75, wave: 'sine', style: 'chill', root: 58 }, voice: { wave: 'sine', mul: 1.2, echo: 0.4 },
+    /*EN*/ en: { title: 'Emperor', tag: 'Rank and File without runs', help: 'Like Rank and File, but only one card moves at a time. Played with <b>two decks</b>. Build the <b>8 foundations</b> from A to K, one per suit. On the table, a card goes on another <b>one rank higher</b> in the <b>other colour</b>. Move <b>one card at a time</b>. Any card can go into an empty space. Tap the stock to draw cards one at a time; it goes round only once. In the first levels you get one more pass through the stock. <b>Tap</b> a card and it goes to the best place, or <b>drag</b> it. 💡 gives a hint and ↩️ undoes.', tvHelp: 'D-pad to a card · OK moves it.', dict: { 'Celdas libres: ': 'Free cells: ', 'Reserva: ': 'Reserve: ', 'Mazo: ': 'Stock: ', 'En la mesa: ': 'On the table: ', 'Base: ': 'Base: ' } },
+    /*TV*/ tvHelp: 'Cruceta hasta una carta · OK la mueve.',
+    id: 'emperador', title: 'Emperador', emoji: '🏛️', color: '#ff6b6b', origin: 'Emperor',
+    help: 'Como Fila y columna, pero solo se mueve una carta cada vez. Se juega con <b>dos barajas</b>. Completa las <b>8 bases</b> del A a la K, una por palo. En la mesa, una carta va sobre otra de <b>un número más</b> y de <b>color distinto</b>. Se mueve <b>una carta cada vez</b>. Cualquier carta puede ir a un hueco vacío. Toca el mazo para sacar cartas de una en una; se pasa una sola vez. En los primeros niveles puedes darle una vuelta más al mazo. <b>Toca</b> una carta y va sola a su mejor sitio, o <b>arrástrala</b>. 💡 te da una pista y ↩️ deshace.',
+    lives: 0, levels: 0, cap: 20,
+  });
+})();

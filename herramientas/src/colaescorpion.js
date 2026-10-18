@@ -1,0 +1,26 @@
+// Cola de escorpión|#08254a
+// @cartas
+(function () {
+  const P = Arcade.paciencia;
+  const V = {
+    found: {"mode":"run","run":"alt"},
+    tab: {"build":"alt","move":"any","empty":"K"},
+    stock: { to: 'tab', cols: 3 },
+    planHint: true, demoBudget: 1200,
+    piles: (lv) => P.mk([['stock', 1], ['found', 4], ['tab', 7]]),
+    deal: (st, D, deck) => P.dealStd(st, D, deck, {"ds":["DDDUUUU","DDDUUUU","DDDUUUU","DDDUUUU","UUUUUUU","UUUUUUU","UUUUUUU"]}),
+    place: (g, s, D, y0) => P.autoPlace(g, s, D, y0, {}),
+    status: P.autoStatus,
+    felt: ["#1864ab","#08254a"], back: ["#2b8a3e","#0b4a1c"], backEmoji: '🦂',
+  };
+  Arcade.game({
+    ...P(V),
+    /*THEME*/ home: 'indexsolitarios.html', tag: 'Escorpión alternando colores', deco: ["🃏","🦂","♠️","♥️","♦️","♣️"], font: 'serif', bg: ["#1864ab","#08254a"],
+    music: { mode: 'lydian', bpm: 76, wave: 'sine', style: 'chill', root: 61 }, voice: { wave: 'sine', mul: 1.2, echo: 0.4 },
+    /*EN*/ en: { title: 'Scorpion Tail', tag: 'Scorpion in alternating colours', help: 'Like Scorpion, but you build down in alternating colours and the K-to-A runs alternate too. Make <b>complete runs from K down to A in alternating colours</b>: each one you finish goes up to the foundations by itself. On the table, a card goes on another <b>one rank higher</b> in the <b>other colour</b>. You can move <b>any face-up card with everything on top of it</b>, even if it is not in order. An empty space only takes a K. Tap the stock to deal one card to each of the first 3 columns. <b>Tap</b> a card and it goes to the best place, or <b>drag</b> it. 💡 gives a hint and ↩️ undoes.', tvHelp: 'D-pad to a card · OK moves it.', dict: { 'Celdas libres: ': 'Free cells: ', 'Reserva: ': 'Reserve: ', 'Mazo: ': 'Stock: ', 'En la mesa: ': 'On the table: ', 'Base: ': 'Base: ' } },
+    /*TV*/ tvHelp: 'Cruceta hasta una carta · OK la mueve.',
+    id: 'colaescorpion', title: 'Cola de escorpión', emoji: '🦂', color: '#4dabf7', origin: 'Scorpion Tail',
+    help: 'Como el Escorpión, pero se baja alternando colores y las escaleras de la K al A también van alternando. Forma <b>escaleras completas de la K al A alternando colores</b>: cada una que termines sube sola a las bases. En la mesa, una carta va sobre otra de <b>un número más</b> y de <b>color distinto</b>. Puedes mover <b>cualquier carta boca arriba con todo lo que tiene encima</b>, aunque no esté en orden. Un hueco vacío solo admite una K. Toca el mazo para repartir una carta a cada una de las 3 primeras columnas. <b>Toca</b> una carta y va sola a su mejor sitio, o <b>arrástrala</b>. 💡 te da una pista y ↩️ deshace.',
+    lives: 0, levels: 0, cap: 20,
+  });
+})();

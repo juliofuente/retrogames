@@ -1,0 +1,24 @@
+// Saratoga|#032a33
+// @cartas
+(function () {
+  const P = Arcade.paciencia;
+  const V = {
+    tab: {"build":"alt","move":"seq","empty":"K"},
+    stock: { to: 'waste', n: 3, redeals: Infinity },
+    piles: (lv) => P.mk([['stock', 1], ['waste', 1], ['found', 4], ['tab', 7]]),
+    deal: (st, D, deck) => P.dealStd(st, D, deck, {"ds":["U","UU","UUU","UUUU","UUUUU","UUUUUU","UUUUUUU"]}),
+    place: (g, s, D, y0) => P.autoPlace(g, s, D, y0, {}),
+    status: P.autoStatus,
+    felt: ["#0b7285","#032a33"], back: ["#0c8599","#064652"], backEmoji: '🐎',
+  };
+  Arcade.game({
+    ...P(V),
+    /*THEME*/ home: 'indexsolitarios.html', tag: 'El Klondike con las cartas a la vista', deco: ["🃏","🐎","♠️","♥️","♦️","♣️"], font: 'serif', bg: ["#0b7285","#032a33"],
+    music: { mode: 'lydian', bpm: 74, wave: 'sine', style: 'chill', root: 61 }, voice: { wave: 'sine', mul: 1.2, echo: 0.4 },
+    /*EN*/ en: { title: 'Saratoga', tag: 'Klondike with the cards face up', help: 'Classic solitaire, but with every table card face up from the start: here you plan. Build the <b>4 foundations</b> from A to K, one per suit. On the table, a card goes on another <b>one rank higher</b> in the <b>other colour</b>. You can move cards together if they are already in order. An empty space only takes a K. Tap the stock to draw cards three at a time and turn it over as often as you like. <b>Tap</b> a card and it goes to the best place, or <b>drag</b> it. 💡 gives a hint and ↩️ undoes.', tvHelp: 'D-pad to a card · OK moves it.', dict: { 'Celdas libres: ': 'Free cells: ', 'Reserva: ': 'Reserve: ', 'Mazo: ': 'Stock: ', 'En la mesa: ': 'On the table: ', 'Base: ': 'Base: ' } },
+    /*TV*/ tvHelp: 'Cruceta hasta una carta · OK la mueve.',
+    id: 'saratoga', title: 'Saratoga', emoji: '🐎', color: '#3bc9db', origin: 'Saratoga / Thoughtful',
+    help: 'El solitario clásico, pero con todas las cartas de la mesa boca arriba desde el principio: aquí se piensa. Completa las <b>4 bases</b> del A a la K, una por palo. En la mesa, una carta va sobre otra de <b>un número más</b> y de <b>color distinto</b>. Puedes mover juntas las cartas que ya estén en orden. Un hueco vacío solo admite una K. Toca el mazo para sacar cartas de tres en tres y dale la vuelta las veces que quieras. <b>Toca</b> una carta y va sola a su mejor sitio, o <b>arrástrala</b>. 💡 te da una pista y ↩️ deshace.',
+    lives: 0, levels: 0, cap: 20,
+  });
+})();

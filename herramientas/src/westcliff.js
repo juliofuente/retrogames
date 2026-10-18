@@ -1,0 +1,24 @@
+// Westcliff|#0a3d24
+// @cartas
+(function () {
+  const P = Arcade.paciencia;
+  const V = {
+    tab: {"build":"alt","move":"seq","empty":"any"},
+    stock: { to: 'waste', n: 1, redeals: Infinity },
+    piles: (lv) => P.mk([['stock', 1], ['waste', 1], ['found', 4], ['tab', 10]]),
+    deal: (st, D, deck) => P.dealStd(st, D, deck, {"ds":["DDU","DDU","DDU","DDU","DDU","DDU","DDU","DDU","DDU","DDU"]}),
+    place: (g, s, D, y0) => P.autoPlace(g, s, D, y0, {}),
+    status: P.autoStatus,
+    felt: ["#1b8a4c","#0a3d24"], back: ["#e67700","#8a4200"], backEmoji: '🏖️',
+  };
+  Arcade.game({
+    ...P(V),
+    /*THEME*/ home: 'indexsolitarios.html', tag: 'El Klondike más fácil, con diez columnas', deco: ["🃏","🏖️","♠️","♥️","♦️","♣️"], font: 'serif', bg: ["#1b8a4c","#0a3d24"],
+    music: { mode: 'major', bpm: 77, wave: 'sine', style: 'chill', root: 58 }, voice: { wave: 'sine', mul: 1.2, echo: 0.4 },
+    /*EN*/ en: { title: 'Westcliff', tag: 'The easiest Klondike, with ten columns', help: 'Ten columns of three cards (only the top one face up) and the rest in the stock: a gentle Klondike to warm up. Build the <b>4 foundations</b> from A to K, one per suit. On the table, a card goes on another <b>one rank higher</b> in the <b>other colour</b>. You can move cards together if they are already in order. Any card can go into an empty space. Tap the stock to draw cards one at a time and turn it over as often as you like. <b>Tap</b> a card and it goes to the best place, or <b>drag</b> it. 💡 gives a hint and ↩️ undoes.', tvHelp: 'D-pad to a card · OK moves it.', dict: { 'Celdas libres: ': 'Free cells: ', 'Reserva: ': 'Reserve: ', 'Mazo: ': 'Stock: ', 'En la mesa: ': 'On the table: ', 'Base: ': 'Base: ' } },
+    /*TV*/ tvHelp: 'Cruceta hasta una carta · OK la mueve.',
+    id: 'westcliff', title: 'Westcliff', emoji: '🏖️', color: '#ff6b6b', origin: 'Westcliff',
+    help: 'Diez columnas de tres cartas (solo la de arriba a la vista) y el resto en el mazo: un Klondike suave para calentar. Completa las <b>4 bases</b> del A a la K, una por palo. En la mesa, una carta va sobre otra de <b>un número más</b> y de <b>color distinto</b>. Puedes mover juntas las cartas que ya estén en orden. Cualquier carta puede ir a un hueco vacío. Toca el mazo para sacar cartas de una en una y dale la vuelta las veces que quieras. <b>Toca</b> una carta y va sola a su mejor sitio, o <b>arrástrala</b>. 💡 te da una pista y ↩️ deshace.',
+    lives: 0, levels: 0, cap: 20,
+  });
+})();

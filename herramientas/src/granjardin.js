@@ -1,0 +1,24 @@
+// Gran jardín|#0b3a15
+// @cartas
+(function () {
+  const P = Arcade.paciencia;
+  const V = {
+    tab: {"build":"any","move":"one","empty":"none"},
+    redeal: P.fanRedeal(2, 3),
+    piles: (lv) => P.mk([['found', 4], ['tab', 18, { fan: 'right' }]]),
+    deal: (st, D, deck) => P.dealStd(st, D, deck, {"ds":["UUU","UUU","UUU","UUU","UUU","UUU","UUU","UUU","UUU","UUU","UUU","UUU","UUU","UUU","UUU","UUU","UUU","U"]}),
+    place: (g, s, D, y0) => P.autoPlace(g, s, D, y0, { fans: true }),
+    status: P.autoStatus,
+    felt: ["#2b8a3e","#0b3a15"], back: ["#c92a2a","#7a1010"], backEmoji: '🌻',
+  };
+  Arcade.game({
+    ...P(V),
+    /*THEME*/ home: 'indexsolitarios.html', tag: 'Abanicos de cualquier palo', deco: ["🃏","🌻","♠️","♥️","♦️","♣️"], font: 'serif', bg: ["#2b8a3e","#0b3a15"],
+    music: { mode: 'major', bpm: 90, wave: 'sine', style: 'chill', root: 55 }, voice: { wave: 'sine', mul: 1.2, echo: 0.4 },
+    /*EN*/ en: { title: 'Super Flower Garden', tag: 'Fans in any suit', help: 'Like La Belle Lucie, but you build down in any suit. Build the <b>4 foundations</b> from A to K, one per suit. On the table, a card goes on another <b>one rank higher</b> of <b>any suit</b>. Move <b>one card at a time</b>. Empty spaces are not refilled. When you get stuck, press 🔀: the table cards are gathered, shuffled and dealt again in threes (you can do it twice). <b>Tap</b> a card and it goes to the best place, or <b>drag</b> it. 💡 gives a hint and ↩️ undoes.', tvHelp: 'D-pad to a card · OK moves it.', dict: { 'Celdas libres: ': 'Free cells: ', 'Reserva: ': 'Reserve: ', 'Mazo: ': 'Stock: ', 'En la mesa: ': 'On the table: ', 'Base: ': 'Base: ' } },
+    /*TV*/ tvHelp: 'Cruceta hasta una carta · OK la mueve.',
+    id: 'granjardin', title: 'Gran jardín', emoji: '🌻', color: '#69db7c', origin: 'Super Flower Garden',
+    help: 'Como los Abanicos (La Belle Lucie), pero se baja de cualquier palo. Completa las <b>4 bases</b> del A a la K, una por palo. En la mesa, una carta va sobre otra de <b>un número más</b> de <b>cualquier palo</b>. Se mueve <b>una carta cada vez</b>. Los huecos vacíos no se rellenan. Cuando te atasques, pulsa 🔀: se recogen las cartas de la mesa, se barajan y se reparten otra vez de tres en tres (puedes hacerlo 2 veces). <b>Toca</b> una carta y va sola a su mejor sitio, o <b>arrástrala</b>. 💡 te da una pista y ↩️ deshace.',
+    lives: 0, levels: 0, cap: 20,
+  });
+})();

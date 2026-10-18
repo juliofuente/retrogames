@@ -1,0 +1,23 @@
+// Solitario ruso|#0a3d24
+// @cartas
+(function () {
+  const P = Arcade.paciencia;
+  const V = {
+    tab: {"build":"suit","move":"any","empty":"K"},
+    piles: (lv) => P.mk([['found', 4], ['tab', 7]]),
+    deal: (st, D, deck) => P.dealStd(st, D, deck, {"ds":["U","DUUUUU","DDUUUUU","DDDUUUUU","DDDDUUUUU","DDDDDUUUUU","DDDDDDUUUUU"]}),
+    place: (g, s, D, y0) => P.autoPlace(g, s, D, y0, {}),
+    status: P.autoStatus,
+    felt: ["#1b8a4c","#0a3d24"], back: ["#862e9c","#45115a"], backEmoji: '🪆',
+  };
+  Arcade.game({
+    ...P(V),
+    /*THEME*/ home: 'indexsolitarios.html', tag: 'El Yukon difícil: del mismo palo', deco: ["🃏","🪆","♠️","♥️","♦️","♣️"], font: 'serif', bg: ["#1b8a4c","#0a3d24"],
+    music: { mode: 'lydian', bpm: 83, wave: 'sine', style: 'chill', root: 58 }, voice: { wave: 'sine', mul: 1.2, echo: 0.4 },
+    /*EN*/ en: { title: 'Russian Solitaire', tag: 'The hard Yukon: same suit', help: 'Yukon\'s tough cousin: you move unsorted piles, but build down in the same suit. Build the <b>4 foundations</b> from A to K, one per suit. On the table, a card goes on another <b>one rank higher</b> of the <b>same suit</b>. You can move <b>any face-up card with everything on top of it</b>, even if it is not in order. An empty space only takes a K. <b>Tap</b> a card and it goes to the best place, or <b>drag</b> it. 💡 gives a hint and ↩️ undoes.', tvHelp: 'D-pad to a card · OK moves it.', dict: { 'Celdas libres: ': 'Free cells: ', 'Reserva: ': 'Reserve: ', 'Mazo: ': 'Stock: ', 'En la mesa: ': 'On the table: ', 'Base: ': 'Base: ' } },
+    /*TV*/ tvHelp: 'Cruceta hasta una carta · OK la mueve.',
+    id: 'ruso', title: 'Solitario ruso', emoji: '🪆', color: '#ff6b6b', origin: 'Russian Solitaire',
+    help: 'El primo difícil del Yukon: mueves montones desordenados, pero se baja del mismo palo. Completa las <b>4 bases</b> del A a la K, una por palo. En la mesa, una carta va sobre otra de <b>un número más</b> y del <b>mismo palo</b>. Puedes mover <b>cualquier carta boca arriba con todo lo que tiene encima</b>, aunque no esté en orden. Un hueco vacío solo admite una K. <b>Toca</b> una carta y va sola a su mejor sitio, o <b>arrástrala</b>. 💡 te da una pista y ↩️ deshace.',
+    lives: 0, levels: 0, cap: 20,
+  });
+})();

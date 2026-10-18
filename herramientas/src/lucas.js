@@ -1,0 +1,26 @@
+// Lucas|#3a0f47
+// @cartas
+(function () {
+  const P = Arcade.paciencia;
+  const V = {
+    decks: 2,
+    tab: {"build":"suit","move":"one","empty":"any"},
+    stock: { to: 'waste', n: 1, redeals: 0 },
+    init(lv) { this.stock.redeals = 0 + (lv < 6 ? 1 : 0); },
+    piles: (lv) => P.mk([['stock', 1], ['waste', 1], ['found', 8], ['tab', 13]]),
+    deal: (st, D, deck) => P.dealStd(st, D, deck, {"ds":["UUU","UUU","UUU","UUU","UUU","UUU","UUU","UUU","UUU","UUU","UUU","UUU","UUU"],"aces":true}),
+    place: (g, s, D, y0) => P.autoPlace(g, s, D, y0, {}),
+    status: P.autoStatus,
+    felt: ["#862e9c","#3a0f47"], back: ["#1971c2","#0b3f73"], backEmoji: '🧔',
+  };
+  Arcade.game({
+    ...P(V),
+    /*THEME*/ home: 'indexsolitarios.html', tag: 'Trece columnas y los ases puestos', deco: ["🃏","🧔","♠️","♥️","♦️","♣️"], font: 'serif', bg: ["#862e9c","#3a0f47"],
+    music: { mode: 'minor', bpm: 83, wave: 'sine', style: 'chill', root: 55 }, voice: { wave: 'sine', mul: 1.2, echo: 0.4 },
+    /*EN*/ en: { title: 'Lucas', tag: 'Thirteen columns and the aces in place', help: 'Like Forty Thieves, with thirteen columns of three cards and the aces already on the foundations. Played with <b>two decks</b>. The aces are already on the <b>foundations</b>: build them up to K by suit. On the table, a card goes on another <b>one rank higher</b> of the <b>same suit</b>. Move <b>one card at a time</b>. Any card can go into an empty space. Tap the stock to draw cards one at a time; it goes round only once. In the first levels you get one more pass through the stock. <b>Tap</b> a card and it goes to the best place, or <b>drag</b> it. 💡 gives a hint and ↩️ undoes.', tvHelp: 'D-pad to a card · OK moves it.', dict: { 'Celdas libres: ': 'Free cells: ', 'Reserva: ': 'Reserve: ', 'Mazo: ': 'Stock: ', 'En la mesa: ': 'On the table: ', 'Base: ': 'Base: ' } },
+    /*TV*/ tvHelp: 'Cruceta hasta una carta · OK la mueve.',
+    id: 'lucas', title: 'Lucas', emoji: '🧔', color: '#b197fc', origin: 'Lucas',
+    help: 'Como los Cuarenta ladrones, con trece columnas de tres cartas y los ases ya en las bases. Se juega con <b>dos barajas</b>. Los ases ya están en las <b>bases</b>: súbelas hasta la K por palo. En la mesa, una carta va sobre otra de <b>un número más</b> y del <b>mismo palo</b>. Se mueve <b>una carta cada vez</b>. Cualquier carta puede ir a un hueco vacío. Toca el mazo para sacar cartas de una en una; se pasa una sola vez. En los primeros niveles puedes darle una vuelta más al mazo. <b>Toca</b> una carta y va sola a su mejor sitio, o <b>arrástrala</b>. 💡 te da una pista y ↩️ deshace.',
+    lives: 0, levels: 0, cap: 20,
+  });
+})();

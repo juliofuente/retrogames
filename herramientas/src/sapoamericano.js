@@ -1,0 +1,27 @@
+// Sapo americano|#5a2000
+// @cartas
+(function () {
+  const P = Arcade.paciencia;
+  const V = {
+    decks: 2,
+    found: {"wrap":true},
+    tab: {"build":"suit","move":"seq","empty":"any","wrap":true,"autoFill":"res"},
+    stock: { to: 'waste', n: 1, redeals: 1 },
+    init(lv) { this.stock.redeals = 1 + (lv < 6 ? 1 : 0); },
+    piles: (lv) => P.mk([['stock', 1], ['waste', 1], ['found', 8], ['res', 1, { fan: 'none' }], ['tab', 8]]),
+    deal: (st, D, deck) => P.dealStd(st, D, deck, {"ds":["U","U","U","U","U","U","U","U"],"fbFirst":true,"res":20}),
+    place: (g, s, D, y0) => P.autoPlace(g, s, D, y0, {}),
+    status: P.autoStatus,
+    felt: ["#e8590c","#5a2000"], back: ["#862e9c","#45115a"], backEmoji: '🐸',
+  };
+  Arcade.game({
+    ...P(V),
+    /*THEME*/ home: 'indexsolitarios.html', tag: 'El Canfield de dos barajas', deco: ["🃏","🐸","♠️","♥️","♦️","♣️"], font: 'serif', bg: ["#e8590c","#5a2000"],
+    music: { mode: 'mixo', bpm: 89, wave: 'sine', style: 'chill', root: 61 }, voice: { wave: 'sine', mul: 1.2, echo: 0.4 },
+    /*EN*/ en: { title: 'American Toad', tag: 'Two-deck Canfield', help: 'An easy two-deck Canfield: a reserve of twenty cards, eight columns and building down in the same suit. Played with <b>two decks</b>. The <b>foundations</b> start at the rank of the first card dealt to them and go up by suit, wrapping after K. On the table, a card goes on another <b>one rank higher</b> of the <b>same suit</b> (and a K can go on an A). You can move cards together if they are already in order. Empty columns refill themselves from the reserve. The <b>reserve</b> has 20 cards: its top card can be played at any time. Tap the stock to draw cards one at a time; you can turn it over once. In the first levels you get one more pass through the stock. <b>Tap</b> a card and it goes to the best place, or <b>drag</b> it. 💡 gives a hint and ↩️ undoes.', tvHelp: 'D-pad to a card · OK moves it.', dict: { 'Celdas libres: ': 'Free cells: ', 'Reserva: ': 'Reserve: ', 'Mazo: ': 'Stock: ', 'En la mesa: ': 'On the table: ', 'Base: ': 'Base: ' } },
+    /*TV*/ tvHelp: 'Cruceta hasta una carta · OK la mueve.',
+    id: 'sapoamericano', title: 'Sapo americano', emoji: '🐸', color: '#ffa94d', origin: 'American Toad',
+    help: 'Un Canfield fácil con dos barajas: reserva de veinte cartas, ocho columnas y bajando del mismo palo. Se juega con <b>dos barajas</b>. Las <b>bases</b> empiezan en el número de la primera carta que sale en ellas y suben por palo, dando la vuelta tras la K. En la mesa, una carta va sobre otra de <b>un número más</b> y del <b>mismo palo</b> (y la K puede ir sobre el A). Puedes mover juntas las cartas que ya estén en orden. Las columnas vacías se rellenan solas con la reserva. La <b>reserva</b> tiene 20 cartas: su carta de arriba se puede jugar en cualquier momento. Toca el mazo para sacar cartas de una en una; puedes darle la vuelta una vez. En los primeros niveles puedes darle una vuelta más al mazo. <b>Toca</b> una carta y va sola a su mejor sitio, o <b>arrástrala</b>. 💡 te da una pista y ↩️ deshace.',
+    lives: 0, levels: 0, cap: 20,
+  });
+})();

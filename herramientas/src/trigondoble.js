@@ -1,0 +1,26 @@
+// Trigon doble|#5a0f2a
+// @cartas
+(function () {
+  const P = Arcade.paciencia;
+  const V = {
+    decks: 2,
+    tab: {"build":"suit","move":"seq","empty":"K"},
+    stock: { to: 'waste', n: 1, redeals: 1 },
+    init(lv) { this.stock.redeals = 1 + (lv < 6 ? 1 : 0); },
+    piles: (lv) => P.mk([['stock', 1], ['waste', 1], ['found', 8], ['tab', 9]]),
+    deal: (st, D, deck) => P.dealStd(st, D, deck, {"ds":["U","DU","DDU","DDDU","DDDDU","DDDDDU","DDDDDDU","DDDDDDDU","DDDDDDDDU"]}),
+    place: (g, s, D, y0) => P.autoPlace(g, s, D, y0, {}),
+    status: P.autoStatus,
+    felt: ["#d6336c","#5a0f2a"], back: ["#0c8599","#064652"], backEmoji: '🔻',
+  };
+  Arcade.game({
+    ...P(V),
+    /*THEME*/ home: 'indexsolitarios.html', tag: 'Trigon con dos barajas', deco: ["🃏","🔻","♠️","♥️","♦️","♣️"], font: 'serif', bg: ["#d6336c","#5a0f2a"],
+    music: { mode: 'minor', bpm: 82, wave: 'sine', style: 'chill', root: 55 }, voice: { wave: 'sine', mul: 1.2, echo: 0.4 },
+    /*EN*/ en: { title: 'Double Trigon', tag: 'Trigon with two decks', help: 'Trigon (same-suit Klondike) with two decks, nine columns and eight foundations. Played with <b>two decks</b>. Build the <b>8 foundations</b> from A to K, one per suit. On the table, a card goes on another <b>one rank higher</b> of the <b>same suit</b>. You can move cards together if they are already in order. An empty space only takes a K. Tap the stock to draw cards one at a time; you can turn it over once. In the first levels you get one more pass through the stock. <b>Tap</b> a card and it goes to the best place, or <b>drag</b> it. 💡 gives a hint and ↩️ undoes.', tvHelp: 'D-pad to a card · OK moves it.', dict: { 'Celdas libres: ': 'Free cells: ', 'Reserva: ': 'Reserve: ', 'Mazo: ': 'Stock: ', 'En la mesa: ': 'On the table: ', 'Base: ': 'Base: ' } },
+    /*TV*/ tvHelp: 'Cruceta hasta una carta · OK la mueve.',
+    id: 'trigondoble', title: 'Trigon doble', emoji: '🔻', color: '#faa2c1', origin: 'Double Trigon',
+    help: 'El Trigon (Klondike del mismo palo) con dos barajas, nueve columnas y ocho bases. Se juega con <b>dos barajas</b>. Completa las <b>8 bases</b> del A a la K, una por palo. En la mesa, una carta va sobre otra de <b>un número más</b> y del <b>mismo palo</b>. Puedes mover juntas las cartas que ya estén en orden. Un hueco vacío solo admite una K. Toca el mazo para sacar cartas de una en una; puedes darle la vuelta una vez. En los primeros niveles puedes darle una vuelta más al mazo. <b>Toca</b> una carta y va sola a su mejor sitio, o <b>arrástrala</b>. 💡 te da una pista y ↩️ deshace.',
+    lives: 0, levels: 0, cap: 20,
+  });
+})();

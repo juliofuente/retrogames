@@ -1,0 +1,25 @@
+// ForeCell|#08254a
+// @cartas
+(function () {
+  const P = Arcade.paciencia;
+  const V = {
+    tab: {"build":"alt","move":"one","empty":"K"},
+    supermove: true,
+    planHint: true, demoBudget: 1500,
+    piles: (lv) => P.mk([['found', 4], ['cell', 4], ['tab', 8]]),
+    deal: (st, D, deck) => P.dealStd(st, D, deck, {"ds":["UUUUUU","UUUUUU","UUUUUU","UUUUUU","UUUUUU","UUUUUU","UUUUUU","UUUUUU"],"cells":4}),
+    place: (g, s, D, y0) => P.autoPlace(g, s, D, y0, {}),
+    status: P.autoStatus,
+    felt: ["#1864ab","#08254a"], back: ["#c92a2a","#7a1010"], backEmoji: '🇸🇪',
+  };
+  Arcade.game({
+    ...P(V),
+    /*THEME*/ home: 'indexsolitarios.html', tag: 'Celdas llenas y huecos para la K', deco: ["🃏","🇸🇪","♠️","♥️","♦️","♣️"], font: 'serif', bg: ["#1864ab","#08254a"],
+    music: { mode: 'major', bpm: 70, wave: 'sine', style: 'chill', root: 61 }, voice: { wave: 'sine', mul: 1.2, echo: 0.4 },
+    /*EN*/ en: { title: 'ForeCell', tag: 'Full cells and spaces for kings', help: 'The Swedish ancestor of FreeCell: the four cells start full and only a K fits in an empty column. Build the <b>4 foundations</b> from A to K, one per suit. On the table, a card goes on another <b>one rank higher</b> in the <b>other colour</b>. Move <b>one card at a time</b>, although you can shift several in a row if you have free spaces to help. An empty space only takes a K. You have <b>4 cells</b>, each holding one card (4 start full). <b>Tap</b> a card and it goes to the best place, or <b>drag</b> it. 💡 gives a hint and ↩️ undoes.', tvHelp: 'D-pad to a card · OK moves it.', dict: { 'Celdas libres: ': 'Free cells: ', 'Reserva: ': 'Reserve: ', 'Mazo: ': 'Stock: ', 'En la mesa: ': 'On the table: ', 'Base: ': 'Base: ' } },
+    /*TV*/ tvHelp: 'Cruceta hasta una carta · OK la mueve.',
+    id: 'forecell', title: 'ForeCell', emoji: '🇸🇪', color: '#4dabf7', origin: 'ForeCell / Napoleon at St Helena',
+    help: 'El antecesor sueco de Carta libre: las cuatro celdas empiezan ocupadas y en una columna vacía solo cabe una K. Completa las <b>4 bases</b> del A a la K, una por palo. En la mesa, una carta va sobre otra de <b>un número más</b> y de <b>color distinto</b>. Se mueve <b>una carta cada vez</b>, aunque puedes pasar varias seguidas si tienes huecos libres para ayudarte. Un hueco vacío solo admite una K. Tienes <b>4 celdas</b> para guardar una carta en cada una (4 empiezan ocupadas). <b>Toca</b> una carta y va sola a su mejor sitio, o <b>arrástrala</b>. 💡 te da una pista y ↩️ deshace.',
+    lives: 0, levels: 0, cap: 20,
+  });
+})();

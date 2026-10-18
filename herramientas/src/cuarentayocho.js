@@ -1,0 +1,26 @@
+// Cuarenta y ocho|#032a33
+// @cartas
+(function () {
+  const P = Arcade.paciencia;
+  const V = {
+    decks: 2,
+    tab: {"build":"suit","move":"one","empty":"any"},
+    stock: { to: 'waste', n: 1, redeals: 1 },
+    init(lv) { this.stock.redeals = 1 + (lv < 6 ? 1 : 0); },
+    piles: (lv) => P.mk([['stock', 1], ['waste', 1], ['found', 8], ['tab', 8]]),
+    deal: (st, D, deck) => P.dealStd(st, D, deck, {"ds":["UUUUU","UUUUU","UUUUU","UUUUU","UUUUU","UUUUU","UUUUU","UUUUU"]}),
+    place: (g, s, D, y0) => P.autoPlace(g, s, D, y0, {}),
+    status: P.autoStatus,
+    felt: ["#0b7285","#032a33"], back: ["#0c8599","#064652"], backEmoji: '🎱',
+  };
+  Arcade.game({
+    ...P(V),
+    /*THEME*/ home: 'indexsolitarios.html', tag: 'Ocho columnas de cinco', deco: ["🃏","🎱","♠️","♥️","♦️","♣️"], font: 'serif', bg: ["#0b7285","#032a33"],
+    music: { mode: 'major', bpm: 72, wave: 'sine', style: 'chill', root: 61 }, voice: { wave: 'sine', mul: 1.2, echo: 0.4 },
+    /*EN*/ en: { title: 'Forty and Eight', tag: 'Eight columns of five', help: 'Eight columns of five cards and eight foundations; it seems nothing happens… until it all clicks. Played with <b>two decks</b>. Build the <b>8 foundations</b> from A to K, one per suit. On the table, a card goes on another <b>one rank higher</b> of the <b>same suit</b>. Move <b>one card at a time</b>. Any card can go into an empty space. Tap the stock to draw cards one at a time; you can turn it over once. In the first levels you get one more pass through the stock. <b>Tap</b> a card and it goes to the best place, or <b>drag</b> it. 💡 gives a hint and ↩️ undoes.', tvHelp: 'D-pad to a card · OK moves it.', dict: { 'Celdas libres: ': 'Free cells: ', 'Reserva: ': 'Reserve: ', 'Mazo: ': 'Stock: ', 'En la mesa: ': 'On the table: ', 'Base: ': 'Base: ' } },
+    /*TV*/ tvHelp: 'Cruceta hasta una carta · OK la mueve.',
+    id: 'cuarentayocho', title: 'Cuarenta y ocho', emoji: '🎱', color: '#3bc9db', origin: 'Forty and Eight',
+    help: 'Ocho columnas de cinco cartas y ocho bases; parece que no pasa nada… hasta que todo encaja. Se juega con <b>dos barajas</b>. Completa las <b>8 bases</b> del A a la K, una por palo. En la mesa, una carta va sobre otra de <b>un número más</b> y del <b>mismo palo</b>. Se mueve <b>una carta cada vez</b>. Cualquier carta puede ir a un hueco vacío. Toca el mazo para sacar cartas de una en una; puedes darle la vuelta una vez. En los primeros niveles puedes darle una vuelta más al mazo. <b>Toca</b> una carta y va sola a su mejor sitio, o <b>arrástrala</b>. 💡 te da una pista y ↩️ deshace.',
+    lives: 0, levels: 0, cap: 20,
+  });
+})();

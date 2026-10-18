@@ -1,0 +1,25 @@
+// Sir Tommy|#032a33
+// @cartas
+(function () {
+  const P = Arcade.paciencia;
+  const V = {
+    found: {"base":1,"step":1,"suit":"any"},
+    tab: {"build":"free","move":"one","empty":"any","from":["waste"]},
+    stock: { to: 'waste', n: 1, redeals: 0 },
+    piles: (lv) => P.mk([['stock', 1], ['waste', 1], ['found', 4], ['tab', 4]]),
+    deal: (st, D, deck) => P.dealStd(st, D, deck, {"ds":[]}),
+    place: (g, s, D, y0) => P.autoPlace(g, s, D, y0, {}),
+    status: P.autoStatus,
+    felt: ["#0b7285","#032a33"], back: ["#0c8599","#064652"], backEmoji: '🧐',
+  };
+  Arcade.game({
+    ...P(V),
+    /*THEME*/ home: 'indexsolitarios.html', tag: 'Cuatro descartes y nada de recolocar', deco: ["🃏","🧐","♠️","♥️","♦️","♣️"], font: 'serif', bg: ["#0b7285","#032a33"],
+    music: { mode: 'dorian', bpm: 84, wave: 'sine', style: 'chill', root: 61 }, voice: { wave: 'sine', mul: 1.2, echo: 0.4 },
+    /*EN*/ en: { title: 'Sir Tommy', tag: 'Four waste piles and no rearranging', help: 'A patience classic: each stock card goes to a foundation or to one of four waste piles, and from there it only moves to a foundation. Build the four <b>foundations</b> from A to K, regardless of suit. Draw cards from the stock one at a time: each goes to a foundation or to one of the <b>four waste piles</b> below; only the top card of a waste pile can be played. The stock goes round only once. <b>Tap</b> a card and it goes to the best place, or <b>drag</b> it. 💡 gives a hint and ↩️ undoes.', tvHelp: 'D-pad to a card · OK moves it.', dict: { 'Celdas libres: ': 'Free cells: ', 'Reserva: ': 'Reserve: ', 'Mazo: ': 'Stock: ', 'En la mesa: ': 'On the table: ', 'Base: ': 'Base: ' } },
+    /*TV*/ tvHelp: 'Cruceta hasta una carta · OK la mueve.',
+    id: 'sirtommy', title: 'Sir Tommy', emoji: '🧐', color: '#3bc9db', origin: 'Sir Tommy / Old Patience',
+    help: 'Un clásico de paciencia: cada carta del mazo va a una base o a uno de los cuatro descartes, y de ahí ya no se mueve más que a una base. Sube las cuatro <b>bases</b> del A a la K, sin importar el palo. Saca cartas del mazo de una en una: cada una va a una base o a uno de los <b>cuatro descartes</b> de abajo; de los descartes solo se juega la de arriba. El mazo se pasa una sola vez. <b>Toca</b> una carta y va sola a su mejor sitio, o <b>arrástrala</b>. 💡 te da una pista y ↩️ deshace.',
+    lives: 0, levels: 0, cap: 20,
+  });
+})();

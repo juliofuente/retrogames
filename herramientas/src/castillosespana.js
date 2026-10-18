@@ -1,0 +1,24 @@
+// Castillos en España|#16191c
+// @cartas
+(function () {
+  const P = Arcade.paciencia;
+  const V = {
+    tab: {"build":"alt","move":"one","empty":"any"},
+    supermove: true,
+    piles: (lv) => P.mk([['found', 4], ['tab', 13]]),
+    deal: (st, D, deck) => P.dealStd(st, D, deck, {"ds":["DDDU","DDDU","DDDU","DDDU","DDDU","DDDU","DDDU","DDDU","DDDU","DDDU","DDDU","DDDU","DDDU"]}),
+    place: (g, s, D, y0) => P.autoPlace(g, s, D, y0, {}),
+    status: P.autoStatus,
+    felt: ["#495057","#16191c"], back: ["#c92a2a","#7a1010"], backEmoji: '🏯',
+  };
+  Arcade.game({
+    ...P(V),
+    /*THEME*/ home: 'indexsolitarios.html', tag: 'Trece montones alternando colores', deco: ["🃏","🏯","♠️","♥️","♦️","♣️"], font: 'serif', bg: ["#495057","#16191c"],
+    music: { mode: 'lydian', bpm: 86, wave: 'sine', style: 'chill', root: 58 }, voice: { wave: 'sine', mul: 1.2, echo: 0.4 },
+    /*EN*/ en: { title: 'Castles in Spain', tag: 'Thirteen piles in alternating colours', help: 'Thirteen piles of four cards (three face down); build in alternating colours and spaces take any card. Build the <b>4 foundations</b> from A to K, one per suit. On the table, a card goes on another <b>one rank higher</b> in the <b>other colour</b>. Move <b>one card at a time</b>, although you can shift several in a row if you have free spaces to help. Any card can go into an empty space. <b>Tap</b> a card and it goes to the best place, or <b>drag</b> it. 💡 gives a hint and ↩️ undoes.', tvHelp: 'D-pad to a card · OK moves it.', dict: { 'Celdas libres: ': 'Free cells: ', 'Reserva: ': 'Reserve: ', 'Mazo: ': 'Stock: ', 'En la mesa: ': 'On the table: ', 'Base: ': 'Base: ' } },
+    /*TV*/ tvHelp: 'Cruceta hasta una carta · OK la mueve.',
+    id: 'castillosespana', title: 'Castillos en España', emoji: '🏯', color: '#adb5bd', origin: 'Castles in Spain',
+    help: 'Trece montones de cuatro cartas (tres boca abajo); se baja alternando colores y los huecos admiten cualquier carta. Completa las <b>4 bases</b> del A a la K, una por palo. En la mesa, una carta va sobre otra de <b>un número más</b> y de <b>color distinto</b>. Se mueve <b>una carta cada vez</b>, aunque puedes pasar varias seguidas si tienes huecos libres para ayudarte. Cualquier carta puede ir a un hueco vacío. <b>Toca</b> una carta y va sola a su mejor sitio, o <b>arrástrala</b>. 💡 te da una pista y ↩️ deshace.',
+    lives: 0, levels: 0, cap: 20,
+  });
+})();

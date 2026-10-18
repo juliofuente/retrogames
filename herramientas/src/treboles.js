@@ -1,0 +1,23 @@
+// Tréboles|#08254a
+// @cartas
+(function () {
+  const P = Arcade.paciencia;
+  const V = {
+    tab: {"build":"any","move":"one","empty":"none","updown":true,"max":3},
+    piles: (lv) => P.mk([['found', 4], ['tab', 18, { fan: 'right' }]]),
+    deal: (st, D, deck) => P.dealStd(st, D, deck, {"ds":["UUU","UUU","UUU","UUU","UUU","UUU","UUU","UUU","UUU","UUU","UUU","UUU","UUU","UUU","UUU","UUU","UUU","U"],"kingsBottom":true}),
+    place: (g, s, D, y0) => P.autoPlace(g, s, D, y0, { fans: true }),
+    status: P.autoStatus,
+    felt: ["#1864ab","#08254a"], back: ["#2b8a3e","#0b4a1c"], backEmoji: '☘️',
+  };
+  Arcade.game({
+    ...P(V),
+    /*THEME*/ home: 'indexsolitarios.html', tag: 'Arriba o abajo, como mucho tres', deco: ["🃏","☘️","♠️","♥️","♦️","♣️"], font: 'serif', bg: ["#1864ab","#08254a"],
+    music: { mode: 'mixo', bpm: 88, wave: 'sine', style: 'chill', root: 61 }, voice: { wave: 'sine', mul: 1.2, echo: 0.4 },
+    /*EN*/ en: { title: 'Shamrocks', tag: 'Up or down, three at most', help: 'Eighteen fans where you build up or down in any suit, but each fan holds three cards at most. Kings start at the bottom. Build the <b>4 foundations</b> from A to K, one per suit. On the table, a card goes on another <b>one rank higher or lower</b> of <b>any suit</b>. Move <b>one card at a time</b>. Each pile holds 3 cards at most. Empty spaces are not refilled. <b>Tap</b> a card and it goes to the best place, or <b>drag</b> it. 💡 gives a hint and ↩️ undoes.', tvHelp: 'D-pad to a card · OK moves it.', dict: { 'Celdas libres: ': 'Free cells: ', 'Reserva: ': 'Reserve: ', 'Mazo: ': 'Stock: ', 'En la mesa: ': 'On the table: ', 'Base: ': 'Base: ' } },
+    /*TV*/ tvHelp: 'Cruceta hasta una carta · OK la mueve.',
+    id: 'treboles', title: 'Tréboles', emoji: '☘️', color: '#4dabf7', origin: 'Shamrocks',
+    help: 'Dieciocho abanicos donde se sube o se baja de cualquier palo, pero cada abanico tiene como mucho tres cartas. Las K empiezan al fondo. Completa las <b>4 bases</b> del A a la K, una por palo. En la mesa, una carta va sobre otra de <b>un número más o uno menos</b> de <b>cualquier palo</b>. Se mueve <b>una carta cada vez</b>. Cada montón tiene como mucho 3 cartas. Los huecos vacíos no se rellenan. <b>Toca</b> una carta y va sola a su mejor sitio, o <b>arrástrala</b>. 💡 te da una pista y ↩️ deshace.',
+    lives: 0, levels: 0, cap: 20,
+  });
+})();

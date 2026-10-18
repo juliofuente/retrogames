@@ -1,0 +1,25 @@
+// Carta libre: reto|#3a0f47
+// @cartas
+(function () {
+  const P = Arcade.paciencia;
+  const V = {
+    tab: {"build":"alt","move":"one","empty":"any"},
+    supermove: true,
+    planHint: true, demoBudget: 1500,
+    piles: (lv) => P.mk([['found', 4], ['cell', 4 + (lv < 6 ? 1 : 0)], ['tab', 8]]),
+    deal: (st, D, deck) => P.dealStd(st, D, deck, {"even":true,"bottom":[1,2]}),
+    place: (g, s, D, y0) => P.autoPlace(g, s, D, y0, {}),
+    status: P.autoStatus,
+    felt: ["#862e9c","#3a0f47"], back: ["#212529","#000000"], backEmoji: '🧗',
+  };
+  Arcade.game({
+    ...P(V),
+    /*THEME*/ home: 'indexsolitarios.html', tag: 'Ases y doses enterrados al fondo', deco: ["🃏","🧗","♠️","♥️","♦️","♣️"], font: 'serif', bg: ["#862e9c","#3a0f47"],
+    music: { mode: 'mixo', bpm: 77, wave: 'sine', style: 'chill', root: 55 }, voice: { wave: 'sine', mul: 1.2, echo: 0.4 },
+    /*EN*/ en: { title: 'Challenge FreeCell', tag: 'Aces and twos buried at the bottom', help: 'FreeCell with a twist: the aces and twos are always at the bottom of the columns. Build the <b>4 foundations</b> from A to K, one per suit. On the table, a card goes on another <b>one rank higher</b> in the <b>other colour</b>. Move <b>one card at a time</b>, although you can shift several in a row if you have free spaces to help. Any card can go into an empty space. You have <b>4 cells</b>, each holding one card. Watch out: the aces and twos are at the bottom of the columns. In the first levels you get one extra cell. <b>Tap</b> a card and it goes to the best place, or <b>drag</b> it. 💡 gives a hint and ↩️ undoes.', tvHelp: 'D-pad to a card · OK moves it.', dict: { 'Celdas libres: ': 'Free cells: ', 'Reserva: ': 'Reserve: ', 'Mazo: ': 'Stock: ', 'En la mesa: ': 'On the table: ', 'Base: ': 'Base: ' } },
+    /*TV*/ tvHelp: 'Cruceta hasta una carta · OK la mueve.',
+    id: 'retolibre', title: 'Carta libre: reto', emoji: '🧗', color: '#b197fc', origin: 'Challenge FreeCell (Thomas Warfield)',
+    help: 'Carta libre con trampa: los ases y los doses están siempre al fondo de las columnas. Completa las <b>4 bases</b> del A a la K, una por palo. En la mesa, una carta va sobre otra de <b>un número más</b> y de <b>color distinto</b>. Se mueve <b>una carta cada vez</b>, aunque puedes pasar varias seguidas si tienes huecos libres para ayudarte. Cualquier carta puede ir a un hueco vacío. Tienes <b>4 celdas</b> para guardar una carta en cada una. Ojo: los ases y los doses están al fondo de las columnas. En los primeros niveles tienes una celda más. <b>Toca</b> una carta y va sola a su mejor sitio, o <b>arrástrala</b>. 💡 te da una pista y ↩️ deshace.',
+    lives: 0, levels: 0, cap: 20,
+  });
+})();

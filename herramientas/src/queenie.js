@@ -1,0 +1,24 @@
+// Queenie|#1d1052
+// @cartas
+(function () {
+  const P = Arcade.paciencia;
+  const V = {
+    tab: {"build":"alt","move":"any","empty":"K"},
+    stock: { to: 'tab' },
+    piles: (lv) => P.mk([['stock', 1], ['found', 4], ['tab', 7]]),
+    deal: (st, D, deck) => P.dealStd(st, D, deck, {"ds":["U","DU","DDU","DDDU","DDDDU","DDDDDU","DDDDDDU"]}),
+    place: (g, s, D, y0) => P.autoPlace(g, s, D, y0, {}),
+    status: P.autoStatus,
+    felt: ["#5f3dc4","#1d1052"], back: ["#212529","#000000"], backEmoji: '👸',
+  };
+  Arcade.game({
+    ...P(V),
+    /*THEME*/ home: 'indexsolitarios.html', tag: 'Klondike, Yukon y Araña a la vez', deco: ["🃏","👸","♠️","♥️","♦️","♣️"], font: 'serif', bg: ["#5f3dc4","#1d1052"],
+    music: { mode: 'minor', bpm: 73, wave: 'sine', style: 'chill', root: 58 }, voice: { wave: 'sine', mul: 1.2, echo: 0.4 },
+    /*EN*/ en: { title: 'Queenie', tag: 'Klondike, Yukon and Spider at once', help: 'A blend of three: build in alternating colours like Klondike, move piles like Yukon and the stock deals onto the columns like Spider. Build the <b>4 foundations</b> from A to K, one per suit. On the table, a card goes on another <b>one rank higher</b> in the <b>other colour</b>. You can move <b>any face-up card with everything on top of it</b>, even if it is not in order. An empty space only takes a K. Tap the stock to deal one card to each column. <b>Tap</b> a card and it goes to the best place, or <b>drag</b> it. 💡 gives a hint and ↩️ undoes.', tvHelp: 'D-pad to a card · OK moves it.', dict: { 'Celdas libres: ': 'Free cells: ', 'Reserva: ': 'Reserve: ', 'Mazo: ': 'Stock: ', 'En la mesa: ': 'On the table: ', 'Base: ': 'Base: ' } },
+    /*TV*/ tvHelp: 'Cruceta hasta una carta · OK la mueve.',
+    id: 'queenie', title: 'Queenie', emoji: '👸', color: '#9775fa', origin: 'Queenie',
+    help: 'Mezcla de tres: se baja alternando colores como en el Klondike, se mueven montones como en el Yukon y el mazo reparte a las columnas como en la Araña. Completa las <b>4 bases</b> del A a la K, una por palo. En la mesa, una carta va sobre otra de <b>un número más</b> y de <b>color distinto</b>. Puedes mover <b>cualquier carta boca arriba con todo lo que tiene encima</b>, aunque no esté en orden. Un hueco vacío solo admite una K. Toca el mazo para repartir una carta a cada columna. <b>Toca</b> una carta y va sola a su mejor sitio, o <b>arrástrala</b>. 💡 te da una pista y ↩️ deshace.',
+    lives: 0, levels: 0, cap: 20,
+  });
+})();

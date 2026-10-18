@@ -1,0 +1,25 @@
+// Fortaleza|#3d0a1d
+// @cartas
+(function () {
+  const P = Arcade.paciencia;
+  const V = {
+    tab: {"build":"any","move":"one","empty":"any"},
+    supermove: true,
+    planHint: true, demoBudget: 1500,
+    piles: (lv) => P.mk([['found', 4], ['cell', 1 + (lv < 6 ? 1 : 0)], ['tab', 8, { fan: 'right' }]]),
+    deal: (st, D, deck) => P.dealStd(st, D, deck, {"ds":["UUUUUUU","UUUUUUU","UUUUUUU","UUUUUUU","UUUUUU","UUUUUU","UUUUUU","UUUUUU"]}),
+    place: (g, s, D, y0) => P.autoPlace(g, s, D, y0, { rows: true }),
+    status: P.autoStatus,
+    felt: ["#a61e4d","#3d0a1d"], back: ["#862e9c","#45115a"], backEmoji: '🛡️',
+  };
+  Arcade.game({
+    ...P(V),
+    /*THEME*/ home: 'indexsolitarios.html', tag: 'Calles y callejones con una celda', deco: ["🃏","🛡️","♠️","♥️","♦️","♣️"], font: 'serif', bg: ["#a61e4d","#3d0a1d"],
+    music: { mode: 'minor', bpm: 85, wave: 'sine', style: 'chill', root: 55 }, voice: { wave: 'sine', mul: 1.2, echo: 0.4 },
+    /*EN*/ en: { title: 'Stronghold', tag: 'Streets and Alleys with a cell', help: 'Streets and Alleys with one cell to park a card. Build the <b>4 foundations</b> from A to K, one per suit. On the table, a card goes on another <b>one rank higher</b> of <b>any suit</b>. Move <b>one card at a time</b>, although you can shift several in a row if you have free spaces to help. Any card can go into an empty space. You have <b>1 cells</b>, each holding one card. In the first levels you get one extra cell. <b>Tap</b> a card and it goes to the best place, or <b>drag</b> it. 💡 gives a hint and ↩️ undoes.', tvHelp: 'D-pad to a card · OK moves it.', dict: { 'Celdas libres: ': 'Free cells: ', 'Reserva: ': 'Reserve: ', 'Mazo: ': 'Stock: ', 'En la mesa: ': 'On the table: ', 'Base: ': 'Base: ' } },
+    /*TV*/ tvHelp: 'Cruceta hasta una carta · OK la mueve.',
+    id: 'fortaleza', title: 'Fortaleza', emoji: '🛡️', color: '#ff8787', origin: 'Stronghold',
+    help: 'Calles y callejones con una celda para guardar una carta. Completa las <b>4 bases</b> del A a la K, una por palo. En la mesa, una carta va sobre otra de <b>un número más</b> de <b>cualquier palo</b>. Se mueve <b>una carta cada vez</b>, aunque puedes pasar varias seguidas si tienes huecos libres para ayudarte. Cualquier carta puede ir a un hueco vacío. Tienes <b>1 celdas</b> para guardar una carta en cada una. En los primeros niveles tienes una celda más. <b>Toca</b> una carta y va sola a su mejor sitio, o <b>arrástrala</b>. 💡 te da una pista y ↩️ deshace.',
+    lives: 0, levels: 0, cap: 20,
+  });
+})();

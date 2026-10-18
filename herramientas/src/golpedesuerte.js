@@ -1,0 +1,25 @@
+// Golpe de suerte|#1d1052
+// @cartas
+(function () {
+  const P = Arcade.paciencia;
+  const V = {
+    tab: {"build":"suit","move":"one","empty":"any","autoFill":"waste"},
+    stock: { to: 'waste', n: 1, redeals: 0 },
+    init(lv) { this.stock.redeals = 0 + (lv < 6 ? 1 : 0); },
+    piles: (lv) => P.mk([['stock', 1], ['waste', 1], ['found', 4], ['tab', 12]]),
+    deal: (st, D, deck) => P.dealStd(st, D, deck, {"ds":["U","U","U","U","U","U","U","U","U","U","U","U"],"aces":true}),
+    place: (g, s, D, y0) => P.autoPlace(g, s, D, y0, {}),
+    status: P.autoStatus,
+    felt: ["#5f3dc4","#1d1052"], back: ["#1971c2","#0b3f73"], backEmoji: '🍀',
+  };
+  Arcade.game({
+    ...P(V),
+    /*THEME*/ home: 'indexsolitarios.html', tag: 'Facilísimo, con una baraja', deco: ["🃏","🍀","♠️","♥️","♦️","♣️"], font: 'serif', bg: ["#5f3dc4","#1d1052"],
+    music: { mode: 'dorian', bpm: 91, wave: 'sine', style: 'chill', root: 58 }, voice: { wave: 'sine', mul: 1.2, echo: 0.4 },
+    /*EN*/ en: { title: 'Fortune\'s Favor', tag: 'Very easy, one deck', help: 'Twelve single cards, the aces already on the foundations and spaces that refill themselves from the waste. The aces are already on the <b>foundations</b>: build them up to K by suit. On the table, a card goes on another <b>one rank higher</b> of the <b>same suit</b>. Move <b>one card at a time</b>. Empty columns refill themselves from the waste. Tap the stock to draw cards one at a time; it goes round only once. In the first levels you get one more pass through the stock. <b>Tap</b> a card and it goes to the best place, or <b>drag</b> it. 💡 gives a hint and ↩️ undoes.', tvHelp: 'D-pad to a card · OK moves it.', dict: { 'Celdas libres: ': 'Free cells: ', 'Reserva: ': 'Reserve: ', 'Mazo: ': 'Stock: ', 'En la mesa: ': 'On the table: ', 'Base: ': 'Base: ' } },
+    /*TV*/ tvHelp: 'Cruceta hasta una carta · OK la mueve.',
+    id: 'golpedesuerte', title: 'Golpe de suerte', emoji: '🍀', color: '#9775fa', origin: 'Fortune\'s Favor',
+    help: 'Doce cartas sueltas, los ases ya en las bases y huecos que se rellenan solos con el descarte. Los ases ya están en las <b>bases</b>: súbelas hasta la K por palo. En la mesa, una carta va sobre otra de <b>un número más</b> y del <b>mismo palo</b>. Se mueve <b>una carta cada vez</b>. Las columnas vacías se rellenan solas con el descarte. Toca el mazo para sacar cartas de una en una; se pasa una sola vez. En los primeros niveles puedes darle una vuelta más al mazo. <b>Toca</b> una carta y va sola a su mejor sitio, o <b>arrástrala</b>. 💡 te da una pista y ↩️ deshace.',
+    lives: 0, levels: 0, cap: 20,
+  });
+})();

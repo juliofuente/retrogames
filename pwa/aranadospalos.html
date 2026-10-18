@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Araña de dos palos · Arcade Perdido</title>
+<meta name="theme-color" content="#032a33">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css?v=6d7635e467">
+</head>
+<body class="game">
+<script src="config.js?v=84fed7f189"></script>
+<script src="common.js?v=403408c295"></script>
+<script src="cartas.js?v=7a0c29ab15"></script>
+<script>
+// @cartas
+(function () {
+  const P = Arcade.paciencia;
+  const V = {
+    decks: 2,
+    found: {"mode":"run"},
+    tab: {"build":"any","move":"run","empty":"any"},
+    stock: { to: 'tab' },
+    planHint: true, demoBudget: 600,
+    piles: (lv) => P.mk([['stock', 1], ['found', 8], ['tab', 10]]),
+    deal: (st, D, deck) => P.dealStd(st, D, deck, {"ds":["DDDDDU","DDDDDU","DDDDDU","DDDDDU","DDDDU","DDDDU","DDDDU","DDDDU","DDDDU","DDDDU"],"suits":2}),
+    place: (g, s, D, y0) => P.autoPlace(g, s, D, y0, {}),
+    status: P.autoStatus,
+    felt: ["#0b7285","#032a33"], back: ["#0c8599","#064652"], backEmoji: '🕸️',
+  };
+  Arcade.game({
+    ...P(V),
+    /*THEME*/ home: 'indexsolitarios.html', tag: 'La Araña a medio camino', deco: ["🃏","🕸️","♠️","♥️","♦️","♣️"], font: 'serif', bg: ["#0b7285","#032a33"],
+    music: { mode: 'mixo', bpm: 86, wave: 'sine', style: 'chill', root: 61 }, voice: { wave: 'sine', mul: 1.2, echo: 0.4 },
+    /*EN*/ en: { title: 'Spider Two Suits', tag: 'Spider halfway there', help: 'Two-deck Spider, but with only spades and hearts. Played with <b>two decks</b>. There are only two suits. Make <b>complete runs from K down to A in the same suit</b>: each one you finish goes up to the foundations by itself. On the table, a card goes on another <b>one rank higher</b> of <b>any suit</b>. Only <b>same-suit runs</b> move together. Any card can go into an empty space. Tap the stock to deal one card to each column. <b>Tap</b> a card and it goes to the best place, or <b>drag</b> it. 💡 gives a hint and ↩️ undoes.', tvHelp: 'D-pad to a card · OK moves it.', dict: { 'Celdas libres: ': 'Free cells: ', 'Reserva: ': 'Reserve: ', 'Mazo: ': 'Stock: ', 'En la mesa: ': 'On the table: ', 'Base: ': 'Base: ' } },
+    /*TV*/ tvHelp: 'Cruceta hasta una carta · OK la mueve.',
+    id: 'aranadospalos', title: 'Araña de dos palos', emoji: '🕸️', color: '#3bc9db', origin: 'Spider Two Suits',
+    help: 'La Araña con dos barajas, pero solo con picas y corazones. Se juega con <b>dos barajas</b>. Solo hay dos palos. Forma <b>escaleras completas de la K al A del mismo palo</b>: cada una que termines sube sola a las bases. En la mesa, una carta va sobre otra de <b>un número más</b> de <b>cualquier palo</b>. Solo se mueven juntas las <b>escaleras del mismo palo</b>. Cualquier carta puede ir a un hueco vacío. Toca el mazo para repartir una carta a cada columna. <b>Toca</b> una carta y va sola a su mejor sitio, o <b>arrástrala</b>. 💡 te da una pista y ↩️ deshace.',
+    lives: 0, levels: 0, cap: 20,
+  });
+})();
+</script>
+</body>
+</html>

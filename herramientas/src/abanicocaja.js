@@ -1,0 +1,23 @@
+// Abanico en caja|#5a2000
+// @cartas
+(function () {
+  const P = Arcade.paciencia;
+  const V = {
+    tab: {"build":"alt","move":"one","empty":"K"},
+    piles: (lv) => P.mk([['found', 4], ['tab', 16, { fan: 'right' }]]),
+    deal: (st, D, deck) => P.dealStd(st, D, deck, {"ds":["UUU","UUU","UUU","UUU","UUU","UUU","UUU","UUU","UUU","UUU","UUU","UUU","UUU","UUU","UUU","UUU"],"aces":true}),
+    place: (g, s, D, y0) => P.autoPlace(g, s, D, y0, { fans: true }),
+    status: P.autoStatus,
+    felt: ["#e8590c","#5a2000"], back: ["#e67700","#8a4200"], backEmoji: '📦',
+  };
+  Arcade.game({
+    ...P(V),
+    /*THEME*/ home: 'indexsolitarios.html', tag: 'Abanicos alternando colores', deco: ["🃏","📦","♠️","♥️","♦️","♣️"], font: 'serif', bg: ["#e8590c","#5a2000"],
+    music: { mode: 'dorian', bpm: 83, wave: 'sine', style: 'chill', root: 61 }, voice: { wave: 'sine', mul: 1.2, echo: 0.4 },
+    /*EN*/ en: { title: 'Box Fan', tag: 'Fans in alternating colours', help: 'Sixteen fans with the aces already on the foundations; build in alternating colours. The aces are already on the <b>foundations</b>: build them up to K by suit. On the table, a card goes on another <b>one rank higher</b> in the <b>other colour</b>. Move <b>one card at a time</b>. An empty space only takes a K. <b>Tap</b> a card and it goes to the best place, or <b>drag</b> it. 💡 gives a hint and ↩️ undoes.', tvHelp: 'D-pad to a card · OK moves it.', dict: { 'Celdas libres: ': 'Free cells: ', 'Reserva: ': 'Reserve: ', 'Mazo: ': 'Stock: ', 'En la mesa: ': 'On the table: ', 'Base: ': 'Base: ' } },
+    /*TV*/ tvHelp: 'Cruceta hasta una carta · OK la mueve.',
+    id: 'abanicocaja', title: 'Abanico en caja', emoji: '📦', color: '#ffa94d', origin: 'Box Fan',
+    help: 'Dieciséis abanicos con los ases ya en las bases; se baja alternando colores. Los ases ya están en las <b>bases</b>: súbelas hasta la K por palo. En la mesa, una carta va sobre otra de <b>un número más</b> y de <b>color distinto</b>. Se mueve <b>una carta cada vez</b>. Un hueco vacío solo admite una K. <b>Toca</b> una carta y va sola a su mejor sitio, o <b>arrástrala</b>. 💡 te da una pista y ↩️ deshace.',
+    lives: 0, levels: 0, cap: 20,
+  });
+})();

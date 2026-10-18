@@ -1,0 +1,26 @@
+// Fuego fatuo|#3d0a1d
+// @cartas
+(function () {
+  const P = Arcade.paciencia;
+  const V = {
+    found: {"mode":"run"},
+    tab: {"build":"any","move":"run","empty":"any"},
+    stock: { to: 'tab' },
+    planHint: true, demoBudget: 1200,
+    piles: (lv) => P.mk([['stock', 1], ['found', 4], ['tab', 7]]),
+    deal: (st, D, deck) => P.dealStd(st, D, deck, {"ds":["DDU","DDU","DDU","DDU","DDU","DDU","DDU"]}),
+    place: (g, s, D, y0) => P.autoPlace(g, s, D, y0, {}),
+    status: P.autoStatus,
+    felt: ["#a61e4d","#3d0a1d"], back: ["#e67700","#8a4200"], backEmoji: '🔥',
+  };
+  Arcade.game({
+    ...P(V),
+    /*THEME*/ home: 'indexsolitarios.html', tag: 'Arañita en un rectángulo', deco: ["🃏","🔥","♠️","♥️","♦️","♣️"], font: 'serif', bg: ["#a61e4d","#3d0a1d"],
+    music: { mode: 'lydian', bpm: 93, wave: 'sine', style: 'chill', root: 55 }, voice: { wave: 'sine', mul: 1.2, echo: 0.4 },
+    /*EN*/ en: { title: 'Will o\' the Wisp', tag: 'Spiderette in a rectangle', help: 'Spider with one deck and seven columns of three cards (two face down). Make <b>complete runs from K down to A in the same suit</b>: each one you finish goes up to the foundations by itself. On the table, a card goes on another <b>one rank higher</b> of <b>any suit</b>. Only <b>same-suit runs</b> move together. Any card can go into an empty space. Tap the stock to deal one card to each column. <b>Tap</b> a card and it goes to the best place, or <b>drag</b> it. 💡 gives a hint and ↩️ undoes.', tvHelp: 'D-pad to a card · OK moves it.', dict: { 'Celdas libres: ': 'Free cells: ', 'Reserva: ': 'Reserve: ', 'Mazo: ': 'Stock: ', 'En la mesa: ': 'On the table: ', 'Base: ': 'Base: ' } },
+    /*TV*/ tvHelp: 'Cruceta hasta una carta · OK la mueve.',
+    id: 'fuegofatuo', title: 'Fuego fatuo', emoji: '🔥', color: '#ff8787', origin: 'Will o\' the Wisp',
+    help: 'La Araña con una baraja y siete columnas de tres cartas (dos boca abajo). Forma <b>escaleras completas de la K al A del mismo palo</b>: cada una que termines sube sola a las bases. En la mesa, una carta va sobre otra de <b>un número más</b> de <b>cualquier palo</b>. Solo se mueven juntas las <b>escaleras del mismo palo</b>. Cualquier carta puede ir a un hueco vacío. Toca el mazo para repartir una carta a cada columna. <b>Toca</b> una carta y va sola a su mejor sitio, o <b>arrástrala</b>. 💡 te da una pista y ↩️ deshace.',
+    lives: 0, levels: 0, cap: 20,
+  });
+})();

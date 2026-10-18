@@ -1,0 +1,25 @@
+// Calles y callejones|#032a33
+// @cartas
+(function () {
+  const P = Arcade.paciencia;
+  const V = {
+    tab: {"build":"any","move":"one","empty":"any"},
+    supermove: true,
+    planHint: true, demoBudget: 1500,
+    piles: (lv) => P.mk([['found', 4], ['tab', 8, { fan: 'right' }]]),
+    deal: (st, D, deck) => P.dealStd(st, D, deck, {"ds":["UUUUUUU","UUUUUUU","UUUUUUU","UUUUUUU","UUUUUU","UUUUUU","UUUUUU","UUUUUU"]}),
+    place: (g, s, D, y0) => P.autoPlace(g, s, D, y0, { rows: true }),
+    status: P.autoStatus,
+    felt: ["#0b7285","#032a33"], back: ["#5f3dc4","#2b1580"], backEmoji: '🏘️',
+  };
+  Arcade.game({
+    ...P(V),
+    /*THEME*/ home: 'indexsolitarios.html', tag: 'El Castillo sin los ases puestos', deco: ["🃏","🏘️","♠️","♥️","♦️","♣️"], font: 'serif', bg: ["#0b7285","#032a33"],
+    music: { mode: 'lydian', bpm: 78, wave: 'sine', style: 'chill', root: 61 }, voice: { wave: 'sine', mul: 1.2, echo: 0.4 },
+    /*EN*/ en: { title: 'Streets and Alleys', tag: 'The Castle without the aces in place', help: 'Like Beleaguered Castle, but the aces do not start on the foundations: they are spread across the rows. Build the <b>4 foundations</b> from A to K, one per suit. On the table, a card goes on another <b>one rank higher</b> of <b>any suit</b>. Move <b>one card at a time</b>, although you can shift several in a row if you have free spaces to help. Any card can go into an empty space. <b>Tap</b> a card and it goes to the best place, or <b>drag</b> it. 💡 gives a hint and ↩️ undoes.', tvHelp: 'D-pad to a card · OK moves it.', dict: { 'Celdas libres: ': 'Free cells: ', 'Reserva: ': 'Reserve: ', 'Mazo: ': 'Stock: ', 'En la mesa: ': 'On the table: ', 'Base: ': 'Base: ' } },
+    /*TV*/ tvHelp: 'Cruceta hasta una carta · OK la mueve.',
+    id: 'callejones', title: 'Calles y callejones', emoji: '🏘️', color: '#3bc9db', origin: 'Streets and Alleys',
+    help: 'Como el Castillo asediado, pero los ases no empiezan en las bases: están repartidos por las filas. Completa las <b>4 bases</b> del A a la K, una por palo. En la mesa, una carta va sobre otra de <b>un número más</b> de <b>cualquier palo</b>. Se mueve <b>una carta cada vez</b>, aunque puedes pasar varias seguidas si tienes huecos libres para ayudarte. Cualquier carta puede ir a un hueco vacío. <b>Toca</b> una carta y va sola a su mejor sitio, o <b>arrástrala</b>. 💡 te da una pista y ↩️ deshace.',
+    lives: 0, levels: 0, cap: 20,
+  });
+})();

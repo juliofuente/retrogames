@@ -28,22 +28,24 @@
     function fitsTab(c, on) {
       if (TB.build === 'free') return true; if (TB.build === 'none') return false;
       let want = R(on) + TB.dir; if (TB.wrap) want = wrap13(want);
-      if (R(c) !== want) return false;
+      if (R(c) !== want) { if (!TB.updown) return false; let w2 = R(on) - TB.dir; if (TB.wrap) w2 = wrap13(w2); if (R(c) !== w2) return false; }
       if (TB.build === 'alt') return RED(c) !== RED(on);
       if (TB.build === 'suit') return S(c) === S(on);
+      if (TB.build === 'color') return RED(c) === RED(on);
+      if (TB.build === 'notsuit') return S(c) !== S(on);
       return true;
     }
-    const seqOK = (cs, suitRun) => cs.every((x, k) => isUp(x) && (k === 0 || (suitRun ? S(x) === S(cs[k - 1]) && R(x) === R(cs[k - 1]) - 1 : fitsTab(x, cs[k - 1]))));
+    const seqOK = (cs, run) => cs.every((x, k) => isUp(x) && (k === 0 || (run ? R(x) === R(cs[k - 1]) - 1 && (run === 'alt' ? RED(x) !== RED(cs[k - 1]) : run === 'color' ? RED(x) === RED(cs[k - 1]) : S(x) === S(cs[k - 1])) : fitsTab(x, cs[k - 1]))));
     function fBase(st, D, i) { const b = st.fb != null ? st.fb : F.base; return Array.isArray(b) ? b[D[i].fi] : b; }
     function fStep(D, i) { return Array.isArray(F.step) ? F.step[D[i].fi] : F.step; }
     function fitsFound(st, D, i, cs) {
       const p = st.p[i];
-      if (F.mode === 'run') return cs.length === 13 && R(cs[0]) === 13 && seqOK(cs, true) && !p.length;
+      if (F.mode === 'run') return cs.length === 13 && R(cs[0]) === 13 && seqOK(cs, F.run || true) && !p.length;
       if (cs.length !== 1) return false; const c = cs[0];
       if (F.mode === 'updown') { if (!p.length) return true; const t = p[p.length - 1], d = Math.abs(R(c) - R(t)); return d === 1 || (F.wrap && d === 12); }
       if (!p.length) return R(c) === fBase(st, D, i) && (!D[i].suit || D[i].suit === S(c) + 1);
       if (p.length >= 13) return false;
-      const t = p[p.length - 1]; if (F.suit === 'suit' && S(c) !== S(t)) return false;
+      const t = p[p.length - 1]; if (F.suit === 'suit' && S(c) !== S(t)) return false; if (F.suit === 'alt' && RED(c) === RED(t)) return false;
       return R(c) === wrap13(R(t) + fStep(D, i));
     }
     // ¿se pueden coger las n cartas de arriba del montón i?
@@ -55,6 +57,7 @@
           if (TB.move === 'one') return !!V.supermove && seqOK(cs, false);
           if (TB.move === 'any') return true;
           if (TB.move === 'run') return seqOK(cs, true);
+          if (TB.move === 'crun') return seqOK(cs, 'color');
           return seqOK(cs, false);
         case 'waste': case 'res': case 'cell': return n === 1;
         case 'grid': return n === 1 && freeGrid(st, D, i);
@@ -76,6 +79,7 @@
         case 'tab': {
           if (TB.from && TB.from.indexOf(D[from].k) < 0) return false;
           if (TB.move === 'one' && V.supermove && n > 1 && n > superLimit(st, D, to)) return false;
+          if (TB.max && q.length + n > TB.max) return false;
           if (!q.length) return TB.empty === 'any' || (TB.empty === 'K' && R(cs[0]) === 13) || (typeof TB.empty === 'function' && TB.empty(cs[0], st));
           const t = q[q.length - 1]; return isUp(t) && fitsTab(cs[0], t);
         }
@@ -126,7 +130,7 @@
           if (d.k === 'grid' && p.length && !isUp(p[0]) && freeGrid(st, D, i)) { p[0] -= DOWN; ch = true; fx++; }
           if (F.mode === 'run' && d.k === 'tab' && p.length >= 13) {
             const cs = p.slice(p.length - 13);
-            if (R(cs[0]) === 13 && seqOK(cs, true)) { const f = kinds(D, 'found').find((j) => !st.p[j].length); if (f != null) { st.p[f] = p.splice(p.length - 13); ch = true; st.runs = (st.runs || 0) + 1; } }
+            if (R(cs[0]) === 13 && seqOK(cs, F.run || true)) { const f = kinds(D, 'found').find((j) => !st.p[j].length); if (f != null) { st.p[f] = p.splice(p.length - 13); ch = true; st.runs = (st.runs || 0) + 1; } }
           }
           if (d.k === 'tab' && !p.length && TB.autoFill) { const r = kinds(D, TB.autoFill)[0]; if (r != null && st.p[r].length) { p.push(st.p[r].pop()); if (!isUp(p[0])) p[0] -= DOWN; ch = true; } }
         });
@@ -193,6 +197,7 @@
       if (df.k === 'tab' && below == null) s += dt.k === 'found' ? 20 : -6;
       if (dt.k === 'tab' && !st.p[m.t].length) s -= below == null ? 1000 : 12;
       if (dt.k === 'tab' && st.p[m.t].length) s += 8;
+      if (TB.build === 'free' && dt.k === 'tab') { const q = st.p[m.t], c = p[p.length - 1]; s += !q.length ? 6 : R(q[q.length - 1]) >= R(c) ? 26 - (R(q[q.length - 1]) - R(c)) : -25; }
       if (df.k === 'tab' && dt.k === 'tab' && below != null && isUp(below) && fitsTab(st.p[m.f][p.length - m.n], below) && D[m.f].k === 'tab') s -= 30;   // ya estaba bien colocada
       return s;
     }
@@ -640,4 +645,87 @@
   P.mk = (spec) => { const out = []; for (const [k, n, extra] of spec) for (let i = 0; i < n; i++) out.push(Object.assign({ k, n: i }, typeof extra === 'function' ? extra(i) : extra || {})); return out; };
   P.of = (D, k) => D.filter((d) => d.k === k).map((d) => d.i);
   P.down = (c) => c + Arcade.cartas.DOWN;
+})();
+(function () {
+  const P = Arcade.paciencia, C = Arcade.cartas;
+  /* reparto genérico de las variantes (o: opciones de la variante)
+     ds: una cadena por columna, 'D' boca abajo y 'U' boca arriba · even: el resto, por columnas y boca arriba · suits: 1 o 2 palos
+     aces / twos: esos números empiezan en las bases · fbFirst: la primera carta va a una base y marca su número
+     bottom: números que van al fondo de las columnas · kingsBottom · cells: celdas ocupadas · res: reserva (resUp: a la vista) · resOpen */
+  P.dealStd = (st, D, deck0, o) => {
+    let deck = deck0.slice();
+    if (o.suits && o.suits < 4) deck = deck.map((c) => { const dk = Math.floor(c / 52), s = Math.floor((c % 52) / 13), r = c % 13; return o.suits === 1 ? (dk * 4 + s) * 52 + r : (dk * 2 + (s >> 1)) * 52 + (s % 2) * 13 + r; });
+    const pull = (pred) => { const k = deck.findIndex(pred); return k < 0 ? null : deck.splice(k, 1)[0]; };
+    const of = (k) => P.of(D, k), F = of('found'), T = of('tab');
+    if (o.aces || o.twos) { const r = o.aces ? 1 : 2; for (const i of F.slice(0, o.nBase || F.length)) { const c = pull((x) => C.R(x) === r); if (c != null) st.p[i].push(c); } }
+    if (o.fbFirst) { const c = deck.shift(); st.p[F[0]].push(c); st.fb = C.R(c); }
+    if (o.foundStart) { const c = pull(o.foundStart); st.p[F[0]].push(c); }
+    const bottoms = []; if (o.bottom) for (const r of o.bottom) { let c; while ((c = pull((x) => C.R(x) === r)) != null) bottoms.push(c); }
+    if (o.res) { const r = of('res')[0]; for (let n = 0; n < o.res; n++) { const c = deck.shift(); st.p[r].push(o.resUp || n === o.res - 1 ? c : c + C.DOWN); } }
+    if (o.resOpen) for (const i of of('res')) st.p[i].push(deck.shift());
+    if (o.cells) { const cl = of('cell'), step = Math.max(1, Math.floor(cl.length / o.cells)); for (let n = 0; n < o.cells; n++) st.p[cl[(n * step) % cl.length]].push(deck.shift()); }
+    T.forEach((i, k) => { if (bottoms[k] != null) st.p[i].push(bottoms[k]); });
+    if (o.ds) T.forEach((i, k) => { for (const ch of o.ds[k] || '') { const c = deck.shift(); if (c == null) break; st.p[i].push(ch === 'D' ? c + C.DOWN : c); } });
+    if (o.even) { let k = 0; const tt = bottoms.length ? T.slice() : T; while (deck.length) st.p[tt[k++ % tt.length]].push(deck.shift()); }
+    if (o.kingsBottom) for (const i of T) { const p = st.p[i]; p.sort((a, b) => (C.R(b) === 13) - (C.R(a) === 13)); }
+    const sk = of('stock')[0]; if (sk != null) while (deck.length) st.p[sk].push(deck.shift() + C.DOWN);
+  };
+  // abanicos: recoger, barajar y repartir de 3 en 3 (La Belle Lucie y familia)
+  P.fanRedeal = (times, size) => ({ times, run(st, D) { const t = P.of(D, 'tab'), all = []; t.forEach((i) => { all.push(...st.p[i]); st.p[i] = []; }); for (let k = all.length - 1; k > 0; k--) { const j = Math.floor(Math.random() * (k + 1)); [all[k], all[j]] = [all[j], all[k]]; } all.forEach((c, k) => st.p[t[Math.floor(k / (size || 3))]].push(c)); st.rr = (st.rr || 0) + 1; } });
+  // texto de estado genérico
+  P.autoStatus = (st, D) => {
+    const T = Arcade.T, o = [], sk = P.of(D, 'stock')[0], cl = P.of(D, 'cell'), rs = P.of(D, 'res'), fo = P.of(D, 'found');
+    if (rs.length === 1) o.push(T('Reserva: ', 'Reserve: ') + st.p[rs[0]].length);
+    if (cl.length) o.push(T('Celdas libres: ', 'Free cells: ') + cl.filter((i) => !st.p[i].length).length);
+    if (sk != null) o.push(T('Mazo: ', 'Stock: ') + st.p[sk].length);
+    if (st.fb && fo.length) o.push(T('Base: ', 'Base: ') + C.RANK[st.fb]);
+    if (!o.length) { const left = D.reduce((a, d, i) => a + (d.k === 'tab' || d.k === 'grid' ? st.p[i].length : 0), 0); o.push(T('En la mesa: ', 'On the table: ') + left); }
+    return o.join(' · ');
+  };
+  /* colocación genérica: fila de arriba (mazo, descarte, reserva, celdas … bases) y columnas debajo;
+     o.rows: filas que se abren a la derecha (familia del castillo) · o.fans: abanicos en rejilla */
+  P.autoPlace = (g, s, D, y0, o = {}) => {
+    const K = (k) => D.filter((d) => d.k === k), stk = K('stock'), wa = K('waste'), fo = K('found'), ce = K('cell'), rs = K('res'), tb = K('tab');
+    const land = g.W > g.H * 1.15;
+    if (o.rows) {
+      const nr = tb.length;
+      if (land) {
+        const per = Math.ceil(nr / 2), side = Math.max(per, fo.length + (ce.length ? 1 : 0)), avail = g.bot - y0 - 8, cw = Math.min(80, (avail - (side - 1) * 5) / side / 1.4, g.W / 9); s.cw = cw;
+        const ch = cw * 1.4, cx = g.W / 2 - cw / 2;
+        fo.forEach((d, i) => { d.x = cx; d.y = y0 + i * (ch + 5); });
+        ce.forEach((d, i) => { d.x = cx - (ce.length - 1) * (cw + 4) / 2 + i * (cw + 4); d.y = y0 + fo.length * (ch + 5); });
+        tb.forEach((d) => { const r = d.n % per, right = d.n >= per; d.y = y0 + r * (ch + 5); d.step = 0.42; if (right) { d.x = cx + cw + 14; d.maxW = g.W - 8 - d.x; } else { d.x = 8; d.maxW = cx - 22; } });
+      } else {
+        const top = Math.max(1, Math.ceil((fo.length + ce.length) / 6)), rowsN = nr + top, avail = g.bot - y0 - 8;
+        const cw = Math.min(70, (avail - (rowsN - 1) * 5) / rowsN / 1.4, (g.W - 20) / Math.max(5.2, fo.length + ce.length + 0.5)); s.cw = cw; const ch = cw * 1.4;
+        const topItems = ce.concat(fo), x0 = (g.W - (cw * topItems.length + 6 * (topItems.length - 1))) / 2;
+        topItems.forEach((d, i) => { d.x = x0 + i * (cw + 6) + (ce.length && i >= ce.length ? 8 : 0); d.y = y0; });
+        tb.forEach((d) => { d.x = 8; d.y = y0 + (ch + 5) * (d.n + top); d.maxW = g.W - 16; d.step = 0.42; });
+      }
+      return;
+    }
+    if (o.fans) {
+      const per = land ? 6 : 4, rows = Math.ceil(tb.length / per), slotW = (g.W - 12) / per, topN = fo.length + ce.length;
+      const cw = Math.min(slotW / 1.75, (g.bot - y0 - 20) / (rows + 1) / 1.4 - 2, (g.W - 20) / (topN + 1), 80); s.cw = cw;
+      const ch = cw * 1.4, gapY = Math.max(2, Math.min(ch * 0.25, (g.bot - y0 - ch * (rows + 1)) / (rows + 1)));
+      const topItems = ce.concat(fo), x0 = g.W / 2 - (cw * topItems.length + 6 * (topItems.length - 1)) / 2;
+      topItems.forEach((d, i) => { d.x = x0 + i * (cw + 6) + (ce.length && i >= ce.length ? 6 : 0); d.y = y0; });
+      tb.forEach((d) => { const r = Math.floor(d.n / per), q = d.n % per; d.x = 6 + q * slotW + (slotW - cw * 1.6) / 2; d.y = y0 + (ch + gapY) * (r + 1); d.maxW = cw * 1.6; d.step = 0.3; });
+      return;
+    }
+    const left = stk.concat(wa, rs.length === 1 ? rs : []), openRes = rs.length > 1 ? rs : [];
+    const tabRows = tb.length > 10 ? 2 : 1, perRow = Math.ceil(tb.length / tabRows);
+    const top1 = left.length + ce.length, gap1 = top1 && fo.length ? 1 : 0;
+    let N = Math.max(perRow, top1 + gap1 + fo.length), rowsTop = 1;
+    if (top1 + gap1 + fo.length > Math.max(perRow, 8)) { N = Math.max(perRow, top1, fo.length); rowsTop = top1 ? 2 : 1; }
+    const resRows = openRes.length ? Math.ceil(openRes.length / N) : 0;
+    const c = P.cols(g, N, { rows: rowsTop + resRows + tabRows * 1.7 }); s.cw = c.cw; const ch = c.cw * 1.4;
+    left.forEach((d, i) => { d.x = c.x(i); d.y = y0; });
+    ce.forEach((d, i) => { d.x = c.x(left.length + i); d.y = y0; });
+    if (rowsTop === 1) fo.forEach((d, i) => { d.x = c.x(N - fo.length + i); d.y = y0; });
+    else fo.forEach((d, i) => { d.x = c.x((N - fo.length) / 2 + i); d.y = y0 + ch + 8; });
+    const ty = y0 + rowsTop * (ch + 8) + 6, bottom = g.bot - 4 - resRows * (ch + 4), rowH = (bottom - ty) / tabRows;
+    tb.forEach((d, i) => { const r = Math.floor(i / perRow), q = i % perRow, inRow = Math.min(perRow, tb.length - r * perRow); d.x = c.x((N - inRow) / 2 + q); d.y = ty + r * rowH; d.maxH = rowH - 8; });
+    openRes.forEach((d, i) => { const r = Math.floor(i / N), inRow = Math.min(N, openRes.length - r * N); d.x = c.x((N - inRow) / 2 + (i % N)); d.y = bottom + 4 + r * (ch + 4); });
+  };
 })();

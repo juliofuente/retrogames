@@ -1,0 +1,25 @@
+// Agnes Sorel|#5a2000
+// @cartas
+(function () {
+  const P = Arcade.paciencia;
+  const V = {
+    found: {"wrap":true},
+    tab: {"build":"color","move":"seq","empty":"any","wrap":true},
+    stock: { to: 'tab' },
+    piles: (lv) => P.mk([['stock', 1], ['found', 4], ['tab', 7]]),
+    deal: (st, D, deck) => P.dealStd(st, D, deck, {"ds":["U","UU","UUU","UUUU","UUUUU","UUUUUU","UUUUUUU"],"fbFirst":true}),
+    place: (g, s, D, y0) => P.autoPlace(g, s, D, y0, {}),
+    status: P.autoStatus,
+    felt: ["#e8590c","#5a2000"], back: ["#862e9c","#45115a"], backEmoji: '👑',
+  };
+  Arcade.game({
+    ...P(V),
+    /*THEME*/ home: 'indexsolitarios.html', tag: 'Bases que empiezan donde quieren', deco: ["🃏","👑","♠️","♥️","♦️","♣️"], font: 'serif', bg: ["#e8590c","#5a2000"],
+    music: { mode: 'dorian', bpm: 79, wave: 'sine', style: 'chill', root: 61 }, voice: { wave: 'sine', mul: 1.2, echo: 0.4 },
+    /*EN*/ en: { title: 'Agnes Sorel', tag: 'Foundations that start anywhere', help: 'A Klondike where the stock deals onto the columns, you build in the same colour and the foundations do not start at A. The <b>foundations</b> start at the rank of the first card dealt to them and go up by suit, wrapping after K. On the table, a card goes on another <b>one rank higher</b> of the <b>same colour</b> (and a K can go on an A). You can move cards together if they are already in order. Any card can go into an empty space. Tap the stock to deal one card to each column. <b>Tap</b> a card and it goes to the best place, or <b>drag</b> it. 💡 gives a hint and ↩️ undoes.', tvHelp: 'D-pad to a card · OK moves it.', dict: { 'Celdas libres: ': 'Free cells: ', 'Reserva: ': 'Reserve: ', 'Mazo: ': 'Stock: ', 'En la mesa: ': 'On the table: ', 'Base: ': 'Base: ' } },
+    /*TV*/ tvHelp: 'Cruceta hasta una carta · OK la mueve.',
+    id: 'agnessorel', title: 'Agnes Sorel', emoji: '👑', color: '#ffa94d', origin: 'Agnes Sorel',
+    help: 'Un Klondike donde el mazo reparte a las columnas, se baja del mismo color y las bases no empiezan en el A. Las <b>bases</b> empiezan en el número de la primera carta que sale en ellas y suben por palo, dando la vuelta tras la K. En la mesa, una carta va sobre otra de <b>un número más</b> y del <b>mismo color</b> (y la K puede ir sobre el A). Puedes mover juntas las cartas que ya estén en orden. Cualquier carta puede ir a un hueco vacío. Toca el mazo para repartir una carta a cada columna. <b>Toca</b> una carta y va sola a su mejor sitio, o <b>arrástrala</b>. 💡 te da una pista y ↩️ deshace.',
+    lives: 0, levels: 0, cap: 20,
+  });
+})();

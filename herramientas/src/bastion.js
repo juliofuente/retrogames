@@ -1,0 +1,25 @@
+// Bastión|#223a05
+// @cartas
+(function () {
+  const P = Arcade.paciencia;
+  const V = {
+    tab: {"build":"suit","move":"one","empty":"any","updown":true},
+    supermove: true,
+    planHint: true, demoBudget: 1500,
+    piles: (lv) => P.mk([['found', 4], ['cell', 2], ['tab', 10, { fan: 'right' }]]),
+    deal: (st, D, deck) => P.dealStd(st, D, deck, {"ds":["UUUUU","UUUUU","UUUUU","UUUUU","UUUUU","UUUUU","UUUUU","UUUUU","UUUUU","UUUUU"],"cells":2}),
+    place: (g, s, D, y0) => P.autoPlace(g, s, D, y0, { rows: true }),
+    status: P.autoStatus,
+    felt: ["#5c940d","#223a05"], back: ["#1971c2","#0b3f73"], backEmoji: '🧱',
+  };
+  Arcade.game({
+    ...P(V),
+    /*THEME*/ home: 'indexsolitarios.html', tag: 'Fortín con dos celdas', deco: ["🃏","🧱","♠️","♥️","♦️","♣️"], font: 'serif', bg: ["#5c940d","#223a05"],
+    music: { mode: 'major', bpm: 73, wave: 'sine', style: 'chill', root: 61 }, voice: { wave: 'sine', mul: 1.2, echo: 0.4 },
+    /*EN*/ en: { title: 'Bastion', tag: 'Fortress with two cells', help: 'Fortress with two cells, which start full. Build the <b>4 foundations</b> from A to K, one per suit. On the table, a card goes on another <b>one rank higher or lower</b> of the <b>same suit</b>. Move <b>one card at a time</b>, although you can shift several in a row if you have free spaces to help. Any card can go into an empty space. You have <b>2 cells</b>, each holding one card (2 start full). <b>Tap</b> a card and it goes to the best place, or <b>drag</b> it. 💡 gives a hint and ↩️ undoes.', tvHelp: 'D-pad to a card · OK moves it.', dict: { 'Celdas libres: ': 'Free cells: ', 'Reserva: ': 'Reserve: ', 'Mazo: ': 'Stock: ', 'En la mesa: ': 'On the table: ', 'Base: ': 'Base: ' } },
+    /*TV*/ tvHelp: 'Cruceta hasta una carta · OK la mueve.',
+    id: 'bastion', title: 'Bastión', emoji: '🧱', color: '#a9e34b', origin: 'Bastion',
+    help: 'El Fortín con dos celdas, que empiezan ocupadas. Completa las <b>4 bases</b> del A a la K, una por palo. En la mesa, una carta va sobre otra de <b>un número más o uno menos</b> y del <b>mismo palo</b>. Se mueve <b>una carta cada vez</b>, aunque puedes pasar varias seguidas si tienes huecos libres para ayudarte. Cualquier carta puede ir a un hueco vacío. Tienes <b>2 celdas</b> para guardar una carta en cada una (2 empiezan ocupadas). <b>Toca</b> una carta y va sola a su mejor sitio, o <b>arrástrala</b>. 💡 te da una pista y ↩️ deshace.',
+    lives: 0, levels: 0, cap: 20,
+  });
+})();

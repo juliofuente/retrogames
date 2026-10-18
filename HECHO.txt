@@ -1,6 +1,11 @@
 ARCADE PERDIDO + ARCADE PRO — LO QUE ESTÁ HECHO
 ================================================
-Fecha: 18-10-2026 · Versión de la PWA (games.js → ARCADE_VERSION): 2.25.0
+Fecha: 18-10-2026 · Versión de la PWA (games.js → ARCADE_VERSION): 2.26.0
+· v2.26.0: la colección Solitarios llega a 100 juegos con 80 variantes más de Politaire (familias Klondike, Yukon,
+  Carta libre, Araña, Cuarenta ladrones, Docena del panadero, Abanicos, Castillo, Canfield, Golf y Sir Tommy). El motor
+  aprende más reglas (mismo color, palo distinto, subir o bajar, máximo por montón, escaleras de color, bases alternando
+  colores) y trae reparto, colocación y estado genéricos (P.dealStd, P.autoPlace, P.autoStatus), así que cada variante
+  es solo su tabla de reglas. La ayuda es/en de cada una se escribió a partir de sus reglas.
 · v2.25.0: nueva colección «Solitarios» (🃏, /coleccion/solitarios, /en/collection/solitaire, portada pwa/indexsolitarios,
   sección 🃏 de la portada de TV; Arcade Pro ya no los muestra). 20 juegos: los 4 que había (Solitario, Araña, Torres
   libres, Huecos) y 16 variantes nuevas con un motor propio, pwa/cartas.js (Arcade.paciencia): Carta libre (FreeCell),

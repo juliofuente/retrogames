@@ -65,6 +65,8 @@ SOLITARIOS (colección soli)
   · Un solitario nuevo es un src/<id>.js con «// @cartas» en la segunda línea y Arcade.game({ ...Arcade.paciencia({…}), … }):
     el motor (pwa/cartas.js) pone el juego; la variante solo dice sus montones (piles), cómo se reparte (deal), dónde
     van (place) y sus reglas (found, tab, stock, cells…). Copia una parecida (cartalibre.js, golf.js, piramidecartas.js).
+  · Para variantes «normales» basta con reglas + P.dealStd (reparto) + P.autoPlace (colocación) + P.autoStatus:
+    mira cualquiera de las de la v2.26 (p. ej. westcliff.js, forecell.js, abanico.js).
   · Alta: php herramientas/arcade.php nuevo <id> coleccion=soli categoria=tablero control=tocar tv=cursor desc_es=… desc_en=…
 
 CONSTRUIR Y REGISTRAR (arcade)  — solo PHP, sin Python ni Node

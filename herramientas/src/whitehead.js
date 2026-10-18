@@ -1,0 +1,25 @@
+// Whitehead|#5c0f2c
+// @cartas
+(function () {
+  const P = Arcade.paciencia;
+  const V = {
+    tab: {"build":"color","move":"run","empty":"any"},
+    stock: { to: 'waste', n: 1, redeals: 0 },
+    init(lv) { this.stock.redeals = 0 + (lv < 6 ? 1 : 0); },
+    piles: (lv) => P.mk([['stock', 1], ['waste', 1], ['found', 4], ['tab', 7]]),
+    deal: (st, D, deck) => P.dealStd(st, D, deck, {"ds":["U","UU","UUU","UUUU","UUUUU","UUUUUU","UUUUUUU"]}),
+    place: (g, s, D, y0) => P.autoPlace(g, s, D, y0, {}),
+    status: P.autoStatus,
+    felt: ["#c2255c","#5c0f2c"], back: ["#5f3dc4","#2b1580"], backEmoji: '🎩',
+  };
+  Arcade.game({
+    ...P(V),
+    /*THEME*/ home: 'indexsolitarios.html', tag: 'Todo a la vista y del mismo color', deco: ["🃏","🎩","♠️","♥️","♦️","♣️"], font: 'serif', bg: ["#c2255c","#5c0f2c"],
+    music: { mode: 'minor', bpm: 72, wave: 'sine', style: 'chill', root: 58 }, voice: { wave: 'sine', mul: 1.2, echo: 0.4 },
+    /*EN*/ en: { title: 'Whitehead', tag: 'All face up and same colour', help: 'Like Klondike but with every card face up, and you build down in the <b>same colour</b> (red on red, black on black). Build the <b>4 foundations</b> from A to K, one per suit. On the table, a card goes on another <b>one rank higher</b> of the <b>same colour</b>. Only <b>same-suit runs</b> move together. Any card can go into an empty space. Tap the stock to draw cards one at a time; it goes round only once. In the first levels you get one more pass through the stock. <b>Tap</b> a card and it goes to the best place, or <b>drag</b> it. 💡 gives a hint and ↩️ undoes.', tvHelp: 'D-pad to a card · OK moves it.', dict: { 'Celdas libres: ': 'Free cells: ', 'Reserva: ': 'Reserve: ', 'Mazo: ': 'Stock: ', 'En la mesa: ': 'On the table: ', 'Base: ': 'Base: ' } },
+    /*TV*/ tvHelp: 'Cruceta hasta una carta · OK la mueve.',
+    id: 'whitehead', title: 'Whitehead', emoji: '🎩', color: '#f783ac', origin: 'Whitehead',
+    help: 'Como el Klondike pero con todas las cartas boca arriba, y se baja del <b>mismo color</b> (rojo sobre rojo, negro sobre negro). Completa las <b>4 bases</b> del A a la K, una por palo. En la mesa, una carta va sobre otra de <b>un número más</b> y del <b>mismo color</b>. Solo se mueven juntas las <b>escaleras del mismo palo</b>. Cualquier carta puede ir a un hueco vacío. Toca el mazo para sacar cartas de una en una; se pasa una sola vez. En los primeros niveles puedes darle una vuelta más al mazo. <b>Toca</b> una carta y va sola a su mejor sitio, o <b>arrástrala</b>. 💡 te da una pista y ↩️ deshace.',
+    lives: 0, levels: 0, cap: 20,
+  });
+})();

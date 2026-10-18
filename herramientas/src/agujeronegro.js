@@ -1,0 +1,26 @@
+// Agujero negro|#0b3a15
+// @cartas
+(function () {
+  const P = Arcade.paciencia;
+  const V = {
+    found: {"mode":"updown","wrap":true},
+    tab: {"build":"none","move":"one","empty":"none"},
+    planHint: true, demoBudget: 2500,
+    won: (st, D) => P.of(D, 'tab').every((i) => !st.p[i].length), autoFinish: false,
+    piles: (lv) => P.mk([['found', 1], ['tab', 17, { fan: 'right' }]]),
+    deal: (st, D, deck) => P.dealStd(st, D, deck, {"ds":["UUU","UUU","UUU","UUU","UUU","UUU","UUU","UUU","UUU","UUU","UUU","UUU","UUU","UUU","UUU","UUU","UUU"], "foundStart": (x) => Arcade.cartas.R(x) === 1 && Arcade.cartas.S(x) === 0}),
+    place: (g, s, D, y0) => P.autoPlace(g, s, D, y0, { fans: true }),
+    status: P.autoStatus,
+    felt: ["#2b8a3e","#0b3a15"], back: ["#2b8a3e","#0b4a1c"], backEmoji: '🕳️',
+  };
+  Arcade.game({
+    ...P(V),
+    /*THEME*/ home: 'indexsolitarios.html', tag: 'Que se lo trague todo', deco: ["🃏","🕳️","♠️","♥️","♦️","♣️"], font: 'serif', bg: ["#2b8a3e","#0b3a15"],
+    music: { mode: 'lydian', bpm: 70, wave: 'sine', style: 'chill', root: 55 }, voice: { wave: 'sine', mul: 1.2, echo: 0.4 },
+    /*EN*/ en: { title: 'Black Hole', tag: 'Let it swallow everything', help: 'Seventeen fans of three cards and a black hole that starts with the ace of spades. Everything must end up inside. Move to the <b>foundation</b> any free card that is <b>one rank higher or lower</b> than the top one, regardless of suit (A follows K). Only the top card of each pile can be played. Clear the table to win. <b>Tap</b> a card and it goes to the best place, or <b>drag</b> it. 💡 gives a hint and ↩️ undoes.', tvHelp: 'D-pad to a card · OK moves it.', dict: { 'Celdas libres: ': 'Free cells: ', 'Reserva: ': 'Reserve: ', 'Mazo: ': 'Stock: ', 'En la mesa: ': 'On the table: ', 'Base: ': 'Base: ' } },
+    /*TV*/ tvHelp: 'Cruceta hasta una carta · OK la mueve.',
+    id: 'agujeronegro', title: 'Agujero negro', emoji: '🕳️', color: '#69db7c', origin: 'Black Hole (David Parlett)',
+    help: 'Diecisiete abanicos de tres cartas y un agujero negro que empieza con el A de picas. Todo tiene que acabar dentro. Lleva a la <b>base</b> cualquier carta libre que sea <b>un número más o uno menos</b> que la de arriba, sin importar el palo (tras la K va el A). Solo se juega la carta de arriba de cada montón. Gana quien deja la mesa vacía. <b>Toca</b> una carta y va sola a su mejor sitio, o <b>arrástrala</b>. 💡 te da una pista y ↩️ deshace.',
+    lives: 0, levels: 0, cap: 20,
+  });
+})();

@@ -1,0 +1,24 @@
+// Easthaven|#08254a
+// @cartas
+(function () {
+  const P = Arcade.paciencia;
+  const V = {
+    tab: {"build":"alt","move":"seq","empty":"any"},
+    stock: { to: 'tab' },
+    piles: (lv) => P.mk([['stock', 1], ['found', 4], ['tab', 7]]),
+    deal: (st, D, deck) => P.dealStd(st, D, deck, {"ds":["DDU","DDU","DDU","DDU","DDU","DDU","DDU"]}),
+    place: (g, s, D, y0) => P.autoPlace(g, s, D, y0, {}),
+    status: P.autoStatus,
+    felt: ["#1864ab","#08254a"], back: ["#c92a2a","#7a1010"], backEmoji: '⚓',
+  };
+  Arcade.game({
+    ...P(V),
+    /*THEME*/ home: 'indexsolitarios.html', tag: 'Mitad Klondike, mitad Araña', deco: ["🃏","⚓","♠️","♥️","♦️","♣️"], font: 'serif', bg: ["#1864ab","#08254a"],
+    music: { mode: 'mixo', bpm: 84, wave: 'sine', style: 'chill', root: 61 }, voice: { wave: 'sine', mul: 1.2, echo: 0.4 },
+    /*EN*/ en: { title: 'Easthaven', tag: 'Half Klondike, half Spider', help: 'Seven columns of three cards and a stock that, instead of going to a waste pile, deals one card to each column, as in Spider. Build the <b>4 foundations</b> from A to K, one per suit. On the table, a card goes on another <b>one rank higher</b> in the <b>other colour</b>. You can move cards together if they are already in order. Any card can go into an empty space. Tap the stock to deal one card to each column. <b>Tap</b> a card and it goes to the best place, or <b>drag</b> it. 💡 gives a hint and ↩️ undoes.', tvHelp: 'D-pad to a card · OK moves it.', dict: { 'Celdas libres: ': 'Free cells: ', 'Reserva: ': 'Reserve: ', 'Mazo: ': 'Stock: ', 'En la mesa: ': 'On the table: ', 'Base: ': 'Base: ' } },
+    /*TV*/ tvHelp: 'Cruceta hasta una carta · OK la mueve.',
+    id: 'easthaven', title: 'Easthaven', emoji: '⚓', color: '#4dabf7', origin: 'Easthaven',
+    help: 'Siete columnas de tres cartas y un mazo que, en vez de ir al descarte, reparte una carta a cada columna, como en la Araña. Completa las <b>4 bases</b> del A a la K, una por palo. En la mesa, una carta va sobre otra de <b>un número más</b> y de <b>color distinto</b>. Puedes mover juntas las cartas que ya estén en orden. Cualquier carta puede ir a un hueco vacío. Toca el mazo para repartir una carta a cada columna. <b>Toca</b> una carta y va sola a su mejor sitio, o <b>arrástrala</b>. 💡 te da una pista y ↩️ deshace.',
+    lives: 0, levels: 0, cap: 20,
+  });
+})();

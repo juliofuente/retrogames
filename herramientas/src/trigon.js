@@ -1,0 +1,24 @@
+// Trigon|#5a2000
+// @cartas
+(function () {
+  const P = Arcade.paciencia;
+  const V = {
+    tab: {"build":"suit","move":"seq","empty":"K"},
+    stock: { to: 'waste', n: 1, redeals: Infinity },
+    piles: (lv) => P.mk([['stock', 1], ['waste', 1], ['found', 4], ['tab', 7]]),
+    deal: (st, D, deck) => P.dealStd(st, D, deck, {"ds":["U","DU","DDU","DDDU","DDDDU","DDDDDU","DDDDDDU"]}),
+    place: (g, s, D, y0) => P.autoPlace(g, s, D, y0, {}),
+    status: P.autoStatus,
+    felt: ["#e8590c","#5a2000"], back: ["#e67700","#8a4200"], backEmoji: '🔺',
+  };
+  Arcade.game({
+    ...P(V),
+    /*THEME*/ home: 'indexsolitarios.html', tag: 'El Klondike del mismo palo', deco: ["🃏","🔺","♠️","♥️","♦️","♣️"], font: 'serif', bg: ["#e8590c","#5a2000"],
+    music: { mode: 'mixo', bpm: 85, wave: 'sine', style: 'chill', root: 61 }, voice: { wave: 'sine', mul: 1.2, echo: 0.4 },
+    /*EN*/ en: { title: 'Trigon', tag: 'Same-suit Klondike', help: 'Good old Klondike, but you build down in the same suit instead of alternating colours. Build the <b>4 foundations</b> from A to K, one per suit. On the table, a card goes on another <b>one rank higher</b> of the <b>same suit</b>. You can move cards together if they are already in order. An empty space only takes a K. Tap the stock to draw cards one at a time and turn it over as often as you like. <b>Tap</b> a card and it goes to the best place, or <b>drag</b> it. 💡 gives a hint and ↩️ undoes.', tvHelp: 'D-pad to a card · OK moves it.', dict: { 'Celdas libres: ': 'Free cells: ', 'Reserva: ': 'Reserve: ', 'Mazo: ': 'Stock: ', 'En la mesa: ': 'On the table: ', 'Base: ': 'Base: ' } },
+    /*TV*/ tvHelp: 'Cruceta hasta una carta · OK la mueve.',
+    id: 'trigon', title: 'Trigon', emoji: '🔺', color: '#ffa94d', origin: 'Trigon',
+    help: 'El Klondike de siempre, pero se baja del mismo palo en lugar de alternar colores. Completa las <b>4 bases</b> del A a la K, una por palo. En la mesa, una carta va sobre otra de <b>un número más</b> y del <b>mismo palo</b>. Puedes mover juntas las cartas que ya estén en orden. Un hueco vacío solo admite una K. Toca el mazo para sacar cartas de una en una y dale la vuelta las veces que quieras. <b>Toca</b> una carta y va sola a su mejor sitio, o <b>arrástrala</b>. 💡 te da una pista y ↩️ deshace.',
+    lives: 0, levels: 0, cap: 20,
+  });
+})();

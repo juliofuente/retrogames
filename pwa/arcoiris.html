@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Arcoíris · Arcade Perdido</title>
+<meta name="theme-color" content="#5c0f2c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css?v=6d7635e467">
+</head>
+<body class="game">
+<script src="config.js?v=84fed7f189"></script>
+<script src="common.js?v=403408c295"></script>
+<script src="cartas.js?v=7a0c29ab15"></script>
+<script>
+// @cartas
+(function () {
+  const P = Arcade.paciencia;
+  const V = {
+    found: {"wrap":true},
+    tab: {"build":"any","move":"seq","empty":"any","wrap":true,"autoFill":"res"},
+    stock: { to: 'waste', n: 1, redeals: 0 },
+    init(lv) { this.stock.redeals = 0 + (lv < 6 ? 1 : 0); },
+    piles: (lv) => P.mk([['stock', 1], ['waste', 1], ['found', 4], ['res', 1, { fan: 'none' }], ['tab', 4]]),
+    deal: (st, D, deck) => P.dealStd(st, D, deck, {"ds":["U","U","U","U"],"fbFirst":true,"res":13}),
+    place: (g, s, D, y0) => P.autoPlace(g, s, D, y0, {}),
+    status: P.autoStatus,
+    felt: ["#c2255c","#5c0f2c"], back: ["#5f3dc4","#2b1580"], backEmoji: '🌈',
+  };
+  Arcade.game({
+    ...P(V),
+    /*THEME*/ home: 'indexsolitarios.html', tag: 'Canfield de cualquier palo', deco: ["🃏","🌈","♠️","♥️","♦️","♣️"], font: 'serif', bg: ["#c2255c","#5c0f2c"],
+    music: { mode: 'major', bpm: 82, wave: 'sine', style: 'chill', root: 58 }, voice: { wave: 'sine', mul: 1.2, echo: 0.4 },
+    /*EN*/ en: { title: 'Rainbow', tag: 'Canfield in any suit', help: 'A Canfield where you build down in any suit; the stock is drawn one at a time and goes round only once. The <b>foundations</b> start at the rank of the first card dealt to them and go up by suit, wrapping after K. On the table, a card goes on another <b>one rank higher</b> of <b>any suit</b> (and a K can go on an A). You can move cards together if they are already in order. Empty columns refill themselves from the reserve. The <b>reserve</b> has 13 cards: its top card can be played at any time. Tap the stock to draw cards one at a time; it goes round only once. In the first levels you get one more pass through the stock. <b>Tap</b> a card and it goes to the best place, or <b>drag</b> it. 💡 gives a hint and ↩️ undoes.', tvHelp: 'D-pad to a card · OK moves it.', dict: { 'Celdas libres: ': 'Free cells: ', 'Reserva: ': 'Reserve: ', 'Mazo: ': 'Stock: ', 'En la mesa: ': 'On the table: ', 'Base: ': 'Base: ' } },
+    /*TV*/ tvHelp: 'Cruceta hasta una carta · OK la mueve.',
+    id: 'arcoiris', title: 'Arcoíris', emoji: '🌈', color: '#f783ac', origin: 'Rainbow',
+    help: 'Un Canfield en el que se baja de cualquier palo; el mazo se saca de una en una y se pasa una sola vez. Las <b>bases</b> empiezan en el número de la primera carta que sale en ellas y suben por palo, dando la vuelta tras la K. En la mesa, una carta va sobre otra de <b>un número más</b> de <b>cualquier palo</b> (y la K puede ir sobre el A). Puedes mover juntas las cartas que ya estén en orden. Las columnas vacías se rellenan solas con la reserva. La <b>reserva</b> tiene 13 cartas: su carta de arriba se puede jugar en cualquier momento. Toca el mazo para sacar cartas de una en una; se pasa una sola vez. En los primeros niveles puedes darle una vuelta más al mazo. <b>Toca</b> una carta y va sola a su mejor sitio, o <b>arrástrala</b>. 💡 te da una pista y ↩️ deshace.',
+    lives: 0, levels: 0, cap: 20,
+  });
+})();
+</script>
+</body>
+</html>

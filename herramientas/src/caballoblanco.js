@@ -1,0 +1,24 @@
+// Caballo blanco|#0b3a15
+// @cartas
+(function () {
+  const P = Arcade.paciencia;
+  const V = {
+    tab: {"build":"alt","move":"seq","empty":"any","autoFill":"waste"},
+    stock: { to: 'waste', n: 1, redeals: Infinity },
+    piles: (lv) => P.mk([['stock', 1], ['waste', 1], ['found', 4], ['tab', 7]]),
+    deal: (st, D, deck) => P.dealStd(st, D, deck, {"ds":["U","U","U","U","U","U","U"]}),
+    place: (g, s, D, y0) => P.autoPlace(g, s, D, y0, {}),
+    status: P.autoStatus,
+    felt: ["#2b8a3e","#0b3a15"], back: ["#c92a2a","#7a1010"], backEmoji: '🐴',
+  };
+  Arcade.game({
+    ...P(V),
+    /*THEME*/ home: 'indexsolitarios.html', tag: 'Columnas que se rellenan solas', deco: ["🃏","🐴","♠️","♥️","♦️","♣️"], font: 'serif', bg: ["#2b8a3e","#0b3a15"],
+    music: { mode: 'lydian', bpm: 92, wave: 'sine', style: 'chill', root: 55 }, voice: { wave: 'sine', mul: 1.2, echo: 0.4 },
+    /*EN*/ en: { title: 'Whitehorse', tag: 'Columns that refill themselves', help: 'You start with seven single cards and empty columns refill themselves from the waste. Build the <b>4 foundations</b> from A to K, one per suit. On the table, a card goes on another <b>one rank higher</b> in the <b>other colour</b>. You can move cards together if they are already in order. Empty columns refill themselves from the waste. Tap the stock to draw cards one at a time and turn it over as often as you like. <b>Tap</b> a card and it goes to the best place, or <b>drag</b> it. 💡 gives a hint and ↩️ undoes.', tvHelp: 'D-pad to a card · OK moves it.', dict: { 'Celdas libres: ': 'Free cells: ', 'Reserva: ': 'Reserve: ', 'Mazo: ': 'Stock: ', 'En la mesa: ': 'On the table: ', 'Base: ': 'Base: ' } },
+    /*TV*/ tvHelp: 'Cruceta hasta una carta · OK la mueve.',
+    id: 'caballoblanco', title: 'Caballo blanco', emoji: '🐴', color: '#69db7c', origin: 'Whitehorse',
+    help: 'Empiezas con siete cartas sueltas y las columnas vacías se rellenan solas con el descarte. Completa las <b>4 bases</b> del A a la K, una por palo. En la mesa, una carta va sobre otra de <b>un número más</b> y de <b>color distinto</b>. Puedes mover juntas las cartas que ya estén en orden. Las columnas vacías se rellenan solas con el descarte. Toca el mazo para sacar cartas de una en una y dale la vuelta las veces que quieras. <b>Toca</b> una carta y va sola a su mejor sitio, o <b>arrástrala</b>. 💡 te da una pista y ↩️ deshace.',
+    lives: 0, levels: 0, cap: 20,
+  });
+})();

@@ -1,0 +1,25 @@
+// Alí Babá|#08254a
+// @cartas
+(function () {
+  const P = Arcade.paciencia;
+  const V = {
+    tab: {"build":"suit","move":"seq","empty":"any"},
+    stock: { to: 'waste', n: 1, redeals: 0 },
+    init(lv) { this.stock.redeals = 0 + (lv < 6 ? 1 : 0); },
+    piles: (lv) => P.mk([['stock', 1], ['waste', 1], ['found', 4], ['tab', 10]]),
+    deal: (st, D, deck) => P.dealStd(st, D, deck, {"ds":["UUUU","UUUU","UUUU","UUUU","UUUU","UUUU","UUUU","UUUU","UUUU","UUUU"],"aces":true}),
+    place: (g, s, D, y0) => P.autoPlace(g, s, D, y0, {}),
+    status: P.autoStatus,
+    felt: ["#1864ab","#08254a"], back: ["#c92a2a","#7a1010"], backEmoji: '🧞',
+  };
+  Arcade.game({
+    ...P(V),
+    /*THEME*/ home: 'indexsolitarios.html', tag: 'Los ladrones con una baraja', deco: ["🃏","🧞","♠️","♥️","♦️","♣️"], font: 'serif', bg: ["#1864ab","#08254a"],
+    music: { mode: 'dorian', bpm: 82, wave: 'sine', style: 'chill', root: 61 }, voice: { wave: 'sine', mul: 1.2, echo: 0.4 },
+    /*EN*/ en: { title: 'Ali Baba', tag: 'The thieves with one deck', help: 'With a single deck: ten columns of four, the aces already on the foundations and same-suit runs that move together. The aces are already on the <b>foundations</b>: build them up to K by suit. On the table, a card goes on another <b>one rank higher</b> of the <b>same suit</b>. You can move cards together if they are already in order. Any card can go into an empty space. Tap the stock to draw cards one at a time; it goes round only once. In the first levels you get one more pass through the stock. <b>Tap</b> a card and it goes to the best place, or <b>drag</b> it. 💡 gives a hint and ↩️ undoes.', tvHelp: 'D-pad to a card · OK moves it.', dict: { 'Celdas libres: ': 'Free cells: ', 'Reserva: ': 'Reserve: ', 'Mazo: ': 'Stock: ', 'En la mesa: ': 'On the table: ', 'Base: ': 'Base: ' } },
+    /*TV*/ tvHelp: 'Cruceta hasta una carta · OK la mueve.',
+    id: 'alibaba', title: 'Alí Babá', emoji: '🧞', color: '#4dabf7', origin: 'Ali Baba',
+    help: 'Con una sola baraja: diez columnas de cuatro, los ases ya en las bases y escaleras del mismo palo que se mueven juntas. Los ases ya están en las <b>bases</b>: súbelas hasta la K por palo. En la mesa, una carta va sobre otra de <b>un número más</b> y del <b>mismo palo</b>. Puedes mover juntas las cartas que ya estén en orden. Cualquier carta puede ir a un hueco vacío. Toca el mazo para sacar cartas de una en una; se pasa una sola vez. En los primeros niveles puedes darle una vuelta más al mazo. <b>Toca</b> una carta y va sola a su mejor sitio, o <b>arrástrala</b>. 💡 te da una pista y ↩️ deshace.',
+    lives: 0, levels: 0, cap: 20,
+  });
+})();
