@@ -822,6 +822,7 @@
         c.at = c.tap || c.hold || (c.drag && c.drag[0]) || null; }
       const c = DM.cur; c.t += dt;
       if (c.ph === 'go') {
+        if (c.until) { if (c.until()) DM.cur = null; return; }   // paso que espera (p. ej. al botón «Siguiente» de una demo guiada)
         if (c.at) { const [tx, ty] = c.at, dx = tx - DM.fx, dy = ty - DM.fy, d = Math.hypot(dx, dy), sp = Math.max(500, d * 4) * dt;
           if (d > sp) { DM.fx += dx / d * sp; DM.fy += dy / d * sp; return; } DM.fx = tx; DM.fy = ty; }
         c.ph = 'act'; c.t = 0;
@@ -842,8 +843,10 @@
     function drawDemo() {
       if (SHOT) return;   // captura para la web: sin dedo ni rótulos
       const sz = 46, pr = DM.press;
+      if (def.demoQuiet && def.demoQuiet(g) === 'all') return;   // pausa de una demo guiada: ni dedo ni rótulos
       if (pr > 0) { ctx.globalAlpha = 0.5 * pr; ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(DM.fx, DM.fy, 14 + (1 - pr) * 18, 0, TAU); ctx.stroke(); ctx.globalAlpha = 1; }
       A.emoji(ctx, '👆', DM.fx + 4, DM.fy + sz * 0.42, sz * (1 - pr * 0.12), { rot: -0.15 });
+      if (def.demoQuiet && def.demoQuiet(g)) return;   // el juego pone sus propios textos
       const y = g.top + 4, bw = 86, blink = 0.75 + 0.25 * Math.sin(g.rt * 4);
       ctx.globalAlpha = blink; ctx.fillStyle = 'rgba(0,0,0,.6)'; A.rr(ctx, g.W - bw - 8, y, bw, 24, 12); ctx.fill();
       A.txt(ctx, '👀 DEMO', g.W - 8 - bw / 2, y + 12, 13, '#ffd43b', 'center', 900); ctx.globalAlpha = 1;
@@ -910,7 +913,7 @@
     /* --- entrada táctil --- */
     canvas.addEventListener('pointerdown', (e) => {
       actx(); e.preventDefault();
-      if (g.demoOn) { endDemo(); return; }
+      if (g.demoOn) { if (def.demoTap && g.state === 'play' && def.demoTap(g, e.clientX, e.clientY)) return; endDemo(); return; }   // demoTap: demos guiadas con botones
       try { canvas.setPointerCapture(e.pointerId); } catch (_) {}
       const p = { id: e.pointerId, x: e.clientX, y: e.clientY, sx: e.clientX, sy: e.clientY, t0: performance.now(), type: e.pointerType };
       g.pointers.set(e.pointerId, p);
@@ -1068,7 +1071,7 @@
     }
     const held = new Set();
     window.addEventListener('keydown', (e) => {
-      if (g.demoOn && g.state === 'play') { e.preventDefault(); endDemo(); return; }
+      if (g.demoOn && g.state === 'play') { e.preventDefault(); if (def.demoKey && def.demoKey(g, keyName(e))) return; endDemo(); return; }
       const k = keyName(e);
       if (TV) {
         const nav = k.startsWith('Arrow') || k === 'OK' || k === 'BACK' || k === ' ';

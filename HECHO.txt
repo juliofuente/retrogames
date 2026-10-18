@@ -1,6 +1,11 @@
 ARCADE PERDIDO + ARCADE PRO — LO QUE ESTÁ HECHO
 ================================================
-Fecha: 18-10-2026 · Versión de la PWA (games.js → ARCADE_VERSION): 2.27.0
+Fecha: 18-10-2026 · Versión de la PWA (games.js → ARCADE_VERSION): 2.27.1
+· v2.27.1: la demo de los solitarios es guiada: antes de cada jugada sale un texto corto que la explica («Pon el 8♠
+  sobre el 9♦: uno menos y de otro color. Así se destapa una carta.») con las cartas iluminadas y los botones «Ver
+  jugada ▶» / «Salir»; luego la jugada se hace despacio. La primera vez dice el objetivo. common.js admite demos
+  guiadas (def.demoTap, def.demoKey, def.demoQuiet y pasos { until }). Arreglado: la pista ya no propone mover un
+  as de una base vacía a otra.
 · v2.27.0: Solitario, Araña, Torres libres y Huecos pasan al motor de cartas (con tutorial, pista y demo como los demás;
   Huecos con barajadas según el nivel: 8, 5 y 3). Nueva categoría «Juegos de cartas» (los 100 solitarios y el póker);
   «Tablero, cartas y palabras» pasa a llamarse «Tablero y palabras» (misma URL). En la web, Solitarios destaca como

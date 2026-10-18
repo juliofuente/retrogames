@@ -74,7 +74,7 @@
       if (from === to) return false; const d = D[to], p = st.p[from], cs = p.slice(p.length - n), q = st.p[to];
       if (V.canDrop) { const r = V.canDrop(st, D, from, n, to, cs); if (r != null) return r; }
       switch (d.k) {
-        case 'found': return fitsFound(st, D, to, cs) && (F.mode !== 'run' || D[from].k === 'tab');
+        case 'found': return D[from].k !== 'found' && fitsFound(st, D, to, cs) && (F.mode !== 'run' || D[from].k === 'tab');
         case 'cell': return n === 1 && !q.length;
         case 'tab': {
           if (TB.from && TB.from.indexOf(D[from].k) < 0) return false;
@@ -599,11 +599,11 @@
     function tutBox(g) {
       const s = g.s, tu = s.tut, step = tu.steps[tu.i], rs = tutRects(g, step);
       const W = g.W, bw = Math.min(W - 24, 460), size = W < 420 ? 14 : 16, ctx = document.createElement('canvas').getContext('2d');
-      const lines = wrapText(ctx, step.t, bw - 32, size), bh = 22 + lines.length * size * 1.35 + 52;
+      const lines = wrapText(ctx, step.t, bw - 32, size), pad = tu.guided ? 34 : 22, bh = pad + lines.length * size * 1.35 + 52;
       let top = rs.length ? Math.min(...rs.map((r) => r.y)) : g.H / 2, bot = rs.length ? Math.max(...rs.map((r) => r.y + r.h)) : g.H / 2;
       let y = bot + 12 + bh < g.bot ? bot + 12 : top - 12 - bh > g.top ? top - 12 - bh : g.bot - bh - 8;
       const x = (W - bw) / 2;
-      return { x, y, w: bw, h: bh, lines, size, rs, next: { x: x + bw - 132, y: y + bh - 44, w: 120, h: 34 }, skip: { x: x + 12, y: y + bh - 44, w: 100, h: 34 } };
+      return { x, y, w: bw, h: bh, lines, size, rs, pad, next: { x: x + bw - 132, y: y + bh - 44, w: 120, h: 34 }, skip: { x: x + 12, y: y + bh - 44, w: 100, h: 34 } };
     }
     function drawTut(g, ctx) {
       const s = g.s, tu = s.tut; if (!tu) return; tu.t += A.fdt;
@@ -614,12 +614,14 @@
       for (const r of b.rs) { ctx.strokeStyle = `rgba(255,212,59,${pulse})`; ctx.lineWidth = 3; A.rr(ctx, r.x, r.y, r.w, r.h, 12); ctx.stroke(); }
       ctx.save(); ctx.globalAlpha = k; ctx.shadowColor = 'rgba(0,0,0,.4)'; ctx.shadowBlur = 18; ctx.fillStyle = '#fffdf5'; A.rr(ctx, b.x, b.y, b.w, b.h, 16); ctx.fill(); ctx.restore();
       ctx.globalAlpha = k;
-      A.txt(ctx, (tu.i + 1) + ' / ' + tu.steps.length, b.x + b.w - 16, b.y + 14, 12, '#868e96', 'right', 800);
-      b.lines.forEach((ln, n) => A.txt(ctx, ln, b.x + 16, b.y + 22 + n * b.size * 1.35 + b.size * 0.4, b.size, '#212529', 'left', 700));
+      if (!tu.guided) A.txt(ctx, (tu.i + 1) + ' / ' + tu.steps.length, b.x + b.w - 16, b.y + 14, 12, '#868e96', 'right', 800);
+      b.lines.forEach((ln, n) => A.txt(ctx, ln, b.x + 16, b.y + b.pad + n * b.size * 1.35 + b.size * 0.4, b.size, '#212529', 'left', 700));
       const last = tu.i === tu.steps.length - 1;
       ctx.fillStyle = '#ffd43b'; A.rr(ctx, b.next.x, b.next.y, b.next.w, b.next.h, 17); ctx.fill();
-      A.txt(ctx, last ? T('¡A jugar!', "Let's play!") : T('Siguiente ▶', 'Next ▶'), b.next.x + b.next.w / 2, b.next.y + b.next.h / 2, 15, '#2a2100', 'center', 900);
-      if (!last) A.txt(ctx, T('Saltar', 'Skip'), b.skip.x + b.skip.w / 2, b.skip.y + b.skip.h / 2, 14, '#868e96', 'center', 800);
+      const gd = tu.guided;
+      A.txt(ctx, gd ? (last ? T('Ver jugada ▶', 'Show me ▶') : T('Siguiente ▶', 'Next ▶')) : last ? T('¡A jugar!', "Let's play!") : T('Siguiente ▶', 'Next ▶'), b.next.x + b.next.w / 2, b.next.y + b.next.h / 2, 15, '#2a2100', 'center', 900);
+      if (!last || gd) A.txt(ctx, gd ? T('Salir', 'Exit') : T('Saltar', 'Skip'), b.skip.x + b.skip.w / 2, b.skip.y + b.skip.h / 2, 14, '#868e96', 'center', 800);
+      if (gd) A.txt(ctx, '👀 DEMO', b.x + 16, b.y + 14, 12, '#e8590c', 'left', 900);
       ctx.globalAlpha = 1;
     }
     function tutTap(g, p) {
@@ -628,8 +630,60 @@
       tutNext(g);
     }
 
+    /* ---------- demo guiada: primero se explica la jugada (texto corto + «Ver jugada»), luego se hace despacio ---------- */
+    const SHOTM = typeof location !== 'undefined' && /[?&]shot=1/.test(location.search);
+    const nm = (x) => RANK[R(x)] + SUIT[S(x)];
+    function explain(g, m) {
+      const s = g.s, D = s.D, st = s.st;
+      if (m.stock) { if (ST.to === 'tab') return T('No hay más jugadas: toca el mazo para repartir una carta a cada columna.', 'No more moves: tap the stock to deal a card to each column.'); if (ST.to === 'found') return T('No hay jugada: toca el mazo para poner otra carta en la base.', 'No move: tap the stock to put a new card on the foundation.'); return m.redeal ? T('El mazo se ha acabado: tócalo para darle la vuelta.', 'The stock is empty: tap it to turn it over.') : T('No hay nada mejor: toca el mazo para sacar carta.', 'Nothing better: tap the stock to draw.'); }
+      if (m.rdl) return T('Atascados: pulsa 🔀 para barajar y repartir otra vez.', 'Stuck: press 🔀 to shuffle and deal again.');
+      if (m.single != null) return T('La K vale 13 ella sola: tócala y se va.', 'A K is worth 13 by itself: tap it and it goes.');
+      if (m.pair) { const [a, b] = m.pair; return T('El ' + nm(top(st, a)) + ' y el ' + nm(top(st, b)) + ' suman 13: tócalos y se van.', nm(top(st, a)) + ' and ' + nm(top(st, b)) + ' add up to 13: tap them and they go.'); }
+      const p = st.p[m.f], c = p[p.length - m.n], q = st.p[m.t], on = q.length ? q[q.length - 1] : null, df = D[m.f], dt = D[m.t];
+      const below = p.length > m.n ? p[p.length - m.n - 1] : null;
+      let t;
+      if (dt.k === 'found') t = F.mode === 'updown' ? T('El ' + nm(c) + ' es uno más o uno menos que el ' + nm(on) + ': a la base.', nm(c) + ' is one away from ' + nm(on) + ': onto the foundation.') : T('El ' + nm(c) + ' sube a su base.', nm(c) + ' goes up to its foundation.');
+      else if (dt.k === 'cell') t = T('Guarda el ' + nm(c) + ' en una celda para hacer sitio.', 'Park ' + nm(c) + ' in a cell to make room.');
+      else if (dt.k === 'grid') t = dt.c === 0 ? T('Un 2 al principio de la fila: el ' + nm(c) + '.', 'A 2 at the start of the row: ' + nm(c) + '.') : T('El ' + nm(c) + ' va justo detrás del ' + nm(st.p[m.t - 1][0]) + '.', nm(c) + ' goes right after ' + nm(st.p[m.t - 1][0]) + '.');
+      else if (!on) t = T('Lleva el ' + nm(c) + (m.n > 1 ? ' (con lo que tiene encima)' : '') + ' al hueco libre.', 'Move ' + nm(c) + (m.n > 1 ? ' (with what is on top)' : '') + ' to the empty space.');
+      else {
+        const why = TB.build === 'free' ? '' : TB.build === 'alt' ? T(': uno menos y de otro color', ': one lower, other colour') : TB.build === 'suit' ? T(': mismo palo, uno menos', ': same suit, one lower') : TB.build === 'color' ? T(': mismo color, uno menos', ': same colour, one lower') : TB.build === 'notsuit' ? T(': uno menos y de otro palo', ': one lower, other suit') : T(': uno menos', ': one lower');
+        t = T((m.n > 1 ? 'Mueve el ' + nm(c) + ' y las ' + (m.n - 1) + ' de encima' : 'Pon el ' + nm(c)) + ' sobre el ' + nm(on) + (TB.updown ? T(': uno más o uno menos', '') : why) + '.', (m.n > 1 ? 'Move ' + nm(c) + ' and the ' + (m.n - 1) + ' on top' : 'Put ' + nm(c)) + ' on ' + nm(on) + (TB.updown ? ': one up or down' : why) + '.');
+        if (TB.build === 'free') t = T('El ' + nm(c) + ' no puede subir aún: al descarte, encima del ' + nm(on) + '.', nm(c) + ' cannot go up yet: onto the waste pile, over ' + nm(on) + '.');
+      }
+      if (df.k === 'cell' && dt.k !== 'cell') t += T(' La celda queda libre.', ' The cell is free again.');
+      if (below != null && !isUp(below)) t += T(' Así se destapa una carta.', ' That uncovers a card.');
+      else if (below == null && df.k === 'tab' && dt.k !== 'tab') t += T(' Y queda un hueco.', ' And a space opens up.');
+      if (df.k === 'grid' && kinds(D, 'grid').length && !V.pair && F.mode === 'updown') t += T(' Quedan libres las cartas de debajo.', ' The cards below become free.');
+      return t;
+    }
+    function guideNext(g, exit) {
+      const s = g.s; if (!s.tut || !s.tut.guided) return false;
+      if (exit) { s.tut = null; s.hl = null; return false; }
+      s.tut.i++; s.tut.t = 0; A.tone(560, 0.05, 'sine', 0.04);
+      if (s.tut.i >= s.tut.steps.length) { s.tut = null; s.dgReady = true; }
+      return true;
+    }
+    function guidedDemo(g, m) {
+      const s = g.s, steps = [];
+      if (!s.dgIntro) { s.dgIntro = true; const goal = tutSteps(g)[0]; if (goal) steps.push({ piles: goal.piles, t: goal.t.split(/(?<=[.!])\s/)[0] }); }
+      steps.push({ move: m, t: explain(g, m) });
+      s.tut = { steps, i: 0, t: 0, guided: true }; s.dgReady = false; s.hl = { m, t: 999 };
+      const out = [{ until: () => s.dgReady }], clear = { until: () => { s.hl = null; return true; } };
+      if (m.stock) { const i = kinds(s.D, 'stock')[0]; out.push({ tap: center(g, i, s.st.p[i].length - 1), after: 1 }); }
+      else if (m.rdl) { const b = s.btns.find((q) => q.id === 'rdl'); out.push({ tap: [b.x + b.w / 2, b.y + b.h / 2], after: 1.2 }); }
+      else if (m.single != null) out.push({ tap: center(g, m.single, s.st.p[m.single].length - 1), after: 1 });
+      else if (m.pair) { const [a, b] = m.pair; out.push({ tap: center(g, a, s.st.p[a].length - 1), after: 0.8 }, { tap: center(g, b, s.st.p[b].length - 1), after: 1 }); }
+      else { const k = s.st.p[m.f].length - m.n; out.push({ drag: [center(g, m.f, k), dropPoint(g, m.t)], dur: 1.2, after: 1 }); }
+      out.push(clear);
+      return out;
+    }
+
     return {
-      lives: 0, levels: 0, cap: 20,
+      lives: 0, levels: 0, cap: 20, demoTime: 3600,
+      demoQuiet: (g) => SHOTM ? false : g.s && g.s.tut && g.s.tut.guided ? 'all' : true,
+      demoTap(g, x, y) { const s = g.s; if (!s || !s.tut || !s.tut.guided) return !!(s && s.D && !s.done); const b = tutBox(g), inR = (r) => x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h; if (inR(b.skip)) return guideNext(g, true); return guideNext(g); },
+      demoKey(g, k) { const s = g.s; if (k === 'BACK' || k === 'Escape' || k === 'Backspace') { if (s && s.tut && s.tut.guided) guideNext(g, true); return false; } if (s && s.tut && s.tut.guided && (k === 'OK' || k === 'Enter' || k === ' ' || k === 'ArrowRight')) return guideNext(g); return true; },
       setup(g) {
         const { D, st } = newDeal(g);
         g.s = { D, st, hist: [], undos: 0, hints: 0, moves: 0, seen: new Set([vkey(st)]), sel: null, done: false, objs: {}, drag: null, stuck: false, pend: 0 };
@@ -728,6 +782,7 @@
       demo(g) {
         const s = g.s; if (!s.D || s.done) return { wait: 0.5 };
         const m = hint(g); if (!m) return { wait: 1 };
+        if (!SHOTM) return guidedDemo(g, m);
         const say = s.moves === 0 && V.demoSay ? V.demoSay : null;
         if (m.stock) { const i = kinds(s.D, 'stock')[0]; return { tap: center(g, i, s.st.p[i].length - 1), after: 0.35, say }; }
         if (m.rdl) { const b = s.btns.find((q) => q.id === 'rdl'); return { tap: [b.x + b.w / 2, b.y + b.h / 2], after: 0.5, say }; }
