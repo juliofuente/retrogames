@@ -1,6 +1,14 @@
 ARCADE PERDIDO + ARCADE PRO — LO QUE ESTÁ HECHO
 ================================================
-Fecha: 18-10-2026 · Versión de la PWA (games.js → ARCADE_VERSION): 2.24.0
+Fecha: 18-10-2026 · Versión de la PWA (games.js → ARCADE_VERSION): 2.25.0
+· v2.25.0: nueva colección «Solitarios» (🃏, /coleccion/solitarios, /en/collection/solitaire, portada pwa/indexsolitarios,
+  sección 🃏 de la portada de TV; Arcade Pro ya no los muestra). 20 juegos: los 4 que había (Solitario, Araña, Torres
+  libres, Huecos) y 16 variantes nuevas con un motor propio, pwa/cartas.js (Arcade.paciencia): Carta libre (FreeCell),
+  Yukon, Escorpión, Canfield, Docena del panadero, Cuarenta ladrones, Castillo asediado, Abanicos (La Belle Lucie), Ocho
+  celdas, Golf, Cálculo, Pirámide de cartas, Tres picos (TriPeaks), Arañita, Jardín de flores y Pingüino de cartas.
+  Reglas tomadas de la web Politaire de Julk como referencia; el código es nuevo (el de Politaire es de Jan Wolter).
+  El motor pone: tocar para mover solo, arrastrar, deshacer, 💡 pista con solucionador, demo, final automático, cartas
+  dibujadas con figuras de emoji, tapete y cascada de cartas al ganar. Probado con bots en los niveles 1, 8/12 y 20.
 · v2.24.0: educativo nuevo «Mati y los Portales» (educativos/mati-portales/, id mati-y-los-portales, mates, 5–12 años,
   solo es; app «mati» en la tabla apps). Aventura del Libro 1 (El Reino de los Dragones) con los 49 problemas: pregunta
   la edad y la adapta en 4 niveles (5–6, 7–8, 9–10, 11+: textos cortos y respuestas para elegir o historia completa y
