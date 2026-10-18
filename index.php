@@ -284,7 +284,8 @@ function game_ld(array $g): array {
   foreach ($g['based'] as $b) { $x = ['@type' => 'VideoGame', 'name' => $b['name']]; if ($b['publisher']) $x['publisher'] = ['@type' => 'Organization', 'name' => $b['publisher']]; if ($b['year']) $x['datePublished'] = (string)$b['year']; $based[] = $x; }
   $ld = ['@type' => ['VideoGame', 'MobileApplication'], '@id' => abs_url($p) . '#game', 'name' => f($g, 'title'), 'alternateName' => T($g['title_en'], $g['title_es']),
     'url' => abs_url($p), 'description' => f($g, 'desc'), 'disambiguatingDescription' => f($g, 'tag'),
-    'image' => [abs_url('/pwa/icons/icon-512.png'), abs_url('/icono/' . $g['id'] . '.svg')],
+    'image' => array_merge(shot_url($g, false) ? [abs_url('/pwa/capturas/' . $g['id'] . '.webp')] : [], [abs_url('/pwa/icons/icon-512.png'), abs_url('/icono/' . $g['id'] . '.svg')]),
+    'screenshot' => shot_url($g, false) ? abs_url('/pwa/capturas/' . $g['id'] . '.webp') : null,
     'genre' => [f($c, 'name'), $c['genre'], 'Arcade'], 'gamePlatform' => array_values(array_filter(['Web browser', 'Android', 'iOS', $g['tv'] ? 'Android TV' : null, $g['tv'] ? 'Fire TV' : null])),
     'applicationCategory' => 'GameApplication', 'operatingSystem' => 'Android, iOS, Windows, macOS, Linux' . ($g['tv'] ? ', Android TV, Fire TV' : ''),
     'playMode' => $g['tv'] ? ['SinglePlayer', 'MultiPlayer'] : 'SinglePlayer',
@@ -297,6 +298,7 @@ function game_ld(array $g): array {
     'publisher' => ['@id' => abs_url('/#org')],
     'potentialAction' => ['@type' => 'PlayAction', 'target' => ['@type' => 'EntryPoint', 'urlTemplate' => abs_url(play_path($g)), 'actionPlatform' => ['https://schema.org/DesktopWebPlatform', 'https://schema.org/MobileWebPlatform']]],
     'mainEntityOfPage' => ['@id' => abs_url($p) . '#webpage']];
+  if (!$ld['screenshot']) unset($ld['screenshot']);
   if ($based) $ld['isBasedOn'] = count($based) === 1 ? $based[0] : $based;
   if ($g['added_version']) $ld['version'] = $g['added_version'];
   return $ld;
@@ -306,7 +308,7 @@ function edu_ld(array $g): array {
   $s = $SUBJS[$g['subject_id']]; $p = game_path($g);
   $langs = explode(',', (string)$g['langs']);
   return ['@type' => ['VideoGame', 'MobileApplication', 'LearningResource'], '@id' => abs_url($p) . '#game', 'name' => f($g, 'title'), 'alternateName' => T($g['title_en'], $g['title_es']),
-    'url' => abs_url($p), 'description' => f($g, 'desc'), 'image' => abs_url('/icono/' . $g['id'] . '.svg'),
+    'url' => abs_url($p), 'description' => f($g, 'desc'), 'image' => shot_url($g, false) ? abs_url('/pwa/capturas/' . $g['id'] . '.webp') : abs_url('/icono/' . $g['id'] . '.svg'),
     'genre' => [T('Educativo', 'Educational'), f($s, 'name')], 'gamePlatform' => ['Web browser', 'Android', 'iOS'],
     'applicationCategory' => 'EducationalApplication', 'applicationSubCategory' => f($s, 'name'), 'operatingSystem' => 'Android, iOS, Windows, macOS, Linux',
     'playMode' => 'SinglePlayer', 'numberOfPlayers' => ['@type' => 'QuantitativeValue', 'minValue' => 1, 'maxValue' => 1],
@@ -327,13 +329,24 @@ function faq_ld(array $qa, string $p): array {
 }
 
 /* ---------- plantilla ---------- */
+function shot_url(array $g, bool $sm = true): ?string {
+  $f = 'pwa/capturas/' . $g['id'] . ($sm ? '-sm' : '') . '.webp'; $full = __DIR__ . '/' . $f;
+  return is_file($full) ? url('/' . $f) . '?v=' . filemtime($full) : null;
+}
+function cover(array $g, bool $sm = true, string $alt = ''): string {
+  $s = shot_url($g, $sm);
+  if ($s) return '<img src="' . h($s) . '" alt="' . h($alt) . '" width="' . ($sm ? 400 : 960) . '" height="' . ($sm ? 250 : 600) . '"' . ($sm ? ' loading="lazy" decoding="async"' : '') . '>';
+  return '<span class="ph" aria-hidden="true" style="background:linear-gradient(135deg,' . h($g['bg1'] ?: $g['color']) . ',' . h($g['bg2'] ?: '#111') . ')">' . h($g['emoji']) . '</span>';
+}
 function card(array $g, string $extra = '', ?string $href = null, int $pos = 0): string {
-  global $CTRLS, $SUBJS;
-  if (is_edu($g)) $chips = '<span>' . h($SUBJS[$g['subject_id']]['emoji'] . ' ' . f($SUBJS[$g['subject_id']], 'name')) . '</span><span>' . h(ages_label($g)) . '</span>';
-  else $chips = '<span>' . h(f($CTRLS[$g['control_id']], 'name')) . '</span>' . ($g['tv'] ? '<span title="' . h(T('Se puede jugar con mando', 'Playable with a remote')) . '">📺</span>' : '');
-  return '<li><a class="card" href="' . h($href ?? url(game_path($g))) . '" style="--c:' . h($g['color']) . '">' . ($pos ? '<span class="pos">' . $pos . '</span>' : '')
-    . '<span class="ic" aria-hidden="true" style="background:linear-gradient(135deg,' . h($g['bg1'] ?: $g['color']) . ',' . h($g['bg2'] ?: '#111') . ')">' . h($g['emoji']) . '</span>'
-    . '<span class="tx"><b>' . h(f($g, 'title')) . '</b><span class="tg">' . h(f($g, 'tag')) . '</span>'
+  global $CTRLS, $SUBJS, $CATS;
+  if (is_edu($g)) $chips = '<span class="cat">' . h($SUBJS[$g['subject_id']]['emoji'] . ' ' . f($SUBJS[$g['subject_id']], 'name')) . '</span><span>' . h(ages_label($g)) . '</span>';
+  else $chips = (isset($CATS[$g['category_id']]) ? '<span class="cat">' . h(f($CATS[$g['category_id']], 'name')) . '</span>' : '') . '<span>' . h(f($CTRLS[$g['control_id']], 'name')) . '</span>';
+  $img = shot_url($g) !== null;
+  return '<li><a class="card" href="' . h($href ?? url(game_path($g))) . '">' . ($pos ? '<span class="pos">' . $pos . '</span>' : '')
+    . '<span class="cv">' . cover($g, true, f($g, 'title')) . ($img ? '<span class="em" aria-hidden="true">' . h($g['emoji']) . '</span>' : '')
+    . '</span>'
+    . '<span class="tx"><b>' . h(f($g, 'title')) . '</b><span class="tg">' . h(f($g, 'tag') ?: cut(f($g, 'desc'), 70)) . '</span>'
     . '<span class="ch">' . $chips . $extra . '</span></span></a></li>';
 }
 function grid(array $games): string { return '<ul class="grid">' . implode('', array_map('card', $games)) . '</ul>'; }
@@ -369,7 +382,7 @@ function render(array $o): void {
 <link rel="alternate" hreflang="en" href="<?= h(abs_url($alt[1])) ?>">
 <link rel="alternate" hreflang="x-default" href="<?= h(abs_url($alt[0])) ?>">
 <?php endif; ?>
-<meta name="theme-color" content="<?= h($o['theme'] ?? '#120f26') ?>">
+<meta name="theme-color" content="<?= h($o['theme'] ?? '#ffce3a') ?>">
 <meta name="application-name" content="<?= h($SITE) ?>">
 <meta name="apple-mobile-web-app-title" content="<?= h($SITE) ?>">
 <meta property="og:type" content="<?= h($o['ogtype'] ?? 'website') ?>">
@@ -377,11 +390,14 @@ function render(array $o): void {
 <meta property="og:title" content="<?= h($o['ogtitle'] ?? $title) ?>">
 <meta property="og:description" content="<?= h($desc) ?>">
 <meta property="og:url" content="<?= h(abs_url($p)) ?>">
-<meta property="og:image" content="<?= h(abs_url('/pwa/icons/icon-512.png')) ?>">
+<?php if (!empty($o['image'])): ?><meta property="og:image" content="<?= h(abs_url($o['image'])) ?>">
+<meta property="og:image:width" content="960"><meta property="og:image:height" content="600">
+<?php else: ?><meta property="og:image" content="<?= h(abs_url('/pwa/icons/icon-512.png')) ?>">
 <meta property="og:image:width" content="512"><meta property="og:image:height" content="512">
+<?php endif; ?>
 <meta property="og:locale" content="<?= $L === 'en' ? 'en_GB' : 'es_ES' ?>">
 <meta property="og:locale:alternate" content="<?= $L === 'en' ? 'es_ES' : 'en_GB' ?>">
-<meta name="twitter:card" content="summary">
+<meta name="twitter:card" content="<?= empty($o['image']) ? 'summary' : 'summary_large_image' ?>">
 <meta name="twitter:title" content="<?= h($o['ogtitle'] ?? $title) ?>">
 <meta name="twitter:description" content="<?= h($desc) ?>">
 <link rel="icon" href="<?= h($o['icon'] ?? url('/pwa/icons/icon-192.png')) ?>">
@@ -389,67 +405,115 @@ function render(array $o): void {
 <link rel="manifest" href="<?= h(url('/pwa/manifest.webmanifest')) ?>">
 <link rel="sitemap" type="application/xml" href="<?= h(url('/sitemap.xml')) ?>">
 <script type="application/ld+json"><?= json_encode($ld, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP) ?></script>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&display=swap">
 <style>
-:root{--bg:#120f26;--bg2:#1d1840;--card:rgba(255,255,255,.06);--line:rgba(255,255,255,.12);--tx:#f1f0ff;--mu:#b9b4e0;--ac:#ffd43b;--r:18px}
+:root{--bg:#f6f4fb;--sf:#fff;--sf2:#f0eef7;--line:#e7e4f0;--tx:#1d1a2e;--mu:#6c6884;--ac:#ffce3a;--ac2:#ffb703;--ink:#2a2100;--r:18px;--sh:0 1px 2px rgba(29,26,46,.06),0 6px 20px rgba(29,26,46,.07);--sh2:0 4px 10px rgba(29,26,46,.10),0 18px 40px rgba(29,26,46,.14)}
 *{box-sizing:border-box}html{-webkit-text-size-adjust:100%}
-body{margin:0;background:radial-gradient(120% 60% at 50% 0,#2a2160,var(--bg) 70%) fixed,var(--bg);color:var(--tx);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
-a{color:inherit}img{max-width:100%}
-.wrap{max-width:1080px;margin:0 auto;padding:0 16px}
-header.top{position:sticky;top:0;z-index:5;background:rgba(18,15,38,.88);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
-header.top .wrap{display:flex;align-items:center;gap:12px;min-height:58px;flex-wrap:wrap;padding-top:6px;padding-bottom:6px}
-.brand{display:flex;align-items:center;gap:8px;text-decoration:none;font-weight:900;font-size:19px;white-space:nowrap}
-.brand span{font-size:26px}
-nav.main{display:flex;gap:4px;flex-wrap:wrap;flex:1}
-nav.main a,.lang{text-decoration:none;padding:6px 10px;border-radius:999px;font-size:14px;color:var(--mu)}nav.main a{white-space:nowrap;padding:6px 8px}
-nav.main a:hover,nav.main a[aria-current]{background:var(--card);color:var(--tx)}
-.lang{border:1px solid var(--line);color:var(--tx)}
-form.search{display:flex;gap:6px;margin:0}
-form.search input{width:150px;max-width:40vw;background:rgba(0,0,0,.25);border:1px solid var(--line);color:var(--tx);border-radius:999px;padding:7px 12px;font-size:14px}
-form.search button{background:var(--card);border:1px solid var(--line);color:var(--tx);border-radius:999px;padding:6px 10px;cursor:pointer}
-main{padding:22px 0 40px}
-h1{font-size:clamp(28px,5.5vw,46px);line-height:1.1;margin:.2em 0 .3em}
-h2{font-size:clamp(21px,3.4vw,28px);margin:1.6em 0 .6em}
-.lead{color:var(--mu);font-size:18px;max-width:760px;margin:0 0 10px}
-.crumbs{font-size:14px;color:var(--mu);margin-bottom:8px}.crumbs a{color:var(--mu)}
-.grid{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
-.card{display:flex;gap:12px;align-items:center;text-decoration:none;background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:12px;height:100%;transition:transform .12s,border-color .12s}
-.card:hover,.card:focus-visible{transform:translateY(-2px);border-color:var(--c);outline:none}
-.card{position:relative}.pos{position:absolute;top:-8px;left:-8px;min-width:28px;height:28px;border-radius:999px;background:var(--ac);color:#1b1500;font-weight:900;display:grid;place-items:center;font-size:14px;box-shadow:0 3px 10px rgba(0,0,0,.3)}
-ol.rank{counter-reset:none}
-.ic{flex:none;width:58px;height:58px;border-radius:16px;display:grid;place-items:center;font-size:32px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.12)}
-.tx{display:flex;flex-direction:column;min-width:0}.tx b{font-size:17px}
-.tg{color:var(--mu);font-size:13.5px;line-height:1.35}
-.ch{display:flex;flex-wrap:wrap;gap:4px 6px;margin-top:4px;font-size:12px}.ch span{background:rgba(255,255,255,.08);border-radius:999px;padding:1px 8px;white-space:nowrap}
-.tiles{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}
-.tile{display:flex;gap:10px;align-items:center;text-decoration:none;background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px}
-.tile:hover{border-color:var(--ac)}.tile .e{font-size:28px}.tile small{display:block;color:var(--mu)}
-.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
-.col{display:block;text-decoration:none;border-radius:22px;padding:22px;border:1px solid var(--line);background:linear-gradient(135deg,rgba(255,255,255,.09),rgba(255,255,255,.02))}
-.col .e{font-size:44px}.col h3{margin:.2em 0;font-size:24px}.col p{color:var(--mu);margin:0 0 8px}.col b{color:var(--ac)}
-.hero{display:grid;grid-template-columns:auto 1fr;gap:22px;align-items:center}
-.big{width:150px;height:150px;border-radius:36px;display:grid;place-items:center;font-size:88px;box-shadow:0 18px 50px rgba(0,0,0,.35),inset 0 0 0 1px rgba(255,255,255,.15)}
-.btns{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}
-.btn{display:inline-flex;align-items:center;gap:8px;text-decoration:none;font-weight:800;border-radius:999px;padding:12px 20px;border:1px solid var(--line);background:var(--card)}
-.btn.pri{background:var(--ac);color:#1b1500;border-color:transparent;font-size:18px;padding:13px 26px}
-.btn:hover{filter:brightness(1.08)}
-.box{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:18px 20px}
-.how{font-size:17px}.how b{color:#fff}
-dl.facts{display:grid;grid-template-columns:max-content 1fr;gap:8px 18px;margin:0}
-dl.facts dt{color:var(--mu)}dl.facts dd{margin:0}
-.two{display:grid;grid-template-columns:1.4fr 1fr;gap:16px}
-details.faq{border-bottom:1px solid var(--line);padding:10px 0}details.faq summary{cursor:pointer;font-weight:700}details.faq p{color:var(--mu);margin:.5em 0 0}
-.pager{display:flex;justify-content:space-between;gap:10px;margin-top:24px}
-.az{columns:3 220px;padding:0;list-style:none}.az li{break-inside:avoid;padding:3px 0}.az a{text-decoration:none}.az a:hover{text-decoration:underline}
-footer{border-top:1px solid var(--line);color:var(--mu);font-size:14px;padding:26px 0 40px}
-footer .links{display:flex;flex-wrap:wrap;gap:6px 16px;margin-bottom:12px}footer a{color:var(--mu)}
-@media (min-width:721px){form.search input{width:110px}nav.main{gap:0}}
-@media (max-width:720px){header.top{position:static}header.top .wrap{gap:8px}.brand{flex:1}nav.main{order:3;flex:0 0 100%;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin:0 -6px}nav.main a{white-space:nowrap}form.search{order:4;flex:0 0 100%}form.search input{flex:1;max-width:none;width:auto}.hero{grid-template-columns:1fr}.big{width:110px;height:110px;font-size:64px;border-radius:28px}.two{grid-template-columns:1fr}main{padding-top:14px}}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.5 Nunito,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+a{color:inherit}img{max-width:100%;display:block}
+.wrap{max-width:1180px;margin:0 auto;padding:0 16px}
+header.top{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.92);backdrop-filter:saturate(1.4) blur(10px);-webkit-backdrop-filter:saturate(1.4) blur(10px);border-bottom:1px solid var(--line)}
+header.top .wrap{display:flex;align-items:center;gap:14px;min-height:64px}
+.brand{display:flex;align-items:center;gap:9px;text-decoration:none;font-weight:900;font-size:20px;white-space:nowrap;letter-spacing:-.01em}
+.brand span{display:grid;place-items:center;width:38px;height:38px;border-radius:12px;background:var(--ac);font-size:22px;box-shadow:inset 0 -3px 0 rgba(0,0,0,.12)}
+nav.main{display:flex;gap:2px;flex:1;min-width:0;overflow-x:auto;scrollbar-width:none}nav.main::-webkit-scrollbar{display:none}
+nav.main a{text-decoration:none;padding:8px 12px;border-radius:999px;font-size:15px;font-weight:800;color:var(--mu);white-space:nowrap}
+nav.main a:hover{background:var(--sf2);color:var(--tx)}nav.main a[aria-current]{background:var(--tx);color:#fff}
+form.search{display:flex;align-items:center;margin:0;background:var(--sf2);border-radius:999px;padding:0 6px 0 14px;border:2px solid transparent}
+form.search:focus-within{border-color:var(--ac);background:#fff}
+form.search input{width:170px;background:none;border:0;outline:0;color:var(--tx);padding:9px 0;font:inherit;font-size:15px}
+form.search button{background:none;border:0;cursor:pointer;font-size:16px;padding:6px}
+.lang{text-decoration:none;font-size:14px;font-weight:800;padding:8px 12px;border-radius:999px;background:var(--sf2);white-space:nowrap}
+main{padding:22px 0 48px}
+h1{font-size:clamp(28px,5vw,44px);line-height:1.08;margin:.15em 0 .3em;font-weight:900;letter-spacing:-.02em}
+h2{font-size:clamp(21px,3vw,27px);margin:1.7em 0 .7em;font-weight:900;letter-spacing:-.01em;display:flex;align-items:baseline;gap:10px}
+h2 a{text-decoration:none}h2 small,.cnt{color:var(--mu);font-size:.6em;font-weight:800}
+.lead{color:var(--mu);font-size:18px;max-width:780px;margin:0 0 12px}
+.crumbs{font-size:14px;color:var(--mu);margin-bottom:10px;font-weight:700}.crumbs a{color:var(--mu);text-decoration:none}.crumbs a:hover{color:var(--tx)}
+.more{font-weight:800;text-decoration:none;color:var(--tx);background:var(--sf);border:1px solid var(--line);border-radius:999px;padding:8px 16px;display:inline-block;margin-top:14px}.more:hover{border-color:var(--ac2)}
+/* tarjetas */
+.grid{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:18px 16px}
+.card{position:relative;display:flex;flex-direction:column;text-decoration:none;height:100%;border-radius:var(--r);outline:none}
+.cv{position:relative;display:block;aspect-ratio:16/10;border-radius:var(--r);overflow:hidden;background:var(--sf2);box-shadow:var(--sh);transition:transform .18s,box-shadow .18s}
+.cv img{width:100%;height:100%;object-fit:cover;transition:transform .35s}
+.cv .ph{position:absolute;inset:0;display:grid;place-items:center;font-size:64px}
+.cv .em{position:absolute;left:8px;bottom:8px;width:36px;height:36px;border-radius:11px;display:grid;place-items:center;font-size:21px;background:rgba(255,255,255,.92);box-shadow:0 2px 8px rgba(0,0,0,.18)}
+.card:hover .cv,.card:focus-visible .cv{transform:translateY(-3px);box-shadow:var(--sh2)}.card:hover .cv img{transform:scale(1.05)}
+.card:focus-visible .cv{outline:3px solid var(--ac2);outline-offset:2px}
+.tx{display:flex;flex-direction:column;min-width:0;padding:10px 4px 0}.tx b{font-size:16.5px;line-height:1.25;font-weight:900}
+.tg{color:var(--mu);font-size:13.5px;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.ch{display:flex;flex-wrap:wrap;gap:4px 6px;margin-top:6px;font-size:12px;font-weight:800}.ch span{background:var(--sf2);color:var(--mu);border-radius:999px;padding:2px 9px;white-space:nowrap}
+.ch .cat{background:#fff3c4;color:#6b5000}
+.pos{position:absolute;z-index:2;top:-8px;left:-8px;min-width:32px;height:32px;border-radius:999px;background:var(--ac);color:var(--ink);font-weight:900;display:grid;place-items:center;font-size:15px;box-shadow:0 3px 10px rgba(0,0,0,.2);border:3px solid var(--bg)}
+/* portada */
+.feat{position:relative;display:grid;grid-template-columns:1.35fr 1fr;align-items:stretch;background:var(--tx);color:#fff;border-radius:28px;overflow:hidden;box-shadow:var(--sh2);margin:6px 0 8px;text-decoration:none}
+.feat .img{position:relative;min-height:260px}.feat .img img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.feat .img:after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent 60%,var(--tx))}
+.feat .info{padding:30px 30px 30px 10px;display:flex;flex-direction:column;justify-content:center;gap:6px}
+.badge{align-self:flex-start;background:var(--ac);color:var(--ink);font-weight:900;font-size:13px;border-radius:999px;padding:3px 12px;text-transform:uppercase;letter-spacing:.04em}
+.feat h2{margin:.1em 0 0;font-size:clamp(26px,3.6vw,38px);color:#fff}.feat p{margin:0;color:#cfcbe6;font-size:17px}
+.hello{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.hello h1{font-size:clamp(26px,4.2vw,38px);margin-bottom:0}.hello h1 em{font-style:normal;background:linear-gradient(transparent 62%,var(--ac) 62%)}
+.chips{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding:4px 0 2px;margin:14px 0 0}.chips::-webkit-scrollbar{display:none}
+.chips a{flex:none;text-decoration:none;font-weight:800;font-size:15px;background:var(--sf);border:1px solid var(--line);border-radius:999px;padding:8px 15px;white-space:nowrap}
+.chips a:hover{border-color:var(--ac2);background:#fffaeb}.chips a b{color:var(--mu);font-weight:800;margin-left:4px;font-size:13px}
+.tiles{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+.tile{display:flex;gap:12px;align-items:center;text-decoration:none;background:var(--sf);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;box-shadow:var(--sh);transition:transform .15s}
+.tile:hover{transform:translateY(-2px);border-color:var(--ac2)}.tile .e{font-size:30px}.tile b{font-weight:900}.tile small{display:block;color:var(--mu);font-weight:700}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
+.col{display:flex;flex-direction:column;text-decoration:none;border-radius:24px;background:var(--sf);border:1px solid var(--line);box-shadow:var(--sh);overflow:hidden;transition:transform .15s,box-shadow .15s}
+.col:hover{transform:translateY(-3px);box-shadow:var(--sh2)}
+.col .mos{display:grid;grid-template-columns:2fr 1fr;grid-template-rows:1fr 1fr;gap:3px;aspect-ratio:16/8;background:var(--sf2)}
+.col .mos img{width:100%;height:100%;object-fit:cover}.col .mos img:first-child{grid-row:span 2}
+.col .mos .ph{display:grid;place-items:center;font-size:64px;grid-column:span 2;grid-row:span 2}
+.col .bd{padding:14px 18px 18px}.col h3{margin:0;font-size:21px;font-weight:900}.col p{color:var(--mu);margin:4px 0 10px;font-size:15px}
+.col b{display:inline-block;background:var(--ac);color:var(--ink);border-radius:999px;padding:4px 12px;font-size:14px}
+/* ficha */
+.hero{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(0,1fr);gap:28px;align-items:center}
+.shot{position:relative;display:block;aspect-ratio:16/10;border-radius:24px;overflow:hidden;box-shadow:var(--sh2);background:var(--sf2)}
+.shot img{width:100%;height:100%;object-fit:cover;transition:transform .4s}.shot:hover img{transform:scale(1.03)}
+.shot .ph{position:absolute;inset:0;display:grid;place-items:center;font-size:120px}
+.shot .go{position:absolute;inset:0;display:grid;place-items:center;background:linear-gradient(transparent 55%,rgba(0,0,0,.35))}
+.shot .go span{width:86px;height:86px;border-radius:50%;background:var(--ac);color:var(--ink);display:grid;place-items:center;font-size:34px;padding-left:6px;box-shadow:0 10px 30px rgba(0,0,0,.35);transition:transform .15s}
+.shot:hover .go span{transform:scale(1.08)}
+.big{width:64px;height:64px;border-radius:18px;display:grid;place-items:center;font-size:38px;box-shadow:var(--sh);flex:none}
+.ttl{display:flex;align-items:center;gap:14px}.ttl h1{margin:0}
+.tagl{font-weight:900;font-size:18px;margin:12px 0 4px}
+.btns{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
+.btn{display:inline-flex;align-items:center;gap:8px;text-decoration:none;font-weight:900;border-radius:999px;padding:12px 20px;border:1px solid var(--line);background:var(--sf);box-shadow:var(--sh)}
+.btn.pri{background:var(--ac);color:var(--ink);border-color:transparent;font-size:18px;padding:14px 30px;box-shadow:inset 0 -4px 0 rgba(0,0,0,.12),0 6px 18px rgba(255,183,3,.35)}
+.btn:hover{filter:brightness(1.04);transform:translateY(-1px)}
+.facts-mini{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px}.facts-mini span{background:var(--sf);border:1px solid var(--line);border-radius:999px;padding:4px 11px;font-size:13.5px;font-weight:800;color:var(--mu)}
+.box{background:var(--sf);border:1px solid var(--line);border-radius:22px;padding:20px 22px;box-shadow:var(--sh)}
+.how{font-size:17px}
+dl.facts{display:grid;grid-template-columns:max-content 1fr;gap:9px 18px;margin:0}
+dl.facts dt{color:var(--mu);font-weight:700}dl.facts dd{margin:0;font-weight:700}dl.facts a{text-decoration-color:var(--ac2);text-decoration-thickness:2px;text-underline-offset:3px}
+.two{display:grid;grid-template-columns:1.4fr 1fr;gap:18px;align-items:start}
+details.faq{background:var(--sf);border:1px solid var(--line);border-radius:16px;padding:14px 18px;margin-bottom:10px}details.faq summary{cursor:pointer;font-weight:900}details.faq p{color:var(--mu);margin:.5em 0 0}
+.pager{display:flex;justify-content:space-between;gap:10px;margin-top:28px;flex-wrap:wrap}
+.az{columns:3 230px;padding:0;list-style:none}.az li{break-inside:avoid;padding:4px 0}.az a{text-decoration:none;font-weight:800}.az a:hover{text-decoration:underline;text-decoration-color:var(--ac2)}
+footer{background:var(--sf);border-top:1px solid var(--line);color:var(--mu);font-size:14px;padding:30px 0 40px}
+footer .links{display:flex;flex-wrap:wrap;gap:6px 16px;margin-bottom:12px}footer a{color:var(--mu);text-decoration:none}footer a:hover{color:var(--tx)}
+footer .fb{display:flex;align-items:center;gap:9px;font-weight:900;color:var(--tx);font-size:18px;margin-bottom:14px}
+.tabbar{display:none}
+@media (max-width:860px){nav.main{display:none}form.search{flex:1}form.search input{width:100%}}
+@media (max-width:720px){
+ header.top .wrap{gap:10px;min-height:58px}.brand b{display:none}.lang{padding:8px 10px}
+ .feat{grid-template-columns:1fr}.feat .img{min-height:0;aspect-ratio:16/10}.feat .img:after{background:linear-gradient(transparent 55%,var(--tx))}.feat .info{padding:4px 20px 22px}
+ .hero{grid-template-columns:1fr;gap:18px}.two{grid-template-columns:1fr}main{padding-top:14px}
+ .grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:16px 12px}.tx b{font-size:15px}.tg{font-size:12.5px}.cv .em{width:30px;height:30px;font-size:18px;border-radius:9px}
+ body{padding-bottom:calc(66px + env(safe-area-inset-bottom))}
+ .tabbar{display:flex;position:fixed;z-index:30;left:0;right:0;bottom:0;background:rgba(255,255,255,.96);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-top:1px solid var(--line);padding:6px 6px calc(6px + env(safe-area-inset-bottom))}
+ .tabbar a{flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;text-decoration:none;font-size:11.5px;font-weight:800;color:var(--mu);padding:4px 0;border-radius:12px}
+ .tabbar a span{font-size:21px;line-height:1.1}.tabbar a[aria-current]{color:var(--tx);background:#fff3c4}
+}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
 <body>
 <header class="top"><div class="wrap">
-  <a class="brand" href="<?= h(home_url()) ?>"><span aria-hidden="true">🕹️</span><?= h($SITE) ?></a>
+  <a class="brand" href="<?= h(home_url()) ?>"><span aria-hidden="true">🕹️</span><b><?= h($SITE) ?></b></a>
   <nav class="main" aria-label="<?= h(T('Principal', 'Main')) ?>">
     <?php foreach ($COLS as $c): ?><a href="<?= h(url(col_path($c))) ?>"<?= $p === col_path($c) ? ' aria-current="page"' : '' ?>><?= h(f($c, 'name')) ?></a><?php endforeach; ?>
     <a href="<?= h(url(list_path('games'))) ?>"<?= $p === list_path('games') ? ' aria-current="page"' : '' ?>><?= h(T('Todos', 'All games')) ?></a>
@@ -459,12 +523,19 @@ footer .links{display:flex;flex-wrap:wrap;gap:6px 16px;margin-bottom:12px}footer
     <input type="search" name="q" value="<?= h($o['q'] ?? '') ?>" placeholder="<?= h(T('Buscar juego…', 'Search games…')) ?>" aria-label="<?= h(T('Buscar', 'Search')) ?>">
     <button type="submit" aria-label="<?= h(T('Buscar', 'Search')) ?>">🔎</button>
   </form>
-  <a class="lang" href="<?= h(url($other)) ?>" hreflang="<?= $L === 'en' ? 'es' : 'en' ?>" lang="<?= $L === 'en' ? 'es' : 'en' ?>"><?= $L === 'en' ? '🇪🇸 Español' : '🇬🇧 English' ?></a>
+  <a class="lang" href="<?= h(url($other)) ?>" hreflang="<?= $L === 'en' ? 'es' : 'en' ?>" lang="<?= $L === 'en' ? 'es' : 'en' ?>" title="<?= $L === 'en' ? 'Español' : 'English' ?>"><?= $L === 'en' ? 'ES' : 'EN' ?></a>
 </div></header>
 <main class="wrap">
 <?= $o['body'] ?>
 </main>
+<nav class="tabbar" aria-label="<?= h(T('Accesos rápidos', 'Quick links')) ?>">
+  <a href="<?= h(home_url()) ?>"<?= $p === home_path() ? ' aria-current="page"' : '' ?>><span aria-hidden="true">🏠</span><?= h(T('Inicio', 'Home')) ?></a>
+  <a href="<?= h(url(list_path('games'))) ?>"<?= $p === list_path('games') ? ' aria-current="page"' : '' ?>><span aria-hidden="true">🎮</span><?= h(T('Juegos', 'Games')) ?></a>
+  <?php if (isset($COLS['edu'])): ?><a href="<?= h(url(col_path($COLS['edu']))) ?>"<?= $p === col_path($COLS['edu']) ? ' aria-current="page"' : '' ?>><span aria-hidden="true">🎓</span><?= h(T('Educativos', 'Learning')) ?></a><?php endif; ?>
+  <a href="<?= h(url(list_path('tv'))) ?>"<?= $p === list_path('tv') ? ' aria-current="page"' : '' ?>><span aria-hidden="true">📺</span>TV</a>
+</nav>
 <footer><div class="wrap">
+  <div class="fb"><span aria-hidden="true">🕹️</span><?= h($SITE) ?></div>
   <div class="links">
     <?php foreach ($CATS as $c): ?><a href="<?= h(url(cat_path($c))) ?>"><?= h($c['emoji'] . ' ' . f($c, 'name')) ?></a><?php endforeach; ?>
   </div>
@@ -491,15 +562,30 @@ function page_home(): void {
   $new = array_values(array_filter($GAMES, function ($g) { return $g['added_version'] !== null && !is_edu($g); }));
   $na = arcade_count(); $ne = count($GAMES) - $na;
   ob_start(); ?>
-  <h1><?= h(T('Juegos arcade y educativos gratis para móvil y TV', 'Free arcade and educational games for phone and TV')) ?></h1>
-  <p class="lead"><?= h(T($na . ' juegos HTML5 hechos con emojis: mecánicas de recreativa olvidadas y los grandes éxitos de móvil. Sin anuncios, sin descargas, con hasta 120 niveles, tres modos de dificultad y funcionan sin conexión. Se juegan con el dedo o con el mando de la tele. Y además ' . $ne . ' juegos educativos de mates, lengua, lógica e inglés para niños de 3 a 16 años.', $na . ' HTML5 games made with emojis: forgotten arcade mechanics and the big mobile hits. No ads, no downloads, up to 120 levels, three difficulty modes and they work offline. Play with your finger or with the TV remote. Plus ' . $ne . ' educational games for maths, language, logic and English for kids aged 3 to 16.')) ?></p>
-  <?= rank_html(array_values($GAMES), 12) ?>
+  <?php $ft = top_games(array_values(array_filter($GAMES, function ($g) { return !is_edu($g) && shot_url($g, false); })), 'all', 1)[0] ?? ($new[0] ?? null) ?? array_values(array_filter($GAMES, function ($g) { return shot_url($g, false); }))[0] ?? null; ?>
+  <div class="hello"><h1><?= T('Juega un rato. <em>Sin anuncios.</em>', 'Play a little. <em>No ads.</em>') ?></h1></div>
+  <nav class="chips" aria-label="<?= h(T('Categorías', 'Categories')) ?>">
+    <?php foreach ($CATS as $c): if (empty($byCat[$c['id']])) continue; ?><a href="<?= h(url(cat_path($c))) ?>"><?= h($c['emoji'] . ' ' . f($c, 'name')) ?><b><?= count($byCat[$c['id']]) ?></b></a><?php endforeach; ?>
+    <a href="<?= h(url(list_path('tv'))) ?>">📺 TV</a>
+  </nav>
+  <?php if ($ft): ?>
+  <h2 class="sr" style="position:absolute;left:-9999px"><?= h(T('Destacado', 'Featured')) ?></h2>
+  <a class="feat" href="<?= h(url(game_path($ft))) ?>" style="margin-top:18px">
+    <span class="img"><?= cover($ft, false, f($ft, 'title')) ?></span>
+    <span class="info"><span class="badge"><?= h(top_games([$ft], 'all', 1) ? T('🔥 El más jugado', '🔥 Most played') : T('⭐ Destacado', '⭐ Featured')) ?></span>
+      <h2><?= h($ft['emoji'] . ' ' . f($ft, 'title')) ?></h2><p><?= h(f($ft, 'tag') ?: cut(f($ft, 'desc'), 90)) ?></p>
+      <span class="btns"><span class="btn pri">▶ <?= h(T('Jugar ahora', 'Play now')) ?></span></span></span>
+  </a>
+  <?php endif; ?>
+  <p class="lead" style="margin-top:18px"><?= h(T($na . ' juegos HTML5 hechos con emojis: mecánicas de recreativa olvidadas y los grandes éxitos de móvil. Sin anuncios, sin descargas, con hasta 120 niveles, tres modos de dificultad y funcionan sin conexión. Se juegan con el dedo o con el mando de la tele. Y además ' . $ne . ' juegos educativos de mates, lengua, lógica e inglés para niños de 3 a 16 años.', $na . ' HTML5 games made with emojis: forgotten arcade mechanics and the big mobile hits. No ads, no downloads, up to 120 levels, three difficulty modes and they work offline. Play with your finger or with the TV remote. Plus ' . $ne . ' educational games for maths, language, logic and English for kids aged 3 to 16.')) ?></p>
+  <?php if ($new): ?><h2><?= h(T('✨ Novedades', '✨ New games')) ?> <span class="cnt"><?= count($new) ?></span></h2><?= grid(array_slice($new, 0, 10)) ?><?php endif; ?>
+  <?= rank_html(array_values($GAMES), 10) ?>
   <h2><?= h(T('Colecciones', 'Collections')) ?></h2>
   <div class="cols">
     <?php foreach ($COLS as $c): ?>
-    <a class="col" href="<?= h(url(col_path($c))) ?>"><div class="e" aria-hidden="true"><?= h($c['emoji']) ?></div><h3><?= h(f($c, 'name')) ?></h3><p><?= h(f($c, 'desc')) ?></p><b><?= count($byCol[$c['id']] ?? []) ?> <?= h(T('juegos', 'games')) ?> ▶</b></a>
+    <a class="col" href="<?= h(url(col_path($c))) ?>"><?= mosaic($byCol[$c['id']] ?? [], $c['emoji']) ?><span class="bd"><h3><?= h($c['emoji'] . ' ' . f($c, 'name')) ?></h3><p><?= h(f($c, 'desc')) ?></p><b><?= count($byCol[$c['id']] ?? []) ?> <?= h(T('juegos', 'games')) ?> ▶</b></span></a>
     <?php endforeach; ?>
-    <a class="col" href="<?= h(url(list_path('tv'))) ?>"><div class="e" aria-hidden="true">📺</div><h3><?= h(T('Para la tele', 'For your TV')) ?></h3><p><?= h(T('Android TV y Fire TV: juega con el mando, hasta 4 jugadores por turnos.', 'Android TV and Fire TV: play with the remote, up to 4 players taking turns.')) ?></p><b><?= count(array_filter($GAMES, function ($g) { return (bool)$g['tv']; })) ?> <?= h(T('juegos', 'games')) ?> ▶</b></a>
+    <a class="col" href="<?= h(url(list_path('tv'))) ?>"><?= mosaic(array_values(array_filter($GAMES, function ($g) { return (bool)$g['tv'] && $g['collection_id'] === 'pro'; })), '📺') ?><span class="bd"><h3><?= h(T('📺 Para la tele', '📺 For your TV')) ?></h3><p><?= h(T('Android TV y Fire TV: juega con el mando, hasta 4 jugadores por turnos.', 'Android TV and Fire TV: play with the remote, up to 4 players taking turns.')) ?></p><b><?= count(array_filter($GAMES, function ($g) { return (bool)$g['tv']; })) ?> <?= h(T('juegos', 'games')) ?> ▶</b></span></a>
   </div>
   <h2><?= h(T('Categorías', 'Categories')) ?></h2>
   <ul class="tiles">
@@ -507,11 +593,10 @@ function page_home(): void {
   </ul>
   <h2><?= h(T('🎓 Juegos educativos por asignatura y edad', '🎓 Educational games by subject and age')) ?></h2>
   <?= edu_tiles() ?>
-  <?php if ($new): ?><h2><?= h(T('Novedades', 'New games')) ?></h2><?= grid($new) ?><?php endif; ?>
   <?php foreach ($CATS as $c): if (empty($byCat[$c['id']])) continue; ?>
-    <h2><a href="<?= h(url(cat_path($c))) ?>" style="text-decoration:none"><?= h($c['emoji'] . ' ' . f($c, 'name')) ?></a></h2>
-    <?= grid(array_slice($byCat[$c['id']], 0, 6)) ?>
-    <?php if (count($byCat[$c['id']]) > 6): ?><p><a href="<?= h(url(cat_path($c))) ?>"><?= h(T('Ver los ' . count($byCat[$c['id']]) . ' juegos de ' . mb_strtolower(f($c, 'name')), 'See all ' . count($byCat[$c['id']]) . ' ' . mb_strtolower(f($c, 'name')) . ' games')) ?> →</a></p><?php endif; ?>
+    <h2><a href="<?= h(url(cat_path($c))) ?>"><?= h($c['emoji'] . ' ' . f($c, 'name')) ?></a> <span class="cnt"><?= count($byCat[$c['id']]) ?></span></h2>
+    <?= grid(array_slice($byCat[$c['id']], 0, 10)) ?>
+    <?php if (count($byCat[$c['id']]) > 10): ?><p><a class="more" href="<?= h(url(cat_path($c))) ?>"><?= h(T('Ver los ' . count($byCat[$c['id']]) . ' juegos de ' . mb_strtolower(f($c, 'name')), 'See all ' . count($byCat[$c['id']]) . ' ' . mb_strtolower(f($c, 'name')) . ' games')) ?> →</a></p><?php endif; ?>
   <?php endforeach; ?>
   <?php $body = ob_get_clean();
   $title = T('Arcade Perdido · ' . $na . ' juegos arcade y ' . $ne . ' educativos gratis', 'Arcade Perdido · ' . $na . ' arcade and ' . $ne . ' educational games, free');
@@ -520,6 +605,10 @@ function page_home(): void {
     'ld' => [app_ld(), page_ld('CollectionPage', $p, $title, $desc, ['about' => ['@id' => abs_url('/#app')], 'mainEntity' => ['@id' => abs_url($p) . '#list']]), itemlist_ld($p, T('Todos los juegos', 'All games'), array_values($GAMES))]]);
 }
 
+function mosaic(array $games, string $emoji): string {
+  $im = []; foreach ($games as $g) { if (count($im) === 3) break; if ($s = shot_url($g, count($im) > 0)) $im[] = '<img src="' . h($s) . '" alt="" loading="lazy" decoding="async">'; }
+  return '<span class="mos" aria-hidden="true">' . (count($im) === 3 ? implode('', $im) : '<span class="ph">' . h($emoji) . '</span>') . '</span>';
+}
 function edu_tiles(?string $skip = null): string {
   global $SUBJS, $AGES;
   $edu = edu_games(); $o = '<ul class="tiles">';
@@ -672,10 +761,11 @@ function page_game_edu(array $g): void {
   <?= crumbs_html($crumbs) ?>
   <article>
   <div class="hero">
-    <div class="big" aria-hidden="true" style="background:linear-gradient(135deg,<?= h($g['bg1']) ?>,<?= h($g['bg2']) ?>)"><?= h($g['emoji']) ?></div>
+    <a class="shot" href="<?= h(url(play_path($g))) ?>" aria-label="<?= h(T('Jugar a ', 'Play ') . $t) ?>"><?= cover($g, false, T('Captura de ', 'Screenshot of ') . $t) ?><span class="go"><span aria-hidden="true">▶</span></span></a>
     <div>
-      <h1><?= h($t) ?></h1>
-      <p class="lead"><?= h(f($g, 'desc')) ?></p>
+      <div class="ttl"><div class="big" aria-hidden="true" style="background:linear-gradient(135deg,<?= h($g['bg1']) ?>,<?= h($g['bg2']) ?>)"><?= h($g['emoji']) ?></div><h1><?= h($t) ?></h1></div>
+      <p class="lead" style="margin-top:12px"><?= h(f($g, 'desc')) ?></p>
+      <div class="facts-mini"><span><?= h($s['emoji'] . ' ' . f($s, 'name')) ?></span><span><?= h(ages_label($g)) ?></span><span><?= h(T('Gratis · sin anuncios', 'Free · no ads')) ?></span></div>
       <div class="btns"><a class="btn pri" href="<?= h(url(play_path($g))) ?>">▶ <?= h(T('Jugar gratis', 'Play for free')) ?></a></div>
     </div>
   </div>
@@ -699,8 +789,8 @@ function page_game_edu(array $g): void {
   <?php $body = ob_get_clean();
   $title = T($t . ': juego educativo de ' . mb_strtolower(f($s, 'name'), 'UTF-8') . ' (' . ages_label($g) . ')', $t . ': educational ' . f($s, 'name') . ' game (' . ages_label($g) . ')') . ' · ' . $SITE;
   $desc = f($g, 'desc') . ' ' . T('Juego educativo gratis para niños de ' . $g['age_min'] . ' a ' . $g['age_max'] . ' años.', 'Free educational game for kids aged ' . $g['age_min'] . ' to ' . $g['age_max'] . '.');
-  render(['path' => $p, 'title' => $title, 'ogtitle' => $t . ' · ' . $SITE, 'desc' => $desc, 'alt' => [game_path($g, 'es'), game_path($g, 'en')], 'body' => $body, 'theme' => $g['color'],
-    'icon' => icon_url($g), 'ld' => [page_ld('ItemPage', $p, $title, $desc, ['breadcrumb' => ['@id' => abs_url($p) . '#breadcrumb'], 'mainEntity' => ['@id' => abs_url($p) . '#game'], 'primaryImageOfPage' => abs_url('/icono/' . $g['id'] . '.svg')]),
+  render(['path' => $p, 'title' => $title, 'ogtitle' => $t . ' · ' . $SITE, 'desc' => $desc, 'alt' => [game_path($g, 'es'), game_path($g, 'en')], 'body' => $body, 'theme' => $g['color'], 'image' => shot_url($g, false) ? '/pwa/capturas/' . $g['id'] . '.webp' : null,
+    'icon' => icon_url($g), 'ld' => [page_ld('ItemPage', $p, $title, $desc, ['breadcrumb' => ['@id' => abs_url($p) . '#breadcrumb'], 'mainEntity' => ['@id' => abs_url($p) . '#game'], 'primaryImageOfPage' => shot_url($g, false) ? abs_url('/pwa/capturas/' . $g['id'] . '.webp') : abs_url('/icono/' . $g['id'] . '.svg')]),
       crumbs_ld($crumbs), edu_ld($g), faq_ld($faq, $p)]]);
 }
 
@@ -728,11 +818,12 @@ function page_game(array $g): void {
   <?= crumbs_html($crumbs) ?>
   <article>
   <div class="hero">
-    <div class="big" aria-hidden="true" style="background:linear-gradient(135deg,<?= h($g['bg1'] ?: $g['color']) ?>,<?= h($g['bg2'] ?: '#111') ?>)"><?= h($g['emoji']) ?></div>
+    <a class="shot" href="<?= h(url(play_path($g))) ?>" aria-label="<?= h(T('Jugar a ', 'Play ') . $t) ?>"><?= cover($g, false, T('Captura de ', 'Screenshot of ') . $t) ?><span class="go"><span aria-hidden="true">▶</span></span></a>
     <div>
-      <h1><?= h($t) ?></h1>
-      <p class="lead" style="margin-bottom:4px"><strong><?= h(f($g, 'tag')) ?></strong></p>
+      <div class="ttl"><div class="big" aria-hidden="true" style="background:linear-gradient(135deg,<?= h($g['bg1'] ?: $g['color']) ?>,<?= h($g['bg2'] ?: '#111') ?>)"><?= h($g['emoji']) ?></div><h1><?= h($t) ?></h1></div>
+      <p class="tagl"><?= h(f($g, 'tag')) ?></p>
       <p class="lead"><?= h(f($g, 'desc')) ?></p>
+      <div class="facts-mini"><span><?= h($c['emoji'] . ' ' . f($c, 'name')) ?></span><span>👆 <?= h(f($ct, 'name')) ?></span><?php if ($g['tv']): ?><span>📺 TV</span><?php endif; ?><span><?= h(T('Gratis · sin anuncios', 'Free · no ads')) ?></span></div>
       <div class="btns">
         <a class="btn pri" href="<?= h(url(play_path($g))) ?>">▶ <?= h(T('Jugar gratis', 'Play for free')) ?></a>
         <?php if ($g['tv']): ?><a class="btn" href="<?= h(game_file_url($g, true)) ?>">📺 <?= h(T('Modo TV', 'TV mode')) ?></a><?php endif; ?>
@@ -774,9 +865,9 @@ function page_game(array $g): void {
   <?php $body = ob_get_clean();
   $title = T($t . ': juego gratis online', $t . ': free online game') . ' (' . ($based ? cut($g['based'][0]['name'], 30) . ', ' : '') . T('móvil y TV', 'phone & TV') . ') · ' . $SITE;
   $desc = f($g, 'desc') . ' ' . T('Gratis, sin anuncios y sin conexión.', 'Free, no ads, works offline.') . ($based ? ' ' . T('Inspirado en ', 'Inspired by ') . $g['based'][0]['name'] . '.' : '');
-  render(['path' => $p, 'title' => $title, 'ogtitle' => $t . ' · ' . $SITE, 'desc' => $desc, 'alt' => [game_path($g, 'es'), game_path($g, 'en')], 'body' => $body, 'theme' => $g['theme_color'] ?: $g['color'],
+  render(['path' => $p, 'title' => $title, 'ogtitle' => $t . ' · ' . $SITE, 'desc' => $desc, 'alt' => [game_path($g, 'es'), game_path($g, 'en')], 'body' => $body, 'theme' => $g['theme_color'] ?: $g['color'], 'image' => shot_url($g, false) ? '/pwa/capturas/' . $g['id'] . '.webp' : null,
     'icon' => icon_url($g), 'ogtype' => 'website',
-    'ld' => [page_ld('ItemPage', $p, $title, $desc, ['breadcrumb' => ['@id' => abs_url($p) . '#breadcrumb'], 'mainEntity' => ['@id' => abs_url($p) . '#game'], 'primaryImageOfPage' => abs_url('/icono/' . $g['id'] . '.svg')]),
+    'ld' => [page_ld('ItemPage', $p, $title, $desc, ['breadcrumb' => ['@id' => abs_url($p) . '#breadcrumb'], 'mainEntity' => ['@id' => abs_url($p) . '#game'], 'primaryImageOfPage' => shot_url($g, false) ? abs_url('/pwa/capturas/' . $g['id'] . '.webp') : abs_url('/icono/' . $g['id'] . '.svg')]),
       crumbs_ld($crumbs), game_ld($g), faq_ld($faq, $p)]]);
 }
 

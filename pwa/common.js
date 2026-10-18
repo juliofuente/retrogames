@@ -763,6 +763,7 @@
          { tap: [x, y] }   { drag: [[x, y], …], dur }   { swipe: [x, y, 'left'|'right'|'up'|'down'], len }
          { hold: [x, y], dur }   { key: 'ArrowLeft'|' ', dur }   { wait: s }   y en cualquiera say: 'texto'
        Si no lo define, se usa una demo genérica según sus controles. */
+    const SHOT = /[?&]shot=1/.test(location.search);   // herramientas/arcade.php capturas
     const DM = { q: [], cur: null, fx: 0, fy: 0, press: 0, say: null, sayT: 0, t: 0, p: null };
     function startDemo() {
       g.mp = null; g.level = 1; g.score = 0; g.lives = def.lives ?? 3; g.t = 0; g.demoOn = true;
@@ -839,6 +840,7 @@
       if (c.ph === 'rest' && c.t >= c.rest) DM.cur = null;
     }
     function drawDemo() {
+      if (SHOT) return;   // captura para la web: sin dedo ni rótulos
       const sz = 46, pr = DM.press;
       if (pr > 0) { ctx.globalAlpha = 0.5 * pr; ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(DM.fx, DM.fy, 14 + (1 - pr) * 18, 0, TAU); ctx.stroke(); ctx.globalAlpha = 1; }
       A.emoji(ctx, '👆', DM.fx + 4, DM.fy + sz * 0.42, sz * (1 - pr * 0.12), { rot: -0.15 });
@@ -1171,6 +1173,9 @@
       requestAnimationFrame(frame);
       let dt = (now - last) / 1000; last = now;
       if (dt > 0.05) dt = 0.05; if (dt < 0) dt = 0;
+      if (!SHOT) step(dt);
+    }
+    function step(dt) {
       g.rt += dt;
       if (g.state === 'play' && !g.demoOn && !document.hidden) STAT.s += dt;
       if (g.state === 'play') updFace(dt);
@@ -1204,7 +1209,7 @@
         else if (p.sq) { ctx.globalAlpha = Math.min(1, al * 2); ctx.fillStyle = p.color; ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot); ctx.fillRect(-p.size, -p.size * 0.5, p.size * 2, p.size); ctx.restore(); ctx.globalAlpha = 1; }
         else { ctx.globalAlpha = al; ctx.fillStyle = p.color || '#fff'; ctx.beginPath(); ctx.arc(p.x, p.y, p.size * (0.5 + al * 0.5), 0, TAU); ctx.fill(); ctx.globalAlpha = 1; }
       }
-      if (g.tapFx && g.state === 'play') { const f = g.tapFx; f.t -= dt; if (f.t > 0) { ctx.globalAlpha = f.t * 2; ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(f.x, f.y, 26 - f.t * 60, 0, TAU); ctx.stroke(); ctx.globalAlpha = 1; } }
+      if (g.tapFx && g.state === 'play' && !SHOT) { const f = g.tapFx; f.t -= dt; if (f.t > 0) { ctx.globalAlpha = f.t * 2; ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(f.x, f.y, 26 - f.t * 60, 0, TAU); ctx.stroke(); ctx.globalAlpha = 1; } }
       if (g.swipeFx) { const f = g.swipeFx; f.t -= dt; if (f.t > 0) { ctx.globalAlpha = f.t * 2.5; ctx.strokeStyle = accent; ctx.lineWidth = 6; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(f.x0, f.y0); ctx.lineTo(f.x1, f.y1); ctx.stroke(); ctx.globalAlpha = 1; } else g.swipeFx = null; }
       for (const f of g.floats) {
         const pop = 1 + Math.max(0, f.life - 0.82) * 3;
@@ -1236,6 +1241,10 @@
     if (padOn) setPad(true);
     g.s = {}; def.setup(g); def.layout && def.layout(g);
     g.hud(); menu();
+    if (SHOT) {   // captura: demo sin rótulos ni mandos, avanzando el tiempo a mano (en headless no corre requestAnimationFrame)
+      A.muted = true; A.musicOn = false; if (padOn) setPad(false); hud.style.display = "none"; ov.style.display = "none";
+      setTimeout(() => { hide(); startDemo(); let n = 0; const ff = () => { for (let i = 0; i < 12; i++) step(1 / 60); if (++n < (+(/[?&]t=(\d+)/.exec(location.search) || [0, 6])[1]) * 5) setTimeout(ff, 0); else document.title = "SHOT_READY"; }; ff(); }, 30);
+    }
     requestAnimationFrame(frame);
     return g;
   };

@@ -75,6 +75,9 @@ CONSTRUIR Y REGISTRAR (arcade)  — solo PHP, sin Python ni Node
       (comprueba la base de datos, crea pwa/<id>.html, copia a la BD lo que sale del código, genera pwa/games.js y
        pwa/config.js, las huellas ?v= y autonomos/)
   · Si solo quieres revisar sin escribir nada: php herramientas/arcade.php comprobar
+  · Captura para el listado y la ficha (pwa/capturas/<id>.webp y <id>-sm.webp): «todo» la hace sola si falta;
+    para repetirla: php herramientas/arcade.php capturas <id>  (necesita Chrome o Chromium; ruta en la variable CHROME).
+    La captura es la demo del juego a los 6 s (?shot=1); si sale fea, mejora demo(g) o prueba con ?shot=1&t=10.
 
 CONSTRUIR Y REGISTRAR (educativo o app propia)
   · Carpeta educativos/<carpeta>/ con su index.html. Todo con rutas relativas y sin enlaces a .html.

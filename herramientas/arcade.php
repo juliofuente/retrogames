@@ -6,7 +6,7 @@
    «set»/«ajuste» aquí. Este script NO crea la base de datos: la lee y genera los archivos que necesita la web.
 
    Uso (desde cualquier carpeta):
-     php herramientas/arcade.php todo                       comprueba y genera todo (lo normal tras cualquier cambio)
+     php herramientas/arcade.php todo                       comprueba y genera todo (lo normal tras cualquier cambio; captura los juegos que no tengan)
      php herramientas/arcade.php juegos [id …]              src/<id>.js → pwa/<id>.html (sin ids: todos)
      php herramientas/arcade.php sincronizar [id …]         copia a la base de datos lo que sale del código del juego
                                                             (cómo se juega, mando, vidas, niveles, colores, adornos)
@@ -18,6 +18,7 @@
      php herramientas/arcade.php catalogo                   genera pwa/games.js y pwa/config.js desde la base de datos
      php herramientas/arcade.php huellas                    pone ?v=<huella> en los .js/.css que cargan las páginas
      php herramientas/arcade.php autonomos [--solo [id,id…]]   versiones con todo incrustado en autonomos/
+     php herramientas/arcade.php capturas [id …] [--faltan] [--t=6]  capturas de cada juego (pwa/capturas/) con Chrome/Chromium sin ventana
      php herramientas/arcade.php comprobar                  revisa la base de datos y src/ sin escribir nada
    Necesita PHP 7.4+ con pdo_sqlite (y mbstring).                                                                    */
 
@@ -398,6 +399,60 @@ function cmd_comprobar(): void {
   say('✓ todo en orden: ' . count($ids) . ' juegos arcade');
 }
 
+/* capturas: pwa/capturas/<id>.webp (960×600) y <id>-sm.webp (400×250) para el listado y la ficha.
+   Abre cada juego en Chromium sin ventana con ?shot=1 (el motor arranca la demo sin rótulos y adelanta 6 s). */
+function chrome_bin(): string {
+  $c = array_filter(array_merge([getenv('CHROME') ?: ''], glob('/opt/pw-browsers/chromium_headless_shell-*/*/headless_shell') ?: [], glob('/opt/pw-browsers/chromium-*/chrome-linux/chrome') ?: [],
+    ['/usr/bin/chromium', '/usr/bin/chromium-browser', '/usr/bin/google-chrome', 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe', '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome']));
+  foreach ($c as $b) if (is_file($b)) return $b;
+  fail('no encuentro Chrome/Chromium: indica la ruta con la variable CHROME');
+}
+function cmd_capturas(array $args): void {
+  if (!function_exists('imagewebp')) fail('falta la extensión gd de PHP (con WebP)');
+  $faltan = in_array('--faltan', $args, true); $secs = ''; foreach ($args as $a) if (preg_match('/^--t=(\d+)$/', $a, $m)) $secs = '&t=' . $m[1]; $ids = array_values(array_filter($args, function ($a) { return $a[0] !== '-'; }));
+  $bin = chrome_bin(); $dir = PWA . '/capturas'; if (!is_dir($dir)) mkdir($dir, 0775, true);
+  $todo = [];
+  foreach (db()->query("SELECT id, url, collection_id FROM games WHERE deleted_at IS NULL ORDER BY sort, id") as $g) {
+    if ($ids && !in_array($g['id'], $ids, true)) continue;
+    if (preg_match('#^https?://#', (string)$g['url'])) continue;                        // externos: no
+    if ($faltan && is_file("$dir/{$g['id']}.webp")) continue;
+    if ($g['collection_id'] !== 'edu') $path = '/' . $g['id'] . '?shot=1&lang=es' . $secs;
+    elseif (strpos((string)$g['url'], 'pwa/') === 0) $path = '/' . preg_replace('/\.html$/', '', substr($g['url'], 4)) . '?shot=1&lang=es';
+    else { $u = ltrim((string)$g['url'], '/'); $path = '/' . $u . (strpos($u, '?') === false ? '?' : '&') . 'lang=es'; }
+    $todo[$g['id']] = $path;
+  }
+  if (!$todo) { say('capturas: nada que hacer'); return; }
+  $port = 8790 + random_int(0, 150); $tmp = sys_get_temp_dir() . '/arcade-cap-' . getmypid(); @mkdir($tmp);
+  $srv = proc_open([PHP_BINARY, '-S', "127.0.0.1:$port", '-t', ROOT, HERE . '/router.php'], [['file', '/dev/null', 'r'], ['file', $tmp . '/srv.log', 'w'], ['file', $tmp . '/srv.log', 'a']], $pp);
+  for ($i = 0; $i < 50 && !@fsockopen('127.0.0.1', $port); $i++) usleep(100000);
+  $run = []; $ok = 0; $q = $todo; $par = max(1, (int)(getenv('PARALELO') ?: 4));
+  while ($q || $run) {
+    while ($q && count($run) < $par) {
+      $id = array_key_first($q); $path = array_shift($q); $png = "$tmp/$id.png";
+      $cmd = [$bin, '--headless', '--no-sandbox', '--disable-gpu', '--hide-scrollbars', '--mute-audio', '--no-first-run', '--lang=es-ES', '--force-prefers-reduced-motion', '--user-data-dir=' . "$tmp/p-$id",
+        '--force-device-scale-factor=1.5', '--window-size=640,400', '--virtual-time-budget=' . (getenv('ESPERA') ?: 9000), '--screenshot=' . $png, "http://127.0.0.1:$port$path"];
+      $run[$id] = [proc_open($cmd, [['file', '/dev/null', 'r'], ['file', '/dev/null', 'w'], ['file', '/dev/null', 'w']], $p2), $png, time()];
+    }
+    foreach ($run as $id => [$pr, $png, $t0]) {
+      $st = proc_get_status($pr);
+      if ($st['running'] && time() - $t0 < 60) continue;
+      if ($st['running']) proc_terminate($pr, 9);
+      proc_close($pr); unset($run[$id]);
+      $im = is_file($png) ? @imagecreatefrompng($png) : false;
+      if (!$im) { say("✗ $id: sin captura"); continue; }
+      foreach ([['', 960, 600, 80], ['-sm', 400, 250, 74]] as [$suf, $w, $h, $qq]) {
+        $o = imagecreatetruecolor($w, $h); imagecopyresampled($o, $im, 0, 0, 0, 0, $w, $h, imagesx($im), imagesy($im)); imagewebp($o, "$dir/$id$suf.webp", $qq); imagedestroy($o);
+      }
+      imagedestroy($im); @unlink($png); $ok++;
+      if (!defined('ARCADE_QUIET') && $ok % 10 === 0) echo "  $ok/", count($todo), "\n";
+    }
+    usleep(150000);
+  }
+  proc_terminate($srv); proc_close($srv);
+  exec('rm -rf ' . escapeshellarg($tmp));
+  say("capturas: $ok de " . count($todo) . " en pwa/capturas/");
+}
+
 /* ═════════════ main ═════════════ */
 if (defined('ARCADE_LIB')) return;
 $args = array_slice($argv, 1); $cmd = array_shift($args) ?? 'ayuda';
@@ -413,7 +468,9 @@ try {
     case 'huellas': cmd_huellas(); break;
     case 'autonomos': cmd_autonomos($args); break;
     case 'comprobar': cmd_comprobar(); break;
-    case 'todo': cmd_comprobar(); cmd_juegos([]); cmd_sincronizar([]); cmd_catalogo(); cmd_huellas(); cmd_autonomos($args); break;
+    case 'capturas': cmd_capturas($args); break;
+    case 'todo': cmd_comprobar(); cmd_juegos([]); cmd_sincronizar([]); cmd_catalogo(); cmd_huellas(); cmd_autonomos($args);
+      try { cmd_capturas(['--faltan']); } catch (Throwable $e) { say('⚠ capturas: ' . $e->getMessage()); } break;
     default: echo preg_replace('/^.*?Uso/s', 'Uso', explode('*/', (string)file_get_contents(__FILE__), 2)[0] ?? ''), "\n";
   }
 } catch (Throwable $e) { fwrite(STDERR, '✗ ' . $e->getMessage() . "\n"); exit(1); }

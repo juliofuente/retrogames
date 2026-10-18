@@ -1,6 +1,11 @@
 ARCADE PERDIDO + ARCADE PRO — LO QUE ESTÁ HECHO
 ================================================
-Fecha: 17-10-2026 · Versión de la PWA (games.js → ARCADE_VERSION): 2.23.0
+Fecha: 18-10-2026 · Versión de la PWA (games.js → ARCADE_VERSION): 2.23.0
+· Nuevo aspecto de la web (claro, amarillo #ffce3a, Nunito): tarjetas con captura del juego, juego destacado en la
+  portada, chips de categorías, colecciones con mosaico de capturas, ficha con la captura grande y ▶ encima, barra
+  inferior en el móvil. Capturas de los 267 juegos en pwa/capturas/ (960×600 y 400×250, WebP) con
+  «arcade.php capturas» (Chromium sin ventana + modo ?shot=1 del motor, que juega la demo sin rótulos y adelanta
+  el tiempo a mano). También se usan como og:image y en el JSON-LD.
 · Toda la configuración en la base de datos (data/arcade.sqlite), sin archivos JSON: fuera herramientas/datos/*.json.
   Tabla settings (versión, portada, modo TV, idioma, jugadores, rondas), tabla apps y papelera (deleted_at en games y
   categories). El CMS edita arcade.sqlite directamente (pestañas Juegos, Categorías, Colecciones, Ajustes, Papelera,
