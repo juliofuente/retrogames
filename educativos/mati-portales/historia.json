@@ -1,0 +1,1589 @@
+{
+  "titulo": "Mati y los Portales",
+  "subtitulo": "El Reino de los Dragones",
+  "version": 1,
+
+  "niveles": {
+    "1": { "nombre": "Aprendiz de Viajero", "edades": "5 y 6 años", "emoji": "🐣", "respuesta": "opciones", "numOpciones": 3, "elegirOperacion": false, "textoCorto": true },
+    "2": { "nombre": "Explorador de Numeria", "edades": "7 y 8 años", "emoji": "🦊", "respuesta": "opciones", "numOpciones": 4, "elegirOperacion": true, "textoCorto": true },
+    "3": { "nombre": "Héroe de los Números", "edades": "9 y 10 años", "emoji": "🦁", "respuesta": "teclado", "elegirOperacion": true, "textoCorto": false },
+    "4": { "nombre": "Gran Maestro del Cálculo", "edades": "11 años o más", "emoji": "🐲", "respuesta": "teclado", "elegirOperacion": true, "textoCorto": false }
+  },
+
+  "operaciones": {
+    "+": { "emoji": "➕", "nombre": "Sumar", "ayuda": "juntar" },
+    "-": { "emoji": "➖", "nombre": "Restar", "ayuda": "quitar o comparar" },
+    "x": { "emoji": "✖️", "nombre": "Multiplicar", "ayuda": "grupos iguales" },
+    "/": { "emoji": "➗", "nombre": "Repartir", "ayuda": "partes iguales" }
+  },
+
+  "personajes": {
+    "mati":   { "nombre": "Mati", "emoji": "🧒", "color": "#4f8cff" },
+    "chispa": { "nombre": "Chispa", "emoji": "🐉", "color": "#3fbf5a" },
+    "abaco":  { "nombre": "Maese Ábaco", "emoji": "🧙‍♂️", "color": "#8a63d2" },
+    "trol":   { "nombre": "Trol", "emoji": "🧌", "color": "#5f8f3a" },
+    "brun":   { "nombre": "Brun Yunque", "emoji": "🧔", "color": "#d2683c" },
+    "alquimista": { "nombre": "Alquimista", "emoji": "👴", "color": "#2f9e9e" },
+    "caballero": { "nombre": "Caballero", "emoji": "🛡️", "color": "#7a8597" },
+    "dragon": { "nombre": "Dragón Anciano", "emoji": "🐲", "color": "#d94040" },
+    "caos":   { "nombre": "Hechicero Caos", "emoji": "🦹", "color": "#7b2fbf" },
+    "seta":   { "nombre": "Setas", "emoji": "🍄", "color": "#d24b6a" },
+    "duende": { "nombre": "Duende", "emoji": "🧝", "color": "#4aa86a" },
+    "voz":    { "nombre": "Voz misteriosa", "emoji": "🌀", "color": "#5a6bd6" },
+    "tu":     { "nombre": "{NOMBRE}", "emoji": "{AVATAR}", "color": "#e0a100" }
+  },
+
+  "armas": {
+    "espada": { "nombre": "Espada Chispeante", "emoji": "🗡️", "dano": { "1": 2, "2": 4, "3": 6, "4": 9 }, "golpes": 1 },
+    "maza":   { "nombre": "Maza Pesada", "emoji": "🔨", "dano": { "1": 3, "2": 5, "3": 8, "4": 12 }, "golpes": 1 },
+    "daga":   { "nombre": "Daga Rápida", "emoji": "🔪", "dano": { "1": 2, "2": 2, "3": 3, "4": 5 }, "golpes": 2 }
+  },
+
+  "fondos": {
+    "biblioteca": { "c": ["#3a2c5e", "#6b4a7e"], "deco": "📚🕯️🌧️" },
+    "portal":     { "c": ["#2a1450", "#8b3fd9"], "deco": "✨🌀✨" },
+    "prado":      { "c": ["#1d3a6b", "#4fa86a"], "deco": "🌕🌙🏰" },
+    "claro":      { "c": ["#3e5c2a", "#9bbf55"], "deco": "🌾🌻🌾" },
+    "rio":        { "c": ["#1f4f6e", "#5aa0a8"], "deco": "🌊🪨🌊" },
+    "bosque":     { "c": ["#123628", "#3f7a4a"], "deco": "🌲🍄🌲" },
+    "aldea":      { "c": ["#5a2e1c", "#c4703a"], "deco": "⚒️🔥⛰️" },
+    "cueva":      { "c": ["#1c2f5a", "#59a3d6"], "deco": "💎🔮💎" },
+    "pantano":    { "c": ["#2e3b3a", "#7d8f6e"], "deco": "⏳🕰️🌫️" },
+    "salon":      { "c": ["#2c3b78", "#b08ad6"], "deco": "🔷🔺🟡" },
+    "mazmorra":   { "c": ["#15172b", "#3d4466"], "deco": "🕸️🔵🕸️" },
+    "guarida":    { "c": ["#4a140f", "#d65a2a"], "deco": "🪙💰🪙" },
+    "valle":      { "c": ["#2a2a3a", "#6c5f86"], "deco": "⚡🏰⚡" },
+    "torre":      { "c": ["#1b0b2e", "#6a1fa8"], "deco": "⚡🌀⚡" },
+    "fiesta":     { "c": ["#1e2a6b", "#e0779a"], "deco": "🎉🏮🎊" }
+  },
+
+  "capitulos": [
+    { "id": "c0",  "titulo": "La fórmula secreta", "etiqueta": "Prólogo", "emoji": "📖", "inicio": "c0" },
+    { "id": "c1",  "titulo": "El Reino de Numeria", "etiqueta": "Capítulo 1", "emoji": "🌙", "inicio": "c1" },
+    { "id": "c2",  "titulo": "La primera batalla", "etiqueta": "Capítulo 2", "emoji": "⚔️", "inicio": "c2" },
+    { "id": "c3",  "titulo": "El Puente de los Trols", "etiqueta": "Capítulo 3", "emoji": "🌉", "inicio": "c3" },
+    { "id": "c4",  "titulo": "El Bosque de los Acertijos", "etiqueta": "Capítulo 4", "emoji": "🍄", "inicio": "c4" },
+    { "id": "c5",  "titulo": "La Aldea de los Enanos Herreros", "etiqueta": "Capítulo 5", "emoji": "⚒️", "inicio": "c5" },
+    { "id": "c6",  "titulo": "Las Cuevas de Cristal", "etiqueta": "Capítulo 6", "emoji": "💎", "inicio": "c6" },
+    { "id": "c7",  "titulo": "El Pantano de las Horas", "etiqueta": "Capítulo 7", "emoji": "⏳", "inicio": "c7" },
+    { "id": "c8",  "titulo": "El Salón de las Formas", "etiqueta": "Capítulo 8", "emoji": "🔷", "inicio": "c8" },
+    { "id": "c9",  "titulo": "La Mazmorra de los Tres Cofres", "etiqueta": "Capítulo 9", "emoji": "🗝️", "inicio": "c9" },
+    { "id": "c10", "titulo": "La Guarida del Dragón Anciano", "etiqueta": "Capítulo 10", "emoji": "🐲", "inicio": "c10" },
+    { "id": "c11", "titulo": "El Ejército de Caos", "etiqueta": "Capítulo 11", "emoji": "🏰", "inicio": "c11" },
+    { "id": "c12", "titulo": "El Hechicero Caos", "etiqueta": "Capítulo 12", "emoji": "🌀", "inicio": "c12" },
+    { "id": "c13", "titulo": "De vuelta a casa", "etiqueta": "Epílogo", "emoji": "🏠", "inicio": "c13" }
+  ],
+
+  "inicio": "c0",
+
+  "nodos": {
+
+    "c0": { "tipo": "capitulo", "cap": "c0", "siguiente": "e0a" },
+
+    "e0a": {
+      "tipo": "escena", "fondo": "biblioteca", "actores": "🧒📓",
+      "texto": [
+        "Matías tenía nueve años, iba a 4.º de Primaria y guardaba un secreto: le encantaban los números. No las cuentas aburridas de la pizarra, sino los números de verdad, los que sirven para entender el mundo. Siempre llevaba encima una libreta gastada. Sus amigos lo llamaban Mati.",
+        "Aquella tarde llovía con ganas. Mati se quedó el último en el cole y, para no aburrirse, exploró el fondo de la biblioteca: ese rincón oscuro y polvoriento al que nadie iba nunca.",
+        "Allí, escondido entre dos tomos enormes, encontró un libro de cuero gastado. Sopló el polvo y leyó el título dorado: «Las matemáticas que abren puertas».",
+        { "q": "mati", "t": "Qué título más raro… Pero algo me dice que tengo que abrirlo." }
+      ],
+      "corto": [
+        "Este es Mati. ¡Le encantan los números! Siempre lleva una libreta.",
+        "Una tarde de lluvia, en la biblioteca del cole, Mati encuentra un libro viejo y misterioso.",
+        { "q": "mati", "t": "¡Qué libro tan raro! Voy a abrirlo." }
+      ],
+      "siguiente": "e0b"
+    },
+
+    "e0b": {
+      "tipo": "escena", "fondo": "biblioteca", "actores": "🧒📖✨",
+      "texto": [
+        "En la última página había un símbolo extraño, de cuatro trazos que brillaban un poco, como si tuvieran luz propia.",
+        "Debajo, una nota escrita con tinta antigua: «Traza el símbolo hasta que sea estable y la puerta se abrirá. Pero cuéntalo bien, viajero, o no irás a ninguna parte».",
+        { "q": "mati", "t": "¿Contar? Eso sé hacerlo. {NOMBRE}, ¿me ayudas?" }
+      ],
+      "corto": [
+        "En la última página hay un símbolo mágico que brilla.",
+        "Una nota dice: «Dibújalo bien y se abrirá una puerta mágica».",
+        { "q": "mati", "t": "{NOMBRE}, ¿me ayudas a contar?" }
+      ],
+      "siguiente": "p0"
+    },
+
+    "p0": {
+      "tipo": "problema", "num": "Problema 0", "titulo": "Trazar la fórmula", "fondo": "biblioteca",
+      "enunciado": "El símbolo se dibuja con {t} trazos. Para que el portal no se cierre de golpe, hay que repetir el símbolo entero {r} veces.",
+      "vars": { "1": { "t": 2, "r": "2-3" }, "2": { "t": "3-4", "r": "2-3" }, "3": { "t": "3-5", "r": "3-4" }, "4": { "t": "6-9", "r": "4-7" } },
+      "visual": { "tipo": "grupos", "n": "r", "cada": "t", "emoji": "✏️", "etiqueta": "símbolo" },
+      "preguntas": [ { "t": "¿Cuántos trazos tiene que hacer Mati en total?", "r": "t*r", "op": ["x", "+"], "trampas": ["t+r"], "u": "trazos" } ],
+      "pista": "Hay {r} grupos iguales de {t} trazos. Puedes sumar {t} tantas veces como símbolos haya… ¡o multiplicar!",
+      "explicacion": [ "Tenemos {r} grupos iguales de {t} trazos.", "Cuando se repite el mismo grupo, lo más rápido es multiplicar: {t} × {r} = {t*r}.", "Sumar también vale: es el camino largo." ],
+      "siguiente": "e0c"
+    },
+
+    "e0c": {
+      "tipo": "escena", "fondo": "portal", "actores": "🧒🌀",
+      "texto": [
+        "Mati contó en voz baja mientras dibujaba. Al terminar el último trazo, el aire tembló como el agua de un charco. Una luz morada se abrió en redondo, del tamaño justo de una puerta.",
+        "Olía a tormenta, a hierba mojada… y a algo cálido, un poco a humo. ¿A escamas?",
+        "Mati guardó la libreta, respiró hondo tres veces y cruzó el portal."
+      ],
+      "corto": [
+        "¡FIUUU! Se abre un portal morado y brillante.",
+        "Mati respira hondo… ¡y salta dentro!"
+      ],
+      "siguiente": "c1"
+    },
+
+    "c1": { "tipo": "capitulo", "cap": "c1", "siguiente": "e1a" },
+
+    "e1a": {
+      "tipo": "escena", "fondo": "prado", "actores": "🧒🐉",
+      "texto": [
+        "Mati cayó de bruces sobre la hierba más verde que había visto nunca. En el cielo brillaban dos lunas a la vez, una plateada y otra dorada, junto a un castillo lejanísimo de torres torcidas.",
+        "A lo lejos, algo rugió. Un rugido grande. Un rugido con alas.",
+        { "q": "chispa", "t": "¡Cuidado! —Plof. Algo pequeño y verde se estampó contra la barriga de Mati." },
+        "Era un dragón pequeñísimo, del tamaño de un gato, con escamas verde manzana y unas alitas demasiado grandes. Intentó echar fuego… y solo le salió un estornudo con tres chispas.",
+        { "q": "chispa", "t": "Achuús. Perdón. Aún estoy aprendiendo lo del fuego. Me llamo Chispa. ¿Tú eres… humano?" },
+        { "q": "mati", "t": "Soy Mati. ¿Dónde estoy?" }
+      ],
+      "corto": [
+        "Mati aparece en un prado precioso. ¡En el cielo hay dos lunas!",
+        "¡Plof! Un dragoncito verde choca con él.",
+        { "q": "chispa", "t": "¡Hola! Me llamo Chispa. Aún no sé echar fuego… ¡achús!" },
+        { "q": "mati", "t": "¡Hola, Chispa! Yo soy Mati." }
+      ],
+      "siguiente": "e1b"
+    },
+
+    "e1b": {
+      "tipo": "escena", "fondo": "prado", "actores": "🧒🐉🧙‍♂️",
+      "texto": [
+        { "q": "abaco", "t": "Estás en el Reino de Numeria, viajero. Y has llegado en el peor momento." },
+        "Era Maese Ábaco, guardián de los números, con una barba blanca larguísima y un bastón cubierto de bolitas de colores, como un ábaco viviente.",
+        { "q": "abaco", "t": "Durante miles de años todo funcionó gracias al Gran Cálculo: los puentes aguantaban, los tesoros se repartían en partes iguales y hasta los dragones compartían la comida." },
+        { "q": "chispa", "t": "Bueno, casi sin discutir." },
+        { "q": "abaco", "t": "Pero el Hechicero Caos rompió el Gran Cálculo en pedazos. Ahora las cuentas salen torcidas y las balanzas mienten. Solo un Viajero que sepa razonar con los números puede arreglarlo. Y creo que ese Viajero eres tú… con la ayuda de {NOMBRE}." },
+        { "q": "mati", "t": "¿Por dónde empiezo?" }
+      ],
+      "corto": [
+        "Llega un mago con una barba muy larga: Maese Ábaco.",
+        { "q": "abaco", "t": "El malvado Hechicero Caos ha roto el Gran Cálculo. ¡Ahora los números se portan mal!" },
+        { "q": "abaco", "t": "Mati y {NOMBRE}, ¡solo vosotros podéis arreglarlo!" }
+      ],
+      "siguiente": "p1"
+    },
+
+    "p1": {
+      "tipo": "problema", "num": "Problema 1", "titulo": "Los fragmentos perdidos", "fondo": "prado",
+      "enunciado": "El Gran Cálculo se rompió en 8 fragmentos 💠. Ábaco sabe dónde están algunos: 3 en el bosque, 2 en la aldea de los enanos y 1 en las cuevas de cristal. Los demás los guarda Caos en su torre.",
+      "vars": { "1": {}, "2": {}, "3": {}, "4": {} },
+      "visual": { "tipo": "items", "lista": [["🌲💠", 3], ["⚒️💠", 2], ["💎💠", 1], ["❓", 2]], "fijo": true },
+      "preguntas": [
+        { "t": "Primero: ¿cuántos fragmentos sabemos dónde están?", "r": "6", "op": "+", "trampas": ["5", "8"], "u": "fragmentos" },
+        { "t": "Y ahora: ¿cuántos tiene escondidos Caos en su torre?", "r": "2", "op": "-", "trampas": ["6", "3"], "u": "fragmentos" }
+      ],
+      "porNivel": { "1": {
+        "enunciado": "Hay 8 fragmentos mágicos 💠. Ábaco ya sabe dónde están 6 de ellos. Los demás los tiene el malvado Caos.",
+        "visual": { "tipo": "items", "lista": [["💠", 6], ["❓", 2]], "fijo": true },
+        "preguntas": [ { "t": "¿Cuántos fragmentos tiene Caos?", "r": "2", "trampas": ["6", "3"], "u": "fragmentos" } ]
+      } },
+      "pista": "Junta primero los que sabemos (3 + 2 + 1). Luego quítalos del total de 8.",
+      "explicacion": [ "Paso 1, sumo lo conocido: 3 + 2 + 1 = 6.", "Paso 2, lo quito del total: 8 − 6 = 2.", "Caos tiene 2 fragmentos. ¡Hay que recuperar 6 por el camino!" ],
+      "siguiente": "e1c"
+    },
+
+    "e1c": {
+      "tipo": "escena", "fondo": "prado", "actores": "🧒🐉🧙‍♂️",
+      "texto": [
+        { "q": "mati", "t": "Seis por el camino y dos en la torre. Vale. Suena a lista de tareas. Me gustan las listas." },
+        { "q": "chispa", "t": "¡Te acompaño! Conozco el reino entero. Bueno, casi entero. Bueno… conozco mi cueva. ¡Pero aprendo rápido!" },
+        { "q": "abaco", "t": "El bosque está cerca, a unas leguas. Una legua es lo que camina una persona en una hora, más o menos." }
+      ],
+      "corto": [
+        { "q": "chispa", "t": "¡Yo os acompaño!" },
+        { "q": "abaco", "t": "Vamos primero al bosque. ¡En marcha!" }
+      ],
+      "siguiente": "p2"
+    },
+
+    "p2": {
+      "tipo": "problema", "num": "Problema 2", "titulo": "El camino del bosque", "fondo": "prado",
+      "enunciado": "El bosque está a {T} leguas. Tras caminar un rato, llegan a un cartel torcido: «Llevas recorridas {H} leguas».",
+      "vars": { "1": { "T": "6-9", "H": "2-6" }, "2": { "T": "10-14", "H": "4-10" }, "3": { "T": "13-19", "H": "5-13" }, "4": { "T": "25-40", "H": "9-30" } },
+      "si": "H<T && H*2!=T",
+      "visual": { "tipo": "camino", "total": "T", "hecho": "H" },
+      "preguntas": [
+        { "t": "¿Cuántas leguas faltan para llegar?", "r": "T-H", "op": "-", "trampas": ["T+H"], "u": "leguas" },
+        { "t": "Chispa pregunta: «¿Hemos pasado ya la mitad del camino?»", "tipo": "eleccion", "r": "H*2>T ? 'si' : 'no'",
+          "opciones": [ { "id": "si", "e": "👍", "t": "Sí, ya la hemos pasado" }, { "id": "no", "e": "👎", "t": "No, todavía no" } ] }
+      ],
+      "pista": "Para saber lo que falta, quita lo recorrido ({H}) del total ({T}). Fíjate en la marca de la mitad.",
+      "explicacion": [ "Lo que falta es una resta: {T} − {H} = {T-H} leguas.", "La mitad de {T} es {T/2}. Llevan {H}, que es {H*2>T ? 'más' : 'menos'} que la mitad.", "{H*2>T ? '¡Ya han pasado la mitad!' : 'Todavía no han llegado a la mitad.'}" ],
+      "siguiente": "p3"
+    },
+
+    "p3": {
+      "tipo": "problema", "num": "Problema 3", "titulo": "Las provisiones", "fondo": "prado",
+      "enunciado": "Ábaco tiene {3*c} galletas de avena 🍪. Son tres caminantes: Mati, Chispa y él. ¡Hay que repartirlas en partes iguales!",
+      "vars": { "1": { "c": "1-2" }, "2": { "c": "2-4" }, "3": { "c": "3-6" }, "4": { "c": "6-12" } },
+      "visual": { "tipo": "reparto", "total": "3*c", "receptores": ["🧒", "🐉", "🧙‍♂️"], "emoji": "🍪" },
+      "preguntas": [ { "t": "¿Cuántas galletas le tocan a cada uno?", "r": "c", "op": "/", "trampas": ["3*c-3", "c+3"], "u": "galletas" } ],
+      "pista": "Toca las galletas para repartirlas una a una. ¿Cuántas acaba teniendo cada uno?",
+      "explicacion": [ "Repartir en partes iguales es dividir.", "{3*c} ÷ 3 = {c} galletas para cada uno.", "Comprobación: {c} + {c} + {c} = {3*c}. ¡Justo!" ],
+      "siguiente": "e1d"
+    },
+
+    "e1d": {
+      "tipo": "escena", "fondo": "prado", "actores": "🐉🍪",
+      "texto": [ "Chispa se comió sus galletas en tres mordiscos y miró las de Mati con cara de pena. Pero Mati fue listo y se las guardó en el bolsillo para el camino." ],
+      "corto": [ "¡Ñam! Chispa se come sus galletas en un segundo." ],
+      "efecto": { "monedas": 10 },
+      "aviso": "Ábaco te da 10 monedas para el viaje 🪙",
+      "siguiente": "c2"
+    },
+
+    "c2": { "tipo": "capitulo", "cap": "c2", "siguiente": "e2a" },
+
+    "e2a": {
+      "tipo": "escena", "fondo": "claro", "actores": "🧒🧙‍♂️🎃",
+      "texto": [
+        "Antes del bosque cruzaron un claro lleno de espantapájaros viejos. Ábaco se detuvo de golpe.",
+        { "q": "abaco", "t": "Antes de meterte en el bosque, tienes que aprender cómo se lucha en Numeria." },
+        { "q": "mati", "t": "¿Luchar? Yo no sé pelear. Soy malísimo en gimnasia." },
+        { "q": "abaco", "t": "Aquí las batallas se ganan calculando. Cada criatura tiene puntos de vida ❤️ y cada arma hace un daño. Si piensas con esos números, sabrás exactamente qué hacer." }
+      ],
+      "corto": [
+        { "q": "abaco", "t": "En Numeria las batallas se ganan… ¡pensando con números!" },
+        { "q": "abaco", "t": "Cada enemigo tiene vida ❤️. Cada golpe le quita un poco." }
+      ],
+      "siguiente": "p4"
+    },
+
+    "p4": {
+      "tipo": "problema", "num": "Problema 4", "titulo": "El espantapájaros de práctica", "fondo": "claro",
+      "enunciado": "Ábaco le da a Mati un palo de práctica 🪵. Cada golpe hace {d} puntos de daño. El espantapájaros tiene {d*k} puntos de vida.",
+      "vars": { "1": { "d": 2, "k": "2-4" }, "2": { "d": "2-3", "k": "3-5" }, "3": { "d": "3-5", "k": "3-6" }, "4": { "d": "6-9", "k": "4-8" } },
+      "visual": { "tipo": "combate", "enemigo": "🎃", "nombre": "Espantapájaros", "vida": "d*k", "dano": "d", "arma": "🪵" },
+      "preguntas": [ { "t": "¿Cuántos golpes hacen falta para derribarlo?", "r": "k", "op": ["/", "-"], "trampas": ["d*k-d", "k+1"], "u": "golpes" } ],
+      "pista": "¿Cuántas veces cabe {d} dentro de {d*k}? Mira las rayitas de la barra de vida.",
+      "explicacion": [ "¿Cuántas veces cabe el {d} en el {d*k}? Eso es dividir.", "{d*k} ÷ {d} = {k} golpes.", "También restando: le quitas {d} cada vez hasta llegar a 0." ],
+      "siguiente": "p5"
+    },
+
+    "p5": {
+      "tipo": "problema", "num": "Problema 5", "titulo": "Cuando el enemigo contraataca", "fondo": "claro",
+      "enunciado": "Un duende gruñón 👺 tiene {hp} puntos de vida. Tu palo le hace {d} de daño por golpe, pero cada vez que atacas, él te muerde y te quita {m}. Tú tienes {v} puntos de vida.",
+      "vars": { "1": { "d": 2, "k": 1, "rr": 1, "m": 1, "x": "2-3" }, "2": { "d": 3, "k": 2, "rr": "1-2", "m": 2, "x": "2-5" }, "3": { "d": "3-4", "k": "2-3", "rr": "1-3", "m": 2, "x": "2-5" }, "4": { "d": "5-7", "k": "3-4", "rr": "1-6", "m": "3-4", "x": "2-6" } },
+      "calc": { "hp": "d*k+rr", "g": "k+1", "v": "m*(k+1)+x" },
+      "si": "rr<d",
+      "visual": { "tipo": "combate", "enemigo": "👺", "nombre": "Duende gruñón", "vida": "hp", "dano": "d", "arma": "🪵", "heroe": { "vida": "v", "recibe": "m" } },
+      "preguntas": [
+        { "t": "¿Cuántos golpes necesitas para vencerlo? (¡Cuidado, no es exacto!)", "r": "g", "op": "/", "trampas": ["k"], "u": "golpes" },
+        { "t": "Si en cada golpe te quita {m}, ¿cuánta vida te queda al final?", "r": "v-m*g", "op": ["-", "x"], "trampas": ["v-m*k", "v-m"], "u": "de vida" }
+      ],
+      "pista": "Con {k} golpes le quitas {d*k}, pero tiene {hp}. ¡Ese trocito que sobra necesita otro golpe entero!",
+      "explicacion": [ "{hp} ÷ {d} = {k} y sobran {rr}. Lo que sobra necesita otro golpe: son {g} golpes.", "Te muerde {g} veces: {m} × {g} = {m*g} de daño.", "Tu vida al final: {v} − {m*g} = {v-m*g}. ¡Ganas, pero algo tocado!" ],
+      "siguiente": "e2b"
+    },
+
+    "e2b": {
+      "tipo": "escena", "fondo": "claro", "actores": "🧒🧙‍♂️",
+      "texto": [
+        { "q": "mati", "t": "Entonces lo importante es ganar en pocos golpes, para que me hagan poco daño." },
+        { "q": "abaco", "t": "¡Exacto! Ya piensas como un héroe de Numeria." },
+        "Apenas dieron unos pasos cuando, de detrás de los arbustos, saltaron varios duendes verdes y peludos enseñando los dientes.",
+        { "q": "abaco", "t": "¡Toma, bolas de humo explosivo! Úsalas con cabeza." }
+      ],
+      "corto": [
+        "¡Oh, no! ¡Salen duendes de los arbustos!",
+        { "q": "abaco", "t": "¡Toma, bolas de humo! 💨" }
+      ],
+      "siguiente": "p6"
+    },
+
+    "p6": {
+      "tipo": "problema", "num": "Problema 6", "titulo": "La emboscada de los duendes", "fondo": "claro",
+      "enunciado": "Hay {n} duendes 👺 y cada uno tiene {d*j} puntos de vida. Cada bola de humo 💨 hace {d} puntos de daño a un duende.",
+      "vars": { "1": { "n": "2-3", "d": 2, "j": "1-2" }, "2": { "n": "2-4", "d": "2-5", "j": 2 }, "3": { "n": "3-5", "d": [5, 10], "j": "2-3" }, "4": { "n": "4-8", "d": [10, 25], "j": "2-4" } },
+      "visual": { "tipo": "combate", "enemigo": "👺", "nombre": "Duende", "cantidad": "n", "vida": "d*j", "dano": "d", "arma": "💨" },
+      "preguntas": [ { "t": "¿Cuántas bolas de humo necesita Mati para vencerlos a todos?", "r": "n*j", "op": ["x", "/"], "trampas": ["n+j", "j"], "u": "bolas" } ],
+      "pista": "Primero piensa cuántas bolas necesita UN duende. Luego, ¿y si son {n}?",
+      "explicacion": [ "Para un duende: {d*j} ÷ {d} = {j} bolas.", "Como hay {n} duendes iguales: {j} × {n} = {n*j} bolas.", "Otra forma: vida total {n} × {d*j} = {n*d*j}; y {n*d*j} ÷ {d} = {n*j}." ],
+      "siguiente": "e2c"
+    },
+
+    "e2c": {
+      "tipo": "escena", "fondo": "claro", "actores": "🐉👏💨",
+      "texto": [
+        "Mati lanzó las bolas con puntería (bueno, con regular puntería, pero acertó), y los duendes salieron corriendo entre toses.",
+        { "q": "chispa", "t": "¡Eso ha sido matemágico!" }
+      ],
+      "corto": [ "¡Los duendes huyen tosiendo! Cof, cof.", { "q": "chispa", "t": "¡Matemágico!" } ],
+      "siguiente": "c3"
+    },
+
+    "c3": { "tipo": "capitulo", "cap": "c3", "siguiente": "e3a" },
+
+    "e3a": {
+      "tipo": "escena", "fondo": "rio", "actores": "🧌🧌🧌",
+      "texto": [
+        "El sonido del agua les avisó: habían llegado a un río ancho, de aguas revueltas, demasiado profundo para cruzarlo a nado. El único paso era un viejo puente de piedra… y encima había tres trols enormes.",
+        { "q": "trol", "t": "¡ALTO! Para cruzar mi puente hay que pagar peaje. Y desde que el Gran Cálculo se rompió, ni los trols sabemos contar. Más os vale ayudarnos… o no pasáis." },
+        "Chispa señaló río abajo con una garra temblorosa: allí, entre la niebla, asomaban unas piedras grandes sobre el agua.",
+        { "q": "chispa", "t": "Psst… ¿y si cruzamos saltando por esas piedras? ¡Así no hablamos con los trols!" }
+      ],
+      "corto": [
+        "Hay un río muy grande y un puente. ¡Encima del puente hay tres trols!",
+        { "q": "trol", "t": "¡ALTO! Para cruzar hay que pagar." },
+        { "q": "chispa", "t": "Psst… ¿cruzamos por las piedras del río?" }
+      ],
+      "siguiente": "d3"
+    },
+
+    "d3": {
+      "tipo": "decision", "fondo": "rio", "actores": "🧒🐉🧙‍♂️",
+      "pregunta": "¿Qué hacemos, {NOMBRE}?",
+      "opciones": [
+        { "e": "🌉", "t": "Hablar con los trols y cruzar el puente", "ir": "p7" },
+        { "e": "🪨", "t": "Cruzar saltando por las piedras del río", "ir": "e3v" }
+      ]
+    },
+
+    "e3v": {
+      "tipo": "escena", "fondo": "rio", "actores": "🧒🪨🌊",
+      "texto": [
+        "Bajaron por la orilla hasta las piedras. Cada piedra tenía un número tallado, cubierto de musgo.",
+        { "q": "abaco", "t": "Cuidado: solo aguantan las piedras que siguen el patrón. Si pisas la equivocada… ¡chof!" }
+      ],
+      "corto": [ "Las piedras del río tienen números.", { "q": "abaco", "t": "¡Pisa solo la piedra correcta!" } ],
+      "siguiente": "p3v"
+    },
+
+    "p3v": {
+      "tipo": "problema", "num": "Atajo", "titulo": "Las piedras saltarinas", "fondo": "rio",
+      "enunciado": "Las piedras seguras siguen un patrón: {s}, {s+k}, {s+2*k}, {s+3*k}… ¿Qué número tendrá la siguiente piedra segura?",
+      "vars": { "1": { "s": 1, "k": 1 }, "2": { "s": [2, 5], "k": [2, 5] }, "3": { "s": "2-4", "k": "3-4" }, "4": { "s": "3-9", "k": "6-9" } },
+      "visual": { "tipo": "patron", "serie": "[s, s+k, s+2*k, s+3*k]", "emoji": "🪨" },
+      "preguntas": [ { "t": "¿Qué número tiene la piedra a la que hay que saltar?", "r": "s+4*k", "op": "+", "trampas": ["s+3*k+1", "s+5*k"] } ],
+      "pista": "¿Cuánto aumenta de una piedra a la siguiente? Súmalo a la última.",
+      "explicacion": [ "La regla del patrón es sumar {k} cada vez.", "{s+3*k} + {k} = {s+4*k}." ],
+      "siguiente": "e3v2", "siFalla": "e3vf"
+    },
+
+    "e3vf": {
+      "tipo": "escena", "fondo": "rio", "actores": "🧒💦🐉",
+      "texto": [
+        "¡CHOF! Mati pisó la piedra equivocada y se hundió hasta las rodillas en el agua helada.",
+        "Chispa lo agarró de la capucha con todas sus fuerzas y, aleteando muchísimo, lo sacó hasta la orilla. Pero la corriente les arrastró hasta… el puente de los trols.",
+        { "q": "trol", "t": "¡Je, je! Mira quién ha vuelto. Pues ahora toca pagar." }
+      ],
+      "corto": [ "¡CHOF! Mati se cae al agua.", "Chispa lo saca volando… ¡pero acaban en el puente de los trols!" ],
+      "efecto": { "vida": -1 },
+      "siguiente": "p7"
+    },
+
+    "e3v2": {
+      "tipo": "escena", "fondo": "rio", "actores": "🧒🦀",
+      "texto": [
+        "¡Salto, salto y salto! Ya casi estaban en la otra orilla cuando, de debajo de la última piedra, salió un cangrejo gigante haciendo clac-clac con sus pinzas.",
+        { "q": "chispa", "t": "¡Ahora sí que me sale el fuego, ya verás!" }
+      ],
+      "corto": [ "¡Casi lo conseguimos! Pero sale un cangrejo gigante. ¡Clac, clac!" ],
+      "siguiente": "p3v2"
+    },
+
+    "p3v2": {
+      "tipo": "problema", "num": "Atajo", "titulo": "El cangrejo de las pinzas", "fondo": "rio",
+      "enunciado": "El cangrejo 🦀 tiene {f*k} puntos de vida. El fuego de Chispa 🔥 hace {f} de daño cada vez.",
+      "vars": { "1": { "f": 2, "k": "2-3" }, "2": { "f": "2-4", "k": "3-5" }, "3": { "f": "4-6", "k": "4-7" }, "4": { "f": "7-12", "k": "6-9" } },
+      "visual": { "tipo": "combate", "enemigo": "🦀", "nombre": "Cangrejo gigante", "vida": "f*k", "dano": "f", "arma": "🔥" },
+      "preguntas": [ { "t": "¿Cuántas llamaradas necesita Chispa?", "r": "k", "op": "/", "trampas": ["k+1", "f*k-f"], "u": "llamaradas" } ],
+      "pista": "¿Cuántas veces cabe {f} en {f*k}?",
+      "explicacion": [ "{f*k} ÷ {f} = {k} llamaradas." ],
+      "siguiente": "e3v3"
+    },
+
+    "e3v3": {
+      "tipo": "escena", "fondo": "bosque", "actores": "🦀💨🐉🔥",
+      "texto": [ "El cangrejo huyó con las pinzas chamuscadas. Chispa estaba tan orgullosa que no paró de dar volteretas hasta llegar al bosque. ¡Se habían ahorrado el peaje!" ],
+      "corto": [ "¡El cangrejo huye! Y no han tenido que pagar a los trols." ],
+      "efecto": { "monedas": 5 },
+      "aviso": "¡Te ahorras el peaje! +5 monedas 🪙",
+      "siguiente": "c4"
+    },
+
+    "p7": {
+      "tipo": "problema", "num": "Problema 7", "titulo": "El peaje del puente", "fondo": "rio",
+      "enunciado": "El trol grande gruñe: «El peaje son {p} monedas por viajero. Y sois… tres: el niño, el lagarto y el viejo».\n—¡Dragón, que soy un dragón! —protesta Chispa.",
+      "vars": { "1": { "p": "1-2" }, "2": { "p": "2-4" }, "3": { "p": "3-6" }, "4": { "p": "7-12" } },
+      "visual": { "tipo": "grupos", "n": 3, "cada": "p", "emoji": "🪙", "etiquetas": ["🧒", "🐉", "🧙‍♂️"] },
+      "preguntas": [ { "t": "¿Cuántas monedas tienen que pagar en total?", "r": "3*p", "op": ["x", "+"], "trampas": ["p+3"], "u": "monedas" } ],
+      "pista": "Cada uno paga {p}. Son 3 grupos iguales de {p}.",
+      "explicacion": [ "Grupos iguales de {p} monedas, 3 veces: multiplicamos.", "{p} × 3 = {3*p} monedas.", "Comprobación: {p} + {p} + {p} = {3*p}." ],
+      "siguiente": "p8"
+    },
+
+    "p8": {
+      "tipo": "problema", "num": "Problema 8", "titulo": "La oferta tramposa", "fondo": "rio",
+      "enunciado": "El trol mediano se frota las manos: «O pagáis {p} monedas cada uno… o me dais {B} monedas por todo el grupo y dejamos de discutir». Ábaco te guiña un ojo: piensa antes de pagar.",
+      "vars": { "1": { "p": "2-3", "dif": "1-2" }, "2": { "p": "3-5", "dif": "1-3" }, "3": { "p": "4-6", "dif": "2-4" }, "4": { "p": "8-15", "dif": "3-9" } },
+      "calc": { "A": "3*p", "B": "3*p+dif" },
+      "visual": { "tipo": "cartas", "cartas": [ { "e": "🧒🐉🧙‍♂️", "t": "Opción A", "l": ["{p} 🪙 cada uno"] }, { "e": "💰", "t": "Opción B", "l": ["{B} 🪙 por todos"] } ] },
+      "preguntas": [
+        { "t": "¿Qué opción sale más barata?", "tipo": "eleccion", "r": "'a'", "opciones": [ { "id": "a", "e": "🧒🐉🧙‍♂️", "t": "A: {p} cada uno" }, { "id": "b", "e": "💰", "t": "B: {B} por todos" } ] },
+        { "t": "¿Cuántas monedas os ahorráis eligiendo bien?", "r": "dif", "op": "-", "trampas": ["B-p", "dif+1"], "u": "monedas" }
+      ],
+      "pista": "Calcula cuánto cuesta la opción A: 3 viajeros × {p}. Luego compara con {B}.",
+      "explicacion": [ "Opción A: {p} × 3 = {A} monedas.", "Opción B: {B} monedas.", "{A} es menor que {B}. La diferencia: {B} − {A} = {dif}. ¡La oferta «especial» era más cara!" ],
+      "siguiente": "e3b", "siFalla": "e3f"
+    },
+
+    "e3f": {
+      "tipo": "escena", "fondo": "rio", "actores": "🧌😂💰",
+      "texto": [
+        "Mati se lió con las cuentas y el trol mediano aprovechó para quedarse con unas monedas de más. ¡Je, je, je!",
+        { "q": "trol", "t": "¡Este humano no piensa tanto como parece!" },
+        { "q": "abaco", "t": "No pasa nada, Viajero. Equivocarse también enseña. La próxima vez, calcula cada opción antes de pagar." }
+      ],
+      "corto": [ "¡El trol os ha engañado y se queda monedas de más!", { "q": "abaco", "t": "La próxima vez, calculamos antes de pagar." } ],
+      "efecto": { "monedas": -3 },
+      "siguiente": "p9"
+    },
+
+    "e3b": {
+      "tipo": "escena", "fondo": "rio", "actores": "🧌😮🧒",
+      "texto": [
+        "Mati pagó lo justo con una sonrisa. El trol mediano se quedó con la boca abierta: el niño lo había pillado al instante.",
+        { "q": "trol", "t": "Este humano piensa demasiado…" }
+      ],
+      "corto": [ "¡Mati no se deja engañar! El trol se queda con la boca abierta." ],
+      "siguiente": "p9"
+    },
+
+    "p9": {
+      "tipo": "problema", "num": "Problema 9", "titulo": "Los tablones del puente", "fondo": "rio",
+      "enunciado": "Ya cruzando, Ábaco examina la pasarela de madera. «Este puente mide {t*n} metros y está hecho con tablones iguales de {t} metros cada uno. Si sabemos cuántos hay, sabremos si falta alguno».",
+      "vars": { "1": { "t": 2, "n": "2-4" }, "2": { "t": "2-3", "n": "3-6" }, "3": { "t": "3-4", "n": "4-7" }, "4": { "t": "4-9", "n": "6-12" } },
+      "visual": { "tipo": "llenar", "total": "t*n", "pieza": "t", "emoji": "🪵", "unidad": "m", "boton": "Poner un tablón" },
+      "preguntas": [ { "t": "¿Cuántos tablones forman la pasarela entera?", "r": "n", "op": "/", "trampas": ["t*n-t", "n+t"], "u": "tablones" } ],
+      "pista": "¿Cuántos trozos de {t} metros caben en {t*n} metros? Prueba a poner tablones.",
+      "explicacion": [ "¿Cuántos trozos de {t} caben en {t*n}? Dividimos.", "{t*n} ÷ {t} = {n} tablones. ¡No falta ninguno, el puente es seguro!" ],
+      "siguiente": "e3c"
+    },
+
+    "e3c": {
+      "tipo": "escena", "fondo": "rio", "actores": "🧌💪",
+      "texto": [
+        "Cuando ya casi habían cruzado, el trol grande se plantó delante, cruzado de brazos.",
+        { "q": "trol", "t": "He cambiado de idea. Si queréis pasar, tenéis que vencerme. ¡Nadie me ha tumbado nunca!" },
+        { "q": "abaco", "t": "Pensemos quién de los dos lo derribará en menos golpes, Chispa: tú o yo." }
+      ],
+      "corto": [ { "q": "trol", "t": "¡No pasaréis! ¡Tenéis que vencerme!" } ],
+      "siguiente": "p10"
+    },
+
+    "p10": {
+      "tipo": "problema", "num": "Problema 10", "titulo": "El trol que no quiere dejar pasar", "fondo": "rio",
+      "enunciado": "El trol tiene {hp} puntos de vida. El bastón de Ábaco 🪄 hace {a} de daño por golpe. El fuego de Chispa 🔥 hace {c} de daño.",
+      "vars": { "1": { "a": 3, "c": 2, "m": 1 }, "2": { "a": [3, 4, 5], "c": [2, 3], "m": 1 }, "3": { "a": [5, 6], "c": [3, 4], "m": 1 }, "4": { "a": [6, 8, 9], "c": [4, 5], "m": "1-2" } },
+      "calc": { "hp": "a*c*m" },
+      "si": "a>c",
+      "visual": { "tipo": "combate", "enemigo": "🧌", "nombre": "Trol grande", "vida": "hp", "dano": "a", "arma": "🪄", "atacante": "🧙‍♂️" },
+      "preguntas": [
+        { "t": "¿Cuántos golpes necesita Ábaco?", "r": "hp/a", "op": "/", "trampas": ["hp/c", "hp-a"], "u": "golpes" },
+        { "t": "¿Y cuántos necesitaría Chispa?", "r": "hp/c", "op": "/", "trampas": ["hp/a", "hp-c"], "u": "golpes" },
+        { "t": "¿Quién lo vence en menos golpes?", "tipo": "eleccion", "r": "'abaco'", "opciones": [ { "id": "abaco", "e": "🧙‍♂️", "t": "Ábaco" }, { "id": "chispa", "e": "🐉", "t": "Chispa" } ] }
+      ],
+      "porNivel": { "1": { "preguntas": [
+        { "t": "¿Cuántos golpes necesita Ábaco?", "r": "hp/a", "trampas": ["hp/c", "hp"], "u": "golpes" },
+        { "t": "¿Quién lo vence en menos golpes?", "tipo": "eleccion", "r": "'abaco'", "opciones": [ { "id": "abaco", "e": "🧙‍♂️", "t": "Ábaco (pega {a})" }, { "id": "chispa", "e": "🐉", "t": "Chispa (pega {c})" } ] }
+      ] } },
+      "pista": "Para cada uno, mira cuántas veces cabe su daño en {hp}.",
+      "explicacion": [ "Ábaco: {hp} ÷ {a} = {hp/a} golpes.", "Chispa: {hp} ÷ {c} = {hp/c} golpes.", "El que pega más fuerte ({a}) necesita menos golpes. ¡Gana Ábaco!" ],
+      "siguiente": "e3d"
+    },
+
+    "e3d": {
+      "tipo": "escena", "fondo": "rio", "actores": "🧌💫",
+      "texto": [
+        "El trol grande se sentó de culo, mareado y con estrellitas dando vueltas sobre la cabeza.",
+        { "q": "trol", "t": "Vale… vale… podéis pasar. Pero volved otro día a enseñarnos a sumar, ¿eh?" }
+      ],
+      "corto": [ "¡Pum! El trol se sienta, mareado. 💫", { "q": "trol", "t": "Vale… podéis pasar." } ],
+      "siguiente": "c4"
+    },
+
+    "c4": { "tipo": "capitulo", "cap": "c4", "siguiente": "e4a" },
+
+    "e4a": {
+      "tipo": "escena", "fondo": "bosque", "actores": "🌳👀🍄",
+      "texto": [
+        "Al otro lado, el bosque cambiaba por completo. Los árboles tenían ojos pintados en la corteza y las setas brillaban con luces de colores.",
+        { "q": "abaco", "t": "Este es el Bosque de los Acertijos. Aquí nada es lo que parece. Hay que pensar dos veces antes de creerse nada." },
+        { "q": "chispa", "t": "No me gusta este sitio. ¡Esa seta me ha guiñado un ojo!" },
+        "En el centro de un claro había un cofre de madera con un cartel clavado encima."
+      ],
+      "corto": [ "Llegan al Bosque de los Acertijos. ¡Los árboles tienen ojos! 👀", "En el centro hay un cofre con un cartel." ],
+      "siguiente": "p11"
+    },
+
+    "p11": {
+      "tipo": "problema", "num": "Problema 11", "titulo": "El cofre con trampa", "fondo": "bosque",
+      "enunciado": "El cartel dice: «Dentro hay {r} rubíes, {e} esmeraldas, {t} telarañas y {f} ranas».\n—¡Fácil, sumas todo! —salta Chispa.\n—Espera… —dice Mati—. Lee bien la pregunta.",
+      "vars": { "1": { "r": "1-3", "e": "1-2", "t": "1-2", "f": 1 }, "2": { "r": "2-5", "e": "2-4", "t": "2-4", "f": "1-2" }, "3": { "r": "4-8", "e": "2-5", "t": "3-6", "f": "1-3" }, "4": { "r": "8-15", "e": "6-12", "t": "5-9", "f": "3-6" } },
+      "visual": { "tipo": "items", "lista": [["❤️‍🔥", "r", "rubí"], ["💚", "e", "esmeralda"], ["🕸️", "t"], ["🐸", "f"]], "marcar": true, "leyenda": "❤️‍🔥 rubí · 💚 esmeralda · 🕸️ telaraña · 🐸 rana" },
+      "preguntas": [ { "t": "¿Cuántas piedras preciosas hay en total?", "r": "r+e", "op": "+", "trampas": ["r+e+t+f", "r"], "u": "piedras" } ],
+      "pista": "¿Las telarañas y las ranas son piedras preciosas? Toca solo las piedras para contarlas.",
+      "explicacion": [ "¡Trampa! Las telarañas y las ranas no son piedras preciosas.", "Solo sumo rubíes y esmeraldas: {r} + {e} = {r+e}.", "Si sumas todo te sale {r+e+t+f}… y el cofre no se abre." ],
+      "siguiente": "e4b"
+    },
+
+    "e4b": {
+      "tipo": "escena", "fondo": "bosque", "actores": "🧰✨",
+      "texto": [
+        "Al decir la respuesta en voz alta, el cofre se abrió con un clic. ¡Dentro brillaban las piedras preciosas!",
+        "Un sendero estrecho se internaba en lo más oscuro del bosque, iluminado por antorchas mágicas colocadas de una forma muy curiosa.",
+        { "q": "mati", "t": "¡Es un patrón! Me encantan los patrones." }
+      ],
+      "corto": [ "¡Clic! El cofre se abre.", "Ahora hay un camino con antorchas mágicas. 🔥" ],
+      "efecto": { "monedas": 3 },
+      "aviso": "Encuentras 3 monedas en el cofre 🪙",
+      "siguiente": "p12"
+    },
+
+    "p12": {
+      "tipo": "problema", "num": "Problema 12", "titulo": "El sendero de las antorchas", "fondo": "bosque",
+      "enunciado": "La primera antorcha tiene {s} llamas, la segunda {s+k}, la tercera {s+2*k}, la cuarta {s+3*k}… Ábaco dice: «Si adivinas cuántas tendrá la quinta, el camino te dejará pasar».",
+      "vars": { "1": { "s": 1, "k": 1 }, "2": { "s": 2, "k": 2 }, "3": { "s": [2, 3, 5], "k": [2, 3, 5] }, "4": { "s": "3-9", "k": "4-9" } },
+      "visual": { "tipo": "patron", "serie": "[s, s+k, s+2*k, s+3*k]", "emoji": "🔥" },
+      "preguntas": [ { "t": "¿Cuántas llamas tendrá la quinta antorcha?", "r": "s+4*k", "op": "+", "trampas": ["s+3*k+1", "s+5*k"], "u": "llamas" } ],
+      "pista": "¿Cuántas llamas más tiene cada antorcha que la anterior?",
+      "explicacion": [ "La regla: se suman {k} cada vez.", "Quinta antorcha: {s+3*k} + {k} = {s+4*k}.", "Los patrones son como adivinar el futuro… con números." ],
+      "siguiente": "d4"
+    },
+
+    "d4": {
+      "tipo": "decision", "fondo": "bosque", "actores": "🧝🫘",
+      "texto": [ "Junto al sendero, un duende vendedor (de los amables, este sí) ofrece judías mágicas en un puestecillo.", { "q": "duende", "t": "¡Judías que se multiplican! ¿Os acercáis?" } ],
+      "corto": [ { "q": "duende", "t": "¡Judías mágicas! ¿Queréis verlas?" } ],
+      "pregunta": "¿Os acercáis al puesto?",
+      "opciones": [
+        { "e": "🫘", "t": "¡Sí! Quiero ver las judías mágicas", "ir": "p13" },
+        { "e": "🏃", "t": "No, mejor seguimos el sendero", "ir": "e4c" }
+      ]
+    },
+
+    "p13": {
+      "tipo": "problema", "num": "Problema 13", "titulo": "Las judías mágicas", "fondo": "bosque",
+      "enunciado": "«Si plantas 1 judía hoy, mañana tendrás {f}. Al día siguiente {f*f}… ¡Cada día se {f==2?'duplica':'triplica'} la cantidad!»\n—¡Quiero un millón de judías! —dice Chispa.",
+      "vars": { "1": { "f": 2, "n": 2 }, "2": { "f": 2, "n": 3 }, "3": { "f": 2, "n": 4 }, "4": { "f": 3, "n": 4 } },
+      "calc": { "serie": "Array.from({length:n},(_,i)=>f**i)" },
+      "visual": { "tipo": "patron", "serie": "serie", "emoji": "🫘", "etiqueta": "Día" },
+      "preguntas": [ { "t": "¿Cuántas judías habrá el día {n+1}?", "r": "f**n", "op": "x", "trampas": ["f**(n-1)+f", "f**(n-1)+1"], "u": "judías" } ],
+      "pista": "Cada día se multiplica por {f}. Mira el último día y multiplícalo por {f}.",
+      "explicacion": [ "La regla no es sumar siempre lo mismo: es multiplicar por {f} cada día.", "Día {n}: {f**(n-1)}. Día {n+1}: {f**(n-1)} × {f} = {f**n}.", "¡Fíjate qué rápido crece algo que se multiplica!" ],
+      "siguiente": "e4c0"
+    },
+
+    "e4c0": {
+      "tipo": "escena", "fondo": "bosque", "actores": "🧝🎁",
+      "texto": [ { "q": "duende", "t": "¡Qué cabeza más bien amueblada! Toma, un regalo para el camino." } ],
+      "corto": [ { "q": "duende", "t": "¡Muy bien! Toma un regalo." } ],
+      "efecto": { "monedas": 4 },
+      "aviso": "El duende te regala 4 monedas 🪙",
+      "siguiente": "e4c"
+    },
+
+    "e4c": {
+      "tipo": "escena", "fondo": "bosque", "actores": "🕷️🕷️🕷️",
+      "texto": [
+        "De pronto, del techo de hojas empezaron a descolgarse arañas gigantes, peludas y con demasiadas patas. Chispa soltó un gritito.",
+        { "q": "abaco", "t": "¡Semillas de fuego! Cada una estalla y hace daño a una araña. ¡Calcula cuántas necesitas, deprisa!" }
+      ],
+      "corto": [ "¡Ahhh! ¡Bajan arañas gigantes! 🕷️", { "q": "abaco", "t": "¡Usa las semillas de fuego!" } ],
+      "siguiente": "p14"
+    },
+
+    "p14": {
+      "tipo": "problema", "num": "Problema 14", "titulo": "Las arañas del techo de hojas", "fondo": "bosque",
+      "enunciado": "Hay {n} arañas 🕷️ y cada una tiene {d*j} puntos de vida. Cada semilla de fuego 🌰 hace {d} de daño a una araña.",
+      "vars": { "1": { "n": 2, "d": 1, "j": "2-3" }, "2": { "n": "2-4", "d": "2-3", "j": "2-3" }, "3": { "n": "4-6", "d": [5, 4], "j": "2-3" }, "4": { "n": "6-9", "d": [6, 7, 8], "j": "3-5" } },
+      "visual": { "tipo": "combate", "enemigo": "🕷️", "nombre": "Araña", "cantidad": "n", "vida": "d*j", "dano": "d", "arma": "🌰" },
+      "preguntas": [ { "t": "¿Cuántas semillas necesita Mati para vencer a todas?", "r": "n*j", "op": ["x", "/"], "trampas": ["n+j", "n*d"], "u": "semillas" } ],
+      "pista": "Igual que con los duendes: ¿cuántas semillas para UNA araña? ¿Y para {n}?",
+      "explicacion": [ "Una araña: {d*j} ÷ {d} = {j} semillas.", "Como hay {n}: {j} × {n} = {n*j} semillas." ],
+      "siguiente": "e4d"
+    },
+
+    "e4d": {
+      "tipo": "escena", "fondo": "bosque", "actores": "🍄🍄🍄",
+      "texto": [
+        "Las arañas huyeron correteando hacia las copas de los árboles.",
+        { "q": "chispa", "t": "Odio las arañas —murmuró desde dentro de la mochila, donde se había escondido." },
+        "Al final del sendero, unas setas parlanchinas bloqueaban el paso."
+      ],
+      "corto": [ "¡Las arañas se van! 🕷️💨", "Ahora unas setas que hablan no les dejan pasar." ],
+      "siguiente": "p15"
+    },
+
+    "p15": {
+      "tipo": "problema", "num": "Problema 15", "titulo": "Las setas que dicen verdad o mentira", "fondo": "bosque",
+      "enunciado": "—Somos {s} setas —dicen a la vez—. Solo {v == 1 ? 'una de nosotras dice' : v + ' de nosotras dicen'} la verdad. Adivina cuántas mienten y podrás pasar.",
+      "vars": { "1": { "s": 3, "v": 1 }, "2": { "s": "3-5", "v": 1 }, "3": { "s": "4-7", "v": "1-2" }, "4": { "s": "9-15", "v": "2-5" } },
+      "visual": { "tipo": "items", "lista": [["🍄", "s"]], "fijo": true },
+      "preguntas": [ { "t": "¿Cuántas setas mienten?", "r": "s-v", "op": "-", "trampas": ["s+v", "v"], "u": "setas" } ],
+      "pista": "Del total de setas, quita las que dicen la verdad.",
+      "explicacion": [ "Total menos las que dicen la verdad: {s} − {v} = {s-v}.", "Parece lógica complicada, pero por dentro es una resta sencilla." ],
+      "siguiente": "e4e"
+    },
+
+    "e4e": {
+      "tipo": "escena", "fondo": "bosque", "actores": "💠✨🧒",
+      "texto": [
+        "Las setas se apartaron refunfuñando y, entre sus raíces, algo brillaba con luz dorada.",
+        { "q": "chispa", "t": "¡Un fragmento del Gran Cálculo!" },
+        "Mati lo recogió con cuidado. Era cálido y vibraba como un corazón diminuto."
+      ],
+      "corto": [ "¡Mira! Entre las setas brilla algo…", { "q": "chispa", "t": "¡Un fragmento mágico!" } ],
+      "efecto": { "fragmentos": 1 },
+      "siguiente": "c5"
+    },
+
+    "c5": { "tipo": "capitulo", "cap": "c5", "siguiente": "e5a" },
+
+    "e5a": {
+      "tipo": "escena", "fondo": "aldea", "actores": "🧔⚒️🔥",
+      "texto": [
+        "Al salir del bosque, el camino bajaba a un valle lleno de humo y de un clang, clang, clang metálico. Era la aldea de los enanos herreros.",
+        { "q": "brun", "t": "¡Forasteros! Soy Brun Yunque, jefe de la herrería. ¿Venís por los fragmentos brillantes? Los tenemos a buen recaudo… pero si nos ayudáis con unas cuentas que nos traen de cabeza, os los daremos. ¡Y hasta os equiparemos!" }
+      ],
+      "corto": [ "Llegan a la aldea de los enanos herreros. ¡Clang, clang!", { "q": "brun", "t": "Soy Brun. Si nos ayudáis con las cuentas, ¡os damos los fragmentos!" } ],
+      "siguiente": "p16"
+    },
+
+    "p16": {
+      "tipo": "problema", "num": "Problema 16", "titulo": "El reparto de las gemas", "fondo": "aldea",
+      "enunciado": "Brun señala un montón de {h*c} gemas azules 💎. «Somos {h} herreros y queremos repartirlas en partes iguales, que aquí no se hacen trampas».",
+      "vars": { "1": { "h": 2, "c": "2-3" }, "2": { "h": "3-4", "c": "2-4" }, "3": { "h": 6, "c": "3-6" }, "4": { "h": "6-8", "c": "6-7" } },
+      "visual": { "tipo": "reparto", "total": "h*c", "receptores": "h", "receptor": "🧔", "emoji": "💎" },
+      "preguntas": [ { "t": "¿Cuántas gemas le tocan a cada herrero?", "r": "c", "op": "/", "trampas": ["h*c-h", "c+1"], "u": "gemas" } ],
+      "pista": "Reparte las gemas una a una entre los herreros.",
+      "explicacion": [ "«Repartir en partes iguales» es la señal de la división.", "{h*c} ÷ {h} = {c} gemas para cada uno.", "Comprobación: {c} × {h} = {h*c}." ],
+      "siguiente": "p17"
+    },
+
+    "p17": {
+      "tipo": "problema", "num": "Problema 17", "titulo": "El almacén de espadas", "fondo": "aldea",
+      "enunciado": "En el almacén hay {e} estanterías y en cada una caben {c} espadas ⚔️. Brun necesita saber cuántas caben en total para hacer el pedido al rey.",
+      "vars": { "1": { "e": 2, "c": "2-3" }, "2": { "e": "2-4", "c": "2-5" }, "3": { "e": "4-6", "c": "5-8" }, "4": { "e": "6-9", "c": "7-12" } },
+      "visual": { "tipo": "grupos", "n": "e", "cada": "c", "emoji": "⚔️", "etiqueta": "estantería" },
+      "preguntas": [ { "t": "¿Cuántas espadas caben en total?", "r": "e*c", "op": ["x", "+"], "trampas": ["e+c", "e*c-c"], "u": "espadas" } ],
+      "pista": "{e} estanterías con {c} espadas cada una: grupos iguales.",
+      "explicacion": [ "Grupos iguales y queremos el total: multiplicamos.", "{c} × {e} = {e*c} espadas." ],
+      "siguiente": "p18"
+    },
+
+    "p18": {
+      "tipo": "problema", "num": "Problema 18", "titulo": "El cambio del herrero", "fondo": "aldea",
+      "enunciado": "Mati quiere una brújula 🧭 para no perderse. Cuesta {p} monedas y paga con una moneda de {m}.\n—Aquí tienes tu cambio —dice Brun—… si recuerdo cómo se calcula.",
+      "vars": { "1": { "m": 5, "p": "1-4" }, "2": { "m": 10, "p": "2-8" }, "3": { "m": [10, 20], "p": "3-17" }, "4": { "m": [50, 100], "p": "13-89" } },
+      "si": "p<m",
+      "visual": { "tipo": "cartas", "cartas": [ { "e": "🧭", "t": "Brújula", "l": ["Cuesta {p} 🪙"] }, { "e": "🪙", "t": "Mati paga", "l": ["con {m} 🪙"] } ] },
+      "preguntas": [ { "t": "¿Cuánto cambio debe devolverle el herrero?", "r": "m-p", "op": "-", "trampas": ["m+p", "m-p+1"], "u": "monedas" } ],
+      "pista": "El cambio es lo que sobra de lo que pagas después de quitar el precio.",
+      "explicacion": [ "«Lo que sobra» es una resta.", "{m} − {p} = {m-p} monedas de cambio.", "—¡Más rápido que mi caja registradora! —se ríe Brun." ],
+      "siguiente": "e5b"
+    },
+
+    "e5b": {
+      "tipo": "escena", "fondo": "aldea", "actores": "🧔🧰",
+      "texto": [ { "q": "brun", "t": "Os habéis ganado una sorpresa. Aquí tengo tres armas: elige bien, Viajero, porque te acompañará en la aventura. ¡Mira sus números!" } ],
+      "corto": [ { "q": "brun", "t": "¡Tengo tres armas para ti! ¿Cuál es la más fuerte?" } ],
+      "siguiente": "p19"
+    },
+
+    "p19": {
+      "tipo": "problema", "num": "Problema 19", "titulo": "¿Qué arma elegir?", "fondo": "aldea",
+      "enunciado": "La Espada Chispeante 🗡️ hace {A.espada.D} de daño por golpe. La Maza Pesada 🔨 hace {A.maza.D}. La Daga Rápida 🔪 hace solo {A.daga.D}… pero golpea 2 veces en cada turno.",
+      "vars": { "1": {}, "2": {}, "3": {}, "4": {} },
+      "visual": { "tipo": "cartas", "cartas": [ { "e": "🗡️", "t": "Espada", "l": ["{A.espada.D} de daño", "1 golpe por turno"] }, { "e": "🔨", "t": "Maza", "l": ["{A.maza.D} de daño", "1 golpe por turno"] }, { "e": "🔪", "t": "Daga", "l": ["{A.daga.D} de daño", "2 golpes por turno"] } ] },
+      "preguntas": [
+        { "t": "¿Cuánto daño hace la Daga en un turno?", "r": "A.daga.T", "op": ["x", "+"], "trampas": ["A.daga.D", "A.daga.D+2"], "u": "de daño" },
+        { "t": "¿Qué arma hace más daño en un turno?", "tipo": "eleccion", "r": "MEJORARMA", "opciones": [ { "id": "espada", "e": "🗡️", "t": "Espada" }, { "id": "maza", "e": "🔨", "t": "Maza" }, { "id": "daga", "e": "🔪", "t": "Daga" } ] }
+      ],
+      "pista": "Mira el daño de cada arma en un turno entero. ¡La daga pega dos veces!",
+      "explicacion": [ "Espada: {A.espada.T} por turno. Maza: {A.maza.T} por turno.", "Daga: {A.daga.D} × 2 = {A.daga.T} por turno.", "La que más daño hace por turno es la {A[MEJORARMA].nombre}. ¡Hay que calcular y no fiarse del aspecto!" ],
+      "siguiente": "d5"
+    },
+
+    "d5": {
+      "tipo": "decision", "fondo": "aldea", "actores": "🗡️🔨🔪",
+      "texto": [ { "q": "brun", "t": "Ahora que sabes cuánto pega cada una… ¿cuál te llevas? A veces la mejor arma es la que de verdad puedes usar." } ],
+      "corto": [ { "q": "brun", "t": "¿Cuál te llevas?" } ],
+      "pregunta": "Elige tu arma para el resto de la aventura",
+      "opciones": [
+        { "e": "🗡️", "t": "Espada Chispeante ({A.espada.D} de daño)", "efecto": { "arma": "espada" }, "ir": "tienda" },
+        { "e": "🔨", "t": "Maza Pesada ({A.maza.D} de daño)", "efecto": { "arma": "maza" }, "ir": "tienda" },
+        { "e": "🔪", "t": "Daga Rápida ({A.daga.D} × 2 golpes)", "efecto": { "arma": "daga" }, "ir": "tienda" }
+      ]
+    },
+
+    "tienda": {
+      "tipo": "decision", "fondo": "aldea", "actores": "🧔🛒",
+      "texto": [ { "q": "brun", "t": "Y esta es mi tienda. Tienes {MONEDAS} monedas. ¿Compras algo antes de seguir?" } ],
+      "corto": [ { "q": "brun", "t": "Tienes {MONEDAS} monedas. ¿Quieres comprar algo?" } ],
+      "pregunta": "La tienda de Brun",
+      "opciones": [
+        { "e": "🧪", "t": "Poción: +1 ❤️ (5 🪙)", "requiere": { "monedas": 5 }, "efecto": { "monedas": -5, "vida": 1 }, "ir": "tienda" },
+        { "e": "🛡️", "t": "Escudo: te protege de un golpe (8 🪙)", "requiere": { "monedas": 8, "sinFlag": "escudo" }, "efecto": { "monedas": -8, "flag": "escudo" }, "ir": "tienda" },
+        { "e": "🍪", "t": "Galletas para Chispa (2 🪙)", "requiere": { "monedas": 2 }, "efecto": { "monedas": -2 }, "aviso": "¡Chispa está feliz! 🐉💚", "ir": "tienda" },
+        { "e": "👋", "t": "Nada más, gracias", "ir": "p20" }
+      ]
+    },
+
+    "p20": {
+      "tipo": "problema", "num": "Problema 20", "titulo": "La lista de la compra", "fondo": "aldea",
+      "enunciado": "Mati tiene {M} monedas en su bolsa para material de viaje. Ve tres cosas útiles: una cuerda 🪢 por {c1}, un farol 🏮 por {c2} y una manta 🧣 por {c3}.",
+      "vars": { "1": { "c1": "1-3", "c2": "1-3", "c3": "1-2", "x": "1-3" }, "2": { "c1": "3-6", "c2": "2-5", "c3": "1-4", "x": "1-5" }, "3": { "c1": "9-13", "c2": "6-9", "c3": "3-6", "x": "2-6" }, "4": { "c1": "18-35", "c2": "12-29", "c3": "7-19", "x": "3-15" } },
+      "calc": { "S": "c1+c2+c3", "M": "c1+c2+c3+x" },
+      "visual": { "tipo": "cartas", "cartas": [ { "e": "🪢", "t": "Cuerda", "l": ["{c1} 🪙"] }, { "e": "🏮", "t": "Farol", "l": ["{c2} 🪙"] }, { "e": "🧣", "t": "Manta", "l": ["{c3} 🪙"] } ] },
+      "preguntas": [
+        { "t": "¿Cuánto cuestan las tres cosas juntas?", "r": "S", "op": "+", "trampas": ["S-1", "c1+c2"], "u": "monedas" },
+        { "t": "¿Le llega con sus {M} monedas? ¿Cuánto le sobra?", "r": "x", "op": "-", "trampas": ["M", "x+1"], "u": "monedas" }
+      ],
+      "pista": "Suma primero todo lo que cuesta. Luego quítalo de {M}.",
+      "explicacion": [ "Coste total: {c1} + {c2} + {c3} = {S}.", "{S} es menor que {M}: ¡sí le llega!", "Lo que sobra: {M} − {S} = {x} monedas." ],
+      "siguiente": "e5c"
+    },
+
+    "e5c": {
+      "tipo": "escena", "fondo": "aldea", "actores": "🧔💠💠",
+      "texto": [ "Al despedirse, Brun le entregó dos fragmentos del Gran Cálculo que los enanos guardaban en su tesoro.", { "q": "brun", "t": "Que la lógica te acompañe, Viajero." } ],
+      "corto": [ "¡Brun os da DOS fragmentos mágicos!", { "q": "brun", "t": "¡Buen viaje!" } ],
+      "efecto": { "fragmentos": 2 },
+      "siguiente": "c6"
+    },
+
+    "c6": { "tipo": "capitulo", "cap": "c6", "siguiente": "e6a" },
+
+    "e6a": {
+      "tipo": "escena", "fondo": "cueva", "actores": "🐉🪞🐉",
+      "texto": [
+        "Llegaron a unas cuevas que brillaban por dentro como si fueran de diamante.",
+        { "q": "abaco", "t": "Las Cuevas de Cristal. El cristal multiplica las cosas, y eso a veces engaña a la vista." },
+        { "q": "chispa", "t": "¡Hay otro dragón! Ah, no, soy yo. Qué guapa soy." },
+        "En una sala encontraron a un viejo alquimista revolviendo un caldero burbujeante."
+      ],
+      "corto": [ "Las cuevas brillan como diamantes. 💎", { "q": "chispa", "t": "¡Otro dragón! Ah, no… es mi reflejo." }, "Un alquimista remueve un caldero." ],
+      "siguiente": "p21"
+    },
+
+    "p21": {
+      "tipo": "problema", "num": "Problema 21", "titulo": "El caldero del alquimista", "fondo": "cueva",
+      "enunciado": "—Para abrir el paso necesito {f} frascos de esencia de cristal 🧪, y cada frasco lleva {g} gotas de luz lunar 💧. Pero ya había echado {s} gotas sueltas por error.",
+      "vars": { "1": { "f": 2, "g": 2, "s": "1-2" }, "2": { "f": "2-3", "g": "2-4", "s": "1-4" }, "3": { "f": "3-5", "g": "4-7", "s": "2-6" }, "4": { "f": "5-8", "g": "6-9", "s": "7-15" } },
+      "visual": { "tipo": "grupos", "n": "f", "cada": "g", "emoji": "💧", "etiqueta": "frasco", "extra": "s" },
+      "preguntas": [
+        { "t": "¿Cuántas gotas hay en los frascos?", "r": "f*g", "op": "x", "trampas": ["f+g"], "u": "gotas" },
+        { "t": "¿Y cuántas hay en total en el caldero?", "r": "f*g+s", "op": "+", "trampas": ["f*g", "f*g-s"], "u": "gotas" }
+      ],
+      "pista": "Primero las gotas de los frascos (grupos iguales). Luego suma las sueltas.",
+      "explicacion": [ "Frascos: {g} × {f} = {f*g} gotas.", "Más las sueltas: {f*g} + {s} = {f*g+s} gotas." ],
+      "siguiente": "p22"
+    },
+
+    "p22": {
+      "tipo": "problema", "num": "Problema 22", "titulo": "La poción a medias", "fondo": "cueva",
+      "enunciado": "Una fuente de cristal gotea una poción brillante 🧪. Entera cura {c} puntos de vida. Pero solo queda la mitad del frasco.",
+      "vars": { "1": { "h": "1-3" }, "2": { "h": "2-6" }, "3": { "h": "5-10" }, "4": { "h": "3-8" } },
+      "calc": { "c": "h*2" },
+      "porNivel": { "4": {
+        "calc": { "c": "h*4" },
+        "enunciado": "Una fuente de cristal gotea una poción brillante 🧪. Entera cura {c} puntos de vida. Pero solo queda la cuarta parte del frasco.",
+        "preguntas": [ { "t": "¿Cuántos puntos cura esa cuarta parte?", "r": "h", "op": "/", "trampas": ["c/2", "c-4"], "u": "de vida" } ],
+        "explicacion": [ "«La cuarta parte» es partir en 4 partes iguales.", "{c} ÷ 4 = {h} puntos de vida." ]
+      } },
+      "visual": { "tipo": "fraccion", "partes": "NIVEL==4?4:2", "emoji": "🧪" },
+      "preguntas": [ { "t": "¿Cuántos puntos de vida cura esa mitad?", "r": "h", "op": "/", "trampas": ["c-2", "c"], "u": "de vida" } ],
+      "pista": "La mitad es partir en 2 partes iguales.",
+      "explicacion": [ "«La mitad» es dividir entre 2.", "{c} ÷ 2 = {h} puntos de vida." ],
+      "siguiente": "e6b"
+    },
+
+    "e6b": {
+      "tipo": "escena", "fondo": "cueva", "actores": "🧒🌉⚠️",
+      "texto": [ "Mati se guardó la poción para cuando le hiciera falta de verdad.", "Más adelante, un puente finísimo de cristal cruzaba un abismo. Un cartel avisaba: «Si se pasa del peso máximo, el puente se rompe»." ],
+      "corto": [ "Hay un puente de cristal muy finito.", "Un cartel dice cuánto peso aguanta." ],
+      "efecto": { "vida": 1 },
+      "aviso": "La poción te cura: +1 ❤️",
+      "siguiente": "p23"
+    },
+
+    "p23": {
+      "tipo": "problema", "num": "Problema 23", "titulo": "El puente que aguanta un peso", "fondo": "cueva",
+      "enunciado": "El puente aguanta {L} kilos como máximo. Mati pesa {m} kilos y Chispa {c} kilos. Ábaco, que pesa mucho, cruzará aparte. Toca a cada uno para subirlo al puente.",
+      "vars": { "1": { "m": "5-7", "c": "2-3", "e": "1-2" }, "2": { "m": "15-20", "c": "3-6", "e": "1-3" }, "3": { "m": "25-30", "c": "3-6", "e": "1-4" }, "4": { "m": "35-45", "c": "8-15", "e": "2-9" } },
+      "calc": { "L": "m+c-e" },
+      "visual": { "tipo": "balanza", "limite": "L", "pesos": [["🧒", "Mati", "m"], ["🐉", "Chispa", "c"]] },
+      "preguntas": [
+        { "t": "Si cruzan a la vez, ¿se pasan del límite?", "tipo": "eleccion", "r": "'si'", "opciones": [ { "id": "si", "e": "⚠️", "t": "Sí, se pasan" }, { "id": "no", "e": "✅", "t": "No, aguanta" } ] },
+        { "t": "¿Por cuántos kilos se pasan?", "r": "e", "op": "-", "trampas": ["m+c", "e+1"], "u": "kilos" }
+      ],
+      "pista": "Suma lo que pesan juntos y compáralo con {L}.",
+      "explicacion": [ "Juntos: {m} + {c} = {m+c} kilos.", "{m+c} es mayor que {L}: ¡se pasan!", "Por cuánto: {m+c} − {L} = {e} kilos. Mejor cruzar de uno en uno." ],
+      "siguiente": "e6c", "siFalla": "e6f"
+    },
+
+    "e6f": {
+      "tipo": "escena", "fondo": "cueva", "actores": "🧒💥🐉",
+      "texto": [ "¡CRAAACK! Cruzaron a la vez y el cristal se agrietó bajo sus pies.", "Chispa batió las alas como nunca y, entre los dos, saltaron al otro lado justo a tiempo. ¡Por los pelos!", { "q": "mati", "t": "Uf… un kilo de nada, pero un kilo importante." } ],
+      "corto": [ "¡CRACK! ¡El puente se rompe!", "Chispa vuela y salva a Mati por los pelos." ],
+      "efecto": { "vida": -1 },
+      "siguiente": "e6d"
+    },
+
+    "e6c": {
+      "tipo": "escena", "fondo": "cueva", "actores": "🧒🌉✅",
+      "texto": [ "Cruzaron de uno en uno y el puente aguantó perfectamente.", { "q": "mati", "t": "¡Unos kilos de nada, pero unos kilos importantes!" } ],
+      "corto": [ "Cruzan de uno en uno. ¡El puente aguanta!" ],
+      "siguiente": "e6d"
+    },
+
+    "e6d": {
+      "tipo": "escena", "fondo": "cueva", "actores": "🗿💠",
+      "texto": [
+        "En la última sala, un enorme Gólem de Cristal se levantó con un crujido. En su pecho brillaba un fragmento.",
+        { "q": "abaco", "t": "Su piel de cristal es dura: le quita daño a cada golpe que recibe. Tu {ARMA.nombre} no entrará entera." }
+      ],
+      "corto": [ "¡Un Gólem de Cristal gigante! 🗿", { "q": "abaco", "t": "¡Su piel es muy dura!" } ],
+      "siguiente": "p24"
+    },
+
+    "p24": {
+      "tipo": "problema", "num": "Problema 24", "titulo": "El Gólem de Cristal", "fondo": "cueva",
+      "enunciado": "Tu {ARMA.nombre} {ARMA.emoji} hace {ARMA.D} de daño por golpe{ARMA.G>1?' y golpea '+ARMA.G+' veces por turno':''}. Pero el cristal del Gólem 🗿 resta {arm} a cada golpe. El Gólem tiene {hp} puntos de vida.",
+      "vars": { "1": { "arm": 1, "k": "2-3" }, "2": { "arm": [1, 2], "k": "2-4" }, "3": { "arm": 2, "k": "3-5" }, "4": { "arm": "3-4", "k": "3-6" } },
+      "calc": { "ef": "(ARMA.D-arm)*ARMA.G", "hp": "(ARMA.D-arm)*ARMA.G*k" },
+      "si": "ARMA.D>arm",
+      "visual": { "tipo": "combate", "enemigo": "🗿", "nombre": "Gólem de Cristal", "vida": "hp", "dano": "ef", "arma": "ARMA.emoji", "armadura": "arm" },
+      "preguntas": [
+        { "t": "¿Cuánto daño le entra de verdad en cada turno?", "r": "ef", "op": "-", "trampas": ["ARMA.D", "ARMA.D+arm"], "u": "de daño" },
+        { "t": "¿Cuántos turnos hacen falta para vencerlo?", "r": "k", "op": "/", "trampas": ["k+1", "Math.ceil(hp/ARMA.T)"], "u": "turnos" }
+      ],
+      "pista": "Primero quita la armadura ({arm}) a cada golpe. Luego mira cuántas veces cabe ese daño en {hp}.",
+      "explicacion": [ "Daño que entra por golpe: {ARMA.D} − {arm} = {ARMA.D-arm}{ARMA.G>1 ? '; y como golpea 2 veces: ' + (ARMA.D-arm) + ' × 2 = ' + ef : ''}.", "Turnos: {hp} ÷ {ef} = {k}.", "Si no tienes en cuenta el cristal, calculas mal. ¡Fijarse en los detalles también es matemáticas!" ],
+      "siguiente": "e6e"
+    },
+
+    "e6e": {
+      "tipo": "escena", "fondo": "cueva", "actores": "✨💠🧒",
+      "texto": [ "El Gólem se deshizo en una lluvia de cristalitos brillantes, y el fragmento cayó en las manos de Mati, tibio y palpitante.", { "q": "mati", "t": "¡Vamos por la mitad! Y cada vez se me da mejor pensar bajo presión." } ],
+      "corto": [ "¡El Gólem se rompe en mil cristalitos!", "¡Otro fragmento!" ],
+      "efecto": { "fragmentos": 1 },
+      "siguiente": "c7"
+    },
+
+    "c7": { "tipo": "capitulo", "cap": "c7", "siguiente": "e7a" },
+
+    "e7a": {
+      "tipo": "escena", "fondo": "pantano", "actores": "⏳🕰️⌛",
+      "texto": [
+        "Llegaron a un pantano gris y neblinoso donde flotaban relojes de arena, péndulos y esferas de reloj enganchadas a los árboles muertos.",
+        { "q": "abaco", "t": "El Pantano de las Horas. Si no controlas bien el tiempo, te quedas atrapado para siempre." },
+        { "q": "chispa", "t": "A mí el tiempo se me hace corto cuando duermo y largo en clase… ah, espera, yo no voy a clase." }
+      ],
+      "corto": [ "Un pantano lleno de relojes. ⏳", { "q": "abaco", "t": "¡Aquí hay que contar bien las horas!" } ],
+      "siguiente": "p25"
+    },
+
+    "p25": {
+      "tipo": "problema", "num": "Problema 25", "titulo": "El reloj del pantano", "fondo": "pantano",
+      "enunciado": "Un gran reloj de piedra marca las {h} en punto. Para que se abra el camino, hay que esperar {w} horas exactas.",
+      "vars": { "1": { "h": "1-6", "w": "1-3" }, "2": { "h": "1-8", "w": "2-4" }, "3": { "h": "1-9", "w": "2-5" }, "4": { "h": "8-11", "w": "3-8" } },
+      "si": "NIVEL==4 || h+w<=12",
+      "visual": { "tipo": "reloj", "hora": "h" },
+      "preguntas": [ { "t": "¿A qué hora se abrirá el camino? Mueve la aguja.", "tipo": "hora", "r": "HORA(h+w)", "desde": "h", "op": "+" } ],
+      "pista": "Avanza la aguja de hora en hora, {w} veces.",
+      "explicacion": [ "Esperar horas es sumar tiempo.", "{h} + {w} = {h+w}{h+w>12 ? ', y como el reloj solo llega al 12, marca las ' + HORA(h+w) : ''}." ],
+      "siguiente": "d7"
+    },
+
+    "d7": {
+      "tipo": "decision", "fondo": "pantano", "actores": "🛶🔥",
+      "texto": [ "La niebla se abrió como una cortina. Delante había dos caminos: una barquita amarrada en el agua quieta y un sendero de soportes para antorchas que se perdía entre los juncos.", { "q": "abaco", "t": "Los dos llevan a la puerta del pantano. Tú decides, {NOMBRE}." } ],
+      "corto": [ "Hay dos caminos: una barca o un camino con antorchas.", { "q": "abaco", "t": "¡Elige tú, {NOMBRE}!" } ],
+      "pregunta": "¿Por dónde vamos?",
+      "opciones": [
+        { "e": "🛶", "t": "En la barquita", "ir": "p7b" },
+        { "e": "🔥", "t": "Por el sendero de antorchas", "ir": "p7a" }
+      ]
+    },
+
+    "p7a": {
+      "tipo": "problema", "num": "Problema 26", "titulo": "Las antorchas del sendero húmedo", "fondo": "pantano",
+      "enunciado": "El sendero tiene {s} soportes y en cada uno caben {a} antorchas 🔥. Hay que llenarlos todos para no perderse en la niebla.",
+      "vars": { "1": { "s": "2-4", "a": 2 }, "2": { "s": "4-7", "a": 2 }, "3": { "s": "6-9", "a": [2, 3] }, "4": { "s": "8-14", "a": "3-6" } },
+      "visual": { "tipo": "grupos", "n": "s", "cada": "a", "emoji": "🔥", "etiqueta": "soporte" },
+      "preguntas": [ { "t": "¿Cuántas antorchas se necesitan?", "r": "s*a", "op": ["x", "+"], "trampas": ["s+a"], "u": "antorchas" } ],
+      "pista": "{s} grupos iguales de {a}.",
+      "explicacion": [ "Grupos iguales: {a} × {s} = {s*a} antorchas." ],
+      "siguiente": "e7b"
+    },
+
+    "p7b": {
+      "tipo": "problema", "num": "Problema 26", "titulo": "Los remos de la barquita", "fondo": "pantano",
+      "enunciado": "La barquita avanza {v} metros con cada golpe de remo 🚣. La orilla de enfrente está a {v*k} metros.",
+      "vars": { "1": { "v": 2, "k": "2-4" }, "2": { "v": [2, 5], "k": "3-6" }, "3": { "v": [3, 4, 5], "k": "5-8" }, "4": { "v": "6-9", "k": "7-12" } },
+      "visual": { "tipo": "llenar", "total": "v*k", "pieza": "v", "emoji": "🚣", "unidad": "m", "boton": "Remar" },
+      "preguntas": [ { "t": "¿Cuántos golpes de remo hacen falta?", "r": "k", "op": "/", "trampas": ["k+1", "v*k-v"], "u": "golpes de remo" } ],
+      "pista": "¿Cuántas veces cabe {v} en {v*k}? Prueba a remar.",
+      "explicacion": [ "{v*k} ÷ {v} = {k} golpes de remo." ],
+      "siguiente": "e7b"
+    },
+
+    "e7b": {
+      "tipo": "escena", "fondo": "pantano", "actores": "🚪🕰️",
+      "texto": [ "Una puerta de piedra musgosa bloqueaba el final del pantano. Un cartel explicaba cuándo se abría.", { "q": "chispa", "t": "¡Ay, que se nos escapa!" } ],
+      "corto": [ "Una puerta de piedra. Solo se abre a ciertas horas." ],
+      "siguiente": "p27"
+    },
+
+    "p27": {
+      "tipo": "problema", "num": "Problema 27", "titulo": "La puerta que se abre cada cierto tiempo", "fondo": "pantano",
+      "enunciado": "La puerta solo se abre cada {k} horas: a las {k}, a las {2*k}, a las {3*k}… El reloj marca ahora las {h}.",
+      "vars": { "1": { "k": 2, "h": [1, 3, 5] }, "2": { "k": 2, "h": [1, 3, 5, 7, 9] }, "3": { "k": [2, 3], "h": "1-10" }, "4": { "k": [3, 4], "h": "1-11" } },
+      "si": "h%k!=0",
+      "calc": { "prox": "Math.ceil(h/k)*k" },
+      "visual": { "tipo": "reloj", "hora": "h", "marcas": "k" },
+      "preguntas": [
+        { "t": "¿A qué hora se abrirá la próxima vez?", "tipo": "hora", "r": "HORA(prox)", "desde": "h" },
+        { "t": "¿Cuántas horas tendrán que esperar?", "r": "prox-h", "op": "-", "trampas": ["k", "prox"], "u": "horas" }
+      ],
+      "pista": "Las horas de apertura están marcadas en el reloj. ¿Cuál viene justo después de las {h}?",
+      "explicacion": [ "Aperturas: {k}, {2*k}, {3*k}… La siguiente después de las {h} es a las {prox}.", "Espera: {prox} − {h} = {prox-h} hora{prox-h>1?'s':''}." ],
+      "siguiente": "e7c"
+    },
+
+    "e7c": {
+      "tipo": "escena", "fondo": "pantano", "actores": "🐍",
+      "texto": [ "Esperaron compartiendo las galletas que sobraban y la puerta se abrió con un gruñido de piedra.", "Al cruzar, una serpiente enorme se alzó entre los juncos, siseando.", { "q": "abaco", "t": "¡Cuidado! Cada vez que muerde quita mucha vida. No conviene que te muerda muchas veces." } ],
+      "corto": [ "¡La puerta se abre! Pero… ¡sale una serpiente enorme! 🐍" ],
+      "siguiente": "p28"
+    },
+
+    "p28": {
+      "tipo": "problema", "num": "Problema 28", "titulo": "La serpiente del pantano", "fondo": "pantano",
+      "enunciado": "Cada mordisco de la serpiente 🐍 quita {m} puntos de vida. Mati tiene ahora {m*k} puntos de vida. Mejor saber cuántos mordiscos aguanta, para no arriesgarse.",
+      "vars": { "1": { "m": 2, "k": "2-3" }, "2": { "m": "3-5", "k": "2-4" }, "3": { "m": "5-7", "k": "3-4" }, "4": { "m": "7-9", "k": "4-7" } },
+      "visual": { "tipo": "barra", "emoji": "🧒", "nombre": "Vida de Mati", "vida": "m*k", "marca": "m" },
+      "preguntas": [ { "t": "¿Cuántos mordiscos aguanta antes de quedarse a 0?", "r": "k", "op": "/", "trampas": ["k+1", "m*k-m"], "u": "mordiscos" } ],
+      "pista": "¿Cuántas veces cabe {m} en {m*k}? Cuenta los trozos de la barra.",
+      "explicacion": [ "{m*k} ÷ {m} = {k} mordiscos.", "Por eso Mati atacó rápido con su {ARMA.nombre}, sin dejar que le mordiera. ¡Mejor ganar rápido!" ],
+      "siguiente": "e7d"
+    },
+
+    "e7d": {
+      "tipo": "escena", "fondo": "pantano", "actores": "🐍💨💠",
+      "texto": [ "Mati atacó con su {ARMA.nombre} antes de que la serpiente pudiera morder, y se escabulló entre los juncos. En el barro donde había estado asomaba un brillo conocido.", { "q": "mati", "t": "¡Solo me falta uno por el camino! Y luego, la torre de Caos." } ],
+      "corto": [ "¡La serpiente huye! Y deja… ¡otro fragmento!" ],
+      "efecto": { "fragmentos": 1 },
+      "siguiente": "c8"
+    },
+
+    "c8": { "tipo": "capitulo", "cap": "c8", "siguiente": "e8a" },
+
+    "e8a": {
+      "tipo": "escena", "fondo": "salon", "actores": "🔺🟦🟡",
+      "texto": [ "Una escalinata de mármol los llevó al Salón de las Formas: cuadrados, triángulos y círculos flotaban y giraban suavemente.", { "q": "abaco", "t": "Aquí viven las figuras. Para pasar hay que medir, contar lados y calcular contornos." }, { "q": "chispa", "t": "¿Por qué el círculo no tiene esquinas? ¿Dónde las ha dejado?" } ],
+      "corto": [ "Un palacio lleno de formas: cuadrados, triángulos, círculos…", { "q": "chispa", "t": "¿Dónde ha dejado el círculo sus esquinas?" } ],
+      "siguiente": "p29"
+    },
+
+    "p29": {
+      "tipo": "problema", "num": "Problema 29", "titulo": "El perímetro de la sala cuadrada", "fondo": "salon",
+      "enunciado": "La sala es un cuadrado perfecto y cada lado mide {a} metros. Para abrir la salida hay que decir cuánto mide el contorno entero dando toda la vuelta: el perímetro. Toca los lados para ir sumando.",
+      "vars": { "1": { "a": "1-3" }, "2": { "a": "2-6" }, "3": { "a": "4-9" }, "4": { "a": "11-25" } },
+      "visual": { "tipo": "perimetro", "ancho": "a", "alto": "a" },
+      "preguntas": [ { "t": "¿Cuánto mide el perímetro?", "r": "4*a", "op": ["x", "+"], "trampas": ["2*a", "a*a"], "u": "metros" } ],
+      "pista": "Un cuadrado tiene 4 lados iguales de {a}.",
+      "explicacion": [ "El perímetro es la suma de todos los lados.", "{a} + {a} + {a} + {a} = {4*a}, o más rápido: {a} × 4 = {4*a} metros." ],
+      "siguiente": "p30"
+    },
+
+    "p30": {
+      "tipo": "problema", "num": "Problema 30", "titulo": "Las combinaciones de capa y sombrero", "fondo": "salon",
+      "enunciado": "En un perchero mágico hay {c} capas y {s} sombreros. Una voz dice: «Di de cuántas maneras distintas puedes combinar una capa con un sombrero». ¡Prueba combinaciones tocando una capa y un sombrero!",
+      "vars": { "1": { "c": 2, "s": 2 }, "2": { "c": 2, "s": 3 }, "3": { "c": [2, 3], "s": [3, 4] }, "4": { "c": [3, 4], "s": [4, 5] } },
+      "visual": { "tipo": "combinar", "a": "c", "b": "s" },
+      "preguntas": [ { "t": "¿De cuántas maneras distintas se pueden combinar?", "r": "c*s", "op": "x", "trampas": ["c+s", "c*s-1"], "u": "combinaciones" } ],
+      "pista": "Con la primera capa puedes ponerte {s} sombreros distintos. ¿Y con cada una de las otras capas?",
+      "explicacion": [ "Por cada capa hay {s} sombreros posibles.", "Son {c} capas: {s} × {c} = {c*s} combinaciones." ],
+      "siguiente": "p31"
+    },
+
+    "p31": {
+      "tipo": "problema", "num": "Problema 31", "titulo": "El perímetro del jardín rectangular", "fondo": "salon",
+      "enunciado": "Por una ventana se ve un jardín rectangular: mide {l} metros de largo y {w} de ancho. Ábaco quiere vallarlo entero.",
+      "vars": { "1": { "l": 3, "w": "1-2" }, "2": { "l": "4-7", "w": "2-3" }, "3": { "l": "6-9", "w": "3-5" }, "4": { "l": "12-20", "w": "5-11" } },
+      "visual": { "tipo": "perimetro", "ancho": "l", "alto": "w" },
+      "preguntas": [ { "t": "¿Cuántos metros de valla hacen falta?", "r": "2*l+2*w", "op": "+", "trampas": ["l+w", "l*w"], "u": "metros" } ],
+      "pista": "Tiene dos lados largos de {l} y dos cortos de {w}. ¡Hay que sumar los cuatro!",
+      "explicacion": [ "Dos largos: {l} + {l} = {2*l}. Dos cortos: {w} + {w} = {2*w}.", "Perímetro: {2*l} + {2*w} = {2*l+2*w} metros." ],
+      "siguiente": "e8b"
+    },
+
+    "e8b": {
+      "tipo": "escena", "fondo": "salon", "actores": "🛡️⚔️",
+      "texto": [ "La salida estaba guardada por un Caballero de Armadura plateada, inmóvil como una estatua… hasta que se movió con un chirrido metálico.", { "q": "abaco", "t": "Su armadura resta daño a cada golpe. Piensa qué arma conviene: la Espada o la Maza." } ],
+      "corto": [ "¡Un caballero con armadura! 🛡️", { "q": "abaco", "t": "¿Espada o Maza? ¡Piensa cuál es mejor!" } ],
+      "siguiente": "p32"
+    },
+
+    "p32": {
+      "tipo": "problema", "num": "Problema 32", "titulo": "El Caballero de Armadura", "fondo": "salon",
+      "enunciado": "El Caballero 🛡️ tiene {hp} puntos de vida y su armadura resta {arm} a cada golpe. La Espada 🗡️ hace {A.espada.D} de daño y la Maza 🔨 hace {A.maza.D}.",
+      "vars": { "1": { "arm": 1, "k": 1 }, "2": { "arm": [1, 2], "k": 1 }, "3": { "arm": 3, "k": 2 }, "4": { "arm": [3, 5], "k": 1 } },
+      "calc": { "ee": "A.espada.D-arm", "em": "A.maza.D-arm", "hp": "MCM(A.espada.D-arm, A.maza.D-arm)*k" },
+      "visual": { "tipo": "combate", "enemigo": "🛡️", "nombre": "Caballero", "vida": "hp", "dano": "em", "arma": "🔨", "armadura": "arm" },
+      "preguntas": [
+        { "t": "Con la Espada, ¿cuántos golpes hacen falta?", "r": "hp/ee", "op": ["-", "/"], "trampas": ["hp/A.espada.D", "hp/em"], "u": "golpes" },
+        { "t": "¿Y con la Maza?", "r": "hp/em", "op": ["-", "/"], "trampas": ["hp/A.maza.D", "hp/ee"], "u": "golpes" },
+        { "t": "¿Con qué arma se vence en menos golpes?", "tipo": "eleccion", "r": "'maza'", "opciones": [ { "id": "espada", "e": "🗡️", "t": "Espada" }, { "id": "maza", "e": "🔨", "t": "Maza" } ] }
+      ],
+      "pista": "Para cada arma: primero resta la armadura ({arm}), luego mira cuántas veces cabe en {hp}.",
+      "explicacion": [ "Espada: {A.espada.D} − {arm} = {ee} por golpe. {hp} ÷ {ee} = {hp/ee} golpes.", "Maza: {A.maza.D} − {arm} = {em} por golpe. {hp} ÷ {em} = {hp/em} golpes.", "Contra armaduras, las armas que pegan fuerte rinden mucho más." ],
+      "siguiente": "e8c"
+    },
+
+    "e8c": {
+      "tipo": "escena", "fondo": "salon", "actores": "🛡️🙇💠",
+      "texto": [ "El Caballero se arrodilló y bajó la cabeza en señal de respeto.", { "q": "caballero", "t": "Has vencido pensando, pequeño Viajero. Pasa." }, "Entre dos baldosas brillaba el último fragmento del camino.", { "q": "abaco", "t": "La torre de Caos está cerca. Demasiado cerca. Y no estará solo." } ],
+      "corto": [ { "q": "caballero", "t": "Has ganado pensando. Puedes pasar." }, "¡Otro fragmento!" ],
+      "efecto": { "fragmentos": 1 },
+      "siguiente": "c9"
+    },
+
+    "c9": { "tipo": "capitulo", "cap": "c9", "siguiente": "e9a" },
+
+    "e9a": {
+      "tipo": "escena", "fondo": "mazmorra", "actores": "💀🕸️🔵",
+      "texto": [ "El camino a la torre pasaba por una mazmorra oscura, llena de telarañas y de antorchas de llamas azules.", { "q": "chispa", "t": "No me gustan las mazmorras. Ni los esqueletos. Ni las arañas. Ni casi nada de aquí, la verdad." }, "Enseguida el pasillo se dividía en dos." ],
+      "corto": [ "Una mazmorra oscura con llamas azules. 🔵", { "q": "chispa", "t": "¡Qué miedo!" }, "El pasillo se divide en dos." ],
+      "siguiente": "d9"
+    },
+
+    "d9": {
+      "tipo": "decision", "fondo": "mazmorra", "actores": "🏹🚣",
+      "pregunta": "¿Qué pasillo elegimos?",
+      "opciones": [
+        { "e": "🏹", "t": "El pasillo de la armería (se oye ruido de flechas)", "ir": "p33" },
+        { "e": "🚣", "t": "El pasillo del foso (se oye agua)", "ir": "p35" }
+      ]
+    },
+
+    "p33": {
+      "tipo": "problema", "num": "Problema 33", "titulo": "El reparto de flechas", "fondo": "mazmorra",
+      "enunciado": "En la armería hay {t} flechas 🏹 y {k} carcajes. Ábaco quiere repartirlas en partes iguales entre los carcajes. ¿Sobrará alguna?",
+      "vars": { "1": { "k": 2, "q": "2-3", "rr": 1 }, "2": { "k": 3, "q": "2-4", "rr": "1-2" }, "3": { "k": 4, "q": "5-8", "rr": "1-3" }, "4": { "k": "6-8", "q": "5-7", "rr": "1-7" } },
+      "si": "rr<k",
+      "calc": { "t": "k*q+rr" },
+      "visual": { "tipo": "reparto", "total": "t", "receptores": "k", "receptor": "🎒", "emoji": "🏹" },
+      "preguntas": [
+        { "t": "¿Cuántas flechas van en cada carcaj?", "r": "q", "op": "/", "trampas": ["q+1", "rr"], "u": "flechas" },
+        { "t": "¿Cuántas flechas sobran?", "r": "rr", "op": "-", "trampas": ["0", "k"], "u": "flechas" }
+      ],
+      "pista": "Reparte de ronda en ronda. Cuando no quedan suficientes para dar una a cada carcaj, esas sobran.",
+      "explicacion": [ "{k} × {q} = {k*q}, y para llegar a {t} faltan {rr}.", "{t} ÷ {k} = {q} y sobran {rr}. Lo que sobra se llama resto." ],
+      "siguiente": "e9b"
+    },
+
+    "p35": {
+      "tipo": "problema", "num": "Problema 35", "titulo": "Los viajes de la barca", "fondo": "mazmorra",
+      "enunciado": "Una balsa cruza un foso subterráneo, pero es pequeña: solo caben {c} sacos por viaje. Hay que pasar {s} sacos de provisiones 🎒 al otro lado.",
+      "vars": { "1": { "c": 2, "q": "1-2", "rr": 1 }, "2": { "c": [3, 4], "q": "2-3", "rr": "1-3" }, "3": { "c": "6-8", "q": "3-4", "rr": "1-7" }, "4": { "c": "9-12", "q": "4-9", "rr": "1-11" } },
+      "si": "rr<c",
+      "calc": { "s": "c*q+rr" },
+      "visual": { "tipo": "grupos", "n": "q", "cada": "c", "emoji": "🎒", "etiqueta": "viaje", "extra": "rr" },
+      "preguntas": [ { "t": "¿Cuántos viajes hacen falta? (Piensa en los que sobran.)", "r": "q+1", "op": "/", "trampas": ["q", "q+2"], "u": "viajes" } ],
+      "pista": "Con {q} viajes llenos pasas {c*q} sacos. ¿Y los {rr} que quedan?",
+      "explicacion": [ "{s} ÷ {c} = {q} y sobran {rr}.", "¡Ojo! Esos {rr} sacos también hay que pasarlos: un viaje más.", "{q} + 1 = {q+1} viajes. En problemas de «cuántos viajes» se redondea hacia arriba." ],
+      "siguiente": "e9b"
+    },
+
+    "e9b": {
+      "tipo": "escena", "fondo": "mazmorra", "actores": "🧰🧰🧰",
+      "texto": [ "Los dos pasillos llevaban a la misma sala: varios cofres sobre pedestales y un letrero brillando en la pared.", { "q": "chispa", "t": "¡Esto es de pensar, no de calcular!" }, { "q": "mati", "t": "Pensar también es matemáticas. Vamos a ir descartando." } ],
+      "corto": [ "¡Una sala con cofres de colores!", { "q": "mati", "t": "La llave está en uno. ¡Vamos a pensar!" } ],
+      "siguiente": "p34"
+    },
+
+    "p34": {
+      "tipo": "problema", "num": "Problema 34", "titulo": "El acertijo de los cofres", "fondo": "mazmorra",
+      "enunciado": "El letrero dice: «La llave 🗝️ está en un solo cofre». Lee las pistas (tócalas para tacharlas) y abre el cofre correcto.",
+      "vars": { "1": { "n": 3 }, "2": { "n": 3 }, "3": { "n": 4 }, "4": { "n": 5 } },
+      "visual": { "tipo": "logica", "n": "n" },
+      "preguntas": [ { "t": "¿En qué cofre está la llave?", "tipo": "cofre", "r": "RESP" } ],
+      "pista": "Tacha los cofres que dicen las pistas. ¿Cuál queda?",
+      "explicacion": [ "Vamos descartando: {DESCARTES}.", "Solo queda una opción: el cofre {RESP_NOMBRE}. Cuando descartas todo lo demás, lo que queda es seguro." ],
+      "siguiente": "e9c"
+    },
+
+    "e9c": {
+      "tipo": "escena", "fondo": "mazmorra", "actores": "💀💀💀",
+      "texto": [ "Clinc: ahí estaba la llave de hierro. Abrieron la puerta… y una reja se cerró de golpe a su espalda. Del suelo empezaron a levantarse esqueletos traqueteando los huesos.", { "q": "chispa", "t": "¡Mi llamarada ya me sale cuando quiero! ¡Déjame a mí!" } ],
+      "corto": [ "¡Esqueletos! 💀", { "q": "chispa", "t": "¡Déjame a mí, ya sé echar fuego!" } ],
+      "siguiente": "p36"
+    },
+
+    "p36": {
+      "tipo": "problema", "num": "Problema 36", "titulo": "La oleada de esqueletos", "fondo": "mazmorra",
+      "enunciado": "Hay {n} esqueletos 💀 y cada uno aguanta {d} puntos de vida. La llamarada de Chispa 🔥 hace justo {d} puntos de daño.",
+      "vars": { "1": { "n": "2-4", "d": 2 }, "2": { "n": "3-6", "d": [4, 5] }, "3": { "n": "4-6", "d": 8 }, "4": { "n": "6-11", "d": [12, 15] } },
+      "visual": { "tipo": "combate", "enemigo": "💀", "nombre": "Esqueleto", "cantidad": "n", "vida": "d", "dano": "d", "arma": "🔥", "atacante": "🐉" },
+      "preguntas": [ { "t": "¿Cuántas llamaradas hacen falta para acabar con todos?", "r": "n", "op": ["/", "x"], "trampas": ["n*d", "n+1"], "u": "llamaradas" } ],
+      "pista": "Si la llamarada es igual a la vida de un esqueleto, ¿cuántas necesita cada uno?",
+      "explicacion": [ "Cada llamarada tumba exactamente un esqueleto.", "Hay {n} esqueletos → {n} llamaradas.", "Con la vida total: {n} × {d} = {n*d}; {n*d} ÷ {d} = {n}. ¡Coincide!" ],
+      "siguiente": "e9d"
+    },
+
+    "e9d": {
+      "tipo": "escena", "fondo": "mazmorra", "actores": "🐉🔥🦴",
+      "texto": [ "Fium, fium, fium… y los esqueletos se desmoronaron en montoncitos de huesos.", { "q": "chispa", "t": "¡Por fin me sale el fuego cuando quiero!" } ],
+      "corto": [ "¡Fium, fium! Los esqueletos se caen en montoncitos." ],
+      "siguiente": "c10"
+    },
+
+    "c10": { "tipo": "capitulo", "cap": "c10", "siguiente": "e10a" },
+
+    "e10a": {
+      "tipo": "escena", "fondo": "guarida", "actores": "🐲💤🪙",
+      "texto": [ "Tras la mazmorra, una cueva enorme olía a azufre. Sobre una montaña de oro dormía el Dragón Anciano: gigantesco, rojo como las brasas, tan viejo que tenía la barba blanca.", "Y bajo su ala, medio escondido, brillaba un fragmento.", { "q": "chispa", "t": "Es… es el dragón más grande del mundo." } ],
+      "corto": [ "¡Un dragón gigante y rojo duerme sobre un montón de oro! 🐲💤", "Bajo su ala brilla un fragmento." ],
+      "siguiente": "d10"
+    },
+
+    "d10": {
+      "tipo": "decision", "fondo": "guarida", "actores": "🐲💤",
+      "pregunta": "¿Qué hacemos?",
+      "opciones": [
+        { "e": "🗣️", "t": "Despertarlo con educación y hablar con él", "ir": "e10c" },
+        { "e": "🤫", "t": "Coger el fragmento a escondidas, de puntillas", "ir": "e10b" }
+      ]
+    },
+
+    "e10b": {
+      "tipo": "escena", "fondo": "guarida", "actores": "🐲😠💨",
+      "texto": [ "Mati se acercó de puntillas… pero Chispa estornudó. ¡ACHÚS! Tres chispas cayeron sobre el oro.", "Un ojo enorme se abrió. El dragón soltó un resoplido de humo que tumbó a Mati de espaldas.", { "q": "dragon", "t": "¿Ladronzuelos en mi guarida? Así no se piden las cosas, pequeños." }, { "q": "mati", "t": "Perdón… tienes razón. Venimos a recomponer el Gran Cálculo." } ],
+      "corto": [ "¡ACHÚS! Chispa estornuda y el dragón se despierta.", "¡FFFF! Un resoplido de humo tumba a Mati.", { "q": "dragon", "t": "¡Así no se piden las cosas!" } ],
+      "efecto": { "vida": -1 },
+      "siguiente": "e10d"
+    },
+
+    "e10c": {
+      "tipo": "escena", "fondo": "guarida", "actores": "🐲👁️🧒",
+      "texto": [ { "q": "mati", "t": "Disculpe, señor Dragón… —dijo Mati, con la voz temblando." }, "Un ojo enorme se abrió y los miró.", { "q": "dragon", "t": "Qué educado. Hace mucho que nadie viene a mi guarida sin intentar robarme el oro." } ],
+      "corto": [ { "q": "mati", "t": "Perdone, señor Dragón…" }, { "q": "dragon", "t": "¡Qué niño tan educado!" } ],
+      "efecto": { "monedas": 5 },
+      "aviso": "Al dragón le gusta tu educación: +5 monedas 🪙",
+      "siguiente": "e10d"
+    },
+
+    "e10d": {
+      "tipo": "escena", "fondo": "guarida", "actores": "🐲🧒🐉",
+      "texto": [ { "q": "dragon", "t": "Así que eres el Viajero de la profecía. Te daré el fragmento… si demuestras que sabes pensar con números. Aquí no se gana con espadas, niño. Se gana con la cabeza." } ],
+      "corto": [ { "q": "dragon", "t": "Te daré el fragmento si resuelves mis acertijos." } ],
+      "siguiente": "p37"
+    },
+
+    "p37": {
+      "tipo": "problema", "num": "Problema 37", "titulo": "El oro del dragón", "fondo": "guarida",
+      "enunciado": "—Aquí hay {s*c} monedas de oro 🪙. Quiero repartirlas en {s} sacos iguales para esconderlas mejor.",
+      "vars": { "1": { "s": 2, "c": "2-5" }, "2": { "s": "3-5", "c": "3-6" }, "3": { "s": 5, "c": [10, 20] }, "4": { "s": "4-8", "c": "15-30" } },
+      "visual": { "tipo": "reparto", "total": "s*c", "receptores": "s", "receptor": "💰", "emoji": "🪙" },
+      "preguntas": [ { "t": "¿Cuántas monedas van en cada saco?", "r": "c", "op": "/", "trampas": ["s*c-s", "c+s"], "u": "monedas" } ],
+      "pista": "Repartir en partes iguales: ¿qué número multiplicado por {s} da {s*c}?",
+      "explicacion": [ "Repartir en partes iguales: {s*c} ÷ {s}.", "Pienso: {s} × {c} = {s*c}, así que {s*c} ÷ {s} = {c}." ],
+      "siguiente": "p38"
+    },
+
+    "p38": {
+      "tipo": "problema", "num": "Problema 38", "titulo": "Las gemas que faltan", "fondo": "guarida",
+      "enunciado": "—Tenía {t} gemas rojas 🔴 en esta repisa, pero unos ladrones me robaron {r} mientras dormía.",
+      "vars": { "1": { "t": "5-9", "r": "1-4" }, "2": { "t": "12-20", "r": "3-9" }, "3": { "t": "30-60", "r": "10-25" }, "4": { "t": "120-300", "r": "45-150" } },
+      "si": "r<t",
+      "visual": { "tipo": "items", "lista": [["🔴", "t"]], "quitar": "r", "fijo": true },
+      "preguntas": [ { "t": "¿Cuántas gemas le quedan?", "r": "t-r", "op": "-", "trampas": ["t+r", "t-r+10"], "u": "gemas" } ],
+      "pista": "Le han quitado {r}. Quítalas de {t}.",
+      "explicacion": [ "Le han quitado gemas: restamos.", "{t} − {r} = {t-r} gemas." ],
+      "siguiente": "p39"
+    },
+
+    "p39": {
+      "tipo": "problema", "num": "Problema 39", "titulo": "¿Qué bolsa pesa más?", "fondo": "guarida",
+      "enunciado": "El dragón pone delante dos bolsas. En la bolsa A hay {ga} grupos de {ca} monedas. En la bolsa B hay {gb} grupos de {cb} monedas.",
+      "vars": { "1": { "ga": 3, "ca": 1, "gb": 2, "cb": 2 }, "2": { "ga": [4, 5], "ca": [2, 3], "gb": [2, 3], "cb": [4, 5] }, "3": { "ga": "5-7", "ca": "3-4", "gb": "3-4", "cb": "6-9" }, "4": { "ga": "8-12", "ca": "5-8", "gb": "4-6", "cb": "11-19" } },
+      "si": "ga>gb && gb*cb>ga*ca",
+      "visual": { "tipo": "cartas", "cartas": [ { "e": "👝", "t": "Bolsa A", "l": ["{ga} grupos", "de {ca} 🪙"] }, { "e": "💼", "t": "Bolsa B", "l": ["{gb} grupos", "de {cb} 🪙"] } ] },
+      "preguntas": [
+        { "t": "¿Cuántas monedas hay en la bolsa A?", "r": "ga*ca", "op": "x", "trampas": ["ga+ca"], "u": "monedas" },
+        { "t": "¿Y en la bolsa B?", "r": "gb*cb", "op": "x", "trampas": ["gb+cb"], "u": "monedas" },
+        { "t": "¿Cuál tiene más monedas?", "tipo": "eleccion", "r": "'b'", "opciones": [ { "id": "a", "e": "👝", "t": "Bolsa A" }, { "id": "b", "e": "💼", "t": "Bolsa B" } ] }
+      ],
+      "pista": "No te fíes de cuántos grupos hay. Calcula el total de cada bolsa.",
+      "explicacion": [ "Bolsa A: {ca} × {ga} = {ga*ca}. Bolsa B: {cb} × {gb} = {gb*cb}.", "{gb*cb} es mayor que {ga*ca}: gana la bolsa B.", "Aunque A tenía más grupos, lo que cuenta es el total." ],
+      "siguiente": "e10e"
+    },
+
+    "e10e": {
+      "tipo": "escena", "fondo": "guarida", "actores": "🐲😄💠",
+      "texto": [ { "q": "dragon", "t": "¡Pensamiento rápido, niño! No te has dejado engañar. Has merecido tu premio." }, "Con una garra empujó hacia ellos el fragmento dorado.", { "q": "abaco", "t": "Espera… Creíamos que Caos tenía dos, ¡pero uno lo tenía el dragón! A Caos solo le queda uno." }, { "q": "dragon", "t": "Id con cuidado. Caos no juega limpio. Y tiene un ejército." } ],
+      "corto": [ { "q": "dragon", "t": "¡Muy bien pensado! Toma tu premio." }, "¡Otro fragmento! Ya solo le queda uno al malvado Caos." ],
+      "efecto": { "fragmentos": 1 },
+      "siguiente": "c11"
+    },
+
+    "c11": { "tipo": "capitulo", "cap": "c11", "siguiente": "e11a" },
+
+    "e11a": {
+      "tipo": "escena", "fondo": "valle", "actores": "🗿🗿🗿🗿",
+      "texto": [ "La torre de Caos se alzaba al final de un valle gris, negra y retorcida, con rayos morados girando en lo alto. Entre ellos y la torre había un ejército de gárgolas de piedra y sombras.", { "q": "abaco", "t": "Los defensores de Numeria han venido a ayudarnos. Pero hay que pensar la batalla como un buen general." }, { "q": "mati", "t": "Un general también calcula." } ],
+      "corto": [ "¡La torre de Caos! Delante hay un ejército de gárgolas.", { "q": "abaco", "t": "¡Los caballeros de Numeria nos ayudan!" } ],
+      "siguiente": "p40"
+    },
+
+    "p40": {
+      "tipo": "problema", "num": "Problema 40", "titulo": "Las gárgolas en formación", "fondo": "valle",
+      "enunciado": "Las gárgolas avanzan en filas perfectas: {f} filas con {g} gárgolas 🗿 en cada fila.",
+      "vars": { "1": { "f": 2, "g": "2-3" }, "2": { "f": "3-4", "g": "3-5" }, "3": { "f": "6-8", "g": "4-6" }, "4": { "f": "9-12", "g": "7-12" } },
+      "visual": { "tipo": "grupos", "n": "f", "cada": "g", "emoji": "🗿", "etiqueta": "fila", "filas": true },
+      "preguntas": [ { "t": "¿Cuántas gárgolas hay en total?", "r": "f*g", "op": ["x", "+"], "trampas": ["f+g", "f*g-g"], "u": "gárgolas" } ],
+      "pista": "{f} filas iguales de {g}.",
+      "explicacion": [ "Filas iguales: multiplicamos. {g} × {f} = {f*g} gárgolas." ],
+      "siguiente": "p41"
+    },
+
+    "p41": {
+      "tipo": "problema", "num": "Problema 41", "titulo": "¿Qué ejército golpea más fuerte?", "fondo": "valle",
+      "enunciado": "En primera línea, Caos tiene {n1} gárgolas 🗿 que hacen {d1} de daño cada una. Los caballeros de Numeria 🛡️ son solo {n2}, pero cada uno hace {d2} de daño.",
+      "vars": { "1": { "n1": 3, "d1": 1, "n2": 2, "d2": 2 }, "2": { "n1": [4, 5], "d1": 2, "n2": 3, "d2": [4, 5] }, "3": { "n1": "7-9", "d1": 3, "n2": "5-6", "d2": "5-6" }, "4": { "n1": "11-15", "d1": "4-6", "n2": "7-9", "d2": "8-11" } },
+      "si": "n1>n2 && n2*d2>n1*d1",
+      "visual": { "tipo": "cartas", "cartas": [ { "e": "🗿", "t": "Caos", "l": ["{n1} gárgolas", "{d1} de daño cada una"] }, { "e": "🛡️", "t": "Numeria", "l": ["{n2} caballeros", "{d2} de daño cada uno"] } ] },
+      "preguntas": [
+        { "t": "¿Cuánto daño hace la primera línea de Caos en un turno?", "r": "n1*d1", "op": "x", "trampas": ["n1+d1"], "u": "de daño" },
+        { "t": "¿Y los caballeros de Numeria?", "r": "n2*d2", "op": "x", "trampas": ["n2+d2"], "u": "de daño" },
+        { "t": "¿Quién golpea más fuerte?", "tipo": "eleccion", "r": "'numeria'", "opciones": [ { "id": "caos", "e": "🗿", "t": "El ejército de Caos" }, { "id": "numeria", "e": "🛡️", "t": "Los caballeros de Numeria" } ] }
+      ],
+      "pista": "Daño total = número de combatientes × daño de cada uno.",
+      "explicacion": [ "Caos: {n1} × {d1} = {n1*d1}. Numeria: {n2} × {d2} = {n2*d2}.", "¡Numeria pega más fuerte, aunque sean menos! Menos puede ser más si pega más fuerte." ],
+      "siguiente": "e11b"
+    },
+
+    "e11b": {
+      "tipo": "escena", "fondo": "valle", "actores": "🛡️⚔️🗿💥",
+      "texto": [ { "q": "mati", "t": "¡Entonces podemos ganar!" }, "Los caballeros cargaron y la primera línea de gárgolas se quebró como piedra vieja. Pero detrás, un muro de sombra bloqueaba el paso a la torre." ],
+      "corto": [ "¡Los caballeros ganan! Pero ahora hay un muro de sombra. 🧱" ],
+      "siguiente": "p42"
+    },
+
+    "p42": {
+      "tipo": "problema", "num": "Problema 42", "titulo": "Las catapultas", "fondo": "valle",
+      "enunciado": "El muro de sombra 🧱 tiene {d*k} puntos de resistencia. Cada disparo de catapulta hace {d} puntos de daño.",
+      "vars": { "1": { "d": [2, 5], "k": "2-3" }, "2": { "d": [5, 10], "k": "3-5" }, "3": { "d": [10, 20], "k": "4-6" }, "4": { "d": [15, 25, 50], "k": "6-9" } },
+      "visual": { "tipo": "combate", "enemigo": "🧱", "nombre": "Muro de sombra", "vida": "d*k", "dano": "d", "arma": "🪨" },
+      "preguntas": [ { "t": "¿Cuántos disparos hacen falta para derribarlo?", "r": "k", "op": "/", "trampas": ["k+1", "d*k-d"], "u": "disparos" } ],
+      "pista": "¿Cuántas veces cabe {d} en {d*k}?",
+      "explicacion": [ "{d*k} ÷ {d} = {k} disparos, porque {d} × {k} = {d*k}." ],
+      "siguiente": "p43"
+    },
+
+    "p43": {
+      "tipo": "problema", "num": "Problema 43", "titulo": "Los refuerzos de Caos", "fondo": "valle",
+      "enunciado": "¡Suenan tambores! Llegan {a} grupos de {b} sombras 👤 por el este y {c} grupos de {d} por el oeste.",
+      "vars": { "1": { "a": 2, "b": 2, "c": 1, "d": "2-3" }, "2": { "a": "2-3", "b": "3-5", "c": 2, "d": "2-4" }, "3": { "a": "3-4", "b": "5-7", "c": "2-3", "d": "4-6" }, "4": { "a": "5-8", "b": "6-9", "c": "3-6", "d": "7-12" } },
+      "visual": { "tipo": "grupos", "n": "a", "cada": "b", "emoji": "👤", "etiqueta": "este", "n2": "c", "cada2": "d", "etiqueta2": "oeste" },
+      "preguntas": [
+        { "t": "¿Cuántas sombras llegan por el este?", "r": "a*b", "op": "x", "trampas": ["a+b"], "u": "sombras" },
+        { "t": "¿Cuántas llegan en total?", "r": "a*b+c*d", "op": "+", "trampas": ["a*b+c+d", "a*b"], "u": "sombras" }
+      ],
+      "pista": "Calcula cada lado por separado (grupos iguales) y luego júntalos.",
+      "explicacion": [ "Este: {b} × {a} = {a*b}. Oeste: {d} × {c} = {c*d}.", "Total: {a*b} + {c*d} = {a*b+c*d} sombras." ],
+      "siguiente": "e11c"
+    },
+
+    "e11c": {
+      "tipo": "escena", "fondo": "valle", "actores": "🛡️🏃🏰",
+      "texto": [ "Eran muchas, pero los defensores aguantaron firmes.", { "q": "caballero", "t": "¡Id! ¡Nosotros los contenemos! ¡Acabad con Caos!" } ],
+      "corto": [ { "q": "caballero", "t": "¡Corred a la torre!" } ],
+      "siguiente": "c12"
+    },
+
+    "c12": { "tipo": "capitulo", "cap": "c12", "siguiente": "e12a" },
+
+    "e12a": {
+      "tipo": "escena", "fondo": "torre", "actores": "🦹⚡💠",
+      "texto": [ "Subieron la escalera de caracol hasta lo más alto. Allí, flotando entre rayos morados, estaba el Hechicero Caos, con una túnica llena de números que se borraban y se reescribían solos. En su mano brillaba el último fragmento.", { "q": "caos", "t": "Así que el famoso Viajero. Siete fragmentos… impresionante. Pero yo soy las matemáticas rotas. ¿Crees que un crío puede conmigo?" }, { "q": "mati", "t": "No voy a vencerte rompiendo números. Voy a vencerte pensándolos bien. Ábaco, Chispa, {NOMBRE}… ¿listos?" } ],
+      "corto": [ "¡El malvado Hechicero Caos! Tiene el último fragmento.", { "q": "caos", "t": "¡Ja, ja! ¡No podréis conmigo!" }, { "q": "mati", "t": "{NOMBRE}, ¡a por él con los números!" } ],
+      "siguiente": "p44"
+    },
+
+    "p44": {
+      "tipo": "problema", "num": "Problema 44", "titulo": "La barrera de Caos", "fondo": "torre",
+      "enunciado": "Caos levanta una barrera mágica 🔮 de {d*k} puntos de resistencia. Atacando los tres juntos (tu {ARMA.nombre}, el bastón y el fuego de Chispa) hacéis {d} puntos de daño por turno.",
+      "vars": { "1": { "d": [2, 3], "k": "2-3" }, "2": { "d": "4-7", "k": "3-5" }, "3": { "d": "6-9", "k": "5-7" }, "4": { "d": "12-19", "k": "6-9" } },
+      "visual": { "tipo": "combate", "enemigo": "🔮", "nombre": "Barrera de Caos", "vida": "d*k", "dano": "d", "arma": "⚡" },
+      "preguntas": [ { "t": "¿Cuántos turnos hacen falta para romperla?", "r": "k", "op": "/", "trampas": ["k+1", "d*k-d"], "u": "turnos" } ],
+      "pista": "¿Cuántas veces cabe {d} en {d*k}?",
+      "explicacion": [ "{d*k} ÷ {d} = {k} turnos, porque {d} × {k} = {d*k}." ],
+      "siguiente": "p45"
+    },
+
+    "p45": {
+      "tipo": "problema", "num": "Problema 45", "titulo": "¿Aguantaremos hasta romperla?", "fondo": "torre",
+      "enunciado": "Mientras golpeabais la barrera, Caos lanzaba un rayo ⚡ cada turno que hacía {r} puntos de daño al grupo. Tardasteis {t} turnos. El equipo tenía {V} puntos de vida en total.",
+      "vars": { "1": { "t": 2, "r": 2, "x": "1-3" }, "2": { "t": "3-4", "r": "2-4", "x": "1-4" }, "3": { "t": "5-7", "r": "5-7", "x": "2-6" }, "4": { "t": "6-9", "r": "7-12", "x": "3-9" } },
+      "calc": { "V": "t*r+x" },
+      "visual": { "tipo": "barra", "emoji": "🧒🐉🧙‍♂️", "nombre": "Vida del equipo", "vida": "V", "marca": "r", "hasta": "t" },
+      "preguntas": [
+        { "t": "¿Cuánto daño reciben en total?", "r": "t*r", "op": "x", "trampas": ["t+r", "V-t"], "u": "de daño" },
+        { "t": "¿Cuánta vida les queda al final?", "r": "x", "op": "-", "trampas": ["x+r", "V-r"], "u": "de vida" }
+      ],
+      "pista": "Primero el daño total: {t} turnos de {r}. Luego réstalo de {V}.",
+      "explicacion": [ "Daño total: {r} × {t} = {t*r}.", "Vida que queda: {V} − {t*r} = {x}. ¡Aguantan por los pelos!" ],
+      "siguiente": "e12b", "siFalla": "e12f"
+    },
+
+    "e12f": {
+      "tipo": "escena", "fondo": "torre", "actores": "🧙‍♂️🛡️⚡",
+      "texto": [ "Mati dudó con las cuentas y un rayo le alcanzó de lleno. Ábaco levantó su bastón justo a tiempo para frenar el siguiente.", { "q": "abaco", "t": "¡Concéntrate, Viajero! Contar bien la vida que nos queda es tan importante como atacar." } ],
+      "corto": [ "¡Zas! Un rayo alcanza a Mati.", { "q": "abaco", "t": "¡Ánimo! ¡Seguimos!" } ],
+      "efecto": { "vida": -1 },
+      "siguiente": "e12b"
+    },
+
+    "e12b": {
+      "tipo": "escena", "fondo": "torre", "actores": "🦹😨",
+      "texto": [ { "q": "mati", "t": "¡Lo conseguimos!" }, "La barrera estalló en pedazos de luz. Caos retrocedió, por primera vez asustado. Furioso, lanzó su ataque más poderoso: un conjuro de números ardiendo en el aire.", { "q": "caos", "t": "¡Resuelve esto o el hechizo te alcanzará!" } ],
+      "corto": [ "¡La barrera se rompe!", { "q": "caos", "t": "¡Resuelve mi conjuro, si puedes!" } ],
+      "siguiente": "p46"
+    },
+
+    "p46": {
+      "tipo": "problema", "num": "Problema 46", "titulo": "El conjuro de Caos", "fondo": "torre",
+      "enunciado": "En el aire arden los números: {a} × {b} − {c} 🔥. Mati piensa: «Tengo que respetar el orden: primero la multiplicación, después la resta».",
+      "vars": { "1": { "a": 2, "b": 2, "c": 1 }, "2": { "a": "2-4", "b": "3-5", "c": "1-5" }, "3": { "a": "5-8", "b": "5-9", "c": "6-15" }, "4": { "a": "6-9", "b": "6-9", "c": "3-6", "d": "2-5" } },
+      "si": "a*b>c && (NIVEL<4 || a*b>c*d)",
+      "visual": { "tipo": "conjuro", "texto": "{a} × {b} − {c}" },
+      "preguntas": [
+        { "t": "Paso 1: ¿cuánto es {a} × {b}?", "r": "a*b", "op": "x", "trampas": ["a+b"] },
+        { "t": "Paso 2: ¿cuál es el resultado del conjuro?", "r": "a*b-c", "op": "-", "trampas": ["a*b+c", "a*b-c+1"] }
+      ],
+      "porNivel": { "4": {
+        "enunciado": "En el aire arden los números: {a} × {b} − {c} × {d} 🔥. Mati piensa: «Primero las multiplicaciones, después la resta».",
+        "visual": { "tipo": "conjuro", "texto": "{a} × {b} − {c} × {d}" },
+        "preguntas": [
+          { "t": "Paso 1: ¿cuánto es {a} × {b}?", "r": "a*b", "op": "x", "trampas": ["a+b"] },
+          { "t": "Paso 2: ¿y {c} × {d}?", "r": "c*d", "op": "x", "trampas": ["c+d"] },
+          { "t": "Paso 3: ¿cuál es el resultado del conjuro?", "r": "a*b-c*d", "op": "-", "trampas": ["(a*b-c)*d", "a*b-c*d+1"] }
+        ],
+        "explicacion": [ "Primero las multiplicaciones: {a} × {b} = {a*b} y {c} × {d} = {c*d}.", "Después la resta: {a*b} − {c*d} = {a*b-c*d}.", "El orden de las operaciones importa." ]
+      } },
+      "pista": "¡Primero la multiplicación! Luego resta {c}.",
+      "explicacion": [ "Paso 1 (multiplico): {a} × {b} = {a*b}.", "Paso 2 (resto): {a*b} − {c} = {a*b-c}.", "El orden de las operaciones importa." ],
+      "siguiente": "p47"
+    },
+
+    "p47": {
+      "tipo": "problema", "num": "Problema 47", "titulo": "El ejército de sombras se ordena", "fondo": "torre",
+      "enunciado": "El conjuro se deshizo como humo. En un último intento, Caos invoca {k*c} sombras 👤 que se colocan en {k} círculos iguales a su alrededor. Si sabéis cuántas hay en cada círculo, encontraréis el hueco para colaros.",
+      "vars": { "1": { "k": 2, "c": "2-3" }, "2": { "k": "3-4", "c": "3-5" }, "3": { "k": 6, "c": "6-9" }, "4": { "k": "7-9", "c": "7-12" } },
+      "visual": { "tipo": "reparto", "total": "k*c", "receptores": "k", "receptor": "⭕", "emoji": "👤" },
+      "preguntas": [ { "t": "¿Cuántas sombras hay en cada círculo?", "r": "c", "op": "/", "trampas": ["c+1", "k*c-k"], "u": "sombras" } ],
+      "pista": "Repartir {k*c} entre {k} círculos iguales.",
+      "explicacion": [ "{k*c} ÷ {k} = {c}, porque {k} × {c} = {k*c}.", "Conociendo la formación, Mati encontró el hueco justo para llegar hasta Caos." ],
+      "siguiente": "e12c"
+    },
+
+    "e12c": {
+      "tipo": "escena", "fondo": "torre", "actores": "🧒💠🦹",
+      "texto": [ "Mati se coló por el hueco y le arrancó a Caos el último fragmento. ¡Ya tenía los 8!", { "q": "abaco", "t": "¡Para recomponerlo hay que colocarlos en los 2 círculos iguales de la máquina antigua! ¡Rápido!" } ],
+      "corto": [ "¡Mati le quita el último fragmento a Caos!", { "q": "abaco", "t": "¡Colócalos en los dos círculos, rápido!" } ],
+      "efecto": { "fragmentos": 1 },
+      "siguiente": "p48"
+    },
+
+    "p48": {
+      "tipo": "problema", "num": "Problema 48", "titulo": "Reunir los ocho fragmentos", "fondo": "torre",
+      "enunciado": "Mati tiene los 8 fragmentos 💠 y debe repartirlos en 2 círculos iguales de la máquina antigua. ¡Colócalos tú!",
+      "vars": { "1": {}, "2": {}, "3": {}, "4": {} },
+      "visual": { "tipo": "reparto", "total": 8, "receptores": 2, "receptor": "⭕", "emoji": "💠" },
+      "preguntas": [ { "t": "¿Cuántos fragmentos van en cada círculo?", "r": "4", "op": "/", "trampas": ["8", "2", "6"], "u": "fragmentos" } ],
+      "pista": "Repartir en 2 partes iguales es buscar la mitad.",
+      "explicacion": [ "Repartir 8 en 2 partes iguales: 8 ÷ 2 = 4.", "Cuatro a un lado y cuatro al otro." ],
+      "siguiente": "e12d"
+    },
+
+    "e12d": {
+      "tipo": "escena", "fondo": "fiesta", "actores": "💠✨🌟",
+      "texto": [ "Los ocho fragmentos se unieron con un fogonazo de luz dorada. El Gran Cálculo volvió a girar entero y una onda de orden recorrió todo el reino.", { "q": "caos", "t": "Esto… no… ha… terminado… —gruñó el hechicero, antes de desvanecerse." }, "Un silencio enorme llenó la torre. Y luego, desde el valle, llegó el rugido de victoria de todo Numeria." ],
+      "corto": [ "¡FLASH! El Gran Cálculo vuelve a funcionar. ✨", "¡Caos desaparece! ¡Habéis salvado Numeria!" ],
+      "siguiente": "c13"
+    },
+
+    "c13": { "tipo": "capitulo", "cap": "c13", "siguiente": "e13a" },
+
+    "e13a": {
+      "tipo": "escena", "fondo": "fiesta", "actores": "🧒🐉🧙‍♂️🎉",
+      "texto": [ "En la plaza del castillo, bajo las dos lunas, todo Numeria celebró la victoria con farolillos, música y una lluvia de pétalos.", { "q": "abaco", "t": "Has salvado el reino, Viajero. Y no con espadas, sino pensando. Saber razonar con los números es más poderoso que cualquier hechizo." }, { "q": "chispa", "t": "¿Volverás? —preguntó Chispa, con los ojos llorosos." }, { "q": "mati", "t": "Volveré. Te lo juro por mi libreta." }, "Ábaco le dio un último regalo: una página llena de nuevas fórmulas. Mati cruzó de vuelta el portal y apareció en la biblioteca del cole. En su mundo no había pasado ni un minuto.", "Abrió la libreta y miró la siguiente fórmula. Para activarla, hacía falta un número secreto." ],
+      "corto": [ "¡Gran fiesta en Numeria! 🎉", { "q": "chispa", "t": "¿Volverás, Mati?" }, { "q": "mati", "t": "¡Claro que sí!" }, "Mati vuelve a casa por el portal. En su libreta hay una nueva fórmula secreta…" ],
+      "siguiente": "p49"
+    },
+
+    "p49": {
+      "tipo": "problema", "num": "Problema 49", "titulo": "El siguiente portal", "fondo": "biblioteca",
+      "enunciado": "La nota de Ábaco dice: «El próximo portal se abre con un número: el {f==2?'doble':'triple'} de {a}, {s>0?'más':'menos'} {Math.abs(s)}».",
+      "vars": { "1": { "f": 2, "a": "2-4", "s": 1 }, "2": { "f": 2, "a": "5-9", "s": "1-3" }, "3": { "f": 2, "a": "6-12", "s": "1-5" }, "4": { "f": 3, "a": "9-19", "s": [-5, -4, -3, 3, 4, 5, 7] } },
+      "visual": { "tipo": "conjuro", "texto": "{f==2?'doble':'triple'} de {a} {s>0?'+':'−'} {Math.abs(s)} = 🌀" },
+      "preguntas": [
+        { "t": "Primero: ¿cuánto es el {f==2?'doble':'triple'} de {a}?", "r": "f*a", "op": "x", "trampas": ["a+f", "a"] },
+        { "t": "¿Qué número abre el siguiente portal?", "r": "f*a+s", "op": ["+", "-"], "trampas": ["f*a-s", "f*(a+s)"] }
+      ],
+      "pista": "Primero el {f==2?'doble (× 2)':'triple (× 3)'}, luego {s>0?'suma':'resta'} {Math.abs(s)}.",
+      "explicacion": [ "Paso 1: {a} × {f} = {f*a}.", "Paso 2: {f*a} {s>0?'+':'−'} {Math.abs(s)} = {f*a+s}.", "Mati apuntó un gran «{f*a+s}» en su libreta: «Próximo destino: el portal {f*a+s}». Pero esa… ya es otra aventura." ],
+      "efecto": { "portal": "f*a+s" },
+      "siguiente": "fin"
+    },
+
+    "fin": { "tipo": "final" },
+
+    "desmayo": {
+      "tipo": "escena", "fondo": "prado", "actores": "🧙‍♂️🧪🧒",
+      "texto": [ "Mati se quedó sin fuerzas y se sentó en el suelo, mareado.", { "q": "abaco", "t": "Tranquilo, Viajero. Toma esta poción de Numeria. Equivocarse no es perder: es aprender por dónde no ir." }, "Mati bebió y sintió cómo volvía la energía. ¡A seguir!" ],
+      "corto": [ "Mati está cansado… 😵", { "q": "abaco", "t": "¡Toma esta poción! Equivocarse también enseña." }, "¡Mati se siente fuerte otra vez! 💪" ],
+      "efecto": { "vidaLlena": true },
+      "siguiente": "_volver"
+    }
+  },
+
+  "torre": [
+    {
+      "titulo": "Los goblins de la cueva", "fondo": "cueva",
+      "enunciado": "Hay {n} goblins 👹 y cada uno tiene {d*j} puntos de vida. Tu arma hace {d} de daño por golpe.",
+      "vars": { "1": { "n": 2, "d": 2, "j": "1-2" }, "2": { "n": "2-3", "d": "2-4", "j": "2-3" }, "3": { "n": 3, "d": 6, "j": "2-4" }, "4": { "n": "4-6", "d": "7-9", "j": "3-5" } },
+      "visual": { "tipo": "combate", "enemigo": "👹", "nombre": "Goblin", "cantidad": "n", "vida": "d*j", "dano": "d", "arma": "🔨" },
+      "preguntas": [ { "t": "¿Cuántos golpes necesitas en total?", "r": "n*j", "op": ["x", "/"], "trampas": ["n+j"], "u": "golpes" } ],
+      "pista": "¿Cuántos golpes para un goblin? ¿Y para {n}?",
+      "explicacion": [ "Uno: {d*j} ÷ {d} = {j}. Todos: {j} × {n} = {n*j} golpes." ]
+    },
+    {
+      "titulo": "Las pociones del estante", "fondo": "cueva",
+      "enunciado": "Hay {f} filas y en cada fila caben {c} pociones 🧪.",
+      "vars": { "1": { "f": 2, "c": "2-3" }, "2": { "f": "3-4", "c": "3-5" }, "3": { "f": "4-6", "c": "6-8" }, "4": { "f": "7-9", "c": "8-12" } },
+      "visual": { "tipo": "grupos", "n": "f", "cada": "c", "emoji": "🧪", "etiqueta": "fila", "filas": true },
+      "preguntas": [ { "t": "¿Cuántas pociones hay en total?", "r": "f*c", "op": "x", "trampas": ["f+c"], "u": "pociones" } ],
+      "pista": "Filas iguales: grupos iguales.",
+      "explicacion": [ "{c} × {f} = {f*c} pociones." ]
+    },
+    {
+      "titulo": "El reparto del botín", "fondo": "guarida",
+      "enunciado": "Hay {3*c} monedas de oro 🪙 para repartir en partes iguales entre Mati, Chispa y Ábaco.",
+      "vars": { "1": { "c": "1-3" }, "2": { "c": "3-6" }, "3": { "c": "8-14" }, "4": { "c": "15-30" } },
+      "visual": { "tipo": "reparto", "total": "3*c", "receptores": ["🧒", "🐉", "🧙‍♂️"], "emoji": "🪙" },
+      "preguntas": [ { "t": "¿Cuántas monedas le tocan a cada uno?", "r": "c", "op": "/", "trampas": ["c+3", "3*c-3"], "u": "monedas" } ],
+      "pista": "Repartir en 3 partes iguales.",
+      "explicacion": [ "{3*c} ÷ 3 = {c} monedas para cada uno." ]
+    },
+    {
+      "titulo": "El patrón de las escaleras", "fondo": "salon",
+      "enunciado": "Una escalera mágica enciende escalones así: {k}, {2*k}, {3*k}, {4*k}…",
+      "vars": { "1": { "k": 1 }, "2": { "k": [2, 5, 10] }, "3": { "k": "3-6" }, "4": { "k": "7-12" } },
+      "visual": { "tipo": "patron", "serie": "[k, 2*k, 3*k, 4*k]", "emoji": "💡" },
+      "preguntas": [ { "t": "¿Cuántas luces tendrá el quinto escalón?", "r": "5*k", "op": "+", "trampas": ["4*k+1", "6*k"], "u": "luces" } ],
+      "pista": "¿Cuánto sube cada vez?",
+      "explicacion": [ "Sumamos {k} cada vez: {4*k} + {k} = {5*k}. ¡Es la tabla del {k}!" ]
+    },
+    {
+      "titulo": "El cambio en la tienda", "fondo": "aldea",
+      "enunciado": "Mati compra una cuerda mágica 🪢 que cuesta {p} monedas. Paga con una moneda grande de {m}.",
+      "vars": { "1": { "m": 5, "p": "1-4" }, "2": { "m": 10, "p": "2-9" }, "3": { "m": 20, "p": "6-19" }, "4": { "m": [50, 100], "p": "17-88" } },
+      "si": "p<m",
+      "visual": { "tipo": "cartas", "cartas": [ { "e": "🪢", "t": "Cuerda", "l": ["{p} 🪙"] }, { "e": "🪙", "t": "Pagas", "l": ["{m} 🪙"] } ] },
+      "preguntas": [ { "t": "¿Cuánto te devuelven?", "r": "m-p", "op": "-", "trampas": ["m+p"], "u": "monedas" } ],
+      "pista": "Quita el precio de lo que pagas.",
+      "explicacion": [ "{m} − {p} = {m-p} monedas de cambio." ]
+    },
+    {
+      "titulo": "Las alfombras voladoras", "fondo": "fiesta",
+      "enunciado": "Hay que llevar a {s} duendes 🧝 de excursión. En cada alfombra voladora caben {c}.",
+      "vars": { "1": { "c": 2, "q": "1-2", "rr": 1 }, "2": { "c": [3, 4], "q": "2-3", "rr": "1-2" }, "3": { "c": 8, "q": "4-6", "rr": "1-7" }, "4": { "c": "9-12", "q": "5-9", "rr": "1-11" } },
+      "si": "rr<c",
+      "calc": { "s": "c*q+rr" },
+      "visual": { "tipo": "grupos", "n": "q", "cada": "c", "emoji": "🧝", "etiqueta": "alfombra", "extra": "rr" },
+      "preguntas": [ { "t": "¿Cuántas alfombras hacen falta?", "r": "q+1", "op": "/", "trampas": ["q"], "u": "alfombras" } ],
+      "pista": "¡Los que sobran también necesitan alfombra!",
+      "explicacion": [ "{s} ÷ {c} = {q} y sobran {rr}. Hace falta una más: {q+1} alfombras." ]
+    },
+    {
+      "titulo": "El murciélago insistente", "fondo": "mazmorra",
+      "enunciado": "Cada mordisco del murciélago 🦇 te quita {m} puntos de vida. Tienes {m*k}.",
+      "vars": { "1": { "m": 2, "k": "2-3" }, "2": { "m": "3-5", "k": "3-4" }, "3": { "m": 5, "k": "5-7" }, "4": { "m": "6-9", "k": "6-9" } },
+      "visual": { "tipo": "barra", "emoji": "🧒", "nombre": "Tu vida", "vida": "m*k", "marca": "m" },
+      "preguntas": [ { "t": "¿Cuántos mordiscos aguantas antes de quedarte a 0?", "r": "k", "op": "/", "trampas": ["k+1"], "u": "mordiscos" } ],
+      "pista": "¿Cuántas veces cabe {m} en {m*k}?",
+      "explicacion": [ "{m*k} ÷ {m} = {k} mordiscos." ]
+    },
+    {
+      "titulo": "Las gemas escondidas", "fondo": "bosque",
+      "enunciado": "Un cofre tiene {r} rubíes, {z} zafiros, {c} caracoles y {b} botas viejas.",
+      "vars": { "1": { "r": "1-3", "z": "1-2", "c": 1, "b": 1 }, "2": { "r": "2-5", "z": "2-4", "c": "1-3", "b": "1-2" }, "3": { "r": "5-8", "z": "4-7", "c": "2-4", "b": "1-3" }, "4": { "r": "9-16", "z": "7-13", "c": "4-8", "b": "2-5" } },
+      "visual": { "tipo": "items", "lista": [["❤️‍🔥", "r"], ["💙", "z"], ["🐌", "c"], ["👢", "b"]], "marcar": true, "leyenda": "❤️‍🔥 rubí · 💙 zafiro · 🐌 caracol · 👢 bota" },
+      "preguntas": [ { "t": "¿Cuántas piedras preciosas hay?", "r": "r+z", "op": "+", "trampas": ["r+z+c+b"], "u": "piedras" } ],
+      "pista": "Los caracoles y las botas no son piedras.",
+      "explicacion": [ "Solo rubíes y zafiros: {r} + {z} = {r+z}." ]
+    },
+    {
+      "titulo": "El cofre de los anillos", "fondo": "guarida",
+      "enunciado": "Mati encuentra {n} cofres y en cada uno hay {c} anillos mágicos 💍.",
+      "vars": { "1": { "n": 2, "c": "1-3" }, "2": { "n": "2-4", "c": "2-5" }, "3": { "n": "4-6", "c": "5-9" }, "4": { "n": "7-9", "c": "7-12" } },
+      "visual": { "tipo": "grupos", "n": "n", "cada": "c", "emoji": "💍", "etiqueta": "cofre" },
+      "preguntas": [ { "t": "¿Cuántos anillos hay en total?", "r": "n*c", "op": "x", "trampas": ["n+c"], "u": "anillos" } ],
+      "pista": "Grupos iguales.",
+      "explicacion": [ "{c} × {n} = {n*c} anillos." ]
+    },
+    {
+      "titulo": "La trampa de veneno", "fondo": "mazmorra",
+      "enunciado": "Mati tiene {v} puntos de vida, pero pisa una trampa de veneno 🧪 que le quita {q}.",
+      "vars": { "1": { "v": "5-9", "q": "1-4" }, "2": { "v": "12-20", "q": "3-9" }, "3": { "v": "25-40", "q": "8-19" }, "4": { "v": "60-150", "q": "25-59" } },
+      "si": "q<v",
+      "visual": { "tipo": "barra", "emoji": "🧒", "nombre": "Vida de Mati", "vida": "v", "marca": 0 },
+      "preguntas": [ { "t": "¿Con cuánta vida se queda?", "r": "v-q", "op": "-", "trampas": ["v+q"], "u": "de vida" } ],
+      "pista": "Le quitan vida: resta.",
+      "explicacion": [ "{v} − {q} = {v-q} puntos de vida." ]
+    },
+    {
+      "titulo": "¿Maza o lanza contra el ogro?", "fondo": "claro",
+      "enunciado": "Un ogro 👹 tiene {hp} puntos de vida. La Maza 🔨 hace {a} de daño y la Lanza 🔱 hace {b}.",
+      "vars": { "1": { "a": 3, "b": 1 }, "2": { "a": [4, 5], "b": [2, 3] }, "3": { "a": 8, "b": 5 }, "4": { "a": [12, 15], "b": [8, 10] } },
+      "si": "a>b",
+      "calc": { "hp": "MCM(a,b)" },
+      "visual": { "tipo": "combate", "enemigo": "👹", "nombre": "Ogro", "vida": "hp", "dano": "a", "arma": "🔨" },
+      "preguntas": [
+        { "t": "¿Cuántos golpes con la Maza?", "r": "hp/a", "op": "/", "trampas": ["hp/b"], "u": "golpes" },
+        { "t": "¿Cuántos golpes con la Lanza?", "r": "hp/b", "op": "/", "trampas": ["hp/a"], "u": "golpes" }
+      ],
+      "pista": "Divide la vida entre el daño de cada arma.",
+      "explicacion": [ "Maza: {hp} ÷ {a} = {hp/a}. Lanza: {hp} ÷ {b} = {hp/b}. ¡Gana la Maza!" ]
+    },
+    {
+      "titulo": "El conjuro con orden", "fondo": "torre",
+      "enunciado": "Un acertijo mágico aparece en el aire: {a} × {b} − {c}.",
+      "vars": { "1": { "a": 2, "b": "2-3", "c": 1 }, "2": { "a": "2-5", "b": "2-5", "c": "1-5" }, "3": { "a": "4-9", "b": "4-9", "c": "5-19" }, "4": { "a": "7-12", "b": "7-12", "c": "11-39" } },
+      "si": "a*b>c",
+      "visual": { "tipo": "conjuro", "texto": "{a} × {b} − {c}" },
+      "preguntas": [ { "t": "¿Cuál es el resultado?", "r": "a*b-c", "op": "x", "trampas": ["a*(b-c)", "a*b+c"] } ],
+      "pista": "Primero multiplica, luego resta.",
+      "explicacion": [ "{a} × {b} = {a*b}; {a*b} − {c} = {a*b-c}." ]
+    }
+  ]
+}

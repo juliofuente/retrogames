@@ -1,0 +1,1674 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Mati y los Portales · Aventura de problemas de mates</title>
+<meta name="description" content="Aventura de problemas de matemáticas para niños de 5 a 12 años: ayuda a Mati a salvar el Reino de Numeria resolviendo puzles, combates de números y decisiones tipo elige tu propia aventura.">
+<meta name="theme-color" content="#161338">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E🐉%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Andika:wght@400;700&family=Grandstander:wght@500;700;900&display=swap">
+<style>
+/* Layout: una columna de cuento — barra de estado, escenario con emojis, tarjeta de papel con el texto y la acción. */
+:root {
+  color-scheme: dark;
+  --noche: #161338;
+  --noche-2: #251f5e;
+  --noche-3: #352c80;
+  --papel: #fbf9ff;
+  --papel-2: #efeaff;
+  --tinta: #24204e;
+  --tinta-suave: #5f5a92;
+  --oro: #ffc53d;
+  --oro-osc: #c98a00;
+  --chispa: #36c96a;
+  --chispa-osc: #1f8e47;
+  --portal: #9b6bff;
+  --portal-osc: #6a3fd1;
+  --rojo: #ff5d6c;
+  --rojo-osc: #c43345;
+  --cielo: #5ab4ff;
+  --linea: #d9d2f5;
+  --brillo: #fff6d6;
+  --f-titulo: "Grandstander", "Comic Sans MS", "Trebuchet MS", system-ui, sans-serif;
+  --f-texto: "Andika", "Verdana", "Segoe UI", system-ui, sans-serif;
+  --t-base: clamp(19px, 1.2rem + 0.4vw, 23px);
+  --radio: 22px;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { min-height: 100%; }
+body {
+  margin: 0;
+  background: var(--noche);
+  background-image:
+    radial-gradient(circle at 12% 18%, rgba(255,246,214,.55) 0 1.5px, transparent 2px),
+    radial-gradient(circle at 78% 9%, rgba(255,246,214,.45) 0 1.2px, transparent 2px),
+    radial-gradient(circle at 55% 40%, rgba(255,246,214,.35) 0 1px, transparent 2px),
+    radial-gradient(circle at 90% 64%, rgba(255,246,214,.4) 0 1.3px, transparent 2px),
+    radial-gradient(circle at 30% 80%, rgba(255,246,214,.35) 0 1px, transparent 2px),
+    linear-gradient(180deg, var(--noche) 0%, var(--noche-2) 100%);
+  background-attachment: fixed;
+  color: var(--papel);
+  font-family: var(--f-texto);
+  font-size: var(--t-base);
+  line-height: 1.55;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 12px 84px;
+  -webkit-tap-highlight-color: transparent;
+}
+#app { max-width: 820px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
+h1, h2, h3 { font-family: var(--f-titulo); text-wrap: balance; margin: 0; line-height: 1.15; }
+button { font: inherit; color: inherit; cursor: pointer; }
+button:focus-visible, input:focus-visible { outline: 4px solid var(--cielo); outline-offset: 3px; }
+
+/* ---------- Botones ---------- */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: .45em;
+  border: 0; border-radius: 18px; padding: .7em 1.2em;
+  font-family: var(--f-titulo); font-weight: 700; font-size: 1.05em;
+  background: var(--oro); color: var(--tinta);
+  box-shadow: 0 5px 0 var(--oro-osc);
+  transition: transform .08s, box-shadow .08s, filter .15s;
+  touch-action: manipulation; min-height: 54px;
+}
+.btn:active { transform: translateY(4px); box-shadow: 0 1px 0 var(--oro-osc); }
+.btn:disabled { filter: grayscale(.8) opacity(.55); cursor: not-allowed; }
+.btn.verde { background: var(--chispa); color: #08321a; box-shadow: 0 5px 0 var(--chispa-osc); }
+.btn.morado { background: var(--portal); color: #fff; box-shadow: 0 5px 0 var(--portal-osc); }
+.btn.claro { background: var(--papel-2); color: var(--tinta); box-shadow: 0 5px 0 var(--linea); }
+.btn.peq { min-height: 42px; padding: .4em .8em; font-size: .85em; border-radius: 14px; }
+.btn.ancho { width: 100%; }
+.fila-btn { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; }
+
+/* ---------- Barra de estado ---------- */
+#hud {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px;
+  background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.12);
+  border-radius: 18px; padding: 8px 12px; font-family: var(--f-titulo); font-weight: 700;
+  font-size: .9em;
+}
+#hud .quien { display: flex; align-items: center; gap: 6px; min-width: 0; }
+#hud .quien b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 9em; }
+#hud .stat { display: inline-flex; align-items: center; gap: 4px; font-variant-numeric: tabular-nums; }
+#hud .corazones { letter-spacing: -2px; }
+#hud .corazones .off { filter: grayscale(1) opacity(.35); }
+#hud .esp { flex: 1; }
+#hud .ico { background: rgba(255,255,255,.1); border: 0; border-radius: 12px; width: 40px; height: 40px; font-size: 1.15em; }
+#hud .ico.off { opacity: .45; }
+.pop { animation: pop .45s; }
+@keyframes pop { 40% { transform: scale(1.45); } }
+
+/* ---------- Escenario ---------- */
+.escenario {
+  position: relative; border-radius: var(--radio); overflow: hidden;
+  min-height: clamp(150px, 27vh, 230px);
+  display: flex; align-items: flex-end; justify-content: center;
+  padding: 18px 12px 14px;
+  box-shadow: inset 0 -30px 40px rgba(0,0,0,.25), 0 10px 30px rgba(0,0,0,.35);
+}
+.escenario.mini { min-height: 92px; padding: 10px; align-items: center; }
+.escenario .suelo { position: absolute; inset: auto 0 0 0; height: 26%; background: rgba(0,0,0,.18); border-top-left-radius: 50% 30%; border-top-right-radius: 50% 30%; }
+.escenario .deco { position: absolute; font-size: 1.6em; opacity: .55; filter: saturate(.8); pointer-events: none; }
+.escenario .deco.d0 { top: 10px; left: 14px; }
+.escenario .deco.d1 { top: 14px; right: 16px; font-size: 2em; }
+.escenario .deco.d2 { top: 38%; left: 50%; transform: translateX(-50%); font-size: 1.1em; opacity: .35; }
+.actores { position: relative; display: flex; gap: clamp(6px, 3vw, 22px); align-items: flex-end; z-index: 1; }
+.actor { font-size: clamp(52px, 13vw, 84px); line-height: 1; animation: flota 3.2s ease-in-out infinite; filter: drop-shadow(0 8px 6px rgba(0,0,0,.35)); transition: transform .25s; }
+.escenario.mini .actor { font-size: 44px; }
+.actor:nth-child(2) { animation-delay: -.8s; }
+.actor:nth-child(3) { animation-delay: -1.6s; }
+.actor:nth-child(4) { animation-delay: -2.2s; }
+.actor.habla { animation: salta .6s ease-in-out infinite; }
+@keyframes flota { 50% { transform: translateY(-8px); } }
+@keyframes salta { 50% { transform: translateY(-16px) scale(1.08); } }
+
+/* ---------- Tarjeta de papel ---------- */
+.tarjeta {
+  background: var(--papel); color: var(--tinta);
+  border-radius: var(--radio); padding: clamp(18px, 4vw, 30px);
+  box-shadow: 0 12px 0 rgba(0,0,0,.18), 0 18px 40px rgba(0,0,0,.35);
+  display: flex; flex-direction: column; gap: 16px; min-width: 0;
+}
+.tarjeta .cab { display: flex; align-items: flex-start; gap: 10px; justify-content: space-between; }
+.tarjeta .cab .t { min-width: 0; }
+.etiq { font-family: var(--f-titulo); font-weight: 700; font-size: .72em; letter-spacing: .08em; text-transform: uppercase; color: var(--portal-osc); }
+.tarjeta h2 { font-size: 1.45em; color: var(--tinta); }
+.leer { flex: none; border: 0; background: var(--papel-2); border-radius: 14px; width: 48px; height: 48px; font-size: 1.3em; }
+.narracion { margin: 0; animation: entra .35s ease-out; }
+@keyframes entra { from { opacity: .2; transform: translateY(8px); } }
+.dialogo { display: flex; gap: 12px; align-items: flex-start; animation: entra .35s ease-out; }
+.dialogo .av { flex: none; width: 54px; height: 54px; border-radius: 50%; display: grid; place-items: center; font-size: 32px; background: var(--papel-2); border: 3px solid var(--c, var(--portal)); }
+.dialogo .bocadillo { position: relative; background: var(--papel-2); border-radius: 18px; padding: 10px 16px; min-width: 0; }
+.dialogo .bocadillo::before { content: ""; position: absolute; left: -9px; top: 18px; border: 9px solid transparent; border-left: 0; border-right-color: var(--papel-2); }
+.dialogo .nom { display: block; font-family: var(--f-titulo); font-weight: 700; font-size: .78em; color: var(--c, var(--portal-osc)); }
+.lineas { display: flex; flex-direction: column; gap: 14px; }
+.toca { font-size: .8em; color: var(--tinta-suave); text-align: center; }
+
+/* ---------- Problemas ---------- */
+.enunciado { margin: 0; font-size: 1.04em; }
+.pregunta { font-family: var(--f-titulo); font-weight: 700; font-size: 1.12em; color: var(--tinta); margin: 0; }
+.zona-preg { display: flex; flex-direction: column; gap: 14px; border-top: 3px dashed var(--linea); padding-top: 16px; }
+.paso { font-family: var(--f-titulo); font-size: .75em; font-weight: 700; color: var(--tinta-suave); letter-spacing: .06em; text-transform: uppercase; }
+.opciones { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px; }
+.opc {
+  border: 3px solid var(--linea); background: #fff; border-radius: 18px; color: var(--tinta);
+  font-family: var(--f-titulo); font-weight: 900; font-size: 1.7em; min-height: 76px; padding: 8px;
+  box-shadow: 0 5px 0 var(--linea); transition: transform .08s;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+}
+.opc small { font-family: var(--f-texto); font-weight: 400; font-size: .48em; color: var(--tinta-suave); line-height: 1.25; text-align: center; }
+.opc.txt { font-size: 1.05em; font-weight: 700; }
+.opc .em { font-size: 1.6em; line-height: 1.1; }
+.opc:active { transform: translateY(4px); box-shadow: 0 1px 0 var(--linea); }
+.opc.mal { border-color: var(--rojo); background: #ffe9ec; opacity: .55; animation: tiembla .4s; }
+.opc.bien { border-color: var(--chispa); background: #e3fbe9; }
+.opc.marca { border-color: var(--oro); box-shadow: 0 0 0 5px rgba(255,197,61,.45); }
+@keyframes tiembla { 20%,60% { transform: translateX(-7px); } 40%,80% { transform: translateX(7px); } }
+.teclado { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; max-width: 380px; width: 100%; margin: 0 auto; }
+.teclado button { min-height: 60px; border: 0; border-radius: 16px; background: var(--papel-2); color: var(--tinta); font-family: var(--f-titulo); font-weight: 900; font-size: 1.5em; box-shadow: 0 4px 0 var(--linea); }
+.teclado button:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--linea); }
+.teclado .ok { background: var(--chispa); color: #08321a; box-shadow: 0 4px 0 var(--chispa-osc); }
+.pantallita { max-width: 380px; width: 100%; margin: 0 auto; display: flex; align-items: baseline; justify-content: center; gap: 10px; min-height: 72px; border-radius: 18px; background: var(--tinta); color: var(--oro); font-family: var(--f-titulo); font-weight: 900; font-size: 2.3em; padding: 6px 14px; font-variant-numeric: tabular-nums; }
+.pantallita small { font-size: .38em; color: var(--papel-2); font-weight: 500; }
+.pantallita.mal { animation: tiembla .4s; background: var(--rojo-osc); }
+.aviso-preg { border-radius: 16px; padding: 12px 16px; font-size: .95em; animation: entra .3s; }
+.aviso-preg.pista { background: #fff4d1; border: 2px solid var(--oro); }
+.aviso-preg.bien { background: #e3fbe9; border: 2px solid var(--chispa); font-family: var(--f-titulo); font-weight: 700; }
+.aviso-preg.ayuda { background: #efe7ff; border: 2px solid var(--portal); }
+.ops { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+.ops .opc { font-size: 1.05em; flex-direction: row; justify-content: flex-start; gap: 12px; text-align: left; padding: 10px 14px; }
+.ops .opc .em { font-size: 1.7em; }
+.ops .opc span { display: flex; flex-direction: column; line-height: 1.2; }
+.explica { background: var(--papel-2); border-radius: 18px; padding: 4px 18px; }
+.explica summary { font-family: var(--f-titulo); font-weight: 700; cursor: pointer; padding: 10px 0; list-style: none; }
+.explica summary::-webkit-details-marker { display: none; }
+.explica p { margin: 0 0 10px; }
+.estrellas { text-align: center; font-size: 3.2em; letter-spacing: 6px; }
+.estrellas span { display: inline-block; animation: estrella .5s backwards; }
+.estrellas span:nth-child(2) { animation-delay: .15s; } .estrellas span:nth-child(3) { animation-delay: .3s; }
+.estrellas .off { filter: grayscale(1) opacity(.25); }
+@keyframes estrella { from { transform: scale(0) rotate(-90deg); } }
+.resultado { text-align: center; font-family: var(--f-titulo); font-weight: 900; font-size: 1.5em; color: var(--chispa-osc); }
+
+/* ---------- Visuales ---------- */
+.visual { background: #f4f0ff; border-radius: 18px; padding: 14px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.visual .ayudita { font-size: .78em; color: var(--tinta-suave); text-align: center; }
+.contador { text-align: center; font-family: var(--f-titulo); font-weight: 700; color: var(--portal-osc); font-variant-numeric: tabular-nums; }
+.grupos { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+.grupos.filas { flex-direction: column; align-items: center; }
+.grupo { border: 3px dashed var(--linea); background: #fff; border-radius: 16px; padding: 6px 10px; display: flex; flex-direction: column; align-items: center; gap: 2px; max-width: 100%; color: var(--tinta); }
+.grupo.contado { border-style: solid; border-color: var(--chispa); background: #e9fbef; }
+.grupo .ems { display: flex; flex-wrap: wrap; justify-content: center; font-size: 1.35em; line-height: 1.25; max-width: 11em; }
+.grupos.filas .grupo { flex-direction: row; gap: 10px; }
+.grupos.filas .grupo .ems { max-width: none; }
+.grupo small { font-size: .62em; color: var(--tinta-suave); }
+.items { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+.item { font-size: 1.6em; min-width: 1.75em; height: 1.75em; display: grid; place-items: center; border-radius: 12px; border: 2px solid transparent; background: transparent; padding: 0; line-height: 1; }
+.item.marcable { background: #fff; border-color: var(--linea); }
+.item.marcado { border-color: var(--chispa); background: #dff8e7; box-shadow: 0 0 0 3px rgba(54,201,106,.35); }
+.item.robado { opacity: .25; position: relative; }
+.item.robado::after { content: "✕"; position: absolute; color: var(--rojo); font-size: .9em; font-weight: 900; }
+.leyenda { text-align: center; font-size: .8em; color: var(--tinta-suave); }
+.compacto { text-align: center; font-family: var(--f-titulo); font-size: 1.6em; font-weight: 700; color: var(--tinta); }
+
+.reparto .monton { display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; min-height: 2em; padding: 8px; border-radius: 14px; background: #fff; border: 2px solid var(--linea); }
+.reparto .monton .item { width: 1.6em; height: 1.6em; font-size: 1.4em; }
+.reparto .monton .item.sobra { opacity: .5; outline: 2px dashed var(--rojo); border-radius: 10px; }
+.receptores { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 8px; }
+.receptor { background: #fff; border-radius: 14px; border: 2px solid var(--linea); padding: 6px; text-align: center; color: var(--tinta); }
+.receptor .quien { font-size: 1.8em; line-height: 1.1; }
+.receptor .recibido { font-size: 1em; min-height: 1.4em; line-height: 1.2; word-break: break-all; }
+.receptor b { font-family: var(--f-titulo); color: var(--portal-osc); }
+
+.camino { display: flex; align-items: center; gap: 6px; }
+.camino .pista-c { position: relative; flex: 1; display: flex; gap: 3px; min-width: 0; padding-bottom: 26px; }
+.casilla { flex: 1; min-width: 0; aspect-ratio: 1 / 1.3; max-height: 46px; border-radius: 6px; background: #fff; border: 2px solid var(--linea); padding: 0; display: grid; place-items: center; font-size: clamp(9px, 2.6vw, 18px); }
+.casilla.hecha { background: #ffe7a6; border-color: var(--oro); }
+.casilla.contada { background: #d9f7e2; border-color: var(--chispa); }
+.camino .mitad { position: absolute; left: 50%; top: -6px; bottom: 0; width: 0; border-left: 3px dashed var(--portal); }
+.camino .mitad span { position: absolute; bottom: 0; left: 0; transform: translateX(-50%); font-size: .62em; font-family: var(--f-titulo); font-weight: 700; color: var(--portal-osc); white-space: nowrap; }
+.camino .punta { font-size: 1.6em; flex: none; }
+
+.combate { display: flex; flex-direction: column; gap: 10px; }
+.enemigos { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+.enemigo { position: relative; background: #fff; border: 3px solid var(--linea); border-radius: 16px; padding: 6px 8px; width: clamp(92px, 26vw, 140px); text-align: center; color: var(--tinta); transition: transform .15s, opacity .4s; }
+.enemigos.muchos .enemigo { width: clamp(70px, 20vw, 100px); }
+.enemigo .em { font-size: 2.6em; line-height: 1.1; display: block; }
+.enemigos.muchos .enemigo .em { font-size: 1.9em; }
+.enemigo .nom { font-size: .62em; font-family: var(--f-titulo); font-weight: 700; color: var(--tinta-suave); display: block; }
+.enemigo.atacable { cursor: crosshair; border-color: var(--rojo); box-shadow: 0 0 0 4px rgba(255,93,108,.25); }
+.enemigo.golpe { animation: tiembla .3s; }
+.enemigo.vencido { opacity: .25; filter: grayscale(1); transform: scale(.9); }
+.vida { position: relative; height: 16px; border-radius: 8px; background: #ececf5; overflow: hidden; border: 2px solid var(--tinta); }
+.vida .relleno { position: absolute; inset: 0 auto 0 0; background: linear-gradient(90deg, var(--rojo), #ff8a5c); transition: width .3s; }
+.vida.heroe .relleno { background: linear-gradient(90deg, var(--chispa), #8ae06a); }
+.vida .cortes { position: absolute; inset: 0; background: repeating-linear-gradient(90deg, transparent 0 calc(var(--seg) - 2px), rgba(36,32,78,.75) calc(var(--seg) - 2px) var(--seg)); pointer-events: none; }
+.vida-num { font-size: .7em; font-family: var(--f-titulo); font-weight: 700; font-variant-numeric: tabular-nums; }
+.insignias { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.insignia { background: var(--tinta); color: var(--papel); border-radius: 999px; padding: 3px 12px; font-size: .78em; font-family: var(--f-titulo); font-weight: 700; }
+.insignia.oro { background: var(--oro); color: var(--tinta); }
+.heroe-c { display: flex; align-items: center; gap: 10px; background: #fff; border-radius: 16px; border: 3px solid var(--chispa); padding: 6px 10px; color: var(--tinta); }
+.heroe-c .em { font-size: 2em; }
+.heroe-c .vida { flex: 1; }
+.heroe-c.golpe { animation: tiembla .35s; border-color: var(--rojo); }
+.flotante { position: fixed; pointer-events: none; z-index: 60; font-family: var(--f-titulo); font-weight: 900; font-size: 1.6em; color: var(--rojo); text-shadow: 0 2px 0 #fff; animation: sube .9s ease-out forwards; }
+@keyframes sube { to { transform: translateY(-60px); opacity: 0; } }
+
+.patron { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; align-items: stretch; }
+.caja-p { background: #fff; border: 3px solid var(--linea); border-radius: 14px; padding: 6px; width: clamp(64px, 17vw, 110px); display: flex; flex-direction: column; align-items: center; justify-content: space-between; gap: 4px; color: var(--tinta); }
+.caja-p .ems { display: flex; flex-wrap: wrap; justify-content: center; font-size: .95em; line-height: 1.1; }
+.caja-p b { font-family: var(--f-titulo); font-size: 1.35em; }
+.caja-p small { font-size: .58em; color: var(--tinta-suave); }
+.caja-p.misterio { border-color: var(--portal); border-style: dashed; animation: late 1.4s ease-in-out infinite; }
+.caja-p.misterio b { font-size: 2em; color: var(--portal); }
+@keyframes late { 50% { transform: scale(1.06); } }
+
+.reloj-c { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.reloj-c svg { width: min(230px, 62vw); height: auto; }
+.reloj-ctrl { display: flex; align-items: center; gap: 10px; }
+.reloj-ctrl .btn { white-space: nowrap; }
+.reloj-ctrl .hora { font-family: var(--f-titulo); font-weight: 900; font-size: 1.4em; min-width: 4.2em; text-align: center; color: var(--tinta); }
+.aguja { transition: transform .35s cubic-bezier(.3,1.5,.6,1); }
+
+.perim svg { width: 100%; max-width: 420px; height: auto; display: block; margin: 0 auto; }
+.perim .lado { cursor: pointer; }
+
+.combinar .col { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.combinar .opc { font-size: 1em; min-height: 58px; padding: 6px 10px; flex-direction: row; gap: 6px; }
+.combinar .opc .em { font-size: 1.5em; }
+.combinar .opc.sel { border-color: var(--portal); background: #efe7ff; box-shadow: 0 5px 0 var(--portal); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; min-height: 2.2em; }
+.chip { background: #fff; border: 2px solid var(--chispa); border-radius: 999px; padding: 2px 10px; font-size: 1.05em; animation: pop .4s; }
+
+.balanza .puente { position: relative; height: 92px; margin: 0 6%; }
+.balanza .tabla { position: absolute; left: 0; right: 0; bottom: 14px; height: 18px; border-radius: 8px; background: linear-gradient(90deg, #a6e1ff, #d6f1ff); border: 3px solid var(--cielo); transition: transform .3s; }
+.balanza .tabla.peligro { border-color: var(--rojo); background: repeating-linear-gradient(110deg, #ffd6db 0 10px, #fff 10px 14px); animation: tiembla .5s 2; }
+.balanza .encima { position: absolute; left: 0; right: 0; bottom: 34px; display: flex; justify-content: center; gap: 18px; font-size: 2.4em; line-height: 1; }
+.balanza .cartel { text-align: center; font-family: var(--f-titulo); font-weight: 700; color: var(--tinta); font-variant-numeric: tabular-nums; }
+.balanza .personajes { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+.balanza .opc { font-size: 1em; min-height: 60px; flex-direction: row; gap: 8px; padding: 6px 14px; }
+.balanza .opc.sel { border-color: var(--cielo); background: #e5f4ff; }
+
+.cartas { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; }
+.carta { background: #fff; border-radius: 16px; border: 3px solid var(--linea); padding: 10px; text-align: center; color: var(--tinta); display: flex; flex-direction: column; gap: 2px; }
+.carta .em { font-size: 2.2em; line-height: 1.2; }
+.carta b { font-family: var(--f-titulo); font-size: 1.05em; }
+.carta span { font-size: .85em; color: var(--tinta-suave); }
+
+.frasco { display: flex; flex-direction: column-reverse; width: 90px; height: 150px; margin: 0 auto; border: 4px solid var(--tinta); border-radius: 16px 16px 26px 26px; overflow: hidden; background: #fff; }
+.frasco div { flex: 1; border-top: 2px dashed var(--linea); }
+.frasco div.lleno { background: linear-gradient(180deg, #b78bff, var(--portal)); }
+
+.barra-c { display: flex; align-items: center; gap: 10px; color: var(--tinta); }
+.barra-c .em { font-size: 1.8em; flex: none; }
+.barra-c .trozos { flex: 1; display: flex; height: 30px; border: 3px solid var(--tinta); border-radius: 10px; overflow: hidden; }
+.barra-c .trozo { flex: 1; border: 0; border-right: 2px solid var(--tinta); background: linear-gradient(180deg, #7be59b, var(--chispa)); padding: 0; }
+.barra-c .trozo:last-child { border-right: 0; }
+.barra-c .trozo.tachado { background: #3a3560; }
+.barra-c .trozo.unico { background: linear-gradient(90deg, var(--chispa), #8ae06a); cursor: default; }
+
+.conjuro { text-align: center; font-family: var(--f-titulo); font-weight: 900; font-size: clamp(1.7em, 7vw, 2.6em); color: var(--portal-osc); text-shadow: 0 0 18px rgba(155,107,255,.55); padding: 8px; }
+
+.logica .pistas { display: flex; flex-direction: column; gap: 6px; }
+.logica .pistas button { text-align: left; background: #fff; border: 2px solid var(--linea); border-radius: 12px; padding: 6px 12px; color: var(--tinta); font-size: .92em; }
+.logica .pistas button.tachada { text-decoration: line-through; opacity: .55; background: #eee9fb; }
+.cofres { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+.cofre { width: clamp(70px, 19vw, 104px); border-radius: 16px; border: 4px solid var(--c); background: #fff; padding: 6px; display: flex; flex-direction: column; align-items: center; color: var(--tinta); }
+.cofre .em { font-size: 2.3em; line-height: 1.1; }
+.cofre small { font-family: var(--f-titulo); font-weight: 700; color: var(--c); font-size: .72em; }
+.cofre.activo { box-shadow: 0 0 0 5px rgba(255,197,61,.5); cursor: pointer; }
+.cofre.mal { opacity: .35; animation: tiembla .4s; }
+.cofre.bien { background: #e3fbe9; }
+
+.llenar .pista-l { display: flex; height: 54px; border-radius: 12px; border: 3px solid var(--tinta); background: repeating-linear-gradient(90deg, #dff3ff 0 12px, #cbeaff 12px 24px); overflow: hidden; }
+.llenar .pieza { height: 100%; display: grid; place-items: center; font-size: 1.2em; background: linear-gradient(180deg, #ffd88a, #e3a646); border-right: 3px solid var(--tinta); animation: crece .3s ease-out; min-width: 0; overflow: hidden; }
+.llenar .pieza small { font-size: .55em; font-family: var(--f-titulo); font-weight: 700; }
+@keyframes crece { from { transform: scaleX(0); transform-origin: left; } }
+
+/* ---------- Pantallas ---------- */
+.portada { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 20px; padding-block: 18px; }
+.portal-anim { width: min(240px, 60vw); aspect-ratio: 1; border-radius: 50%; position: relative; display: grid; place-items: center; background: radial-gradient(circle, #f5e7ff 0 18%, var(--portal) 40%, var(--portal-osc) 62%, transparent 70%); box-shadow: 0 0 60px rgba(155,107,255,.7); animation: gira 9s linear infinite; }
+.portal-anim::before { content: ""; position: absolute; inset: 8%; border-radius: 50%; border: 6px dotted rgba(255,246,214,.7); }
+.portal-anim span { font-size: 4.4em; animation: gira 9s linear infinite reverse; }
+@keyframes gira { to { transform: rotate(360deg); } }
+.portada h1 { font-size: clamp(2.1em, 8vw, 3.4em); font-weight: 900; color: var(--oro); text-shadow: 0 4px 0 var(--portal-osc), 0 10px 30px rgba(0,0,0,.4); letter-spacing: .01em; }
+.portada .sub { font-family: var(--f-titulo); font-size: 1.15em; color: var(--brillo); margin-top: -10px; }
+.portada .botones { display: flex; flex-direction: column; gap: 14px; width: min(360px, 100%); }
+.nota { font-size: .78em; color: rgba(251,249,255,.75); max-width: 34em; }
+
+.edades { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.edades .opc { font-size: 1.9em; min-height: 80px; }
+.edades .opc.sel { border-color: var(--portal); background: #efe7ff; box-shadow: 0 5px 0 var(--portal); }
+.avatares { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+.avatares .opc { font-size: 1em; min-width: 120px; }
+.avatares .opc.sel { border-color: var(--portal); background: #efe7ff; box-shadow: 0 5px 0 var(--portal); }
+.campo { width: 100%; font: inherit; font-size: 1.2em; padding: 14px 16px; border-radius: 16px; border: 3px solid var(--linea); background: #fff; color: var(--tinta); font-family: var(--f-titulo); font-weight: 700; color-scheme: light; }
+.nivel-c { display: flex; align-items: center; gap: 14px; background: var(--papel-2); border-radius: 18px; padding: 12px 16px; }
+.nivel-c .em { font-size: 2.6em; }
+
+.splash { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 12px; padding-block: 28px; }
+.splash .em { font-size: 5em; animation: flota 3s ease-in-out infinite; }
+.splash .etiq { color: var(--oro); font-size: .9em; }
+.splash h1 { font-size: clamp(1.9em, 7vw, 2.8em); color: var(--papel); font-weight: 900; }
+
+.mapa { display: flex; flex-direction: column; gap: 6px; position: relative; }
+.isla { display: flex; align-items: center; gap: 12px; width: min(440px, 92%); border-radius: 20px; padding: 10px 14px; border: 3px solid rgba(255,255,255,.18); background: rgba(255,255,255,.08); color: var(--papel); text-align: left; }
+.isla:nth-child(odd) { align-self: flex-start; }
+.isla:nth-child(even) { align-self: flex-end; }
+.isla .em { font-size: 2.1em; flex: none; width: 1.5em; text-align: center; }
+.isla .t { min-width: 0; }
+.isla .t small { display: block; font-family: var(--f-titulo); font-size: .7em; letter-spacing: .06em; text-transform: uppercase; color: var(--oro); }
+.isla .t b { font-family: var(--f-titulo); font-size: .95em; }
+.isla.bloq { opacity: .4; cursor: default; }
+.isla.bloq .em { filter: grayscale(1); }
+.isla.actual { border-color: var(--oro); background: rgba(255,197,61,.16); box-shadow: 0 0 24px rgba(255,197,61,.35); }
+.isla .estado { margin-left: auto; font-size: 1.2em; flex: none; }
+.mapa-cab { display: flex; flex-direction: column; gap: 10px; align-items: center; text-align: center; }
+.mapa-cab h1 { color: var(--oro); font-size: 2em; }
+.frag-fila { display: flex; gap: 4px; justify-content: center; font-size: 1.6em; }
+.frag-fila .off { filter: grayscale(1) opacity(.3); }
+
+.diploma { background: var(--papel); color: var(--tinta); border-radius: 26px; padding: clamp(20px, 5vw, 40px); text-align: center; border: 10px double var(--oro); display: flex; flex-direction: column; gap: 12px; align-items: center; }
+.diploma h1 { font-size: clamp(1.5em, 6vw, 2.2em); color: var(--portal-osc); }
+.diploma .nombre { font-family: var(--f-titulo); font-weight: 900; font-size: clamp(1.8em, 8vw, 2.8em); color: var(--tinta); border-bottom: 3px solid var(--oro); padding: 0 .4em; }
+.diploma .datos { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+.diploma .dato { background: var(--papel-2); border-radius: 16px; padding: 8px 14px; font-family: var(--f-titulo); font-weight: 700; }
+.diploma .firma { font-family: var(--f-titulo); color: var(--tinta-suave); font-size: .85em; }
+
+#capa { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; background: rgba(12,10,40,.72); padding: 20px max(16px, env(safe-area-inset-right, 0px)) 20px max(16px, env(safe-area-inset-left, 0px)); animation: entra .25s; }
+#capa .caja { background: var(--papel); color: var(--tinta); border-radius: 26px; padding: 26px; text-align: center; max-width: 440px; width: 100%; display: flex; flex-direction: column; gap: 14px; align-items: center; box-shadow: 0 20px 60px rgba(0,0,0,.5); }
+#capa .grande { font-size: 5em; line-height: 1; animation: pop .7s; }
+#toast { position: fixed; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 70; background: var(--tinta); color: var(--papel); border: 3px solid var(--oro); border-radius: 18px; padding: 10px 18px; font-family: var(--f-titulo); font-weight: 700; max-width: calc(100% - 32px); text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,.4); animation: entra .3s; }
+.confeti { position: fixed; top: -40px; z-index: 80; pointer-events: none; font-size: 26px; animation: cae linear forwards; }
+@keyframes cae { to { transform: translateY(110vh) rotate(540deg); } }
+.cargando { text-align: center; padding: 60px 0; font-family: var(--f-titulo); font-size: 1.3em; }
+
+@media (max-width: 480px) {
+  .ops { grid-template-columns: 1fr; }
+  .edades { grid-template-columns: repeat(4, 1fr); }
+  .edades .opc { font-size: 1.4em; min-height: 64px; }
+  .dialogo .av { width: 44px; height: 44px; font-size: 26px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="hud" hidden></div>
+  <main id="pantalla"><div class="cargando">✨ Abriendo el portal…</div></main>
+</div>
+
+<script>
+"use strict";
+/* =========================================================
+   Mati y los Portales — motor del juego
+   Toda la historia y los problemas viven en historia.json
+   ========================================================= */
+let H = null;          // historia
+let S = null;          // estado de la partida
+let CTX = null;        // problema en curso
+const CLAVE = "mati_portales_v1";
+const CLAVE_PREF = "mati_portales_pref";
+let PREF = { tts: false, sonido: true };
+
+/* ---------- utilidades ---------- */
+const $ = (s, el = document) => el.querySelector(s);
+function el(tag, attrs, ...kids) {
+  const e = document.createElement(tag);
+  if (attrs) for (const [k, v] of Object.entries(attrs)) {
+    if (v == null || v === false) continue;
+    if (k === "class") e.className = v;
+    else if (k === "html") e.innerHTML = v;
+    else if (k.startsWith("on")) e.addEventListener(k.slice(2), v);
+    else if (k === "style") e.style.cssText = v;
+    else e.setAttribute(k, v === true ? "" : v);
+  }
+  for (const k of kids.flat()) if (k != null && k !== false) e.append(k.nodeType ? k : document.createTextNode(String(k)));
+  return e;
+}
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const rnd = n => Math.floor(Math.random() * n);
+const rint = (a, b) => a + rnd(b - a + 1);
+const barajar = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = rnd(i + 1); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+function grafemas(s) {
+  s = String(s || "");
+  if (window.Intl && Intl.Segmenter) return [...new Intl.Segmenter("es", { granularity: "grapheme" }).segment(s)].map(x => x.segment).filter(x => x.trim());
+  return Array.from(s).filter(x => x.trim());
+}
+function guardar() { try { localStorage.setItem(CLAVE, JSON.stringify(S)); } catch (e) {} }
+function leerGuardado() { try { const s = JSON.parse(localStorage.getItem(CLAVE)); return s && s.nivel ? s : null; } catch (e) { return null; } }
+function guardarPref() { try { localStorage.setItem(CLAVE_PREF, JSON.stringify(PREF)); } catch (e) {} }
+try { Object.assign(PREF, JSON.parse(localStorage.getItem(CLAVE_PREF)) || {}); } catch (e) {}
+
+/* ---------- expresiones y plantillas ---------- */
+const MCD = (a, b) => b ? MCD(b, a % b) : Math.abs(a);
+const MCM = (a, b) => Math.abs(a * b) / MCD(a, b);
+const HORA = n => ((Math.round(n) - 1) % 12 + 12) % 12 + 1;
+function armasNivel() {
+  const A = {};
+  for (const [id, a] of Object.entries(H.armas)) {
+    const D = nivelVal(a.dano, S.nivel);
+    A[id] = { id, nombre: a.nombre, emoji: a.emoji, D, G: a.golpes, T: D * a.golpes };
+  }
+  return A;
+}
+function nivelVal(obj, n) {
+  if (obj == null || typeof obj !== "object") return obj;
+  if (obj[n] != null) return obj[n];
+  for (let i = n - 1; i >= 1; i--) if (obj[i] != null) return obj[i];
+  for (let i = n + 1; i <= 4; i++) if (obj[i] != null) return obj[i];
+  return {};
+}
+function scopeBase() {
+  const A = armasNivel();
+  const ARMA = A[S.arma] || A.maza;
+  const mejor = Object.values(A).sort((x, y) => y.T - x.T)[0].id;
+  return {
+    NIVEL: S.nivel, NOMBRE: S.nombre, AVATAR: S.avatar, VIAJERO: S.viajero,
+    MONEDAS: S.monedas, FRAGMENTOS: S.fragmentos, A, ARMA, MEJORARMA: mejor, MCM, MCD, HORA, Math
+  };
+}
+function ev(expr, sc) {
+  if (typeof expr === "number" || typeof expr === "boolean") return expr;
+  if (expr == null) return expr;
+  const k = Object.keys(sc);
+  try { return Function(...k, '"use strict";return (' + expr + ");")(...k.map(x => sc[x])); }
+  catch (e) { console.warn("Expresión con error:", expr, e); return NaN; }
+}
+function fmt(v) {
+  if (typeof v === "number") return Number.isInteger(v) ? String(v) : v.toLocaleString("es-ES", { maximumFractionDigits: 2 });
+  return v == null ? "" : String(v);
+}
+function tpl(str, sc) {
+  if (str == null) return "";
+  return String(str).replace(/\{([^{}]+)\}/g, (m, e) => { const v = ev(e, sc); return (typeof v === "number" && isNaN(v)) ? m : fmt(v); });
+}
+const tplHTML = (str, sc) => esc(tpl(str, sc)).replace(/\n/g, "<br>");
+function valor(v, sc) {
+  if (typeof v === "number") return v;
+  if (Array.isArray(v)) return v[rnd(v.length)];
+  if (typeof v === "string") { const m = v.match(/^(-?\d+)-(-?\d+)$/); if (m) return rint(+m[1], +m[2]); return ev(v, sc); }
+  return v;
+}
+function generarVars(P) {
+  const base = scopeBase();
+  let sc = base;
+  for (let t = 0; t < 500; t++) {
+    sc = { ...base };
+    const vs = nivelVal(P.vars, S.nivel) || {};
+    for (const [k, v] of Object.entries(vs)) sc[k] = valor(v, sc);
+    for (const [k, v] of Object.entries(P.calc || {})) sc[k] = ev(v, sc);
+    if (!P.si || ev(P.si, sc)) break;
+  }
+  if (P.visual && P.visual.tipo === "logica") generarLogica(P.visual, sc);
+  return sc;
+}
+const COLORES = [
+  { id: "rojo", nombre: "rojo", c: "#e5484d" }, { id: "azul", nombre: "azul", c: "#3b82f6" },
+  { id: "verde", nombre: "verde", c: "#22a35a" }, { id: "amarillo", nombre: "amarillo", c: "#d99a00" },
+  { id: "morado", nombre: "morado", c: "#8b5cf6" }
+];
+function generarLogica(v, sc) {
+  const n = clamp(ev(v.n, sc) || 3, 2, 5);
+  const cofres = barajar(COLORES).slice(0, n);
+  const ok = cofres[rnd(n)];
+  const otros = barajar(cofres.filter(c => c !== ok));
+  const pistas = [];
+  if (n >= 5) {
+    pistas.push(`No está ni en el ${otros[0].nombre} ni en el ${otros[1].nombre}.`);
+    otros.slice(2).forEach(c => pistas.push(`No está en el ${c.nombre}.`));
+  } else otros.forEach(c => pistas.push(`No está en el ${c.nombre}.`));
+  sc.COFRES = cofres; sc.RESP = ok.id; sc.RESP_NOMBRE = ok.nombre; sc.PISTAS = barajar(pistas);
+  sc.DESCARTES = otros.map(c => "no es el " + c.nombre).join(", ");
+}
+
+/* ---------- sonido y voz ---------- */
+let AC = null;
+function tono(fs, d = .1, tipo = "sine", vol = .12) {
+  if (!PREF.sonido) return;
+  try {
+    AC = AC || new (window.AudioContext || window.webkitAudioContext)();
+    const t = AC.currentTime;
+    fs.forEach((f, i) => {
+      const o = AC.createOscillator(), g = AC.createGain();
+      o.type = tipo; o.frequency.value = f;
+      g.gain.setValueAtTime(vol, t + i * d);
+      g.gain.exponentialRampToValueAtTime(.001, t + i * d + d * 1.6);
+      o.connect(g).connect(AC.destination); o.start(t + i * d); o.stop(t + i * d + d * 1.7);
+    });
+  } catch (e) {}
+}
+const sfx = {
+  ok: () => tono([523, 659, 784, 1047], .09, "triangle"),
+  mal: () => tono([233, 175], .16, "sawtooth", .06),
+  golpe: () => tono([160, 90], .05, "square", .08),
+  moneda: () => tono([988, 1319], .07, "square", .05),
+  clic: () => tono([700], .035, "sine", .05),
+  frag: () => tono([523, 659, 784, 1047, 1319, 1568], .1, "triangle"),
+  pasa: () => tono([392, 523], .06, "triangle", .06)
+};
+function limpiarVoz(t) {
+  return String(t).replace(/\p{Extended_Pictographic}|️|‍/gu, " ")
+    .replace(/×/g, " por ").replace(/−/g, " menos ").replace(/÷/g, " entre ").replace(/—/g, ", ").replace(/\s+/g, " ").trim();
+}
+function hablar(texto, forzar) {
+  if (!(forzar || PREF.tts) || !("speechSynthesis" in window)) return;
+  try {
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(limpiarVoz(texto));
+    u.lang = "es-ES"; u.rate = S && S.nivel <= 2 ? .88 : .98; u.pitch = 1.05;
+    const voz = speechSynthesis.getVoices().find(v => /^es(-|_)ES/i.test(v.lang)) || speechSynthesis.getVoices().find(v => /^es/i.test(v.lang));
+    if (voz) u.voice = voz;
+    speechSynthesis.speak(u);
+  } catch (e) {}
+}
+function callar() { try { speechSynthesis.cancel(); } catch (e) {} }
+const botonLeer = obtener => el("button", { class: "leer", "aria-label": "Leer en voz alta", title: "Leer en voz alta", onclick: () => hablar(obtener(), true) }, "🔊");
+
+/* ---------- efectos visuales ---------- */
+function toast(txt, ms = 2400) {
+  const v = $("#toast"); if (v) v.remove();
+  const t = el("div", { id: "toast", role: "status" }, txt);
+  document.body.append(t); setTimeout(() => t.remove(), ms);
+}
+function confeti(n = 28, emojis = "✨⭐🎉💠🌟🪙") {
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const lista = grafemas(emojis);
+  for (let i = 0; i < n; i++) {
+    const c = el("div", { class: "confeti", style: `left:${Math.random() * 100}vw;animation-duration:${1.6 + Math.random() * 1.6}s;animation-delay:${Math.random() * .4}s` }, lista[rnd(lista.length)]);
+    document.body.append(c); setTimeout(() => c.remove(), 3800);
+  }
+}
+function flotante(txt, cerca, color) {
+  const r = cerca.getBoundingClientRect();
+  const f = el("div", { class: "flotante", style: `left:${r.left + r.width / 2 - 20 + rnd(20)}px;top:${r.top + 6}px;${color ? "color:" + color : ""}` }, txt);
+  document.body.append(f); setTimeout(() => f.remove(), 950);
+}
+function capa(contenido, alCerrar) {
+  cerrarCapa();
+  const c = el("div", { id: "capa", role: "dialog", "aria-modal": "true" }, el("div", { class: "caja" }, contenido));
+  document.body.append(c);
+  return c;
+}
+function cerrarCapa() { const c = $("#capa"); if (c) c.remove(); }
+
+/* ---------- estado ---------- */
+function estadoNuevo(nombre, avatar, edad) {
+  return {
+    nombre, avatar, viajero: avatar === "👧" ? "Viajera" : "Viajero", edad, nivel: nivelDeEdad(edad),
+    nodo: H.inicio, vida: 5, vidaMax: 5, monedas: 0, fragmentos: 0, arma: "maza",
+    flags: {}, caps: [], aplicado: null, fragNodos: [], volver: null, portal: null,
+    stats: { resueltos: 0, intentados: 0, estrellas: 0 }, mejores: {}, terminado: false
+  };
+}
+function nivelDeEdad(e) { return e <= 6 ? 1 : e <= 8 ? 2 : e <= 10 ? 3 : 4; }
+const NIV = () => H.niveles[S.nivel];
+
+function cambiarVida(d) {
+  if (d < 0 && S.flags.escudo) { delete S.flags.escudo; toast("🛡️ ¡Tu escudo te ha protegido!"); return; }
+  S.vida = clamp(S.vida + d, 0, S.vidaMax); hud("vida");
+}
+function cambiarMonedas(d) { S.monedas = Math.max(0, S.monedas + d); if (d > 0) sfx.moneda(); hud("monedas"); }
+function aplicarEfecto(ef, idNodo, sc) {
+  if (!ef) return;
+  if (ef.monedas) cambiarMonedas(ef.monedas);
+  if (ef.vida) cambiarVida(ef.vida);
+  if (ef.vidaLlena) { S.vida = S.vidaMax; hud("vida"); }
+  if (ef.arma) S.arma = ef.arma;
+  if (ef.flag) S.flags[ef.flag] = true;
+  if (ef.portal && sc) S.portal = ev(ef.portal, sc);
+  if (ef.fragmentos && !S.fragNodos.includes(idNodo)) {
+    S.fragNodos.push(idNodo);
+    S.fragmentos = Math.min(8, S.fragmentos + ef.fragmentos);
+    hud("frag");
+    mostrarFragmento();
+  }
+}
+function mostrarFragmento() {
+  sfx.frag(); confeti(34, "💠✨🌟");
+  const fila = el("div", { class: "frag-fila", "aria-label": `${S.fragmentos} de 8 fragmentos` });
+  for (let i = 0; i < 8; i++) fila.append(el("span", { class: i < S.fragmentos ? "" : "off" }, "💠"));
+  capa([
+    el("div", { class: "grande" }, "💠"),
+    el("h2", null, "¡Fragmento recuperado!"),
+    fila,
+    el("p", { style: "margin:0" }, `Ya tienes ${S.fragmentos} de 8 fragmentos del Gran Cálculo.`),
+    el("button", { class: "btn verde", onclick: () => { sfx.clic(); cerrarCapa(); } }, "¡Genial! ✨")
+  ]);
+}
+
+/* ---------- barra de estado ---------- */
+function hud(anim) {
+  const h = $("#hud");
+  if (!S) { h.hidden = true; return; }
+  h.hidden = false;
+  const corazones = el("span", { class: "stat corazones", title: "Vida", "aria-label": `Vida ${S.vida} de ${S.vidaMax}` });
+  for (let i = 0; i < S.vidaMax; i++) corazones.append(el("span", { class: i < S.vida ? "" : "off" }, "❤️"));
+  const st = (cls, txt, tit) => el("span", { class: "stat " + cls, title: tit }, txt);
+  h.replaceChildren(...[
+    el("span", { class: "quien" }, el("span", null, S.avatar), el("b", null, S.nombre)),
+    corazones,
+    st("monedas", `🪙 ${S.monedas}`, "Monedas"),
+    st("frag", `💠 ${S.fragmentos}/8`, "Fragmentos"),
+    st("estr", `⭐ ${S.stats.estrellas}`, "Estrellas"),
+    S.flags.escudo ? st("", "🛡️", "Escudo") : null,
+    el("span", { class: "esp" }),
+    botonFav("ico"),
+    el("button", { class: "ico", title: "Mapa", "aria-label": "Abrir el mapa", onclick: () => { sfx.clic(); pantallaMapa(); } }, "🗺️"),
+    el("button", { class: "ico" + (PREF.tts ? "" : " off"), title: PREF.tts ? "Voz automática: activada" : "Voz automática: apagada", "aria-label": "Voz automática", "aria-pressed": PREF.tts ? "true" : "false", onclick: () => { PREF.tts = !PREF.tts; guardarPref(); if (!PREF.tts) callar(); hud(); toast(PREF.tts ? "🗣️ Leeré los textos en voz alta" : "🤫 Voz automática apagada"); } }, "🗣️"),
+    el("button", { class: "ico" + (PREF.sonido ? "" : " off"), title: "Sonidos", "aria-label": "Sonidos", "aria-pressed": PREF.sonido ? "true" : "false", onclick: () => { PREF.sonido = !PREF.sonido; guardarPref(); hud(); } }, PREF.sonido ? "🔔" : "🔕")
+  ].filter(Boolean));
+  const m = { vida: ".corazones", monedas: ".monedas", frag: ".frag", estr: ".estr" }[anim];
+  if (m) { const x = $(m, h); x && x.classList.add("pop"); }
+}
+
+/* ---------- navegación ---------- */
+function pantalla(...kids) {
+  callar(); cerrarCapa();
+  const p = $("#pantalla"); p.replaceChildren(...kids);
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+function ir(id) {
+  if (id === "_volver") { id = S.volver || H.inicio; S.volver = null; }
+  if (S.vida <= 0 && id !== "desmayo") { S.volver = id; id = "desmayo"; }
+  const n = H.nodos[id];
+  if (!n) { console.warn("Nodo inexistente:", id); return pantallaMapa(); }
+  if (S.nodo !== id) S.aplicado = null;
+  S.nodo = id; guardar(); hud();
+  ({ escena: verEscena, decision: verDecision, capitulo: verCapitulo, problema: verProblema, final: verFinal }[n.tipo] || verEscena)(n, id);
+}
+function escenario(fondo, actores, mini) {
+  const f = H.fondos[fondo] || H.fondos.prado;
+  const d = grafemas(f.deco);
+  const esc = el("div", { class: "escenario" + (mini ? " mini" : ""), style: `background:linear-gradient(180deg, ${f.c[0]}, ${f.c[1]})` },
+    el("div", { class: "suelo" }),
+    d.map((x, i) => el("span", { class: "deco d" + i, "aria-hidden": "true" }, x)),
+    el("div", { class: "actores", "aria-hidden": "true" }, grafemas(actores || "").map(a => el("span", { class: "actor", "data-a": a }, a)))
+  );
+  return esc;
+}
+function sc0() { return scopeBase(); }
+function lineasDe(n) { return (NIV().textoCorto && n.corto) ? n.corto : (n.texto || []); }
+function textoLinea(l, sc) {
+  if (typeof l === "string") return tpl(l, sc);
+  const p = H.personajes[l.q] || { nombre: "" };
+  return tpl(p.nombre, sc) + ": " + tpl(l.t, sc);
+}
+function nodoLinea(l, sc) {
+  if (typeof l === "string") return el("p", { class: "narracion", html: tplHTML(l, sc) });
+  const p = H.personajes[l.q] || { nombre: "?", emoji: "💬", color: "#7b61ff" };
+  return el("div", { class: "dialogo", style: `--c:${p.color}` },
+    el("div", { class: "av", "aria-hidden": "true" }, tpl(p.emoji, sc)),
+    el("div", { class: "bocadillo" }, el("span", { class: "nom" }, tpl(p.nombre, sc)), el("span", { html: tplHTML(l.t, sc) })));
+}
+function resaltarActor(esc, l, sc) {
+  esc.querySelectorAll(".actor").forEach(a => a.classList.remove("habla"));
+  if (typeof l !== "object") return;
+  const p = H.personajes[l.q]; if (!p) return;
+  const em = tpl(p.emoji, sc);
+  const a = [...esc.querySelectorAll(".actor")].find(x => x.dataset.a === em);
+  if (a) a.classList.add("habla");
+}
+
+/* ---------- escena ---------- */
+function verEscena(n, id) {
+  const sc = sc0();
+  const esc = escenario(n.fondo, n.actores);
+  const lineas = lineasDe(n);
+  const caja = el("div", { class: "lineas", "aria-live": "polite" });
+  const zonaBtn = el("div", { class: "fila-btn" });
+  const tarjeta = el("section", { class: "tarjeta" },
+    el("div", { class: "cab" }, el("div", { class: "t" }, el("span", { class: "etiq" }, capituloDe(id))), botonLeer(() => lineas.slice(0, mostradas).map(l => textoLinea(l, sc)).join(". "))),
+    caja, zonaBtn);
+  let mostradas = 0;
+  function mas() {
+    if (mostradas >= lineas.length) return;
+    const l = lineas[mostradas++];
+    caja.append(nodoLinea(l, sc));
+    resaltarActor(esc, l, sc);
+    hablar(textoLinea(l, sc));
+    pintarBoton();
+    if (mostradas > 1) caja.lastElementChild.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
+  function pintarBoton() {
+    zonaBtn.replaceChildren();
+    if (mostradas < lineas.length) zonaBtn.append(el("button", { class: "btn", onclick: () => { sfx.clic(); mas(); } }, "Siguiente ▶"));
+    else zonaBtn.append(el("button", { class: "btn verde", onclick: () => { sfx.pasa(); ir(n.siguiente); } }, "Continuar ➜"));
+  }
+  caja.addEventListener("click", () => { if (mostradas < lineas.length) { sfx.clic(); mas(); } });
+  pantalla(esc, tarjeta);
+  mas();
+  if (n.efecto && S.aplicado !== id) {
+    S.aplicado = id;
+    setTimeout(() => {
+      aplicarEfecto(n.efecto, id, sc);
+      if (n.aviso) toast(tpl(n.aviso, sc));
+      else if (n.efecto.vida < 0) toast("💔 Pierdes un corazón");
+      guardar();
+    }, 500);
+  }
+}
+function capituloDe(id) {
+  const c = S.capActual && H.capitulos.find(c => c.id === S.capActual);
+  return c ? `${c.etiqueta} · ${c.titulo}` : "";
+}
+
+/* ---------- capítulo ---------- */
+function verCapitulo(n) {
+  const c = H.capitulos.find(c => c.id === n.cap);
+  S.capActual = c.id;
+  if (!S.caps.includes(c.id)) S.caps.push(c.id);
+  guardar();
+  pantalla(el("section", { class: "splash" },
+    el("div", { class: "em", "aria-hidden": "true" }, c.emoji),
+    el("span", { class: "etiq" }, c.etiqueta),
+    el("h1", null, c.titulo),
+    el("button", { class: "btn", onclick: () => { sfx.pasa(); ir(n.siguiente); } }, "¡Empezar! ✨")
+  ));
+  hablar(c.etiqueta + ". " + c.titulo);
+}
+
+/* ---------- decisión ---------- */
+function verDecision(n, id) {
+  const sc = sc0();
+  const lineas = lineasDe(n);
+  const esc = escenario(n.fondo, n.actores);
+  const ops = el("div", { class: "opciones", style: "grid-template-columns:1fr" });
+  n.opciones.forEach(o => {
+    const rq = o.requiere || {};
+    let ok = true, motivo = "";
+    if (rq.monedas && S.monedas < rq.monedas) { ok = false; motivo = `Te faltan ${rq.monedas - S.monedas} 🪙`; }
+    if (rq.sinFlag && S.flags[rq.sinFlag]) { ok = false; motivo = "Ya lo tienes"; }
+    ops.append(el("button", {
+      class: "opc txt", disabled: !ok, style: "flex-direction:row;gap:14px;justify-content:flex-start;text-align:left",
+      onclick: () => {
+        sfx.clic();
+        if (o.efecto) { aplicarEfecto(o.efecto, id, sc); if (o.efecto.monedas < 0) sfx.moneda(); }
+        if (o.aviso) toast(tpl(o.aviso, sc));
+        else if (o.efecto && o.efecto.vida > 0) toast("❤️ ¡Te sientes mejor!");
+        else if (o.efecto && o.efecto.flag === "escudo") toast("🛡️ ¡Escudo equipado!");
+        else if (o.efecto && o.efecto.arma) toast(`${H.armas[o.efecto.arma].emoji} ¡Te llevas la ${H.armas[o.efecto.arma].nombre}!`);
+        guardar();
+        if (o.ir === id) verDecision(n, id); else ir(o.ir);
+      }
+    }, el("span", { class: "em" }, o.e), el("span", null, tpl(o.t, sc), motivo ? el("small", { style: "display:block;font-size:.75em" }, motivo) : null)));
+  });
+  const textoTodo = () => [...lineas.map(l => textoLinea(l, sc)), tpl(n.pregunta, sc)].join(". ");
+  pantalla(esc, el("section", { class: "tarjeta" },
+    el("div", { class: "cab" }, el("div", { class: "t" }, el("span", { class: "etiq" }, "Tú decides")), botonLeer(textoTodo)),
+    lineas.length ? el("div", { class: "lineas" }, lineas.map(l => nodoLinea(l, sc))) : null,
+    el("p", { class: "pregunta" }, tpl(n.pregunta, sc)),
+    ops));
+  const ultima = lineas[lineas.length - 1]; if (ultima) resaltarActor(esc, ultima, sc);
+  hablar(textoTodo());
+}
+
+/* ---------- problema ---------- */
+function prepararProblema(nodo) {
+  const P = { ...nodo, ...((nodo.porNivel && nodo.porNivel[S.nivel]) || {}) };
+  const sc = generarVars(P);
+  return { P, sc };
+}
+function verProblema(nodo, id, torre) {
+  const { P, sc } = prepararProblema(nodo);
+  CTX = { P, sc, id, torre: !!torre, qi: 0, intentos: 0, res: [], fallo: false, w: {}, opOk: false };
+  const vis = P.visual ? crearVisual(P.visual, sc, CTX) : null;
+  const zona = el("div", { class: "zona-preg", "aria-live": "polite" });
+  CTX.zona = zona;
+  const textoTodo = () => tpl(P.enunciado, sc) + " " + (CTX.qActual ? tpl(CTX.qActual.t, sc) : "");
+  const tarjeta = el("section", { class: "tarjeta" },
+    el("div", { class: "cab" },
+      el("div", { class: "t" }, el("span", { class: "etiq" }, torre ? "Torre del Entrenamiento" : (P.num || "Problema")), el("h2", null, tpl(P.titulo, sc))),
+      botonLeer(textoTodo)),
+    el("p", { class: "enunciado", html: tplHTML(P.enunciado, sc) }),
+    vis, zona);
+  const mini = escenario(P.fondo, torre ? "🏋️🧒🐉" : "🧒🐉🧙‍♂️", true);
+  pantalla(mini, tarjeta);
+  siguientePregunta();
+  setTimeout(() => hablar(textoTodo()), 50);
+}
+function siguientePregunta() {
+  const C = CTX;
+  if (C.qi >= C.P.preguntas.length) return finProblema();
+  const q = C.P.preguntas[C.qi];
+  C.qActual = q; C.intentos = 0; C.opOk = false;
+  const z = C.zona; z.replaceChildren();
+  if (C.P.preguntas.length > 1) z.append(el("span", { class: "paso" }, `Pregunta ${C.qi + 1} de ${C.P.preguntas.length}`));
+  z.append(el("p", { class: "pregunta" }, tpl(q.t, C.sc)));
+  C.area = el("div", { style: "display:flex;flex-direction:column;gap:14px" });
+  C.avisos = el("div", { style: "display:flex;flex-direction:column;gap:10px" });
+  z.append(C.area, C.avisos);
+  if (C.qi > 0) hablar(tpl(q.t, C.sc));
+  const tipo = q.tipo || "numero";
+  if (NIV().elegirOperacion && q.op && tipo === "numero") elegirOperacion(q);
+  else respuesta(q);
+}
+function elegirOperacion(q) {
+  const C = CTX;
+  const validas = [].concat(q.op);
+  let fallosOp = 0;
+  const caja = el("div", { class: "ops" });
+  C.area.replaceChildren(el("span", { class: "paso" }, "Antes de calcular: ¿qué operación toca?"), caja);
+  Object.entries(H.operaciones).forEach(([k, o]) => {
+    const b = el("button", {
+      class: "opc", "data-op": k, onclick: () => {
+        if (validas.includes(k)) {
+          sfx.ok(); b.classList.add("bien");
+          const extra = validas.length > 1 && k !== validas[0] ? ` (También vale ${H.operaciones[validas[0]].nombre.toLowerCase()}, ¡que es más rápido!)` : "";
+          C.avisos.replaceChildren(el("div", { class: "aviso-preg bien" }, `¡Eso es! Toca ${o.nombre.toLowerCase()}.${extra}`));
+          setTimeout(() => { C.avisos.replaceChildren(); respuesta(q); }, extra ? 1600 : 800);
+        } else {
+          sfx.mal(); b.classList.add("mal"); b.disabled = true; fallosOp++;
+          const txt = fallosOp >= 2
+            ? `Pista: aquí toca ${H.operaciones[validas[0]].nombre.toLowerCase()} (${H.operaciones[validas[0]].ayuda}).`
+            : "Mmm… Piensa: ¿hay que juntar, quitar, hacer grupos iguales o repartir?";
+          C.avisos.replaceChildren(el("div", { class: "aviso-preg pista" }, "💡 " + txt));
+          if (fallosOp >= 2) caja.querySelector(`[data-op="${validas[0]}"]`).classList.add("marca");
+        }
+      }
+    }, el("span", { class: "em" }, o.emoji), el("span", null, el("b", null, o.nombre), el("small", null, o.ayuda)));
+    caja.append(b);
+  });
+}
+function respuesta(q) {
+  const C = CTX, sc = C.sc;
+  const tipo = q.tipo || "numero";
+  const correcta = ev(q.r, sc);
+  C.correcta = correcta;
+  C.area.replaceChildren();
+  if (tipo === "eleccion") {
+    const caja = el("div", { class: "opciones" });
+    q.opciones.forEach(o => {
+      const b = el("button", { class: "opc txt", onclick: () => comprobar(o.id, b) },
+        o.e ? el("span", { class: "em" }, o.e) : null, el("span", null, tpl(o.t, sc)));
+      b.dataset.v = o.id; caja.append(b);
+    });
+    C.area.append(caja);
+  } else if (tipo === "hora") {
+    C.area.append(relojInteractivo(ev(q.desde ?? 12, sc)));
+  } else if (tipo === "cofre") {
+    C.area.append(el("p", { class: "toca" }, "👆 Toca el cofre donde crees que está la llave"));
+    C.w.activarCofres && C.w.activarCofres(id => comprobar(id));
+  } else if (NIV().respuesta === "opciones") {
+    const caja = el("div", { class: "opciones" });
+    opcionesNumericas(correcta, q, sc, NIV().numOpciones || 3).forEach(v => {
+      const b = el("button", { class: "opc", onclick: () => comprobar(v, b) }, fmt(v), q.u ? el("small", null, tpl(q.u, sc)) : null);
+      b.dataset.v = v; caja.append(b);
+    });
+    C.area.append(caja);
+  } else {
+    C.area.append(teclado(q, sc));
+  }
+}
+function opcionesNumericas(r, q, sc, n) {
+  const set = new Set([r]);
+  const cand = [];
+  (q.trampas || []).forEach(t => cand.push(ev(t, sc)));
+  const paso = Math.abs(r) >= 40 ? Math.max(2, Math.round(r / 10)) : 1;
+  cand.push(r + paso, r - paso, r + 2 * paso, r - 2 * paso, r + 3 * paso, r * 2, r + 10);
+  for (const c of cand) {
+    if (set.size >= n) break;
+    if (typeof c === "number" && isFinite(c) && Number.isInteger(c) && c >= 0 && !set.has(c)) set.add(c);
+  }
+  let extra = 1;
+  while (set.size < n) { if (!set.has(r + extra)) set.add(r + extra); extra++; }
+  return barajar([...set]);
+}
+function teclado(q, sc) {
+  let txt = "";
+  const pant = el("div", { class: "pantallita", "aria-live": "polite" });
+  const pintar = () => pant.replaceChildren(el("span", null, txt || "?"), q.u ? el("small", null, tpl(q.u, sc)) : null);
+  pintar();
+  const t = el("div", { class: "teclado" });
+  const pulsar = k => {
+    sfx.clic();
+    if (k === "⌫") txt = txt.slice(0, -1);
+    else if (k === "✔") { if (txt) { const v = Number(txt); if (!comprobar(v, pant)) { txt = ""; } } }
+    else if (txt.length < 5) txt = (txt === "0" ? "" : txt) + k;
+    pintar();
+  };
+  ["1", "2", "3", "4", "5", "6", "7", "8", "9", "⌫", "0", "✔"].forEach(k =>
+    t.append(el("button", { class: k === "✔" ? "ok" : "", "aria-label": k === "⌫" ? "Borrar" : k === "✔" ? "Comprobar" : k, onclick: () => pulsar(k) }, k)));
+  const tecla = e => {
+    if (!document.body.contains(pant)) return window.removeEventListener("keydown", tecla);
+    if (/^[0-9]$/.test(e.key)) pulsar(e.key);
+    else if (e.key === "Backspace") pulsar("⌫");
+    else if (e.key === "Enter") pulsar("✔");
+  };
+  window.addEventListener("keydown", tecla);
+  return el("div", { style: "display:flex;flex-direction:column;gap:12px" }, pant, t);
+}
+function comprobar(v, boton) {
+  const C = CTX, q = C.qActual;
+  const tipo = q.tipo || "numero";
+  let ok;
+  if (tipo === "hora") ok = HORA(v) === HORA(C.correcta);
+  else if (tipo === "eleccion" || tipo === "cofre") ok = String(v) === String(C.correcta);
+  else ok = Math.abs(Number(v) - Number(C.correcta)) < 1e-9;
+  if (ok) {
+    sfx.ok();
+    if (boton && boton.classList) boton.classList.add("bien");
+    C.res.push(C.intentos === 0 ? 3 : 2);
+    bloquearArea();
+    const frases = ["¡Correcto!", "¡Muy bien pensado!", "¡Genial!", "¡Matemágico!", "¡Eso es!", "¡Bravo!"];
+    const f = frases[rnd(frases.length)];
+    C.avisos.replaceChildren(el("div", { class: "aviso-preg bien" }, `✅ ${f}`));
+    hablar(f);
+    if (C.qi === C.P.preguntas.length - 1) confeti(16);
+    setTimeout(() => { C.qi++; siguientePregunta(); }, 1100);
+    return true;
+  }
+  sfx.mal();
+  C.intentos++;
+  if (boton && boton.classList) { boton.classList.add("mal"); if (boton.tagName === "BUTTON") boton.disabled = true; else setTimeout(() => boton.classList.remove("mal"), 600); }
+  if (C.w.golpeHeroe && !C.torre) C.w.golpeHeroe();
+  if (C.intentos === 1) {
+    const pista = q.pista || C.P.pista;
+    C.avisos.replaceChildren(el("div", { class: "aviso-preg pista" }, "💡 ¡Casi! Pista: " + tpl(pista, C.sc)));
+    hablar("¡Casi! " + tpl(pista, C.sc));
+  } else {
+    C.res.push(1); C.fallo = true;
+    bloquearArea();
+    let resp = fmt(C.correcta);
+    if (tipo === "eleccion") { const o = q.opciones.find(o => o.id === C.correcta); resp = o ? tpl(o.t, C.sc) : resp; }
+    if (tipo === "cofre") resp = "el cofre " + C.sc.RESP_NOMBRE;
+    if (tipo === "hora") resp = "las " + HORA(C.correcta);
+    if (C.area) C.area.querySelectorAll(".opc").forEach(b => { if (String(b.dataset.v) === String(C.correcta)) b.classList.add("bien"); });
+    C.w.marcarCofre && tipo === "cofre" && C.w.marcarCofre(C.correcta);
+    C.avisos.replaceChildren(
+      el("div", { class: "aviso-preg ayuda" }, el("b", null, `🧠 Mati te ayuda: la respuesta es ${resp}${q.u && tipo === "numero" ? " " + tpl(q.u, C.sc) : ""}.`),
+        el("div", { style: "margin-top:6px" }, C.P.explicacion.map(x => el("p", { style: "margin:4px 0", html: tplHTML(x, C.sc) })))),
+      el("button", { class: "btn claro", onclick: () => { C.qi++; siguientePregunta(); } }, "Entendido ▶"));
+    hablar(`La respuesta es ${resp}.`);
+  }
+  return false;
+}
+function bloquearArea() {
+  const C = CTX;
+  C.area && C.area.querySelectorAll("button").forEach(b => b.disabled = true);
+  C.w.desactivarCofres && C.w.desactivarCofres();
+}
+function finProblema() {
+  const C = CTX;
+  if (C.w.ataque && !C.hechoAtaque) {
+    C.hechoAtaque = true;
+    C.zona.replaceChildren(el("p", { class: "pregunta" }, "⚔️ ¡A la carga! Toca al enemigo para atacar."), el("p", { class: "toca" }, "Cada toque es un golpe. ¿Te salen los golpes que calculaste?"));
+    hablar("¡A la carga! Toca al enemigo para atacar.");
+    C.w.ataque(() => finProblema());
+    return;
+  }
+  const media = C.res.reduce((a, b) => a + b, 0) / C.res.length;
+  const estrellas = clamp(Math.round(media), 1, 3);
+  S.stats.estrellas += estrellas; S.stats.intentados++;
+  if (!C.fallo) S.stats.resueltos++;
+  if (!C.torre) S.mejores[C.id] = Math.max(S.mejores[C.id] || 0, estrellas);
+  cambiarMonedas(estrellas);
+  if (!C.torre && C.P.efecto) aplicarEfecto(C.P.efecto, C.id, C.sc);
+  guardar(); hud("estr");
+  const fila = el("div", { class: "estrellas", "aria-label": `${estrellas} estrellas de 3` });
+  for (let i = 0; i < 3; i++) fila.append(el("span", { class: i < estrellas ? "" : "off" }, "⭐"));
+  const titulo = estrellas === 3 ? "¡Perfecto!" : estrellas === 2 ? "¡Muy bien!" : "¡Lo has conseguido!";
+  if (estrellas === 3) confeti(30);
+  const sig = C.torre ? null : (C.fallo && C.P.siFalla ? C.P.siFalla : C.P.siguiente);
+  const botones = C.torre
+    ? el("div", { class: "fila-btn" },
+        el("button", { class: "btn verde", onclick: () => problemaTorre() }, "Otro reto 🏋️"),
+        el("button", { class: "btn claro", onclick: () => pantallaMapa() }, "Salir de la torre"))
+    : el("button", { class: "btn verde ancho", onclick: () => { sfx.pasa(); ir(sig); } }, "Continuar la aventura ➜");
+  C.zona.replaceChildren(
+    fila,
+    el("div", { class: "resultado" }, `${titulo} +${estrellas} 🪙`),
+    el("details", { class: "explica", open: C.fallo ? true : null },
+      el("summary", null, "🧠 Cómo lo pensó Mati"),
+      C.P.explicacion.map(x => el("p", { html: tplHTML(x, C.sc) }))),
+    botones);
+  hablar(titulo);
+  C.zona.scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
+
+/* ---------- reloj ---------- */
+function relojSVG(h, marcas, id) {
+  const ns = "http://www.w3.org/2000/svg";
+  const s = document.createElementNS(ns, "svg");
+  s.setAttribute("viewBox", "0 0 200 200"); s.setAttribute("role", "img"); s.setAttribute("aria-label", `Reloj que marca las ${h}`);
+  let html = `<circle cx="100" cy="100" r="92" fill="#fff" stroke="#24204e" stroke-width="7"/>`;
+  for (let i = 1; i <= 12; i++) {
+    const a = (i / 12) * Math.PI * 2 - Math.PI / 2, x = 100 + Math.cos(a) * 72, y = 100 + Math.sin(a) * 72;
+    const destaca = marcas && i % marcas === 0;
+    if (destaca) html += `<circle cx="${x}" cy="${y}" r="15" fill="#ffc53d"/>`;
+    html += `<text x="${x}" y="${y + 7}" text-anchor="middle" font-family="Grandstander, sans-serif" font-weight="700" font-size="20" fill="#24204e">${i}</text>`;
+  }
+  html += `<g class="aguja" ${id ? `id="${id}"` : ""} style="transform-origin:100px 100px;transform:rotate(${(h % 12) * 30}deg)"><line x1="100" y1="100" x2="100" y2="48" stroke="#6a3fd1" stroke-width="9" stroke-linecap="round"/></g>`;
+  html += `<line x1="100" y1="100" x2="100" y2="26" stroke="#24204e" stroke-width="4" stroke-linecap="round"/><circle cx="100" cy="100" r="8" fill="#24204e"/>`;
+  s.innerHTML = html;
+  return s;
+}
+function relojInteractivo(desde) {
+  let h = HORA(desde), vueltas = 0;
+  const idA = "ag" + rnd(1e6);
+  const svg = relojSVG(h, 0, idA);
+  const etq = el("span", { class: "hora" }, `Las ${h}`);
+  let grados = (h % 12) * 30;
+  const mover = d => {
+    sfx.clic(); h = HORA(h + d); grados += d * 30;
+    svg.querySelector("#" + idA).style.transform = `rotate(${grados}deg)`;
+    etq.textContent = `Las ${h}`;
+  };
+  return el("div", { class: "reloj-c" }, svg,
+    el("div", { class: "reloj-ctrl" },
+      el("button", { class: "btn claro peq", "aria-label": "Una hora menos", onclick: () => mover(-1) }, "◀ −1"),
+      etq,
+      el("button", { class: "btn claro peq", "aria-label": "Una hora más", onclick: () => mover(1) }, "+1 ▶")),
+    el("button", { class: "btn verde", onclick: e => comprobar(h, null) }, "✔ Comprobar"));
+}
+
+/* ---------- visuales ---------- */
+function crearVisual(v, sc, C) {
+  const f = VIS[v.tipo];
+  if (!f) return null;
+  const caja = el("div", { class: "visual " + v.tipo });
+  f(caja, v, sc, C);
+  return caja;
+}
+const E = (x, sc) => (typeof x === "string" && /[A-Za-z0-9_]/.test(x)) ? ev(x, sc) : x;
+const VIS = {
+  grupos(caja, v, sc) {
+    const sets = [[v.n, v.cada, v.etiqueta, v.etiquetas]];
+    if (v.n2) sets.push([v.n2, v.cada2, v.etiqueta2]);
+    let sumados = [];
+    const cont = el("div", { class: "contador" });
+    const pintarCont = () => cont.textContent = sumados.length ? `Contados: ${sumados.join(" + ")} = ${sumados.reduce((a, b) => a + b, 0)}` : "";
+    sets.forEach(([nE, cE, etq, etqs]) => {
+      const n = E(nE, sc), cada = E(cE, sc);
+      const g = el("div", { class: "grupos" + (v.filas ? " filas" : "") });
+      const compacto = cada > 15 || n * cada > 90;
+      for (let i = 0; i < n; i++) {
+        const lab = etqs ? etqs[i] : (etq ? `${etq} ${i + 1}` : "");
+        const b = el("button", { class: "grupo", "aria-label": `${lab || "grupo"}: ${cada}`, onclick: () => {
+          sfx.clic();
+          if (b.classList.toggle("contado")) sumados.push(cada); else sumados.splice(sumados.indexOf(cada), 1);
+          pintarCont();
+        } },
+          compacto ? el("div", { class: "ems" }, `${v.emoji} × ${cada}`) : el("div", { class: "ems" }, Array.from({ length: cada }, () => el("span", null, v.emoji))),
+          lab ? el("small", null, lab) : null);
+        g.append(b);
+      }
+      caja.append(g);
+    });
+    if (v.extra) {
+      const x = E(v.extra, sc);
+      if (x > 0) caja.append(el("div", { class: "grupos" }, el("div", { class: "grupo", style: "border-color:var(--oro)" },
+        el("div", { class: "ems" }, x > 15 ? `${v.emoji} × ${x}` : Array.from({ length: x }, () => el("span", null, v.emoji))), el("small", null, "sueltas"))));
+    }
+    caja.append(cont, el("p", { class: "ayudita", style: "margin:0" }, "Toca los grupos para ir contando"));
+  },
+  items(caja, v, sc) {
+    let todos = [];
+    v.lista.forEach(([em, n]) => { const c = E(n, sc); for (let i = 0; i < c; i++) todos.push(em); });
+    const quitar = v.quitar ? E(v.quitar, sc) : 0;
+    if (todos.length > 90) {
+      caja.append(el("div", { class: "compacto" }, v.lista.map(([em, n]) => `${em} × ${E(n, sc)}`).join("   ") + (quitar ? `  (− ${quitar})` : "")));
+      return;
+    }
+    if (!v.fijo) todos = barajar(todos);
+    const wrap = el("div", { class: "items" });
+    let marcados = 0;
+    const cont = el("div", { class: "contador" });
+    todos.forEach((em, i) => {
+      const b = el(v.marcar ? "button" : "span", { class: "item" + (v.marcar ? " marcable" : "") + (i < quitar ? " robado" : "") }, em);
+      if (v.marcar) b.addEventListener("click", () => { sfx.clic(); marcados += b.classList.toggle("marcado") ? 1 : -1; cont.textContent = `Marcados: ${marcados}`; });
+      wrap.append(b);
+    });
+    caja.append(wrap);
+    if (v.leyenda) caja.append(el("div", { class: "leyenda" }, v.leyenda));
+    if (quitar) caja.append(el("div", { class: "leyenda" }, `✕ = robadas`));
+    if (v.marcar) { caja.append(cont, el("p", { class: "ayudita", style: "margin:0" }, "Toca para marcar lo que quieres contar")); }
+  },
+  reparto(caja, v, sc) {
+    const total = E(v.total, sc);
+    const recs = Array.isArray(v.receptores) ? v.receptores : Array.from({ length: E(v.receptores, sc) }, () => v.receptor || "🙂");
+    const k = recs.length;
+    if (total > 72) {
+      caja.append(el("div", { class: "compacto" }, `${v.emoji} × ${total}  ➜  ${recs.join(" ")}`), el("p", { class: "ayudita", style: "margin:0" }, `Hay que repartir ${total} entre ${k}.`));
+      return;
+    }
+    let restantes, cuentas, turno;
+    const monton = el("div", { class: "monton" });
+    const filaRec = el("div", { class: "receptores" });
+    const estado = el("div", { class: "contador" });
+    const recEls = recs.map(r => {
+      const d = el("div", { class: "receptor" }, el("div", { class: "quien" }, r), el("div", { class: "recibido" }), el("b", null, "0"));
+      filaRec.append(d); return d;
+    });
+    function reiniciar() {
+      restantes = total; cuentas = Array(k).fill(0); turno = 0;
+      monton.replaceChildren();
+      for (let i = 0; i < total; i++) monton.append(el("button", { class: "item", "aria-label": "Repartir uno", onclick: dar }, v.emoji));
+      recEls.forEach(r => { $(".recibido", r).textContent = ""; $("b", r).textContent = "0"; });
+      pintar();
+    }
+    function dar() {
+      if (restantes <= 0) return;
+      if (turno === 0 && restantes < k) return;
+      const it = monton.querySelector(".item:not(.sobra)"); if (!it) return;
+      it.remove(); restantes--;
+      cuentas[turno]++;
+      const r = recEls[turno];
+      $(".recibido", r).append(v.emoji); $("b", r).textContent = cuentas[turno];
+      r.classList.remove("pop"); void r.offsetWidth; r.classList.add("pop");
+      sfx.clic();
+      turno = (turno + 1) % k;
+      pintar();
+    }
+    function pintar() {
+      if (restantes > 0 && turno === 0 && restantes < k) {
+        monton.querySelectorAll(".item").forEach(i => { i.classList.add("sobra"); i.disabled = true; });
+        estado.textContent = `¡Ya no hay para otra ronda! Sobran ${restantes}.`;
+      } else if (restantes === 0 && turno === 0) estado.textContent = "¡Reparto terminado! ¿Cuántos tiene cada uno?";
+      else estado.textContent = restantes ? `Quedan ${restantes} por repartir` : "";
+    }
+    reiniciar();
+    caja.append(el("p", { class: "ayudita", style: "margin:0" }, "Toca el montón para repartir de uno en uno"), monton, filaRec, estado,
+      el("div", { class: "fila-btn" },
+        el("button", { class: "btn claro peq", onclick: () => { let n = 0; const t = setInterval(() => { const antes = restantes; dar(); if (restantes === antes || ++n > 200) clearInterval(t); }, 90); } }, "⚡ Repartir todo"),
+        el("button", { class: "btn claro peq", onclick: reiniciar }, "↺ Otra vez")));
+  },
+  camino(caja, v, sc) {
+    const T = E(v.total, sc), Hh = E(v.hecho, sc);
+    const pista = el("div", { class: "pista-c" });
+    let contadas = 0;
+    const cont = el("div", { class: "contador" });
+    for (let i = 0; i < T; i++) {
+      const hecha = i < Hh;
+      const b = el("button", { class: "casilla" + (hecha ? " hecha" : ""), "aria-label": `Legua ${i + 1}`, disabled: hecha ? true : null }, hecha ? "👣" : "");
+      if (!hecha) b.addEventListener("click", () => { sfx.clic(); contadas += b.classList.toggle("contada") ? 1 : -1; b.textContent = b.classList.contains("contada") ? "✓" : ""; cont.textContent = `Has contado ${contadas} legua${contadas === 1 ? "" : "s"} que faltan`; });
+      pista.append(b);
+    }
+    pista.append(el("div", { class: "mitad" }, el("span", null, "mitad")));
+    caja.append(el("div", { class: "camino" }, el("span", { class: "punta" }, "🧒"), pista, el("span", { class: "punta" }, "🌲")),
+      el("div", { class: "leyenda" }, `👣 = recorridas · total: ${T} leguas`), cont,
+      el("p", { class: "ayudita", style: "margin:0" }, "Toca las casillas vacías para contar las que faltan"));
+  },
+  combate(caja, v, sc, C) {
+    const n = E(v.cantidad ?? 1, sc), vidaMax = E(v.vida, sc), dano = E(v.dano, sc);
+    const arma = E(v.arma || "⚔️", sc);
+    const enemigos = [];
+    const zonaE = el("div", { class: "enemigos" + (n > 3 ? " muchos" : "") });
+    const seg = !v.armadura && vidaMax / dano <= 30 ? (dano / vidaMax * 100) + "%" : "100%";
+    for (let i = 0; i < n; i++) {
+      const relleno = el("div", { class: "relleno", style: "width:100%" });
+      const num = el("span", { class: "vida-num" }, `❤️ ${vidaMax}`);
+      const d = el("button", { class: "enemigo", "aria-label": `${v.nombre}, vida ${vidaMax}`, disabled: true },
+        el("span", { class: "em" }, v.enemigo), el("span", { class: "nom" }, v.nombre),
+        el("div", { class: "vida", style: `--seg:${seg}` }, relleno, el("div", { class: "cortes" })), num);
+      enemigos.push({ hp: vidaMax, d, relleno, num });
+      zonaE.append(d);
+    }
+    const ins = el("div", { class: "insignias" },
+      v.armadura
+        ? el("span", { class: "insignia oro" }, `${arma} tu arma`)
+        : el("span", { class: "insignia oro" }, `${v.atacante ? v.atacante + " " : ""}${arma} quita ${dano} por golpe`),
+      v.armadura ? el("span", { class: "insignia" }, `🛡️ armadura: −${E(v.armadura, sc)} por golpe`) : null);
+    caja.append(zonaE, ins);
+    let heroe = null;
+    if (v.heroe) {
+      const hv = E(v.heroe.vida, sc), rec = E(v.heroe.recibe, sc);
+      const rel = el("div", { class: "relleno", style: "width:100%" });
+      const num = el("span", { class: "vida-num" }, `❤️ ${hv}`);
+      const c = el("div", { class: "heroe-c" }, el("span", { class: "em" }, "🧒"), el("div", { class: "vida heroe", style: `--seg:${rec / hv * 100}%` }, rel, el("div", { class: "cortes" })), num);
+      heroe = { hp: hv, max: hv, rec, rel, num, c };
+      caja.append(c);
+    }
+    if (!v.armadura) caja.append(el("p", { class: "ayudita", style: "margin:0" }, "Las rayitas de la barra marcan cuánto quita cada golpe"));
+    const golpesLbl = el("div", { class: "contador" });
+    C.w.golpeHeroe = () => {
+      cambiarVida(-1);
+      const blanco = heroe ? heroe.c : zonaE;
+      blanco.classList.remove("golpe"); void blanco.offsetWidth; blanco.classList.add("golpe");
+      flotante("−❤️", $("#hud .corazones") || blanco);
+    };
+    C.w.ataque = hecho => {
+      let golpes = 0;
+      caja.append(golpesLbl);
+      const vivos = () => enemigos.filter(e => e.hp > 0);
+      const actualizar = () => enemigos.forEach(e => {
+        e.d.disabled = e.hp <= 0;
+        e.d.classList.toggle("atacable", e.hp > 0 && e === vivos()[0]);
+      });
+      enemigos.forEach(e => e.d.addEventListener("click", () => {
+        const obj = vivos()[0]; if (!obj) return;
+        obj.hp = Math.max(0, obj.hp - dano); golpes++;
+        sfx.golpe();
+        obj.relleno.style.width = (obj.hp / vidaMax * 100) + "%";
+        obj.num.textContent = `❤️ ${obj.hp}`;
+        obj.d.classList.remove("golpe"); void obj.d.offsetWidth; obj.d.classList.add("golpe");
+        flotante("−" + dano, obj.d);
+        if (heroe) {
+          heroe.hp = Math.max(0, heroe.hp - heroe.rec);
+          heroe.rel.style.width = (heroe.hp / heroe.max * 100) + "%"; heroe.num.textContent = `❤️ ${heroe.hp}`;
+          heroe.c.classList.remove("golpe"); void heroe.c.offsetWidth; heroe.c.classList.add("golpe");
+          setTimeout(() => flotante("−" + heroe.rec, heroe.c, "#c43345"), 180);
+        }
+        if (obj.hp <= 0) { obj.d.classList.add("vencido"); obj.d.querySelector(".em").textContent = "💨"; }
+        golpesLbl.textContent = `Golpes: ${golpes}`;
+        actualizar();
+        if (!vivos().length) {
+          golpesLbl.textContent = `¡Victoria en ${golpes} golpes! 🎉`;
+          sfx.ok(); confeti(20, "💥⭐✨");
+          setTimeout(hecho, 1200);
+        }
+      }));
+      actualizar();
+      enemigos[0].d.scrollIntoView({ behavior: "smooth", block: "center" });
+    };
+  },
+  barra(caja, v, sc) {
+    const V = E(v.vida, sc), m = E(v.marca, sc);
+    const trozos = el("div", { class: "trozos" });
+    const cont = el("div", { class: "contador" });
+    let tach = 0;
+    if (m > 0 && V / m <= 30) {
+      for (let i = 0; i < V / m; i++) {
+        const b = el("button", { class: "trozo", "aria-label": `Trozo de ${m}` });
+        b.addEventListener("click", () => { sfx.golpe(); tach += b.classList.toggle("tachado") ? 1 : -1; cont.textContent = `Trozos tachados: ${tach} (${tach * m} de ${V})`; });
+        trozos.append(b);
+      }
+    } else trozos.append(el("span", { class: "trozo unico" }));
+    caja.append(el("div", { class: "leyenda" }, `${v.nombre}: ❤️ ${V}${m > 0 ? ` · cada trozo = ${m}` : ""}`),
+      el("div", { class: "barra-c" }, el("span", { class: "em" }, v.emoji), trozos), cont,
+      m > 0 ? el("p", { class: "ayudita", style: "margin:0" }, "Toca los trozos para tacharlos, como si fueran mordiscos") : null);
+  },
+  patron(caja, v, sc) {
+    const serie = ev(v.serie, sc);
+    const fila = el("div", { class: "patron" });
+    serie.forEach((x, i) => fila.append(el("div", { class: "caja-p" },
+      x <= 12 ? el("div", { class: "ems" }, Array.from({ length: x }, () => el("span", null, v.emoji))) : el("div", { class: "ems", style: "font-size:1.4em" }, v.emoji),
+      el("b", null, fmt(x)), el("small", null, `${v.etiqueta || "Nº"} ${i + 1}`))));
+    fila.append(el("div", { class: "caja-p misterio" }, el("div", { class: "ems", style: "font-size:1.4em" }, v.emoji), el("b", null, "?"), el("small", null, `${v.etiqueta || "Nº"} ${serie.length + 1}`)));
+    caja.append(fila);
+  },
+  reloj(caja, v, sc) {
+    const h = E(v.hora, sc), mk = v.marcas ? E(v.marcas, sc) : 0;
+    caja.append(el("div", { class: "reloj-c" }, relojSVG(h, mk), el("div", { class: "leyenda" }, `Ahora son las ${h}${mk ? ` · en amarillo, las horas en que se abre la puerta` : ""}`)));
+  },
+  perimetro(caja, v, sc) {
+    const a = E(v.ancho, sc), b = E(v.alto, sc);
+    const W = 300, Hh = 190, m = 34;
+    const esc = Math.min((W - 2 * m) / a, (Hh - 2 * m) / b);
+    const w = a * esc, h = b * esc, x0 = (W - w) / 2, y0 = (Hh - h) / 2;
+    const lados = [[x0, y0, x0 + w, y0, a, "top"], [x0 + w, y0, x0 + w, y0 + h, b, "right"], [x0 + w, y0 + h, x0, y0 + h, a, "bottom"], [x0, y0 + h, x0, y0, b, "left"]];
+    const ns = "http://www.w3.org/2000/svg";
+    const s = document.createElementNS(ns, "svg");
+    s.setAttribute("viewBox", `0 0 ${W} ${Hh}`); s.setAttribute("role", "img"); s.setAttribute("aria-label", `Figura de ${a} por ${b} metros`);
+    s.innerHTML = `<rect x="${x0}" y="${y0}" width="${w}" height="${h}" fill="#e7f6ff" rx="4"/>`;
+    const sum = [];
+    const cont = el("div", { class: "contador" }, "Toca cada lado para sumarlo");
+    lados.forEach(([x1, y1, x2, y2, val, pos]) => {
+      const g = document.createElementNS(ns, "g"); g.setAttribute("class", "lado"); g.setAttribute("tabindex", "0"); g.setAttribute("role", "button"); g.setAttribute("aria-label", `Lado de ${val} metros`);
+      const tx = pos === "left" ? x1 - 12 : pos === "right" ? x1 + 12 : (x1 + x2) / 2;
+      const anc = pos === "left" ? "end" : pos === "right" ? "start" : "middle";
+      const ty = pos === "top" ? y1 - 12 : pos === "bottom" ? y1 + 26 : (y1 + y2) / 2 + 6;
+      g.innerHTML = `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="transparent" stroke-width="26"/><line class="vis" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#24204e" stroke-width="7" stroke-linecap="round"/><text x="${tx}" y="${ty}" text-anchor="${anc}" font-family="Grandstander, sans-serif" font-weight="700" font-size="17" fill="#24204e">${val} m</text>`;
+      let on = false;
+      const tog = () => {
+        sfx.clic(); on = !on;
+        g.querySelector(".vis").setAttribute("stroke", on ? "#ffc53d" : "#24204e");
+        if (on) sum.push(val); else sum.splice(sum.indexOf(val), 1);
+        cont.textContent = sum.length ? `Sumado: ${sum.join(" + ")} = ${sum.reduce((p, q) => p + q, 0)}${sum.length === 4 ? " ✓ ¡toda la vuelta!" : ""}` : "Toca cada lado para sumarlo";
+      };
+      g.addEventListener("click", tog); g.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); tog(); } });
+      s.append(g);
+    });
+    caja.append(el("div", { class: "perim" }, s), cont);
+  },
+  combinar(caja, v, sc) {
+    const CAPAS = [["🟥", "Capa roja"], ["🟦", "Capa azul"], ["🟩", "Capa verde"], ["🟨", "Capa amarilla"]];
+    const SOMB = [["🎩", "Chistera"], ["👒", "Pamela"], ["🧢", "Gorra"], ["🎓", "Birrete"], ["⛑️", "Casco"]];
+    const ca = CAPAS.slice(0, E(v.a, sc)), so = SOMB.slice(0, E(v.b, sc));
+    let selA = null, selB = null;
+    const hechas = new Set();
+    const chips = el("div", { class: "chips" });
+    const cont = el("div", { class: "contador" }, "Combinaciones encontradas: 0");
+    const colA = el("div", { class: "col" }), colB = el("div", { class: "col" });
+    const probar = () => {
+      if (selA == null || selB == null) return;
+      const k = selA + "-" + selB;
+      if (hechas.has(k)) toast("¡Esa ya la tienes! 😉", 1400);
+      else { hechas.add(k); sfx.moneda(); chips.append(el("span", { class: "chip" }, `${ca[selA][0]}${so[selB][0]}`)); cont.textContent = `Combinaciones encontradas: ${hechas.size}`; }
+      selA = selB = null;
+      caja.querySelectorAll(".sel").forEach(x => x.classList.remove("sel"));
+    };
+    ca.forEach(([e, n], i) => { const b = el("button", { class: "opc", onclick: () => { sfx.clic(); colA.querySelectorAll(".sel").forEach(x => x.classList.remove("sel")); b.classList.add("sel"); selA = i; probar(); } }, el("span", { class: "em" }, e), n); colA.append(b); });
+    so.forEach(([e, n], i) => { const b = el("button", { class: "opc", onclick: () => { sfx.clic(); colB.querySelectorAll(".sel").forEach(x => x.classList.remove("sel")); b.classList.add("sel"); selB = i; probar(); } }, el("span", { class: "em" }, e), n); colB.append(b); });
+    caja.append(el("span", { class: "paso", style: "text-align:center" }, "Capas"), colA, el("span", { class: "paso", style: "text-align:center" }, "Sombreros"), colB, cont, chips,
+      el("p", { class: "ayudita", style: "margin:0" }, "Toca una capa y un sombrero para probártelos"));
+  },
+  balanza(caja, v, sc) {
+    const L = E(v.limite, sc);
+    const sobre = new Set();
+    const encima = el("div", { class: "encima" });
+    const tabla = el("div", { class: "tabla" });
+    const cartel = el("div", { class: "cartel" });
+    const pesos = v.pesos.map(([e, n, p]) => [e, n, E(p, sc)]);
+    const pintar = () => {
+      const tot = [...sobre].reduce((a, i) => a + pesos[i][2], 0);
+      encima.replaceChildren(...[...sobre].map(i => el("span", null, pesos[i][0])));
+      cartel.textContent = `⚖️ En el puente: ${tot} kg · Máximo: ${L} kg`;
+      tabla.classList.toggle("peligro", tot > L);
+      if (tot > L) sfx.mal();
+    };
+    const pers = el("div", { class: "personajes" });
+    pesos.forEach(([e, n, p], i) => {
+      const b = el("button", { class: "opc", onclick: () => { sfx.clic(); if (sobre.has(i)) sobre.delete(i); else sobre.add(i); b.classList.toggle("sel"); pintar(); } }, el("span", { class: "em" }, e), `${n}: ${p} kg`);
+      pers.append(b);
+    });
+    pintar();
+    caja.append(el("div", { class: "puente" }, encima, tabla), cartel, pers);
+  },
+  cartas(caja, v, sc) {
+    caja.append(el("div", { class: "cartas" }, v.cartas.map(c => el("div", { class: "carta" },
+      el("span", { class: "em" }, c.e), el("b", null, tpl(c.t, sc)), (c.l || []).map(l => el("span", null, tpl(l, sc)))))));
+  },
+  fraccion(caja, v, sc) {
+    const p = E(v.partes, sc);
+    const fr = el("div", { class: "frasco", "aria-label": `Frasco con 1 de ${p} partes llena` });
+    for (let i = 0; i < p; i++) fr.append(el("div", { class: i === 0 ? "lleno" : "" }));
+    caja.append(fr, el("div", { class: "leyenda" }, `Queda 1 de ${p} partes iguales`));
+  },
+  conjuro(caja, v, sc) { caja.append(el("div", { class: "conjuro" }, tpl(v.texto, sc))); },
+  logica(caja, v, sc, C) {
+    const pistas = el("div", { class: "pistas" }, sc.PISTAS.map(p => {
+      const b = el("button", { onclick: () => { sfx.clic(); b.classList.toggle("tachada"); } }, "📜 " + p); return b;
+    }));
+    let alPulsar = null;
+    const fila = el("div", { class: "cofres" });
+    const els = {};
+    sc.COFRES.forEach(c => {
+      const b = el("button", { class: "cofre", style: `--c:${c.c}`, "aria-label": "Cofre " + c.nombre, onclick: () => { if (alPulsar) alPulsar(c.id, b); } },
+        el("span", { class: "em" }, "🧰"), el("small", null, c.nombre));
+      els[c.id] = b; fila.append(b);
+    });
+    C.w.activarCofres = fn => { alPulsar = (id, b) => { if (b.classList.contains("mal")) return; fn(id); if (id !== sc.RESP) b.classList.add("mal"); else { b.classList.add("bien"); b.querySelector(".em").textContent = "🗝️"; } }; fila.querySelectorAll(".cofre").forEach(b => b.classList.add("activo")); };
+    C.w.desactivarCofres = () => { alPulsar = null; fila.querySelectorAll(".cofre").forEach(b => b.classList.remove("activo")); };
+    C.w.marcarCofre = id => { els[id].classList.add("bien"); els[id].querySelector(".em").textContent = "🗝️"; };
+    caja.append(el("span", { class: "paso" }, "Pistas (tócalas para tacharlas)"), pistas, fila);
+  },
+  llenar(caja, v, sc) {
+    const L = E(v.total, sc), p = E(v.pieza, sc);
+    const pista = el("div", { class: "pista-l" });
+    const cont = el("div", { class: "contador" });
+    let n = 0;
+    const btn = el("button", { class: "btn claro peq" }, `${v.emoji} ${v.boton || "Poner"}`);
+    const pintar = () => { cont.textContent = `${v.emoji} × ${n} · ${n * p} de ${L} ${v.unidad || ""}${n * p >= L ? " ✓ ¡completo!" : ""}`; btn.disabled = n * p >= L; };
+    btn.addEventListener("click", () => {
+      if (n * p >= L) return;
+      n++; sfx.clic();
+      pista.append(el("div", { class: "pieza", style: `width:${p / L * 100}%` }, p / L > .09 ? el("small", null, n) : ""));
+      pintar();
+    });
+    pintar();
+    caja.append(el("div", { class: "leyenda" }, `Largo total: ${L} ${v.unidad || ""} · cada pieza: ${p} ${v.unidad || ""}`), pista, cont,
+      el("div", { class: "fila-btn" }, btn, el("button", { class: "btn claro peq", onclick: () => { n = 0; pista.replaceChildren(); pintar(); } }, "↺ Otra vez")));
+  }
+};
+
+/* ---------- final ---------- */
+function verFinal() {
+  S.terminado = true; guardar();
+  const sc = sc0();
+  confeti(60);
+  pantalla(el("section", { class: "diploma" },
+    el("span", { class: "etiq" }, "Mati y los Portales · Libro 1"),
+    el("div", { style: "font-size:3.4em;line-height:1" }, "🏅"),
+    el("h1", null, `Diploma de ${S.viajero === "Viajera" ? "Exploradora" : "Explorador"} de Numeria`),
+    el("p", { style: "margin:0" }, "Este diploma certifica que"),
+    el("div", { class: "nombre" }, S.nombre),
+    el("p", { style: "margin:0;max-width:30em" }, "ha cruzado portales, ha vencido a trols, arañas, gólems y al mismísimo Hechicero Caos, y ha demostrado que sabe razonar con los números y elegir la operación correcta."),
+    el("div", { class: "datos" },
+      el("span", { class: "dato" }, `✅ ${S.stats.resueltos} de ${S.stats.intentados} problemas resueltos sin ayuda`),
+      el("span", { class: "dato" }, `⭐ ${S.stats.estrellas} estrellas`),
+      el("span", { class: "dato" }, `💠 ${S.fragmentos}/8 fragmentos`),
+      S.portal != null ? el("span", { class: "dato" }, `🌀 Próximo portal: ${S.portal}`) : null),
+    el("p", { class: "firma" }, "Firmado: Maese Ábaco 🧙‍♂️ · y Chispa 🐉"),
+    el("p", { style: "margin:0;font-family:var(--f-titulo);font-weight:700" }, "CONTINUARÁ… Mati volverá en el Libro 2."),
+    el("div", { class: "fila-btn" },
+      el("button", { class: "btn verde", onclick: () => problemaTorre() }, "🏋️ Torre del Entrenamiento"),
+      el("button", { class: "btn claro", onclick: () => pantallaMapa() }, "🗺️ Mapa"),
+      el("button", { class: "btn claro", onclick: () => { const s = estadoNuevo(S.nombre, S.avatar, S.edad); S = s; guardar(); ir(H.inicio); } }, "🔁 Jugar otra vez"))
+  ));
+  hablar(`¡Enhorabuena, ${S.nombre}! Has salvado Numeria.`);
+}
+
+/* ---------- torre del entrenamiento ---------- */
+function problemaTorre() {
+  if (!CTX || !CTX.torre) STAT.p++;
+  const historia = Object.entries(H.nodos).filter(([id, n]) => n.tipo === "problema" && id !== "p48" && id !== "p1");
+  const pool = [...H.torre.map((t, i) => ["t" + i, { ...t, tipo: "problema" }]), ...historia];
+  const [id, n] = pool[rnd(pool.length)];
+  verProblema(n, id, true);
+}
+
+/* ---------- mapa ---------- */
+function pantallaMapa() {
+  const capActualIdx = H.capitulos.findIndex(c => c.id === S.capActual);
+  const frag = el("div", { class: "frag-fila", "aria-label": `${S.fragmentos} de 8 fragmentos` });
+  for (let i = 0; i < 8; i++) frag.append(el("span", { class: i < S.fragmentos ? "" : "off" }, "💠"));
+  const mapa = el("div", { class: "mapa" });
+  H.capitulos.forEach((c, i) => {
+    const visto = S.caps.includes(c.id);
+    const actual = c.id === S.capActual;
+    const b = el("button", { class: "isla" + (visto ? "" : " bloq") + (actual ? " actual" : ""), disabled: visto ? null : true, onclick: () => confirmarCapitulo(c) },
+      el("span", { class: "em", "aria-hidden": "true" }, visto ? c.emoji : "🔒"),
+      el("span", { class: "t" }, el("small", null, c.etiqueta), el("b", null, visto ? c.titulo : "???")),
+      el("span", { class: "estado" }, actual ? "✨" : (visto && i < capActualIdx ? "✅" : "")));
+    mapa.append(b);
+  });
+  const nv = NIV();
+  pantalla(
+    el("section", { class: "mapa-cab" },
+      el("h1", null, "El mapa de Numeria"),
+      frag,
+      el("div", { class: "fila-btn" },
+        el("button", { class: "btn verde", onclick: () => ir(S.nodo) }, S.terminado && S.nodo === "fin" ? "🏅 Ver diploma" : "▶ Seguir la aventura"),
+        el("button", { class: "btn morado", onclick: () => problemaTorre() }, "🏋️ Torre del Entrenamiento"))),
+    mapa,
+    el("section", { class: "tarjeta" },
+      el("div", { class: "nivel-c" }, el("span", { class: "em" }, nv.emoji), el("div", null, el("span", { class: "etiq" }, `Nivel para ${nv.edades}`), el("div", { style: "font-family:var(--f-titulo);font-weight:700" }, nv.nombre))),
+      el("div", { class: "fila-btn" },
+        el("button", { class: "btn claro peq", onclick: () => elegirEdad(true) }, "🎂 Cambiar la edad"),
+        el("button", { class: "btn claro peq", onclick: () => confirmarBorrar() }, "🗑️ Empezar de cero"),
+        el("button", { class: "btn claro peq", onclick: () => pantallaInicio() }, "🏠 Portada")))
+  );
+}
+function confirmarCapitulo(c) {
+  sfx.clic();
+  capa([
+    el("div", { class: "grande" }, c.emoji),
+    el("h2", null, `${c.etiqueta}: ${c.titulo}`),
+    el("p", { style: "margin:0" }, "¿Quieres jugar este capítulo? Tus estrellas y monedas se quedan contigo."),
+    el("div", { class: "fila-btn" },
+      el("button", { class: "btn verde", onclick: () => { cerrarCapa(); ir(c.inicio); } }, "¡Vamos!"),
+      el("button", { class: "btn claro", onclick: cerrarCapa }, "Ahora no"))
+  ]);
+}
+function confirmarBorrar() {
+  capa([
+    el("div", { class: "grande" }, "🗑️"),
+    el("h2", null, "¿Empezar de cero?"),
+    el("p", { style: "margin:0" }, "Se borrará la partida de este dispositivo: capítulos, estrellas y monedas."),
+    el("div", { class: "fila-btn" },
+      el("button", { class: "btn", style: "background:var(--rojo);box-shadow:0 5px 0 var(--rojo-osc);color:#fff", onclick: () => { try { localStorage.removeItem(CLAVE); } catch (e) {} S = null; hud(); pantallaInicio(); } }, "Sí, borrar"),
+      el("button", { class: "btn claro", onclick: cerrarCapa }, "No"))
+  ]);
+}
+
+/* ---------- inicio y perfil ---------- */
+function pantallaInicio() {
+  const g = leerGuardado() || S;
+  $("#hud").hidden = true;
+  pantalla(el("section", { class: "portada" },
+    el("div", { style: "align-self:flex-end;margin-bottom:-56px" }, botonFav("btn claro peq")),
+    el("div", { class: "portal-anim", "aria-hidden": "true" }, el("span", null, "🐉")),
+    el("h1", null, H.titulo),
+    el("div", { class: "sub" }, H.subtitulo),
+    el("div", { class: "botones" },
+      g ? el("button", { class: "btn verde", onclick: () => { sfx.pasa(); S = g; S.flags = S.flags || {}; hud(); ir(S.nodo); } }, `▶ Continuar (${g.avatar} ${g.nombre})`) : null,
+      el("button", { class: "btn", onclick: () => { sfx.clic(); perfil(); } }, "✨ Nueva aventura"),
+      el("button", { class: "btn morado", onclick: () => { sfx.clic(); if (g) { S = g; hud(); problemaTorre(); } else perfil(true); } }, "🏋️ Torre del Entrenamiento")),
+    el("p", { class: "nota" }, "Una aventura de problemas de matemáticas. Antes de empezar te preguntaremos la edad para que la historia y los números sean justo para ti. Para las familias: lo importante no es la cuenta, sino decidir qué operación hace falta.")
+  ));
+}
+let BORRADOR = { nombre: "", avatar: "🧒" };
+function perfil(irATorre) {
+  const input = el("input", { class: "campo", id: "nombre", type: "text", maxlength: "16", placeholder: "Escribe tu nombre", value: BORRADOR.nombre, autocomplete: "off" });
+  const avs = el("div", { class: "avatares" });
+  [["🧒", "Viajero"], ["👧", "Viajera"]].forEach(([e, n]) => {
+    const b = el("button", { type: "button", class: "opc txt" + (BORRADOR.avatar === e ? " sel" : ""), onclick: () => { sfx.clic(); BORRADOR.avatar = e; avs.querySelectorAll(".sel").forEach(x => x.classList.remove("sel")); b.classList.add("sel"); } }, el("span", { class: "em" }, e), n);
+    avs.append(b);
+  });
+  const form = el("form", { class: "tarjeta", onsubmit: e => {
+    e.preventDefault();
+    BORRADOR.nombre = input.value.trim() || (BORRADOR.avatar === "👧" ? "Viajera" : "Viajero");
+    elegirEdad(false, irATorre);
+  } },
+    el("span", { class: "etiq" }, "Paso 1 de 2"),
+    el("h2", null, "¿Cómo te llamas?"),
+    el("label", { for: "nombre", class: "toca", style: "text-align:left" }, "Mati te llamará por tu nombre durante la aventura"),
+    input,
+    el("p", { class: "pregunta" }, "¿Qué quieres ser?"),
+    avs,
+    el("button", { class: "btn verde ancho", type: "submit" }, "Siguiente ▶"),
+    el("button", { class: "btn claro peq", type: "button", onclick: pantallaInicio }, "◀ Volver"));
+  pantalla(escenario("portal", "🧒🌀🐉", true), form);
+  setTimeout(() => input.focus(), 100);
+}
+function elegirEdad(cambiar, irATorre) {
+  let edad = cambiar && S ? S.edad : null;
+  const info = el("div");
+  const listo = el("button", { class: "btn verde ancho", disabled: edad ? null : true }, cambiar ? "Guardar ✔" : "¡A la aventura! ✨");
+  const pintarInfo = () => {
+    if (!edad) return info.replaceChildren();
+    const nv = H.niveles[nivelDeEdad(edad)];
+    info.replaceChildren(el("div", { class: "nivel-c" }, el("span", { class: "em" }, nv.emoji),
+      el("div", null, el("span", { class: "etiq" }, "Tu nivel"), el("div", { style: "font-family:var(--f-titulo);font-weight:700" }, nv.nombre),
+        el("small", { style: "color:var(--tinta-suave)" }, nv.respuesta === "opciones" ? "Textos cortos, números pequeños y respuestas para elegir." : "Historia completa, números más grandes y respuestas con teclado."))));
+  };
+  const grid = el("div", { class: "edades" });
+  for (let e = 5; e <= 12; e++) {
+    const b = el("button", { class: "opc" + (edad === e ? " sel" : ""), onclick: () => { sfx.clic(); edad = e; grid.querySelectorAll(".sel").forEach(x => x.classList.remove("sel")); b.classList.add("sel"); listo.disabled = false; pintarInfo(); } }, e === 12 ? "12+" : String(e));
+    grid.append(b);
+  }
+  pintarInfo();
+  listo.addEventListener("click", () => {
+    sfx.pasa();
+    if (cambiar) { S.edad = edad; S.nivel = nivelDeEdad(edad); guardar(); toast("🎂 ¡Edad cambiada!"); pantallaMapa(); return; }
+    S = estadoNuevo(BORRADOR.nombre, BORRADOR.avatar, edad); STAT.p++;
+    guardar(); hud();
+    if (irATorre) problemaTorre(); else ir(H.inicio);
+  });
+  pantalla(escenario("portal", "🎂🧒", true), el("section", { class: "tarjeta" },
+    cambiar ? null : el("span", { class: "etiq" }, "Paso 2 de 2"),
+    el("h2", null, "¿Cuántos años tienes?"),
+    el("p", { class: "toca", style: "text-align:left;margin:0" }, "Así la historia y los problemas serán justo para ti."),
+    grid, info, listo,
+    el("button", { class: "btn claro peq", onclick: () => cambiar ? pantallaMapa() : perfil(irATorre) }, "◀ Volver")));
+}
+
+/* ---------- carga de historia.json ---------- */
+function cargaManual(error) {
+  const input = el("input", { type: "file", id: "archivo", accept: ".json,application/json", class: "campo" });
+  input.addEventListener("change", () => {
+    const f = input.files[0]; if (!f) return;
+    const r = new FileReader();
+    r.onload = () => { try { H = JSON.parse(r.result); pantallaInicio(); } catch (e) { toast("Ese archivo no es una historia válida"); } };
+    r.readAsText(f);
+  });
+  pantalla(el("section", { class: "tarjeta" },
+    el("h2", null, "📂 Falta la historia"),
+    el("p", { style: "margin:0" }, "No he podido abrir historia.json. Esto pasa al abrir index.html con doble clic, porque el navegador no deja leer archivos sueltos."),
+    el("p", { style: "margin:0" }, "Elige el archivo historia.json aquí abajo, o abre la carpeta con un servidor local (por ejemplo: python -m http.server)."),
+    el("label", { for: "archivo", class: "paso" }, "Elegir historia.json"),
+    input));
+}
+async function arrancar() {
+  const incrustada = document.getElementById("historia-json");
+  if (incrustada) {
+    try { H = JSON.parse(incrustada.textContent); return pantallaInicio(); }
+    catch (e) { console.warn("La historia incrustada tiene un error:", e); }
+  }
+  try {
+    const r = await fetch("historia.json", { cache: "no-cache" });
+    if (!r.ok) throw new Error(r.status);
+    H = await r.json();
+    pantallaInicio();
+  } catch (e) { cargaManual(e); }
+}
+/* ---------- emojis nuevos: sustituto antiguo si el sistema no los pinta (igual que Arcade.FALLBACK) ---------- */
+const FALLBACK = { "🪨": "🌑", "🪄": "✨", "🪵": "🏏", "🧌": "👹", "🪢": "➰", "🫘": "🌱", "🪙": "💰", "🤍": "💖",
+  "❤️‍🔥": "🔴", "🟥": "❤️", "🟦": "💙", "🟩": "💚", "🟨": "💛", "🟪": "💜" };
+const CLAVES_FB = Object.keys(FALLBACK);
+const eok = new Map(); let etc = null;
+function emojiOK(ch) {
+  let v = eok.get(ch); if (v !== undefined) return v; v = true;
+  try {
+    if (!etc) { const c = document.createElement("canvas"); c.width = c.height = 64; etc = c.getContext("2d", { willReadFrequently: true }); }
+    const x = etc; x.clearRect(0, 0, 64, 64); x.font = '40px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif'; x.textBaseline = "top";
+    if (x.measureText(ch).width > x.measureText("😀").width * 1.35) v = false;
+    else {
+      x.fillStyle = "#f00"; x.fillText(ch, 4, 4);
+      const d = x.getImageData(0, 0, 64, 64).data; let col = false, ink = false;
+      for (let i = 0; i < d.length; i += 4) if (d[i + 3] > 40) { ink = true; if (d[i + 1] > 30 || d[i + 2] > 30) { col = true; break; } }
+      v = ink && col;
+    }
+  } catch (_) { v = true; }
+  eok.set(ch, v); return v;
+}
+function fx(t) {
+  if (!t) return t;
+  for (const k of CLAVES_FB) if (t.indexOf(k) >= 0 && !emojiOK(k)) t = t.split(k).join(FALLBACK[k]);
+  return t;
+}
+function arreglarEmojis(raiz) {
+  const w = document.createTreeWalker(raiz, NodeFilter.SHOW_TEXT); let n;
+  while ((n = w.nextNode())) { const t = fx(n.nodeValue); if (t !== n.nodeValue) n.nodeValue = t; }
+}
+new MutationObserver(ms => { for (const m of ms) { if (m.type === "characterData") { const t = fx(m.target.nodeValue); if (t !== m.target.nodeValue) m.target.nodeValue = t; } else m.addedNodes.forEach(x => arreglarEmojis(x.nodeType === 3 ? x.parentNode || x : x)); } })
+  .observe(document.body, { childList: true, subtree: true, characterData: true });
+
+/* ---------- favorito y tiempo de juego → web PHP (../../api/…). Sin la web PHP falla en silencio. ---------- */
+const GAME_ID = "mati-y-los-portales";
+const web = /^https?:/.test(location.protocol);
+const lsGet = (k, d) => { try { const v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch (e) { return d; } };
+const lsSet = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} };
+const uid = () => { let u = null; try { u = localStorage.getItem('arc_uid'); } catch (e) {} if (!/^[a-f0-9]{24}$/.test(u || '')) { u = Array.from(crypto.getRandomValues(new Uint8Array(12)), (b) => b.toString(16).padStart(2, '0')).join(''); try { localStorage.setItem('arc_uid', u); } catch (e) {} } document.cookie = 'arc_uid=' + u + ';path=/;max-age=63072000;SameSite=Lax'; return u; };
+const favs = () => { const v = lsGet('arc_favs', []); return Array.isArray(v) ? v : []; };
+function botonFav(cls) {
+  const b = el("button", { class: cls, title: "Favorito", "aria-label": "Favorito" });
+  const pintar = () => b.textContent = favs().includes(GAME_ID) ? "❤️" : "🤍";
+  b.addEventListener("click", () => {
+    const on = !favs().includes(GAME_ID), l = favs().filter(x => x !== GAME_ID);
+    if (on) { l.unshift(GAME_ID); sfx.ok(); toast("❤️ Guardado en favoritos"); }
+    lsSet('arc_favs', l); pintar();
+    if (web) try { fetch('../../api/fav', { method: 'POST', body: JSON.stringify({ g: GAME_ID, on: on ? 1 : 0, u: uid() }), keepalive: true, headers: { 'Content-Type': 'application/json' } }).catch(() => {}); } catch (e) {}
+  });
+  pintar(); return b;
+}
+const STAT = { s: 0, p: 0 };
+const flush = () => { if (!web || (STAT.s < 1 && !STAT.p)) return; const body = JSON.stringify({ g: GAME_ID, s: Math.round(STAT.s), p: STAT.p, u: uid() }); STAT.s = 0; STAT.p = 0; try { navigator.sendBeacon && navigator.sendBeacon('../../api/play', new Blob([body], { type: 'application/json' })); } catch (e) {} };
+setInterval(() => { if (S && !$("#hud").hidden && !document.hidden) STAT.s++; }, 1000);
+setInterval(flush, 60000); window.addEventListener('pagehide', flush); document.addEventListener('visibilitychange', () => { if (document.hidden) flush(); });
+
+if ("speechSynthesis" in window) { try { speechSynthesis.getVoices(); speechSynthesis.onvoiceschanged = () => {}; } catch (e) {} }
+arrancar();
+</script>
+<a data-sitehome href="../../" onclick="return (function(){try{var b=sessionStorage.getItem('arc_back');if(b&&b[0]==='/'&&b[1]!=='/'){location.href=b;return false}}catch(e){}return true})()" title="Todos los juegos" aria-label="Todos los juegos" style="position:fixed;left:12px;bottom:max(12px,env(safe-area-inset-bottom));z-index:9999;width:46px;height:46px;border-radius:50%;display:grid;place-items:center;text-decoration:none;font-size:24px;background:rgba(255,255,255,.92);box-shadow:0 4px 14px rgba(0,0,0,.25)">🏠</a>
+<script>/* Con window.isSingleGame = true (juego suelto, p. ej. dentro de una app) se quita el botón a la portada */if(window.isSingleGame===true)document.querySelectorAll('[data-sitehome]').forEach(function(a){a.remove()});</script>
+</body>
+</html>
