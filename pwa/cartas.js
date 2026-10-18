@@ -269,7 +269,7 @@
       V.place(g, s, s.D, s.y0);
       s.ch = s.cw * 1.4;
       const bs = Math.min(42, (g.W - 20) / 9);
-      s.btns = [{ id: 'undo', e: '↩️', tip: T('Deshacer', 'Undo') }, { id: 'hint', e: '💡', tip: T('Pista', 'Hint') }];
+      s.btns = [{ id: 'tut', e: '📖', tip: T('Tutorial', 'Tutorial') }, { id: 'undo', e: '↩️', tip: T('Deshacer', 'Undo') }, { id: 'hint', e: '💡', tip: T('Pista', 'Hint') }];
       if (V.redeal) s.btns.unshift({ id: 'rdl', e: '🔀', tip: T('Barajar', 'Shuffle') });
       s.btns.forEach((b, k) => { b.w = bs; b.h = 34; b.x = g.W - 8 - (s.btns.length - k) * (bs + 6); b.y = g.top + 5; });
       s.cache = new Map();
@@ -520,6 +520,111 @@
       return [last.px + s.cw / 2, last.py + s.ch * 0.6];
     }
 
+    /* ---------- tutorial: se escribe solo a partir de las reglas de la variante ---------- */
+    function tutSteps(g) {
+      const s = g.s, D = s.D, st = s.st, all = (k) => kinds(D, k), out = [];
+      const nf = all('found').length, rk = (r) => RANK[r];
+      const cond = { alt: T('de color distinto', 'of the other colour'), suit: T('del mismo palo', 'of the same suit'), any: T('de cualquier palo', 'of any suit'), color: T('del mismo color', 'of the same colour'), notsuit: T('de un palo distinto al suyo', 'of a different suit') };
+      const btn = (id) => s.btns.find((b) => b.id === id);
+      // 1. objetivo
+      if (V.pair) out.push({ piles: all('grid').concat(all('disc')), t: T('🎯 Objetivo: desmontar la pirámide quitando parejas que sumen 13 (A vale 1, J 11, Q 12; la K se va sola). Toca una carta y luego su pareja. Solo valen las cartas que no tienen otra encima.', '🎯 Goal: take the pyramid apart by removing pairs that add up to 13 (A is 1, J 11, Q 12; a K goes by itself). Tap a card and then its partner. Only cards with nothing on top count.') });
+      else if (F.mode === 'run') out.push({ piles: all('found'), t: T('🎯 Objetivo: formar escaleras completas de la K al A ' + (F.run === 'alt' ? 'alternando colores' : 'del mismo palo') + '. Cada una que termines en la mesa sube sola aquí.', '🎯 Goal: build complete runs from K down to A ' + (F.run === 'alt' ? 'in alternating colours' : 'in the same suit') + '. Each one you finish on the table comes up here by itself.') });
+      else if (F.mode === 'updown') out.push({ piles: all('found'), t: T('🎯 Objetivo: dejar la mesa vacía. Trae aquí cartas que sean un número más o uno menos que la de arriba, de cualquier palo' + (F.wrap ? ' (tras la K va el A).' : '; la K no admite nada.'), '🎯 Goal: clear the table. Bring here cards one rank higher or lower than the top one, any suit' + (F.wrap ? ' (A follows K).' : '; nothing goes on a K.')) });
+      else {
+        const base = Array.isArray(F.step) ? T('empiezan en A, 2, 3 y 4 y suben de 1 en 1, de 2 en 2, de 3 en 3 y de 4 en 4 (tras la K se vuelve a empezar)', 'start at A, 2, 3 and 4 and go up by 1, 2, 3 and 4 (after K you wrap round)')
+          : st.fb != null ? T('empiezan en el ' + rk(st.fb) + ' (la primera carta que salió) y suben hasta dar la vuelta', 'start at ' + rk(st.fb) + ' (the first card dealt) and go up, wrapping round')
+          : F.base !== 1 ? T('empiezan en el ' + rk(F.base) + ' y suben dando la vuelta', 'start at ' + rk(F.base) + ' and go up, wrapping round') : T('van del A a la K', 'go from A to K');
+        const su = F.suit === 'any' ? T('sin importar el palo', 'regardless of suit') : F.suit === 'alt' ? T('alternando colores', 'in alternating colours') : T('cada una de un palo', 'one suit each');
+        out.push({ piles: all('found'), t: T('🎯 Objetivo: subir todas las cartas a estas ' + nf + ' bases. Las bases ' + base + ', ' + su + '.', '🎯 Goal: move every card up to these ' + nf + ' foundations. They ' + base + ', ' + su + '.') });
+      }
+      // 2. la mesa
+      const tabs = all('tab'), grid = all('grid');
+      if (tabs.length) {
+        let t;
+        if (TB.build === 'none') t = T('La mesa: aquí no se pone una carta sobre otra; solo se juega la carta de arriba de cada montón.', 'The table: you cannot put cards on each other here; only the top card of each pile plays.');
+        else if (TB.build === 'free') t = T('Los descartes: la carta del mazo que no pueda subir a una base va a uno de estos montones. Solo se juega la de arriba, así que encima pon las que vayas a necesitar antes.', 'The waste piles: a stock card that cannot go up to a foundation goes on one of these. Only the top card plays, so put the ones you will need sooner on top.');
+        else {
+          t = T('La mesa: una carta va sobre otra de un número ' + (TB.updown ? 'más o uno menos' : 'más') + ' y ' + cond[TB.build] + (TB.wrap ? ' (la K puede ir sobre el A)' : '') + '. ', 'The table: a card goes on another one rank ' + (TB.updown ? 'higher or lower' : 'higher') + ' and ' + cond[TB.build] + (TB.wrap ? ' (a K can go on an A)' : '') + '. ');
+          t += { one: T('Se mueve una carta cada vez' + (V.supermove ? ' (o varias si tienes huecos libres para ayudarte).' : '.'), 'Move one card at a time' + (V.supermove ? ' (or several if you have free spaces to help).' : '.')), seq: T('Puedes mover juntas las cartas que ya estén en orden.', 'You can move cards together if they are already in order.'), any: T('Puedes mover cualquier carta boca arriba con todo lo que tiene encima, aunque no esté en orden.', 'You can move any face-up card with everything on top of it, even out of order.'), run: T('Solo se mueven juntas las escaleras del mismo palo.', 'Only same-suit runs move together.'), crun: T('Se mueven juntas las escaleras del mismo color.', 'Same-colour runs move together.') }[TB.move] || '';
+          t += ' ' + (TB.autoFill ? T('Los huecos se rellenan solos.', 'Empty spaces refill themselves.') : TB.empty === 'K' ? T('En un hueco solo cabe una K.', 'Only a K fits in an empty space.') : TB.empty === 'none' ? T('Los huecos no se rellenan.', 'Empty spaces are not refilled.') : typeof TB.empty === 'function' ? T('En un hueco solo cabe la carta justo anterior a la base (' + rk(wrap13((st.fb || 1) - 1)) + ').', 'Only the card just below the base (' + rk(wrap13((st.fb || 1) - 1)) + ') fits in an empty space.') : T('En un hueco cabe cualquier carta.', 'Any card fits in an empty space.'));
+          if (TB.max) t += ' ' + T('Cada montón tiene como mucho ' + TB.max + ' cartas.', 'Each pile holds ' + TB.max + ' cards at most.');
+        }
+        out.push({ piles: tabs, t });
+      }
+      if (grid.length && !V.pair) out.push({ piles: grid, t: T('Las montañas: solo se juegan las cartas que no tienen otra encima. Las tapadas se dan la vuelta solas cuando quedan libres.', 'The peaks: only cards with nothing on top can be played. Face-down cards turn over by themselves when they become free.') });
+      // 3. celdas y reserva
+      if (all('cell').length) out.push({ piles: all('cell'), t: T('Las celdas: cada una guarda una carta mientras haces sitio. Úsalas con cabeza: si se llenan todas, te quedas sin margen.', 'The cells: each one holds a card while you make room. Use them wisely: if they all fill up, you run out of room.') });
+      const res = all('res');
+      if (res.length === 1) out.push({ piles: res, t: T('La reserva: su carta de arriba se puede jugar cuando quieras. Vaciarla es la clave de la partida.', 'The reserve: its top card can be played whenever you like. Emptying it is the key to the game.') + (TB.autoFill === 'res' ? T(' Además, rellena sola las columnas vacías.', ' It also refills empty columns by itself.') : '') });
+      else if (res.length > 1) out.push({ piles: res, t: T('La reserva: cualquiera de estas cartas se puede jugar en cualquier momento.', 'The reserve: any of these cards can be played at any time.') });
+      // 4. mazo
+      const sk = all('stock');
+      if (sk.length) {
+        let t;
+        if (ST.to === 'tab') t = T('El mazo: tócalo para repartir una carta a ' + (ST.cols ? 'cada una de las ' + ST.cols + ' primeras columnas' : 'cada columna') + (ST.needAll ? ' (no puede haber columnas vacías)' : '') + '.', 'The stock: tap it to deal one card to ' + (ST.cols ? 'each of the first ' + ST.cols + ' columns' : 'every column') + (ST.needAll ? ' (no column may be empty)' : '') + '.');
+        else if (ST.to === 'found') t = T('El mazo: cuando no puedas jugar, tócalo para poner otra carta en la base.', 'The stock: when you cannot play, tap it to put a new card on the foundation.');
+        else { const r = ST.redeals; t = T('El mazo: tócalo para sacar ' + (ST.n === 1 ? 'una carta' : ST.n + ' cartas') + ' al descarte; la de arriba se puede jugar. ', 'The stock: tap it to turn ' + (ST.n === 1 ? 'one card' : ST.n + ' cards') + ' onto the waste; the top one can be played. ') + (r === Infinity ? T('Cuando se acabe, dale la vuelta las veces que quieras.', 'When it runs out, turn it over as often as you like.') : r === 0 ? T('Ojo: el mazo se pasa una sola vez.', 'Careful: the stock goes round only once.') : T('Puedes darle la vuelta ' + (r === 1 ? 'una vez' : r + ' veces') + '.', 'You can turn it over ' + (r === 1 ? 'once' : r + ' times') + '.')); }
+        out.push({ piles: sk.concat(all('waste')), t });
+      }
+      if (V.redeal) out.push({ btns: ['rdl'], t: T('🔀 Barajar: cuando te atasques, recoge las cartas de la mesa, las baraja y las reparte otra vez. Tienes ' + (V.redeal.times - (st.rr || 0)) + '.', '🔀 Shuffle: when you get stuck, it gathers the table cards, shuffles and deals them again. You have ' + (V.redeal.times - (st.rr || 0)) + '.') });
+      // 5. controles y una jugada de ejemplo
+      out.push({ btns: ['hint', 'undo'], t: T('Toca una carta y va sola a su mejor sitio, o arrástrala tú. 💡 te enseña una jugada y ↩️ deshace la última. 📖 vuelve a abrir este tutorial.', 'Tap a card and it goes to its best place, or drag it yourself. 💡 shows you a move and ↩️ undoes the last one. 📖 opens this tutorial again.') });
+      const m = hint(g);
+      if (m) out.push({ move: m, t: T('Por ejemplo, ahora mismo puedes hacer esta jugada (en amarillo). ¡A jugar!', 'For example, right now you could make this move (in yellow). Let\'s play!') });
+      return out;
+    }
+    function tutStart(g) { const s = g.s; s.tut = { steps: tutSteps(g), i: 0, t: 0 }; s.drag = null; A.tone(660, 0.06, 'sine', 0.05); }
+    function tutNext(g, skip) {
+      const s = g.s, tu = s.tut; if (!tu) return;
+      tu.i++; tu.t = 0;
+      if (skip || tu.i >= tu.steps.length) { s.tut = null; try { A.set('tut_' + (g.def && g.def.id), 1); } catch (e) {} return; }
+      A.tone(560 + tu.i * 30, 0.05, 'sine', 0.04);
+      const st = tu.steps[tu.i]; if (st.move) s.hl = { m: st.move, t: 6 };
+    }
+    function tutRects(g, step) {
+      const s = g.s, L = layoutCards(g), r = [];
+      for (const i of step.piles || []) { const q = pileRect(g, i, L); r.push({ x: q.x - 4, y: q.y - 4, w: q.w + 8, h: q.h + 8 }); }
+      for (const id of step.btns || []) { const b = s.btns.find((x) => x.id === id); if (b) r.push({ x: b.x - 4, y: b.y - 4, w: b.w + 8, h: b.h + 8 }); }
+      if (step.move) { const m = step.move; for (const i of m.pair || (m.single != null ? [m.single] : m.f != null ? [m.f, m.t] : m.stock ? kinds(s.D, 'stock') : [])) { const q = pileRect(g, i, L); r.push({ x: q.x - 4, y: q.y - 4, w: q.w + 8, h: q.h + 8 }); } }
+      return r;
+    }
+    function wrapText(ctx, text, maxW, size) {
+      ctx.font = '700 ' + size + 'px ' + A.FONT; const words = text.split(' '), lines = []; let cur = '';
+      for (const w of words) { const t2 = cur ? cur + ' ' + w : w; if (ctx.measureText(t2).width > maxW && cur) { lines.push(cur); cur = w; } else cur = t2; }
+      if (cur) lines.push(cur); return lines;
+    }
+    function tutBox(g) {
+      const s = g.s, tu = s.tut, step = tu.steps[tu.i], rs = tutRects(g, step);
+      const W = g.W, bw = Math.min(W - 24, 460), size = W < 420 ? 14 : 16, ctx = document.createElement('canvas').getContext('2d');
+      const lines = wrapText(ctx, step.t, bw - 32, size), bh = 22 + lines.length * size * 1.35 + 52;
+      let top = rs.length ? Math.min(...rs.map((r) => r.y)) : g.H / 2, bot = rs.length ? Math.max(...rs.map((r) => r.y + r.h)) : g.H / 2;
+      let y = bot + 12 + bh < g.bot ? bot + 12 : top - 12 - bh > g.top ? top - 12 - bh : g.bot - bh - 8;
+      const x = (W - bw) / 2;
+      return { x, y, w: bw, h: bh, lines, size, rs, next: { x: x + bw - 132, y: y + bh - 44, w: 120, h: 34 }, skip: { x: x + 12, y: y + bh - 44, w: 100, h: 34 } };
+    }
+    function drawTut(g, ctx) {
+      const s = g.s, tu = s.tut; if (!tu) return; tu.t += A.fdt;
+      const b = tutBox(g), k = Math.min(1, tu.t * 4);
+      ctx.save(); ctx.globalAlpha = 0.62 * k; ctx.fillStyle = '#0b0820';
+      ctx.beginPath(); ctx.rect(0, 0, g.W, g.H); for (const r of b.rs) { const q = Math.min(12, r.w / 2, r.h / 2); ctx.moveTo(r.x + q, r.y); ctx.arcTo(r.x + r.w, r.y, r.x + r.w, r.y + r.h, q); ctx.arcTo(r.x + r.w, r.y + r.h, r.x, r.y + r.h, q); ctx.arcTo(r.x, r.y + r.h, r.x, r.y, q); ctx.arcTo(r.x, r.y, r.x + r.w, r.y, q); ctx.closePath(); } ctx.fill('evenodd'); ctx.restore();
+      const pulse = 0.6 + 0.4 * Math.sin(g.rt * 5);
+      for (const r of b.rs) { ctx.strokeStyle = `rgba(255,212,59,${pulse})`; ctx.lineWidth = 3; A.rr(ctx, r.x, r.y, r.w, r.h, 12); ctx.stroke(); }
+      ctx.save(); ctx.globalAlpha = k; ctx.shadowColor = 'rgba(0,0,0,.4)'; ctx.shadowBlur = 18; ctx.fillStyle = '#fffdf5'; A.rr(ctx, b.x, b.y, b.w, b.h, 16); ctx.fill(); ctx.restore();
+      ctx.globalAlpha = k;
+      A.txt(ctx, (tu.i + 1) + ' / ' + tu.steps.length, b.x + b.w - 16, b.y + 14, 12, '#868e96', 'right', 800);
+      b.lines.forEach((ln, n) => A.txt(ctx, ln, b.x + 16, b.y + 22 + n * b.size * 1.35 + b.size * 0.4, b.size, '#212529', 'left', 700));
+      const last = tu.i === tu.steps.length - 1;
+      ctx.fillStyle = '#ffd43b'; A.rr(ctx, b.next.x, b.next.y, b.next.w, b.next.h, 17); ctx.fill();
+      A.txt(ctx, last ? T('¡A jugar!', "Let's play!") : T('Siguiente ▶', 'Next ▶'), b.next.x + b.next.w / 2, b.next.y + b.next.h / 2, 15, '#2a2100', 'center', 900);
+      if (!last) A.txt(ctx, T('Saltar', 'Skip'), b.skip.x + b.skip.w / 2, b.skip.y + b.skip.h / 2, 14, '#868e96', 'center', 800);
+      ctx.globalAlpha = 1;
+    }
+    function tutTap(g, p) {
+      const b = tutBox(g), inR = (r) => p.x >= r.x && p.x <= r.x + r.w && p.y >= r.y && p.y <= r.y + r.h;
+      if (inR(b.skip) && g.s.tut.i < g.s.tut.steps.length - 1) return tutNext(g, true);
+      tutNext(g);
+    }
+
     return {
       lives: 0, levels: 0, cap: 20,
       setup(g) {
@@ -527,12 +632,14 @@
         g.s = { D, st, hist: [], undos: 0, hints: 0, moves: 0, seen: new Set([vkey(st)]), sel: null, done: false, objs: {}, drag: null, stuck: false, pend: 0 };
         place(g);
         // al empezar: las cartas salen del mazo una a una
+        if (!g.demoOn && !/[?&]shot=1/.test(location.search) && !A.get('tut_' + (g.def && g.def.id), 0)) g.s.tutPend = 0.9;
         layoutCards(g).forEach((o, n) => { const ob = g.s.objs[o.c] = {}; ob.__gl = { x: g.W / 2 - g.s.cw / 2, y: g.bot + 20 + n * 2, a: 1, f: A.fno }; });
         A.sfx.whoosh();
       },
       layout(g) { if (g.s && g.s.D) { place(g); g.s.felt = null; } },
       down(g, p) {
         const s = g.s; if (!s.D || s.done) return;
+        if (s.tut) return;
         for (const b of s.btns) if (p.x >= b.x && p.x <= b.x + b.w && p.y >= b.y && p.y <= b.y + b.h) { s.btnDown = b.id; return; }
         const h = hit(g, p.x, p.y); s.press = h; if (!h || h.k < 0) return;
         const n = s.st.p[h.pile].length - h.k;
@@ -540,10 +647,13 @@
       },
       move(g, p) { const d = g.s.drag; if (!d) return; d.x = p.x; d.y = p.y; if (Math.hypot(p.x - p.sx, p.y - p.sy) > 10) d.moved = true; },
       up(g, p) {
-        const s = g.s; if (!s.D) return; const d = s.drag; s.drag = null;
+        const s = g.s; if (!s.D) return;
+        if (s.tut) return tutTap(g, p);
+        const d = s.drag; s.drag = null;
         if (s.btnDown) {
           const id = s.btnDown; s.btnDown = null;
           if (id === 'undo') return doUndo(g);
+          if (id === 'tut') return tutStart(g);
           if (id === 'rdl') { if (V.redeal && (s.st.rr || 0) < V.redeal.times) commit(g, { rdl: 1 }); else A.sfx.bad(); return; }
           if (id === 'hint') { const m = hint(g); s.hints++; if (m) { s.hl = { m, t: 2.2 }; A.tone(880, 0.06, 'sine', 0.06); } else g.message(T('No veo jugadas', 'No moves found'), 1.6); return; }
           return;
@@ -559,12 +669,13 @@
         const h = s.press; s.press = null;
         if (h) tapPile(g, h.pile, h.k < 0 ? s.st.p[h.pile].length - 1 : h.k);
       },
-      key(g, k, dn) { if (!dn) return; if (k === 'z' || k === 'Backspace') doUndo(g); if (k === 'h') { const m = hint(g); if (m) g.s.hl = { m, t: 2.2 }; } },
+      key(g, k, dn) { if (!dn) return; if (g.s.tut) { if (k === 'Escape' || k === 'Backspace') tutNext(g, true); else if (k === 'Enter' || k === ' ' || k === 'ArrowRight') tutNext(g); return; } if (k === 'z' || k === 'Backspace') doUndo(g); if (k === 'h') { const m = hint(g); if (m) g.s.hl = { m, t: 2.2 }; } },
       update(g, dt) {
         const s = g.s; if (!s.D) return;
         if (s.wob) { s.wob.t -= dt; if (s.wob.t <= 0) s.wob = null; }
         if (s.hl) { s.hl.t -= dt; if (s.hl.t <= 0) s.hl = null; }
         updCascade(g, dt);
+        if (s.tutPend != null && g.state === 'play') { s.tutPend -= dt; if (s.tutPend <= 0) { s.tutPend = null; if (!g.demoOn) tutStart(g); } }
         // final automático: todo a la vista y sin mazo → las cartas suben solas
         if (!s.done && F.mode === 'build' && V.autoFinish !== false && !s.drag) {
           const all = s.st.p.every((p, i) => s.D[i].k === 'found' || s.D[i].k === 'disc' || p.every(isUp)), noStock = kinds(s.D, 'stock').every((i) => !s.st.p[i].length) && kinds(s.D, 'waste').every((i) => !s.st.p[i].length);
@@ -608,6 +719,7 @@
           ctx.globalAlpha = on ? 1 : 0.35; A.emoji(ctx, b.e, b.x + b.w / 2, b.y + b.h / 2, 19); ctx.globalAlpha = 1;
           if (b.id === 'rdl') A.txt(ctx, String(V.redeal.times - (s.st.rr || 0)), b.x + b.w - 5, b.y + b.h - 6, 11, '#ffd43b', 'center', 900, 'rgba(0,0,0,.6)');
         }
+        if (s.tut) drawTut(g, ctx);
       },
       demo(g) {
         const s = g.s; if (!s.D || s.done) return { wait: 0.5 };
@@ -622,6 +734,7 @@
       },
       tv: { mode: 'tap', targets: (g) => {
         const s = g.s; if (!s.D) return []; const o = [];
+        if (s.tut) { const b = tutBox(g); return [{ x: b.next.x, y: b.next.y, w: b.next.w, h: b.next.h, instant: true }]; }
         for (const c of layoutCards(g)) { const n = s.st.p[c.pile].length - c.k; if (c.up && canTake(s.st, s.D, c.pile, n)) o.push({ x: c.px, y: c.py, w: s.cw, h: c.top ? s.ch : s.ch * 0.27 }); }
         for (const i of kinds(s.D, 'stock')) o.push({ x: s.D[i].x, y: s.D[i].y, w: s.cw, h: s.ch });
         for (const b of s.btns) o.push({ x: b.x, y: b.y, w: b.w, h: b.h, instant: true });
