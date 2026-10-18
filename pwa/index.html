@@ -29,6 +29,7 @@
     <button class="chip" data-f="Dos" data-i="two">✌️ Dos dedos</button>
     <a class="chip link" href="indexpro" id="other" data-i="other" style="text-decoration:none">✨ Arcade Pro</a>
     <a class="chip link" href="indexmesa" data-i="mesa" style="text-decoration:none">♟️ Juegos de mesa</a>
+    <a class="chip link" href="indexsolitarios" data-i="soli" style="text-decoration:none">🃏 Solitarios</a>
     <button class="chip" data-f="❤" data-i="favs">❤️ Favoritos</button>
     <button class="chip" id="tvmode" style="display:none" data-i="tv">📺 Modo TV</button>
     <button class="chip" id="lang" style="display:none"></button>
@@ -37,14 +38,14 @@
   <main class="grid" id="grid"></main>
   <p class="foot" id="foot"></p>
 </div>
-<script src="games.js?v=5a463d62a1"></script>
+<script src="games.js?v=07b73487ab"></script>
 <script>
 (function () {
   const get = (k, d) => { try { const v = localStorage.getItem('arc_' + k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } };
   const grid = document.getElementById('grid');
   const EN = arcadeIdioma() === 'en';
   document.documentElement.lang = EN ? 'en' : 'es';
-  const TX = { tagline: 'Arcade mechanics that were a hit and nobody used again, remade to play with your finger.', all: 'All', tap: '👆 Tap', drag: '✋ Drag', swipe: '↔️ Swipe', two: '✌️ Two fingers', other: '✨ Arcade Pro', favs: '❤️ Favourites', tv: '📺 TV mode', install: '📲 Install' , mesa: '♟️ Board games' };
+  const TX = { tagline: 'Arcade mechanics that were a hit and nobody used again, remade to play with your finger.', all: 'All', tap: '👆 Tap', drag: '✋ Drag', swipe: '↔️ Swipe', two: '✌️ Two fingers', other: '✨ Arcade Pro', favs: '❤️ Favourites', tv: '📺 TV mode', install: '📲 Install' , mesa: '♟️ Board games', soli: '🃏 Solitaire' };
   if (EN) { document.querySelectorAll('[data-i]').forEach(e => { if (TX[e.dataset.i]) e.textContent = TX[e.dataset.i]; }); document.title = 'Arcade Perdido · Forgotten classic mechanics'; }
   const loc = (g, k) => (EN && g.en && g.en[k]) || g[k];
   if ((ARCADE_CONFIG.idioma || 'auto') === 'auto') {
@@ -76,7 +77,7 @@
     mine.forEach((g) => grid.appendChild(card(g)));
     // con búsqueda, también enseña los de la otra colección
     const others = words.length ? (window.GAMES_PRO || []).filter(ok) : [];
-    others.forEach((g) => grid.appendChild(card(g, (window.GAMES_MESA || []).indexOf(g.id) >= 0 ? '♟️ ' + (EN ? 'Board games' : 'Juegos de mesa') : '✨ Arcade Pro')));
+    others.forEach((g) => grid.appendChild(card(g, (window.GAMES_SOLI || []).indexOf(g.id) >= 0 ? '🃏 ' + (EN ? 'Solitaire' : 'Solitarios') : (window.GAMES_MESA || []).indexOf(g.id) >= 0 ? '♟️ ' + (EN ? 'Board games' : 'Juegos de mesa') : '✨ Arcade Pro')));
     if (!mine.length && !others.length) { const p = document.createElement('p'); p.className = 'empty'; p.textContent = EN ? 'No games found. Try another word (e.g. Tetris, Zuma, 2048).' : 'No hay juegos con eso. Prueba otra palabra (por ejemplo: Tetris, Zuma, 2048).'; grid.appendChild(p); }
   }
   const qi = document.getElementById('q');

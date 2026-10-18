@@ -143,7 +143,7 @@
   }
 
   Arcade.game({
-    /*THEME*/ home: 'indexpro.html', tag: 'Ocho escaleras del K al A', deco: ['🕷️', '🃏', '♠️', '♥️', '🕸️', '👑'], font: 'serif', bg: ['#147a52', '#0d3b2e'],
+    /*THEME*/ home: 'indexsolitarios.html', tag: 'Ocho escaleras del K al A', deco: ['🕷️', '🃏', '♠️', '♥️', '🕸️', '👑'], font: 'serif', bg: ['#147a52', '#0d3b2e'],
     music: { mode: 'dorian', bpm: 78, wave: 'sine', style: 'chill', root: 57 }, voice: { wave: 'sine', mul: 1.2, echo: 0.4 },
     /*EN*/ en: { title: 'Spider', tag: 'Eight runs from K to A', help: 'Spider solitaire with two decks. Put a card on another one rank higher (a 6 on a 7, any suit). You can move several cards together if they form a <b>run of the same suit</b>. When you complete a run <b>from K down to A of one suit</b>, it leaves the table. Clear the 8 runs. <b>Tap</b> a card and it goes to the best place (or <b>drag</b> it). The deck at the top deals one card to each column (only when there are no empty columns). It starts with one suit (♠) and later uses two (♠ ♥). Every deal has been checked to have a solution.', tvHelp: 'D-pad to a card · OK moves it to the best place.', dict: { '↩️ Deshacer': '↩️ Undo', 'Escaleras: ': 'Runs: ', 'Llena antes las columnas vacías': 'Fill the empty columns first' } },
     /*TV*/ tvHelp: 'Cruceta hasta una carta · OK la mueve a su mejor sitio.',

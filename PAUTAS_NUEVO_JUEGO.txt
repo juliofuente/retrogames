@@ -61,6 +61,12 @@ REGLAS DEL SISTEMA (obligatorias)
  8. Nada de window.withpwa ni de service workers propios: la PWA está desactivada. El juego debe funcionar solo
     con window.isSingleGame = true (sin 🏠, sin favoritos y sin estadísticas, p. ej. dentro de una app Android).
 
+SOLITARIOS (colección soli)
+  · Un solitario nuevo es un src/<id>.js con «// @cartas» en la segunda línea y Arcade.game({ ...Arcade.paciencia({…}), … }):
+    el motor (pwa/cartas.js) pone el juego; la variante solo dice sus montones (piles), cómo se reparte (deal), dónde
+    van (place) y sus reglas (found, tab, stock, cells…). Copia una parecida (cartalibre.js, golf.js, piramidecartas.js).
+  · Alta: php herramientas/arcade.php nuevo <id> coleccion=soli categoria=tablero control=tocar tv=cursor desc_es=… desc_en=…
+
 CONSTRUIR Y REGISTRAR (arcade)  — solo PHP, sin Python ni Node
   · El juego: herramientas/src/<id>.js (primera línea «// Título|#colorDeTema»).
   · Toda la configuración vive en data/arcade.sqlite (no hay archivos JSON). Da de alta el juego en la base de datos:

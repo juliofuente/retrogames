@@ -5,7 +5,7 @@ $R = dirname(__DIR__);
 $u = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH); $qs = $_SERVER['QUERY_STRING'] ?? '';
 $go = function ($to) use ($qs) { header('Location: ' . $to . ($qs !== '' && strpos($to, '?') === false ? '?' . $qs : ''), true, 301); exit; };
 if (preg_match('#^/pwa/(?!index)[a-z0-9]+(\.html)?$#', $u)) goto php;
-if (preg_match('#^/pwa/(index(pro|tv|mesa)?(\.html)?)?$#', $u)) goto php;
+if (preg_match('#^/pwa/(index(pro|tv|mesa|solitarios)?(\.html)?)?$#', $u)) goto php;
 if (preg_match('#^/educativos/?$#', $u) || preg_match('#^/educativos/index(\.html)?$#', $u)) $go('/coleccion/educativos');
 if (preg_match('#^/(data|herramientas|autonomos)(/|$)#', $u) && $u !== '/data/julkadmin.php') { http_response_code(403); exit('403'); }
 if ($u === '/index.html') goto php;

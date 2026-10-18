@@ -54,7 +54,7 @@
   <main class="grid" id="grid"></main>
   <p class="hint" id="hint">🎮 <b>Cruceta</b> para elegir · <b>OK</b> para jugar · En partida, <b>Atrás</b> pausa · Varios jugadores juegan <b>por turnos</b></p>
 </div>
-<script src="games.js?v=5a463d62a1"></script>
+<script src="games.js?v=07b73487ab"></script>
 <script>
 (function () {
   const get = (k, d) => { try { const v = localStorage.getItem('arc_' + k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } };
@@ -89,13 +89,14 @@
     bar.appendChild(b);
   }
   const q = ARCADE_CONFIG.modo === 'modonormal' || ARCADE_CONFIG.modo === 'modotv' ? '' : '?tv=1';
-  const HAS_MESA = typeof GAMES_MESA !== 'undefined' && GAMES_MESA.length;
-  let sec = ({ pro: 'pro', mesa: HAS_MESA ? 'mesa' : 'main' })[new URLSearchParams(location.search).get('sec')] || 'main';
+  const HAS_MESA = typeof GAMES_MESA !== 'undefined' && GAMES_MESA.length, HAS_SOLI = typeof GAMES_SOLI !== 'undefined' && GAMES_SOLI.length;
+  let sec = ({ pro: 'pro', mesa: HAS_MESA ? 'mesa' : 'main', soli: HAS_SOLI ? 'soli' : 'main' })[new URLSearchParams(location.search).get('sec')] || 'main';
   const secs = document.createElement('div'); secs.className = 'secs';
   const SECS = { main: ['🕹️ Arcade Perdido', EN ? 'Forgotten arcade mechanics · played with the remote' : 'Mecánicas de arcade olvidadas · para jugar con el mando'],
     pro: ['✨ Arcade Pro', EN ? 'Mobile hits remade with emojis · played with the remote' : 'Éxitos de móvil rehechos con emojis · para jugar con el mando'],
-    mesa: [EN ? '♟️ Board games' : '♟️ Juegos de mesa', EN ? 'Board classics against the machine · turn by turn, from the sofa' : 'Clásicos de tablero contra la máquina · por turnos, desde el sofá'] };
-  for (const k of HAS_MESA ? ['main', 'pro', 'mesa'] : ['main', 'pro']) {
+    mesa: [EN ? '♟️ Board games' : '♟️ Juegos de mesa', EN ? 'Board classics against the machine · turn by turn, from the sofa' : 'Clásicos de tablero contra la máquina · por turnos, desde el sofá'],
+    soli: [EN ? '🃏 Solitaire' : '🃏 Solitarios', EN ? 'Solitaire variants · with hints and undo, from the sofa' : 'Variantes del solitario · con pistas y deshacer, desde el sofá'] };
+  for (const k of ['main', 'pro'].concat(HAS_MESA ? ['mesa'] : [], HAS_SOLI ? ['soli'] : [])) {
     const b = document.createElement('button'); b.className = 'chip sec'; b.dataset.sec = k; b.textContent = SECS[k][0];
     b.addEventListener('click', () => { if (sec === k) return; sec = k; render(); setFocus(grid.firstElementChild); history.replaceState(null, '', '?sec=' + k); try { sessionStorage.setItem('arc_back', location.pathname + location.search); } catch (e) {} });
     secs.appendChild(b);
@@ -104,10 +105,10 @@
   function render() {
     grid.innerHTML = '';
     secs.querySelectorAll('.sec').forEach((x) => x.classList.toggle('on', x.dataset.sec === sec));
-    document.querySelector('h1').textContent = sec === 'pro' ? 'Arcade Pro' : sec === 'mesa' ? (EN ? 'Board games' : 'Juegos de mesa') : 'Arcade Perdido';
-    document.querySelector('.logo').textContent = sec === 'pro' ? '✨' : sec === 'mesa' ? '♟️' : '🕹️';
+    document.querySelector('h1').textContent = sec === 'pro' ? 'Arcade Pro' : sec === 'mesa' ? (EN ? 'Board games' : 'Juegos de mesa') : sec === 'soli' ? (EN ? 'Solitaire' : 'Solitarios') : 'Arcade Perdido';
+    document.querySelector('.logo').textContent = sec === 'pro' ? '✨' : sec === 'mesa' ? '♟️' : sec === 'soli' ? '🃏' : '🕹️';
     document.getElementById('sub').textContent = SECS[sec][1];
-    const ALL = GAMES.concat(GAMES_PRO), MS = HAS_MESA ? GAMES_MESA : [], list = sec === 'mesa' ? MS.map((id) => ALL.find((g) => g.id === id)).filter(Boolean) : (sec === 'pro' ? GAMES_PRO.filter((g) => MS.indexOf(g.id) < 0) : GAMES);
+    const ALL = GAMES.concat(GAMES_PRO), MS = HAS_MESA ? GAMES_MESA : [], SO = HAS_SOLI ? GAMES_SOLI : [], byIds = (ids) => ids.map((id) => ALL.find((g) => g.id === id)).filter(Boolean), list = sec === 'mesa' ? byIds(MS) : sec === 'soli' ? byIds(SO) : (sec === 'pro' ? GAMES_PRO.filter((g) => MS.indexOf(g.id) < 0 && SO.indexOf(g.id) < 0) : GAMES);
     list.filter((g) => g.tv).forEach((g) => {
       const a = document.createElement('a');
       a.className = 'gc'; a.href = g.id + q; a.dataset.id = g.id; a.style.setProperty('--c', g.color);

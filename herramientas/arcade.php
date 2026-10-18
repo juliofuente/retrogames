@@ -221,7 +221,7 @@ function cmd_juegos(array $ids): void {
     [$title, $theme] = array_map('trim', explode('|', substr($first, 2)));
     $head = "<!doctype html>\n<html lang=\"es\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no\">\n<title>$title · Arcade Perdido</title>\n<meta name=\"theme-color\" content=\"$theme\">\n<meta name=\"apple-mobile-web-app-capable\" content=\"yes\">\n<link rel=\"preconnect\" href=\"https://fonts.googleapis.com\"><link rel=\"preconnect\" href=\"https://fonts.gstatic.com\" crossorigin>\n";
     $html = $head . "<link rel=\"manifest\" href=\"manifest.webmanifest\">\n<link rel=\"icon\" href=\"icons/icon-192.png\">\n<link rel=\"apple-touch-icon\" href=\"icons/icon-192.png\">\n<link rel=\"stylesheet\" href=\"common.css\">\n</head>\n<body class=\"game\">\n<script src=\"config.js\"></script>\n<script src=\"common.js\"></script>\n"
-      . (strpos($src, '@phys') !== false ? "<script src=\"phys.js\"></script>\n" : '') . "<script>\n" . $body . "</script>\n</body>\n</html>\n";
+      . (strpos($src, '@phys') !== false ? "<script src=\"phys.js\"></script>\n" : '') . (strpos($src, '@cartas') !== false ? "<script src=\"cartas.js\"></script>\n" : '') . "<script>\n" . $body . "</script>\n</body>\n</html>\n";
     file_put_contents(PWA . "/$n.html", $html);
   }
   say('juegos: ' . count($ids) . ' construidos en pwa/');
@@ -234,16 +234,17 @@ function entrada(array $g): array {
     'en' => ['title' => $g['title_en'], 'desc' => $g['desc_en'], 'tag' => $g['tag_en'], 'ctrl' => $g['ctrl_en']]];
 }
 function cmd_catalogo(): void {
-  $A = ajustes(); $main = []; $pro = []; $mesa = [];
+  $A = ajustes(); $main = []; $pro = []; $mesa = []; $soli = [];
   foreach (juegos_bd() as $g) {
     if (!$g['file'] || !is_file(PWA . '/' . $g['file'])) continue;   // los externos y los que no tienen archivo no van a las portadas de la PWA
     $e = '  ' . jenc(entrada($g)) . ',';
     if ($g['collection_id'] === 'main') $main[] = $e; else $pro[] = $e;
     if ($g['collection_id'] === 'mesa') $mesa[] = $g['id'];
+    if ($g['collection_id'] === 'soli') $soli[] = $g['id'];
   }
   $js = "/* Arcade Perdido · lista de juegos.\n   GENERADO por herramientas/arcade.php desde data/arcade.sqlite: no lo edites a mano (usa el CMS en /cms).\n   La versión es el ajuste «version»: súbela cada vez que cambies archivos para que el móvil descargue la nueva. */\n"
     . "var ARCADE_VERSION = '" . $A['version'] . "';\nvar GAMES = [\n" . implode("\n", $main) . "\n];\n\n/* Colección Pro: mecánicas de los grandes éxitos de los juegos de móvil, hechas con JS y emojis. */\nvar GAMES_PRO = [\n" . implode("\n", $pro) . "\n];\n"
-    . "// juegos de mesa por turnos (portada pwa/indexmesa y sección ♟️ de la portada de TV)\nvar GAMES_MESA = " . jenc($mesa) . ";\n";
+    . "// juegos de mesa por turnos (portada pwa/indexmesa y sección ♟️ de la portada de TV)\nvar GAMES_MESA = " . jenc($mesa) . ";\n// solitarios (portada pwa/indexsolitarios y sección 🃏 de la portada de TV)\nvar GAMES_SOLI = " . jenc($soli) . ";\n";
   file_put_contents(PWA . '/games.js', $js);
   // ARCADE_CONFIG de config.js, con los ajustes de la base de datos
   $q = function ($v) { return "'" . addslashes((string)$v) . "'"; };
@@ -350,14 +351,14 @@ function cmd_huellas(): void {
 function cmd_autonomos(array $args): void {
   $out = ROOT . '/autonomos/'; @mkdir($out, 0775, true);
   $r = function ($f) { return (string)file_get_contents(PWA . '/' . $f); };
-  $css = $r('common.css'); $codes = ['common.js' => $r('common.js'), 'games.js' => $r('games.js'), 'config.js' => $r('config.js'), 'phys.js' => $r('phys.js')];
-  foreach (['common.js', 'games.js', 'config.js'] as $k) if (strpos($codes[$k], '</script') !== false) fail("$k contiene </script");
+  $css = $r('common.css'); $codes = ['common.js' => $r('common.js'), 'games.js' => $r('games.js'), 'config.js' => $r('config.js'), 'phys.js' => $r('phys.js'), 'cartas.js' => $r('cartas.js')];
+  foreach (['common.js', 'games.js', 'config.js', 'cartas.js'] as $k) if (strpos($codes[$k], '</script') !== false) fail("$k contiene </script");
   $files = glob(PWA . '/*.html'); sort($files);
   foreach ($files as $f) {
     $s = (string)file_get_contents($f);
     $s = preg_replace_callback('/<link rel="stylesheet" href="common\.css(\?v=[0-9a-f]*)?">/', function () use ($css) { return "<style>\n" . $css . '</style>'; }, $s);
     foreach ($codes as $name => $code) $s = preg_replace_callback('/<script src="' . preg_quote($name, '/') . '(\?v=[0-9a-f]*)?"><\/script>/', function () use ($code) { return "<script>\n" . $code . '</script>'; }, $s);
-    if (preg_match('/(href|src)="(common\.css|common\.js|config\.js|games\.js|phys\.js)/', $s)) fail('quedó una referencia sin incrustar en ' . basename($f));
+    if (preg_match('/(href|src)="(common\.css|common\.js|config\.js|games\.js|phys\.js|cartas\.js)/', $s)) fail('quedó una referencia sin incrustar en ' . basename($f));
     file_put_contents($out . basename($f), $s);
   }
   say('autonomos: ' . count(glob($out . '*.html')) . ' archivos');

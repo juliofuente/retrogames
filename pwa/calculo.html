@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Cálculo · Arcade Perdido</title>
+<meta name="theme-color" content="#08254a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css?v=6d7635e467">
+</head>
+<body class="game">
+<script src="config.js?v=84fed7f189"></script>
+<script src="common.js?v=403408c295"></script>
+<script src="cartas.js?v=89bd5c74a5"></script>
+<script>
+// @cartas
+(function () {
+  const P = Arcade.paciencia;
+  const V = {
+      found: { base: [1, 2, 3, 4], step: [1, 2, 3, 4], suit: 'any' }, stock: { to: 'waste', n: 1, redeals: 0 },
+      tab: { build: 'free', move: 'one', empty: 'any', from: ['waste'] },
+      // cuánto falta para que una base pida esta carta (para repartir bien los descartes)
+      score(st, D, m, base) {
+        if (m.f == null || D[m.f].k !== 'waste' || D[m.t].k !== 'tab') return null;
+        const { R } = Arcade.cartas, f = P.of(D, 'found');
+        const wait = (c) => Math.min(...f.map((j, q) => { const p = st.p[j]; if (p.length >= 13) return 99; let r = R(p[p.length - 1]); for (let n = 1; n <= 13; n++) { r = ((r + q) % 13) + 1; if (r === R(c)) return n; } return 99; }));
+        const c = st.p[m.f][st.p[m.f].length - 1], q = st.p[m.t], w = wait(c);
+        if (!q.length) return 20 - w + (R(c) === 13 ? 30 : 0) - P.of(D, 'tab').filter((i) => !st.p[i].length).length * 0;
+        const wt = wait(q[q.length - 1]);
+        return w <= wt ? 40 - (wt - w) : -10 - (w - wt) * 3;
+      },
+      piles: () => P.mk([['stock', 1], ['waste', 1], ['found', 4], ['tab', 4]]),
+      deal(st, D, deck) { const f = P.of(D, 'found'); for (let r = 1; r <= 4; r++) { const k = deck.findIndex((c) => Arcade.cartas.R(c) === r); st.p[f[r - 1]].push(deck.splice(k, 1)[0]); } for (const c of deck) st.p[P.of(D, 'stock')[0]].push(P.down(c)); },
+      place(g, s, D, y0) { const c = P.cols(g, 6); s.cw = c.cw; const ch = c.cw * 1.4; D.forEach((d) => { if (d.k === 'stock') { d.x = c.x(0); d.y = y0; } if (d.k === 'waste') { d.x = c.x(0); d.y = y0 + ch + 22; } if (d.k === 'found') { d.x = c.x(2 + d.n); d.y = y0; } if (d.k === 'tab') { d.x = c.x(2 + d.n); d.y = y0 + ch + 22; } }); },
+      status: (st, D) => Arcade.T('Mazo: ', 'Stock: ') + st.p[P.of(D, 'stock')[0]].length,
+      demoSay: Arcade.T('Cada base suma un número distinto', 'Each foundation adds a different number'),      felt: ["#1864ab","#08254a"], back: ["#1971c2","#0b3f73"], backEmoji: '🧮',
+  };
+  Arcade.game({
+    ...P(V),
+    /*THEME*/ home: 'indexsolitarios.html', tag: 'Cuatro bases, cuatro tablas de sumar', deco: ["🃏","🧮","♠️","♥️","♦️","♣️"], font: 'serif', bg: ["#1864ab","#08254a"],
+    music: { mode: 'dorian', bpm: 74, wave: 'sine', style: 'chill', root: 58 }, voice: { wave: 'sine', mul: 1.2, echo: 0.4 },
+    /*EN*/ en: { title: 'Calculation', tag: 'Four foundations, four times tables', help: 'A thinking solitaire. The four <b>foundations</b> start at A, 2, 3 and 4 and go up <b>by 1</b>, <b>by 2</b>, <b>by 3</b> and <b>by 4</b> (after K you wrap round: Q + 2 = A), regardless of suit; all of them end on K. Draw cards from the stock one at a time: each one goes to a foundation or to one of the <b>four waste piles</b> below. Only the top card of a waste pile can be played, so spread them wisely. The stock cannot be turned over. <b>Tap</b> a card and it goes to the best place, or <b>drag</b> it. 💡 gives a hint and ↩️ undoes.', tvHelp: 'D-pad to a card · OK moves it.', dict: { 'Mazo: ': 'Stock: ', 'Toca una carta y va sola a su sitio': 'Tap a card and it goes to its place' } },
+    /*TV*/ tvHelp: 'Cruceta hasta una carta · OK la mueve.',
+    id: 'calculo', title: 'Cálculo', emoji: '🧮', color: '#4dabf7', origin: 'Calculation / Broken Intervals',
+    help: 'Un solitario de pensar. Las cuatro <b>bases</b> empiezan en A, 2, 3 y 4 y suben de <b>1 en 1</b>, de <b>2 en 2</b>, de <b>3 en 3</b> y de <b>4 en 4</b> (tras la K se vuelve a empezar: Q + 2 = A), sin importar el palo; todas acaban en K. Saca cartas del mazo de una en una: cada una va a una base o a uno de los <b>cuatro montones de descarte</b> de abajo. De los descartes solo se juega la carta de arriba, así que reparte bien. El mazo no se puede volver a pasar. <b>Toca</b> una carta y va sola a su mejor sitio, o <b>arrástrala</b>. 💡 te da una pista y ↩️ deshace.',
+    lives: 0, levels: 0, cap: 20,
+  });
+})();
+</script>
+</body>
+</html>

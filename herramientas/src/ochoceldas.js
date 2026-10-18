@@ -1,0 +1,24 @@
+// Ocho celdas|#032a33
+// @cartas
+(function () {
+  const P = Arcade.paciencia;
+  const V = {
+      solvable: true, solveBudget: 2500, supermove: true,
+      tab: { build: 'suit', move: 'one', empty: 'K' },
+      piles: () => P.mk([['cell', 8], ['found', 4], ['tab', 8]]),
+      deal(st, D, deck) { const t = P.of(D, 'tab'), cl = P.of(D, 'cell'); let k = 0; for (let r = 0; r < 6; r++) for (const i of t) st.p[i].push(deck[k++]); for (let n = 0; n < 4; n++) st.p[cl[n * 2]].push(deck[k++]); },
+      place(g, s, D, y0) { const c = P.cols(g, 8); s.cw = c.cw; const ch = c.cw * 1.4; D.forEach((d) => { if (d.k === 'cell') { d.x = c.x(d.n); d.y = y0; } if (d.k === 'found') { d.x = c.x(2 + d.n); d.y = y0 + ch + 8; } if (d.k === 'tab') { d.x = c.x(d.n); d.y = y0 + ch * 2 + 22; } }); },
+      status: (st, D) => Arcade.T('Celdas libres: ', 'Free cells: ') + P.of(D, 'cell').filter((i) => !st.p[i].length).length,
+      demoSay: Arcade.T('Del mismo palo, un número menos', 'Same suit, one rank lower'),      felt: ["#0b7285","#032a33"], back: ["#0c8599","#064652"], backEmoji: '🗄️',
+  };
+  Arcade.game({
+    ...P(V),
+    /*THEME*/ home: 'indexsolitarios.html', tag: 'Como Carta libre, pero del mismo palo', deco: ["🃏","🗄️","♠️","♥️","♦️","♣️"], font: 'serif', bg: ["#0b7285","#032a33"],
+    music: { mode: 'lydian', bpm: 88, wave: 'sine', style: 'chill', root: 61 }, voice: { wave: 'sine', mul: 1.2, echo: 0.4 },
+    /*EN*/ en: { title: 'Eight Off', tag: 'Like FreeCell, but in the same suit', help: 'Eight <b>cells</b> (four already taken) to help you and eight columns with every card face up. Build the <b>foundations</b> from A to K by suit. On the table you build down <b>in the same suit</b> (a 6♥ on the 7♥). You can move several cards in a row if you have free cells. An empty column only takes a K. <b>Tap</b> a card and it goes to the best place, or <b>drag</b> it. 💡 gives a hint and ↩️ undoes.', tvHelp: 'D-pad to a card · OK moves it.', dict: { 'Celdas libres: ': 'Free cells: ', 'Toca una carta y va sola a su sitio': 'Tap a card and it goes to its place' } },
+    /*TV*/ tvHelp: 'Cruceta hasta una carta · OK la mueve.',
+    id: 'ochoceldas', title: 'Ocho celdas', emoji: '🗄️', color: '#63e6be', origin: 'Eight Off',
+    help: 'Ocho <b>celdas</b> (cuatro ya ocupadas) para ayudarte y ocho columnas con todas las cartas a la vista. Completa las <b>bases</b> del A a la K por palo. En la mesa se baja <b>del mismo palo</b> (un 6♥ sobre el 7♥). Puedes mover varias cartas seguidas si tienes celdas libres. Una columna vacía solo admite una K. <b>Toca</b> una carta y va sola a su mejor sitio, o <b>arrástrala</b>. 💡 te da una pista y ↩️ deshace.',
+    lives: 0, levels: 0, cap: 20,
+  });
+})();

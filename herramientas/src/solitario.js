@@ -163,7 +163,7 @@
   }
 
   Arcade.game({
-    /*THEME*/ home: 'indexpro.html', tag: 'El solitario de toda la vida', deco: ['🃏', '♠️', '♥️', '♦️', '♣️', '👑'], font: 'serif', bg: ['#117a45', '#0b4d2c'],
+    /*THEME*/ home: 'indexsolitarios.html', tag: 'El solitario de toda la vida', deco: ['🃏', '♠️', '♥️', '♦️', '♣️', '👑'], font: 'serif', bg: ['#117a45', '#0b4d2c'],
     music: { mode: 'major', bpm: 80, wave: 'sine', style: 'chill', root: 60 }, voice: { wave: 'sine', mul: 1.2, echo: 0.4 },
     /*EN*/ en: { title: 'Solitaire', tag: 'The good old solitaire', help: 'Classic solitaire (Klondike). Build the four <b>foundations</b> at the top, one per suit, from A to K. On the table, cards go in <b>descending order and alternating colours</b> (a red 6 on a black 7); only a K can go into an empty column. <b>Tap</b> a card and it moves by itself to the best place (or <b>drag</b> it wherever you like). Tap the deck to draw: one card at a time in the first levels and three at a time later. ↩️ undoes. Every deal has been checked to have a solution.', tvHelp: 'D-pad to a card · OK moves it to the best place.', dict: { '↩️ Deshacer': '↩️ Undo', 'Movimientos: ': 'Moves: ', 'Saca ': 'Draw ' } },
     /*TV*/ tvHelp: 'Cruceta hasta una carta · OK la mueve a su mejor sitio.',

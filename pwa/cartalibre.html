@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Carta libre · Arcade Perdido</title>
+<meta name="theme-color" content="#0b4d2c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css?v=6d7635e467">
+</head>
+<body class="game">
+<script src="config.js?v=84fed7f189"></script>
+<script src="common.js?v=403408c295"></script>
+<script src="cartas.js?v=89bd5c74a5"></script>
+<script>
+// @cartas
+(function () {
+  const P = Arcade.paciencia;
+  Arcade.game({
+    ...P({
+      solvable: true, supermove: true,
+      tab: { build: 'alt', move: 'one', empty: 'any' },
+      piles: (lv) => P.mk([['cell', lv < 12 ? 4 : 3], ['found', 4], ['tab', 8]]),
+      deal(st, D, deck) { const t = P.of(D, 'tab'); deck.forEach((c, k) => st.p[t[k % 8]].push(c)); },
+      place(g, s, D, y0) {
+        const c = P.cols(g, 8); s.cw = c.cw; const nc = P.of(D, 'cell').length;
+        D.forEach((d) => {
+          if (d.k === 'cell') { d.x = c.x(d.n); d.y = y0; }
+          if (d.k === 'found') { d.x = c.x(4 + d.n); d.y = y0; }
+          if (d.k === 'tab') { d.x = c.x(d.n); d.y = y0 + c.cw * 1.4 + 14; }
+        });
+        void nc;
+      },
+      status: (st, D) => Arcade.T('Celdas libres: ', 'Free cells: ') + P.of(D, 'cell').filter((i) => !st.p[i].length).length,
+      demoSay: Arcade.T('Usa las celdas para ordenar', 'Use the cells to sort'),
+      felt: ['#1c8f52', '#08381f'], back: ['#c92a2a', '#7a1010'], backEmoji: '🗽',
+    }),
+    /*THEME*/ home: 'indexsolitarios.html', tag: 'Cuatro celdas y ninguna excusa', deco: ['🃏', '🗽', '♠️', '♥️', '♦️', '♣️'], font: 'serif', bg: ['#1c8f52', '#08381f'],
+    music: { mode: 'dorian', bpm: 78, wave: 'sine', style: 'chill', root: 57 }, voice: { wave: 'sine', mul: 1.2, echo: 0.4 },
+    /*EN*/ en: { title: 'FreeCell', tag: 'Four cells and no excuses', help: 'Every card is face up from the start: it all depends on you. Build the four <b>foundations</b> (top right) from A to K, one per suit. On the table, cards go in <b>descending order and alternating colours</b>. The <b>cells</b> (top left) each hold one card while you make room. You can move several cards at once if there are enough free cells and empty columns. <b>Tap</b> a card and it goes to the best place, or <b>drag</b> it. 💡 gives you a hint and ↩️ undoes. From level 12 there are only 3 cells.', tvHelp: 'D-pad to a card · OK moves it.', dict: { 'Celdas libres: ': 'Free cells: ', 'Usa las celdas para ordenar': 'Use the cells to sort' } },
+    /*TV*/ tvHelp: 'Cruceta hasta una carta · OK la mueve.',
+    id: 'cartalibre', title: 'Carta libre', emoji: '🗽', color: '#ff6b6b', origin: 'FreeCell (Paul Alfille)',
+    help: 'Todas las cartas se ven desde el principio: todo depende de ti. Completa las cuatro <b>bases</b> (arriba a la derecha) del A a la K, una por palo. En la mesa, las cartas van en <b>orden descendente y alternando colores</b>. Las <b>celdas</b> (arriba a la izquierda) guardan una carta cada una mientras haces sitio. Puedes mover varias cartas a la vez si hay celdas libres y columnas vacías suficientes. <b>Toca</b> una carta y va sola a su mejor sitio, o <b>arrástrala</b>. 💡 te da una pista y ↩️ deshace. Desde el nivel 12 hay solo 3 celdas.',
+    lives: 0, levels: 0, cap: 20,
+  });
+})();
+</script>
+</body>
+</html>

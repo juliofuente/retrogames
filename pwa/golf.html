@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Golf · Arcade Perdido</title>
+<meta name="theme-color" content="#0b3d16">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css?v=6d7635e467">
+</head>
+<body class="game">
+<script src="config.js?v=84fed7f189"></script>
+<script src="common.js?v=403408c295"></script>
+<script src="cartas.js?v=89bd5c74a5"></script>
+<script>
+// @cartas
+(function () {
+  const P = Arcade.paciencia;
+  const V = {
+      found: { mode: 'updown', wrap: true }, stock: { to: 'found' }, planHint: true, demoBudget: 3000, solvable: true, solveTries: 15, solveBudget: 4000,
+      tab: { build: 'none', move: 'one', empty: 'none' },
+      piles: () => P.mk([['stock', 1], ['found', 1], ['tab', 7]]),
+      init(lv) { this.found.wrap = lv < 8; },
+      deal(st, D, deck) { let k = 0; const t = P.of(D, 'tab'); for (let r = 0; r < 5; r++) for (const i of t) st.p[i].push(deck[k++]); st.p[P.of(D, 'found')[0]].push(deck[k++]); while (k < 52) st.p[P.of(D, 'stock')[0]].push(P.down(deck[k++])); },
+      won: (st, D) => P.of(D, 'tab').every((i) => !st.p[i].length),
+      place(g, s, D, y0) { const c = P.cols(g, 7, { max: 84 }); s.cw = c.cw; const ch = c.cw * 1.4, yb = Math.min(g.bot - ch - 10, y0 + ch * 3.2); D.forEach((d) => { if (d.k === 'tab') { d.x = c.x(d.n); d.y = y0; d.maxH = yb - 12 - y0; } if (d.k === 'stock') { d.x = c.x(2); d.y = yb; } if (d.k === 'found') { d.x = c.x(3.5); d.y = yb; d.label = '⛳'; } }); },
+      status: (st, D) => Arcade.T('En la mesa: ', 'On the table: ') + P.of(D, 'tab').reduce((a, i) => a + st.p[i].length, 0) + ' · ' + Arcade.T('Mazo: ', 'Stock: ') + st.p[P.of(D, 'stock')[0]].length,
+      demoSay: Arcade.T('Uno más o uno menos', 'One up or one down'),      felt: ["#2f9e44","#0b3d16"], back: ["#f08c00","#a35200"], backEmoji: '⛳',
+  };
+  Arcade.game({
+    ...P(V),
+    /*THEME*/ home: 'indexsolitarios.html', tag: 'Un número más o uno menos, y al hoyo', deco: ["🃏","⛳","♠️","♥️","♦️","♣️"], font: 'serif', bg: ["#2f9e44","#0b3d16"],
+    music: { mode: 'minor', bpm: 93, wave: 'sine', style: 'chill', root: 55 }, voice: { wave: 'sine', mul: 1.2, echo: 0.4 },
+    /*EN*/ en: { title: 'Golf', tag: 'One up or one down, and into the hole', help: 'Clear the table: all seven columns must end up empty. You can move the bottom card of any column to the <b>hole</b> (at the bottom, next to the stock) if it is <b>one rank higher or lower</b> than the card there, any suit (on a 7, a 6 or an 8). When you can\'t, tap the stock to put another card on the hole. In the first levels, A follows K; from level 8, a K ends the streak. <b>Tap</b> a card and it goes to the best place, or <b>drag</b> it. 💡 gives a hint and ↩️ undoes.', tvHelp: 'D-pad to a card · OK moves it.', dict: { 'En la mesa: ': 'On the table: ', 'Mazo: ': 'Stock: ', 'Toca una carta y va sola a su sitio': 'Tap a card and it goes to its place' } },
+    /*TV*/ tvHelp: 'Cruceta hasta una carta · OK la mueve.',
+    id: 'golf', title: 'Golf', emoji: '⛳', color: '#8ce99a', origin: 'Golf',
+    help: 'Limpia la mesa: las siete columnas tienen que quedar vacías. Puedes llevar la carta de abajo de cualquier columna al <b>hoyo</b> (abajo, al lado del mazo) si es <b>un número más o uno menos</b> que la que hay allí, sin importar el palo (sobre un 7, un 6 o un 8). Cuando no puedas, toca el mazo para sacar otra carta al hoyo. En los primeros niveles, tras la K va el A; desde el nivel 8, la K corta la racha. <b>Toca</b> una carta y va sola a su mejor sitio, o <b>arrástrala</b>. 💡 te da una pista y ↩️ deshace.',
+    lives: 0, levels: 0, cap: 20,
+  });
+})();
+</script>
+</body>
+</html>

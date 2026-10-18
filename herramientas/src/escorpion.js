@@ -1,0 +1,24 @@
+// Escorpión|#2b160a
+// @cartas
+(function () {
+  const P = Arcade.paciencia;
+  const V = {
+      found: { mode: 'run' }, stock: { to: 'tab', cols: 3 }, planHint: true, demoBudget: 3000,
+      tab: { build: 'suit', move: 'any', empty: 'K' },
+      piles: () => P.mk([['stock', 1], ['found', 4], ['tab', 7]]),
+      deal(st, D, deck, lv) { const t = P.of(D, 'tab'); let k = 0; t.forEach((i, c) => { for (let n = 0; n < 7; n++) st.p[i].push(c < 4 && n < 3 && lv >= 8 ? P.down(deck[k++]) : deck[k++]); }); while (k < 52) st.p[P.of(D, 'stock')[0]].push(P.down(deck[k++])); },
+      place(g, s, D, y0) { const c = P.cols(g, 7); s.cw = c.cw; D.forEach((d) => { if (d.k === 'stock') { d.x = c.x(0); d.y = y0; } if (d.k === 'found') { d.x = c.x(3 + d.n); d.y = y0; } if (d.k === 'tab') { d.x = c.x(d.n); d.y = y0 + c.cw * 1.4 + 14; } }); },
+      status: (st) => Arcade.T('Escaleras: ', 'Runs: ') + (st.runs || 0) + '/4',
+      demoSay: Arcade.T('Del mismo palo, de la K al A', 'Same suit, K down to A'),      felt: ["#7a4a1d","#2b160a"], back: ["#e8590c","#8a2e00"], backEmoji: '🦂',
+  };
+  Arcade.game({
+    ...P(V),
+    /*THEME*/ home: 'indexsolitarios.html', tag: 'Escaleras del mismo palo, de la K al A', deco: ["🃏","🦂","♠️","♥️","♦️","♣️"], font: 'serif', bg: ["#7a4a1d","#2b160a"],
+    music: { mode: 'mixo', bpm: 82, wave: 'sine', style: 'chill', root: 61 }, voice: { wave: 'sine', mul: 1.2, echo: 0.4 },
+    /*EN*/ en: { title: 'Scorpion', tag: 'Same-suit runs, from K down to A', help: 'Make <b>four complete runs</b>, from K down to A in the same suit: each one you finish goes up to the foundations by itself. On the table, a card goes on another <b>of the same suit and one rank higher</b>, and you can move <b>any face-up card with everything on top of it</b>. An empty column only takes a K. When you are stuck, tap the stock: it deals its 3 cards to the first three columns. Until level 8 there are no face-down cards. <b>Tap</b> a card and it goes to the best place, or <b>drag</b> it. 💡 gives a hint and ↩️ undoes.', tvHelp: 'D-pad to a card · OK moves it.', dict: { 'Escaleras: ': 'Runs: ', 'Toca una carta y va sola a su sitio': 'Tap a card and it goes to its place' } },
+    /*TV*/ tvHelp: 'Cruceta hasta una carta · OK la mueve.',
+    id: 'escorpion', title: 'Escorpión', emoji: '🦂', color: '#ff922b', origin: 'Scorpion',
+    help: 'Forma <b>cuatro escaleras completas</b>, de la K al A y del mismo palo: cada una que termines sube sola a las bases. En la mesa, una carta va sobre otra <b>del mismo palo y un número más</b>, y puedes mover <b>cualquier carta boca arriba con todo lo que tiene encima</b>. Una columna vacía solo admite una K. Cuando no puedas más, toca el mazo: reparte sus 3 cartas a las tres primeras columnas. Hasta el nivel 8 no hay cartas boca abajo. <b>Toca</b> una carta y va sola a su mejor sitio, o <b>arrástrala</b>. 💡 te da una pista y ↩️ deshace.',
+    lives: 0, levels: 0, cap: 20,
+  });
+})();

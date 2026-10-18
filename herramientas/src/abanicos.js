@@ -1,0 +1,25 @@
+// Abanicos|#3d0a1d
+// @cartas
+(function () {
+  const P = Arcade.paciencia;
+  const V = {
+      tab: { build: 'suit', move: 'one', empty: 'none' },
+      piles: () => P.mk([['found', 4], ['tab', 18, { fan: 'right' }]]),
+      init(lv) { this.redeal.times = lv < 6 ? 3 : 2; },
+      redeal: { times: 2, run(st, D) { const t = P.of(D, 'tab'); const all = []; t.forEach((i) => { all.push(...st.p[i]); st.p[i] = []; }); for (let k = all.length - 1; k > 0; k--) { const j = Math.floor(Math.random() * (k + 1)); [all[k], all[j]] = [all[j], all[k]]; } all.forEach((c, k) => st.p[t[Math.floor(k / 3)]].push(c)); st.rr = (st.rr || 0) + 1; } },
+      deal(st, D, deck) { const t = P.of(D, 'tab'); deck.forEach((c, k) => st.p[t[Math.floor(k / 3)]].push(c)); },
+      place(g, s, D, y0) { const per = g.W > g.H ? 6 : 4, rows = Math.ceil(18 / per), slotW = (g.W - 12) / per; const cw = Math.min(slotW / 1.75, (g.bot - y0 - 20) / (rows + 1) / 1.4 - 2, 80); s.cw = cw; const ch = cw * 1.4, gapY = Math.min(ch * 0.25, (g.bot - y0 - ch * (rows + 1)) / (rows + 1)); D.forEach((d) => { if (d.k === 'found') { d.x = g.W / 2 - (cw * 4 + 18) / 2 + d.n * (cw + 6); d.y = y0; } if (d.k === 'tab') { const r = Math.floor(d.n / per), q = d.n % per; d.x = 6 + q * slotW + (slotW - cw * 1.6) / 2; d.y = y0 + (ch + gapY) * (r + 1); d.maxW = cw * 1.6; d.step = 0.3; } }); },
+      status: (st) => Arcade.T('Barajadas: ', 'Reshuffles: ') + (st.rr || 0),
+      demoSay: Arcade.T('Del mismo palo, un número menos', 'Same suit, one rank lower'),      felt: ["#a61e4d","#3d0a1d"], back: ["#c2255c","#6b0f33"], backEmoji: '🪭',
+  };
+  Arcade.game({
+    ...P(V),
+    /*THEME*/ home: 'indexsolitarios.html', tag: 'Dieciocho abanicos y dos barajadas', deco: ["🃏","🪭","♠️","♥️","♦️","♣️"], font: 'serif', bg: ["#a61e4d","#3d0a1d"],
+    music: { mode: 'mixo', bpm: 83, wave: 'sine', style: 'chill', root: 58 }, voice: { wave: 'sine', mul: 1.2, echo: 0.4 },
+    /*EN*/ en: { title: 'La Belle Lucie', tag: 'Eighteen fans and two reshuffles', help: 'The cards are in <b>fans of three</b>, all face up; only the top card of each fan can be played. Build the <b>foundations</b> from A to K by suit. A card goes on another <b>of the same suit and one rank higher</b>, one at a time. Empty fans are not refilled. When you get stuck, press 🔀: the table cards are gathered, shuffled and dealt again in threes. You have two reshuffles (three in the first levels). <b>Tap</b> a card and it goes to the best place, or <b>drag</b> it. 💡 gives a hint and ↩️ undoes.', tvHelp: 'D-pad to a card · OK moves it.', dict: { 'Barajadas: ': 'Reshuffles: ', 'Toca una carta y va sola a su sitio': 'Tap a card and it goes to its place' } },
+    /*TV*/ tvHelp: 'Cruceta hasta una carta · OK la mueve.',
+    id: 'abanicos', title: 'Abanicos', emoji: '🪭', color: '#f783ac', origin: 'La Belle Lucie / Midnight Oil',
+    help: 'Las cartas están en <b>abanicos de tres</b>, todas a la vista; solo se juega la carta de arriba de cada abanico. Completa las <b>bases</b> del A a la K por palo. Una carta va sobre otra <b>del mismo palo y un número más</b>, de una en una. Los abanicos vacíos no se rellenan. Cuando te atasques, pulsa 🔀: se recogen las cartas de la mesa, se barajan y se vuelven a repartir de tres en tres. Tienes dos barajadas (tres en los primeros niveles). <b>Toca</b> una carta y va sola a su mejor sitio, o <b>arrástrala</b>. 💡 te da una pista y ↩️ deshace.',
+    lives: 0, levels: 0, cap: 20,
+  });
+})();

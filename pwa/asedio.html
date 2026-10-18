@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Castillo asediado · Arcade Perdido</title>
+<meta name="theme-color" content="#1a1d21">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css">
+</head>
+<body class="game">
+<script src="config.js"></script>
+<script src="common.js"></script>
+<script src="cartas.js"></script>
+<script>
+// @cartas
+(function () {
+  const P = Arcade.paciencia;
+  const V = {
+      solvable: true, solveBudget: 2500, supermove: true,
+      tab: { build: 'any', move: 'one', empty: 'any' },
+      piles: () => P.mk([['found', 4], ['tab', 8, { fan: 'right' }]]),
+      deal(st, D, deck) { const f = P.of(D, 'found'), t = P.of(D, 'tab'); const rest = deck.filter((c) => Arcade.cartas.R(c) !== 1); deck.filter((c) => Arcade.cartas.R(c) === 1).forEach((c, n) => st.p[f[n]].push(c)); rest.forEach((c, k) => st.p[t[k % 8]].push(c)); },
+      place(g, s, D, y0) { if (g.W > g.H * 1.15) { const avail = g.bot - y0 - 8, cw = Math.min(80, (avail - 15) / 4 / 1.4); s.cw = cw; const ch = cw * 1.4, cx = g.W / 2 - cw / 2; D.forEach((d) => { if (d.k === 'found') { d.x = cx; d.y = y0 + d.n * (ch + 5); } if (d.k === 'tab') { const r = d.n % 4, right = d.n >= 4; d.y = y0 + r * (ch + 5); d.step = 0.42; if (right) { d.x = cx + cw + 14; d.maxW = g.W - 8 - d.x; } else { d.x = 8; d.maxW = cx - 14 - 8; } } }); return; } const rows = 9, avail = g.bot - y0 - 8; const cw = Math.min(70, (avail - (rows - 1) * 5) / rows / 1.4, (g.W - 20) / 5.2); s.cw = cw; const ch = cw * 1.4, x0 = (g.W - (cw * 4 + 18)) / 2; D.forEach((d) => { if (d.k === 'found') { d.x = x0 + d.n * (cw + 6); d.y = y0; } if (d.k === 'tab') { d.x = 8; d.y = y0 + (ch + 5) * (d.n + 1); d.maxW = g.W - 16; d.step = 0.42; } }); },
+      status: () => Arcade.T('Un número menos, de cualquier palo', 'One rank lower, any suit'),
+      demoSay: Arcade.T('Solo se juega la punta de cada fila', 'Only the end of each row plays'),      felt: ["#495057","#1a1d21"], back: ["#364fc7","#1b2a7a"], backEmoji: '🏰',
+  };
+  Arcade.game({
+    ...P(V),
+    /*THEME*/ home: 'indexsolitarios.html', tag: 'Ocho filas contra las murallas', deco: ["🃏","🏰","♠️","♥️","♦️","♣️"], font: 'serif', bg: ["#495057","#1a1d21"],
+    music: { mode: 'major', bpm: 78, wave: 'sine', style: 'chill', root: 55 }, voice: { wave: 'sine', mul: 1.2, echo: 0.4 },
+    /*EN*/ en: { title: 'Beleaguered Castle', tag: 'Eight rows against the walls', help: 'The four aces are already on the <b>foundations</b>: build them up to K by suit. The cards are in <b>eight rows</b>, all face up; only the card at <b>the end of each row</b> can be played. A card goes on another <b>one rank higher, any suit</b>, and any card fits in an empty row. You can move several in a row if you have empty rows to help you. <b>Tap</b> a card and it goes to the best place, or <b>drag</b> it. 💡 gives a hint and ↩️ undoes.', tvHelp: 'D-pad to a card · OK moves it.', dict: { 'Un número menos, de cualquier palo': 'One rank lower, any suit', 'Solo se juega la punta de cada fila': 'Only the end of each row plays', 'Toca una carta y va sola a su sitio': 'Tap a card and it goes to its place' } },
+    /*TV*/ tvHelp: 'Cruceta hasta una carta · OK la mueve.',
+    id: 'asedio', title: 'Castillo asediado', emoji: '🏰', color: '#adb5bd', origin: 'Beleaguered Castle',
+    help: 'Los cuatro ases ya están en las <b>bases</b>: súbelas hasta la K por palo. Las cartas están en <b>ocho filas</b>, todas a la vista; solo se juega la carta de <b>la punta de cada fila</b>. Una carta va sobre otra de <b>un número más, de cualquier palo</b>, y en una fila vacía cabe cualquier carta. Puedes mover varias seguidas si tienes filas vacías para ayudarte. <b>Toca</b> una carta y va sola a su mejor sitio, o <b>arrástrala</b>. 💡 te da una pista y ↩️ deshace.',
+    lives: 0, levels: 0, cap: 20,
+  });
+})();
+</script>
+</body>
+</html>

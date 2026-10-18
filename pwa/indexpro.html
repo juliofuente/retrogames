@@ -30,6 +30,7 @@
     <button class="chip" data-f="Mantener" data-i="hold">✊ Mantener</button>
     <a class="chip link" href="./" id="other" data-i="other">🕹️ Arcade Perdido</a>
     <a class="chip link" href="indexmesa" data-i="mesa">♟️ Juegos de mesa</a>
+    <a class="chip link" href="indexsolitarios" data-i="soli">🃏 Solitarios</a>
     <button class="chip" data-f="❤" data-i="favs">❤️ Favoritos</button>
     <button class="chip" id="tvmode" style="display:none" data-i="tv">📺 Modo TV</button>
     <button class="chip" id="lang" style="display:none"></button>
@@ -38,14 +39,14 @@
   <main class="grid" id="grid"></main>
   <p class="foot" id="foot"></p>
 </div>
-<script src="games.js?v=5a463d62a1"></script>
+<script src="games.js?v=07b73487ab"></script>
 <script>
 (function () {
   const get = (k, d) => { try { const v = localStorage.getItem('arc_' + k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } };
   const grid = document.getElementById('grid');
   const EN = arcadeIdioma() === 'en';
   document.documentElement.lang = EN ? 'en' : 'es';
-  const TX = { tagline: 'The big mobile game hits, built from scratch with JavaScript and emojis, with animations, up to 120 levels and three difficulty modes.', all: 'All', tap: '👆 Tap', drag: '✋ Drag', swipe: '↔️ Swipe', hold: '✊ Hold', other: '🕹️ Arcade Perdido', mesa: '♟️ Board games', favs: '❤️ Favourites', tv: '📺 TV mode', install: '📲 Install' };
+  const TX = { tagline: 'The big mobile game hits, built from scratch with JavaScript and emojis, with animations, up to 120 levels and three difficulty modes.', all: 'All', tap: '👆 Tap', drag: '✋ Drag', swipe: '↔️ Swipe', hold: '✊ Hold', other: '🕹️ Arcade Perdido', mesa: '♟️ Board games', soli: '🃏 Solitaire', favs: '❤️ Favourites', tv: '📺 TV mode', install: '📲 Install' };
   if (EN) { document.querySelectorAll('[data-i]').forEach(e => { if (TX[e.dataset.i]) e.textContent = TX[e.dataset.i]; }); document.title = 'Arcade Pro · Mobile hits with emojis'; }
   const loc = (g, k) => (EN && g.en && g.en[k]) || g[k];
   if ((ARCADE_CONFIG.idioma || 'auto') === 'auto') {
@@ -54,7 +55,7 @@
   }
   { const o = document.getElementById('other'); o.href = './';
   }
-  const MESA_IDS = window.GAMES_MESA || [], PRO = GAMES_PRO.filter((g) => MESA_IDS.indexOf(g.id) < 0);   // los de mesa tienen su propia colección
+  const MESA_IDS = (window.GAMES_MESA || []).concat(window.GAMES_SOLI || []), PRO = GAMES_PRO.filter((g) => MESA_IDS.indexOf(g.id) < 0);   // los de mesa tienen su propia colección
   const norm = (t) => String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   const hay = (g) => norm([g.title, g.tag, g.desc, g.origin, g.ctrl, g.en && g.en.title, g.en && g.en.tag, g.en && g.en.desc].join(' '));
   let curF = '', curQ = '';
@@ -78,7 +79,7 @@
     mine.forEach((g) => grid.appendChild(card(g)));
     // con búsqueda, también enseña los de la otra colección
     const others = words.length ? (window.GAMES || []).concat(GAMES_PRO.filter((g) => MESA_IDS.indexOf(g.id) >= 0)).filter(ok) : [];
-    others.forEach((g) => grid.appendChild(card(g, MESA_IDS.indexOf(g.id) >= 0 ? '♟️ ' + (EN ? 'Board games' : 'Juegos de mesa') : '🕹️ Arcade Perdido')));
+    others.forEach((g) => grid.appendChild(card(g, (window.GAMES_SOLI || []).indexOf(g.id) >= 0 ? '🃏 ' + (EN ? 'Solitaire' : 'Solitarios') : MESA_IDS.indexOf(g.id) >= 0 ? '♟️ ' + (EN ? 'Board games' : 'Juegos de mesa') : '🕹️ Arcade Perdido')));
     if (!mine.length && !others.length) { const p = document.createElement('p'); p.className = 'empty'; p.textContent = EN ? 'No games found. Try another word (e.g. Tetris, Zuma, 2048).' : 'No hay juegos con eso. Prueba otra palabra (por ejemplo: Tetris, Zuma, 2048).'; grid.appendChild(p); }
   }
   const qi = document.getElementById('q');

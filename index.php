@@ -1024,7 +1024,7 @@ if ($L === 'es' && $path === '/robots.txt') out_robots();
 if ($L === 'es' && $k === 'icono' && $arg && count($seg) === 2 && preg_match('/^([a-z0-9-]+)\.svg$/', $arg, $m) && isset($GAMES[$m[1]])) out_svg($GAMES[$m[1]]);
 
 // índices estáticos de la PWA (/pwa/, /pwa/indexpro, /pwa/indextv): .htaccess los pasa por aquí para poder cerrarlos
-if (preg_match('#^/pwa/(index(pro|tv|mesa)?(\.html)?)?$#', $path, $m)) {
+if (preg_match('#^/pwa/(index(pro|tv|mesa|solitarios)?(\.html)?)?$#', $path, $m)) {
   if (!PORTADA) page_404();
   if (!empty($m[3]) || ($m[1] ?? '') === 'index') redirect(url('/pwa/' . (($m[2] ?? '') !== '' ? 'index' . $m[2] : '')));
   header('Content-Type: text/html; charset=utf-8'); header('Cache-Control: no-cache');

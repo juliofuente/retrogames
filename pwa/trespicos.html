@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Tres picos · Arcade Perdido</title>
+<meta name="theme-color" content="#0a2f5c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css?v=6d7635e467">
+</head>
+<body class="game">
+<script src="config.js?v=84fed7f189"></script>
+<script src="common.js?v=403408c295"></script>
+<script src="cartas.js?v=89bd5c74a5"></script>
+<script>
+// @cartas
+(function () {
+  const P = Arcade.paciencia;
+  const V = {
+      found: { mode: 'updown', wrap: true }, stock: { to: 'found' }, autoFinish: false, planHint: true, demoBudget: 3000, solvable: true, solveTries: 8, solveBudget: 4000,
+      piles: () => { const L = [], rows = [[1.5, 4.5, 7.5], [1, 2, 4, 5, 7, 8], [0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5], [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]]; rows.forEach((xs, r) => xs.forEach((x) => L.push({ k: 'grid', r, gx: x }))); L.forEach((d) => { d.cov = L.map((e, j) => e.r === d.r + 1 && Math.abs(e.gx - d.gx) === 0.5 ? j : -1).filter((j) => j >= 0); }); return L.concat(P.mk([['stock', 1], ['found', 1]])); },
+      deal(st, D, deck) { let k = 0; D.forEach((d, i) => { if (d.k === 'grid') st.p[i].push(d.r < 3 ? P.down(deck[k++]) : deck[k++]); }); st.p[P.of(D, 'found')[0]].push(deck[k++]); while (k < 52) st.p[P.of(D, 'stock')[0]].push(P.down(deck[k++])); },
+      won: (st, D) => D.every((d, i) => d.k !== 'grid' || !st.p[i].length),
+      place(g, s, D, y0) { const avail = g.bot - y0 - 12; const cw = Math.min((g.W - 12) / 10.3, avail / (1.4 * (1 + 3 * 0.55 + 1.6)), 84); s.cw = cw; const ch = cw * 1.4, step = cw * 1.03, x0 = g.W / 2 - (step * 9 + cw) / 2; D.forEach((d) => { if (d.k === 'grid') { d.x = x0 + d.gx * step; d.y = y0 + d.r * ch * 0.55; } const yb = Math.min(g.bot - ch - 6, y0 + 3 * ch * 0.55 + ch * 1.6); if (d.k === 'stock') { d.x = g.W / 2 - cw * 1.4; d.y = yb; } if (d.k === 'found') { d.x = g.W / 2 + cw * 0.3; d.y = yb; } }); },
+      status: (st, D) => Arcade.T('Quedan: ', 'Left: ') + D.filter((d, i) => d.k === 'grid' && st.p[i].length).length + ' · ' + Arcade.T('Mazo: ', 'Stock: ') + st.p[P.of(D, 'stock')[0]].length,
+      demoSay: Arcade.T('Uno más o uno menos', 'One up or one down'),      felt: ["#1c7ed6","#0a2f5c"], back: ["#5c940d","#2b4a05"], backEmoji: '🏔️',
+  };
+  Arcade.game({
+    ...P(V),
+    /*THEME*/ home: 'indexsolitarios.html', tag: 'Rachas de cartas en tres montañas', deco: ["🃏","🏔️","♠️","♥️","♦️","♣️"], font: 'serif', bg: ["#1c7ed6","#0a2f5c"],
+    music: { mode: 'mixo', bpm: 84, wave: 'sine', style: 'chill', root: 55 }, voice: { wave: 'sine', mul: 1.2, echo: 0.4 },
+    /*EN*/ en: { title: 'TriPeaks', tag: 'Card streaks across three mountains', help: 'Three mountains of cards. Move any <b>free</b> card (with nothing on top) to the <b>pile</b> at the bottom if it is <b>one rank higher or lower</b> than the card there, any suit; A follows K. Face-down cards turn over when they become free. Chain as many as you can: the longer the streak, the more points. When you can\'t, tap the stock. Clear all three peaks to win. <b>Tap</b> a card and it goes to the best place, or <b>drag</b> it. 💡 gives a hint and ↩️ undoes.', tvHelp: 'D-pad to a card · OK moves it.', dict: { 'Quedan: ': 'Left: ', 'Mazo: ': 'Stock: ', 'Toca una carta y va sola a su sitio': 'Tap a card and it goes to its place' } },
+    /*TV*/ tvHelp: 'Cruceta hasta una carta · OK la mueve.',
+    id: 'trespicos', title: 'Tres picos', emoji: '🏔️', color: '#a5d8ff', origin: 'TriPeaks / Tri Towers',
+    help: 'Tres montañas de cartas. Lleva al <b>montón</b> de abajo cualquier carta <b>libre</b> (sin otra encima) que sea <b>un número más o uno menos</b> que la que hay allí, de cualquier palo; tras la K va el A. Las cartas tapadas se dan la vuelta cuando quedan libres. Encadena todas las que puedas: cuanto más larga la racha, más puntos. Cuando no puedas, toca el mazo. Gana quien despeja los tres picos. <b>Toca</b> una carta y va sola a su mejor sitio, o <b>arrástrala</b>. 💡 te da una pista y ↩️ deshace.',
+    lives: 0, levels: 0, cap: 20,
+  });
+})();
+</script>
+</body>
+</html>

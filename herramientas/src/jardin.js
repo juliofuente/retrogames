@@ -1,0 +1,24 @@
+// Jardín de flores|#0a3313
+// @cartas
+(function () {
+  const P = Arcade.paciencia;
+  const V = {
+      solvable: true, solveBudget: 2500, canon: false,
+      tab: { build: 'any', move: 'one', empty: 'any' },
+      piles: () => P.mk([['found', 4], ['tab', 6], ['res', 16]]),
+      deal(st, D, deck) { const t = P.of(D, 'tab'), r = P.of(D, 'res'); let k = 0; for (let n = 0; n < 6; n++) for (const i of t) st.p[i].push(deck[k++]); for (const i of r) st.p[i].push(deck[k++]); },
+      place(g, s, D, y0) { const c = P.cols(g, 8); s.cw = c.cw; const ch = c.cw * 1.4, yr = g.bot - ch * 2 - 12; D.forEach((d) => { if (d.k === 'found') { d.x = c.x(2 + d.n); d.y = y0; } if (d.k === 'tab') { d.x = c.x(1 + d.n); d.y = y0 + ch + 12; d.maxH = yr - 10 - d.y; } if (d.k === 'res') { d.x = c.x(d.n % 8); d.y = yr + (d.n < 8 ? 0 : ch + 4); } }); },
+      status: () => Arcade.T('Ramo: cualquier carta', 'Bouquet: any card'),
+      demoSay: Arcade.T('Las flores del ramo se juegan cuando quieras', 'Bouquet cards play any time'),      felt: ["#2b8a3e","#0a3313"], back: ["#d6336c","#7a1036"], backEmoji: '💐',
+  };
+  Arcade.game({
+    ...P(V),
+    /*THEME*/ home: 'indexsolitarios.html', tag: 'Un ramo de dieciséis cartas a mano', deco: ["🃏","💐","♠️","♥️","♦️","♣️"], font: 'serif', bg: ["#2b8a3e","#0a3313"],
+    music: { mode: 'minor', bpm: 94, wave: 'sine', style: 'chill', root: 61 }, voice: { wave: 'sine', mul: 1.2, echo: 0.4 },
+    /*EN*/ en: { title: 'Flower Garden', tag: 'A bouquet of sixteen cards at hand', help: 'Six <b>flowerbeds</b> of six cards and a <b>bouquet</b> of sixteen at the bottom; everything is visible. Build the <b>foundations</b> from A to K by suit. You can play <b>any card from the bouquet</b> and the bottom card of each flowerbed. On the table you build <b>down one rank, any suit</b>, one card at a time, and any card can go to an empty flowerbed. <b>Tap</b> a card and it goes to the best place, or <b>drag</b> it. 💡 gives a hint and ↩️ undoes.', tvHelp: 'D-pad to a card · OK moves it.', dict: { 'Ramo: cualquier carta': 'Bouquet: any card', 'Toca una carta y va sola a su sitio': 'Tap a card and it goes to its place' } },
+    /*TV*/ tvHelp: 'Cruceta hasta una carta · OK la mueve.',
+    id: 'jardin', title: 'Jardín de flores', emoji: '💐', color: '#ffc9e3', origin: 'Flower Garden / The Garden',
+    help: 'Seis <b>parterres</b> de seis cartas y un <b>ramo</b> de dieciséis abajo; todo se ve. Completa las <b>bases</b> del A a la K por palo. Puedes jugar <b>cualquier carta del ramo</b> y la de abajo de cada parterre. En la mesa se baja <b>de uno en uno, de cualquier palo</b>, moviendo una carta cada vez, y cualquier carta puede ir a un parterre vacío. <b>Toca</b> una carta y va sola a su mejor sitio, o <b>arrástrala</b>. 💡 te da una pista y ↩️ deshace.',
+    lives: 0, levels: 0, cap: 20,
+  });
+})();

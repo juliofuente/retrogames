@@ -1,0 +1,24 @@
+// Docena del panadero|#3a2210
+// @cartas
+(function () {
+  const P = Arcade.paciencia;
+  const V = {
+      solvable: true, solveBudget: 2500,
+      tab: { build: 'any', move: 'one', empty: 'none' },
+      piles: () => P.mk([['found', 4], ['tab', 13]]),
+      deal(st, D, deck) { const t = P.of(D, 'tab'); t.forEach((i, c) => { const p = deck.slice(c * 4, c * 4 + 4); p.sort((a, b) => (Arcade.cartas.R(b) === 13) - (Arcade.cartas.R(a) === 13)); st.p[i].push(...p); }); },
+      place(g, s, D, y0) { const c = P.cols(g, 7); s.cw = c.cw; const ch = c.cw * 1.4, y1 = y0 + ch + 12, y2 = y1 + (g.bot - y1) / 2 + 4; D.forEach((d) => { if (d.k === 'found') { d.x = c.x(1.5 + d.n); d.y = y0; } if (d.k === 'tab') { const r = d.n < 7 ? 0 : 1; d.x = r ? c.x(d.n - 7 + 0.5) : c.x(d.n); d.y = r ? y2 : y1; d.maxH = r ? g.bot - 4 - y2 : y2 - 8 - y1; } }); },
+      status: () => Arcade.T('De uno en uno, cualquier palo', 'One at a time, any suit'),
+      demoSay: Arcade.T('Bajando, de cualquier palo', 'Down, any suit'),      felt: ["#8a5a2b","#3a2210"], back: ["#a0522d","#5a2a10"], backEmoji: '🥖',
+  };
+  Arcade.game({
+    ...P(V),
+    /*THEME*/ home: 'indexsolitarios.html', tag: 'Trece montones y una sola regla', deco: ["🃏","🥖","♠️","♥️","♦️","♣️"], font: 'serif', bg: ["#8a5a2b","#3a2210"],
+    music: { mode: 'minor', bpm: 92, wave: 'sine', style: 'chill', root: 58 }, voice: { wave: 'sine', mul: 1.2, echo: 0.4 },
+    /*EN*/ en: { title: 'Baker\'s Dozen', tag: 'Thirteen piles and a single rule', help: 'Thirteen piles of four cards, all face up; the kings go to the bottom when dealing. Build the <b>foundations</b> from A to K by suit. On the table you build <b>down one rank, any suit</b> (a 6 on any 7), and only <b>the top card</b> moves. Empty piles stay empty, so think before you move. <b>Tap</b> a card and it goes to the best place, or <b>drag</b> it. 💡 gives a hint and ↩️ undoes.', tvHelp: 'D-pad to a card · OK moves it.', dict: { 'De uno en uno, cualquier palo': 'One at a time, any suit', 'Bajando, de cualquier palo': 'Down, any suit', 'Toca una carta y va sola a su sitio': 'Tap a card and it goes to its place' } },
+    /*TV*/ tvHelp: 'Cruceta hasta una carta · OK la mueve.',
+    id: 'panadero', title: 'Docena del panadero', emoji: '🥖', color: '#e8b16a', origin: 'Baker\'s Dozen',
+    help: 'Trece montones de cuatro cartas, todas a la vista; las K se colocan al fondo al repartir. Completa las <b>bases</b> del A a la K por palo. En la mesa se baja <b>de uno en uno, de cualquier palo</b> (un 6 sobre cualquier 7), y solo se mueve <b>la carta de arriba</b>. Los montones vacíos se quedan vacíos, así que piensa antes de mover. <b>Toca</b> una carta y va sola a su mejor sitio, o <b>arrástrala</b>. 💡 te da una pista y ↩️ deshace.',
+    lives: 0, levels: 0, cap: 20,
+  });
+})();

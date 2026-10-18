@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Pingüino de cartas · Arcade Perdido</title>
+<meta name="theme-color" content="#062a52">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css?v=6d7635e467">
+</head>
+<body class="game">
+<script src="config.js?v=84fed7f189"></script>
+<script src="common.js?v=403408c295"></script>
+<script src="cartas.js?v=89bd5c74a5"></script>
+<script>
+// @cartas
+(function () {
+  const P = Arcade.paciencia;
+  const V = {
+      solvable: true, solveBudget: 2500,
+      found: { suit: 'suit', wrap: true },
+      tab: { build: 'suit', move: 'run', empty: (c, st) => Arcade.cartas.R(c) === ((st.fb + 11) % 13) + 1, wrap: true },
+      piles: () => P.mk([['cell', 7], ['found', 4], ['tab', 7]]),
+      deal(st, D, deck) { const { R } = Arcade.cartas, b = deck[0]; st.fb = R(b); const f = P.of(D, 'found'), t = P.of(D, 'tab'); const same = deck.slice(1).filter((c) => R(c) === st.fb); same.forEach((c, n) => st.p[f[n]].push(c)); const rest = [b].concat(deck.slice(1).filter((c) => R(c) !== st.fb)); rest.forEach((c, k) => st.p[t[k % 7]].push(c)); },
+      place(g, s, D, y0) { const c = P.cols(g, 7); s.cw = c.cw; const ch = c.cw * 1.4; D.forEach((d) => { if (d.k === 'cell') { d.x = c.x(d.n); d.y = y0; } if (d.k === 'found') { d.x = c.x(1.5 + d.n); d.y = y0 + ch + 8; } if (d.k === 'tab') { d.x = c.x(d.n); d.y = y0 + ch * 2 + 22; } }); },
+      status: (st) => Arcade.T('Pico: ', 'Beak: ') + Arcade.cartas.RANK[st.fb],
+      demoSay: Arcade.T('Las bases empiezan en el pico', 'Foundations start at the beak'),      felt: ["#1971c2","#062a52"], back: ["#212529","#000000"], backEmoji: '🐧',
+  };
+  Arcade.game({
+    ...P(V),
+    /*THEME*/ home: 'indexsolitarios.html', tag: 'El pico manda: todo empieza por él', deco: ["🃏","🐧","♠️","♥️","♦️","♣️"], font: 'serif', bg: ["#1971c2","#062a52"],
+    music: { mode: 'dorian', bpm: 75, wave: 'sine', style: 'chill', root: 55 }, voice: { wave: 'sine', mul: 1.2, echo: 0.4 },
+    /*EN*/ en: { title: 'Penguin', tag: 'The beak rules: everything starts with it', help: 'The first card, the <b>beak</b>, decides the game: the <b>foundations</b> start at its rank (the other three cards of that rank are already there) and go up by suit, wrapping after K. On the table you build down <b>in the same suit</b> and can move whole <b>same-suit runs</b>. You have seven <b>cells</b> (the flipper) to park cards. An empty column only takes the card <b>just below the beak</b> (if the beak is a 5, a 4). <b>Tap</b> a card and it goes to the best place, or <b>drag</b> it. 💡 gives a hint and ↩️ undoes.', tvHelp: 'D-pad to a card · OK moves it.', dict: { 'Pico: ': 'Beak: ', 'Toca una carta y va sola a su sitio': 'Tap a card and it goes to its place' } },
+    /*TV*/ tvHelp: 'Cruceta hasta una carta · OK la mueve.',
+    id: 'pinguinosolo', title: 'Pingüino de cartas', emoji: '🐧', color: '#d0ebff', origin: 'Penguin (David Parlett)',
+    help: 'La primera carta, el <b>pico</b>, decide la partida: las <b>bases</b> empiezan en su número (las otras tres cartas de ese número ya están en ellas) y suben por palo, dando la vuelta tras la K. En la mesa se baja <b>del mismo palo</b> y puedes mover <b>escaleras del mismo palo</b> enteras. Tienes siete <b>celdas</b> (la aleta) para guardar cartas. Una columna vacía solo admite la carta <b>justo anterior al pico</b> (si el pico es un 5, un 4). <b>Toca</b> una carta y va sola a su mejor sitio, o <b>arrástrala</b>. 💡 te da una pista y ↩️ deshace.',
+    lives: 0, levels: 0, cap: 20,
+  });
+})();
+</script>
+</body>
+</html>

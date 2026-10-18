@@ -77,7 +77,7 @@
   }
 
   Arcade.game({
-    /*THEME*/ home: 'indexpro.html', tag: 'Ordena cada fila del 2 a la K', deco: ['🃏', '♠️', '♥️', '♦️', '♣️', '🔀'], font: 'serif', bg: ['#45306b', '#2a1b3d'],
+    /*THEME*/ home: 'indexsolitarios.html', tag: 'Ordena cada fila del 2 a la K', deco: ['🃏', '♠️', '♥️', '♦️', '♣️', '🔀'], font: 'serif', bg: ['#45306b', '#2a1b3d'],
     music: { mode: 'lydian', bpm: 84, wave: 'sine', style: 'chill', root: 62 }, voice: { wave: 'sine', mul: 1.2, echo: 0.4 },
     /*EN*/ en: { title: 'Gaps', tag: 'Sort every row from 2 to K', help: 'Montana solitaire. The aces are removed and leave <b>gaps</b>. A gap can only be filled by the card <b>of the same suit and one rank higher</b> than the one on its left (after a 7♥, only the 8♥); in the first spot of a row, only a <b>2</b>. <b>Tap a gap</b> (or the card you want to move) and it moves by itself. Leave each row in order from 2 to K of a single suit. If you get stuck, <b>shuffle</b>: the cards already in order stay put. The fewer shuffles, the more stars.', tvHelp: 'D-pad to a gap or a card · OK to move it.', dict: { '🔀 Barajar': '🔀 Shuffle', 'Barajados: ': 'Shuffles: ' } },
     /*TV*/ tvHelp: 'Cruceta hasta un hueco o una carta · OK para moverla.',
