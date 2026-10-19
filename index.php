@@ -79,6 +79,18 @@ $LASTMOD = $META['actualizado'] ?? date('Y-m-d');
    Cada subdominio enseña solo sus colecciones; en la de la tele, solo los juegos con mando. Lo demás da 404. */
 require_once __DIR__ . '/sites.php';
 $WEB = site_for_host($db, $host);
+$WEBS = $db->query('SELECT * FROM sites ORDER BY sort, id')->fetchAll();
+/* dirección de otra web: el subdominio sobre el dominio base de esta (con el mismo puerto y protocolo) */
+function site_url(array $w): string {
+  global $WEB, $host, $https;
+  $h = strtolower($host); $port = ''; if (preg_match('/(:\d+)$/', $h, $m)) { $port = $m[1]; $h = substr($h, 0, -strlen($port)); }
+  $base = $WEB['host'] === '*' || strpos($WEB['host'], '.') !== false ? preg_replace('/^www\./', '', $h) : (string)substr($h, strpos($h, '.') + 1);
+  if ($WEB['host'] !== '*' && strpos($WEB['host'], '.') !== false) $base = (string)substr($h, strpos($h, '.') + 1);
+  $to = $w['host'] === '*' ? $base : (strpos($w['host'], '.') !== false ? $w['host'] : $w['host'] . '.' . $base);
+  return ($https ? 'https' : 'http') . '://' . $to . $port . '/';
+}
+function sites_path(?string $lang = null): string { global $L; return ($lang ?? $L) === 'en' ? '/en/sites' : '/webs'; }
+function sites_label(): string { return T('Ver todos los subsites', 'See all our sites'); }
 define('TVSITE', $WEB['tv']);
 $ALL_GAMES = $GAMES;
 if ($WEB['cols'] !== null) $COLS = array_intersect_key($COLS, array_flip($WEB['cols']));
@@ -535,6 +547,7 @@ footer .fb{display:flex;align-items:center;gap:9px;font-weight:900;color:var(--t
     <?php if ($multi): foreach ($COLS as $c): ?><a href="<?= h(url(col_path($c))) ?>"<?= $p === col_path($c) ? ' aria-current="page"' : '' ?>><?= h(f($c, 'name')) ?></a><?php endforeach; else: foreach (array_slice($CATS, 0, 6) as $c): ?><a href="<?= h(url(cat_path($c))) ?>"<?= $p === cat_path($c) ? ' aria-current="page"' : '' ?>><?= h($c['emoji'] . ' ' . f($c, 'name')) ?></a><?php endforeach; endif; ?>
     <a href="<?= h(url(list_path('games'))) ?>"<?= $p === list_path('games') ? ' aria-current="page"' : '' ?>><?= h(T('Todos', 'All games')) ?></a>
     <?php if (TVSITE): ?><a href="<?= h(url(list_path('tv'))) ?>"<?= $p === list_path('tv') ? ' aria-current="page"' : '' ?>>📺 TV</a><?php endif; ?>
+    <a href="<?= h(url(sites_path())) ?>"<?= $p === sites_path() ? ' aria-current="page"' : '' ?>>🌐 <?= h(T('Subsites', 'Sites')) ?></a>
   </nav>
   <form class="search" action="<?= h(url(list_path('search'))) ?>" method="get" role="search">
     <input type="search" name="q" value="<?= h($o['q'] ?? '') ?>" placeholder="<?= h(T('Buscar juego…', 'Search games…')) ?>" aria-label="<?= h(T('Buscar', 'Search')) ?>">
@@ -555,6 +568,7 @@ footer .fb{display:flex;align-items:center;gap:9px;font-weight:900;color:var(--t
 </nav>
 <footer><div class="wrap">
   <div class="fb"><span aria-hidden="true"><?= h($WEB['emoji'] ?: '🕹️') ?></span><?= h($SITE) ?></div>
+  <p><a class="more" href="<?= h(url(sites_path())) ?>" style="margin-top:0">🌐 <?= h(sites_label()) ?> →</a></p>
   <div class="links"<?= $multi ? '' : ' hidden' ?>>
     <?php foreach ($COLS as $c): ?><a href="<?= h(url(col_path($c))) ?>"><b><?= h($c['emoji'] . ' ' . f($c, 'name')) ?></b></a><?php endforeach; ?>
   </div>
@@ -716,6 +730,28 @@ function page_control(array $c): void {
   $lead = T('Juegos táctiles que se controlan con un solo gesto: ' . mb_strtolower($n, 'UTF-8') . '. Ideales para jugar con una mano en el móvil.', 'Touch games played with a single gesture: ' . mb_strtolower($n, 'UTF-8') . '. Perfect for playing one-handed on your phone.');
   page_list($p, [ctrl_path($c, 'es'), ctrl_path($c, 'en')], T('Juegos para ' . mb_strtolower($n, 'UTF-8'), mb_convert_case($n, MB_CASE_TITLE, 'UTF-8') . ' games'), $lead, $games,
     [[T('Inicio', 'Home'), home_path()], [T('Control: ', 'Control: ') . $n, $p]], T('Juegos de ' . mb_strtolower($n, 'UTF-8') . ' para móvil', mb_convert_case($n, MB_CASE_TITLE, 'UTF-8') . ' games for mobile') . ' · ' . $SITE, $lead);
+}
+
+function page_sites(): void {
+  global $WEBS, $WEB, $SITE, $COLS;
+  $p = sites_path();
+  ob_start(); ?>
+  <?= crumbs_html([[T('Inicio', 'Home'), home_path()], [sites_label(), $p]]) ?>
+  <h1>🌐 <?= h(sites_label()) ?></h1>
+  <p class="lead"><?= h(T('Cada colección tiene su propia web. Elige a cuál quieres ir.', 'Each collection has its own site. Pick where you want to go.')) ?></p>
+  <ul class="tiles" style="grid-template-columns:repeat(auto-fill,minmax(260px,1fr))">
+  <?php foreach ($WEBS as $w): $me = $w['id'] === $WEB['id']; $cl = trim((string)$w['collections']); ?>
+    <li><a class="tile" href="<?= h(site_url($w)) ?>" style="background:<?= h($w['c_bg']) ?>;color:<?= h($w['c_text']) ?>;border:2px solid <?= h($me ? $w['c_accent'] : $w['c_bg']) ?>;align-items:flex-start">
+      <span class="e" aria-hidden="true" style="display:grid;place-items:center;width:48px;height:48px;border-radius:14px;background:<?= h($w['c_accent']) ?>;flex:none"><?= h($w['emoji']) ?></span>
+      <span><b><?= h(T($w['name_es'], $w['name_en'] ?: $w['name_es'])) ?><?= $me ? ' · ' . h(T('estás aquí', 'you are here')) : '' ?></b>
+        <small style="color:<?= h($w['c_muted']) ?>"><?= h(T((string)$w['tag_es'], (string)($w['tag_en'] ?: $w['tag_es']))) ?></small>
+        <small style="color:<?= h($w['c_accent']) ?>;margin-top:4px"><?= h(preg_replace('#^https?://|/$#', '', site_url($w))) ?><?= $w['tv'] ? ' · 📺 ' . h(T('para la tele', 'for TV')) : '' ?></small></span></a></li>
+  <?php endforeach; ?>
+  </ul>
+  <?php $body = ob_get_clean();
+  $title = sites_label() . ' · ' . $SITE;
+  render(['path' => $p, 'title' => $title, 'desc' => T('Todas las webs de juegos: arcade, Arcade Pro, juegos de mesa, solitarios, educativos y para la tele.', 'All our game sites: arcade, Arcade Pro, board games, solitaire, educational and TV.'), 'alt' => [sites_path('es'), sites_path('en')], 'body' => $body,
+    'ld' => [page_ld('CollectionPage', $p, $title, '')]]);
 }
 
 function page_tv(): void {
@@ -921,6 +957,8 @@ function serve_index(string $k): void {
   $head = '<base href="' . h(url('/pwa/')) . '">' . ($WEB['cols'] !== null ? '<style>a.chip.link{display:none!important}</style>' : '');
   $html = preg_replace('/<head>/i', '<head>' . "\n" . $head, $html, 1);
   $html = preg_replace('/<title>.*?<\/title>/s', '<title>' . h($SITE) . '</title>', $html, 1);
+  $lnk = '<a href="' . h(url(sites_path(guess_lang()))) . '" style="position:fixed;right:12px;bottom:12px;z-index:50;background:rgba(0,0,0,.55);color:#fff;font:700 14px system-ui,sans-serif;text-decoration:none;padding:8px 14px;border-radius:999px;backdrop-filter:blur(6px)">🌐 ' . h(guess_lang() === 'en' ? 'See all our sites' : 'Ver todos los subsites') . '</a>';
+  $html = preg_replace('#</body>#i', $lnk . '</body>', $html, 1);
   header('Content-Type: text/html; charset=utf-8'); header('Cache-Control: no-cache');
   echo $html; exit;
 }
@@ -1103,6 +1141,7 @@ if ($r === '/' && count($seg) === 0) { page_home(); exit; }
 if (count($seg) === 1 && $k === 'lista' && !$EN) redirect(url(list_path('games')));   // la antigua copia estática lista.html
 if (count($seg) === 1 && $k === ($EN ? 'games' : 'juegos')) { page_all(); exit; }
 if (count($seg) === 1 && $k === 'tv' && TVSITE) { page_tv(); exit; }
+if (count($seg) === 1 && $k === ($EN ? 'sites' : 'webs')) { page_sites(); exit; }
 if (count($seg) === 1 && $k === ($EN ? 'search' : 'buscar')) { page_search(); exit; }
 if (count($seg) === 2) {
   if ($k === ($EN ? 'game' : 'juego')) { $g = $EN ? find_by($GAMES, 'slug_en', $arg) : ($GAMES[$arg] ?? null); if ($g) { page_game($g); exit; } }

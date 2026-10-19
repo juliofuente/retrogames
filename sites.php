@@ -18,7 +18,7 @@ function sites_ensure(PDO $db): void {
   $db->exec("CREATE TABLE sites (id TEXT PRIMARY KEY, host TEXT NOT NULL UNIQUE, name_es TEXT NOT NULL, name_en TEXT, emoji TEXT, tag_es TEXT, tag_en TEXT, desc_es TEXT, desc_en TEXT,
     collections TEXT NOT NULL DEFAULT '*', tv INTEGER NOT NULL DEFAULT 0, font TEXT, c_bg TEXT, c_surface TEXT, c_text TEXT, c_muted TEXT, c_accent TEXT, c_ink TEXT, sort INTEGER DEFAULT 0)");
   $seed = [
-    ['principal', '*', 'Arcade Perdido', 'Arcade Perdido', '🕹️', 'Juega un rato. Sin anuncios.', 'Play a little. No ads.', '', '', '*', 0, 'Nunito', '#f6f4fb', '#ffffff', '#1d1a2e', '#6c6884', '#ffce3a', '#2a2100', 0],
+    ['principal', '*', 'JuegosBoom', 'JuegosBoom', '🕹️', 'Todos los juegos en una sola web.', 'All the games in one place.', '', '', '*', 0, 'Nunito', '#f6f4fb', '#ffffff', '#1d1a2e', '#6c6884', '#ffce3a', '#2a2100', 0],
     ['arcade', 'arcade', 'Arcade Perdido', 'Lost Arcade', '🕹️', 'Las recreativas que nadie volvió a hacer.', 'The arcade games nobody made again.', '', '', 'main', 0, 'Rubik', '#120c24', '#1d1638', '#f4effe', '#a89fc9', '#ff3d9a', '#ffffff', 1],
     ['arcadeplus', 'arcadeplus', 'Arcade Pro', 'Arcade Pro', '✨', 'Los éxitos del móvil, hechos con emojis.', 'Mobile hits, made with emojis.', '', '', 'pro', 0, 'Baloo 2', '#0b1324', '#15213c', '#eef4ff', '#98a8c6', '#3de0ff', '#03252e', 2],
     ['mesa', 'mesa', 'Juegos de mesa', 'Board games', '♟️', 'Los clásicos de tablero, contra la máquina.', 'Board classics, against the machine.', '', '', 'mesa', 0, 'Lora', '#f4ecdf', '#fffaf1', '#2b1d10', '#7a6450', '#b5762c', '#ffffff', 3],

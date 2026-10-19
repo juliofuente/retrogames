@@ -5,7 +5,8 @@ Fecha: 19-10-2026 · Versión de la PWA (games.js → ARCADE_VERSION): 2.30.0
   mesa, solitarios, educativos y tv (más «*» para el dominio principal). Cada una tiene sus colecciones, nombre, lema,
   fuente y colores, y no se puede pasar de una a otra (lo ajeno da 404). La de la tele solo tiene juegos con mando, va
   siempre en modo TV y su portada es la de la tele; las demás nunca entran en modo TV. Manifest propio por web
-  (/manifest.webmanifest). Arreglado: /pwa/indexsolitarios no pasaba por index.php en Apache.
+  (/manifest.webmanifest). En todas hay un enlace «🌐 Ver todos los subsites» (cabecera, pie y portadas de la PWA)
+  a /webs (/en/sites), con la lista de webs y su aspecto. La web «*» se llama JuegosBoom. Arreglado: /pwa/indexsolitarios no pasaba por index.php en Apache.
 · v2.29.0: 8 juegos nuevos (281 en total).
   - Arcade Pro: Torre giratoria (plataformas en una torre que gira, estilo Nebulus), Cohete ratón (puzle de flechas
     con ratones, gatos y agujeros, estilo ChuChu Rocket; los niveles se generan y se comprueban simulando),
