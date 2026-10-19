@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Tres frentes · Arcade Perdido</title>
+<meta name="theme-color" content="#14213d">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css?v=6d7635e467">
+</head>
+<body class="game">
+<script src="config.js?v=84fed7f189"></script>
+<script src="common.js?v=91476f9e44"></script>
+<script>
+(function () {
+  const { rand, clamp, pick, shuffle } = Arcade;
+  const T = Arcade.T;
+  // ab: allyHere v · draw · foeHere v · crowd · allyAll v
+  const POOL = [
+    { e: '🐜', n: T('Hormiga', 'Ant'), c: 1, p: 2 },
+    { e: '🦊', n: T('Zorro', 'Fox'), c: 1, p: 1, ab: 'allyHere', v: 1, d: T('Al salir: +1 a tus otras cartas de aquí', 'On reveal: +1 to your other cards here') },
+    { e: '🦉', n: T('Búho', 'Owl'), c: 2, p: 2, ab: 'draw', d: T('Al salir: robas una carta', 'On reveal: draw a card') },
+    { e: '🐍', n: T('Serpiente', 'Snake'), c: 2, p: 3, ab: 'foeHere', v: 1, d: T('Al salir: −1 a las cartas rivales de aquí', 'On reveal: −1 to enemy cards here') },
+    { e: '🐺', n: T('Lobo', 'Wolf'), c: 3, p: 4 },
+    { e: '🐝', n: T('Enjambre', 'Swarm'), c: 3, p: 2, ab: 'crowd', d: T('Al salir: +4 si tienes 3 o más cartas aquí', 'On reveal: +4 if you have 3+ cards here') },
+    { e: '🦁', n: T('León', 'Lion'), c: 4, p: 6 },
+    { e: '🦅', n: T('Águila', 'Eagle'), c: 4, p: 4, ab: 'allyAll', v: 1, d: T('Al salir: +1 a todas tus otras cartas', 'On reveal: +1 to all your other cards') },
+    { e: '🐻', n: T('Oso', 'Bear'), c: 5, p: 8 },
+    { e: '🐊', n: T('Cocodrilo', 'Crocodile'), c: 5, p: 6, ab: 'foeHere', v: 2, d: T('Al salir: −2 a las cartas rivales de aquí', 'On reveal: −2 to enemy cards here') },
+    { e: '🐘', n: T('Elefante', 'Elephant'), c: 6, p: 12 },
+    { e: '🐉', n: T('Dragón', 'Dragon'), c: 6, p: 9, ab: 'allyHere', v: 3, d: T('Al salir: +3 a tus otras cartas de aquí', 'On reveal: +3 to your other cards here') },
+  ];
+  const LOCS = [
+    { e: '🏝️', n: T('Isla', 'Island'), d: T('Sin nada especial', 'Nothing special') },
+    { e: '🌋', n: T('Volcán', 'Volcano'), d: T('Las cartas que salen aquí: −1', 'Cards revealed here: −1'), rev: (c) => { c.p -= 1; } },
+    { e: '🌳', n: T('Bosque', 'Forest'), d: T('Cartas de coste 1 y 2: +2', 'Cost 1 and 2 cards: +2'), rev: (c) => { if (c.c <= 2) c.p += 2; } },
+    { e: '🏔️', n: T('Montaña', 'Mountain'), d: T('Solo caben 2 cartas por lado', 'Only 2 cards per side'), cap: 2 },
+    { e: '🏰', n: T('Castillo', 'Castle'), d: T('Tu primera carta aquí: +3', 'Your first card here: +3'), rev: (c, mine) => { if (mine.length === 1) c.p += 3; } },
+    { e: '🌊', n: T('Mar', 'Sea'), d: T('No se puede jugar en el turno 6', 'Can\'t play here on turn 6'), ban: (c, t) => t === 6 },
+    { e: '❄️', n: T('Glaciar', 'Glacier'), d: T('Solo cartas de coste 3 o menos', 'Only cards costing 3 or less'), ban: (c) => c.c > 3 },
+    { e: '🌈', n: T('Arcoíris', 'Rainbow'), d: T('Al final de cada turno, todas +1', 'At the end of each turn, all +1'), end: (c) => { c.p += 1; } },
+    { e: '🕳️', n: T('Abismo', 'Abyss'), d: T('Cartas de coste 5 o más: −3', 'Cards costing 5 or more: −3'), rev: (c) => { if (c.c >= 5) c.p -= 3; } },
+    { e: '⛩️', n: T('Templo', 'Temple'), d: T('Al jugar aquí, robas una carta', 'Play here and draw a card'), draw: 1 },
+  ];
+  const CURVE = [0, 3, 3, 3, 2.4, 1.8, 1.2];
+  let UID = 0;
+  function mkDeck() { const out = []; while (out.length < 12) { const c = pick(POOL); if (Math.random() * 3 < CURVE[c.c]) out.push({ ...c, uid: ++UID }); } return shuffle(out); }
+  const powerAt = (S, l) => S.locs[l].reduce((t, c) => t + (c.rev ? c.p : 0), 0);
+  const capOf = (l) => l.cap || 4;
+
+  function drawC(g, w) { const S = g.s.S[w]; if (S.deck.length && S.hand.length < 7) S.hand.push(S.deck.pop()); }
+  function canPlace(g, w, c, l) {
+    const s = g.s, S = s.S[w], L = s.L[l]; if (c.c > s.turn - s.spent[w]) return false;
+    if (S.locs[l].length >= capOf(L)) return false; if (L.ban && L.ban(c, s.turn)) return false; return true;
+  }
+  function place(g, w, hi, l) { const s = g.s, S = s.S[w], c = S.hand[hi]; if (!c || !canPlace(g, w, c, l)) return false; S.hand.splice(hi, 1); s.spent[w] += c.c; S.locs[l].push({ ...c, base: c.p, rev: false, t: s.turn }); return true; }
+  function unplace(g, l, k) { const s = g.s, S = s.S[0], c = S.locs[l][k]; if (!c || c.rev) return; S.locs[l].splice(k, 1); s.spent[0] -= c.c; S.hand.push(POOL.find((q) => q.e === c.e) && { ...POOL.find((q) => q.e === c.e), uid: c.uid }); }
+
+  /* ---------- IA: reparte la energía por los lugares (máquina y demo) ---------- */
+  function plan(g, w, noise) {
+    const s = g.s, S = s.S[w], O = s.S[1 - w], out = [], spent = s.spent[w], room = s.L.map((L, l) => capOf(L) - S.locs[l].length);
+    let e = s.turn - spent;
+    const est = s.L.map((L, l) => powerAt(S, l) + S.locs[l].filter((c) => !c.rev).reduce((t, c) => t + c.p, 0) - powerAt(O, l) * 1.05);
+    const hand = S.hand.map((c, i) => ({ c, i })).sort((a, b) => b.c.c - a.c.c || b.c.p - a.c.p);
+    // mejor combinación sencilla: las cartas más caras que quepan
+    for (const { c, i } of hand) {
+      if (c.c > e) continue;
+      let best = -1, bv = -1e9;
+      for (let l = 0; l < 3; l++) {
+        if (room[l] <= 0) continue; const L = s.L[l]; if (L.ban && L.ban(c, s.turn)) continue;
+        let gain = c.p; if (L.rev) { const t = { ...c }; L.rev(t, S.locs[l].concat([t])); gain = t.p; }
+        if (c.ab === 'allyHere') gain += c.v * S.locs[l].length; if (c.ab === 'foeHere') gain += c.v * O.locs[l].length; if (c.ab === 'crowd' && S.locs[l].length >= 2) gain += 4;
+        const m = est[l];
+        const v = (m < -14 ? gain * 0.3 : m > 12 ? gain * 0.4 : gain + 6) + (Math.random() < noise ? rand(0, 12) : rand(0, 1.5));
+        if (v > bv) { bv = v; best = l; }
+      }
+      if (best < 0) continue;
+      out.push({ uid: c.uid, l: best }); e -= c.c; room[best]--; est[best] += c.p;
+    }
+    return out;
+  }
+
+  function endTurn(g) {
+    const s = g.s; if (s.phase !== 'plan' || s.done) return;
+    // la máquina coloca ahora (sus cartas no se ven hasta que salen)
+    for (const a of plan(g, 1, s.noise)) { const i = s.S[1].hand.findIndex((c) => c.uid === a.uid); if (i >= 0) place(g, 1, i, a.l); }
+    s.queue = []; for (const w of [0, 1]) for (let l = 0; l < 3; l++) s.S[w].locs[l].forEach((c) => { if (!c.rev) s.queue.push({ w, l, c }); });
+    s.queue.sort((a, b) => a.w - b.w); s.phase = 'reveal'; s.revT = 0.3; s.sel = null; Arcade.sfx.whoosh();
+  }
+  function reveal(g, q) {
+    const s = g.s, S = s.S[q.w], O = s.S[1 - q.w], L = s.L[q.l], c = q.c; c.rev = true; c.pop = 0.5;
+    if (L.rev) L.rev(c, S.locs[q.l].filter((x) => x.rev));
+    if (L.draw) drawC(g, q.w);
+    if (c.ab === 'allyHere') S.locs[q.l].forEach((x) => { if (x !== c && x.rev) { x.p += c.v; x.pop = 0.4; } });
+    if (c.ab === 'foeHere') O.locs[q.l].forEach((x) => { if (x.rev) { x.p -= c.v; x.pop = 0.4; } });
+    if (c.ab === 'allyAll') S.locs.forEach((col) => col.forEach((x) => { if (x !== c && x.rev) { x.p += c.v; x.pop = 0.4; } }));
+    if (c.ab === 'crowd' && S.locs[q.l].length >= 3) c.p += 4;
+    if (c.ab === 'draw') drawC(g, q.w);
+    const [x, y] = cardPos(g, q.w, q.l, S.locs[q.l].indexOf(c)); g.burst(x, y, { n: 8, color: q.w ? ['#ff8787', '#fff'] : ['#74c0fc', '#fff'], speed: 110 });
+    Arcade.tone(q.w ? 330 : 560, 0.08, 'triangle', 0.07);
+    if (c.ab) g.float(c.ab === 'draw' ? '+🂠' : '✦', x, y - 20, '#ffd43b', 18);
+  }
+  function finishTurn(g) {
+    const s = g.s;
+    s.L.forEach((L, l) => { if (L.end) for (const S of s.S) S.locs[l].forEach((c) => { L.end(c); c.pop = 0.4; }); });
+    if (s.turn >= 6) return score(g);
+    s.turn++; s.spent = [0, 0]; drawC(g, 0); drawC(g, 1); s.phase = 'plan'; s.plan = null;
+    g.message(T('Turno ', 'Turn ') + s.turn + ' · ⚡' + s.turn, 0.9); Arcade.sfx.up();
+  }
+  function score(g) {
+    const s = g.s; s.done = true; s.phase = 'end';
+    let mine = 0, theirs = 0, tot = 0;
+    for (let l = 0; l < 3; l++) { const a = powerAt(s.S[0], l), b = powerAt(s.S[1], l); tot += a - b; if (a > b) mine++; else if (b > a) theirs++; s.res[l] = a > b ? 1 : b > a ? -1 : 0; }
+    const win = mine > theirs || (mine === theirs && tot > 0);
+    if (win) { Arcade.sfx.win(); g.confetti(90); g.addScore(250 * g.lv + Math.max(0, tot) * 20, g.W / 2, g.H / 2); setTimeout(() => { if (g.state === 'play') g.win(mine === 3 ? 3 : tot >= 10 ? 2 : 1); }, 1800); }
+    else { Arcade.sfx.lose(); g.message(mine === theirs && tot === 0 ? T('Empate: otra vez', 'Draw: again') : T('Gana la máquina', 'The machine wins'), 1.6); setTimeout(() => { if (g.state !== 'play') return; if (mine === theirs && tot === 0) Arcade.current.def.setup(g); else if (g.die()) Arcade.current.def.setup(g); }, 2200); }
+  }
+
+  /* ---------- geometría ---------- */
+  function geo(g) {
+    const s = g.s, W = g.W, top = g.top + 34, bot = g.bot - (g.demoOn ? 44 : 0);
+    s.cw = (W - 24) / 3; s.mw = Math.min(54, (s.cw - 10) / 2); s.mh = s.mw * 1.15;
+    s.hw = Math.min(62, (W - 16) / 7); s.hh = s.hw * 1.35; s.handY = bot - s.hh - 62;
+    const area = s.mh * 2 + 8, avail = s.handY - 20 - top, locH = clamp(avail - area * 2 - 8, 70, 110);
+    s.y0 = top + Math.max(0, (avail - area * 2 - locH - 8) / 2); s.locY = s.y0 + area + 4; s.locH = locH; s.y1 = s.locY + locH + 4;
+    s.endB = { x: W / 2 - 90, y: bot - 52, w: 180, h: 44 };
+  }
+  const colX = (s, l) => 12 + l * s.cw;
+  function cardPos(g, w, l, k) { const s = g.s, cx = colX(s, l) + s.cw / 2, dx = (k % 2 ? 1 : -1) * (s.mw / 2 + 2), r = (k / 2) | 0; return w ? [cx + dx, s.y0 + s.mh * 2 + 4 - (r + 0.5) * (s.mh + 4)] : [cx + dx, s.y1 + (r + 0.5) * (s.mh + 4)]; }
+  function handRect(g, i) { const s = g.s, n = s.S[0].hand.length, sp = Math.min(s.hw + 4, (g.W - 16 - s.hw) / Math.max(1, n - 1)), x0 = g.W / 2 - ((n - 1) * sp + s.hw) / 2; return { x: x0 + i * sp, y: s.handY - (s.sel === i ? 14 : 0), w: s.hw, h: s.hh }; }
+  const inR = (b, p) => p.x >= b.x && p.x <= b.x + b.w && p.y >= b.y && p.y <= b.y + b.h;
+  const colRect = (s, l) => ({ x: colX(s, l), y: s.locY, w: s.cw, h: s.y1 + s.mh * 2 + 8 - s.locY });
+
+  function tapAt(g, p) {
+    const s = g.s; if (s.done || s.phase !== 'plan') return; const S = s.S[0];
+    if (inR(s.endB, p)) return endTurn(g);
+    for (let i = S.hand.length - 1; i >= 0; i--) if (inR(handRect(g, i), p)) {
+      if (s.sel === i) { s.sel = null; return; }
+      const c = S.hand[i]; s.info = c.n + ' · ' + c.c + '⚡ ' + c.p + '💪' + (c.d ? ' · ' + c.d : ''); s.infoT = 3;
+      if (c.c > s.turn - s.spent[0]) { s.info = T('Te falta energía ⚡', 'Not enough energy ⚡'); s.infoT = 1.4; Arcade.sfx.bad(); return; }
+      s.sel = i; Arcade.tone(640, 0.04, 'square', 0.04); return;
+    }
+    for (let l = 0; l < 3; l++) {
+      for (let k = S.locs[l].length - 1; k >= 0; k--) { const c = S.locs[l][k]; if (c.rev) continue; const [x, y] = cardPos(g, 0, l, k); if (Math.abs(p.x - x) < s.mw / 2 && Math.abs(p.y - y) < s.mh / 2) { unplace(g, l, k); Arcade.tone(300, 0.05, 'triangle', 0.05); return; } }
+      if (inR(colRect(s, l), p)) {
+        if (s.sel == null) { const L = s.L[l]; s.info = L.e + ' ' + L.n + ': ' + L.d; s.infoT = 3; return; }
+        const c = S.hand[s.sel];
+        if (!canPlace(g, 0, c, l)) { const L = s.L[l]; s.info = S.locs[l].length >= capOf(L) ? T('Ese lugar está lleno', 'That location is full') : L.e + ' ' + L.d; s.infoT = 1.6; Arcade.sfx.bad(); return; }
+        place(g, 0, s.sel, l); s.sel = null; Arcade.tone(720, 0.05, 'square', 0.05); return;
+      }
+    }
+    s.sel = null;
+  }
+
+  /* ---------- dibujo ---------- */
+  function mini(ctx, x, y, w, h, c, o = {}) {
+    ctx.save(); if (o.a != null) ctx.globalAlpha = o.a;
+    const sc = c.pop > 0 ? 1 + c.pop * 0.3 : 1; ctx.translate(x + w / 2, y + h / 2); ctx.scale(sc, sc); ctx.translate(-w / 2, -h / 2);
+    if (o.back) { ctx.fillStyle = '#5f3dc4'; Arcade.rr(ctx, 0, 0, w, h, 8); ctx.fill(); ctx.strokeStyle = '#d0bfff'; ctx.lineWidth = 2; ctx.stroke(); Arcade.emoji(ctx, '❓', w / 2, h / 2, w * 0.4); ctx.restore(); return; }
+    const gr = ctx.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, o.foe ? '#ffe3e3' : '#e7f5ff'); gr.addColorStop(1, o.foe ? '#e03131' : '#1c7ed6');
+    ctx.fillStyle = gr; Arcade.rr(ctx, 0, 0, w, h, 8); ctx.fill();
+    ctx.strokeStyle = o.sel ? '#ffd43b' : o.glow ? '#69db7c' : o.pend ? '#fff' : 'rgba(0,0,0,.4)'; ctx.lineWidth = o.sel || o.glow ? 3 : o.pend ? 2 : 1; if (o.pend) ctx.setLineDash([4, 3]); ctx.stroke(); ctx.setLineDash([]);
+    Arcade.emoji(ctx, c.e, w / 2, h * 0.45, w * 0.48);
+    ctx.fillStyle = '#1864ab'; ctx.beginPath(); ctx.arc(8, 8, 8, 0, 6.3); ctx.fill(); Arcade.txt(ctx, String(c.c), 8, 9, 11, '#fff', 'center', 900);
+    const pw = c.p, base = c.base != null ? c.base : c.p; ctx.fillStyle = '#f08c00'; ctx.beginPath(); ctx.arc(w - 9, h - 9, 10, 0, 6.3); ctx.fill();
+    Arcade.txt(ctx, String(pw), w - 9, h - 8, 12, pw > base ? '#d3f9d8' : pw < base ? '#ffc9c9' : '#fff', 'center', 900);
+    if (c.ab) Arcade.txt(ctx, '✦', 9, h - 9, 11, '#ffd43b', 'center', 900);
+    if (o.name) Arcade.txt(ctx, c.n, w / 2, h * 0.78, Math.max(8, w * 0.15), '#111', 'center', 800);
+    ctx.restore();
+  }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Gana dos de tres lugares', deco: ['🃏', '🏰', '🌋', '🌳', '⚡', '🐉'], font: 'round', bg: ['#1d3461', '#14213d'],
+    music: { mode: 'minor', bpm: 104, wave: 'square', style: 'epic', root: 57 }, voice: { wave: 'square', mul: 0.9, echo: 0.3 },
+    /*EN*/ en: { title: 'Three Fronts', tag: 'Win two of three locations', help: 'There are three locations and the game lasts 6 turns. Win by having more power 💪 in two of the three. Each turn you have as much energy ⚡ as the turn number. Tap a card from your hand and then a location to play it. Tap a card you just played to take it back. When you are ready, press Reveal. The machine plays hidden: its cards appear at the same time as yours. Cards with ✦ do something when they appear. Each location has its own rule: tap it to read it.', tvHelp: 'D-pad to a card · OK · then to a location · OK.', dict: { 'Mostrar': 'Reveal', 'Tu turno': 'Your turn', 'Turno ': 'Turn ', 'Saliendo…': 'Revealing…' } },
+    /*TV*/ tvHelp: 'Cruceta hasta una carta · OK · luego a un lugar · OK.',
+    tv: { mode: 'tap', targets: (g) => { const s = g.s; if (!s.S || s.phase !== 'plan') return []; const out = [s.endB]; s.S[0].hand.forEach((c, i) => out.push(handRect(g, i))); for (let l = 0; l < 3; l++) out.push({ x: colX(s, l), y: s.locY, w: s.cw, h: s.locH }); return out; } },
+    id: 'tresfrentes', title: 'Tres frentes', emoji: '🏰', color: '#4dabf7', origin: 'Marvel Snap (Second Dinner, 2022)', pad: false,
+    help: 'Hay tres lugares y la partida dura 6 turnos. Gana quien tenga más poder 💪 en dos de los tres. Cada turno tienes tanta energía ⚡ como el número del turno. Toca una carta de tu mano y luego un lugar para jugarla. Toca una carta recién jugada para recuperarla. Cuando lo tengas, pulsa Mostrar. La máquina juega a escondidas: sus cartas salen a la vez que las tuyas. Las cartas con ✦ hacen algo al salir. Cada lugar tiene su regla: tócalo para leerla.',
+    lives: 3, levels: 0, cap: 20,
+    /*SC*/ demo(g) {
+      const s = g.s; if (!s.S || s.done || s.phase !== 'plan') return { wait: 0.4 };
+      if (!s.plan) s.plan = plan(g, 0, 0);
+      const say = (es, en) => (s.said = (s.said || 0) + 1) < 9 ? T(es, en) : null;
+      const a = s.plan[0];
+      if (!a) { s.plan = null; s.plan = []; return { tap: [g.W / 2, s.endB.y + 22], after: 0.8, say: say('Pulsa Mostrar y mira qué sale', 'Press Reveal and see what comes out') }; }
+      const i = s.S[0].hand.findIndex((c) => c.uid === a.uid); if (i < 0) { s.plan.shift(); return { wait: 0.1 }; }
+      if (s.sel !== i) { const r = handRect(g, i); return { tap: [r.x + r.w / 2, r.y + r.h / 2], after: 0.45, say: say('Elige una carta que puedas pagar', 'Pick a card you can afford') }; }
+      s.plan.shift(); return { tap: [colX(s, a.l) + s.cw / 2, s.locY + s.locH / 2], after: 0.6, say: say('Juégala donde más falta haga', 'Play it where it\'s needed most') };
+    },
+    setup(g) {
+      const L = g.lv, locs = shuffle(LOCS.slice(1)).slice(0, 3); if (L <= 2) locs[1] = LOCS[0];
+      g.s = { S: [{ hand: [], deck: mkDeck(), locs: [[], [], []] }, { hand: [], deck: mkDeck(), locs: [[], [], []] }], L: locs, turn: 1, spent: [0, 0], phase: 'plan', sel: null, queue: [], revT: 0, done: false, res: [0, 0, 0], info: '', infoT: 0, noise: clamp(0.55 - L * 0.04, 0.05, 0.55), plan: null };
+      for (let k = 0; k < 3; k++) { drawC(g, 0); drawC(g, 1); } if (L >= 6) drawC(g, 1); drawC(g, 0); drawC(g, 1);
+      geo(g);
+    },
+    layout(g) { if (g.s.S) geo(g); },
+    tap(g, p) { tapAt(g, p); },
+    update(g, dt) {
+      const s = g.s; if (!s.S) return; geo(g); if (s.infoT > 0) s.infoT -= dt;
+      for (const S of s.S) for (const col of S.locs) for (const c of col) if (c.pop > 0) c.pop = Math.max(0, c.pop - dt * 1.5);
+      if (s.phase === 'reveal') { s.revT -= dt * (g.demoAuto ? 1.5 : 1); if (s.revT <= 0) { const q = s.queue.shift(); if (q) { reveal(g, q); s.revT = 0.55; } else finishTurn(g); } }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      const bg = ctx.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, '#2c1e4a'); bg.addColorStop(0.5, '#1d3461'); bg.addColorStop(1, '#14213d'); ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      if (!s.S) return;
+      // cabecera
+      Arcade.txt(ctx, (s.done ? '' : T('Turno ', 'Turn ') + s.turn + '/6'), 14, g.top + 16, 15, '#fff', 'left', 900);
+      Arcade.txt(ctx, '🤖 ' + T('Rival: ', 'Rival: ') + s.S[1].hand.length + ' 🃏', W / 2 + 40, g.top + 16, 13, '#ffc9c9', 'center', 800);
+      for (let l = 0; l < 3; l++) {
+        const L = s.L[l], x = colX(s, l), cx = x + s.cw / 2;
+        // zona de cada lado
+        ctx.fillStyle = 'rgba(255,135,135,.08)'; Arcade.rr(ctx, x + 2, s.y0 - 2, s.cw - 4, s.locY - s.y0 - 2, 10); ctx.fill();
+        ctx.fillStyle = s.sel != null && canPlace(g, 0, s.S[0].hand[s.sel], l) ? 'rgba(105,219,124,' + (0.18 + 0.1 * Math.sin(g.rt * 6)) + ')' : 'rgba(116,192,252,.08)'; Arcade.rr(ctx, x + 2, s.y1, s.cw - 4, s.mh * 2 + 10, 10); ctx.fill();
+        for (const w of [1, 0]) s.S[w].locs[l].forEach((c, k) => { const [px, py] = cardPos(g, w, l, k); if (w === 1 && !c.rev) return; mini(ctx, px - s.mw / 2, py - s.mh / 2, s.mw, s.mh, c, { foe: w === 1, pend: w === 0 && !c.rev }); });
+        // lugar
+        const res = s.done ? s.res[l] : 0;
+        const lg = ctx.createLinearGradient(0, s.locY, 0, s.locY + s.locH); lg.addColorStop(0, '#f8f9fa'); lg.addColorStop(1, '#adb5bd'); ctx.fillStyle = lg; Arcade.rr(ctx, x + 4, s.locY, s.cw - 8, s.locH, 12); ctx.fill();
+        if (res) { ctx.strokeStyle = res > 0 ? '#40c057' : '#fa5252'; ctx.lineWidth = 5; ctx.stroke(); }
+        Arcade.emoji(ctx, L.e, cx, s.locY + s.locH * 0.27, s.locH * 0.24);
+        Arcade.txt(ctx, L.n, cx, s.locY + s.locH * 0.48, 12, '#212529', 'center', 900);
+        const a = powerAt(s.S[0], l), b = powerAt(s.S[1], l);
+        ctx.fillStyle = b > a ? '#e03131' : '#868e96'; ctx.beginPath(); ctx.arc(cx, s.locY + 2, 13, 0, 6.3); ctx.fill(); Arcade.txt(ctx, String(b), cx, s.locY + 3, 13, '#fff', 'center', 900);
+        ctx.fillStyle = a > b ? '#1c7ed6' : '#868e96'; ctx.beginPath(); ctx.arc(cx, s.locY + s.locH - 2, 13, 0, 6.3); ctx.fill(); Arcade.txt(ctx, String(a), cx, s.locY + s.locH - 1, 13, '#fff', 'center', 900);
+        { const words = L.d.split(' '), lines = [''], mc = Math.floor((s.cw - 14) / 5.2); for (const wd of words) { const t = lines[lines.length - 1]; if ((t + ' ' + wd).trim().length > mc) lines.push(wd); else lines[lines.length - 1] = (t + ' ' + wd).trim(); }
+          lines.slice(0, 3).forEach((ln, k) => Arcade.txt(ctx, ln, cx, s.locY + s.locH * 0.63 + k * 10, 9.5, '#495057', 'center', 700)); }
+      }
+      // mano
+      const S = s.S[0], en = s.turn - s.spent[0];
+      S.hand.forEach((c, i) => { const r = handRect(g, i), ok = c.c <= en && s.phase === 'plan'; mini(ctx, r.x, r.y, r.w, r.h, c, { sel: s.sel === i, glow: ok && s.sel !== i, a: ok || s.sel === i ? 1 : 0.5, name: true }); });
+      // energía y botón
+      const b = s.endB, my = s.phase === 'plan' && !s.done;
+      Arcade.txt(ctx, '⚡ ' + en, 18, b.y + b.h / 2, 22, '#ffd43b', 'left', 900);
+      ctx.fillStyle = my ? '#f59f00' : '#495057'; Arcade.rr(ctx, b.x, b.y, b.w, b.h, 14); ctx.fill();
+      Arcade.txt(ctx, my ? 'Mostrar' : s.done ? '' : 'Saliendo…', b.x + b.w / 2, b.y + b.h / 2 + 1, 17, '#fff', 'center', 900);
+      const info = s.infoT > 0 ? s.info : s.sel != null ? T('Ahora toca un lugar', 'Now tap a location') : '';
+      if (info) { ctx.fillStyle = 'rgba(0,0,0,.6)'; Arcade.rr(ctx, 8, s.handY - 34, W - 16, 24, 10); ctx.fill(); Arcade.txt(ctx, info, W / 2, s.handY - 22, 12, '#fff', 'center', 800); }
+    },
+  });
+})();
+</script>
+</body>
+</html>

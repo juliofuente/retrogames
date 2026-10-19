@@ -1,0 +1,189 @@
+// Escoba|#0b4d2c
+// @cartas
+(function () {
+  const { rand, clamp, shuffle } = Arcade;
+  const T = Arcade.T, B = Arcade.baraja;
+  const val = (c) => (c.r <= 7 ? c.r : c.r - 2);   // sota 8 · caballo 9 · rey 10
+  const GOAL = 6;
+
+  // todas las combinaciones de la mesa que suman 15 con la carta c
+  function combos(table, c) {
+    const need = 15 - val(c), out = [], n = table.length;
+    for (let m = 1; m < 1 << n; m++) { let s = 0; const pick = []; for (let i = 0; i < n; i++) if (m & (1 << i)) { s += val(table[i]); pick.push(i); if (s > need) break; } if (s === need) out.push(pick); }
+    return out;
+  }
+  const isOro = (c) => c.s === 0, is7o = (c) => c.s === 0 && c.r === 7;
+  function capValue(table, c, pick) {
+    const got = pick.map((i) => table[i]).concat([c]); let v = got.length + (pick.length === table.length ? 12 : 0);
+    for (const x of got) v += (isOro(x) ? 0.7 : 0) + (x.r === 7 ? 1.2 : 0) + (is7o(x) ? 4 : 0);
+    return v;
+  }
+  // mejor jugada: {hi, pick|null}
+  function bestMove(s, w, noise) {
+    const hand = s.hand[w]; let best = null, bv = -1e9;
+    hand.forEach((c, hi) => {
+      for (const pick of combos(s.table, c)) { const v = capValue(s.table, c, pick) + (Math.random() < noise ? rand(-6, 6) : 0); if (v > bv) { bv = v; best = { hi, pick }; } }
+      const tot = s.table.reduce((t, x) => t + val(x), 0) + val(c), risk = tot >= 5 && tot <= 14 ? 6 : 0;
+      const v = -risk - (c.r === 7 ? 2.5 : 0) - (isOro(c) ? 1 : 0) - (is7o(c) ? 5 : 0) - val(c) * 0.05 - 3 + (Math.random() < noise ? rand(-4, 4) : 0);
+      if (v > bv) { bv = v; best = { hi, pick: null }; }
+    });
+    return best;
+  }
+
+  /* ---------- reparto y puntos ---------- */
+  function newRound(g) {
+    const s = g.s; s.deck = shuffle(B.deck('es')); s.table = []; s.pile = [[], []]; s.esc = [0, 0]; s.lastCap = -1; s.hand = [[], []]; s.sel = null; s.pick = []; s.summary = null;
+    for (let k = 0; k < 4; k++) s.table.push(s.deck.pop());
+    deal(g); s.turn = s.first; s.first = 1 - s.first; s.cpuT = 1.2;
+  }
+  function deal(g) { const s = g.s; for (let k = 0; k < 3; k++) for (const w of [0, 1]) if (s.deck.length) s.hand[w].push(s.deck.pop()); Arcade.sfx.whoosh(); }
+  function tally(s) {
+    const P = [0, 0], rows = [];
+    const add = (lab, a, b) => { rows.push([lab, a, b]); P[0] += a; P[1] += b; };
+    add(T('Escobas', 'Sweeps'), s.esc[0], s.esc[1]);
+    const cnt = (f) => s.pile.map((p) => p.filter(f).length), cmp = ([a, b]) => (a > b ? [1, 0] : b > a ? [0, 1] : [0, 0]);
+    add(T('Más cartas', 'Most cards'), ...cmp(cnt(() => true)));
+    add(T('Más oros', 'Most coins'), ...cmp(cnt(isOro)));
+    add(T('Siete de oros', 'Seven of coins'), ...cnt(is7o));
+    add(T('Más sietes', 'Most sevens'), ...cmp(cnt((x) => x.r === 7)));
+    return { P, rows };
+  }
+  function endRound(g) {
+    const s = g.s;
+    if (s.table.length && s.lastCap >= 0) { s.pile[s.lastCap].push(...s.table); s.table = []; }
+    const t = tally(s); s.score[0] += t.P[0]; s.score[1] += t.P[1]; s.summary = { rows: t.rows, P: t.P, t: 0 };
+    Arcade.sfx.up();
+  }
+  function afterSummary(g) {
+    const s = g.s, [a, b] = s.score;
+    if ((a >= GOAL || b >= GOAL) && a !== b) {
+      s.done = true;
+      if (a > b) { Arcade.sfx.win(); g.confetti(90); g.addScore(300 * g.lv + (a - b) * 60, g.W / 2, g.H / 2); setTimeout(() => { if (g.state === 'play') g.win(a - b >= 6 ? 3 : a - b >= 3 ? 2 : 1); }, 900); }
+      else { Arcade.sfx.lose(); g.message(T('Gana la máquina', 'The machine wins'), 1.4); setTimeout(() => { if (g.state === 'play' && g.die()) Arcade.current.def.setup(g); }, 1700); }
+      return;
+    }
+    newRound(g);
+  }
+
+  /* ---------- jugar ---------- */
+  function play(g, w, hi, pick) {
+    const s = g.s, c = s.hand[w][hi]; if (!c) return;
+    const [hx, hy] = handPos(g, w, hi); s.hand[w].splice(hi, 1); s.sel = null; s.pick = [];
+    if (pick && pick.length) {
+      const got = pick.map((i) => s.table[i]), sweep = pick.length === s.table.length;
+      const [px, py] = pilePos(g, w);
+      got.forEach((x) => { const [tx, ty] = tablePos(g, s.table.indexOf(x)); fly(s, x, tx, ty, px, py, 0.15); });
+      fly(s, c, hx, hy, px, py, 0); s.table = s.table.filter((x) => !got.includes(x)); s.pile[w].push(c, ...got); s.lastCap = w;
+      Arcade.sfx.coin(); g.float('+' + (got.length + 1), px, py - 20, '#fff', 18);
+      if (sweep && (s.deck.length || s.hand[0].length + s.hand[1].length)) { s.esc[w]++; g.message(w ? T('¡Escoba de la máquina!', 'Machine sweep!') : T('¡Escoba!', 'Sweep!'), 1.1); if (!w) { g.confetti(40); g.addScore(150 * g.lv, g.W / 2, g.H * 0.45); } Arcade.sfx.combo(3 + s.esc[w]); }
+      else if (!w) g.addScore(10 * (got.length + 1), px, py);
+    } else {
+      s.table.push(c); const [tx, ty] = tablePos(g, s.table.length - 1); fly(s, c, hx, hy, tx, ty, 0); Arcade.tone(w ? 300 : 480, 0.06, 'triangle', 0.06);
+    }
+    s.turn = 1 - w; s.cpuT = 1.1; s.wait = 0.5;
+  }
+  function fly(s, c, x0, y0, x1, y1, delay) { s.flies.push({ c, x0, y0, x1, y1, t: -delay }); }
+  function step(g) {   // tras cada jugada: repartir o cerrar la ronda
+    const s = g.s; if (s.hand[0].length || s.hand[1].length) return;
+    if (s.deck.length) deal(g); else endRound(g);
+  }
+
+  /* ---------- geometría ---------- */
+  function geo(g) {
+    const s = g.s, W = g.W, top = g.top + 30, bot = g.bot - (g.demoOn ? 46 : 0);
+    s.cw = Math.min(78, (W - 40) / 3.6); s.ch = s.cw * 1.5; s.tw = Math.min(58, (W - 30) / 5.4); s.th = s.tw * 1.5;
+    s.hy = [bot - s.ch - 10, top + 6]; s.tableY = top + 6 + s.th * 0.75 + 26; s.tableH = s.hy[0] - 40 - s.tableY;
+  }
+  function handPos(g, w, i) { const s = g.s, n = Math.max(1, s.hand[w].length), cw = w ? s.tw * 0.8 : s.cw, sp = cw + 10; return [g.W / 2 + (i - (n - 1) / 2) * sp - cw / 2, s.hy[w] - (w === 0 && s.sel === i ? 14 : 0)]; }
+  function tablePos(g, i) { const s = g.s, n = s.table.length, per = n > 10 ? 5 : 4, rows = Math.ceil(Math.max(1, n) / per), r = (i / per) | 0, k = i % per, inRow = Math.min(per, n - r * per), sp = s.tw + 8; return [g.W / 2 + (k - (inRow - 1) / 2) * sp - s.tw / 2, s.tableY + s.tableH / 2 + (r - (rows - 1) / 2) * (s.th + 8) - s.th / 2]; }
+  function pilePos(g, w) { const s = g.s; return w ? [g.W - 36, s.hy[1] + 44] : [g.W - 36, s.hy[0] + s.ch / 2]; }
+  const inC = (x, y, w, h, p) => p.x >= x && p.x <= x + w && p.y >= y && p.y <= y + h;
+
+  function tapAt(g, p) {
+    const s = g.s; if (s.done || s.summary) return;
+    if (s.turn !== 0 || s.flies.length || s.wait > 0) return;
+    for (let i = s.hand[0].length - 1; i >= 0; i--) { const [x, y] = handPos(g, 0, i); if (inC(x, y, s.cw, s.ch, p)) {
+      if (s.sel === i) { const cs = combos(s.table, s.hand[0][i]); if (!s.pick.length) { if (cs.length && !s.warned) { s.warned = 1; s.hintT = 2; Arcade.sfx.bad(); return; } play(g, 0, i, null); } return; }
+      s.sel = i; s.pick = []; s.warned = 0; Arcade.tone(640, 0.04, 'square', 0.04); return; } }
+    if (s.sel == null) return;
+    for (let i = s.table.length - 1; i >= 0; i--) { const [x, y] = tablePos(g, i); if (inC(x, y, s.tw, s.th, p)) {
+      const k = s.pick.indexOf(i); if (k >= 0) s.pick.splice(k, 1); else s.pick.push(i);
+      const sum = s.pick.reduce((t, j) => t + val(s.table[j]), 0) + val(s.hand[0][s.sel]);
+      if (sum === 15) play(g, 0, s.sel, s.pick.slice()); else if (sum > 15) { Arcade.sfx.bad(); s.pick = [i]; s.overT = 1; } else Arcade.tone(520 + s.pick.length * 60, 0.04, 'sine', 0.05);
+      return; } }
+  }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexmesa.html', tag: 'Suma quince y barre la mesa', deco: ['🪙', '🏆', '🗡️', '🪵', '🧹', '🃏'], font: 'serif', bg: ['#14743f', '#0b4d2c'],
+    music: { mode: 'major', bpm: 92, wave: 'triangle', style: 'chill', root: 60 }, voice: { wave: 'sine', mul: 1.1, echo: 0.35 },
+    /*EN*/ en: { title: 'Escoba', tag: 'Make fifteen and sweep the table', help: 'A Spanish card game against the machine with the 40-card deck. The Jack is worth 8, the Knight 9 and the King 10; the rest are worth their number. On your turn, play one card from your hand. If it adds up to 15 with cards on the table, you take them all. Tap your card and then the table cards that add up to 15. If you can\'t (or don\'t want to) capture, tap your card again and it stays on the table. Clearing the table is an escoba: one point. At the end of each round there are points for most cards, most coins, the seven of coins and most sevens. The first to reach 6 points wins.', tvHelp: 'D-pad to a card · OK · then to the table cards · OK.', dict: { 'Tu turno': 'Your turn', 'Turno de la máquina': 'Machine\'s turn', 'Tú': 'You', 'Máquina': 'Machine', 'Fin de la ronda': 'End of round', 'Toca para seguir': 'Tap to continue' } },
+    /*TV*/ tvHelp: 'Cruceta hasta una carta · OK · luego a las cartas de la mesa · OK.',
+    tv: { mode: 'tap', targets: (g) => { const s = g.s; if (!s.hand || s.turn !== 0 || s.done) return []; if (s.summary) return [{ x: 20, y: g.H / 2 - 100, w: g.W - 40, h: 200 }]; const out = s.hand[0].map((c, i) => { const [x, y] = handPos(g, 0, i); return { x, y, w: s.cw, h: s.ch }; }); if (s.sel != null) s.table.forEach((c, i) => { const [x, y] = tablePos(g, i); out.push({ x, y, w: s.tw, h: s.th }); }); return out; } },
+    id: 'escoba', title: 'Escoba', emoji: '🧹', color: '#ffd43b', origin: 'Escoba del quince (juego tradicional español)', pad: false,
+    help: 'Juego de baraja española contra la máquina, con 40 cartas. La sota vale 8, el caballo 9 y el rey 10; las demás, su número. En tu turno juegas una carta de tu mano. Si suma 15 con cartas de la mesa, te las llevas todas. Toca tu carta y luego las cartas de la mesa que sumen 15. Si no puedes (o no quieres) llevarte nada, toca otra vez tu carta y se queda en la mesa. Dejar la mesa vacía es una escoba: un punto. Al final de cada ronda hay puntos por más cartas, más oros, el siete de oros y más sietes. Gana quien llegue antes a 6 puntos.',
+    lives: 3, levels: 0, cap: 20,
+    /*SC*/ demo(g) {
+      const s = g.s; if (!s.hand || s.done) return { wait: 0.4 };
+      if (s.summary) return s.summary.t > 2.5 ? { tap: [g.W / 2, g.H / 2], after: 0.6 } : { wait: 0.5 };
+      if (s.turn !== 0 || s.flies.length || s.wait > 0) return { wait: 0.3 };
+      const say = (es, en) => (s.said = (s.said || 0) + 1) < 9 ? T(es, en) : null;
+      const m = s.dplan || (s.dplan = bestMove(s, 0, 0)), c = s.hand[0][m.hi];
+      if (s.sel !== m.hi) { const [x, y] = handPos(g, 0, m.hi); return { tap: [x + s.cw / 2, y + s.ch / 2], after: 0.5, say: say(m.pick ? 'Esta carta suma 15 con la mesa' : 'No hay quince: suelta una carta', m.pick ? 'This card makes 15 with the table' : 'No fifteen: drop a card') }; }
+      if (!m.pick) { s.dplan = null; const [x, y] = handPos(g, 0, m.hi); return { tap: [x + s.cw / 2, y + s.ch / 2], after: 0.7, say: say('Tócala otra vez para dejarla', 'Tap it again to leave it') }; }
+      const i = m.pick.find((j) => !s.pick.includes(j)); if (i == null) { s.dplan = null; return { wait: 0.2 }; }
+      if (m.pick.filter((j) => !s.pick.includes(j)).length === 1) s.dplan = null;
+      const [x, y] = tablePos(g, i); return { tap: [x + s.tw / 2, y + s.th / 2], after: 0.45, say: say(val(c) + ' + … = 15', val(c) + ' + … = 15') };
+    },
+    setup(g) {
+      g.s = { score: [0, 0], first: 0, flies: [], wait: 0, noise: clamp(0.5 - g.lv * 0.04, 0.03, 0.5), done: false, dplan: null };
+      geo(g); newRound(g);
+    },
+    layout(g) { if (g.s.hand) geo(g); },
+    tap(g, p) { const s = g.s; if (s.summary) { if (s.summary.t > 0.8) { s.summary = null; afterSummary(g); } return; } tapAt(g, p); },
+    update(g, dt) {
+      const s = g.s; if (!s.hand) return; geo(g);
+      if (s.hintT > 0) s.hintT -= dt; if (s.overT > 0) s.overT -= dt; if (s.wait > 0) s.wait -= dt;
+      for (const f of s.flies) f.t += dt / 0.35; s.flies = s.flies.filter((f) => f.t < 1);
+      if (s.summary) { s.summary.t += dt; if (g.demoAuto && s.summary.t > 3) { s.summary = null; afterSummary(g); } return; }
+      if (s.done || s.flies.length || s.wait > 0) return;
+      step(g); if (s.summary) return;
+      if (s.turn === 1) { s.cpuT -= dt; if (s.cpuT <= 0 && s.hand[1].length) { const m = bestMove(s, 1, s.noise); play(g, 1, m.hi, m.pick); } }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      const bg = ctx.createRadialGradient(W / 2, H * 0.45, 30, W / 2, H / 2, H * 0.75); bg.addColorStop(0, '#1e9c57'); bg.addColorStop(1, '#0b4d2c'); ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      if (!s.hand) return;
+      const flying = new Set(s.flies.filter((f) => f.t < 1).map((f) => f.c));
+      // marcador
+      Arcade.txt(ctx, T('Tú ', 'You ') + s.score[0] + ' · ' + s.score[1] + T(' Máquina', ' Machine'), 14, g.top + 14, 14, '#fff', 'left', 900);
+      Arcade.txt(ctx, '🧹 ' + s.esc[0] + ' · ' + s.esc[1] + '    📚 ' + s.deck.length, 14, g.top + 34, 12, '#d3f9d8', 'left', 800);
+      // mano rival
+      s.hand[1].forEach((c, i) => { if (flying.has(c)) return; const [x, y] = handPos(g, 1, i); B.draw(ctx, c, x, y, s.tw * 0.8, s.th * 0.8, { back: true }); });
+      // mesa
+      const selC = s.sel != null ? s.hand[0][s.sel] : null, can = new Set(); if (selC) combos(s.table, selC).forEach((cb) => cb.forEach((i) => can.add(i)));
+      s.table.forEach((c, i) => { if (flying.has(c)) return; const [x, y] = tablePos(g, i), on = s.pick.includes(i); B.draw(ctx, c, x, y - (on ? 8 : 0), s.tw, s.th, { glow: on ? '#ffd43b' : can.has(i) ? 'rgba(105,219,124,.9)' : null }); });
+      if (!s.table.length) Arcade.txt(ctx, T('Mesa vacía', 'Empty table'), W / 2, s.tableY + s.tableH / 2, 14, 'rgba(255,255,255,.4)', 'center', 800);
+      // montones ganados
+      for (const w of [0, 1]) { const [px, py] = pilePos(g, w); if (s.pile[w].length) { B.draw(ctx, null, px - 18, py - 24, 36, 50, { back: true, backCol: ['#1c7ed6', '#0b3d91'] }); Arcade.txt(ctx, String(s.pile[w].length), px, py + 34, 12, '#fff', 'center', 900); } }
+      // mi mano
+      s.hand[0].forEach((c, i) => { if (flying.has(c)) return; const [x, y] = handPos(g, 0, i); B.draw(ctx, c, x, y, s.cw, s.ch, { glow: s.sel === i ? '#ffd43b' : null, dim: s.turn !== 0 }); });
+      // cartas en vuelo
+      for (const f of s.flies) { if (f.t < 0) continue; const e = 1 - (1 - f.t) * (1 - f.t), x = f.x0 + (f.x1 - f.x0) * e, y = f.y0 + (f.y1 - f.y0) * e - Math.sin(f.t * Math.PI) * 30; B.draw(ctx, f.c, x, y, s.tw, s.th, {}); }
+      // texto
+      let info = s.turn === 0 ? 'Tu turno' : 'Turno de la máquina';
+      if (selC) { const sum = s.pick.reduce((t, j) => t + val(s.table[j]), 0) + val(selC); info = s.hintT > 0 ? T('Puedes sumar 15: elige cartas de la mesa (o tócala otra vez para dejarla)', 'You can make 15: pick table cards (or tap it again to leave it)') : T('Suma: ', 'Sum: ') + sum + ' / 15' + (s.pick.length ? '' : T(' · toca cartas de la mesa', ' · tap table cards')); }
+      ctx.fillStyle = 'rgba(0,0,0,.4)'; Arcade.rr(ctx, 10, s.hy[0] - 36, W - 20, 26, 10); ctx.fill();
+      Arcade.txt(ctx, info, W / 2, s.hy[0] - 23, 12.5, s.overT > 0 ? '#ffa8a8' : '#fff', 'center', 800);
+      // resumen de ronda
+      if (s.summary) {
+        const S = s.summary, bw = Math.min(330, W - 30), bh = 250, bx = W / 2 - bw / 2, by = H / 2 - bh / 2;
+        ctx.fillStyle = 'rgba(0,0,0,.5)'; ctx.fillRect(0, 0, W, H); ctx.fillStyle = '#fff8e7'; Arcade.rr(ctx, bx, by, bw, bh, 18); ctx.fill();
+        Arcade.txt(ctx, 'Fin de la ronda', W / 2, by + 26, 18, '#0b4d2c', 'center', 900);
+        Arcade.txt(ctx, 'Tú', bx + bw - 90, by + 54, 12, '#495057', 'center', 900); Arcade.txt(ctx, 'Máquina', bx + bw - 36, by + 54, 12, '#495057', 'center', 900);
+        S.rows.forEach(([lab, a, b], k) => { const y = by + 80 + k * 26; Arcade.txt(ctx, lab, bx + 18, y, 14, '#212529', 'left', 800); Arcade.txt(ctx, String(a), bx + bw - 90, y, 15, a ? '#2b8a3e' : '#adb5bd', 'center', 900); Arcade.txt(ctx, String(b), bx + bw - 36, y, 15, b ? '#c92a2a' : '#adb5bd', 'center', 900); });
+        Arcade.txt(ctx, s.score[0] + ' – ' + s.score[1] + T(' (a ', ' (to ') + GOAL + ')', W / 2, by + bh - 40, 18, '#0b4d2c', 'center', 900);
+        if (S.t > 0.8) Arcade.txt(ctx, 'Toca para seguir', W / 2, by + bh - 16, 12, '#868e96', 'center', 800);
+      }
+    },
+  });
+})();

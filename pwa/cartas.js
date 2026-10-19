@@ -15,6 +15,72 @@
   const wrap13 = (r) => ((r - 1 + 13 * 4) % 13) + 1;
   A.cartas = { S, R, RED, SUIT, RANK, DOWN, card, isUp };
 
+  /* ---------- A.baraja: cartas sueltas para juegos de mesa (francesa 'fr' o española 'es') ----------
+     carta = { k: 'es' | 'fr', s: palo 0..3, r: número (es: 1-7, 10-12 · fr: 1-13) } */
+  A.baraja = (function () {
+    const ES = ['🪙', '🏆', '🗡️', '🪵'], ESC = ['#c98a00', '#c2255c', '#1864ab', '#2b8a3e'], FRS = ['♠', '♥', '♦', '♣'];
+    const ESN = [T('oros', 'coins'), T('copas', 'cups'), T('espadas', 'swords'), T('bastos', 'clubs')];
+    const FIG = { es: { 10: '🧑', 11: '🏇', 12: '🤴' }, fr: { 11: '🤵', 12: '👸', 13: '🤴' } };
+    const RK = { es: { 10: T('S', 'J'), 11: T('C', 'Kn'), 12: 'R' }, fr: { 1: 'A', 11: 'J', 12: 'Q', 13: 'K' } };
+    const PIP = [[], [[0.5, 0.5]], [[0.5, 0.27], [0.5, 0.73]], [[0.5, 0.22], [0.5, 0.5], [0.5, 0.78]], [[0.3, 0.28], [0.7, 0.28], [0.3, 0.72], [0.7, 0.72]], [[0.3, 0.26], [0.7, 0.26], [0.5, 0.5], [0.3, 0.74], [0.7, 0.74]], [[0.3, 0.22], [0.7, 0.22], [0.3, 0.5], [0.7, 0.5], [0.3, 0.78], [0.7, 0.78]], [[0.3, 0.2], [0.7, 0.2], [0.5, 0.36], [0.3, 0.52], [0.7, 0.52], [0.3, 0.8], [0.7, 0.8]]];
+    const SF = 'Georgia,"Times New Roman",serif', cache = new Map();
+    const red = (c) => c.k === 'fr' && (c.s === 1 || c.s === 2);
+    const col = (c) => (c.k === 'es' ? ESC[c.s] : red(c) ? '#d6336c' : '#1f2340');
+    const sym = (c) => (c.k === 'es' ? ES[c.s] : FRS[c.s]);
+    const rank = (c) => (RK[c.k][c.r] || String(c.r));
+    function canvas(w, h) { const dpr = A.dpr, cv = document.createElement('canvas'); cv.width = Math.ceil((w + 4) * dpr); cv.height = Math.ceil((h + 6) * dpr); const x = cv.getContext('2d'); x.scale(dpr, dpr); x.translate(1, 1); return [cv, x]; }
+    function paint(c, w, h) {
+      const [cv, x] = canvas(w, h), r = w * 0.1, cl = col(c);
+      x.fillStyle = 'rgba(0,0,0,.28)'; A.rr(x, 0.5, 2.2, w, h, r); x.fill();
+      const gr = x.createLinearGradient(0, 0, w, h); gr.addColorStop(0, '#ffffff'); gr.addColorStop(1, '#f1ece2'); x.fillStyle = gr; A.rr(x, 0, 0, w, h, r); x.fill();
+      if (c.k === 'es') { x.strokeStyle = cl; x.lineWidth = Math.max(1.5, w * 0.035); A.rr(x, w * 0.05, w * 0.05, w * 0.9, h - w * 0.1, r * 0.7); x.stroke(); }
+      else { x.strokeStyle = 'rgba(0,0,0,.18)'; x.lineWidth = 1; A.rr(x, 0, 0, w, h, r); x.stroke(); }
+      const fs = Math.max(10, w * 0.28), fig = FIG[c.k][c.r];
+      A.txt(x, rank(c), w * 0.1, fs * 0.66, fs, cl, 'left', 900, null, SF);
+      if (c.k === 'fr') A.txt(x, sym(c), w * 0.9, fs * 0.62, fs * 0.8, cl, 'right', 900, null, SF); else A.emoji(x, sym(c), w * 0.8, fs * 0.66, fs * 0.75);
+      const top = h * 0.3, hh = h * 0.64;
+      if (fig) {
+        const fx = w * 0.14, fy = top, fw = w - fx * 2, fh = hh - h * 0.04;
+        const g2 = x.createLinearGradient(0, fy, 0, fy + fh); g2.addColorStop(0, '#fff4e6'); g2.addColorStop(1, '#ffd8a8'); x.fillStyle = g2; A.rr(x, fx, fy, fw, fh, w * 0.06); x.fill(); x.strokeStyle = cl; x.lineWidth = Math.max(1, w * 0.025); x.stroke();
+        A.emoji(x, fig, w / 2, fy + fh * 0.45, Math.min(fw, fh) * 0.62);
+        if (c.k === 'es') A.emoji(x, sym(c), w * 0.72, fy + fh * 0.84, w * 0.22);
+      } else if (c.k === 'es' && c.r <= 7 && w >= 44 && c.r > 1) {
+        const sz = w * (c.r > 5 ? 0.2 : 0.24); for (const [a, b] of PIP[c.r]) A.emoji(x, sym(c), w * (0.12 + a * 0.76), top + b * hh * 0.92, sz);
+      } else if (c.k === 'es') A.emoji(x, sym(c), w / 2, top + hh * 0.46, w * (c.r === 1 ? 0.58 : 0.42));
+      else A.txt(x, sym(c), w / 2, top + hh * 0.46, w * 0.55, cl, 'center', 900, null, SF);
+      if (c.k === 'es' && c.r > 1 && c.r <= 7 && w < 44) A.txt(x, '×' + c.r, w / 2, h * 0.9, w * 0.2, cl, 'center', 900);
+      return cv;
+    }
+    function paintBack(w, h, c1, c2, em) {
+      const [cv, x] = canvas(w, h), r = w * 0.1;
+      x.fillStyle = 'rgba(0,0,0,.28)'; A.rr(x, 0.5, 2.2, w, h, r); x.fill();
+      const gr = x.createLinearGradient(0, 0, w, h); gr.addColorStop(0, c1); gr.addColorStop(1, c2); x.fillStyle = gr; A.rr(x, 0, 0, w, h, r); x.fill();
+      x.strokeStyle = 'rgba(255,255,255,.75)'; x.lineWidth = Math.max(1.5, w * 0.04); A.rr(x, w * 0.08, w * 0.08, w * 0.84, h - w * 0.16, r * 0.6); x.stroke();
+      x.fillStyle = 'rgba(255,255,255,.9)'; x.beginPath(); x.arc(w / 2, h / 2, w * 0.24, 0, 7); x.fill(); A.emoji(x, em, w / 2, h / 2, w * 0.3);
+      return cv;
+    }
+    function blit(ctx, cv, x, y, w, o) {
+      ctx.save();
+      if (o && o.flip != null && o.flip < 1) { ctx.translate(x + w / 2, 0); ctx.scale(Math.max(0.04, Math.abs(o.flip * 2 - 1)), 1); ctx.translate(-(x + w / 2), 0); }
+      if (o && o.rot) { ctx.translate(x + w / 2, y + cv.height / A.dpr / 2); ctx.rotate(o.rot); ctx.translate(-(x + w / 2), -(y + cv.height / A.dpr / 2)); }
+      if (o && o.alpha != null) ctx.globalAlpha = o.alpha;
+      ctx.drawImage(cv, x - 1, y - 1, cv.width / A.dpr, cv.height / A.dpr); ctx.restore();
+    }
+    function ring(ctx, x, y, w, h, color) { ctx.save(); ctx.strokeStyle = color; ctx.lineWidth = 3; ctx.shadowColor = color; ctx.shadowBlur = 12; A.rr(ctx, x, y, w, h, w * 0.1); ctx.stroke(); ctx.restore(); }
+    return {
+      ES, ESN, sym, rank, col,
+      deck(k) { const out = [], rs = k === 'es' ? [1, 2, 3, 4, 5, 6, 7, 10, 11, 12] : [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]; for (let s = 0; s < 4; s++) for (const r of rs) out.push({ k, s, r, id: k + s + '_' + r }); return out; },
+      name(c) { return c.k === 'es' ? ({ 1: T('As', 'Ace'), 10: T('Sota', 'Jack'), 11: T('Caballo', 'Knight'), 12: T('Rey', 'King') }[c.r] || String(c.r)) + T(' de ', ' of ') + ESN[c.s] : rank(c) + FRS[c.s]; },
+      draw(ctx, c, x, y, w, h, o = {}) {
+        const key = (o.back || !c ? 'B' + (o.backCol || '') : c.id) + '@' + Math.round(w * 10) + 'x' + Math.round(h * 10);
+        let cv = cache.get(key); if (!cv) { cv = o.back || !c ? paintBack(w, h, (o.backCol || ['#c92a2a', '#7a1010'])[0], (o.backCol || ['#c92a2a', '#7a1010'])[1], o.backEmoji || '🃏') : paint(c, w, h); cache.set(key, cv); if (cache.size > 400) cache.delete(cache.keys().next().value); }
+        blit(ctx, cv, x, y, w, o);
+        if (o.glow) ring(ctx, x, y, w, h, o.glow);
+        if (o.dim) { ctx.fillStyle = 'rgba(20,10,40,.4)'; A.rr(ctx, x, y, w, h, w * 0.1); ctx.fill(); }
+      },
+    };
+  })();
+
   A.paciencia = function (V) {
     // las reglas son los mismos objetos de la variante: su init(lv) puede cambiarlas según el nivel
     const F = V.found = Object.assign({ base: 1, step: 1, suit: 'suit', wrap: false, mode: 'build' }, V.found || {});

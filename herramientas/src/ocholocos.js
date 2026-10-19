@@ -1,0 +1,137 @@
+// Ocho locos|#0c3b5e
+// @cartas
+(function () {
+  const { rand, clamp, shuffle } = Arcade;
+  const T = Arcade.T, B = Arcade.baraja;
+  const SUITS = ['♠', '♥', '♦', '♣'], SN = [T('picas', 'spades'), T('corazones', 'hearts'), T('diamantes', 'diamonds'), T('tréboles', 'clubs')];
+  const specials = (g) => g.lv >= 4;
+
+  const canPlay = (s, c) => c.r === 8 || c.s === s.suit || c.r === s.top().r;
+  function choose(s, w, noise, sp) {
+    const H = s.hand[w], ok = H.map((c, i) => i).filter((i) => canPlay(s, H[i])); if (!ok.length) return -1;
+    if (Math.random() < noise) return ok[(Math.random() * ok.length) | 0];
+    const cnt = [0, 1, 2, 3].map((q) => H.filter((c) => c.s === q).length), oppN = s.hand[1 - w].length;
+    const v = (c) => (c.r === 8 ? -8 + (ok.length === 1 ? 20 : 0) : 0) + cnt[c.s] * 1.5 + (sp && (c.r === 2 || c.r === 11) ? (oppN <= 3 ? 8 : -1) : 0) + c.r * 0.05;
+    return ok.sort((a, b) => v(H[b]) - v(H[a]))[0];
+  }
+  const favSuit = (H, skip) => { const cnt = [0, 1, 2, 3].map((q) => H.filter((c) => c !== skip && c.s === q && c.r !== 8).length); return cnt.indexOf(Math.max(...cnt)); };
+
+  function drawOne(g, w) {
+    const s = g.s; if (!s.deck.length) { if (s.pile.length <= 1) return null; const top = s.pile.pop(); s.deck = shuffle(s.pile); s.pile = [top]; Arcade.sfx.whoosh(); }
+    const c = s.deck.pop(); s.hand[w].push(c); s.flies.push({ c, w, t: 0, from: 'deck' }); return c;
+  }
+  function play(g, w, i, suit) {
+    const s = g.s, c = s.hand[w][i]; if (!c || !canPlay(s, c)) return false;
+    s.hand[w].splice(i, 1); s.pile.push(c); s.suit = c.s; s.drew = false; s.sel = null; s.flies.push({ c, w, t: 0, from: 'hand', i });
+    Arcade.tone(w ? 330 : 560, 0.07, 'triangle', 0.07);
+    if (!s.hand[w].length) { end(g, w); return true; }
+    if (c.r === 8) { if (w === 0 && suit == null) { s.choosing = true; return true; } s.suit = suit != null ? suit : favSuit(s.hand[w]); g.message('8 → ' + SUITS[s.suit] + ' ' + SN[s.suit], 1); Arcade.sfx.up(); }
+    next(g, w, c); return true;
+  }
+  function next(g, w, c) {
+    const s = g.s; let to = 1 - w;
+    if (specials(g) && c && c.r === 2) { drawOne(g, to); drawOne(g, to); g.message(w ? T('¡Robas 2!', 'You draw 2!') : T('¡La máquina roba 2!', 'The machine draws 2!'), 1); Arcade.sfx.bad(); }
+    if (specials(g) && c && c.r === 11) { to = w; g.message(w ? T('Pierdes el turno', 'You lose your turn') : T('La máquina pierde el turno', 'The machine loses its turn'), 1); }
+    s.turn = to; s.drew = false; s.cpuT = rand(0.7, 1.1);
+  }
+  function end(g, w) {
+    const s = g.s; s.done = true;
+    setTimeout(() => {
+      if (g.state !== 'play') return;
+      if (w === 0) { const left = s.hand[1].length; Arcade.sfx.win(); g.confetti(90); g.addScore(250 * g.lv + left * 30, g.W / 2, g.H / 2); setTimeout(() => { if (g.state === 'play') g.win(left >= 6 ? 3 : left >= 3 ? 2 : 1); }, 900); }
+      else { Arcade.sfx.lose(); g.message(T('La máquina se quedó sin cartas', 'The machine ran out of cards'), 1.5); setTimeout(() => { if (g.state === 'play' && g.die()) Arcade.current.def.setup(g); }, 1800); }
+    }, 600);
+  }
+  function tapDeck(g) {
+    const s = g.s; if (s.turn !== 0 || s.done || s.choosing) return;
+    if (s.drew) { s.drew = false; next(g, 0, null); Arcade.tone(300, 0.06, 'sine', 0.05); return; }   // pasar
+    if (s.hand[0].some((c) => canPlay(s, c)) && !s.warned) { s.warned = 1; s.whyT = 1.6; s.why = T('¡Tienes una carta que sirve!', 'You have a card that fits!'); Arcade.sfx.bad(); return; }
+    const c = drawOne(g, 0); s.drew = true; s.warned = 0; Arcade.sfx.whoosh();
+    if (!c || !canPlay(s, c)) { s.why = T('No sirve: pasas', 'No good: you pass'); s.whyT = 1.2; s.drew = false; s.passT = 0.8; }
+  }
+
+  /* ---------- geometría ---------- */
+  function geo(g) {
+    const s = g.s, W = g.W, top = g.top + 34, bot = g.bot - (g.demoOn ? 46 : 0);
+    s.cw = Math.min(70, (W - 30) / 4.6); s.ch = s.cw * 1.45; s.sw = s.cw * 0.6; s.sh = s.sw * 1.45;
+    s.hy = bot - s.ch - 12; s.oy = top + 4; s.cy = (s.oy + s.sh + s.hy) / 2 - s.ch / 2;
+    s.deckX = W / 2 - s.cw - 14; s.pileX = W / 2 + 14;
+  }
+  function handPos(g, w, i) {
+    const s = g.s, n = Math.max(1, s.hand[w].length), cw = w ? s.sw : s.cw, maxW = g.W - 24, sp = Math.min(cw + (w ? -cw * 0.45 : 6), (maxW - cw) / Math.max(1, n - 1));
+    const x0 = g.W / 2 - ((n - 1) * sp + cw) / 2; return [x0 + i * sp, w ? s.oy : s.hy - (w === 0 && s.sel === i ? 12 : 0)];
+  }
+  const inC = (x, y, w, h, p) => p.x >= x && p.x <= x + w && p.y >= y && p.y <= y + h;
+  const suitBtn = (g, k) => { const s = g.s, bw = Math.min(70, (g.W - 50) / 4); return { x: g.W / 2 + (k - 2) * (bw + 8) + 4, y: s.cy + s.ch + 18, w: bw, h: 56 }; };
+
+  Arcade.game({
+    /*THEME*/ home: 'indexmesa.html', tag: 'Palo o número, y los ochos mandan', deco: ['♠️', '♥️', '♦️', '♣️', '8️⃣', '🃏'], font: 'round', bg: ['#155e8f', '#0c3b5e'],
+    music: { mode: 'major', bpm: 116, wave: 'square', style: 'bouncy', root: 60 }, voice: { wave: 'square', mul: 1, echo: 0.25 },
+    /*EN*/ en: { title: 'Crazy Eights', tag: 'Suit or number, and eights rule', help: 'Get rid of all your cards before the machine. On your turn, play a card of the same suit or the same number as the top of the pile. Eights are wild: they go on anything and you choose the new suit. If you can\'t play, tap the deck to draw a card. If it fits you can play it; if not, you pass. From level 4 there are special cards: a 2 makes the rival draw two and a J makes them lose their turn.', tvHelp: 'D-pad to a card or the deck · OK.', dict: { 'Tu turno': 'Your turn', 'Juega la máquina…': 'Machine is playing…', 'Elige palo': 'Choose a suit', 'Roba': 'Draw', 'Pasar': 'Pass' } },
+    /*TV*/ tvHelp: 'Cruceta hasta una carta o el mazo · OK.',
+    tv: { mode: 'tap', targets: (g) => { const s = g.s; if (!s.hand || s.turn !== 0 || s.done) return []; if (s.choosing) return [0, 1, 2, 3].map((k) => suitBtn(g, k)); const out = s.hand[0].map((c, i) => { const [x, y] = handPos(g, 0, i); return { x, y, w: s.cw, h: s.ch }; }); out.push({ x: s.deckX, y: s.cy, w: s.cw, h: s.ch }); return out; } },
+    id: 'ocholocos', title: 'Ocho locos', emoji: '🎱', color: '#4dabf7', origin: 'Crazy Eights (juego de cartas popular)', pad: false,
+    help: 'Quédate sin cartas antes que la máquina. En tu turno juega una carta del mismo palo o del mismo número que la de arriba del montón. Los ochos son comodines: van sobre cualquier carta y eliges el palo nuevo. Si no puedes jugar, toca el mazo para robar una carta. Si sirve, puedes jugarla; si no, pasas. Desde el nivel 4 hay cartas especiales: el 2 hace robar dos al rival y la J le hace perder el turno.',
+    lives: 3, levels: 0, cap: 20,
+    /*SC*/ demo(g) {
+      const s = g.s; if (!s.hand || s.done || s.turn !== 0 || s.passT > 0) return { wait: 0.4 };
+      const say = (es, en) => (s.said = (s.said || 0) + 1) < 9 ? T(es, en) : null;
+      if (s.choosing) { const k = favSuit(s.hand[0]), b = suitBtn(g, k); return { tap: [b.x + b.w / 2, b.y + b.h / 2], after: 0.7, say: say('Elige el palo del que tengas más', 'Pick the suit you have most of') }; }
+      const i = choose(s, 0, 0, specials(g));
+      if (i < 0) return { tap: [s.deckX + s.cw / 2, s.cy + s.ch / 2], after: 0.8, say: say(s.drew ? 'Tampoco sirve: pasas' : 'Ninguna sirve: roba del mazo', s.drew ? 'Still no good: pass' : 'Nothing fits: draw from the deck') };
+      const c = s.hand[0][i], [x, y] = handPos(g, 0, i);
+      const nx = i + 1 < s.hand[0].length ? handPos(g, 0, i + 1)[0] : x + s.cw; return { tap: [(x + nx) / 2, y + s.ch / 2], after: 0.75, say: say(c.r === 8 ? 'Un ocho vale para todo' : c.s === s.suit ? 'Mismo palo: vale' : 'Mismo número: vale', c.r === 8 ? 'An eight goes on anything' : c.s === s.suit ? 'Same suit: it fits' : 'Same number: it fits') };
+    },
+    setup(g) {
+      const deck = shuffle(B.deck('fr')); let top; do { top = deck.pop(); if (top.r === 8 || (specials(g) && (top.r === 2 || top.r === 11))) { deck.unshift(top); top = null; } } while (!top);
+      const n = g.lv >= 10 ? 6 : 7;
+      g.s = { deck, pile: [top], suit: top.s, hand: [[], []], turn: 0, drew: false, choosing: false, flies: [], cpuT: 1, done: false, noise: clamp(0.5 - g.lv * 0.04, 0.04, 0.5), whyT: 0, passT: 0, top() { return this.pile[this.pile.length - 1]; } };
+      for (let k = 0; k < n; k++) { deck.length && g.s.hand[0].push(deck.pop()); deck.length && g.s.hand[1].push(deck.pop()); }
+      g.s.turn = g.lv % 2 ? 0 : 1; geo(g);
+    },
+    layout(g) { if (g.s.hand) geo(g); },
+    tap(g, p) {
+      const s = g.s; if (!s.hand || s.done || s.turn !== 0 || s.passT > 0) return;
+      if (s.choosing) { for (let k = 0; k < 4; k++) { const b = suitBtn(g, k); if (inC(b.x, b.y, b.w, b.h, p)) { s.choosing = false; s.suit = k; Arcade.sfx.up(); next(g, 0, s.top()); return; } } return; }
+      if (inC(s.deckX, s.cy, s.cw, s.ch, p)) return tapDeck(g);
+      for (let i = s.hand[0].length - 1; i >= 0; i--) { const [x, y] = handPos(g, 0, i); if (inC(x, y, s.cw, s.ch, p)) {
+        if (!canPlay(s, s.hand[0][i])) { s.why = T('Tiene que ser ', 'It must be ') + SUITS[s.suit] + T(' o un ', ' or a ') + B.rank(s.top()) + T(' (o un 8)', ' (or an 8)'); s.whyT = 1.6; Arcade.sfx.bad(); return; }
+        play(g, 0, i); return; } }
+    },
+    update(g, dt) {
+      const s = g.s; if (!s.hand) return; geo(g); if (s.whyT > 0) s.whyT -= dt;
+      for (const f of s.flies) f.t += dt / 0.3; s.flies = s.flies.filter((f) => f.t < 1);
+      if (s.passT > 0) { s.passT -= dt; if (s.passT <= 0) next(g, 0, null); return; }
+      if (s.done || s.turn !== 1) return;
+      s.cpuT -= dt * (g.demoAuto ? 1.4 : 1); if (s.cpuT > 0) return;
+      const i = choose(s, 1, s.noise, specials(g));
+      if (i >= 0) { play(g, 1, i); return; }
+      if (!s.drew) { const c = drawOne(g, 1); s.drew = true; s.cpuT = 0.6; if (!c) { s.drew = false; next(g, 1, null); } return; }
+      s.drew = false; next(g, 1, null);
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      const bg = ctx.createRadialGradient(W / 2, H * 0.45, 30, W / 2, H / 2, H * 0.75); bg.addColorStop(0, '#1f7ab8'); bg.addColorStop(1, '#0c3b5e'); ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      if (!s.hand) return;
+      Arcade.txt(ctx, '🤖 ' + s.hand[1].length + T(' cartas', ' cards'), 14, g.top + 14, 13, '#d0ebff', 'left', 900);
+      // rival
+      s.hand[1].forEach((c, i) => { const [x, y] = handPos(g, 1, i); B.draw(ctx, null, x, y, s.sw, s.sh, { back: true, backCol: ['#e8590c', '#a33a00'] }); });
+      // mazo y montón
+      if (s.deck.length) { for (let k = Math.min(3, Math.ceil(s.deck.length / 10)); k >= 0; k--) B.draw(ctx, null, s.deckX - k, s.cy - k * 1.5, s.cw, s.ch, { back: true, backCol: ['#1864ab', '#0b3d91'], glow: k === 0 && s.turn === 0 && !s.done && !s.hand[0].some((c) => canPlay(s, c)) ? 'rgba(255,212,59,' + (0.5 + 0.4 * Math.sin(g.rt * 6)) + ')' : null }); Arcade.txt(ctx, s.drew ? 'Pasar' : 'Roba', s.deckX + s.cw / 2, s.cy + s.ch + 14, 13, '#fff', 'center', 900); }
+      const pl = s.pile, flyingTop = s.flies.find((f) => f.from === 'hand' && f.c === s.top());
+      if (pl.length > 1) B.draw(ctx, pl[pl.length - 2], s.pileX + 3, s.cy + 2, s.cw, s.ch, { rot: 0.08 });
+      if (flyingTop) { const f = flyingTop, e = 1 - (1 - f.t) * (1 - f.t), x0 = W / 2 - s.cw / 2, y0 = f.w ? s.oy : s.hy; B.draw(ctx, f.c, x0 + (s.pileX - x0) * e, y0 + (s.cy - y0) * e, s.cw, s.ch, { flip: f.w ? Math.min(1, f.t * 1.4) : null }); }
+      else B.draw(ctx, s.top(), s.pileX, s.cy, s.cw, s.ch, {});
+      // palo actual (importa tras un 8)
+      const sc = s.suit === 1 || s.suit === 2 ? '#ff8787' : '#fff';
+      ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.beginPath(); ctx.arc(s.pileX + s.cw + 26, s.cy + s.ch / 2, 20, 0, 6.3); ctx.fill();
+      Arcade.txt(ctx, SUITS[s.suit], s.pileX + s.cw + 26, s.cy + s.ch / 2 + 2, 24, sc, 'center', 900);
+      // mi mano
+      s.hand[0].forEach((c, i) => { const [x, y] = handPos(g, 0, i), ok = s.turn === 0 && !s.done && canPlay(s, c); B.draw(ctx, c, x, y - (ok ? 6 : 0), s.cw, s.ch, { glow: ok ? 'rgba(105,219,124,.9)' : null, dim: s.turn !== 0 }); });
+      // texto
+      const info = s.whyT > 0 ? s.why : s.done ? '' : s.choosing ? 'Elige palo' : s.turn === 0 ? 'Tu turno' : 'Juega la máquina…';
+      if (info) { ctx.fillStyle = 'rgba(0,0,0,.4)'; Arcade.rr(ctx, 10, s.hy - 38, W - 20, 26, 10); ctx.fill(); Arcade.txt(ctx, info, W / 2, s.hy - 25, 13, s.whyT > 0 ? '#ffd8a8' : '#fff', 'center', 800); }
+      if (s.choosing) for (let k = 0; k < 4; k++) { const b = suitBtn(g, k); ctx.fillStyle = '#fff'; Arcade.rr(ctx, b.x, b.y, b.w, b.h, 14); ctx.fill(); ctx.strokeStyle = '#ffd43b'; ctx.lineWidth = 3; ctx.stroke(); Arcade.txt(ctx, SUITS[k], b.x + b.w / 2, b.y + b.h / 2 + 2, 30, k === 1 || k === 2 ? '#d6336c' : '#1f2340', 'center', 900); }
+    },
+  });
+})();

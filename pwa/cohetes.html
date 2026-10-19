@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Cohete ratón · Arcade Perdido</title>
+<meta name="theme-color" content="#1b1446">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css?v=6d7635e467">
+</head>
+<body class="game">
+<script src="config.js?v=84fed7f189"></script>
+<script src="common.js?v=91476f9e44"></script>
+<script>
+(function () {
+  const { rand, ri, clamp, pick } = Arcade;
+  const DX = [0, 1, 0, -1], DY = [-1, 0, 1, 0], BIT = [1, 2, 4, 8];
+  const MAXT = 140, TICK = 0.2;
+  const cfg = (L) => ({
+    C: clamp(5 + Math.floor(L / 3), 5, 8), R: clamp(5 + Math.floor(L / 2.5), 5, 9),
+    mice: clamp(1 + Math.floor(L / 4), 1, 4), cats: L >= 4 ? clamp(Math.floor((L - 2) / 5), 1, 2) : 0,
+    holes: L >= 3 ? clamp(Math.floor((L - 1) / 4), 1, 3) : 0, arrows: clamp(1 + Math.floor(L / 4), 1, 5), walls: clamp(0.08 + L * 0.012, 0.08, 0.22),
+  });
+
+  /* ---------- simulación por casillas (determinista) ---------- */
+  // P: {C,R,wall,rocket,holes:Set,mice:[{x,y,d}],cats:[{x,y,d}]} · arrows: Map(idx -> dir)
+  function sim(P, arrows, rec) {
+    const ents = P.mice.map((m) => ({ ...m, t: 'm', st: 0 })).concat(P.cats.map((c) => ({ ...c, t: 'c', st: 0 })));
+    const frames = rec ? [ents.map((e) => ({ x: e.x, y: e.y, d: e.d, st: e.st }))] : null, seen = new Set();
+    const open = (x, y, d) => !(P.wall[y * P.C + x] & BIT[d]);
+    let saved = 0, res = null;
+    for (let t = 1; t <= MAXT && !res; t++) {
+      for (const e of ents) {
+        if (e.st) continue; if (e.t === 'c' && t % 2) continue;
+        const i = e.y * P.C + e.x; if (arrows.has(i)) e.d = arrows.get(i);
+        let d = e.d; if (!open(e.x, e.y, d)) { d = (e.d + 1) % 4; if (!open(e.x, e.y, d)) { d = (e.d + 3) % 4; if (!open(e.x, e.y, d)) d = (e.d + 2) % 4; } }
+        e.d = d; e.px = e.x; e.py = e.y; e.x += DX[d]; e.y += DY[d];
+        if (e.t === 'm') seen.add(e.y * P.C + e.x);
+      }
+      for (const e of ents) {
+        if (e.st || (e.t === 'c' && t % 2)) continue; const i = e.y * P.C + e.x;
+        if (P.holes.has(i)) { e.st = 3; if (e.t === 'm') { res = { ok: false, why: 'hole', t }; } }
+        else if (i === P.rocket) { if (e.t === 'm') { e.st = 1; saved++; } else { e.st = 2; res = { ok: false, why: 'cat', t }; } }
+      }
+      for (const c of ents) {
+        if (c.t !== 'c' || c.st || res) continue;
+        for (const m of ents) {
+          if (m.t !== 'm' || m.st) continue;
+          const swap = t % 2 === 0 && c.px === m.x && c.py === m.y && m.px === c.x && m.py === c.y;
+          if ((c.x === m.x && c.y === m.y) || swap) { m.st = 4; res = { ok: false, why: 'eat', t }; }
+        }
+      }
+      if (rec) frames.push(ents.map((e) => ({ x: e.x, y: e.y, d: e.d, st: e.st })));
+      if (!res && saved === P.mice.length) res = { ok: true, t };
+    }
+    if (!res) res = { ok: false, why: 'time', t: MAXT };
+    res.frames = frames; res.seen = seen; res.saved = saved; return res;
+  }
+
+  /* ---------- generador: flechas al azar sobre el recorrido de los ratones ---------- */
+  function generate(L) {
+    for (let tries = 0; tries < 4000; tries++) {
+      const Le = Math.max(1, L - Math.floor(tries / 300) * 3), k = cfg(Le), C = k.C, R = k.R, N = C * R;
+      const wall = new Array(N).fill(0);
+      for (let x = 0; x < C; x++) { wall[x] |= 1; wall[(R - 1) * C + x] |= 4; }
+      for (let y = 0; y < R; y++) { wall[y * C] |= 8; wall[y * C + C - 1] |= 2; }
+      for (let y = 0; y < R; y++) for (let x = 0; x < C; x++) {
+        if (x < C - 1 && Math.random() < k.walls) { wall[y * C + x] |= 2; wall[y * C + x + 1] |= 8; }
+        if (y < R - 1 && Math.random() < k.walls) { wall[y * C + x] |= 4; wall[(y + 1) * C + x] |= 1; }
+      }
+      const used = new Set(), free = () => { for (;;) { const i = ri(0, N - 1); if (!used.has(i)) { used.add(i); return i; } } };
+      const rocket = free(), holes = new Set(); for (let h = 0; h < k.holes; h++) holes.add(free());
+      const ent = () => { const i = free(); return { x: i % C, y: (i / C) | 0, d: ri(0, 3) }; };
+      const mice = Array.from({ length: k.mice }, ent), cats = Array.from({ length: k.cats }, ent);
+      if (mice.some((m) => Math.abs(m.x - rocket % C) + Math.abs(m.y - ((rocket / C) | 0)) < 3)) continue;
+      const P = { C, R, wall, rocket, holes, mice, cats };
+      if (sim(P, new Map()).ok) continue;
+      const arrows = new Map(); let r = null;
+      for (let a = 0; a < k.arrows; a++) {
+        const cur = sim(P, arrows), cand = [...cur.seen].filter((i) => !arrows.has(i) && i !== rocket && !holes.has(i));
+        if (!cand.length) break; let best = null, bv = -1;
+        for (let q = 0; q < 24; q++) {   // de unas cuantas flechas al azar, la que más ratones salva
+          const i = pick(cand), d = ri(0, 3); arrows.set(i, d); const t = sim(P, arrows); arrows.delete(i);
+          const v = t.ok ? 1e6 : t.saved * 1000 + (t.why === 'time' ? 0 : t.t) + Math.random();
+          if (v > bv) { bv = v; best = [i, d, t]; }
+        }
+        arrows.set(best[0], best[1]); r = best[2]; if (r.ok) break;
+      }
+      if (!r || !r.ok || arrows.size < Math.min(k.arrows, 1 + Math.floor(Le / 4))) continue;
+      let need = true; for (const i of arrows.keys()) { const m = new Map(arrows); m.delete(i); if (sim(P, m).ok) { need = false; break; } }
+      if (!need) continue;
+      P.sol = [...arrows.entries()]; P.inv = [0, 0, 0, 0]; for (const [, d] of P.sol) P.inv[d]++;
+      return P;
+    }
+    return generate(1);
+  }
+
+  /* ---------- geometría y botones ---------- */
+  function geo(g) {
+    const s = g.s, P = s.P, Ha = g.bot - g.top - 190;
+    s.cs = Math.min((g.W - 24) / P.C, Ha / P.R, 66); s.ox = (g.W - s.cs * P.C) / 2; s.oy = g.top + 58 + (Ha - s.cs * P.R) / 2;
+    const bw = Math.min(70, (g.W - 40) / 4 - 8); s.inv = [0, 1, 2, 3].map((d) => ({ d, x: g.W / 2 + (d - 1.5) * (bw + 10) - bw / 2, y: g.bot - 128, w: bw, h: bw * 0.8 }));
+    const w2 = Math.min(170, (g.W - 40) / 2 - 6); s.bClear = { x: g.W / 2 - w2 - 6, y: g.bot - 56, w: w2, h: 46 }; s.bGo = { x: g.W / 2 + 6, y: g.bot - 56, w: w2, h: 46 };
+  }
+  const cellXY = (s, i) => [s.ox + (i % s.P.C + 0.5) * s.cs, s.oy + (((i / s.P.C) | 0) + 0.5) * s.cs];
+  const inR = (b, p) => p.x >= b.x && p.x <= b.x + b.w && p.y >= b.y && p.y <= b.y + b.h;
+  const cen = (b) => [b.x + b.w / 2, b.y + b.h / 2];
+  function left(s, d) { let n = s.P.inv[d]; for (const v of s.arrows.values()) if (v === d) n--; return n; }
+
+  function go(g) {
+    const s = g.s; if (s.run) return;
+    s.tries++; const r = sim(s.P, s.arrows, true); s.run = { r, k: 0, t: 0 }; Arcade.sfx.whoosh(); s.sel = s.sel;
+  }
+  function endRun(g) {
+    const s = g.s, r = s.run.r;
+    if (r.ok) {
+      s.done = true; g.confetti(80); Arcade.sfx.win && Arcade.sfx.win();
+      const st = s.tries <= 1 ? 3 : s.tries <= 3 ? 2 : 1; g.addScore(150 * g.lv * st, ...cellXY(s, s.P.rocket));
+      s.launch = 0.01; setTimeout(() => { if (g.state === 'play') g.win(st); }, 1500); return;
+    }
+    const msg = { hole: '¡Un ratón cayó al agujero!', cat: '¡Un gato se coló en el cohete!', eat: '¡Un gato cazó a un ratón!', time: 'Los ratones no llegan' }[r.why];
+    Arcade.sfx.bad(); g.shake(0.2, 5); g.message(msg, 1.3, 'Cambia las flechas y prueba otra vez');
+    s.fail = 1.4;
+  }
+  function tapAt(g, p) {
+    const s = g.s; if (s.done) return;
+    if (s.run) { if (!s.fail) { s.run = null; Arcade.tone(300, 0.06, 'square', 0.05); } return; }
+    for (const b of s.inv) if (inR(b, p)) { if (s.P.inv[b.d]) { s.sel = b.d; Arcade.tone(620, 0.04, 'square', 0.04); } return; }
+    if (inR(s.bGo, p)) return go(g);
+    if (inR(s.bClear, p)) { s.arrows.clear(); Arcade.tone(260, 0.06, 'triangle', 0.05); return; }
+    const c = Math.floor((p.x - s.ox) / s.cs), r = Math.floor((p.y - s.oy) / s.cs), P = s.P;
+    if (c < 0 || r < 0 || c >= P.C || r >= P.R) return;
+    const i = r * P.C + c;
+    if (s.arrows.has(i)) { const d = s.arrows.get(i); s.arrows.delete(i); if (left(s, s.sel) > 0 && d !== s.sel) { s.arrows.set(i, s.sel); } Arcade.tone(380, 0.05, 'triangle', 0.05); return; }
+    if (i === P.rocket || P.holes.has(i)) { Arcade.sfx.bad(); return; }
+    if (left(s, s.sel) <= 0) { const d = [0, 1, 2, 3].find((q) => left(s, q) > 0); if (d == null) { Arcade.sfx.bad(); s.noLeft = 0.8; return; } s.sel = d; }
+    s.arrows.set(i, s.sel); Arcade.tone(700, 0.05, 'square', 0.05);
+    if (left(s, s.sel) <= 0) { const d = [0, 1, 2, 3].find((q) => left(s, q) > 0); if (d != null) s.sel = d; }
+  }
+
+  function arrow(ctx, x, y, d, r, col) {
+    ctx.save(); ctx.translate(x, y); ctx.rotate(d * Math.PI / 2); ctx.fillStyle = col; ctx.strokeStyle = 'rgba(0,0,0,.45)'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(0, -r); ctx.lineTo(r * 0.8, 0); ctx.lineTo(r * 0.32, 0); ctx.lineTo(r * 0.32, r * 0.85); ctx.lineTo(-r * 0.32, r * 0.85); ctx.lineTo(-r * 0.32, 0); ctx.lineTo(-r * 0.8, 0); ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.restore();
+  }
+  function button(ctx, b, label, col, on) {
+    ctx.fillStyle = on ? col : 'rgba(255,255,255,.12)'; Arcade.rr(ctx, b.x, b.y, b.w, b.h, 14); ctx.fill();
+    Arcade.txt(ctx, label, b.x + b.w / 2, b.y + b.h / 2 + 1, 17, '#fff', 'center', 900);
+  }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Flechas, ratones y gatos', deco: ['🐭', '🚀', '🐱', '⬆️', '🧀', '🕳️'], font: 'round', bg: ['#2b2170', '#1b1446'],
+    music: { mode: 'major', bpm: 128, wave: 'square', style: 'bouncy', root: 62 }, voice: { wave: 'square', mul: 1, echo: 0.2 },
+    /*EN*/ en: { title: 'Mouse Rocket', tag: 'Arrows, mice and cats', help: 'Get every mouse 🐭 into the rocket 🚀. Mice always walk straight ahead. When they hit a wall they turn right, and if they can\'t, left. An arrow on a square makes anyone who steps on it turn that way. Choose an arrow below and tap a square to place it. Tap an arrow on the board to remove it. When you are ready, press ▶ Launch and watch. Cats 🐱 eat mice and must not reach the rocket. Holes 🕳️ swallow mice (and cats too). If it goes wrong, nothing is lost: change the arrows and try again. Fewer attempts, more stars.', tvHelp: 'D-pad to an arrow or a square · OK places it · ▶ Launch.', dict: { '¡Un ratón cayó al agujero!': 'A mouse fell in a hole!', '¡Un gato se coló en el cohete!': 'A cat got into the rocket!', '¡Un gato cazó a un ratón!': 'A cat caught a mouse!', 'Los ratones no llegan': 'The mice never get there', 'Cambia las flechas y prueba otra vez': 'Change the arrows and try again', '▶ Despegar': '▶ Launch', '↺ Quitar': '↺ Clear', 'Coloca las flechas': 'Place the arrows', 'Mirando…': 'Watching…', '⏹ Parar': '⏹ Stop', 'Intento ': 'Try ' } },
+    /*TV*/ tvHelp: 'Cruceta hasta una flecha o una casilla · OK la coloca · ▶ Despegar.',
+    tv: { mode: 'tap', targets: (g) => { const s = g.s; if (!s.P || s.done) return []; if (s.run) return [s.bGo]; const out = s.inv.filter((b) => s.P.inv[b.d]).concat([s.bClear, s.bGo]); for (let i = 0; i < s.P.C * s.P.R; i++) if (i !== s.P.rocket && !s.P.holes.has(i)) out.push({ x: s.ox + (i % s.P.C) * s.cs, y: s.oy + Math.floor(i / s.P.C) * s.cs, w: s.cs, h: s.cs }); return out; } },
+    id: 'cohetes', title: 'Cohete ratón', emoji: '🚀', color: '#ffa94d', origin: 'ChuChu Rocket! (Sonic Team, 1999)', pad: false,
+    help: 'Lleva a todos los ratones 🐭 al cohete 🚀. Los ratones siempre andan recto. Si chocan con una pared giran a la derecha, y si no pueden, a la izquierda. Una flecha en una casilla hace girar hacia donde apunta a quien la pisa. Elige una flecha abajo y toca una casilla para ponerla. Toca una flecha del tablero para quitarla. Cuando lo tengas, pulsa ▶ Despegar y mira. Los gatos 🐱 se comen a los ratones y no pueden llegar al cohete. Los agujeros 🕳️ se tragan a los ratones (y también a los gatos). Si sale mal no pasa nada: cambia las flechas y vuelve a probar. Cuantos menos intentos, más estrellas.',
+    lives: 0, levels: 0, cap: 20,
+    /*SC*/ demo(g) {
+      const s = g.s; if (!s.P || s.done) return { wait: 0.4 };
+      if (s.run) return { wait: 0.4 };
+      const want = new Map(s.P.sol);
+      for (const [i, d] of s.arrows) if (want.get(i) !== d) return { tap: cellXY(s, i), after: 0.3, say: Arcade.T('Quita la flecha que sobra', 'Remove the extra arrow') };
+      for (const [i, d] of want) if (s.arrows.get(i) !== d) {
+        if (s.sel !== d) return { tap: cen(s.inv[d]), after: 0.3, say: Arcade.T('Elige la dirección de la flecha', 'Choose the arrow direction') };
+        return { tap: cellXY(s, i), after: 0.4, say: Arcade.T('Ponla donde pasan los ratones', 'Put it where the mice pass') };
+      }
+      return { tap: cen(s.bGo), after: 1, say: Arcade.T('¡Despegue! Mira cómo llegan', 'Launch! Watch them arrive') };
+    },
+    setup(g) {
+      const P = generate(g.lv); const sel = [0, 1, 2, 3].find((d) => P.inv[d]);
+      g.s = { P, arrows: new Map(), sel, run: null, tries: 0, done: false, fail: 0, launch: 0, noLeft: 0 };
+      geo(g);
+    },
+    layout(g) { if (g.s.P) geo(g); },
+    tap(g, p) { tapAt(g, p); },
+    key(g, k, down) { const s = g.s; if (!down || !s.P) return; if (k === 'Enter') go(g); },
+    update(g, dt) {
+      const s = g.s; if (!s.P) return; if (s.noLeft > 0) s.noLeft -= dt; if (s.launch) s.launch += dt;
+      const run = s.run; if (!run) return;
+      if (s.fail) { s.fail -= dt; if (s.fail <= 0) { s.fail = 0; s.run = null; } return; }
+      run.t += dt / TICK * (g.demoAuto ? 1.6 : 1);
+      while (run.t >= 1) {
+        run.t -= 1; run.k++;
+        const fr = run.r.frames, a = fr[run.k - 1], b = fr[run.k];
+        if (b) b.forEach((e, j) => { if (e.st && !a[j].st) { const [x, y] = cellXY(s, e.y * s.P.C + e.x); if (e.st === 1) { Arcade.sfx.pop(); g.burst(x, y, { n: 10, color: ['#ffe066', '#fff'], speed: 120 }); } else g.burst(x, y, { n: 14, color: ['#fa5252', '#343a40'], speed: 160 }); } });
+        if (run.k >= fr.length - 1) { run.k = fr.length - 1; run.t = 0; endRun(g); break; }
+        else Arcade.tone(500 + (run.k % 4) * 40, 0.025, 'sine', 0.02);
+      }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H; ctx.fillStyle = '#1b1446'; ctx.fillRect(0, 0, W, H);
+      for (let k = 0; k < 50; k++) { ctx.fillStyle = 'rgba(255,255,255,' + (0.15 + 0.15 * Math.sin(g.rt * 2 + k)) + ')'; ctx.fillRect((k * 97) % W, (k * 61) % H, 2, 2); }
+      const P = s.P; if (!P) return; const cs = s.cs, C = P.C;
+      ctx.fillStyle = '#0e0a2e'; Arcade.rr(ctx, s.ox - 8, s.oy - 8, cs * C + 16, cs * P.R + 16, 12); ctx.fill();
+      for (let i = 0; i < C * P.R; i++) { const x = s.ox + (i % C) * cs, y = s.oy + Math.floor(i / C) * cs; ctx.fillStyle = ((i % C) + ((i / C) | 0)) % 2 ? '#8fd3fe' : '#a5e1ff'; ctx.fillRect(x, y, cs, cs); }
+      for (const i of P.holes) { const [x, y] = cellXY(s, i); ctx.fillStyle = '#212529'; ctx.beginPath(); ctx.ellipse(x, y, cs * 0.38, cs * 0.3, 0, 0, 6.3); ctx.fill(); ctx.strokeStyle = '#495057'; ctx.lineWidth = 3; ctx.stroke(); }
+      { const [x, y] = cellXY(s, P.rocket); ctx.fillStyle = 'rgba(255,212,59,' + (0.35 + 0.2 * Math.sin(g.rt * 4)) + ')'; ctx.fillRect(x - cs / 2, y - cs / 2, cs, cs); Arcade.emoji(ctx, '🚀', x, y - (s.launch ? s.launch * s.launch * 300 : 0), cs * 0.78); }
+      const ghost = !s.run && !s.done;
+      for (const [i, d] of s.arrows) { const [x, y] = cellXY(s, i); arrow(ctx, x, y, d, cs * 0.34, '#ff6b6b'); }
+      // paredes
+      ctx.strokeStyle = '#3b2f8f'; ctx.lineWidth = Math.max(4, cs * 0.1); ctx.lineCap = 'round';
+      for (let i = 0; i < C * P.R; i++) {
+        const w = P.wall[i], x = s.ox + (i % C) * cs, y = s.oy + Math.floor(i / C) * cs; ctx.beginPath();
+        if (w & 1) { ctx.moveTo(x, y); ctx.lineTo(x + cs, y); } if (w & 8) { ctx.moveTo(x, y); ctx.lineTo(x, y + cs); }
+        if (w & 2 && i % C === C - 1) { ctx.moveTo(x + cs, y); ctx.lineTo(x + cs, y + cs); } if (w & 4 && Math.floor(i / C) === P.R - 1) { ctx.moveTo(x, y + cs); ctx.lineTo(x + cs, y + cs); }
+        ctx.stroke();
+      }
+      // bichos
+      const ents = P.mice.map((m) => ({ ...m, t: 'm' })).concat(P.cats.map((c) => ({ ...c, t: 'c' })));
+      const fr = s.run ? s.run.r.frames : null, k = s.run ? s.run.k : 0, f = s.run ? s.run.t : 0;
+      ents.forEach((e, j) => {
+        let x = e.x, y = e.y, d = e.d, st = 0;
+        if (fr) { const a = fr[k][j], b = fr[Math.min(k + 1, fr.length - 1)][j]; st = a.st; d = b.d; const ff = e.t === 'c' ? (k % 2 ? (f + 1) / 2 : f / 2) : f; const bb = e.t === 'c' && k % 2 === 0 ? a : b; x = a.x + (bb.x - a.x) * (e.t === 'c' ? 0 : ff); y = a.y + (bb.y - a.y) * (e.t === 'c' ? 0 : ff);
+          if (e.t === 'c') { const pa = fr[k - (k % 2)][j], pb = fr[Math.min(k - (k % 2) + 2, fr.length - 1)][j]; x = pa.x + (pb.x - pa.x) * ff; y = pa.y + (pb.y - pa.y) * ff; st = pa.st; d = pb.d; } }
+        if (st) return;
+        const px = s.ox + (x + 0.5) * cs, py = s.oy + (y + 0.5) * cs, bob = s.run ? Math.abs(Math.sin(g.rt * 14 + j)) * cs * 0.06 : 0;
+        Arcade.emoji(ctx, e.t === 'm' ? '🐭' : '🐱', px, py - bob, cs * (e.t === 'm' ? 0.62 : 0.74));
+        if (ghost) { ctx.fillStyle = e.t === 'm' ? '#fff' : '#ffa8a8'; const ax = px + DX[d] * cs * 0.42, ay = py + DY[d] * cs * 0.42; ctx.beginPath(); ctx.arc(ax, ay, cs * 0.07, 0, 6.3); ctx.fill(); }
+      });
+      // cabecera
+      Arcade.txt(ctx, s.done ? '' : s.run ? 'Mirando…' : 'Coloca las flechas', W / 2, g.top + 22, 17, '#fff', 'center', 900);
+      Arcade.txt(ctx, Arcade.T('Intento ', 'Try ') + (s.tries + (s.run ? 0 : 1)), W / 2, g.top + 42, 12, '#b197fc', 'center', 700);
+      // inventario
+      for (const b of s.inv) {
+        const n = left(s, b.d), on = s.P.inv[b.d] > 0, sel = s.sel === b.d && !s.run;
+        ctx.fillStyle = sel ? '#ffd43b' : on ? 'rgba(255,255,255,.16)' : 'rgba(255,255,255,.05)'; Arcade.rr(ctx, b.x, b.y, b.w, b.h, 12); ctx.fill();
+        if (on) { arrow(ctx, b.x + b.w * 0.4, b.y + b.h / 2, b.d, b.h * 0.3, n > 0 ? '#ff6b6b' : '#868e96'); Arcade.txt(ctx, '×' + n, b.x + b.w - 8, b.y + b.h - 12, 14, sel ? '#1b1446' : '#fff', 'right', 900); }
+      }
+      if (s.noLeft > 0) Arcade.txt(ctx, Arcade.T('No quedan flechas', 'No arrows left'), W / 2, s.inv[0].y - 12, 14, '#ffa8a8', 'center', 900);
+      button(ctx, s.bClear, '↺ Quitar', '#7048e8', !s.run && s.arrows.size > 0);
+      button(ctx, s.bGo, s.run ? '⏹ Parar' : '▶ Despegar', s.run ? '#e03131' : '#2f9e44', !s.done);
+    },
+  });
+})();
+</script>
+</body>
+</html>

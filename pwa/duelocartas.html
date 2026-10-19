@@ -1,0 +1,286 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Duelo de cartas · Arcade Perdido</title>
+<meta name="theme-color" content="#2a1a0f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css?v=6d7635e467">
+</head>
+<body class="game">
+<script src="config.js?v=84fed7f189"></script>
+<script src="common.js?v=91476f9e44"></script>
+<script>
+(function () {
+  const { rand, ri, clamp, pick, shuffle } = Arcade;
+  const T = Arcade.T;
+  // t: 'm' esbirro (a/h, taunt, charge) · 's' hechizo (fx, v, tg: 'enemy' | 'ally' | null)
+  const POOL = [
+    { e: '🐀', n: T('Rata', 'Rat'), c: 1, t: 'm', a: 1, h: 2 },
+    { e: '🐝', n: T('Avispa', 'Wasp'), c: 1, t: 'm', a: 1, h: 1, charge: 1 },
+    { e: '🐢', n: T('Tortuga', 'Turtle'), c: 2, t: 'm', a: 1, h: 4, taunt: 1 },
+    { e: '🐺', n: T('Lobo', 'Wolf'), c: 2, t: 'm', a: 3, h: 2 },
+    { e: '🦅', n: T('Halcón', 'Hawk'), c: 2, t: 'm', a: 2, h: 1, charge: 1 },
+    { e: '🐻', n: T('Oso', 'Bear'), c: 3, t: 'm', a: 3, h: 4 },
+    { e: '🦔', n: T('Erizo', 'Hedgehog'), c: 3, t: 'm', a: 2, h: 4, taunt: 1 },
+    { e: '🐆', n: T('Guepardo', 'Cheetah'), c: 3, t: 'm', a: 4, h: 2, charge: 1 },
+    { e: '🦏', n: T('Rinoceronte', 'Rhino'), c: 4, t: 'm', a: 3, h: 6, taunt: 1 },
+    { e: '🐊', n: T('Cocodrilo', 'Crocodile'), c: 4, t: 'm', a: 5, h: 4 },
+    { e: '🦁', n: T('León', 'Lion'), c: 5, t: 'm', a: 4, h: 4, charge: 1 },
+    { e: '🦍', n: T('Gorila', 'Gorilla'), c: 5, t: 'm', a: 5, h: 6 },
+    { e: '🐘', n: T('Elefante', 'Elephant'), c: 6, t: 'm', a: 5, h: 8, taunt: 1 },
+    { e: '🐉', n: T('Dragón', 'Dragon'), c: 7, t: 'm', a: 8, h: 8 },
+    { e: '✨', n: T('Chispa', 'Spark'), c: 1, t: 's', fx: 'dmg', v: 2, tg: 'enemy', d: T('2 de daño', '2 damage') },
+    { e: '🍀', n: T('Trébol', 'Clover'), c: 2, t: 's', fx: 'draw', v: 2, d: T('Roba 2 cartas', 'Draw 2 cards') },
+    { e: '💪', n: T('Fuerza', 'Strength'), c: 2, t: 's', fx: 'buff', v: 2, tg: 'ally', d: T('+2/+2 a un aliado', '+2/+2 to an ally') },
+    { e: '💚', n: T('Curar', 'Heal'), c: 3, t: 's', fx: 'heal', v: 6, d: T('Cura 6 a tu héroe', 'Heal your hero 6') },
+    { e: '🔥', n: T('Fuego', 'Fire'), c: 4, t: 's', fx: 'dmg', v: 4, tg: 'enemy', d: T('4 de daño', '4 damage') },
+    { e: '🌪️', n: T('Tornado', 'Tornado'), c: 4, t: 's', fx: 'aoe', v: 2, d: T('2 a todos los esbirros rivales', '2 to all enemy minions') },
+    { e: '☄️', n: T('Meteoro', 'Meteor'), c: 6, t: 's', fx: 'nuke', v: 3, d: T('3 a todos los enemigos', '3 to every enemy') },
+  ];
+  const CURVE = [0, 4, 5, 4, 3, 2, 1.2, 0.7];
+  function mkDeck() {
+    const out = []; let uid = 0;
+    while (out.length < 20) { const c = pick(POOL); if (Math.random() * 5 < CURVE[c.c]) out.push({ ...c, uid: ++uid }); }
+    return shuffle(out);
+  }
+  const desc = (c) => c.t === 's' ? c.d : [c.taunt ? T('🛡️ Provocar: hay que atacarle primero', '🛡️ Taunt: must be attacked first') : '', c.charge ? T('⚡ Carga: ataca ya este turno', '⚡ Charge: attacks this turn') : ''].filter(Boolean).join(' · ') || T('Esbirro', 'Minion');
+
+  /* ---------- reglas ---------- */
+  function side(hp) { return { hp, max: hp, mana: 0, maxMana: 0, deck: mkDeck(), hand: [], board: [] }; }
+  function drawCard(g, w, n = 1) { const S = g.s.S[w]; for (let k = 0; k < n; k++) { if (!S.deck.length) { S.hp -= ++S.fat || (S.fat = 1); continue; } const c = S.deck.pop(); if (S.hand.length < 7) S.hand.push(c); } }
+  function startTurn(g, w) {
+    const s = g.s, S = s.S[w]; s.turn = w; s.sel = null; s.round += w === 0 ? 1 : 0;
+    S.maxMana = Math.min(8, S.maxMana + 1); S.mana = S.maxMana; drawCard(g, w); S.board.forEach((m) => { m.sleep = false; m.used = false; });
+    if (w === 1) s.cpuT = 0.9; checkEnd(g);
+  }
+  const ready = (m) => !m.used && (!m.sleep || m.charge);
+  const taunts = (S) => S.board.filter((m) => m.taunt);
+  function attackTargets(g, w) { const O = g.s.S[1 - w], tt = taunts(O); return tt.length ? tt.map((m) => O.board.indexOf(m)) : [-1, ...O.board.map((m, i) => i)]; }
+  function spellTargets(g, w, c) { const S = g.s.S[w], O = g.s.S[1 - w]; return c.tg === 'enemy' ? [-1, ...O.board.map((m, i) => i)] : c.tg === 'ally' ? S.board.map((m, i) => i) : null; }
+  function playable(g, w, c) { const S = g.s.S[w]; if (c.c > S.mana) return false; if (c.t === 'm') return S.board.length < 5; if (c.tg) return spellTargets(g, w, c).length > 0; return true; }
+  function hurt(g, w, i, n) {
+    const s = g.s, S = s.S[w], [x, y] = posOf(g, w, i);
+    if (i < 0) S.hp -= n; else { const m = S.board[i]; if (!m) return; m.h -= n; m.hit = 0.4; }
+    g.float('-' + n, x, y - 10, '#ff6b6b', 24); g.burst(x, y, { n: 8, color: ['#ff6b6b', '#ffd43b'], speed: 120 });
+  }
+  function cleanup(g) {
+    for (const S of g.s.S) for (let i = S.board.length - 1; i >= 0; i--) if (S.board[i].h <= 0) { const w = g.s.S.indexOf(S), [x, y] = posOf(g, w, i); g.burst(x, y, { n: 14, color: ['#adb5bd', '#495057'], speed: 160 }); S.board.splice(i, 1); Arcade.sfx.pop(); }
+    checkEnd(g);
+  }
+  function checkEnd(g) {
+    const s = g.s; if (s.done) return;
+    if (s.S[1].hp <= 0) { s.done = true; Arcade.sfx.win(); g.confetti(90); const hp = s.S[0].hp; g.addScore(300 * g.lv + hp * 40, g.W / 2, g.H / 2); setTimeout(() => { if (g.state === 'play') g.win(hp >= 15 ? 3 : hp >= 8 ? 2 : 1); }, 1400); }
+    else if (s.S[0].hp <= 0) { s.done = true; Arcade.sfx.lose(); g.message(T('Has perdido el duelo', 'You lost the duel'), 1.4); setTimeout(() => { if (g.state === 'play' && g.die()) Arcade.current.def.setup(g); }, 1800); }
+  }
+  function play(g, w, hi, tgt) {
+    const s = g.s, S = s.S[w], O = s.S[1 - w], c = S.hand[hi]; if (!c || !playable(g, w, c)) return false;
+    S.mana -= c.c; S.hand.splice(hi, 1); s.sel = null; s.flash = { c, t: 1.1, w };
+    if (c.t === 'm') { S.board.push({ ...c, max: c.h, sleep: true, used: false, born: 0.4 }); Arcade.tone(w ? 300 : 520, 0.08, 'triangle', 0.07); return true; }
+    Arcade.sfx.whoosh();
+    if (c.fx === 'dmg') hurt(g, 1 - w, tgt, c.v);
+    if (c.fx === 'buff') { const m = S.board[tgt]; m.a += c.v; m.h += c.v; m.max += c.v; const [x, y] = posOf(g, w, tgt); g.ring(x, y, '#69db7c', 40, 4); Arcade.sfx.up(); }
+    if (c.fx === 'heal') { const v = Math.min(c.v, S.max - S.hp); S.hp += v; const [x, y] = posOf(g, w, -1); g.float('+' + v, x, y - 10, '#69db7c', 24); Arcade.sfx.up(); }
+    if (c.fx === 'draw') drawCard(g, w, c.v);
+    if (c.fx === 'aoe' || c.fx === 'nuke') { for (let i = O.board.length - 1; i >= 0; i--) hurt(g, 1 - w, i, c.v); if (c.fx === 'nuke') hurt(g, 1 - w, -1, c.v); g.shake(0.25, 6); }
+    cleanup(g); return true;
+  }
+  function attack(g, w, mi, tgt) {
+    const s = g.s, S = s.S[w], O = s.S[1 - w], m = S.board[mi]; if (!m || !ready(m) || !attackTargets(g, w).includes(tgt)) return false;
+    m.used = true; s.sel = null; s.lunge = { w, mi, tgt, t: 0 }; Arcade.sfx.hit();
+    hurt(g, 1 - w, tgt, m.a); if (tgt >= 0) hurt(g, w, mi, O.board[tgt].a); else g.shake(0.2, 5);
+    cleanup(g); return true;
+  }
+  function endTurn(g) { const s = g.s; if (s.done) return; s.sel = null; Arcade.tone(380, 0.08, 'sine', 0.06); startTurn(g, 1 - s.turn); }
+
+  /* ---------- IA (la usan la máquina y la demo) ---------- */
+  function think(g, w, noise) {
+    const s = g.s, S = s.S[w], O = s.S[1 - w], rnd = () => Math.random() < noise;
+    // ¿letal? todos a la cara
+    const att = S.board.map((m, i) => i).filter((i) => ready(S.board[i]));
+    if (!taunts(O).length && att.reduce((t, i) => t + S.board[i].a, 0) >= O.hp && att.length) return { k: 'att', i: att[0], tgt: -1 };
+    // jugar cartas: la más cara que quepa
+    const cand = S.hand.map((c, i) => ({ c, i })).filter(({ c }) => playable(g, w, c)).sort((a, b) => b.c.c - a.c.c + (rnd() ? rand(-3, 3) : 0));
+    for (const { c, i } of cand) {
+      if (c.t === 'm') return { k: 'play', i };
+      if (c.fx === 'heal' && S.hp > S.max - 4) continue;
+      if (c.fx === 'draw' && S.hand.length > 5) continue;
+      if (c.fx === 'aoe' && !(O.board.length >= 2 || O.board.some((m) => m.h <= c.v))) continue;
+      if (c.fx === 'buff') { const b = S.board.map((m, j) => j).sort((a, b) => S.board[b].a - S.board[a].a)[0]; return { k: 'play', i, tgt: b }; }
+      if (c.fx === 'dmg') { const kill = O.board.map((m, j) => j).filter((j) => O.board[j].h <= c.v).sort((a, b) => O.board[b].a - O.board[a].a)[0]; if (kill != null && O.board[kill].a >= 2) return { k: 'play', i, tgt: kill }; if (O.hp <= c.v || !O.board.length || rnd()) return { k: 'play', i, tgt: -1 }; if (kill != null) return { k: 'play', i, tgt: kill }; return { k: 'play', i, tgt: -1 }; }
+      return { k: 'play', i };
+    }
+    // ataques
+    for (const i of att) {
+      const m = S.board[i], tg = attackTargets(g, w).filter((t) => t >= 0);
+      if (taunts(O).length) { const best = tg.sort((a, b) => (O.board[a].h <= m.a ? -10 : 0) - (O.board[b].h <= m.a ? -10 : 0) + O.board[a].h - O.board[b].h)[0]; return { k: 'att', i, tgt: best }; }
+      const good = tg.filter((t) => O.board[t].h <= m.a && O.board[t].a < m.h).sort((a, b) => O.board[b].a - O.board[a].a)[0];
+      if (good != null && !rnd() && O.board[good].a >= Math.max(2, m.a - 1)) return { k: 'att', i, tgt: good };
+      return { k: 'att', i, tgt: -1 };
+    }
+    return { k: 'end' };
+  }
+  function doAI(g, act, w) { if (act.k === 'play') return play(g, w, act.i, act.tgt); if (act.k === 'att') return attack(g, w, act.i, act.tgt); endTurn(g); return true; }
+
+  /* ---------- geometría ---------- */
+  function geo(g) {
+    const s = g.s, W = g.W, top = g.top, H = g.bot - g.top;
+    s.mw = Math.min(68, (W - 24) / 5 - 8); s.mh = s.mw * 1.25;
+    s.hw = Math.min(70, (W - 16) / 6.2); s.hh = s.hw * 1.4;
+    s.rowY = [top + H * 0.6, top + H * 0.3];            // centro de cada fila de esbirros (0 = tuyo, 1 = máquina)
+    s.heroY = [top + H * 0.6 + s.mh / 2 + 44, top + 40];
+    s.handY = g.bot - s.hh - 8 - (g.demoOn ? 44 : 0); s.infoY = s.handY - 18;
+    s.endB = { x: W - 104, y: top + H * 0.45 - 20, w: 96, h: 40 };
+  }
+  function boardX(g, w, i) { const S = g.s.S[w], n = S.board.length, sp = g.s.mw + 8; return g.W / 2 + (i - (n - 1) / 2) * sp; }
+  function posOf(g, w, i) { const s = g.s; return i < 0 ? [g.W / 2, s.heroY[w]] : [boardX(g, w, i), s.rowY[w]]; }
+  function handRect(g, i) { const s = g.s, n = s.S[0].hand.length, sp = Math.min(s.hw + 4, (g.W - 16 - s.hw) / Math.max(1, n - 1)), x0 = g.W / 2 - ((n - 1) * sp + s.hw) / 2; return { x: x0 + i * sp, y: s.handY - (s.sel && s.sel.k === 'hand' && s.sel.i === i ? 16 : 0), w: s.hw, h: s.hh }; }
+  const inR = (b, p) => p.x >= b.x && p.x <= b.x + b.w && p.y >= b.y && p.y <= b.y + b.h;
+  function hitTarget(g, p, w) {   // devuelve índice (-1 héroe) del lado w bajo el punto, o null
+    const s = g.s, S = s.S[w];
+    for (let i = 0; i < S.board.length; i++) { const [x, y] = posOf(g, w, i); if (Math.abs(p.x - x) < s.mw / 2 + 3 && Math.abs(p.y - y) < s.mh / 2 + 3) return i; }
+    const [x, y] = posOf(g, w, -1); if (Math.abs(p.x - x) < 46 && Math.abs(p.y - y) < 34) return -1; return null;
+  }
+  // objetivos válidos de la selección actual: [{w, i}]
+  function selTargets(g) {
+    const s = g.s, sel = s.sel; if (!sel) return [];
+    if (sel.k === 'min') return attackTargets(g, 0).map((i) => ({ w: 1, i }));
+    const c = s.S[0].hand[sel.i]; if (!c || !c.tg) return []; return spellTargets(g, 0, c).map((i) => ({ w: c.tg === 'enemy' ? 1 : 0, i }));
+  }
+
+  function tapAt(g, p) {
+    const s = g.s; if (s.done || s.turn !== 0 || s.lunge) return;
+    const S = s.S[0];
+    if (inR(s.endB, p)) return endTurn(g);
+    for (let i = S.hand.length - 1; i >= 0; i--) if (inR(handRect(g, i), p)) {
+      const c = S.hand[i];
+      if (s.sel && s.sel.k === 'hand' && s.sel.i === i) { if (!playable(g, 0, c)) { Arcade.sfx.bad(); s.why = c.c > S.mana ? T('No tienes maná suficiente', 'Not enough mana') : T('No hay sitio', 'No room'); s.whyT = 1.2; return; } if (!c.tg) play(g, 0, i); else { s.why = T('Elige un objetivo', 'Choose a target'); s.whyT = 1.2; } return; }
+      s.sel = { k: 'hand', i }; Arcade.tone(640, 0.04, 'square', 0.04); return;
+    }
+    const tg = selTargets(g);
+    for (const t of tg) { const h = hitTarget(g, p, t.w); if (h === t.i) { if (s.sel.k === 'min') attack(g, 0, s.sel.i, t.i); else play(g, 0, s.sel.i, t.i); return; } }
+    const mine = hitTarget(g, p, 0);
+    if (mine != null && mine >= 0) { const m = S.board[mine]; if (ready(m)) { s.sel = { k: 'min', i: mine }; Arcade.tone(560, 0.04, 'square', 0.04); } else { s.why = m.used ? T('Ya ha atacado este turno', 'Already attacked this turn') : T('Acaba de llegar: ataca el turno que viene', 'Just arrived: attacks next turn'); s.whyT = 1.3; Arcade.sfx.bad(); } return; }
+    if (s.sel && s.sel.k === 'hand' && !S.hand[s.sel.i].tg && p.y > s.rowY[1] + s.mh / 2 && p.y < s.handY - 20) { play(g, 0, s.sel.i); return; }
+    if (s.sel && s.sel.k === 'min' && hitTarget(g, p, 1) != null) { s.why = T('Primero los que tienen 🛡️', 'Taunt 🛡️ minions first'); s.whyT = 1.3; Arcade.sfx.bad(); return; }
+    s.sel = null;
+  }
+
+  /* ---------- dibujo ---------- */
+  function cardFace(ctx, x, y, w, h, c, o = {}) {
+    const sp = c.t === 's';
+    ctx.save(); if (o.dim) ctx.globalAlpha = 0.55;
+    ctx.fillStyle = 'rgba(0,0,0,.35)'; Arcade.rr(ctx, x + 2, y + 3, w, h, 9); ctx.fill();
+    const gr = ctx.createLinearGradient(x, y, x, y + h); gr.addColorStop(0, sp ? '#d0bfff' : '#ffe8cc'); gr.addColorStop(1, sp ? '#7048e8' : '#d9480f');
+    ctx.fillStyle = gr; Arcade.rr(ctx, x, y, w, h, 9); ctx.fill();
+    ctx.strokeStyle = o.glow ? '#69db7c' : o.sel ? '#ffd43b' : 'rgba(0,0,0,.4)'; ctx.lineWidth = o.glow || o.sel ? 3 : 1.5; ctx.stroke();
+    Arcade.emoji(ctx, c.e, x + w / 2, y + h * 0.42, w * 0.46);
+    Arcade.txt(ctx, c.n, x + w / 2, y + h * 0.74, Math.max(8, w * 0.15), '#1a1a1a', 'center', 800);
+    ctx.fillStyle = '#1c7ed6'; ctx.beginPath(); ctx.arc(x + 9, y + 9, 10, 0, 6.3); ctx.fill(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5; ctx.stroke();
+    Arcade.txt(ctx, String(c.c), x + 9, y + 10, 13, '#fff', 'center', 900);
+    if (!sp) { stat(ctx, x + 9, y + h - 9, c.a, '#f59f00'); stat(ctx, x + w - 9, y + h - 9, c.h, '#e03131'); if (c.taunt) Arcade.emoji(ctx, '🛡️', x + w - 10, y + 11, 13); if (c.charge) Arcade.emoji(ctx, '⚡', x + w - 10, y + 11 + (c.taunt ? 14 : 0), 13); }
+    else Arcade.txt(ctx, '✦', x + w / 2, y + h - 10, 12, '#fff', 'center', 900);
+    ctx.restore();
+  }
+  function stat(ctx, x, y, v, col, hurtC) { ctx.fillStyle = col; ctx.beginPath(); ctx.arc(x, y, 10, 0, 6.3); ctx.fill(); ctx.strokeStyle = 'rgba(0,0,0,.5)'; ctx.lineWidth = 1.5; ctx.stroke(); Arcade.txt(ctx, String(v), x, y + 1, 13, hurtC || '#fff', 'center', 900); }
+  function minion(g, ctx, w, i, m, o) {
+    const s = g.s, [cx0, cy0] = posOf(g, w, i); let cx = cx0, cy = cy0;
+    const L = s.lunge; if (L && L.w === w && L.mi === i) { const [tx, ty] = posOf(g, 1 - w, L.tgt), k = Math.sin(Math.min(1, L.t) * Math.PI) * 0.7; cx += (tx - cx) * k; cy += (ty - cy) * k; }
+    const sc = m.born > 0 ? 1 - m.born : 1, mw = s.mw * sc, mh = s.mh * sc, x = cx - mw / 2, y = cy - mh / 2;
+    ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.beginPath(); ctx.ellipse(cx, cy + mh / 2, mw / 2, 6, 0, 0, 6.3); ctx.fill();
+    if (m.taunt) { ctx.fillStyle = '#868e96'; Arcade.rr(ctx, x - 4, y - 4, mw + 8, mh + 8, 14); ctx.fill(); }
+    const gr = ctx.createLinearGradient(x, y, x, y + mh); gr.addColorStop(0, w ? '#ffc9c9' : '#d3f9d8'); gr.addColorStop(1, w ? '#c92a2a' : '#2b8a3e');
+    ctx.fillStyle = gr; Arcade.rr(ctx, x, y, mw, mh, 12); ctx.fill();
+    ctx.strokeStyle = o.sel ? '#ffd43b' : o.target ? '#ff8787' : o.ready ? '#69db7c' : 'rgba(0,0,0,.45)'; ctx.lineWidth = o.sel || o.target || o.ready ? 3.5 : 1.5; ctx.stroke();
+    if (m.hit > 0) { ctx.fillStyle = 'rgba(255,0,0,' + m.hit + ')'; Arcade.rr(ctx, x, y, mw, mh, 12); ctx.fill(); }
+    Arcade.emoji(ctx, m.e, cx, cy - mh * 0.08, mw * 0.55);
+    stat(ctx, x + 8, y + mh - 8, m.a, '#f59f00'); stat(ctx, x + mw - 8, y + mh - 8, m.h, '#e03131', m.h < m.max ? '#ffe3e3' : null);
+    if (m.charge) Arcade.emoji(ctx, '⚡', x + mw - 9, y + 10, 12);
+    if (w === 0 && s.turn === 0 && !ready(m)) Arcade.emoji(ctx, m.used ? '✔️' : '💤', x + 10, y + 10, 12);
+  }
+  function hero(g, ctx, w, o) {
+    const s = g.s, S = s.S[w], [x, y] = posOf(g, w, -1);
+    ctx.fillStyle = o.target ? 'rgba(255,135,135,.35)' : 'rgba(255,255,255,.08)'; ctx.beginPath(); ctx.arc(x, y, 30, 0, 6.3); ctx.fill();
+    if (o.target) { ctx.strokeStyle = '#ff8787'; ctx.lineWidth = 3; ctx.stroke(); }
+    Arcade.emoji(ctx, w ? s.foe : '🧙', x, y, 40);
+    ctx.fillStyle = '#e03131'; Arcade.rr(ctx, x + 22, y - 2, 40, 24, 12); ctx.fill(); Arcade.txt(ctx, '❤ ' + Math.max(0, S.hp), x + 42, y + 11, 14, '#fff', 'center', 900);
+    // maná
+    const mx = 14, my = w ? y - 12 : y + 4; Arcade.txt(ctx, '💧 ' + S.mana + '/' + S.maxMana, mx, my, 15, '#74c0fc', 'left', 900);
+    Arcade.txt(ctx, '📚 ' + S.deck.length, mx, my + 20, 12, '#ced4da', 'left', 700);
+    if (w) for (let k = 0; k < S.hand.length; k++) { ctx.fillStyle = '#7048e8'; Arcade.rr(ctx, g.W - 26 - k * 12, y + 14, 16, 24, 3); ctx.fill(); ctx.strokeStyle = '#d0bfff'; ctx.lineWidth = 1; ctx.stroke(); }
+  }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Esbirros, hechizos y un rival', deco: ['🃏', '🐉', '🔥', '🛡️', '⚡', '🧙'], font: 'round', bg: ['#4a2c17', '#2a1a0f'],
+    music: { mode: 'dorian', bpm: 96, wave: 'triangle', style: 'epic', root: 55 }, voice: { wave: 'triangle', mul: 1, echo: 0.3 },
+    /*EN*/ en: { title: 'Card Duel', tag: 'Minions, spells and a rival', help: 'Bring the rival hero\'s ❤ down to zero. Each turn you get one more 💧 mana, up to 8. Cards cost the mana in their blue circle. Tap a card to see it and tap it again to play it. Animals stay on the table: yellow is attack and red is health. An animal that has just arrived waits until next turn, unless it has ⚡ Charge. Tap one of your animals and then an enemy to attack. If the rival has 🛡️ Taunt animals, you must attack them first. When fighting, both deal their attack to each other. Spells ✦ act at once; some ask you for a target. When you\'re done, press End turn.', tvHelp: 'D-pad to a card or animal · OK selects · OK on the target.', dict: { 'Fin turno': 'End turn', 'Tu turno': 'Your turn', 'Turno rival…': 'Rival\'s turn…', 'Has perdido el duelo': 'You lost the duel' } },
+    /*TV*/ tvHelp: 'Cruceta hasta una carta o un animal · OK lo elige · OK sobre el objetivo.',
+    tv: { mode: 'tap', targets: (g) => { const s = g.s; if (!s.S || s.turn !== 0 || s.done) return []; const out = [s.endB]; s.S[0].hand.forEach((c, i) => out.push(handRect(g, i))); s.S[0].board.forEach((m, i) => { const [x, y] = posOf(g, 0, i); out.push({ x: x - s.mw / 2, y: y - s.mh / 2, w: s.mw, h: s.mh }); }); for (const t of selTargets(g)) { const [x, y] = posOf(g, t.w, t.i); out.push(t.i < 0 ? { x: x - 32, y: y - 32, w: 64, h: 64 } : { x: x - s.mw / 2, y: y - s.mh / 2, w: s.mw, h: s.mh }); } return out; } },
+    id: 'duelocartas', title: 'Duelo de cartas', emoji: '🐉', color: '#ff922b', origin: 'Hearthstone (Blizzard, 2014)', pad: false,
+    help: 'Baja a cero el ❤ del héroe rival. Cada turno tienes un 💧 maná más, hasta 8. Las cartas cuestan el maná de su círculo azul. Toca una carta para verla y tócala otra vez para jugarla. Los animales se quedan en la mesa: el amarillo es su ataque y el rojo su vida. Un animal recién llegado espera al turno siguiente, salvo si tiene ⚡ Carga. Toca un animal tuyo y luego un enemigo para atacar. Si el rival tiene animales con 🛡️ Provocar, hay que atacarlos primero. Al pelear, los dos se hacen daño con su ataque. Los hechizos ✦ actúan al momento; algunos te piden un objetivo. Cuando acabes, pulsa Fin turno.',
+    lives: 3, levels: 0, cap: 20,
+    /*SC*/ demo(g) {
+      const s = g.s; if (!s.S || s.done || s.turn !== 0 || s.lunge || s.flash) return { wait: 0.4 };
+      const a = s.plan || (s.plan = think(g, 0, 0));
+      const say = (es, en) => (s.said = (s.said || 0) + 1) < 8 ? T(es, en) : null;
+      if (a.k === 'end') { s.plan = null; return { tap: [s.endB.x + s.endB.w / 2, s.endB.y + s.endB.h / 2], after: 0.8, say: say('Sin más jugadas: fin de turno', 'Nothing left: end turn') }; }
+      if (a.k === 'play') {
+        const r = handRect(g, a.i), c = s.S[0].hand[a.i];
+        if (!s.sel || s.sel.k !== 'hand' || s.sel.i !== a.i) return { tap: [r.x + r.w / 2, r.y + r.h / 2], after: 0.5, say: say('Mira la carta: cuesta ' + c.c + ' de maná', 'Check the card: it costs ' + c.c + ' mana') };
+        s.plan = null; if (!c.tg) return { tap: [r.x + r.w / 2, r.y + r.h / 2], after: 0.7, say: say('Tócala otra vez para jugarla', 'Tap it again to play it') };
+        const [x, y] = posOf(g, c.tg === 'enemy' ? 1 : 0, a.tgt); return { tap: [x, y], after: 0.7, say: say('Elige el objetivo del hechizo', 'Pick the spell\'s target') };
+      }
+      const [mx, my] = posOf(g, 0, a.i);
+      if (!s.sel || s.sel.k !== 'min' || s.sel.i !== a.i) return { tap: [mx, my], after: 0.45, say: say('Elige un animal listo (borde verde)', 'Pick a ready animal (green border)') };
+      s.plan = null; const [x, y] = posOf(g, 1, a.tgt); return { tap: [x, y], after: 0.7, say: say(a.tgt < 0 ? '¡Al héroe rival!' : 'Ataca a un animal rival', a.tgt < 0 ? 'At the rival hero!' : 'Attack an enemy animal') };
+    },
+    setup(g) {
+      const L = g.lv;
+      g.s = { S: [side(20), side(clamp(12 + L, 13, 30))], turn: 0, sel: null, round: 0, cpuT: 0, done: false, lunge: null, flash: null, why: '', whyT: 0, noise: clamp(0.5 - L * 0.04, 0.05, 0.5), foe: pick(['👹', '🧛', '🧟', '🐲', '👺', '🦹']), plan: null };
+      geo(g); drawCard(g, 0, 3); drawCard(g, 1, 3 + (L >= 8 ? 1 : 0)); g.s.S[1].maxMana = L >= 12 ? 1 : 0; startTurn(g, 0);
+    },
+    layout(g) { if (g.s.S) geo(g); },
+    tap(g, p) { tapAt(g, p); },
+    update(g, dt) {
+      const s = g.s; if (!s.S) return; geo(g); if (s.whyT > 0) s.whyT -= dt;
+      for (const S of s.S) for (const m of S.board) { if (m.hit > 0) m.hit -= dt * 1.5; if (m.born > 0) m.born = Math.max(0, m.born - dt * 2); }
+      if (s.lunge) { s.lunge.t += dt * 3; if (s.lunge.t >= 1) s.lunge = null; }
+      if (s.flash) { s.flash.t -= dt * (g.demoAuto ? 1.6 : 1); if (s.flash.t <= 0) s.flash = null; }
+      if (s.turn === 1 && !s.done && !s.lunge && !s.flash) { s.cpuT -= dt; if (s.cpuT <= 0) { const a = think(g, 1, s.noise); doAI(g, a, 1); s.cpuT = a.k === 'end' ? 0 : 0.75; } }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      const bg = ctx.createRadialGradient(W / 2, H * 0.45, 40, W / 2, H * 0.45, H * 0.7); bg.addColorStop(0, '#6b4226'); bg.addColorStop(1, '#2a1a0f'); ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      if (!s.S) return;
+      ctx.strokeStyle = 'rgba(255,224,170,.15)'; ctx.lineWidth = 2; ctx.setLineDash([6, 8]); ctx.beginPath(); ctx.moveTo(10, (s.rowY[0] + s.rowY[1]) / 2); ctx.lineTo(W - 116, (s.rowY[0] + s.rowY[1]) / 2); ctx.stroke(); ctx.setLineDash([]);
+      const tg = selTargets(g), isT = (w, i) => tg.some((t) => t.w === w && t.i === i);
+      hero(g, ctx, 1, { target: isT(1, -1) }); hero(g, ctx, 0, { target: isT(0, -1) });
+      for (const w of [1, 0]) s.S[w].board.forEach((m, i) => minion(g, ctx, w, i, m, { sel: w === 0 && s.sel && s.sel.k === 'min' && s.sel.i === i, target: isT(w, i), ready: w === 0 && s.turn === 0 && ready(m) && !s.done }));
+      // botón fin de turno
+      const b = s.endB, my = s.turn === 0 && !s.done, nothing = my && !think(g, 0, 0).k.startsWith('p') && !s.S[0].board.some(ready);
+      ctx.fillStyle = my ? (nothing ? '#f59f00' : '#2f9e44') : '#495057'; Arcade.rr(ctx, b.x, b.y, b.w, b.h, 12); ctx.fill();
+      if (my && nothing) { ctx.strokeStyle = 'rgba(255,255,255,' + (0.4 + 0.4 * Math.sin(g.rt * 6)) + ')'; ctx.lineWidth = 3; ctx.stroke(); }
+      Arcade.txt(ctx, my ? 'Fin turno' : 'Turno rival…', b.x + b.w / 2, b.y + b.h / 2 + 1, my ? 15 : 12, '#fff', 'center', 900);
+      // mano
+      const S = s.S[0];
+      S.hand.forEach((c, i) => { const r = handRect(g, i), sel = s.sel && s.sel.k === 'hand' && s.sel.i === i; cardFace(ctx, r.x, r.y, r.w, r.h, c, { sel, glow: !sel && my && playable(g, 0, c), dim: !playable(g, 0, c) }); });
+      // texto de ayuda
+      let info = '';
+      if (s.whyT > 0) info = s.why;
+      else if (s.sel && s.sel.k === 'hand') { const c = S.hand[s.sel.i]; if (c) info = c.n + ' · ' + desc(c) + (playable(g, 0, c) ? (c.tg ? T(' → elige objetivo', ' → pick a target') : T(' → toca otra vez', ' → tap again')) : ''); }
+      else if (s.sel && s.sel.k === 'min') info = T('¿A quién atacas?', 'Who do you attack?');
+      else if (my) info = 'Tu turno';
+      if (info) { ctx.fillStyle = 'rgba(0,0,0,.55)'; Arcade.rr(ctx, 8, s.infoY - 14, W - 16, 26, 10); ctx.fill(); Arcade.txt(ctx, info, W / 2, s.infoY, 13, s.whyT > 0 ? '#ffa8a8' : '#ffe8cc', 'center', 800); }
+      // carta recién jugada en grande
+      if (s.flash) { const f = s.flash, a = Math.min(1, f.t * 2.5), cw = 110, ch = 150; ctx.save(); ctx.globalAlpha = a; cardFace(ctx, W / 2 - cw / 2, H * 0.42 - ch / 2, cw, ch, f.c, {}); ctx.restore(); if (f.c.t === 's') { ctx.globalAlpha = a; Arcade.txt(ctx, f.c.d, W / 2, H * 0.42 + ch / 2 + 16, 14, '#fff', 'center', 900, 'rgba(0,0,0,.6)'); ctx.globalAlpha = 1; } }
+    },
+  });
+})();
+</script>
+</body>
+</html>
