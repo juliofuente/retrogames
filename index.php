@@ -89,6 +89,24 @@ function site_url(array $w): string {
   $to = $w['host'] === '*' ? $base : (strpos($w['host'], '.') !== false ? $w['host'] : $w['host'] . '.' . $base);
   return ($https ? 'https' : 'http') . '://' . $to . $port . '/';
 }
+/* subcategorías de la web: sus categorías y, en la de educativos, las asignaturas. En las webs con varias colecciones no salen
+   las categorías propias de una colección (las familias de solitarios: se ven en su colección). [emoji, nombre, ruta, juegos] */
+function subcats(): array {
+  global $CATS, $COLS, $GAMES, $SUBJS;
+  static $o = null; if ($o !== null) return $o;
+  $multi = count($COLS) > 1; $o = [];
+  foreach ($CATS as $c) {
+    if ($multi && !empty($c['col'])) continue;
+    if (!$multi && $c['id'] === 'educativos' && $SUBJS) continue;
+    $gs = array_values(array_filter($GAMES, function ($g) use ($c) { return $g['category_id'] === $c['id']; }));
+    if ($gs) $o[] = ['e' => $c['emoji'], 'n' => f($c, 'name'), 'p' => cat_path($c), 'g' => $gs];
+  }
+  if (!$multi) foreach ($SUBJS as $c) {
+    $gs = array_values(array_filter($GAMES, function ($g) use ($c) { return $g['subject_id'] === $c['id']; }));
+    if ($gs) $o[] = ['e' => $c['emoji'], 'n' => f($c, 'name'), 'p' => subj_path($c), 'g' => $gs];
+  }
+  return $o;
+}
 function sites_path(?string $lang = null): string { global $L; return ($lang ?? $L) === 'en' ? '/en/sites' : '/webs'; }
 function sites_label(): string { return T('Ver todos los subsites', 'See all our sites'); }
 define('TVSITE', $WEB['tv']);
@@ -544,7 +562,7 @@ footer .fb{display:flex;align-items:center;gap:9px;font-weight:900;color:var(--t
 <header class="top"><div class="wrap">
   <a class="brand" href="<?= h(home_url()) ?>"><span aria-hidden="true"><?= h($WEB['emoji'] ?: '🕹️') ?></span><b><?= h($SITE) ?></b></a>
   <nav class="main" aria-label="<?= h(T('Principal', 'Main')) ?>">
-    <?php if ($multi): foreach ($COLS as $c): ?><a href="<?= h(url(col_path($c))) ?>"<?= $p === col_path($c) ? ' aria-current="page"' : '' ?>><?= h(f($c, 'name')) ?></a><?php endforeach; else: foreach (array_slice($CATS, 0, 6) as $c): ?><a href="<?= h(url(cat_path($c))) ?>"<?= $p === cat_path($c) ? ' aria-current="page"' : '' ?>><?= h($c['emoji'] . ' ' . f($c, 'name')) ?></a><?php endforeach; endif; ?>
+    <?php if ($multi): foreach ($COLS as $c): ?><a href="<?= h(url(col_path($c))) ?>"<?= $p === col_path($c) ? ' aria-current="page"' : '' ?>><?= h(f($c, 'name')) ?></a><?php endforeach; else: foreach (array_slice(subcats(), 0, 6) as $c): ?><a href="<?= h(url($c['p'])) ?>"<?= $p === $c['p'] ? ' aria-current="page"' : '' ?>><?= h($c['e'] . ' ' . $c['n']) ?></a><?php endforeach; endif; ?>
     <a href="<?= h(url(list_path('games'))) ?>"<?= $p === list_path('games') ? ' aria-current="page"' : '' ?>><?= h(T('Todos', 'All games')) ?></a>
     <?php if (TVSITE): ?><a href="<?= h(url(list_path('tv'))) ?>"<?= $p === list_path('tv') ? ' aria-current="page"' : '' ?>>📺 TV</a><?php endif; ?>
     <a href="<?= h(url(sites_path())) ?>"<?= $p === sites_path() ? ' aria-current="page"' : '' ?>>🌐 <?= h(T('Subsites', 'Sites')) ?></a>
@@ -564,7 +582,7 @@ footer .fb{display:flex;align-items:center;gap:9px;font-weight:900;color:var(--t
   <?php if (isset($COLS['soli']) && $multi): ?><a href="<?= h(url(col_path($COLS['soli']))) ?>"<?= $p === col_path($COLS['soli']) ? ' aria-current="page"' : '' ?>><span aria-hidden="true">🃏</span><?= h(T('Solitarios', 'Solitaire')) ?></a><?php endif; ?>
   <?php if (isset($COLS['edu']) && $multi): ?><a href="<?= h(url(col_path($COLS['edu']))) ?>"<?= $p === col_path($COLS['edu']) ? ' aria-current="page"' : '' ?>><span aria-hidden="true">🎓</span><?= h(T('Educativos', 'Learning')) ?></a><?php endif; ?>
   <?php if (TVSITE): ?><a href="<?= h(url(list_path('tv'))) ?>"<?= $p === list_path('tv') ? ' aria-current="page"' : '' ?>><span aria-hidden="true">📺</span>TV</a><?php endif; ?>
-  <?php if (!$multi): foreach (array_slice($CATS, 0, 2) as $c): ?><a href="<?= h(url(cat_path($c))) ?>"<?= $p === cat_path($c) ? ' aria-current="page"' : '' ?>><span aria-hidden="true"><?= h($c['emoji']) ?></span><?= h(cut(f($c, 'name'), 12)) ?></a><?php endforeach; endif; ?>
+  <?php if (!$multi): foreach (array_slice(subcats(), 0, 2) as $c): ?><a href="<?= h(url($c['p'])) ?>"<?= $p === $c['p'] ? ' aria-current="page"' : '' ?>><span aria-hidden="true"><?= h($c['e']) ?></span><?= h(cut($c['n'], 12)) ?></a><?php endforeach; endif; ?>
 </nav>
 <footer><div class="wrap">
   <div class="fb"><span aria-hidden="true"><?= h($WEB['emoji'] ?: '🕹️') ?></span><?= h($SITE) ?></div>
@@ -573,7 +591,7 @@ footer .fb{display:flex;align-items:center;gap:9px;font-weight:900;color:var(--t
     <?php foreach ($COLS as $c): ?><a href="<?= h(url(col_path($c))) ?>"><b><?= h($c['emoji'] . ' ' . f($c, 'name')) ?></b></a><?php endforeach; ?>
   </div>
   <div class="links">
-    <?php foreach ($CATS as $c): ?><a href="<?= h(url(cat_path($c))) ?>"><?= h($c['emoji'] . ' ' . f($c, 'name')) ?></a><?php endforeach; ?>
+    <?php foreach (subcats() as $c): ?><a href="<?= h(url($c['p'])) ?>"><?= h($c['e'] . ' ' . $c['n']) ?></a><?php endforeach; ?>
   </div>
   <div class="links">
     <?php foreach ($SUBJS as $c): ?><a href="<?= h(url(subj_path($c))) ?>"><?= h($c['emoji'] . ' ' . T('Educativos de ', 'Educational ') . f($c, 'name')) ?></a><?php endforeach; ?>
@@ -604,7 +622,7 @@ function page_home(): void {
   <div class="hello"><h1><?php if ($WEB['host'] === '*'): ?><?= T('Juega un rato. <em>Sin anuncios.</em>', 'Play a little. <em>No ads.</em>') ?><?php else: ?><?= h($WEB['emoji'] . ' ' . $SITE) ?><?php endif; ?></h1><?php if ($WEB['host'] !== '*' && f($WEB, 'tag')): ?><p class="lead" style="margin:0 0 6px"><?= h(f($WEB, 'tag')) ?></p><?php endif; ?></div>
   <nav class="chips" aria-label="<?= h(T('Categorías', 'Categories')) ?>">
     <?php foreach (['soli', 'mesa', 'edu'] as $k): if (!$multi || empty($COLS[$k]) || empty($byCol[$k])) continue; ?><a class="col-chip" href="<?= h(url(col_path($COLS[$k]))) ?>"><?= h($COLS[$k]['emoji'] . ' ' . f($COLS[$k], 'name')) ?><b><?= count($byCol[$k]) ?></b></a><?php endforeach; ?>
-    <?php foreach ($CATS as $c): if (empty($byCat[$c['id']])) continue; ?><a href="<?= h(url(cat_path($c))) ?>"><?= h($c['emoji'] . ' ' . f($c, 'name')) ?><b><?= count($byCat[$c['id']]) ?></b></a><?php endforeach; ?>
+    <?php foreach (subcats() as $c): ?><a href="<?= h(url($c['p'])) ?>"><?= h($c['e'] . ' ' . $c['n']) ?><b><?= count($c['g']) ?></b></a><?php endforeach; ?>
   </nav>
   <?php if ($ft): ?>
   <h2 class="sr" style="position:absolute;left:-9999px"><?= h(T('Destacado', 'Featured')) ?></h2>
@@ -633,14 +651,14 @@ function page_home(): void {
   </div><?php endif; ?>
   <h2><?= h(T('Categorías', 'Categories')) ?></h2>
   <ul class="tiles">
-    <?php foreach ($CATS as $c): ?><li><a class="tile" href="<?= h(url(cat_path($c))) ?>"><span class="e" aria-hidden="true"><?= h($c['emoji']) ?></span><span><b><?= h(f($c, 'name')) ?></b><small><?= count($byCat[$c['id']] ?? []) ?> <?= h(T('juegos', 'games')) ?></small></span></a></li><?php endforeach; ?>
+    <?php foreach (subcats() as $c): ?><li><a class="tile" href="<?= h(url($c['p'])) ?>"><span class="e" aria-hidden="true"><?= h($c['e']) ?></span><span><b><?= h($c['n']) ?></b><small><?= count($c['g']) ?> <?= h(T('juegos', 'games')) ?></small></span></a></li><?php endforeach; ?>
   </ul>
-  <?php if ($SUBJS): ?><h2><?= h(T('🎓 Juegos educativos por asignatura y edad', '🎓 Educational games by subject and age')) ?></h2>
-  <?= edu_tiles() ?><?php endif; ?>
-  <?php foreach ($CATS as $c): if (empty($byCat[$c['id']])) continue; ?>
-    <h2><a href="<?= h(url(cat_path($c))) ?>"><?= h($c['emoji'] . ' ' . f($c, 'name')) ?></a> <span class="cnt"><?= count($byCat[$c['id']]) ?></span></h2>
-    <?= grid(array_slice($byCat[$c['id']], 0, 10)) ?>
-    <?php if (count($byCat[$c['id']]) > 10): ?><p><a class="more" href="<?= h(url(cat_path($c))) ?>"><?= h(T('Ver los ' . count($byCat[$c['id']]) . ' juegos de ' . mb_strtolower(f($c, 'name')), 'See all ' . count($byCat[$c['id']]) . ' ' . mb_strtolower(f($c, 'name')) . ' games')) ?> →</a></p><?php endif; ?>
+  <?php if ($SUBJS && $multi): ?><h2><?= h(T('🎓 Juegos educativos por asignatura y edad', '🎓 Educational games by subject and age')) ?></h2>
+  <?= edu_tiles() ?><?php elseif ($SUBJS): ?><h2><?= h(T('Por edad', 'By age')) ?></h2><?= edu_tiles('subj') ?><?php endif; ?>
+  <?php foreach (subcats() as $c): $n = count($c['g']); ?>
+    <h2><a href="<?= h(url($c['p'])) ?>"><?= h($c['e'] . ' ' . $c['n']) ?></a> <span class="cnt"><?= $n ?></span></h2>
+    <?= grid(array_slice($c['g'], 0, 10)) ?>
+    <?php if ($n > 10): ?><p><a class="more" href="<?= h(url($c['p'])) ?>"><?= h(T('Ver los ' . $n . ' juegos de ' . mb_strtolower($c['n']), 'See all ' . $n . ' ' . mb_strtolower($c['n']) . ' games')) ?> →</a></p><?php endif; ?>
   <?php endforeach; ?>
   <?php $body = ob_get_clean();
   $title = !$multi ? $SITE . ' · ' . count($GAMES) . T(' juegos gratis y sin anuncios', ' free games, no ads') : T($SITE . ' · ' . $na . ' juegos arcade y ' . $ne . ' educativos gratis', $SITE . ' · ' . $na . ' arcade and ' . $ne . ' educational games, free');
@@ -684,6 +702,9 @@ function page_collection(array $c): void {
   $p = col_path($c); $n = f($c, 'name');
   $open = TVSITE ? url('/') . '?sec=' . $c['id'] : url('/' . $c['index_file']);
   $play = '<div class="btns" style="margin-bottom:18px"><a class="btn pri" href="' . h($open) . '">▶ ' . h(T('Abrir ' . $n, 'Open ' . $n)) . '</a></div>';
+  global $CATS; $tl = '';
+  foreach ($CATS as $k) { $cn = count(array_filter($games, function ($g) use ($k) { return $g['category_id'] === $k['id']; })); if ($cn && $cn < count($games)) $tl .= '<li><a class="tile" href="' . h(url(cat_path($k))) . '"><span class="e" aria-hidden="true">' . h($k['emoji']) . '</span><span><b>' . h(f($k, 'name')) . '</b><small>' . $cn . ' ' . h(T('juegos', 'games')) . '</small></span></a></li>'; }
+  if ($tl) $play .= '<ul class="tiles" style="margin-bottom:8px">' . $tl . '</ul>';
   if ($c['id'] === 'edu') $play = edu_tiles() . '<h2>' . h(T('Todos los juegos educativos', 'All educational games')) . '</h2>';   // sin portada aparte: esta es su portada
   page_list($p, [col_path($c, 'es'), col_path($c, 'en')], $c['id'] === 'edu' ? T('🎓 Juegos educativos', '🎓 Educational games') : $n, f($c, 'desc'), $games, [[T('Inicio', 'Home'), home_path()], [$n, $p]],
     ($c['id'] === 'edu' ? T('Juegos educativos para niños: ' . count($games) . ' juegos gratis de mates, lengua, lógica e inglés', 'Educational games for kids: ' . count($games) . ' free maths, language, logic and English games')
