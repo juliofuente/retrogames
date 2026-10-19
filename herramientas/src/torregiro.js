@@ -1,0 +1,184 @@
+// Torre giratoria|#0b1d3a
+(function () {
+  const { rand, ri, pick, clamp } = Arcade;
+  const TAU = Math.PI * 2;
+  const ad = (a, b) => { let d = (a - b) % TAU; if (d > Math.PI) d -= TAU; if (d < -Math.PI) d += TAU; return d; };   // diferencia de ángulos en [-π, π]
+  const W_SPEED = 1.25, GRAV = 900, JUMP = 340, LEDGE = 24;
+
+  /* ---------- la torre: repisas, ascensores, puertas y bichos ---------- */
+  function build(lv) {
+    const L = [], path = [], enemies = [], doors = [];
+    const top = 520 + lv * 70;
+    const add = (o) => { o.i = L.length; L.push(o); return o; };
+    let a = 0, y = 0, dir = 1;
+    let cur = add({ a0: -0.55, a1: 0.55, y: 0, kind: 'base' }); path.push(cur);
+    while (y < top) {
+      const r = Math.random(), cen = (cur.a0 + cur.a1) / 2;
+      if (r < 0.1 && lv >= 2 && y > 60 && !cur.door && !cur.noDoor && cur.kind === 'step') {   // puerta: cruzas al otro lado de la torre
+        cur.door = { a: dir > 0 ? cur.a1 - 0.15 : cur.a0 + 0.15 };
+        const other = add({ a0: cur.door.a + Math.PI - 0.3, a1: cur.door.a + Math.PI + 0.3, y, kind: 'step', noDoor: true });
+        doors.push({ a: cur.door.a, y, to: other }); path.push(other); cur = other; continue;
+      }
+      if (r < 0.22 && lv >= 3 && cur.kind !== 'crumble') {   // ascensor
+        const la = (dir > 0 ? cur.a1 : cur.a0) + dir * 0.32, span = 0.26, h = ri(90, 150);
+        const lift = add({ a0: la - span / 2, a1: la + span / 2, y, y0: y, y1: y + h, kind: 'lift', ph: rand(0, 6) }); path.push(lift);
+        y += h; const na = la + dir * 0.5;
+        cur = add({ a0: na - 0.27, a1: na + 0.27, y, kind: 'step' });
+        path.push(cur); continue;
+      }
+      if (Math.random() < 0.15) dir = -dir;
+      const dy = ri(34, 54), gap = rand(0.12, 0.3), span = rand(0.32, 0.62) * (lv > 8 ? 0.85 : 1);
+      const start = dir > 0 ? cur.a1 + gap : cur.a0 - gap - span;
+      y += dy;
+      const kind = lv >= 4 && Math.random() < 0.14 ? 'crumble' : 'step';
+      cur = add({ a0: start, a1: start + span, y, kind }); path.push(cur);
+      if (lv >= 3 && span > 0.5 && Math.random() < 0.18 + lv * 0.015) enemies.push({ type: 'ball', l: cur, a: (cur.a0 + cur.a1) / 2, v: (Math.random() < 0.5 ? -1 : 1) * rand(0.5, 0.8) });
+      if (lv >= 5 && Math.random() < 0.08 + lv * 0.006 && y > 120) enemies.push({ type: 'eye', a: rand(0, TAU), y: y + 22, v: (Math.random() < 0.5 ? -1 : 1) * rand(0.4, 0.7) });
+    }
+    const goal = cur; goal.goal = true;
+    return { L, path, enemies, doors, top: goal.y, goalA: (goal.a0 + goal.a1) / 2 };
+  }
+  const inSpan = (a, l, pad = 0) => ad(a, l.a0) >= -pad && ad(a, l.a1) <= pad;
+  function ledgeY(l) { return l.kind === 'lift' ? l.y : l.y; }
+
+  /* ---------- jugador ---------- */
+  function respawn(g) { const s = g.s, l = s.check || s.T.path[0]; s.p = { a: (l.a0 + l.a1) / 2, y: ledgeY(l), vy: 0, on: l, inv: 1.5, face: 1 }; s.cam = s.p.a; s.camY = s.p.y; }
+  function kill(g, why) {
+    const s = g.s; if (s.dead) return; s.dead = true; Arcade.sfx.lose(); g.shake(0.3, 8); g.message(why, 1.2);
+    setTimeout(() => { if (g.state !== 'play') return; s.dead = false; if (g.die()) { respawn(g); } }, 1300);
+  }
+  function jump(g) { const p = g.s.p; if (p.on && !g.s.dead) { p.vy = JUMP; p.on = null; Arcade.tone(520, 0.08, 'square', 0.05, 200); } }
+  function enterDoor(g) {
+    const s = g.s, p = s.p; if (!p.on || s.dead || s.anim) return false;
+    const d = s.T.doors.find((q) => Math.abs(q.y - p.y) < 2 && Math.abs(ad(p.a, q.a)) < 0.14); if (!d) return false;
+    s.anim = { t: 0, from: p.a, to: p.a + Math.PI, l: d.to }; Arcade.sfx.whoosh(); return true;
+  }
+  function doorHere(g) { const s = g.s, p = s.p; return p.on && s.T.doors.find((q) => Math.abs(q.y - p.y) < 2 && Math.abs(ad(p.a, q.a)) < 0.14); }
+
+  /* ---------- demo: sigue el camino de repisas ---------- */
+  function ai(g) {
+    const s = g.s, p = s.p, P = s.T.path; if (s.anim) return;
+    if (!p.on) { if (s.aiT && inSpan(p.a, s.aiT, -0.06)) s.dir = 0; return; }
+    const k = P.indexOf(p.on), nx = P[k + 1]; s.dir = 0; s.aiT = nx; if (!nx) return;
+    const dr = s.T.doors.find((q) => Math.abs(q.y - p.y) < 2 && q.to === nx);
+    if (dr) { const dd = ad(dr.a, p.a); if (Math.abs(dd) > 0.08) s.dir = Math.sign(dd); else enterDoor(g); return; }
+    if (p.on.kind === 'lift') { if (p.on.y >= p.on.y1 - 4) { s.dir = Math.sign(ad((nx.a0 + nx.a1) / 2, p.a)); if (Math.abs(ad(p.a, (nx.a0 + nx.a1) / 2)) < 0.9) jump(g); } return; }
+    const tc = (nx.a0 + nx.a1) / 2, d = ad(tc, p.a); s.dir = Math.sign(d);
+    const edge = Math.min(Math.abs(ad(nx.a0, p.a)), Math.abs(ad(nx.a1, p.a)));
+    if (inSpan(p.a, nx) && Math.abs(nx.y - p.y) < 2) return;
+    if (nx.kind === 'lift') { if (nx.y > p.y + 4) { s.dir = 0; return; } if (edge < 0.28) jump(g); return; }
+    if (edge < 0.3 && nx.y - p.y < 62) jump(g);
+  }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Sube la torre que gira', deco: ['🐸', '🗼', '🌊', '⚪', '👁️', '🚪'], font: 'round', bg: ['#1e3a8a', '#0b1d3a'],
+    music: { mode: 'mixo', bpm: 118, wave: 'square', style: 'bouncy', root: 57 }, voice: { wave: 'square', mul: 1.5, echo: 0.25 },
+    /*EN*/ en: { title: 'Spinning Tower', tag: 'Climb the tower that turns', help: 'Climb to the top of the tower before time runs out. When you walk, the whole tower turns around you. Jump from ledge to ledge: gaps and steps up need a jump. Lifts ⬆️ carry you up. Doors 🚪 take you to the other side of the tower: stand in front of one and press 🚪. Balls and flying eyes knock you down, and the sea at the bottom is deadly. Crumbling ledges fall shortly after you step on them. <b>Hold</b> ◀ ▶ to walk and tap ⤴️ to jump.', tvHelp: '◀ ▶ walk · OK jump · ▲ enter a door.', dict: { 'Tiempo': 'Time', 'Altura': 'Height', '¡Al agua!': 'Splash!', '¡Golpe!': 'Ouch!', '¡Sin tiempo!': 'Out of time!', '¡Arriba!': 'Top!', 'Sube hasta la cima': 'Climb to the top' } },
+    /*TV*/ tvHelp: '◀ ▶ andar · OK saltar · ▲ entrar por una puerta.',
+    id: 'torregiro', title: 'Torre giratoria', emoji: '🗼', color: '#4dabf7', origin: 'Nebulus / Tower Toppler (Hewson, 1987)',
+    help: 'Sube hasta lo alto de la torre antes de que se acabe el tiempo. Al andar, es la torre la que gira a tu alrededor. Salta de repisa en repisa: para los huecos y los escalones hay que saltar. Los ascensores ⬆️ te suben solos. Las puertas 🚪 te llevan al otro lado de la torre: ponte delante y pulsa 🚪. Las bolas y los ojos voladores te tiran, y el mar de abajo no perdona. Las repisas que se agrietan caen poco después de pisarlas. <b>Mantén</b> ◀ ▶ para andar y toca ⤴️ para saltar.',
+    lives: 3, levels: 0, cap: 20,
+    pad: false,
+    /*SC*/ demo(g) { const s = g.s; s.ai = true; return { wait: 0.6, say: s.saidAi ? null : (s.saidAi = 1, Arcade.T('Sube hasta la cima', 'Climb to the top')) }; },
+    setup(g) {
+      const T = build(g.lv);
+      g.s = { T, dir: 0, cam: 0, camY: 0, time: 50 + T.top / 11, check: null, dead: false, anim: null, crumbT: {}, btn: {}, best: 0, ai: false, won: false };
+      respawn(g); this.layout(g);
+    },
+    layout(g) {
+      const s = g.s; if (!s.T) return; const W = g.W, by = g.bot - 78, bs = Math.min(72, W / 5);
+      s.R = Math.min(W * 0.28, 150, (g.bot - g.top) * 0.22); s.cx = W / 2;
+      s.btn = { l: { x: 12, y: by, w: bs, h: 66 }, r: { x: 20 + bs, y: by, w: bs, h: 66 }, j: { x: W - 12 - bs * 1.2, y: by, w: bs * 1.2, h: 66 } };
+    },
+    down(g, p) { const s = g.s, b = s.btn, inR = (r) => p.x >= r.x && p.x <= r.x + r.w && p.y >= r.y && p.y <= r.y + r.h; if (s.ai) return;
+      if (inR(b.l)) { s.dir = -1; p.btnDir = -1; } else if (inR(b.r)) { s.dir = 1; p.btnDir = 1; } else if (inR(b.j)) { if (!enterDoor(g)) jump(g); } else if (p.x < g.W / 3) { s.dir = -1; p.btnDir = -1; } else if (p.x > g.W * 2 / 3) { s.dir = 1; p.btnDir = 1; } else if (!enterDoor(g)) jump(g); },
+    up(g, p) { if (p.btnDir) g.s.dir = 0; },
+    key(g, k, d) {
+      const s = g.s; if (s.ai) return;
+      if (k === 'ArrowLeft') s.dir = d ? -1 : s.dir === -1 ? 0 : s.dir;
+      else if (k === 'ArrowRight') s.dir = d ? 1 : s.dir === 1 ? 0 : s.dir;
+      else if (d && k === 'ArrowUp') { if (!enterDoor(g)) jump(g); }
+      else if (d && k === ' ') { if (!enterDoor(g)) jump(g); }
+    },
+    update(g, dt) {
+      const s = g.s; if (!s.T || s.won) return; const p = s.p, T = s.T;
+      if (g.demoOn) { s.ai = true; ai(g); } else s.ai = false;
+      if (!s.dead) { s.time -= dt; if (s.time <= 0) { s.time = 0; kill(g, Arcade.T('¡Sin tiempo!', 'Out of time!')); s.time = 30; } }
+      // ascensores y repisas que caen
+      for (const l of T.L) {
+        if (l.kind === 'lift') { const ny = l.y0 + (l.y1 - l.y0) * (0.5 - 0.5 * Math.cos((l.ph += dt * 0.9))); const dy = ny - l.y; l.y = ny; if (p.on === l) p.y += dy; }
+        if (l.kind === 'crumble' && l.gone) { l.back -= dt; if (l.back <= 0) l.gone = false; }
+      }
+      if (s.anim) { const A = s.anim; A.t += dt; p.a = A.from + (A.to - A.from) * Math.min(1, A.t / 0.6); if (A.t >= 0.6) { p.a = A.to; p.on = A.l; p.y = A.l.y; s.anim = null; } }
+      else if (!s.dead) {
+        p.a += s.dir * W_SPEED * dt; if (s.dir) p.face = s.dir;
+        if (p.on) {
+          if (p.on.kind === 'crumble') { p.on.t = (p.on.t || 0) + dt; if (p.on.t > 0.7) { p.on.gone = true; p.on.back = 4; p.on.t = 0; Arcade.sfx.hit(); } }
+          if (p.on.gone || !inSpan(p.a, p.on, 0.04)) p.on = null;
+        }
+        if (!p.on) {
+          const py = p.y; p.vy -= GRAV * dt; p.y += p.vy * dt;
+          if (p.vy <= 0) for (const l of T.L) { if (l.gone) continue; if (py >= l.y - 1 && p.y <= l.y && inSpan(p.a, l, 0.02)) { p.y = l.y; p.vy = 0; p.on = l; Arcade.tone(300, 0.04, 'triangle', 0.04); break; } }
+          if (p.y < -60) kill(g, Arcade.T('¡Al agua!', 'Splash!'));
+        }
+        if (p.on && (p.on.kind === 'step' || p.on.kind === 'base') && (!s.check || p.on.y > s.check.y)) s.check = p.on;
+        const h = Math.floor(p.y / 10); if (h > s.best) { g.addScore((h - s.best) * 2); s.best = h; }
+        if (p.on && p.on.goal) { s.won = true; g.addScore(Math.round(s.time) * 20 * g.lv, g.W / 2, g.H / 2); g.confetti(80); g.message(Arcade.T('¡Arriba!', 'Top!'), 1.2); setTimeout(() => { if (g.state === 'play') g.win(s.time > 25 ? 3 : s.time > 10 ? 2 : 1); }, 1300); }
+      }
+      if (p.inv > 0) p.inv -= dt;
+      for (const e of T.enemies) {
+        if (e.type === 'ball') { e.a += e.v * dt; if (ad(e.a, e.l.a0) < 0.05 || ad(e.a, e.l.a1) > -0.05) { e.v = -e.v; e.a += e.v * dt * 2; } e.y = e.l.y + 11; }
+        else e.a += e.v * dt;
+        if (!s.dead && p.inv <= 0 && !s.anim && Math.abs(ad(e.a, p.a)) < 0.12 && Math.abs((e.y || 0) - (p.y + 14)) < 22) kill(g, Arcade.T('¡Golpe!', 'Ouch!'));
+      }
+      s.cam += ad(p.a, s.cam) * Math.min(1, dt * 12); s.camY += (p.y - s.camY) * Math.min(1, dt * 6);
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      const bg = ctx.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, '#0b1d3a'); bg.addColorStop(1, '#1e3a8a'); ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      if (!s.T) return;
+      for (let k = 0; k < 40; k++) { const x = (k * 97) % W, y = (k * 53 + s.camY * 0.15) % H; ctx.fillStyle = 'rgba(255,255,255,.25)'; ctx.fillRect(x, y, 1.5, 1.5); }
+      const R = s.R, cx = s.cx, baseY = g.top + (g.bot - g.top) * 0.66, sy = (y) => baseY - (y - s.camY);
+      const proj = (a, r = R + LEDGE / 2) => { const t = ad(a, s.cam); return { x: cx + r * Math.sin(t), z: Math.cos(t) }; };
+      // mar
+      const seaY = sy(-30); if (seaY < H) { const gr = ctx.createLinearGradient(0, seaY, 0, H); gr.addColorStop(0, '#228be6'); gr.addColorStop(1, '#0b3d91'); ctx.fillStyle = gr; ctx.fillRect(0, seaY, W, H - seaY); for (let x = 0; x < W; x += 24) { ctx.fillStyle = 'rgba(255,255,255,.35)'; ctx.fillRect(x + (g.rt * 30) % 24, seaY + 4, 12, 2); } }
+      // torre
+      const topY = sy(s.T.top + 60), botY = Math.min(H, sy(-30));
+      const tg = ctx.createLinearGradient(cx - R, 0, cx + R, 0); tg.addColorStop(0, '#3b2a1a'); tg.addColorStop(0.35, '#c08552'); tg.addColorStop(0.5, '#e0a96d'); tg.addColorStop(0.75, '#a0683a'); tg.addColorStop(1, '#2b1d10');
+      ctx.fillStyle = tg; ctx.fillRect(cx - R, Math.max(0, topY), R * 2, botY - Math.max(0, topY));
+      ctx.strokeStyle = 'rgba(0,0,0,.22)'; ctx.lineWidth = 1;
+      for (let j = 0; j < 28; j++) { const t = ad(j * TAU / 28, s.cam); if (Math.cos(t) <= 0) continue; const x = cx + R * Math.sin(t); ctx.globalAlpha = Math.cos(t); ctx.beginPath(); ctx.moveTo(x, Math.max(0, topY)); ctx.lineTo(x, botY); ctx.stroke(); }
+      ctx.globalAlpha = 1;
+      for (let y = Math.floor((s.camY - 400) / 26) * 26; y < s.camY + 600; y += 26) { const yy = sy(y); if (yy < topY || yy > botY) continue; ctx.beginPath(); ctx.moveTo(cx - R, yy); ctx.lineTo(cx + R, yy); ctx.stroke(); }
+      // puertas (en la pared)
+      for (const d of s.T.doors) { const q = proj(d.a, R); if (q.z < 0.1) continue; const y = sy(d.y); ctx.fillStyle = 'rgba(20,10,5,.85)'; const w = 26 * q.z; Arcade.rr(ctx, q.x - w / 2, y - 40, w, 40, 10 * q.z); ctx.fill(); Arcade.emoji(ctx, '🚪', q.x, y - 20, 26 * q.z); }
+      // repisas
+      for (const l of s.T.L) {
+        if (l.gone) continue; const y = sy(l.y); if (y < -20 || y > H + 20) continue;
+        const pts = []; for (let k = 0; k <= 8; k++) { const a = l.a0 + (l.a1 - l.a0) * k / 8, q = proj(a, R + LEDGE); if (q.z > -0.05) pts.push(q); }
+        if (pts.length < 2) continue;
+        const x1 = Math.min(...pts.map((q) => q.x)), x2 = Math.max(...pts.map((q) => q.x)), zm = pts.reduce((a, q) => a + q.z, 0) / pts.length;
+        const col = l.goal ? '#ffd43b' : l.kind === 'lift' ? '#74c0fc' : l.kind === 'crumble' ? '#e8590c' : '#adb5bd';
+        ctx.fillStyle = 'rgba(0,0,0,.3)'; ctx.fillRect(x1, y + 10, x2 - x1, 6);
+        ctx.globalAlpha = 0.55 + 0.45 * zm; ctx.fillStyle = col; Arcade.rr(ctx, x1, y, x2 - x1, 11, 4); ctx.fill();
+        ctx.fillStyle = 'rgba(255,255,255,.35)'; ctx.fillRect(x1 + 2, y + 1, x2 - x1 - 4, 2); ctx.globalAlpha = 1;
+        if (l.kind === 'crumble' && l.t > 0) { ctx.strokeStyle = '#000'; ctx.beginPath(); ctx.moveTo((x1 + x2) / 2 - 6, y); ctx.lineTo((x1 + x2) / 2 + 2, y + 10); ctx.stroke(); }
+        if (l.kind === 'lift') Arcade.emoji(ctx, '⬆️', (x1 + x2) / 2, y + 24, 14);
+        if (l.goal) Arcade.emoji(ctx, '🏁', (x1 + x2) / 2, y - 18, 26);
+      }
+      // bichos
+      for (const e of s.T.enemies) { const q = proj(e.a); if (q.z < 0) continue; const y = sy(e.y); Arcade.emoji(ctx, e.type === 'ball' ? '🔴' : '👁️', q.x, y, 22 * (0.6 + 0.4 * q.z)); }
+      // jugador
+      const p = s.p, py = sy(p.y);
+      if (!(p.inv > 0 && Math.floor(g.rt * 12) % 2)) { const sq = p.on ? 1 : 1.08; Arcade.emoji(ctx, s.dead ? '😵' : '🐸', cx, py - 15, 32, { sx: p.face * sq, sy: 1 / sq }); }
+      // marcador
+      Arcade.txt(ctx, '⏱ ' + Math.ceil(s.time), 12, g.top + 18, 16, s.time < 10 ? '#ff6b6b' : '#fff', 'left', 900, 'rgba(0,0,0,.5)');
+      Arcade.txt(ctx, Arcade.T('Altura', 'Height') + ' ' + Math.max(0, Math.round(p.y / s.T.top * 100)) + '%', W - 12, g.top + 44, 14, '#ffe066', 'right', 900, 'rgba(0,0,0,.5)');
+      // botones
+      if (!s.ai) {
+        const b = s.btn, door = doorHere(g);
+        for (const [k, e] of [['l', '◀️'], ['r', '▶️'], ['j', door ? '🚪' : '⤴️']]) { const r = b[k]; ctx.fillStyle = 'rgba(255,255,255,.14)'; Arcade.rr(ctx, r.x, r.y, r.w, r.h, 16); ctx.fill(); Arcade.emoji(ctx, e, r.x + r.w / 2, r.y + r.h / 2, 30); }
+      }
+    },
+  });
+})();
