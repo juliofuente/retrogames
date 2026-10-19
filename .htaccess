@@ -14,7 +14,7 @@ AddDefaultCharset utf-8
   # Juegos arcade con URL antigua (/pwa/pivote.html?lang=en, /pwa/pivote) → index.php los redirige a /pivote (o /pivote/en)
   RewriteRule ^pwa/(?!index)[a-z0-9]+(\.html)?$ index.php [L]
   # Índices de la PWA (/pwa/, /pwa/indexpro, /pwa/indextv): los sirve index.php (dan 404 si PORTADA = false)
-  RewriteRule ^pwa/(index(pro|tv|mesa)?(\.html)?)?$ index.php [L]
+  RewriteRule ^pwa/(index(pro|tv|mesa|solitarios)?(\.html)?)?$ index.php [L]
 
   # La portada de los educativos es la de index.php
   RewriteRule ^educativos/?$ /coleccion/educativos [R=301,L]

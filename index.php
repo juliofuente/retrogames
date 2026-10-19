@@ -74,11 +74,26 @@ foreach ($db->query('SELECT * FROM game_age_groups') as $r) if (isset($GAMES[$r[
 foreach ($db->query('SELECT * FROM based_on ORDER BY game_id, sort') as $r) if (isset($GAMES[$r['game_id']])) $GAMES[$r['game_id']]['based'][] = $r;
 $VERSION = $META['version'] ?? '';
 $LASTMOD = $META['actualizado'] ?? date('Y-m-d');
-$SITE = 'Arcade Perdido';
+
+/* ---------- la web del subdominio (tabla «sites», ver sites.php) ----------
+   Cada subdominio enseña solo sus colecciones; en la de la tele, solo los juegos con mando. Lo demás da 404. */
+require_once __DIR__ . '/sites.php';
+$WEB = site_for_host($db, $host);
+define('TVSITE', $WEB['tv']);
+$ALL_GAMES = $GAMES;
+if ($WEB['cols'] !== null) $COLS = array_intersect_key($COLS, array_flip($WEB['cols']));
+$GAMES = array_filter($GAMES, function ($g) use ($COLS) { return isset($COLS[$g['collection_id']]) && (!TVSITE || $g['tv']); });
+if (TVSITE) $COLS = array_filter($COLS, function ($c) use ($GAMES) { foreach ($GAMES as $g) if ($g['collection_id'] === $c['id']) return true; return false; });
+$used = function (string $f) use ($GAMES) { $o = []; foreach ($GAMES as $g) $o[(string)$g[$f]] = 1; return $o; };
+$CATS = array_intersect_key($CATS, $used('category_id'));
+$CTRLS = array_intersect_key($CTRLS, $used('control_id'));
+if (!isset($COLS['edu'])) { $SUBJS = []; $AGES = []; }
+$SITE = $WEB['name_es'];
 
 /* ---------- idioma ---------- */
 $L = 'es';
 if ($path === '/en/' || starts($path, '/en/')) { $L = 'en'; }
+if ($L === 'en' && !empty($WEB['name_en'])) $SITE = $WEB['name_en'];
 function T(string $es, string $en): string { global $L; return $L === 'en' ? $en : $es; }
 function f(array $row, string $field): string { global $L; return (string)($row[$field . '_' . $L] ?? $row[$field . '_es'] ?? ''); }
 function home_url(?string $lang = null): string { global $L; return url(($lang ?? $L) === 'en' ? '/en/' : '/'); }
@@ -357,7 +372,8 @@ function crumbs_html(array $items): string {
 }
 
 function render(array $o): void {
-  global $L, $SITE, $CATS, $COLS, $CTRLS, $GAMES, $VERSION, $SUBJS, $AGES;
+  global $L, $SITE, $CATS, $COLS, $CTRLS, $GAMES, $VERSION, $SUBJS, $AGES, $WEB;
+  $font = site_font($WEB); $multi = count($COLS) > 1;
   $status = $o['status'] ?? 200;
   http_response_code($status);
   header('Content-Type: text/html; charset=utf-8');
@@ -382,7 +398,7 @@ function render(array $o): void {
 <link rel="alternate" hreflang="en" href="<?= h(abs_url($alt[1])) ?>">
 <link rel="alternate" hreflang="x-default" href="<?= h(abs_url($alt[0])) ?>">
 <?php endif; ?>
-<meta name="theme-color" content="<?= h($o['theme'] ?? '#ffce3a') ?>">
+<meta name="theme-color" content="<?= h($o['theme'] ?? ($WEB['c_bg'] ?? '#ffce3a')) ?>">
 <meta name="application-name" content="<?= h($SITE) ?>">
 <meta name="apple-mobile-web-app-title" content="<?= h($SITE) ?>">
 <meta property="og:type" content="<?= h($o['ogtype'] ?? 'website') ?>">
@@ -402,26 +418,27 @@ function render(array $o): void {
 <meta name="twitter:description" content="<?= h($desc) ?>">
 <link rel="icon" href="<?= h($o['icon'] ?? url('/pwa/icons/icon-192.png')) ?>">
 <link rel="apple-touch-icon" href="<?= h(url('/pwa/icons/icon-192.png')) ?>">
-<link rel="manifest" href="<?= h(url('/pwa/manifest.webmanifest')) ?>">
+<link rel="manifest" href="<?= h(url('/manifest.webmanifest')) ?>">
 <link rel="sitemap" type="application/xml" href="<?= h(url('/sitemap.xml')) ?>">
 <script type="application/ld+json"><?= json_encode($ld, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP) ?></script>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=<?= h(str_replace(' ', '+', $font)) ?>:wght@500;600;700;800;900&display=swap">
 <style>
-:root{--bg:#f6f4fb;--sf:#fff;--sf2:#f0eef7;--line:#e7e4f0;--tx:#1d1a2e;--mu:#6c6884;--ac:#ffce3a;--ac2:#ffb703;--ink:#2a2100;--r:18px;--sh:0 1px 2px rgba(29,26,46,.06),0 6px 20px rgba(29,26,46,.07);--sh2:0 4px 10px rgba(29,26,46,.10),0 18px 40px rgba(29,26,46,.14)}
+:root{--r:18px}
+<?= site_css($WEB) ?>
 *{box-sizing:border-box}html{-webkit-text-size-adjust:100%}
-body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.5 Nunito,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.5 "<?= h($font) ?>",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
 a{color:inherit}img{max-width:100%;display:block}
 .wrap{max-width:1180px;margin:0 auto;padding:0 16px}
-header.top{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.92);backdrop-filter:saturate(1.4) blur(10px);-webkit-backdrop-filter:saturate(1.4) blur(10px);border-bottom:1px solid var(--line)}
+header.top{position:sticky;top:0;z-index:20;background:var(--hd);backdrop-filter:saturate(1.4) blur(10px);-webkit-backdrop-filter:saturate(1.4) blur(10px);border-bottom:1px solid var(--line)}
 header.top .wrap{display:flex;align-items:center;gap:14px;min-height:64px}
 .brand{display:flex;align-items:center;gap:9px;text-decoration:none;font-weight:900;font-size:20px;white-space:nowrap;letter-spacing:-.01em}
 .brand span{display:grid;place-items:center;width:38px;height:38px;border-radius:12px;background:var(--ac);font-size:22px;box-shadow:inset 0 -3px 0 rgba(0,0,0,.12)}
 nav.main{display:flex;gap:2px;flex:1;min-width:0;overflow-x:auto;scrollbar-width:none}nav.main::-webkit-scrollbar{display:none}
 nav.main a{text-decoration:none;padding:8px 12px;border-radius:999px;font-size:15px;font-weight:800;color:var(--mu);white-space:nowrap}
-nav.main a:hover{background:var(--sf2);color:var(--tx)}nav.main a[aria-current]{background:var(--tx);color:#fff}
+nav.main a:hover{background:var(--sf2);color:var(--tx)}nav.main a[aria-current]{background:var(--tx);color:var(--bg)}
 form.search{display:flex;align-items:center;margin:0;background:var(--sf2);border-radius:999px;padding:0 6px 0 14px;border:2px solid transparent}
-form.search:focus-within{border-color:var(--ac);background:#fff}
+form.search:focus-within{border-color:var(--ac);background:var(--sf)}
 form.search input{width:170px;background:none;border:0;outline:0;color:var(--tx);padding:9px 0;font:inherit;font-size:15px}
 form.search button{background:none;border:0;cursor:pointer;font-size:16px;padding:6px}
 .lang{text-decoration:none;font-size:14px;font-weight:800;padding:8px 12px;border-radius:999px;background:var(--sf2);white-space:nowrap}
@@ -444,20 +461,20 @@ h2 a{text-decoration:none}h2 small,.cnt{color:var(--mu);font-size:.6em;font-weig
 .tx{display:flex;flex-direction:column;min-width:0;padding:10px 4px 0}.tx b{font-size:16.5px;line-height:1.25;font-weight:900}
 .tg{color:var(--mu);font-size:13.5px;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .ch{display:flex;flex-wrap:wrap;gap:4px 6px;margin-top:6px;font-size:12px;font-weight:800}.ch span{background:var(--sf2);color:var(--mu);border-radius:999px;padding:2px 9px;white-space:nowrap}
-.ch .cat{background:#fff3c4;color:#6b5000}
+.ch .cat{background:var(--chip);color:var(--chiptx)}
 .pos{position:absolute;z-index:2;top:-8px;left:-8px;min-width:32px;height:32px;border-radius:999px;background:var(--ac);color:var(--ink);font-weight:900;display:grid;place-items:center;font-size:15px;box-shadow:0 3px 10px rgba(0,0,0,.2);border:3px solid var(--bg)}
 /* portada */
-.feat{position:relative;display:grid;grid-template-columns:1.35fr 1fr;align-items:stretch;background:var(--tx);color:#fff;border-radius:28px;overflow:hidden;box-shadow:var(--sh2);margin:6px 0 8px;text-decoration:none}
+.feat{position:relative;display:grid;grid-template-columns:1.35fr 1fr;align-items:stretch;background:var(--feat);color:var(--feattx);border-radius:28px;overflow:hidden;box-shadow:var(--sh2);margin:6px 0 8px;text-decoration:none}
 .feat .img{position:relative;min-height:260px}.feat .img img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-.feat .img:after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent 60%,var(--tx))}
+.feat .img:after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent 60%,var(--feat))}
 .feat .info{padding:30px 30px 30px 10px;display:flex;flex-direction:column;justify-content:center;gap:6px}
 .badge{align-self:flex-start;background:var(--ac);color:var(--ink);font-weight:900;font-size:13px;border-radius:999px;padding:3px 12px;text-transform:uppercase;letter-spacing:.04em}
-.feat h2{margin:.1em 0 0;font-size:clamp(26px,3.6vw,38px);color:#fff}.feat p{margin:0;color:#cfcbe6;font-size:17px}
+.feat h2{margin:.1em 0 0;font-size:clamp(26px,3.6vw,38px);color:var(--feattx)}.feat p{margin:0;color:var(--featmu);font-size:17px}
 .hello{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap}
 .hello h1{font-size:clamp(26px,4.2vw,38px);margin-bottom:0}.hello h1 em{font-style:normal;background:linear-gradient(transparent 62%,var(--ac) 62%)}
 .chips{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding:4px 0 2px;margin:14px 0 0}.chips::-webkit-scrollbar{display:none}
 .chips a{flex:none;text-decoration:none;font-weight:800;font-size:15px;background:var(--sf);border:1px solid var(--line);border-radius:999px;padding:8px 15px;white-space:nowrap}
-.chips a:hover{border-color:var(--ac2);background:#fffaeb}.chips a.col-chip{background:#fff3c4;border-color:#ffe08a}.chips a b{color:var(--mu);font-weight:800;margin-left:4px;font-size:13px}
+.chips a:hover{border-color:var(--ac2);background:var(--sf2)}.chips a.col-chip{background:var(--chip);border-color:var(--ac)}.chips a b{color:var(--mu);font-weight:800;margin-left:4px;font-size:13px}
 .tiles{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
 .tile{display:flex;gap:12px;align-items:center;text-decoration:none;background:var(--sf);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;box-shadow:var(--sh);transition:transform .15s}
 .tile:hover{transform:translateY(-2px);border-color:var(--ac2)}.tile .e{font-size:30px}.tile b{font-weight:900}.tile small{display:block;color:var(--mu);font-weight:700}
@@ -500,24 +517,24 @@ footer .fb{display:flex;align-items:center;gap:9px;font-weight:900;color:var(--t
 @media (max-width:860px){nav.main{display:none}form.search{flex:1}form.search input{width:100%}}
 @media (max-width:720px){
  header.top .wrap{gap:10px;min-height:58px}.brand b{display:none}.lang{padding:8px 10px}
- .feat{grid-template-columns:1fr}.feat .img{min-height:0;aspect-ratio:16/10}.feat .img:after{background:linear-gradient(transparent 55%,var(--tx))}.feat .info{padding:4px 20px 22px}
+ .feat{grid-template-columns:1fr}.feat .img{min-height:0;aspect-ratio:16/10}.feat .img:after{background:linear-gradient(transparent 55%,var(--feat))}.feat .info{padding:4px 20px 22px}
  .hero{grid-template-columns:1fr;gap:18px}.two{grid-template-columns:1fr}main{padding-top:14px}
  .grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:16px 12px}.tx b{font-size:15px}.tg{font-size:12.5px}.cv .em{width:30px;height:30px;font-size:18px;border-radius:9px}
  body{padding-bottom:calc(66px + env(safe-area-inset-bottom))}
- .tabbar{display:flex;position:fixed;z-index:30;left:0;right:0;bottom:0;background:rgba(255,255,255,.96);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-top:1px solid var(--line);padding:6px 6px calc(6px + env(safe-area-inset-bottom))}
+ .tabbar{display:flex;position:fixed;z-index:30;left:0;right:0;bottom:0;background:var(--hd);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-top:1px solid var(--line);padding:6px 6px calc(6px + env(safe-area-inset-bottom))}
  .tabbar a{flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;text-decoration:none;font-size:11.5px;font-weight:800;color:var(--mu);padding:4px 0;border-radius:12px}
- .tabbar a span{font-size:21px;line-height:1.1}.tabbar a[aria-current]{color:var(--tx);background:#fff3c4}
+ .tabbar a span{font-size:21px;line-height:1.1}.tabbar a[aria-current]{color:var(--tx);background:var(--chip)}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
 <body>
 <header class="top"><div class="wrap">
-  <a class="brand" href="<?= h(home_url()) ?>"><span aria-hidden="true">🕹️</span><b><?= h($SITE) ?></b></a>
+  <a class="brand" href="<?= h(home_url()) ?>"><span aria-hidden="true"><?= h($WEB['emoji'] ?: '🕹️') ?></span><b><?= h($SITE) ?></b></a>
   <nav class="main" aria-label="<?= h(T('Principal', 'Main')) ?>">
-    <?php foreach ($COLS as $c): ?><a href="<?= h(url(col_path($c))) ?>"<?= $p === col_path($c) ? ' aria-current="page"' : '' ?>><?= h(f($c, 'name')) ?></a><?php endforeach; ?>
+    <?php if ($multi): foreach ($COLS as $c): ?><a href="<?= h(url(col_path($c))) ?>"<?= $p === col_path($c) ? ' aria-current="page"' : '' ?>><?= h(f($c, 'name')) ?></a><?php endforeach; else: foreach (array_slice($CATS, 0, 6) as $c): ?><a href="<?= h(url(cat_path($c))) ?>"<?= $p === cat_path($c) ? ' aria-current="page"' : '' ?>><?= h($c['emoji'] . ' ' . f($c, 'name')) ?></a><?php endforeach; endif; ?>
     <a href="<?= h(url(list_path('games'))) ?>"<?= $p === list_path('games') ? ' aria-current="page"' : '' ?>><?= h(T('Todos', 'All games')) ?></a>
-    <a href="<?= h(url(list_path('tv'))) ?>"<?= $p === list_path('tv') ? ' aria-current="page"' : '' ?>>📺 TV</a>
+    <?php if (TVSITE): ?><a href="<?= h(url(list_path('tv'))) ?>"<?= $p === list_path('tv') ? ' aria-current="page"' : '' ?>>📺 TV</a><?php endif; ?>
   </nav>
   <form class="search" action="<?= h(url(list_path('search'))) ?>" method="get" role="search">
     <input type="search" name="q" value="<?= h($o['q'] ?? '') ?>" placeholder="<?= h(T('Buscar juego…', 'Search games…')) ?>" aria-label="<?= h(T('Buscar', 'Search')) ?>">
@@ -531,13 +548,14 @@ footer .fb{display:flex;align-items:center;gap:9px;font-weight:900;color:var(--t
 <nav class="tabbar" aria-label="<?= h(T('Accesos rápidos', 'Quick links')) ?>">
   <a href="<?= h(home_url()) ?>"<?= $p === home_path() ? ' aria-current="page"' : '' ?>><span aria-hidden="true">🏠</span><?= h(T('Inicio', 'Home')) ?></a>
   <a href="<?= h(url(list_path('games'))) ?>"<?= $p === list_path('games') ? ' aria-current="page"' : '' ?>><span aria-hidden="true">🎮</span><?= h(T('Juegos', 'Games')) ?></a>
-  <?php if (isset($COLS['soli'])): ?><a href="<?= h(url(col_path($COLS['soli']))) ?>"<?= $p === col_path($COLS['soli']) ? ' aria-current="page"' : '' ?>><span aria-hidden="true">🃏</span><?= h(T('Solitarios', 'Solitaire')) ?></a><?php endif; ?>
-  <?php if (isset($COLS['edu'])): ?><a href="<?= h(url(col_path($COLS['edu']))) ?>"<?= $p === col_path($COLS['edu']) ? ' aria-current="page"' : '' ?>><span aria-hidden="true">🎓</span><?= h(T('Educativos', 'Learning')) ?></a><?php endif; ?>
-  <a href="<?= h(url(list_path('tv'))) ?>"<?= $p === list_path('tv') ? ' aria-current="page"' : '' ?>><span aria-hidden="true">📺</span>TV</a>
+  <?php if (isset($COLS['soli']) && $multi): ?><a href="<?= h(url(col_path($COLS['soli']))) ?>"<?= $p === col_path($COLS['soli']) ? ' aria-current="page"' : '' ?>><span aria-hidden="true">🃏</span><?= h(T('Solitarios', 'Solitaire')) ?></a><?php endif; ?>
+  <?php if (isset($COLS['edu']) && $multi): ?><a href="<?= h(url(col_path($COLS['edu']))) ?>"<?= $p === col_path($COLS['edu']) ? ' aria-current="page"' : '' ?>><span aria-hidden="true">🎓</span><?= h(T('Educativos', 'Learning')) ?></a><?php endif; ?>
+  <?php if (TVSITE): ?><a href="<?= h(url(list_path('tv'))) ?>"<?= $p === list_path('tv') ? ' aria-current="page"' : '' ?>><span aria-hidden="true">📺</span>TV</a><?php endif; ?>
+  <?php if (!$multi): foreach (array_slice($CATS, 0, 2) as $c): ?><a href="<?= h(url(cat_path($c))) ?>"<?= $p === cat_path($c) ? ' aria-current="page"' : '' ?>><span aria-hidden="true"><?= h($c['emoji']) ?></span><?= h(cut(f($c, 'name'), 12)) ?></a><?php endforeach; endif; ?>
 </nav>
 <footer><div class="wrap">
-  <div class="fb"><span aria-hidden="true">🕹️</span><?= h($SITE) ?></div>
-  <div class="links">
+  <div class="fb"><span aria-hidden="true"><?= h($WEB['emoji'] ?: '🕹️') ?></span><?= h($SITE) ?></div>
+  <div class="links"<?= $multi ? '' : ' hidden' ?>>
     <?php foreach ($COLS as $c): ?><a href="<?= h(url(col_path($c))) ?>"><b><?= h($c['emoji'] . ' ' . f($c, 'name')) ?></b></a><?php endforeach; ?>
   </div>
   <div class="links">
@@ -559,7 +577,9 @@ footer .fb{display:flex;align-items:center;gap:9px;font-weight:900;color:var(--t
 
 /* ---------- páginas ---------- */
 function page_home(): void {
-  global $COLS, $CATS, $GAMES, $L, $SITE;
+  global $COLS, $CATS, $GAMES, $L, $SITE, $WEB, $SUBJS;
+  if (TVSITE) serve_index('tv');   // la web de la tele: su portada es la de la PWA para el mando
+  $multi = count($COLS) > 1; $one = $multi ? null : reset($COLS);
   $p = $L === 'en' ? '/en/' : '/';
   $byCol = []; foreach ($GAMES as $g) $byCol[$g['collection_id']][] = $g;
   $byCat = []; foreach ($GAMES as $g) $byCat[$g['category_id']][] = $g;
@@ -567,11 +587,10 @@ function page_home(): void {
   $na = arcade_count(); $ne = count($GAMES) - $na;
   ob_start(); ?>
   <?php $ft = top_games(array_values(array_filter($GAMES, function ($g) { return !is_edu($g) && shot_url($g, false); })), 'all', 1)[0] ?? ($new[0] ?? null) ?? array_values(array_filter($GAMES, function ($g) { return shot_url($g, false); }))[0] ?? null; ?>
-  <div class="hello"><h1><?= T('Juega un rato. <em>Sin anuncios.</em>', 'Play a little. <em>No ads.</em>') ?></h1></div>
+  <div class="hello"><h1><?php if ($WEB['host'] === '*'): ?><?= T('Juega un rato. <em>Sin anuncios.</em>', 'Play a little. <em>No ads.</em>') ?><?php else: ?><?= h($WEB['emoji'] . ' ' . $SITE) ?><?php endif; ?></h1><?php if ($WEB['host'] !== '*' && f($WEB, 'tag')): ?><p class="lead" style="margin:0 0 6px"><?= h(f($WEB, 'tag')) ?></p><?php endif; ?></div>
   <nav class="chips" aria-label="<?= h(T('Categorías', 'Categories')) ?>">
-    <?php foreach (['soli', 'mesa', 'edu'] as $k): if (empty($COLS[$k]) || empty($byCol[$k])) continue; ?><a class="col-chip" href="<?= h(url(col_path($COLS[$k]))) ?>"><?= h($COLS[$k]['emoji'] . ' ' . f($COLS[$k], 'name')) ?><b><?= count($byCol[$k]) ?></b></a><?php endforeach; ?>
+    <?php foreach (['soli', 'mesa', 'edu'] as $k): if (!$multi || empty($COLS[$k]) || empty($byCol[$k])) continue; ?><a class="col-chip" href="<?= h(url(col_path($COLS[$k]))) ?>"><?= h($COLS[$k]['emoji'] . ' ' . f($COLS[$k], 'name')) ?><b><?= count($byCol[$k]) ?></b></a><?php endforeach; ?>
     <?php foreach ($CATS as $c): if (empty($byCat[$c['id']])) continue; ?><a href="<?= h(url(cat_path($c))) ?>"><?= h($c['emoji'] . ' ' . f($c, 'name')) ?><b><?= count($byCat[$c['id']]) ?></b></a><?php endforeach; ?>
-    <a href="<?= h(url(list_path('tv'))) ?>">📺 TV</a>
   </nav>
   <?php if ($ft): ?>
   <h2 class="sr" style="position:absolute;left:-9999px"><?= h(T('Destacado', 'Featured')) ?></h2>
@@ -582,36 +601,36 @@ function page_home(): void {
       <span class="btns"><span class="btn pri">▶ <?= h(T('Jugar ahora', 'Play now')) ?></span></span></span>
   </a>
   <?php endif; ?>
-  <p class="lead" style="margin-top:18px"><?= h(T($na . ' juegos HTML5 hechos con emojis: mecánicas de recreativa olvidadas y los grandes éxitos de móvil. Sin anuncios, sin descargas, con hasta 120 niveles, tres modos de dificultad y funcionan sin conexión. Se juegan con el dedo o con el mando de la tele. Y además ' . $ne . ' juegos educativos de mates, lengua, lógica e inglés para niños de 3 a 16 años.', $na . ' HTML5 games made with emojis: forgotten arcade mechanics and the big mobile hits. No ads, no downloads, up to 120 levels, three difficulty modes and they work offline. Play with your finger or with the TV remote. Plus ' . $ne . ' educational games for maths, language, logic and English for kids aged 3 to 16.')) ?></p>
+  <?php if (f($WEB, 'desc') !== '' || !$multi): ?><p class="lead" style="margin-top:18px"><?= h(f($WEB, 'desc') ?: f($one, 'desc')) ?></p><?php else: ?>
+  <p class="lead" style="margin-top:18px"><?= h(T($na . ' juegos HTML5 hechos con emojis: mecánicas de recreativa olvidadas y los grandes éxitos de móvil. Sin anuncios, sin descargas, con hasta 120 niveles, tres modos de dificultad y funcionan sin conexión. Se juegan con el dedo o con el mando de la tele. Y además ' . $ne . ' juegos educativos de mates, lengua, lógica e inglés para niños de 3 a 16 años.', $na . ' HTML5 games made with emojis: forgotten arcade mechanics and the big mobile hits. No ads, no downloads, up to 120 levels, three difficulty modes and they work offline. Play with your finger or with the TV remote. Plus ' . $ne . ' educational games for maths, language, logic and English for kids aged 3 to 16.')) ?></p><?php endif; ?>
   <?php if ($new): ?><h2><?= h(T('✨ Novedades', '✨ New games')) ?> <span class="cnt"><?= count($new) ?></span></h2><?= grid(array_slice($new, 0, 10)) ?><?php endif; ?>
-  <?php if (!empty($byCol['soli'])): $sc = $COLS['soli']; ?>
+  <?php if ($multi && !empty($byCol['soli'])): $sc = $COLS['soli']; ?>
   <h2><a href="<?= h(url(col_path($sc))) ?>"><?= h($sc['emoji'] . ' ' . f($sc, 'name')) ?></a> <span class="cnt"><?= count($byCol['soli']) ?></span></h2>
   <p class="lead" style="margin-top:-6px"><?= h(T('Cien variantes del solitario con cartas grandes, pistas, deshacer y un tutorial en cada juego que te enseña sus reglas paso a paso.', 'A hundred solitaire variants with big cards, hints, undo and a tutorial in every game that teaches you its rules step by step.')) ?></p>
   <?= grid(array_slice($byCol['soli'], 0, 10)) ?>
   <p><a class="more" href="<?= h(url(col_path($sc))) ?>"><?= h(T('Ver los ' . count($byCol['soli']) . ' solitarios', 'See all ' . count($byCol['soli']) . ' solitaire games')) ?> →</a></p>
   <?php endif; ?>
   <?= rank_html(array_values($GAMES), 10) ?>
-  <h2><?= h(T('Colecciones', 'Collections')) ?></h2>
+  <?php if ($multi): ?><h2><?= h(T('Colecciones', 'Collections')) ?></h2>
   <div class="cols">
     <?php foreach ($COLS as $c): ?>
     <a class="col" href="<?= h(url(col_path($c))) ?>"><?= mosaic($byCol[$c['id']] ?? [], $c['emoji']) ?><span class="bd"><h3><?= h($c['emoji'] . ' ' . f($c, 'name')) ?></h3><p><?= h(f($c, 'desc')) ?></p><b><?= count($byCol[$c['id']] ?? []) ?> <?= h(T('juegos', 'games')) ?> ▶</b></span></a>
     <?php endforeach; ?>
-    <a class="col" href="<?= h(url(list_path('tv'))) ?>"><?= mosaic(array_values(array_filter($GAMES, function ($g) { return (bool)$g['tv'] && $g['collection_id'] === 'pro'; })), '📺') ?><span class="bd"><h3><?= h(T('📺 Para la tele', '📺 For your TV')) ?></h3><p><?= h(T('Android TV y Fire TV: juega con el mando, hasta 4 jugadores por turnos.', 'Android TV and Fire TV: play with the remote, up to 4 players taking turns.')) ?></p><b><?= count(array_filter($GAMES, function ($g) { return (bool)$g['tv']; })) ?> <?= h(T('juegos', 'games')) ?> ▶</b></span></a>
-  </div>
+  </div><?php endif; ?>
   <h2><?= h(T('Categorías', 'Categories')) ?></h2>
   <ul class="tiles">
     <?php foreach ($CATS as $c): ?><li><a class="tile" href="<?= h(url(cat_path($c))) ?>"><span class="e" aria-hidden="true"><?= h($c['emoji']) ?></span><span><b><?= h(f($c, 'name')) ?></b><small><?= count($byCat[$c['id']] ?? []) ?> <?= h(T('juegos', 'games')) ?></small></span></a></li><?php endforeach; ?>
   </ul>
-  <h2><?= h(T('🎓 Juegos educativos por asignatura y edad', '🎓 Educational games by subject and age')) ?></h2>
-  <?= edu_tiles() ?>
+  <?php if ($SUBJS): ?><h2><?= h(T('🎓 Juegos educativos por asignatura y edad', '🎓 Educational games by subject and age')) ?></h2>
+  <?= edu_tiles() ?><?php endif; ?>
   <?php foreach ($CATS as $c): if (empty($byCat[$c['id']])) continue; ?>
     <h2><a href="<?= h(url(cat_path($c))) ?>"><?= h($c['emoji'] . ' ' . f($c, 'name')) ?></a> <span class="cnt"><?= count($byCat[$c['id']]) ?></span></h2>
     <?= grid(array_slice($byCat[$c['id']], 0, 10)) ?>
     <?php if (count($byCat[$c['id']]) > 10): ?><p><a class="more" href="<?= h(url(cat_path($c))) ?>"><?= h(T('Ver los ' . count($byCat[$c['id']]) . ' juegos de ' . mb_strtolower(f($c, 'name')), 'See all ' . count($byCat[$c['id']]) . ' ' . mb_strtolower(f($c, 'name')) . ' games')) ?> →</a></p><?php endif; ?>
   <?php endforeach; ?>
   <?php $body = ob_get_clean();
-  $title = T('Arcade Perdido · ' . $na . ' juegos arcade y ' . $ne . ' educativos gratis', 'Arcade Perdido · ' . $na . ' arcade and ' . $ne . ' educational games, free');
-  $desc = T('Juega gratis y sin anuncios a ' . $na . ' juegos HTML5 con emojis (puzles, arcade, un toque, física y estrategia) y a ' . $ne . ' juegos educativos de mates, lengua, lógica e inglés para niños. Para móvil, PC y Android TV.', 'Play ' . $na . ' free, ad-free HTML5 emoji games (puzzles, arcade, one-tap, physics, strategy) and ' . $ne . ' educational maths, language, logic and English games for kids. For phone, PC and Android TV.');
+  $title = !$multi ? $SITE . ' · ' . count($GAMES) . T(' juegos gratis y sin anuncios', ' free games, no ads') : T($SITE . ' · ' . $na . ' juegos arcade y ' . $ne . ' educativos gratis', $SITE . ' · ' . $na . ' arcade and ' . $ne . ' educational games, free');
+  $desc = f($WEB, 'desc') !== '' ? f($WEB, 'desc') : (!$multi ? f($one, 'desc') : null) ?? T('Juega gratis y sin anuncios a ' . $na . ' juegos HTML5 con emojis (puzles, arcade, un toque, física y estrategia) y a ' . $ne . ' juegos educativos de mates, lengua, lógica e inglés para niños. Para móvil, PC y Android TV.', 'Play ' . $na . ' free, ad-free HTML5 emoji games (puzzles, arcade, one-tap, physics, strategy) and ' . $ne . ' educational maths, language, logic and English games for kids. For phone, PC and Android TV.');
   render(['path' => $p, 'title' => $title, 'desc' => $desc, 'alt' => ['/', '/en/'], 'body' => $body, 'back' => true,
     'ld' => [app_ld(), page_ld('CollectionPage', $p, $title, $desc, ['about' => ['@id' => abs_url('/#app')], 'mainEntity' => ['@id' => abs_url($p) . '#list']]), itemlist_ld($p, T('Todos los juegos', 'All games'), array_values($GAMES))]]);
 }
@@ -649,7 +668,8 @@ function page_collection(array $c): void {
   global $GAMES, $SITE;
   $games = array_values(array_filter($GAMES, function ($g) use ($c) { return $g['collection_id'] === $c['id']; }));
   $p = col_path($c); $n = f($c, 'name');
-  $play = '<div class="btns" style="margin-bottom:18px"><a class="btn pri" href="' . h(url('/' . $c['index_file'])) . '">▶ ' . h(T('Abrir ' . $n, 'Open ' . $n)) . '</a></div>';
+  $open = TVSITE ? url('/') . '?sec=' . $c['id'] : url('/' . $c['index_file']);
+  $play = '<div class="btns" style="margin-bottom:18px"><a class="btn pri" href="' . h($open) . '">▶ ' . h(T('Abrir ' . $n, 'Open ' . $n)) . '</a></div>';
   if ($c['id'] === 'edu') $play = edu_tiles() . '<h2>' . h(T('Todos los juegos educativos', 'All educational games')) . '</h2>';   // sin portada aparte: esta es su portada
   page_list($p, [col_path($c, 'es'), col_path($c, 'en')], $c['id'] === 'edu' ? T('🎓 Juegos educativos', '🎓 Educational games') : $n, f($c, 'desc'), $games, [[T('Inicio', 'Home'), home_path()], [$n, $p]],
     ($c['id'] === 'edu' ? T('Juegos educativos para niños: ' . count($games) . ' juegos gratis de mates, lengua, lógica e inglés', 'Educational games for kids: ' . count($games) . ' free maths, language, logic and English games')
@@ -704,7 +724,7 @@ function page_tv(): void {
   $p = list_path('tv');
   $lead = T('Juegos que se juegan con el mando de Android TV, Google TV o Fire TV (cruceta + OK). Abre la web en el navegador de la tele y juega solo o hasta con 4 jugadores por turnos.', 'Games you can play with an Android TV, Google TV or Fire TV remote (D-pad + OK). Open the site in your TV browser and play alone or with up to 4 players taking turns.');
   global $COLS; $mesa = $COLS['mesa'] ?? null;
-  $btn = '<div class="btns" style="margin-bottom:18px"><a class="btn pri" href="' . h(url('/pwa/indextv')) . '?tv=1">📺 ' . h(T('Abrir la portada para TV', 'Open the TV home screen')) . '</a>'
+  $btn = '<div class="btns" style="margin-bottom:18px"><a class="btn pri" href="' . h(url('/')) . '">📺 ' . h(T('Abrir la portada para TV', 'Open the TV home screen')) . '</a>'
     . ($mesa ? ' <a class="btn" href="' . h(url(col_path($mesa))) . '">♟️ ' . h(f($mesa, 'name')) . '</a>' : '') . '</div>';
   page_list($p, [list_path('tv', 'es'), list_path('tv', 'en')], T('Juegos para la tele con mando', 'TV games you play with the remote'), $lead, $games,
     [[T('Inicio', 'Home'), home_path()], ['TV', $p]], T(count($games) . ' juegos para Android TV y Fire TV gratis', count($games) . ' free games for Android TV and Fire TV') . ' · ' . $SITE, $lead, ['before' => $btn]);
@@ -837,7 +857,7 @@ function page_game(array $g): void {
       <div class="facts-mini"><span><?= h($c['emoji'] . ' ' . f($c, 'name')) ?></span><span>👆 <?= h(f($ct, 'name')) ?></span><?php if ($g['tv']): ?><span>📺 TV</span><?php endif; ?><span><?= h(T('Gratis · sin anuncios', 'Free · no ads')) ?></span></div>
       <div class="btns">
         <a class="btn pri" href="<?= h(url(play_path($g))) ?>">▶ <?= h(T('Jugar gratis', 'Play for free')) ?></a>
-        <?php if ($g['tv']): ?><a class="btn" href="<?= h(game_file_url($g, true)) ?>">📺 <?= h(T('Modo TV', 'TV mode')) ?></a><?php endif; ?>
+        
       </div>
     </div>
   </div>
@@ -882,6 +902,36 @@ function page_game(array $g): void {
       crumbs_ld($crumbs), game_ld($g), faq_ld($faq, $p)]]);
 }
 
+/* modo de pantalla que impone la web: la de la tele siempre en modo TV y las demás nunca */
+function force_mode(string $html): string {
+  $js = '<script>ARCADE_CONFIG.modo=' . json_encode(TVSITE ? 'modotv' : 'modonormal') . ';</script>';
+  return preg_replace('#<script src="config\.js(\?v=[0-9a-z]*)?"></script>#', '$0' . $js, $html, 1);
+}
+/* portadas de la PWA (pwa/index, indexpro, indexmesa, indexsolitarios, indextv): solo las de la web, con sus juegos */
+function serve_index(string $k): void {
+  global $COLS, $GAMES, $WEB, $SITE;
+  $col = ['' => 'main', 'pro' => 'pro', 'mesa' => 'mesa', 'solitarios' => 'soli'][$k] ?? null;
+  if ($k === 'tv' ? !TVSITE : (TVSITE || !isset($COLS[$col]))) { page_404(); exit; }
+  $html = (string)@file_get_contents(__DIR__ . '/pwa/index' . $k . '.html');
+  if ($html === '') { page_404(); exit; }
+  $html = force_mode(fresh_assets($html, __DIR__ . '/pwa'));
+  $allow = '<script>(function(A){var f=function(l){if(!l)return;for(var i=l.length-1;i>=0;i--)if(A.indexOf(typeof l[i]==="string"?l[i]:l[i].id)<0)l.splice(i,1)};'
+    . 'f(window.GAMES);f(window.GAMES_PRO);f(window.GAMES_MESA);f(window.GAMES_SOLI)})(' . json_encode(array_keys($GAMES)) . ');</script>';
+  $html = preg_replace('#<script src="games\.js(\?v=[0-9a-z]*)?"></script>#', '$0' . $allow, $html, 1);
+  $head = '<base href="' . h(url('/pwa/')) . '">' . ($WEB['cols'] !== null ? '<style>a.chip.link{display:none!important}</style>' : '');
+  $html = preg_replace('/<head>/i', '<head>' . "\n" . $head, $html, 1);
+  $html = preg_replace('/<title>.*?<\/title>/s', '<title>' . h($SITE) . '</title>', $html, 1);
+  header('Content-Type: text/html; charset=utf-8'); header('Cache-Control: no-cache');
+  echo $html; exit;
+}
+function out_manifest(): void {
+  global $SITE, $WEB;
+  header('Content-Type: application/manifest+json; charset=utf-8');
+  echo json_encode(['name' => $SITE, 'short_name' => $SITE, 'start_url' => url('/'), 'scope' => url('/'), 'display' => 'standalone', 'background_color' => $WEB['c_bg'] ?? '#f6f4fb', 'theme_color' => $WEB['c_bg'] ?? '#ffce3a',
+    'icons' => [['src' => url('/pwa/icons/icon-192.png'), 'sizes' => '192x192', 'type' => 'image/png'], ['src' => url('/pwa/icons/icon-512.png'), 'sizes' => '512x512', 'type' => 'image/png']]], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+  exit;
+}
+
 /* el juego en /{id}: el HTML de pwa/ con <base href="/pwa/"> y window.ARCADE_SITE (portada, idioma, API de tiempo) */
 function serve_game(array $g, ?string $force): void {
   global $SITE;
@@ -890,7 +940,7 @@ function serve_game(array $g, ?string $force): void {
   $p = '/' . $g['id'] . ($force ? '/' . $force : '');
   $lang = $force ?: 'es';
   $site = ['id' => $g['id'], 'lang' => $force, 'play' => url('/' . $g['id']), 'api' => url('/api/play'), 'fav' => url('/api/fav'),
-    'home' => ['es' => url('/'), 'en' => url('/en/')], 'tv' => ['es' => url('/tv'), 'en' => url('/en/tv')]];
+    'home' => ['es' => url('/'), 'en' => url(TVSITE ? '/' : '/en/')], 'tv' => ['es' => url('/'), 'en' => url(TVSITE ? '/' : '/en/')]];
   $title = ($lang === 'en' ? $g['title_en'] : $g['title_es']) . ' · ' . $SITE;
   $desc = cut(($lang === 'en' ? $g['desc_en'] : $g['desc_es']), 160);
   $head = '<base href="' . h(url('/pwa/')) . '">'
@@ -902,7 +952,7 @@ function serve_game(array $g, ?string $force): void {
     . '<meta property="og:title" content="' . h($title) . '"><meta property="og:description" content="' . h($desc) . '">'
     . '<meta property="og:url" content="' . h(abs_url($p)) . '"><meta property="og:image" content="' . h(abs_url('/pwa/icons/icon-512.png')) . '">'
     . '<script>window.ARCADE_SITE=' . json_encode($site, JSON_UNESCAPED_SLASHES | JSON_HEX_TAG) . ';</script>';
-  $html = fresh_assets($html, __DIR__ . '/pwa');
+  $html = force_mode(fresh_assets($html, __DIR__ . '/pwa'));
   $html = preg_replace('/<head>/i', '<head>' . "\n" . $head, $html, 1);
   $html = preg_replace('/<title>.*?<\/title>/s', '<title>' . h($title) . '</title>', $html, 1);
   if ($force) $html = preg_replace('/<html lang="[a-z]+"/i', '<html lang="' . $force . '"', $html, 1);
@@ -914,7 +964,7 @@ function serve_game(array $g, ?string $force): void {
 
 /* juego de una petición de la API: id propio o 'brain:<minijuego>' de Emoji Brain Academy */
 function api_game(string $gid): ?array {
-  global $GAMES;
+  global $ALL_GAMES; $GAMES = $ALL_GAMES;
   if (strncmp($gid, 'brain:', 6) === 0) {
     $b = substr($gid, 6);
     if (preg_match('/^[a-z0-9]+$/', $b)) foreach ($GAMES as $x) if (is_edu($x) && strpos((string)$x['url'], 'juego=' . $b . '&') !== false) return $x;
@@ -993,7 +1043,8 @@ function out_svg(array $g): void {
 function out_sitemap(): void {
   global $GAMES, $CATS, $COLS, $CTRLS, $LASTMOD, $SUBJS, $AGES;
   header('Content-Type: application/xml; charset=utf-8');
-  $pairs = [['/', '/en/', '1.0'], [list_path('games', 'es'), list_path('games', 'en'), '0.7'], [list_path('tv', 'es'), list_path('tv', 'en'), '0.7']];
+  $pairs = [['/', '/en/', '1.0'], [list_path('games', 'es'), list_path('games', 'en'), '0.7']];
+  if (TVSITE) $pairs[] = [list_path('tv', 'es'), list_path('tv', 'en'), '0.7'];
   foreach ($COLS as $c) $pairs[] = [col_path($c, 'es'), col_path($c, 'en'), '0.9'];
   foreach ($CATS as $c) $pairs[] = [cat_path($c, 'es'), cat_path($c, 'en'), '0.8'];
   foreach ($CTRLS as $c) $pairs[] = [ctrl_path($c, 'es'), ctrl_path($c, 'en'), '0.5'];
@@ -1036,11 +1087,12 @@ if ($L === 'es' && $k === 'icono' && $arg && count($seg) === 2 && preg_match('/^
 
 // índices estáticos de la PWA (/pwa/, /pwa/indexpro, /pwa/indextv): .htaccess los pasa por aquí para poder cerrarlos
 if (preg_match('#^/pwa/(index(pro|tv|mesa|solitarios)?(\.html)?)?$#', $path, $m)) {
-  if (!PORTADA) page_404();
+  if (!PORTADA) { page_404(); exit; }
   if (!empty($m[3]) || ($m[1] ?? '') === 'index') redirect(url('/pwa/' . (($m[2] ?? '') !== '' ? 'index' . $m[2] : '')));
-  header('Content-Type: text/html; charset=utf-8'); header('Cache-Control: no-cache');
-  readfile(__DIR__ . '/pwa/' . (($m[2] ?? '') !== '' ? 'index' . $m[2] : 'index') . '.html'); exit;
+  if (($m[2] ?? '') === 'tv' && TVSITE) redirect(url('/') . (isset($_SERVER['QUERY_STRING']) && $_SERVER['QUERY_STRING'] !== '' ? '?' . $_SERVER['QUERY_STRING'] : ''), 302);
+  serve_index($m[2] ?? '');
 }
+if ($path === '/manifest.webmanifest') out_manifest();
 // páginas de listado: solo con PORTADA (las URLs antiguas /jugar/{id} siguen redirigiendo al juego)
 if (!PORTADA && count($seg) === 2 && $k === ($EN ? 'game' : 'juego')) {   // sin fichas: /juego/{id} → al juego
   $g = $EN ? find_by($GAMES, 'slug_en', $arg) : ($GAMES[$arg] ?? null);
@@ -1050,7 +1102,7 @@ if (!PORTADA && !(count($seg) === 2 && $k === ($EN ? 'play' : 'jugar'))) goto ju
 if ($r === '/' && count($seg) === 0) { page_home(); exit; }
 if (count($seg) === 1 && $k === 'lista' && !$EN) redirect(url(list_path('games')));   // la antigua copia estática lista.html
 if (count($seg) === 1 && $k === ($EN ? 'games' : 'juegos')) { page_all(); exit; }
-if (count($seg) === 1 && $k === 'tv') { page_tv(); exit; }
+if (count($seg) === 1 && $k === 'tv' && TVSITE) { page_tv(); exit; }
 if (count($seg) === 1 && $k === ($EN ? 'search' : 'buscar')) { page_search(); exit; }
 if (count($seg) === 2) {
   if ($k === ($EN ? 'game' : 'juego')) { $g = $EN ? find_by($GAMES, 'slug_en', $arg) : ($GAMES[$arg] ?? null); if ($g) { page_game($g); exit; } }
@@ -1068,8 +1120,10 @@ if (count($seg) === 2) {
 }
 // el juego: /{id} (idioma automático) o /{id}/es|en (forzado). Los educativos se sirven desde su carpeta.
 juego:
-if (!$EN && (count($seg) === 1 || (count($seg) === 2 && ($arg === 'es' || $arg === 'en'))) && isset($GAMES[$k])) {
-  $g = $GAMES[$k];
+// los arcade que la colección de educativos usa como suyos (edu_ref) también se juegan en su web
+foreach ($GAMES as $x) if (is_edu($x) && ($rf = edu_ref($x)) !== null && isset($ALL_GAMES[$rf]) && !isset($GAMES[$rf])) $REFOK[$rf] = $ALL_GAMES[$rf];
+if (!$EN && (count($seg) === 1 || (count($seg) === 2 && ($arg === 'es' || $arg === 'en'))) && (isset($GAMES[$k]) || isset($REFOK[$k]))) {
+  $g = $GAMES[$k] ?? $REFOK[$k];
   if (is_edu($g) && ($r = edu_ref($g)) !== null) redirect(url('/' . $r . ($arg ? '/' . $arg : '')));
   if (preg_match('#^https?://#', (string)$g['url'])) redirect($g['url'], 302);   // juego externo (añadido desde el CMS)
   if (is_edu($g)) serve_edu($g, $arg);

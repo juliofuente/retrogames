@@ -10,6 +10,7 @@
    tele lo vean al momento. La contraseña y el historial del CMS van aparte, en data/cms.sqlite (fuera de git).   */
 
 declare(strict_types=1);
+require_once __DIR__ . '/sites.php';
 
 const CMS_INT = ['sort', 'lives', 'cap', 'physics', 'age_min', 'age_max'];
 const CMS_KINDS = ['game' => 'games', 'category' => 'categories', 'collection' => 'collections'];
@@ -144,7 +145,7 @@ function pwa_files(): array { $o = []; foreach (glob(__DIR__ . '/pwa/*.html') ?:
 /* ───────── página ───────── */
 function page(string $title, string $body, string $tab = ''): void {
   global $SITE_URL; $flash = $_SESSION['flash'] ?? ''; unset($_SESSION['flash']); $logged = !empty($_SESSION['cms_ok']);
-  $tabs = ['games' => '🎮 Juegos', 'cats' => '🗂️ Categorías', 'cols' => '📚 Colecciones', 'ajustes' => '⚙️ Ajustes', 'trash' => '🗑️ Papelera', 'log' => '🕓 Historial', 'backup' => '💾 Copia'];
+  $tabs = ['games' => '🎮 Juegos', 'cats' => '🗂️ Categorías', 'cols' => '📚 Colecciones', 'webs' => '🌐 Webs', 'ajustes' => '⚙️ Ajustes', 'trash' => '🗑️ Papelera', 'log' => '🕓 Historial', 'backup' => '💾 Copia'];
   header('Content-Type: text/html; charset=utf-8'); ?>
 <!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow">
 <title><?= e($title) ?> · CMS Arcade Perdido</title>
@@ -495,6 +496,75 @@ if ($p === 'trash') {
   <?php page('Papelera', (string)ob_get_clean(), 'trash');
 }
 
+/* ───────── webs por subdominio (tabla sites) ───────── */
+if ($p === 'webs' || $p === 'web') {
+  $a = arcade_db(); sites_ensure($a);
+  $webs = []; foreach ($a->query('SELECT * FROM sites ORDER BY sort, id') as $r) $webs[$r['id']] = $r;
+  $cols = rows('collection');
+  if ($p === 'webs') {
+    ob_start(); ?>
+  <h1>Webs</h1>
+  <p class="mut">Cada web es un subdominio (<code>arcadeplus.juegosboom.com</code>…) con sus colecciones y su aspecto. Desde una web no se puede pasar a otra: lo que no es suyo da 404. La web «*» sale con cualquier otro dominio (el principal, localhost…).</p>
+  <div class="card" style="padding:4px 10px"><table class="resp"><thead><tr><th></th><th>Web</th><th>Subdominio</th><th>Colecciones</th><th>Tele</th><th></th></tr></thead><tbody>
+  <?php foreach ($webs as $id => $w): ?>
+    <tr><td class="em"><span style="display:inline-grid;place-items:center;width:34px;height:34px;border-radius:10px;background:<?= e($w['c_bg']) ?>;border:3px solid <?= e($w['c_accent']) ?>"><?= e($w['emoji']) ?></span></td><td class="t"><b><?= e($w['name_es']) ?></b><small><?= e($w['font']) ?></small></td>
+      <td><code><?= e($w['host']) ?></code></td><td><?= e($w['collections'] === '*' ? 'Todas' : implode(', ', array_map(function ($c) use ($cols) { return $cols[$c]['name_es'] ?? $c; }, explode(',', $w['collections'])))) ?></td><td><?= $w['tv'] ? '📺 Sí' : 'No' ?></td>
+      <td class="acts"><a class="btn sm" href="<?= e(cms_url(['p' => 'web', 'id' => $id])) ?>">✏️ Editar</a></td></tr>
+  <?php endforeach ?></tbody></table></div>
+  <a class="btn pri" href="<?= e(cms_url(['p' => 'web'])) ?>">＋ Nueva web</a>
+  <?php page('Webs', (string)ob_get_clean(), 'webs');
+  }
+  $id = (string)($_GET['id'] ?? ''); $isNew = $id === ''; $err = '';
+  if (!$isNew && !isset($webs[$id])) go(['p' => 'webs'], 'No existe.');
+  $w = $isNew ? ['id' => '', 'host' => '', 'name_es' => '', 'name_en' => '', 'emoji' => '🎮', 'tag_es' => '', 'tag_en' => '', 'desc_es' => '', 'desc_en' => '', 'collections' => '*', 'tv' => 0, 'font' => 'Nunito', 'c_bg' => '#f6f4fb', 'c_surface' => '#ffffff', 'c_text' => '#1d1a2e', 'c_muted' => '#6c6884', 'c_accent' => '#ffce3a', 'c_ink' => '#2a2100', 'sort' => count($webs)] : $webs[$id];
+  if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!empty($_POST['delete']) && !$isNew) {
+      if ($w['host'] === '*') go(['p' => 'web', 'id' => $id], 'La web «*» no se puede borrar: es la que sale por defecto.');
+      $a->prepare('DELETE FROM sites WHERE id = ?')->execute([$id]); cms_log('cms', 'web ' . $id, 'borrada'); go(['p' => 'webs'], 'Web borrada.');
+    }
+    $row = $w; foreach (['host', 'name_es', 'name_en', 'emoji', 'tag_es', 'tag_en', 'desc_es', 'desc_en', 'font', 'c_bg', 'c_surface', 'c_text', 'c_muted', 'c_accent', 'c_ink'] as $k) if (isset($_POST[$k])) $row[$k] = trim((string)$_POST[$k]);
+    $row['host'] = strtolower($row['host']); $row['tv'] = empty($_POST['tv']) ? 0 : 1; $row['sort'] = (int)($_POST['sort'] ?? 0);
+    $sel = array_values(array_intersect((array)($_POST['cols'] ?? []), array_keys($cols))); $row['collections'] = !empty($_POST['all']) || !$sel ? '*' : implode(',', $sel);
+    if ($isNew) $row['id'] = cms_slug($row['host'] === '*' ? 'principal' : explode('.', $row['host'])[0]);
+    if (!preg_match('/^(\*|[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9-]+)*)$/', $row['host'])) $err = 'El subdominio solo puede llevar minúsculas, números, guiones y puntos (o «*»).';
+    foreach ($webs as $o) if ($o['id'] !== $id && ($o['host'] === $row['host'] || ($isNew && $o['id'] === $row['id']))) $err = 'Ya hay una web con ese subdominio.';
+    foreach (['c_bg', 'c_surface', 'c_text', 'c_muted', 'c_accent', 'c_ink'] as $k) if (!preg_match('/^#[0-9a-f]{6}$/i', $row[$k])) $err = 'Los colores tienen que ser del tipo #1a2b3c.';
+    if ($row['font'] !== '' && !preg_match('/^[A-Za-z0-9 ]{2,40}$/', $row['font'])) $err = 'La fuente es el nombre tal cual sale en Google Fonts (p. ej. «Baloo 2»).';
+    if ($row['name_es'] === '') $err = 'Falta el nombre.';
+    if (!$err) {
+      if ($row['name_en'] === '') $row['name_en'] = $row['name_es'];
+      $vals = array_map(function ($k) use ($row) { return $row[$k]; }, SITE_COLS);
+      if ($isNew) $a->prepare('INSERT INTO sites (' . implode(',', SITE_COLS) . ') VALUES (' . implode(',', array_fill(0, count(SITE_COLS), '?')) . ')')->execute($vals);
+      else { $set = array_values(array_diff(SITE_COLS, ['id'])); $a->prepare('UPDATE sites SET ' . implode(', ', array_map(function ($k) { return "$k = ?"; }, $set)) . ' WHERE id = ?')->execute(array_merge(array_map(function ($k) use ($row) { return $row[$k]; }, $set), [$id])); }
+      cms_log('cms', 'web ' . $row['id'], $isNew ? 'creada' : 'editada', $row['host']); go(['p' => 'webs'], $isNew ? 'Web creada.' : 'Guardado.');
+    }
+    $w = $row;
+  }
+  $on = $w['collections'] === '*' ? array_keys($cols) : explode(',', $w['collections']);
+  $col = function ($k, $label) use ($w) { return '<div><label>' . e($label) . '</label><input type="color" name="' . $k . '" value="' . e($w[$k]) . '" style="width:100%;height:42px;padding:2px"></div>'; };
+  $tx = function ($k, $label, $hint = '') use ($w) { return '<div><label>' . e($label) . '</label><input name="' . $k . '" value="' . e($w[$k] ?? '') . '">' . ($hint ? '<p class="hint">' . $hint . '</p>' : '') . '</div>'; };
+  ob_start(); ?>
+  <p><a href="<?= e(cms_url(['p' => 'webs'])) ?>">← Webs</a></p>
+  <h1><?= $isNew ? 'Nueva web' : e($w['emoji'] . ' ' . $w['name_es']) ?></h1>
+  <?php if ($err): ?><div class="flash err"><?= e($err) ?></div><?php endif ?>
+  <form method="post" class="card"><?= csrf_field() ?>
+  <div class="grid">
+    <?= $tx('host', 'Subdominio', '«arcadeplus» vale para arcadeplus.cualquierdominio.com; también puedes poner el host entero. «*» = la web por defecto.') ?>
+    <?= $tx('name_es', 'Nombre (español)') ?><?= $tx('name_en', 'Nombre (inglés)') ?><?= $tx('emoji', 'Emoji') ?>
+    <?= $tx('tag_es', 'Lema (español)') ?><?= $tx('tag_en', 'Lema (inglés)') ?>
+    <div class="w2"><label>Texto de la portada (español)</label><textarea name="desc_es" placeholder="Si lo dejas vacío, sale el de la colección"><?= e($w['desc_es']) ?></textarea></div>
+    <div class="w2"><label>Texto de la portada (inglés)</label><textarea name="desc_en"><?= e($w['desc_en']) ?></textarea></div>
+    <div class="full"><label>Colecciones</label><label style="display:inline-flex;gap:6px;margin-right:14px"><input type="checkbox" name="all" value="1"<?= $w['collections'] === '*' ? ' checked' : '' ?>> Todas</label>
+      <?php foreach ($cols as $cid => $c): ?><label style="display:inline-flex;gap:6px;margin-right:14px"><input type="checkbox" name="cols[]" value="<?= e($cid) ?>"<?= in_array($cid, $on, true) && $w['collections'] !== '*' ? ' checked' : '' ?>> <?= e($c['emoji'] . ' ' . $c['name_es']) ?></label><?php endforeach ?></div>
+    <div class="full"><label style="display:inline-flex;gap:8px"><input type="checkbox" name="tv" value="1"<?= $w['tv'] ? ' checked' : '' ?>> 📺 Web para la tele</label><p class="hint">Marcada: solo juegos con mando, siempre en modo TV y la portada es la de la tele. Sin marcar: nunca hay modo TV.</p></div>
+    <?= $tx('font', 'Fuente (Google Fonts)', 'Nunito, Rubik, Baloo 2, Lora, Fredoka, Playfair Display…') ?>
+    <?= $col('c_bg', 'Fondo') ?><?= $col('c_surface', 'Tarjetas y cabecera') ?><?= $col('c_text', 'Texto') ?><?= $col('c_muted', 'Texto suave') ?><?= $col('c_accent', 'Acento (botones)') ?><?= $col('c_ink', 'Texto sobre el acento') ?>
+    <div><label>Orden</label><input type="number" name="sort" value="<?= e($w['sort']) ?>"></div>
+  </div><p><button class="pri"><?= $isNew ? '＋ Crear' : '💾 Guardar' ?></button></p></form>
+  <?php if (!$isNew && $w['host'] !== '*'): ?><form method="post" class="bar"><?= csrf_field() ?><input type="hidden" name="delete" value="1"><button class="bad" data-confirm="¿Borrar esta web? Su subdominio pasará a mostrar la web por defecto.">🗑️ Borrar web</button></form><?php endif ?>
+  <?php page($isNew ? 'Nueva web' : $w['name_es'], (string)ob_get_clean(), 'webs');
+}
+
 /* ───────── ajustes ───────── */
 if ($p === 'ajustes') {
   $A = cms_ajustes(); $err = '';
@@ -512,7 +582,7 @@ if ($p === 'ajustes') {
   <form method="post" class="card"><?= csrf_field() ?><div class="grid">
     <div><label>Versión</label><input name="version" value="<?= e($A['version']['value']) ?>" pattern="\d+\.\d+\.\d+"><p class="hint">Súbela (p. ej. 2.23.1) cuando cambies juegos para que los móviles descarguen lo nuevo.</p></div>
     <div><label>Portada y listados</label><?= $sel('portada', ['1' => 'Sí: portada, categorías y colecciones', '0' => 'No: web solo de juegos (/<id>)']) ?></div>
-    <div><label>Modo de pantalla</label><?= $sel('modo', ['automatico' => 'Automático (detecta la tele)', 'seleccionable' => 'Seleccionable (botón 📺 / 📱)', 'modonormal' => 'Siempre táctil', 'modotv' => 'Siempre tele (mando)']) ?></div>
+    <div><label>Modo de pantalla</label><?= $sel('modo', ['automatico' => 'Automático (detecta la tele)', 'seleccionable' => 'Seleccionable (botón 📺 / 📱)', 'modonormal' => 'Siempre táctil', 'modotv' => 'Siempre tele (mando)']) ?><p class="hint">En la web manda cada subdominio (🌐 Webs): la de la tele siempre en modo TV y las demás nunca. Este ajuste vale para la PWA suelta y las apps.</p></div>
     <div><label>Idioma</label><?= $sel('idioma', ['auto' => 'Automático, con botón para cambiar', 'es' => 'Siempre español', 'en' => 'Siempre inglés']) ?></div>
     <div><label>Jugadores por turnos en la tele</label><?= $sel('jugadores_max', ['1' => '1', '2' => '2', '3' => '3', '4' => '4']) ?></div>
     <div><label>Rondas en partidas por turnos</label><input type="number" min="1" max="20" name="rondas_multijugador" value="<?= e($A['rondas_multijugador']['value']) ?>"></div>

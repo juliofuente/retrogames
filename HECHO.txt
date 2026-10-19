@@ -1,6 +1,11 @@
 ARCADE PERDIDO + ARCADE PRO — LO QUE ESTÁ HECHO
 ================================================
-Fecha: 19-10-2026 · Versión de la PWA (games.js → ARCADE_VERSION): 2.29.0
+Fecha: 19-10-2026 · Versión de la PWA (games.js → ARCADE_VERSION): 2.30.0
+· v2.30.0: una web por subdominio, configurada en la base de datos (tabla «sites», CMS → 🌐 Webs): arcade, arcadeplus,
+  mesa, solitarios, educativos y tv (más «*» para el dominio principal). Cada una tiene sus colecciones, nombre, lema,
+  fuente y colores, y no se puede pasar de una a otra (lo ajeno da 404). La de la tele solo tiene juegos con mando, va
+  siempre en modo TV y su portada es la de la tele; las demás nunca entran en modo TV. Manifest propio por web
+  (/manifest.webmanifest). Arreglado: /pwa/indexsolitarios no pasaba por index.php en Apache.
 · v2.29.0: 8 juegos nuevos (281 en total).
   - Arcade Pro: Torre giratoria (plataformas en una torre que gira, estilo Nebulus), Cohete ratón (puzle de flechas
     con ratones, gatos y agujeros, estilo ChuChu Rocket; los niveles se generan y se comprueban simulando),

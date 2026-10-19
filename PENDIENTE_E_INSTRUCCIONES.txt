@@ -6,6 +6,20 @@ ARCADE PRO — LO QUE QUEDA POR HACER E CMS (/cms)
   catálogo original. Los juegos del catálogo no se pueden cambiar de identificador (rompería las URLs).
 · El servidor necesita permiso de escritura en data/ (y en pwa/ para subir .html).
 
+WEBS POR SUBDOMINIO (tabla «sites» de data/arcade.sqlite · CMS → 🌐 Webs · código en sites.php)
+· Cada subdominio es una web aparte con sus colecciones, su nombre y su aspecto (fuente y 6 colores):
+  arcade → Arcade Perdido · arcadeplus → Arcade Pro · mesa → Juegos de mesa · solitarios → Solitarios ·
+  educativos → Educativos · tv → Arcade TV (todas las colecciones, solo juegos con mando). «*» = la web por defecto
+  (el dominio sin subdominio, localhost…), con todo.
+· Desde una web no se pasa a otra: juegos, fichas, colecciones, categorías y portadas de la PWA que no son suyos dan 404,
+  y las portadas de la PWA solo enseñan sus juegos (sin los botones a las otras colecciones).
+· Modo de pantalla: la web «tv» siempre en modo TV (su portada es la de la tele, pwa/indextv); las demás nunca
+  (ni detección automática, ni botón 📺, ni ?tv=1). El ajuste «modo» ya solo vale para la PWA suelta y las apps.
+· En el hosting: todos los subdominios tienen que apuntar a la MISMA carpeta (un subdominio comodín *.juegosboom.com, o
+  cada subdominio con la raíz en la carpeta de la web). DNS: un registro A o CNAME para cada subdominio (o *.juegosboom.com).
+  Si usas HTTPS, el certificado tiene que cubrir los subdominios (comodín o uno por subdominio).
+· Probar en local: curl -H "Host: arcadeplus.juegosboom.com" http://127.0.0.1:8080/
+
 INSTRUCCIONES PARA CONTINUAR (Claude Code)
 ================================================================================
 
