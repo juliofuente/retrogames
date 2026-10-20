@@ -150,7 +150,14 @@ static class Program
         Directory.CreateDirectory(Path.GetDirectoryName(j.Mp4)!);
         var tmp = j.Mp4 + ".part.mp4";
         var music = o.PickMusic();
-        using var ff = Ffmpeg.Start(o, tmp, music);
+        double seconds = (double)frames / o.Fps;
+        // efectos de sonido de la escena (marcas de tiempo que da la página): se sintetizan aquí en un WAV
+        string? sfx = null;
+        try {
+            var cues = JsonDocument.Parse((await page.Eval("JSON.stringify(window.arcadeRec.cues || [])")).GetString()!).RootElement;
+            if (cues.GetArrayLength() > 0 && !o.NoSfx) { sfx = j.Mp4 + ".sfx.wav"; Sfx.Write(sfx, cues, seconds); }
+        } catch (Exception e) { Console.WriteLine($"   (sin efectos de sonido: {e.Message})"); }
+        using var ff = Ffmpeg.Start(o, tmp, music, sfx, seconds);
         var stdin = ff.StandardInput.BaseStream;
         int last = -1; var sw = Stopwatch.StartNew();
         for (int f = 0; f < frames; f++)
@@ -166,6 +173,7 @@ static class Program
         stdin.Close();
         await ff.WaitForExitAsync();
         if (ff.ExitCode != 0 || !File.Exists(tmp)) { Console.WriteLine($"  ✗ {j.Id}: ffmpeg terminó con error {ff.ExitCode}"); return false; }
+        if (sfx != null) try { File.Delete(sfx); } catch { }
         File.Move(tmp, j.Mp4, true);
         File.WriteAllText(Path.ChangeExtension(j.Mp4, ".txt"), j.Quiz > 0 ? QuizCaption(info, j.Lang) : Caption(info, j.Lang));
         Console.WriteLine($"  ✓ {j.Mp4} ({new FileInfo(j.Mp4).Length / 1024} KB, {sw.Elapsed.TotalSeconds:0}s)");
@@ -198,7 +206,7 @@ static class Program
 class Options
 {
     public string Sitemap = ""; public string Out = "videos"; public List<string> Langs = new() { "es" }; public List<string> Formats = new() { "vertical" };
-    public string? Puzzles; public int Wait = 45, From = 1, To = 0; bool langSet;
+    public string? Puzzles; public int Wait = 45, From = 1, To = 0; bool langSet; public bool NoSfx; public double MusicVolume = 0.35;
     public int Duration = 75, Fps = 30, Intro = 3, Outro = 4, Parallel = 1, Crf = 21, Max = 0, JpegQuality = 90;
     public bool Redo; public string? Music, ChromePath, FfmpegPath = "ffmpeg"; public HashSet<string> Only = new();
     readonly Random rnd = new();
@@ -216,6 +224,8 @@ class Options
                 case "--web": o.Sitemap = v().TrimEnd('/') + "/sitemap.xml"; break;
                 case "--salida": o.Out = v(); break;
                 case "--puzles": o.Puzzles = v(); break;
+                case "--sin-efectos": o.NoSfx = true; break;
+                case "--volumen-musica": o.MusicVolume = double.Parse(v(), System.Globalization.CultureInfo.InvariantCulture); break;
                 case "--espera": o.Wait = int.Parse(v()); break;
                 case "--desde": o.From = int.Parse(v()); break;
                 case "--hasta": o.To = int.Parse(v()); break;
@@ -258,16 +268,72 @@ class Options
 /* ───────────── ffmpeg: recibe los JPEG por la entrada estándar ───────────── */
 static class Ffmpeg
 {
-    public static Process Start(Options o, string outFile, string? music)
+    public static Process Start(Options o, string outFile, string? music, string? sfx, double seconds)
     {
         var a = new List<string> { "-y", "-loglevel", "error", "-f", "image2pipe", "-framerate", o.Fps.ToString(), "-i", "-" };
-        if (music != null) a.AddRange(new[] { "-stream_loop", "-1", "-i", music });
+        int ia = 1, isfx = -1, imus = -1;
+        if (sfx != null) { a.AddRange(new[] { "-i", sfx }); isfx = ia++; }
+        if (music != null) { a.AddRange(new[] { "-stream_loop", "-1", "-i", music }); imus = ia++; }
         a.AddRange(new[] { "-map", "0:v", "-c:v", "libx264", "-pix_fmt", "yuv420p", "-preset", "veryfast", "-crf", o.Crf.ToString(), "-r", o.Fps.ToString() });
-        if (music != null) a.AddRange(new[] { "-map", "1:a", "-c:a", "aac", "-b:a", "160k", "-af", $"afade=t=in:d=1,afade=t=out:st={Math.Max(0, o.Duration - 2)}:d=2", "-shortest" });
+        string fade = $"afade=t=in:d=1,afade=t=out:st={Math.Max(0, seconds - 2):0.##}:d=2";
+        if (isfx >= 0 && imus >= 0)
+            a.AddRange(new[] { "-filter_complex", $"[{imus}:a]volume={o.MusicVolume.ToString(System.Globalization.CultureInfo.InvariantCulture)},{fade}[m];[{isfx}:a][m]amix=inputs=2:duration=first:normalize=0[a]", "-map", "[a]" });
+        else if (isfx >= 0) a.AddRange(new[] { "-map", isfx + ":a" });
+        else if (imus >= 0) a.AddRange(new[] { "-map", imus + ":a", "-af", fade });
+        if (isfx >= 0 || imus >= 0) a.AddRange(new[] { "-c:a", "aac", "-b:a", "160k", "-t", seconds.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture) });
         a.AddRange(new[] { "-movflags", "+faststart", outFile });
         var psi = new ProcessStartInfo(o.FfmpegPath!) { RedirectStandardInput = true, UseShellExecute = false };
         foreach (var x in a) psi.ArgumentList.Add(x);
         return Process.Start(psi) ?? throw new Exception("no se pudo arrancar ffmpeg");
+    }
+}
+
+/* ───────────── efectos de sonido sintetizados (tick, pop, ritmo, golpe, whoosh, campana…) ───────────── */
+static class Sfx
+{
+    const int SR = 44100;
+    public static void Write(string path, JsonElement cues, double seconds)
+    {
+        var buf = new float[(int)(seconds * SR) + SR];
+        var rnd = new Random(7);
+        foreach (var c in cues.EnumerateArray())
+        {
+            double t = c.GetProperty("t").GetDouble(); string k = c.GetProperty("s").GetString() ?? "";
+            int at = (int)(t * SR); if (at < 0 || at >= buf.Length) continue;
+            switch (k)
+            {
+                case "tick": Tone(buf, at, 0.05, f => 1500, 0.30, 60); break;
+                case "tock": Tone(buf, at, 0.14, f => 880, 0.55, 22); Tone(buf, at, 0.10, f => 1760, 0.18, 30); break;
+                case "pop": Tone(buf, at, 0.09, f => 500 + 700 * f, 0.32, 30); break;
+                case "kick": Tone(buf, at, 0.20, f => 150 - 105 * f, 0.75, 14); break;
+                case "hat": Noise(buf, at, 0.04, 0.10, 80, rnd, true); break;
+                case "boom": Tone(buf, at, 0.7, f => 90 - 60 * f, 0.9, 5); Noise(buf, at, 0.5, 0.35, 6, rnd, false); break;
+                case "whoosh": Whoosh(buf, at, 0.55, 0.45, rnd); break;
+                case "ding": foreach (var (fr, v) in new[] { (1046.5, 0.30), (1568.0, 0.18), (2093.0, 0.10) }) Tone(buf, at, 1.3, f => fr, v, 3.2); break;
+                case "drum": for (int i = 0; i < 14; i++) Noise(buf, at + (int)(i * 0.055 * SR), 0.05, 0.08 + i * 0.022, 50, rnd, false); break;
+            }
+        }
+        float peak = 0; foreach (var v in buf) peak = Math.Max(peak, Math.Abs(v));
+        float g = peak > 0.95f ? 0.95f / peak : 1f;
+        using var w = new BinaryWriter(File.Create(path));
+        int n = buf.Length; w.Write("RIFF"u8); w.Write(36 + n * 2); w.Write("WAVE"u8); w.Write("fmt "u8); w.Write(16); w.Write((short)1); w.Write((short)1); w.Write(SR); w.Write(SR * 2); w.Write((short)2); w.Write((short)16);
+        w.Write("data"u8); w.Write(n * 2); foreach (var v in buf) w.Write((short)Math.Clamp(v * g * 32767, -32768, 32767));
+    }
+    // tono con frecuencia variable (f(0..1)) y caída exponencial
+    static void Tone(float[] b, int at, double dur, Func<double, double> freq, double vol, double decay)
+    {
+        int n = (int)(dur * SR); double ph = 0;
+        for (int i = 0; i < n && at + i < b.Length; i++) { double f = (double)i / n; ph += 2 * Math.PI * freq(f) / SR; double env = Math.Exp(-decay * i / (double)SR) * Math.Min(1, i / (0.003 * SR)); b[at + i] += (float)(Math.Sin(ph) * vol * env); }
+    }
+    static void Noise(float[] b, int at, double dur, double vol, double decay, Random r, bool bright)
+    {
+        int n = (int)(dur * SR); double last = 0;
+        for (int i = 0; i < n && at + i < b.Length; i++) { double x = r.NextDouble() * 2 - 1, y = bright ? x - last : last + (x - last) * 0.15; last = bright ? x : y; b[at + i] += (float)(y * vol * Math.Exp(-decay * i / (double)SR)); }
+    }
+    static void Whoosh(float[] b, int at, double dur, double vol, Random r)
+    {
+        int n = (int)(dur * SR); double lp = 0;
+        for (int i = 0; i < n && at + i < b.Length; i++) { double f = (double)i / n, cut = 0.02 + 0.3 * f; lp += (r.NextDouble() * 2 - 1 - lp) * cut; b[at + i] += (float)(lp * vol * Math.Sin(Math.PI * f) * 2.2); }
     }
 }
 

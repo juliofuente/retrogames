@@ -6,7 +6,8 @@ Fecha: 19-10-2026 · Versión de la PWA (games.js → ARCADE_VERSION): 2.32.0
   la búsqueda y tardaba al cargar), ordenados de fácil a difícil, con sus soluciones guardadas. Más intuitivo: dibujado en canvas,
   tocar cerilla → tocar hueco (sin arrastrar), cómo se lee la cuenta en cada momento (✓/✗), cerillas que quedan, deshacer,
   reiniciar, pista en dos pasos (qué cerilla y a qué hueco), sin cronómetro que agobie, demo que resuelve y mando de TV.
-  Vídeos de retos para TikTok en inglés: ArcadeRecorder --puzles cerillas (common.js: def.recScene / def.recCount).
+  Vídeos de retos para TikTok en inglés: ArcadeRecorder --puzles cerillas (common.js: def.recScene / def.recCount), con
+  subtítulos palabra a palabra, efectos (llamas, confeti, destellos, zoom) y sonido sintetizado por el grabador (arcadeRec.cues).
 · v2.31.0: vídeos de cada juego con un programa C# (herramientas/grabador, ver su LEEME.txt): lee el sitemap, abre cada juego
   en Chrome sin ventana con ?rec=1 o el user agent «ArcadeRecorder», y el juego (modo grabación de common.js, window.arcadeRec)
   avanza fotograma a fotograma mientras el programa captura y ffmpeg monta el MP4 (vertical 1080×1920 y/o horizontal, 75 s,

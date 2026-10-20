@@ -10,11 +10,11 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
-<link rel="stylesheet" href="common.css?v=6d7635e467">
+<link rel="stylesheet" href="common.css">
 </head>
 <body class="game">
-<script src="config.js?v=84fed7f189"></script>
-<script src="common.js?v=57054bbc85"></script>
+<script src="config.js"></script>
+<script src="common.js"></script>
 <script>
 (function () {
   const { clamp } = Arcade;
@@ -50,7 +50,7 @@
   function geo(g) {
     const s = g.s, tk = s.tk, nd = tk.filter((t) => t.d).length, no = tk.length - nd;
     const W = g.W, top = g.top + 70, bot = g.bot - 150 - (g.demoOn ? 40 : 0);
-    s.L = Math.min((W - 30) / (nd * 1.5 + no * 1.2), (bot - top) / 3.2, s.vL || 92); s.th = Math.max(5, s.L * 0.14);
+    s.L = Math.min((W - (s.vMargin || 30)) / (nd * 1.5 + no * 1.2), (bot - top) / 3.2, s.vL || 92); s.th = Math.max(5, s.L * 0.14);
     const total = nd * s.L + (nd - 1 + no) * 0.5 * s.L + no * 0.7 * s.L;
     let x = W / 2 - total / 2; s.cy = s.vcy || top + (bot - top) * 0.45; const y0 = s.cy - s.L;
     s.pos = []; s.opx = [];
@@ -200,61 +200,166 @@
       for (const b of s.btn) { const on = b.k === 'undo' ? s.hist.length > 0 : b.k === 'reset' ? s.hist.length > 0 : !s.done; ctx.fillStyle = on ? (b.k === 'hint' ? '#f59f00' : 'rgba(255,255,255,.18)') : 'rgba(255,255,255,.07)'; Arcade.rr(ctx, b.x, b.y, b.w, b.h, 14); ctx.fill(); Arcade.txt(ctx, lab[b.k], b.x + b.w / 2, b.y + b.h / 2 + 1, 14, on ? '#fff' : 'rgba(255,255,255,.4)', 'center', 900); }
     },
 
-    /* ---------- vídeo de reto para TikTok (programa C# ArcadeRecorder --puzles): /cerillas/en?rec=1&quiz=N ---------- */
+    /* ---------- vídeo de reto estilo TikTok (ArcadeRecorder --puzles): /cerillas/en?rec=1&quiz=N&wait=45 ----------
+       Todo va en función del tiempo t (determinista): gancho, cerillas que caen, subtítulos palabra a palabra, cuenta atrás,
+       «TIME'S UP», solución con la cerilla en llamas, confeti y cierre. cues = sonidos que el grabador sintetiza en su sitio. */
     recCount: PUZ.length,
     recScene(g, Q) {
       if (!Q.has('quiz')) return null;
       const n = clamp(+Q.get('quiz') || 1, 1, PUZ.length), wait = +(Q.get('wait') || 45), host = Q.get('site') || location.host;
-      const P = PUZ[n - 1], tk = toks(P[0]), pl = plan(tk, P[3][0]), sol = P[3][0];
-      const t1 = 2.5, t2 = t1 + wait, t3 = t2 + 4.5, t4 = t3 + 3, dur = t4 + 4;
-      g.level = n; this.setup(g); const s = g.s; s.vcy = g.H * 0.47; s.vL = g.H * 0.105;
-      const big = (ctx, txt, y, size, col, w) => Arcade.txt(ctx, txt, g.W / 2, y, Math.min(size, (g.W * 0.92) / Math.max(6, txt.length) * 1.6), col || '#fff', 'center', 900, w || 'rgba(0,0,0,.45)');
-      const verb = { m: 'move', r: 'remove', a: 'add' }[P[1]], cnt = P[2] === 1 ? 'ONE match' : P[2] + ' matches';
+      const P = PUZ[n - 1], tk = toks(P[0]), pl = plan(tk, P[3][0]), sol = P[3][0], solSegs = segsOf(toks(sol));
+      const verb = { m: 'MOVE', r: 'REMOVE', a: 'ADD' }[P[1]], cnt = P[2] === 1 ? 'ONE' : String(P[2]).replace('2', 'TWO').replace('3', 'THREE').replace('4', 'FOUR');
+      // línea de tiempo
+      const T0 = 0, T1 = 2.4, T2 = 4.6, T3 = T2 + wait, T4 = T3 + 1.6, T5 = T4 + 2.6, T6 = T5 + 3, T7 = T6 + 2.4, DUR = T7 + 4.6;
+      g.level = n; this.setup(g); const s = g.s; s.vcy = g.H * 0.46; s.vL = g.H * 0.12; s.vMargin = 6;
+      // azar fijo por vídeo (mismo vídeo siempre)
+      let seed = n * 9301 + 49297; const rnd = () => ((seed = (seed * 233280 + 49297) % 2147483647) / 2147483647);
+      const embers = Array.from({ length: 70 }, () => ({ x: rnd(), y: rnd(), v: 0.03 + rnd() * 0.07, r: 1 + rnd() * 3, ph: rnd() * 6.3 }));
+      const floaters = Array.from({ length: 14 }, (_, i) => ({ e: ['🤔', '🔥', '🧠', '❓', '💡', '🤯'][i % 6], x: i % 2 ? 0.06 + rnd() * 0.14 : 0.8 + rnd() * 0.14, d: rnd() * 9, v: 0.05 + rnd() * 0.05 }));
+      const confetti = Array.from({ length: 140 }, () => ({ x: 0.5 + (rnd() - 0.5) * 0.3, vx: (rnd() - 0.5) * 1.6, vy: -0.6 - rnd() * 1.1, c: ['#ffd43b', '#ff6b6b', '#69db7c', '#4dabf7', '#f783ac', '#ff922b'][(rnd() * 6) | 0], r: rnd() * 6.3, s: 6 + rnd() * 8 }));
+      const rain = Array.from({ length: 26 }, () => ({ x: rnd(), d: rnd() * 4, v: 0.25 + rnd() * 0.25, r: rnd() * 6.3, vr: (rnd() - 0.5) * 4 }));
+      const lit = s.orig.map((v, i) => (v ? i : -1)).filter((i) => i >= 0);
+      const cues = [{ t: 0.05, s: 'boom' }];
+      lit.forEach((_, k) => { if (k % 2 === 0) cues.push({ t: 0.35 + k * 0.05, s: 'tick' }); });
+      [T1, T1 + 0.25, T1 + 0.5, T1 + 0.75, T1 + 1].forEach((t) => cues.push({ t, s: 'pop' }));
+      for (let t = T2; t < T3 - 0.01; t += 0.5) cues.push({ t, s: Math.round((t - T2) * 2) % 2 ? 'hat' : 'kick' });
+      for (let k = 1; k <= 10; k++) cues.push({ t: T3 - k, s: k <= 5 ? 'tock' : 'tick' });
+      cues.push({ t: T3, s: 'boom' }, { t: T4 + 0.1, s: 'drum' }, { t: T4 + 0.9, s: 'whoosh' }, { t: T5 - 0.2, s: 'ding' }, { t: T5, s: 'pop' }, { t: T6, s: 'pop' }, { t: T7, s: 'whoosh' }, { t: T7 + 0.4, s: 'ding' });
+      // utilidades de dibujo
+      const ease = (k) => 1 - Math.pow(1 - clamp(k, 0, 1), 3), back = (k) => { k = clamp(k, 0, 1); const c = 1.9; return 1 + (c + 1) * Math.pow(k - 1, 3) + c * Math.pow(k - 1, 2); };
+      const FONT = (sz) => '900 ' + sz + 'px ' + (Arcade.TFONT || Arcade.FONT);
+      function caption(ctx, words, x, y, size, t0, t, o = {}) {   // subtítulo TikTok: palabras que aparecen de golpe, contorno negro, la última en amarillo
+        ctx.save(); ctx.font = FONT(size); ctx.textBaseline = 'middle'; ctx.lineJoin = 'round';
+        const sp = size * 0.28, ws = words.map((w) => ctx.measureText(w).width), maxW = g.W * 0.9, lines = [[]]; let lw = 0;
+        words.forEach((w, i) => { if (lw + ws[i] > maxW && lines[lines.length - 1].length) { lines.push([]); lw = 0; } lines[lines.length - 1].push(i); lw += ws[i] + sp; });
+        const per = o.per || 0.22, shown = Math.floor((t - t0) / per) + 1;
+        lines.forEach((ln, li) => {
+          const tw = ln.reduce((a, i) => a + ws[i] + sp, -sp); let cx = x - tw / 2; const cy = y + (li - (lines.length - 1) / 2) * size * 1.18;
+          for (const i of ln) {
+            if (i < shown) {
+              const k = clamp((t - t0 - i * per) / 0.16, 0, 1), sc = 1 + (1 - back(k)) * -0.6 + (k < 1 ? 0.25 * (1 - k) : 0);
+              ctx.save(); ctx.translate(cx + ws[i] / 2, cy); ctx.scale(sc, sc); ctx.rotate((o.tilt || 0) * Math.sin(i * 1.7));
+              ctx.lineWidth = size * 0.2; ctx.strokeStyle = '#000'; ctx.strokeText(words[i], -ws[i] / 2, 0);
+              ctx.fillStyle = o.color ? o.color(i) : i === shown - 1 && shown <= words.length && t - t0 < words.length * per + 0.4 ? '#ffe066' : '#fff'; ctx.fillText(words[i], -ws[i] / 2, 0);
+              ctx.restore();
+            }
+            cx += ws[i] + sp;
+          }
+        });
+        ctx.restore();
+      }
+      function pill(ctx, txt, x, y, size, bg, fg) { ctx.save(); ctx.font = FONT(size); const w = ctx.measureText(txt).width + size * 1.2; ctx.fillStyle = bg; Arcade.rr(ctx, x - w / 2, y - size * 0.8, w, size * 1.6, size * 0.8); ctx.fill(); ctx.fillStyle = fg; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(txt, x, y + 1); ctx.restore(); }
+      function flame(ctx, x, y, sz, t, k = 1) {   // llama de la cabeza de la cerilla
+        for (let i = 0; i < 3; i++) { const f = Math.sin(t * 22 + i * 2) * 0.12; ctx.save(); ctx.globalAlpha = 0.45 * k; ctx.fillStyle = ['#ff6b00', '#ffa94d', '#fff3bf'][i]; ctx.beginPath(); const r = sz * (1 - i * 0.28); ctx.ellipse(x, y - r * 0.6, r * 0.55 * (1 + f), r * (1.1 - f), 0, 0, 6.3); ctx.fill(); ctx.restore(); }
+        Arcade.emoji(ctx, '🔥', x, y - sz * 0.8, sz * 1.3 * k);
+      }
+      const headOf = (i, lift = 0) => { const [x1, y1, x2, y2] = segEnds(s, i); return [x2 - (x2 - x1) * 0.08, y2 - (y2 - y1) * 0.08 - lift]; };
       return {
-        dur,
+        dur: DUR, cues,
+        info: { puzzle: n, total: PUZ.length, equation: pretty(P[0]), action: verb.toLowerCase(), count: P[2], solution: pretty(sol), url: 'https://' + host + '/cerillas' },
         frame(t, dt, ctx) {
           const W = g.W, H = g.H; g.rt = t; geo(g);
-          const bg = ctx.createRadialGradient(W / 2, H * 0.45, 30, W / 2, H * 0.45, H * 0.8); bg.addColorStop(0, '#6b4226'); bg.addColorStop(1, '#1a0f07'); ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
-          // cabecera
-          big(ctx, '🔥 Matchstick puzzle #' + n, H * 0.1, 30, '#ffd8a8');
-          big(ctx, 'How would you solve this?', H * 0.17, 34);
-          big(ctx, 'You can ' + verb + ' ' + cnt, H * 0.225, 26, '#ffe066');
-          // la operación: antes, durante la animación y después
-          let segs = s.orig, k = 0;
-          if (t >= t2) k = clamp((t - t2 - 0.8) / 1.6, 0, 1);
-          const solved = t >= t2 + 2.6;
-          if (t < t2 + 0.8 || !solved) {
-            drawEq(g, ctx, segs, { skip: (i) => k > 0 && pl.from.includes(i), glow: (i) => (t >= t2 && t < t2 + 0.8 && pl.from.includes(i) ? 'rgba(255,107,107,' + (0.5 + 0.5 * Math.sin(t * 12)) + ')' : null), slotCol: (i) => (t >= t2 && pl.to.includes(i) ? 'rgba(105,219,124,.8)' : 'rgba(255,240,210,.16)') });
-            if (k > 0) pl.from.forEach((fi, m) => {   // las cerillas viajan (mover), salen volando (quitar)…
-              const [a1, b1, a2, b2] = segEnds(s, fi), ti = pl.to[m];
-              if (ti != null) { const [c1, d1, c2, d2] = segEnds(s, ti), e = k * k * (3 - 2 * k), up = Math.sin(k * Math.PI) * s.L * 0.6; stick(ctx, a1 + (c1 - a1) * e, b1 + (d1 - b1) * e - up, a2 + (c2 - a2) * e, b2 + (d2 - b2) * e - up, s.th, { glow: '#ffd43b' }); }
-              else { ctx.save(); ctx.globalAlpha = 1 - k; ctx.translate(0, -k * 120); stick(ctx, a1, b1, a2, b2, s.th); ctx.restore(); }
-            });
-            if (k > 0 && P[1] === 'a') pl.to.forEach((ti) => { const [c1, d1, c2, d2] = segEnds(s, ti); stick(ctx, c1, d1, c2, d2, s.th, { alpha: k, glow: '#69db7c' }); });
-          } else drawEq(g, ctx, segsOf(toks(sol)), { glow: (i) => (pl.to.includes(i) ? '#69db7c' : null), slots: false });
-          // cuenta atrás
-          if (t >= t1 && t < t2) {
-            const left = Math.ceil(t2 - t), f = (t2 - t) / wait, r = Math.min(W, H) * 0.11, cy = H * 0.74;
-            ctx.lineWidth = r * 0.16; ctx.strokeStyle = 'rgba(255,255,255,.15)'; ctx.beginPath(); ctx.arc(W / 2, cy, r, 0, Math.PI * 2); ctx.stroke();
-            ctx.strokeStyle = left <= 10 ? '#ff6b6b' : '#ffd43b'; ctx.beginPath(); ctx.arc(W / 2, cy, r, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * f); ctx.stroke();
-            big(ctx, String(left), cy + 2, r * 1.05, left <= 10 ? '#ffa8a8' : '#fff');
-            big(ctx, left > 30 ? 'Pause the video and think 🤔' : left > 10 ? 'Comment your answer 👇' : 'Solution coming…', H * 0.86, 22, '#ffe8cc');
+          // cámara: pequeños golpes de zoom y temblor en los momentos fuertes
+          const punch = (tp, a, d = 0.35) => (t >= tp && t < tp + d ? a * (1 - (t - tp) / d) : 0);
+          const zoom = 1 + punch(0.25, 0.06) + punch(T3, 0.1) + punch(T5 - 0.2, 0.07) + 0.015 * Math.sin(t * 0.9);
+          const shake = punch(T3, 14, 0.5) + punch(0.6, 6, 0.3);
+          // fondo animado
+          const hue = (t * 6) % 360, bg = ctx.createRadialGradient(W / 2, H * 0.45, 20, W / 2, H * 0.5, H * 0.85);
+          bg.addColorStop(0, t >= T3 && t < T4 ? '#7a1f12' : '#7b4a24'); bg.addColorStop(0.55, '#3b210f'); bg.addColorStop(1, '#120904'); ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+          ctx.save(); ctx.globalAlpha = 0.12; ctx.translate(W / 2, H * 0.46); ctx.rotate(t * 0.15);
+          for (let k = 0; k < 12; k++) { ctx.rotate(Math.PI / 6); ctx.fillStyle = k % 2 ? '#ffb347' : '#ff7a00'; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(-W * 0.12, H); ctx.lineTo(W * 0.12, H); ctx.fill(); }
+          ctx.restore(); void hue;
+          for (const e of embers) { const y = ((e.y - t * e.v) % 1 + 1) % 1, x = e.x + Math.sin(t * 1.3 + e.ph) * 0.02; ctx.globalAlpha = 0.25 + 0.5 * (1 - y); ctx.fillStyle = '#ffb347'; ctx.beginPath(); ctx.arc(x * W, y * H, e.r, 0, 6.3); ctx.fill(); }
+          ctx.globalAlpha = 1;
+          ctx.save(); ctx.translate(W / 2 + (shake ? (Math.sin(t * 90) * shake) : 0), H / 2 + (shake ? Math.cos(t * 77) * shake : 0)); ctx.scale(zoom, zoom); ctx.translate(-W / 2, -H / 2);
+          // barra de progreso arriba (estilo historia)
+          if (t >= T2 && t < T3) { const f = (t - T2) / wait; ctx.fillStyle = 'rgba(255,255,255,.18)'; Arcade.rr(ctx, 20, 18, W - 40, 8, 4); ctx.fill(); ctx.fillStyle = T3 - t < 10 ? '#ff6b6b' : '#ffd43b'; Arcade.rr(ctx, 20, 18, (W - 40) * (1 - f), 8, 4); ctx.fill(); }
+          // etiqueta del reto
+          if (t < T7) { const k = back((t - 0.1) / 0.4); ctx.save(); ctx.translate(W / 2, H * 0.075); ctx.scale(k, k); pill(ctx, '🔥 PUZZLE #' + n, 0, 0, 20, '#ff922b', '#fff'); ctx.restore(); }
+          if (t >= T2 && t < T3) { for (const fl of floaters) { const y = 1.02 - (((t - T2) * fl.v + fl.d / 9) % 0.45); ctx.globalAlpha = clamp((y - 0.57) * 6, 0, 0.75) * clamp((1.02 - y) * 8, 0, 1); Arcade.emoji(ctx, fl.e, fl.x * W + Math.sin(t * 2 + fl.d) * 10, y * H, 34); } ctx.globalAlpha = 1; }
+          // ---- la operación ----
+          const solving = t >= T4 + 0.6, mv = clamp((t - (T4 + 0.9)) / 1.4, 0, 1), done = t >= T5 - 0.2;
+          for (const [x, c] of s.opx) { const k = back((t - 0.15) / 0.35); ctx.save(); ctx.translate(x, s.cy); ctx.scale(k, k); Arcade.txt(ctx, OPS[c], 0, 2, s.L * 0.75, '#fff3d6', 'center', 900, 'rgba(0,0,0,.5)'); ctx.restore(); }
+          const base = done ? solSegs : s.orig;
+          for (let i = 0; i < base.length; i++) {
+            const [x1, y1, x2, y2] = segEnds(s, i);
+            const isTo = pl.to.includes(i), isFrom = pl.from.includes(i);
+            if (!base[i]) { stick(ctx, x1, y1, x2, y2, s.th, { ghost: solving && !done && isTo ? 'rgba(105,219,124,' + (0.6 + 0.4 * Math.sin(t * 14)) + ')' : 'rgba(255,240,210,.14)' }); continue; }
+            if (!done && solving && isFrom && mv > 0) continue;   // esta va volando
+            // caída inicial: cada cerilla cae desde arriba con un pequeño rebote
+            const k0 = clamp((t - 0.3 - lit.indexOf(i) * 0.05) / 0.45, 0, 1), drop = t < 2 ? (1 - back(k0)) * H * 0.5 : 0;
+            if (k0 <= 0) continue;
+            const glow = done && isTo ? '#69db7c' : t >= T4 && t < T4 + 0.9 && isFrom ? 'rgba(255,107,0,1)' : t >= T2 && t < T3 && (t * 0.5 % 1) < 0.08 ? 'rgba(255,212,59,.6)' : null;
+            stick(ctx, x1, y1 - drop, x2, y2 - drop, s.th, { glow });
+            if (t >= T4 + 0.1 && t < T4 + 0.9 && isFrom) { const [hx, hy] = headOf(i); flame(ctx, hx, hy, s.th * 2.2, t, clamp((t - T4 - 0.1) * 3, 0, 1)); }
           }
-          if (t < t1) big(ctx, pretty(P[0]) + '  ✗', H * 0.74, 30, '#ffa8a8');
-          if (t >= t2 && t < t3) { big(ctx, 'SOLUTION 👇', H * 0.72, 34, '#69db7c'); if (solved) big(ctx, pretty(sol) + '  ✓', H * 0.8, 34, '#fff', 'rgba(47,158,68,.9)'); }
-          if (t >= t3 && t < t4) { big(ctx, pretty(sol) + '  ✓', H * 0.74, 34, '#fff', 'rgba(47,158,68,.9)'); big(ctx, 'Did you get it? 😎', H * 0.83, 28, '#ffe066'); }
-          // cierre
-          if (t >= t4) {
-            const a = clamp((t - t4) / 0.5, 0, 1); ctx.globalAlpha = a; ctx.fillStyle = 'rgba(20,10,4,.92)'; ctx.fillRect(0, 0, W, H);
-            Arcade.emoji(ctx, '🔥', W / 2, H * 0.32, Math.min(W, H) * 0.22);
-            big(ctx, 'Play ' + PUZ.length + ' puzzles like this', H * 0.48, 36);
-            big(ctx, 'free, no ads, no download', H * 0.55, 24, '#ffe8cc');
-            const url = host + '/cerillas', w = Math.min(W * 0.94, url.length * 17 + 60); ctx.fillStyle = '#ff922b'; Arcade.rr(ctx, W / 2 - w / 2, H * 0.62, w, 64, 32); ctx.fill();
-            big(ctx, url, H * 0.62 + 33, 30, '#fff', 'rgba(0,0,0,.3)');
-            ctx.globalAlpha = 1;
+          // la cerilla de la solución: vuela en llamas (mover), se quema y desaparece (quitar) o aparece con chispas (añadir)
+          if (solving && !done) pl.from.forEach((fi, m) => {
+            const [a1, b1, a2, b2] = segEnds(s, fi), ti = pl.to[m];
+            if (ti != null) { const [c1, d1, c2, d2] = segEnds(s, ti), e = ease(mv), up = Math.sin(mv * Math.PI) * s.L * 0.9, rot = Math.sin(mv * Math.PI) * 0.6;
+              const cx = (a1 + a2) / 2 + ((c1 + c2) / 2 - (a1 + a2) / 2) * e, cy = (b1 + b2) / 2 + ((d1 + d2) / 2 - (b1 + b2) / 2) * e - up;
+              for (let k = 1; k <= 6; k++) { const e2 = ease(mv - k * 0.03), up2 = Math.sin((mv - k * 0.03) * Math.PI) * s.L * 0.9; ctx.globalAlpha = 0.5 - k * 0.07; ctx.fillStyle = '#ffb347'; ctx.beginPath(); ctx.arc((a1 + a2) / 2 + ((c1 + c2) / 2 - (a1 + a2) / 2) * e2, (b1 + b2) / 2 + ((d1 + d2) / 2 - (b1 + b2) / 2) * e2 - up2, s.th * (1.2 - k * 0.12), 0, 6.3); ctx.fill(); }
+              ctx.globalAlpha = 1; ctx.save(); ctx.translate(cx, cy); ctx.rotate(rot);
+              const hx = ((a2 - a1) + ((c2 - c1) - (a2 - a1)) * e) / 2, hy = ((b2 - b1) + ((d2 - d1) - (b2 - b1)) * e) / 2;
+              stick(ctx, -hx, -hy, hx, hy, s.th * 1.15, { glow: '#ffd43b' }); flame(ctx, hx, hy, s.th * 2.4, t, 1 - mv * 0.5); ctx.restore(); }
+            else { const k = mv; ctx.save(); ctx.globalAlpha = 1 - k; stick(ctx, a1, b1 - k * 60, a2, b2 - k * 60, s.th, { burnt: k > 0.3 }); ctx.restore(); flame(ctx, (a1 + a2) / 2, (b1 + b2) / 2 - k * 60, s.th * 3 * (1 - k * 0.5), t, 1 - k);
+              for (let q = 0; q < 6; q++) { ctx.globalAlpha = (1 - k) * 0.4; ctx.fillStyle = '#888'; ctx.beginPath(); ctx.arc((a1 + a2) / 2 + Math.sin(q * 2 + t * 3) * 20, (b1 + b2) / 2 - k * 120 - q * 12, 6 + q * 2, 0, 6.3); ctx.fill(); } ctx.globalAlpha = 1; }
+          });
+          if (solving && !done && P[1] === 'a') pl.to.forEach((ti) => { const [c1, d1, c2, d2] = segEnds(s, ti); stick(ctx, c1, d1, c2, d2, s.th, { alpha: mv, glow: '#69db7c' }); const [hx, hy] = headOf(ti); if (mv < 1) flame(ctx, hx, hy, s.th * 2, t, mv); });
+          // ---- textos y fases ----
+          const capY = H * 0.215;
+          if (t < T1) caption(ctx, ['ONLY', '1%', 'CAN', 'SOLVE', 'THIS', '🤯'], W / 2, capY, 46, 0.15, t, { per: 0.2 });
+          else if (t < T2) caption(ctx, [verb, cnt, P[2] === 1 ? 'MATCH' : 'MATCHES', 'TO', 'FIX', 'IT', '🔥'], W / 2, capY, 44, T1, t, { per: 0.25 });
+          else if (t < T3) {
+            const left = T3 - t, msgs = [['PAUSE', 'AND', 'THINK', '🤔'], [verb, 'ONLY', cnt, P[2] === 1 ? 'MATCH' : 'MATCHES'], ['COMMENT', 'YOUR', 'ANSWER', '👇'], ['TAG', 'A', 'FRIEND', 'WHO', 'CAN', '🧠'], ['LAST', '10', 'SECONDS', '⏰']];
+            const idx = left <= 10 ? 4 : Math.floor((t - T2) / 8.5) % 4, start = left <= 10 ? T3 - 10 : T2 + Math.floor((t - T2) / 8.5) * 8.5;
+            caption(ctx, msgs[idx], W / 2, capY, 42, start, t, { per: 0.18 });
+          } else if (t < T4) { const k = back((t - T3) / 0.3); ctx.save(); ctx.translate(W / 2, capY); ctx.scale(k, k); ctx.rotate(-0.06); pill(ctx, "⏰ TIME'S UP!", 0, 0, 42, '#e03131', '#fff'); ctx.restore(); }
+          else if (t < T5) caption(ctx, ['HERE’S', 'THE', 'ANSWER', '👇'], W / 2, capY, 46, T4, t, { per: 0.2 });
+          else if (t < T6) caption(ctx, ['DID', 'YOU', 'GET', 'IT?', '😎'], W / 2, capY, 48, T5 + 0.3, t, { per: 0.2 });
+          else if (t < T7) caption(ctx, ['COMMENT', 'YES', 'OR', 'NO', '👇'], W / 2, capY, 46, T6, t, { per: 0.2, color: (i) => (i === 1 ? '#69db7c' : i === 3 ? '#ff6b6b' : '#fff') });
+          // lectura de la operación (mal / bien)
+          if (t >= 1.3 && t < T7) {
+            const ok = t >= T5 - 0.2, txt = pretty(ok ? sol : P[0]) + (ok ? '  ✓' : '  ✗'), k = back((t - (ok ? T5 - 0.2 : 1.3)) / 0.35), y = s.cy + s.L * 1.95;
+            ctx.save(); ctx.translate(W / 2, y); ctx.scale(k, k); if (!ok) ctx.rotate(Math.sin(t * 3) * 0.02); pill(ctx, txt, 0, 0, 34, ok ? '#2f9e44' : 'rgba(224,49,49,.92)', '#fff'); ctx.restore();
+          }
+          // sello SOLVED
+          if (t >= T5 && t < T7) { const k = clamp((t - T5) / 0.25, 0, 1), sc = 2.4 - 1.4 * ease(k); ctx.save(); ctx.globalAlpha = k; ctx.translate(W * 0.72, s.cy - s.L * 1.55); ctx.rotate(-0.22); ctx.scale(sc, sc); ctx.strokeStyle = '#69db7c'; ctx.lineWidth = 5; ctx.font = FONT(30); const w = ctx.measureText('SOLVED ✅').width + 26; Arcade.rr(ctx, -w / 2, -24, w, 48, 10); ctx.stroke(); ctx.fillStyle = '#69db7c'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('SOLVED ✅', 0, 2); ctx.restore(); }
+          // cuenta atrás
+          if (t >= T2 && t < T3) {
+            const left = Math.ceil(T3 - t), f = (T3 - t) / wait, frac = (T3 - t) % 1, cy = H * 0.76;
+            if (left <= 5) {   // números gigantes que golpean
+              const k = 1 - frac, sc = 1.8 - 0.8 * ease(k * 3); ctx.save(); ctx.globalAlpha = clamp(frac * 3, 0, 1); ctx.translate(W / 2, cy); ctx.scale(sc, sc);
+              ctx.font = FONT(130); ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.lineWidth = 16; ctx.strokeStyle = '#000'; ctx.strokeText(String(left), 0, 0); ctx.fillStyle = '#ff6b6b'; ctx.fillText(String(left), 0, 0); ctx.restore();
+            } else {
+              const r = Math.min(W, H) * 0.12, pulse = 1 + 0.05 * Math.max(0, 1 - (1 - frac) * 5);
+              ctx.save(); ctx.translate(W / 2, cy); ctx.scale(pulse, pulse);
+              ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.beginPath(); ctx.arc(0, 0, r * 1.18, 0, 6.3); ctx.fill();
+              ctx.lineCap = 'round'; ctx.lineWidth = r * 0.18; ctx.strokeStyle = 'rgba(255,255,255,.15)'; ctx.beginPath(); ctx.arc(0, 0, r, 0, 6.3); ctx.stroke();
+              ctx.strokeStyle = left <= 10 ? '#ff6b6b' : '#ffd43b'; ctx.beginPath(); ctx.arc(0, 0, r, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * f); ctx.stroke();
+              const ang = -Math.PI / 2 + Math.PI * 2 * f; Arcade.emoji(ctx, '🔥', Math.cos(ang) * r, Math.sin(ang) * r, r * 0.45);
+              ctx.font = FONT(r * 0.95); ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.lineWidth = 8; ctx.strokeStyle = '#000'; ctx.strokeText(String(left), 0, 4); ctx.fillStyle = '#fff'; ctx.fillText(String(left), 0, 4);
+              ctx.restore();
+            }
+          }
+          // confeti tras resolver
+          if (t >= T5 - 0.2 && t < T7) { const k = t - (T5 - 0.2); for (const c of confetti) { const x = (c.x + c.vx * k * 0.25) * W, y = H * 0.42 + (c.vy * k + 0.9 * k * k) * H * 0.35; if (y > H + 20) continue; ctx.save(); ctx.translate(x, y); ctx.rotate(c.r + k * 6); ctx.fillStyle = c.c; ctx.fillRect(-c.s / 2, -c.s / 4, c.s, c.s / 2); ctx.restore(); } }
+          ctx.restore();   // fin cámara
+          // destellos de pantalla
+          const fl = punch(T3, 0.7, 0.4) + punch(T5 - 0.2, 0.5, 0.35) + punch(0.25, 0.25, 0.25);
+          if (fl > 0) { ctx.fillStyle = 'rgba(255,255,255,' + fl + ')'; ctx.fillRect(0, 0, W, H); }
+          if (t >= T3 - 5 && t < T3) { const frac = (T3 - t) % 1; if (frac > 0.85) { ctx.fillStyle = 'rgba(255,60,60,' + (frac - 0.85) * 1.2 + ')'; ctx.fillRect(0, 0, W, H); } }
+          // ---- cierre ----
+          if (t >= T7) {
+            const k = clamp((t - T7) / 0.4, 0, 1); ctx.fillStyle = 'rgba(18,9,4,' + 0.93 * k + ')'; ctx.fillRect(0, 0, W, H);
+            for (const r of rain) { const y = ((t - T7) * r.v + r.d / 4) % 1.2 - 0.1; ctx.save(); ctx.globalAlpha = 0.5 * k; ctx.translate(r.x * W, y * H); ctx.rotate(r.r + (t - T7) * r.vr); stick(ctx, -20, 0, 20, 0, 6); ctx.restore(); }
+            const e = back((t - T7 - 0.1) / 0.5); ctx.save(); ctx.globalAlpha = k; ctx.translate(W / 2, H * 0.3); ctx.scale(e, e); ctx.rotate(Math.sin(t * 3) * 0.08); Arcade.emoji(ctx, '🔥', 0, 0, Math.min(W, H) * 0.22); ctx.restore();
+            caption(ctx, ['PLAY', String(PUZ.length), 'PUZZLES', 'LIKE', 'THIS'], W / 2, H * 0.47, 46, T7 + 0.3, t, { per: 0.16, color: (i) => (i === 1 ? '#ffd43b' : '#fff') });
+            if (t > T7 + 1.2) { const e2 = back((t - T7 - 1.2) / 0.35); ctx.save(); ctx.translate(W / 2, H * 0.56); ctx.scale(e2, e2); pill(ctx, 'FREE • NO ADS • NO DOWNLOAD', 0, 0, 18, 'rgba(255,255,255,.14)', '#ffe8cc'); ctx.restore(); }
+            if (t > T7 + 1.6) { const e3 = back((t - T7 - 1.6) / 0.4), bob = 1 + 0.04 * Math.sin(t * 6); ctx.save(); ctx.translate(W / 2, H * 0.67); ctx.scale(e3 * bob, e3 * bob); const url = host + '/cerillas'; ctx.font = FONT(24); const w = Math.min(W * 0.94, ctx.measureText(url).width + 60); ctx.fillStyle = '#ff922b'; Arcade.rr(ctx, -w / 2, -34, w, 68, 34); ctx.fill(); ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(url, 0, 2); ctx.restore(); Arcade.emoji(ctx, '👆', W / 2 + Math.sin(t * 5) * 6, H * 0.76 + Math.abs(Math.sin(t * 5)) * 10, 46); }
+            if (t > T7 + 2.3) caption(ctx, ['FOLLOW', 'FOR', 'DAILY', 'PUZZLES', '➕'], W / 2, H * 0.86, 30, T7 + 2.3, t, { per: 0.12 });
           }
         },
-        info: { puzzle: n, total: PUZ.length, equation: pretty(P[0]), action: verb, count: P[2], solution: pretty(sol), url: 'https://' + host + '/cerillas' },
       };
     },
   });

@@ -1327,6 +1327,7 @@
         ready: false, fps: FPS, frames: total,
         info: Object.assign({ id: def.id, title, tag, emoji: def.emoji || '', origin: def.origin || '', url: location.protocol + '//' + HOST + '/' + def.id, lang: A.lang }, CUST && CUST.info || {}),
         quizCount: def.recCount || 0,
+        cues: CUST && CUST.cues || [],   // sonidos de la escena: [{ t (s), s: 'tick'|'tock'|'pop'|'kick'|'hat'|'boom'|'whoosh'|'ding'|'drum' }]
         step(n = 1) {
           if (CUST) {
             for (let i = 0; i < n && f < total; i++) { f++; ctx.setTransform(A.dpr, 0, 0, A.dpr, 0, 0); ctx.save(); CUST.frame(f / FPS, 1 / FPS, ctx); ctx.restore(); }

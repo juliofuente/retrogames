@@ -51,3 +51,10 @@ Vídeos de retos (un vídeo por problema): --puzles <id>
   dotnet run -c Release -- --web https://mobilehits.juegosboom.com --puzles cerillas --desde 1 --hasta 20 --idioma en
   Salida: videos/cerillas/en/vertical/cerillas-001.mp4 … (unos 59 s cada uno: 2,5 s de entrada, 45 de espera, 7,5 de solución y 4 de cierre)
   En la página: /cerillas/en?rec=1&quiz=N&wait=45&site=<host>; window.arcadeRec.quizCount = número de retos.
+
+Estilo TikTok de los retos (cerillas): gancho «ONLY 1% CAN SOLVE THIS 🤯», cerillas que caen y rebotan, subtítulos palabra a
+palabra con contorno, fondo de rayos y brasas, emojis flotando, barra de progreso y cuenta atrás (los 5 últimos segundos en
+números gigantes con destello rojo), «TIME'S UP!», la cerilla de la solución se enciende y vuela en llamas (o se quema),
+sello «SOLVED ✅», confeti y cierre con cerillas cayendo y el enlace.
+Sonido: la página da las marcas (window.arcadeRec.cues) y el programa sintetiza los efectos (ritmo, ticks, golpes, whoosh,
+redoble, campana) en un WAV que mezcla con la música si se pone --musica (a --volumen-musica 0.35). --sin-efectos los quita.
