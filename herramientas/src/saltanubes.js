@@ -1,0 +1,108 @@
+// Salta nubes|#1c7ed6
+(function () {
+  const { rand, ri, clamp, pick } = Arcade;
+  const T = Arcade.T;
+  function geo(g) { const s = g.s; s.k = clamp((g.bot - g.top) / 700, 0.75, 1.5); s.G = 1500 * s.k; s.JV = Math.sqrt(2 * s.G * 230 * s.k); s.HM = 230 * s.k; s.pw = clamp(g.W / 5.5, 56, 96); s.ph = 14; s.VX = 330 * s.k; }
+  function gen(g, upTo) {
+    const s = g.s, L = g.lv;
+    while (s.topGen < upTo) {
+      const gap = clamp(rand(0.25, 0.55 + L * 0.015) * s.HM, 30, s.HM * 0.82);
+      s.topGen += gap; const h = s.topGen;
+      const r = Math.random(), type = h < 300 ? 'n' : L >= 3 && r < clamp(0.06 + L * 0.01, 0, 0.2) ? 'break' : L >= 2 && r < 0.35 ? 'move' : r < 0.42 ? 'spring' : 'n';
+      const pl = { x: rand(s.pw / 2, g.W - s.pw / 2), h, type, dir: Math.random() < 0.5 ? -1 : 1, sp: rand(40, 70 + L * 4) * s.k, gone: false };
+      s.plats.push(pl);
+      if (type === 'break') { s.topGen -= gap * 0.5; s.plats.push({ x: clamp(pl.x + rand(-1, 1) * s.pw * 1.4, s.pw / 2, g.W - s.pw / 2), h: h + rand(-12, 12), type: 'n', dir: 1, sp: 0 }); }
+      if (L >= 4 && h > 600 && Math.random() < clamp(0.02 + L * 0.004, 0, 0.09)) s.foes.push({ x: rand(30, g.W - 30), h: h + s.HM * 0.45, ph: rand(0, 6), e: Arcade.foe(ri(0, 20)), dead: false });
+      if (Math.random() < 0.12) s.stars.push({ x: rand(20, g.W - 20), h: h + 40, got: false });
+    }
+  }
+  function respawn(g) {
+    const s = g.s, p = s.p, base = s.cam + 40, pl = s.plats.filter((q) => q.h > base && q.type !== 'break').sort((a, b) => a.h - b.h)[0] || s.plats[0];
+    pl.type = 'n'; Object.assign(p, { x: pl.x, h: pl.h + 4, vy: s.JV, inv: 1.5 }); s.dead = false;
+  }
+  function die(g, why) {
+    const s = g.s; if (s.dead || s.won) return; s.dead = true; Arcade.sfx.lose(); g.message(why, 0.9);
+    setTimeout(() => { if (g.state === 'play' && g.die()) respawn(g); }, 900);
+  }
+  const sy = (g, h) => g.bot - (h - g.s.cam);   // altura del mundo → y en pantalla
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Rebota de nube en nube, siempre hacia arriba', deco: ['☁️', '🐸', '🌈', '⭐', '👾', '🚀'], font: 'round', bg: ['#74c0fc', '#1c7ed6'],
+    music: { mode: 'major', bpm: 136, wave: 'square', style: 'bouncy', root: 64 }, voice: { wave: 'square', mul: 1, echo: 0.2 },
+    /*EN*/ en: { title: 'Cloud Hopper', tag: 'Bounce from cloud to cloud, always upwards', help: 'Your character jumps on its own every time it lands on a cloud. Hold the left or right side of the screen to move. If you go off one edge you come back on the other. Cloud with a 🌀 spring = super jump. Grey clouds break when you land on them, and blue ones move. Land on top of monsters to defeat them; touching them any other way costs a life, and so does falling. Reach the height each level asks for.', tvHelp: '◀ ▶ move.', dict: { 'Altura': 'Height', '¡Te caíste!': 'You fell!', '¡Ay!': 'Ouch!' } },
+    /*TV*/ tvHelp: '◀ ▶ moverse.',
+    id: 'saltanubes', title: 'Salta nubes', emoji: '☁️', color: '#74c0fc', origin: 'Doodle Jump (Lima Sky, 2009)', pad: false,
+    help: 'Tu personaje salta solo cada vez que cae en una nube. Mantén pulsado el lado izquierdo o derecho de la pantalla para moverte. Si sales por un borde, apareces por el otro. Nube con muelle 🌀 = supersalto. Las nubes grises se rompen al pisarlas y las azules se mueven. Cae encima de los monstruos para vencerlos; si los tocas de otra forma pierdes una vida, y también si te caes. Llega a la altura que pide cada nivel.',
+    lives: 3, levels: 0, cap: 20,
+    /*SC*/ demo(g) {
+      const s = g.s; if (!s.p || s.dead || s.won) return { wait: 0.2 };
+      const p = s.p, apex = p.vy > 0 ? p.h + p.vy * p.vy / (2 * s.G) : p.h;
+      const cand = s.plats.filter((q) => q.type !== 'break' && !q.gone && q.h < apex - 6 && q.h > (p.vy > 0 ? p.h - 40 : -1e9) && q.h > s.cam + 10);
+      const tgt = cand.sort((a, b) => b.h - a.h)[0]; if (!tgt) return { wait: 0.05 };
+      let dx = tgt.x - p.x; if (Math.abs(dx) > g.W / 2) dx -= Math.sign(dx) * g.W;
+      if (Math.abs(dx) < s.pw * 0.2) return { wait: 0.04 };
+      return { key: dx < 0 ? 'ArrowLeft' : 'ArrowRight', dur: clamp(Math.abs(dx) / s.VX, 0.03, 0.25), after: 0.01, say: s.best < 50 ? T('Muévete para caer sobre la nube de arriba', 'Move to land on the cloud above') : null };
+    },
+    setup(g) {
+      g.s = { plats: [], foes: [], stars: [], topGen: 0, cam: 0, dir: 0, keys: {}, dead: false, won: false, best: 0 };
+      geo(g); const s = g.s; s.goal = Math.round((1600 + Math.min(g.lv, 30) * 160) * s.k);
+      s.plats.push({ x: g.W / 2, h: 20, type: 'n', dir: 1, sp: 0 }); s.topGen = 20; gen(g, (g.bot - g.top) * 2);
+      s.p = { x: g.W / 2, h: 24, vy: s.JV, face: 1, inv: 0 };
+    },
+    layout(g) { if (g.s.p) geo(g); },
+    down(g, p) { g.s.dir = p.x < g.W / 2 ? -1 : 1; },
+    move(g, p) { g.s.dir = p.x < g.W / 2 ? -1 : 1; },
+    up(g) { g.s.dir = 0; },
+    key(g, k, d) { const s = g.s; if (k === 'ArrowLeft' || k === 'ArrowRight') { s.keys[k] = d; s.dir = s.keys.ArrowLeft ? -1 : s.keys.ArrowRight ? 1 : 0; } },
+    update(g, dt) {
+      const s = g.s, p = s.p; if (!p) return;
+      for (const q of s.plats) if (q.type === 'move') { q.x += q.dir * q.sp * dt; if (q.x < s.pw / 2 || q.x > g.W - s.pw / 2) q.dir = -q.dir; }
+      for (const f of s.foes) f.ph += dt;
+      if (s.dead || s.won) return;
+      if (p.inv > 0) p.inv -= dt;
+      p.x += s.dir * s.VX * dt; if (s.dir) p.face = s.dir; if (p.x < 0) p.x += g.W; if (p.x > g.W) p.x -= g.W;
+      const ph = p.h; p.vy -= s.G * dt; p.h += p.vy * dt;
+      if (p.vy < 0) for (const q of s.plats) {
+        if (q.gone || ph < q.h || p.h > q.h || Math.abs(p.x - q.x) > s.pw / 2 + 8) continue;
+        if (q.type === 'break') { q.gone = true; q.fall = 0; Arcade.noise(0.1, 0.1, 800); continue; }
+        p.h = q.h; p.vy = q.type === 'spring' ? s.JV * 1.55 : s.JV; Arcade.tone(q.type === 'spring' ? 880 : 520, 0.07, 'square', 0.05, q.type === 'spring' ? 400 : 120);
+        if (q.type === 'spring') g.burst(q.x, sy(g, q.h), { n: 6, emoji: '✨', size: 12, speed: 120 }); break;
+      }
+      for (const f of s.foes) { if (f.dead) continue; const fx = f.x + Math.sin(f.ph * 1.5) * 30;
+        if (Math.abs(fx - p.x) < 30 && Math.abs(f.h - p.h - 18) < 30) { if (p.vy < 0 && p.h > f.h) { f.dead = true; p.vy = s.JV; g.addScore(50, fx, sy(g, f.h)); Arcade.sfx.pop(); } else if (p.inv <= 0) die(g, T('¡Ay!', 'Ouch!')); } }
+      for (const st of s.stars) if (!st.got && Math.abs(st.x - p.x) < 26 && Math.abs(st.h - p.h - 16) < 30) { st.got = true; g.addScore(20, st.x, sy(g, st.h)); Arcade.sfx.coin(); }
+      for (const q of s.plats) if (q.gone) q.fall = (q.fall || 0) + dt;
+      s.cam = Math.max(s.cam, p.h - (g.bot - g.top) * 0.45);
+      if (p.h > s.best) { g.addScore(Math.floor(p.h / 10) - Math.floor(s.best / 10)); s.best = p.h; }
+      gen(g, s.cam + (g.bot - g.top) * 1.6);
+      s.plats = s.plats.filter((q) => q.h > s.cam - 200); s.foes = s.foes.filter((f) => f.h > s.cam - 200); s.stars = s.stars.filter((x) => x.h > s.cam - 200);
+      if (p.h < s.cam - 40) die(g, T('¡Te caíste!', 'You fell!'));
+      if (s.best >= s.goal && !s.won) { s.won = true; g.confetti(70); Arcade.sfx.win(); g.addScore(100 * g.lv, g.W / 2, g.H / 2); setTimeout(() => { if (g.state === 'play') g.win(g.lives >= 3 ? 3 : g.lives >= 2 ? 2 : 1); }, 900); }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      const t = s.best ? clamp(s.best / (s.goal || 1), 0, 1) : 0;
+      const bg = ctx.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, t > 0.6 ? '#1b1446' : '#4dabf7'); bg.addColorStop(1, t > 0.6 ? '#4263eb' : '#d0ebff'); ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      if (!s.p) return;
+      ctx.globalAlpha = 0.35; for (let i = 0; i < 6; i++) Arcade.emoji(ctx, '☁️', ((i * 137 + s.cam * 0.1) % (W + 120)) - 60, ((i * 211 + s.cam * 0.3) % H), 60); ctx.globalAlpha = 1;
+      for (const q of s.plats) {
+        const y = sy(g, q.h) + (q.gone ? (q.fall || 0) * 400 : 0); if (y < -40 || y > H + 40) continue;
+        ctx.globalAlpha = q.gone ? Math.max(0, 1 - (q.fall || 0) * 2) : 1;
+        ctx.fillStyle = q.type === 'break' ? '#adb5bd' : q.type === 'move' ? '#74c0fc' : '#ffffff';
+        Arcade.rr(ctx, q.x - s.pw / 2, y, s.pw, s.ph, 7); ctx.fill(); ctx.strokeStyle = 'rgba(0,0,0,.15)'; ctx.lineWidth = 2; ctx.stroke();
+        if (q.type === 'break' && !q.gone) { ctx.strokeStyle = '#495057'; ctx.beginPath(); ctx.moveTo(q.x - 6, y); ctx.lineTo(q.x + 2, y + s.ph); ctx.stroke(); }
+        if (q.type === 'spring') Arcade.emoji(ctx, '🌀', q.x, y - 8, 22);
+        ctx.globalAlpha = 1;
+      }
+      for (const st of s.stars) if (!st.got) Arcade.emoji(ctx, '⭐', st.x, sy(g, st.h) - 10, 22);
+      for (const f of s.foes) if (!f.dead) Arcade.emoji(ctx, f.e, f.x + Math.sin(f.ph * 1.5) * 30, sy(g, f.h) - 18, 42);
+      const p = s.p, py = sy(g, p.h) - 22;
+      if (!(p.inv > 0 && Math.floor(p.inv * 10) % 2)) { Arcade.emoji(ctx, s.dead ? '😵' : '🐸', p.x, py, 46, { flip: p.face < 0 }); if (p.x < 30) Arcade.emoji(ctx, '🐸', p.x + W, py, 46); if (p.x > W - 30) Arcade.emoji(ctx, '🐸', p.x - W, py, 46); }
+      // altura
+      const bh = Math.min(260, g.bot - g.top - 80), bx = W - 18, by = g.top + 40;
+      ctx.fillStyle = 'rgba(0,0,0,.25)'; Arcade.rr(ctx, bx - 5, by, 10, bh, 5); ctx.fill(); ctx.fillStyle = '#ffd43b'; Arcade.rr(ctx, bx - 5, by + bh * (1 - t), 10, bh * t, 5); ctx.fill();
+      Arcade.emoji(ctx, '🚩', bx, by - 12, 20);
+      Arcade.txt(ctx, Arcade.T('Altura', 'Height') + ' ' + Math.round(t * 100) + '%', 14, g.top + 18, 15, '#fff', 'left', 900, 'rgba(0,0,0,.35)');
+    },
+  });
+})();

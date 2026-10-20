@@ -764,6 +764,9 @@
          { hold: [x, y], dur }   { key: 'ArrowLeft'|' ', dur }   { wait: s }   y en cualquiera say: 'texto'
        Si no lo define, se usa una demo genérica según sus controles. */
     const SHOT = /[?&]shot=1/.test(location.search);   // herramientas/arcade.php capturas
+    /* grabación de vídeo (herramientas/grabador: programa C#): con ?rec=1 o el user agent «ArcadeRecorder» el juego no corre solo;
+       el grabador lo avanza fotograma a fotograma con window.arcadeRec.step() y saca una captura de cada uno */
+    const REC = !SHOT && (/[?&]rec=1/.test(location.search) || /ArcadeRecorder/.test(navigator.userAgent));
     const DM = { q: [], cur: null, fx: 0, fy: 0, press: 0, say: null, sayT: 0, t: 0, p: null };
     /* demo guiada: primero un texto corto (de la ayuda del juego o del paso de la demo) y «Ver ▶»; la partida se congela
        mientras se lee y luego se juega despacio. «▶▶ Auto» la deja seguir sola y más rápida hasta el final.
@@ -779,8 +782,8 @@
     }
     function startDemo() {
       g.mp = null; g.level = 1; g.score = 0; g.lives = def.lives ?? 3; g.t = 0; g.demoOn = true;
-      Object.assign(DM, { end: false, said: false, q: [], cur: null, fx: g.W / 2, fy: g.bot - 40, press: 0, say: null, sayT: 0, t: 0, p: null, auto: SHOT, pause: null, chunkT: 0, lastPause: null, btns: null });
-      if (!SHOT && !CUSTOM) { DM.sent = helpSentences(); DM.si = 1; DM.pause = { text: DM.sent[0] || T('Mira cómo se juega.', 'Watch how to play.') }; }
+      Object.assign(DM, { end: false, said: false, q: [], cur: null, fx: g.W / 2, fy: g.bot - 40, press: 0, say: null, sayT: 0, t: 0, p: null, auto: SHOT || REC, pause: null, chunkT: 0, lastPause: null, btns: null });
+      if (!SHOT && !REC && !CUSTOM) { DM.sent = helpSentences(); DM.si = 1; DM.pause = { text: DM.sent[0] || T('Mira cómo se juega.', 'Watch how to play.') }; }
       begin(); if (def.onStart) def.onStart(g);
     }
     function endDemo() { if (!g.demoOn) return; g.demoOn = false; if (DM.p) { g.pointers.delete(DM.p.id); DM.p = null; } menu(); }
@@ -831,7 +834,7 @@
       const manual = !DM.auto && !CUSTOM;
       if (manual) { DM.chunkT += dt; dt *= 0.6; }   // guiada: el dedo va más despacio
       DM.press = Math.max(0, DM.press - (DM.p ? 0 : dt * 4)); if (DM.sayT > 0) DM.sayT -= dt;
-      DM.t += dt; if (!DM.end && DM.t > (def.demoTime || 60)) { DM.end = true; if (DM.p) dUp(false); g.message(T('Fin de la demo', 'End of demo'), 1.2); setTimeout(() => endDemo(), 1300); }
+      DM.t += dt; if (!REC && !DM.end && DM.t > (def.demoTime || 60)) { DM.end = true; if (DM.p) dUp(false); g.message(T('Fin de la demo', 'End of demo'), 1.2); setTimeout(() => endDemo(), 1300); }
       if (DM.end) return;
       if (manual && !DM.cur && DM.chunkT > 5.5) {   // cada pocos segundos, la siguiente regla de la ayuda
         DM.chunkT = 0; const nx = DM.sent && DM.sent[DM.si];
@@ -887,9 +890,12 @@
       if (pr > 0) { ctx.globalAlpha = 0.5 * pr; ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(DM.fx, DM.fy, 14 + (1 - pr) * 18, 0, TAU); ctx.stroke(); ctx.globalAlpha = 1; }
       A.emoji(ctx, '👆', DM.fx + 4, DM.fy + sz * 0.42, sz * (1 - pr * 0.12), { rot: -0.15 });
       if (def.demoQuiet && def.demoQuiet(g)) return;   // el juego pone sus propios textos
+      if (REC) { if (!(DM.say && DM.sayT > 0)) return; }   // vídeo: sin «DEMO» ni rótulo fijo, solo los textos de la demo
       const y = g.top + 4, bw = 86, blink = 0.75 + 0.25 * Math.sin(g.rt * 4);
+      if (!REC) {
       ctx.globalAlpha = blink; ctx.fillStyle = 'rgba(0,0,0,.6)'; A.rr(ctx, g.W - bw - 8, y, bw, 24, 12); ctx.fill();
       A.txt(ctx, '👀 DEMO', g.W - 8 - bw / 2, y + 12, 13, '#ffd43b', 'center', 900); ctx.globalAlpha = 1;
+      }
       const say = DM.say && DM.sayT > 0 ? DM.say : DM.auto ? T('▶▶ Automática · toca para salir', '▶▶ Auto · tap to exit') : T('Mirando… (⏸ para salir)', 'Watching… (⏸ to exit)'), a = DM.say && DM.sayT > 0 ? Math.min(1, DM.sayT * 3) : 0.75;
       ctx.globalAlpha = a; ctx.font = '800 15px ' + A.FONT; const w = Math.min(g.W - 24, ctx.measureText(say).width + 30), yy = g.bot - 54;
       ctx.fillStyle = 'rgba(0,0,0,.72)'; A.rr(ctx, g.W / 2 - w / 2, yy, w, 34, 17); ctx.fill(); A.txt(ctx, say, g.W / 2, yy + 17, 15, '#fff', 'center', 800); ctx.globalAlpha = 1;
@@ -1221,7 +1227,7 @@
       requestAnimationFrame(frame);
       let dt = (now - last) / 1000; last = now;
       if (dt > 0.05) dt = 0.05; if (dt < 0) dt = 0;
-      if (!SHOT) step(dt);
+      if (!SHOT && !REC) step(dt);
     }
     function step(dt) {
       g.rt += dt;
@@ -1292,6 +1298,46 @@
     if (SHOT) {   // captura: demo sin rótulos ni mandos, avanzando el tiempo a mano (en headless no corre requestAnimationFrame)
       A.muted = true; A.musicOn = false; if (padOn) setPad(false); hud.style.display = "none"; ov.style.display = "none";
       setTimeout(() => { hide(); startDemo(); let n = 0; const ff = () => { for (let i = 0; i < 12; i++) step(1 / 60); if (++n < (+(/[?&]t=(\d+)/.exec(location.search) || [0, 6])[1]) * 5) setTimeout(ff, 0); else document.title = "SHOT_READY"; }; ff(); }, 30);
+    }
+    if (REC) {   // grabación: el programa C# llama a arcadeRec.step() por cada fotograma del vídeo
+      A.muted = true; A.musicOn = false; if (padOn) setPad(false); for (const k of ['hP', 'hPad']) if ($(k)) $(k).style.visibility = 'hidden';
+      const Q = new URLSearchParams(location.search), num = (k, d) => (Q.has(k) && isFinite(+Q.get(k)) ? +Q.get(k) : d);
+      const FPS = num('fps', 30), DUR = num('dur', 75), IN = num('intro', 3), OUT = num('outro', 4), HOST = Q.get('site') || location.host;
+      const EN = A.lang === 'en', title = EN && def.en && def.en.title ? def.en.title : def.title, tag = EN && def.en && def.en.tag ? def.en.tag : def.tag || '';
+      const bg = def.bg || ['#2b1a5c', '#1a1033'];
+      let f = 0, idle = 0; const total = Math.round(DUR * FPS);
+      const card = (k, outro) => {   // cartela de entrada y de salida, pintada encima del juego
+        ctx.setTransform(A.dpr, 0, 0, A.dpr, 0, 0); ctx.globalAlpha = k;
+        const gr = ctx.createLinearGradient(0, 0, 0, g.H); gr.addColorStop(0, bg[0]); gr.addColorStop(1, bg[1]); ctx.fillStyle = gr; ctx.fillRect(0, 0, g.W, g.H);
+        const m = Math.min(g.W, g.H), cy = g.H * (outro ? 0.36 : 0.4), bounce = Math.sin((f / FPS) * 3) * m * 0.015;
+        A.emoji(ctx, def.emoji || '🎮', g.W / 2, cy + bounce, m * 0.32);
+        A.txt(ctx, title, g.W / 2, cy + m * 0.28, Math.min(m * 0.12, (g.W * 0.9) / Math.max(4, title.length) * 1.7), '#fff', 'center', 900, 'rgba(0,0,0,.5)', TFONT);
+        if (!outro) {
+          if (tag) A.txt(ctx, tag, g.W / 2, cy + m * 0.39, m * 0.05, 'rgba(255,255,255,.88)', 'center', 800);
+          if (def.origin) A.txt(ctx, (EN ? 'Inspired by ' : 'Inspirado en ') + String(def.origin).split(' / ')[0], g.W / 2, cy + m * 0.47, m * 0.04, 'rgba(255,255,255,.7)', 'center', 700);
+        } else {
+          A.txt(ctx, EN ? 'Play it free, no ads' : 'Juega gratis y sin anuncios', g.W / 2, cy + m * 0.4, m * 0.055, 'rgba(255,255,255,.9)', 'center', 800);
+          const w = Math.min(g.W * 0.9, m * 0.08 * HOST.length * 0.62 + 60); ctx.fillStyle = accent; A.rr(ctx, g.W / 2 - w / 2, cy + m * 0.48, w, m * 0.13, m * 0.065); ctx.fill();
+          A.txt(ctx, HOST + '/' + def.id, g.W / 2, cy + m * 0.545, Math.min(m * 0.065, (w - 30) / (HOST.length + def.id.length + 1) * 1.8), '#fff', 'center', 900, 'rgba(0,0,0,.35)');
+        }
+        ctx.globalAlpha = 1;
+      };
+      window.arcadeRec = {
+        ready: false, fps: FPS, frames: total,
+        info: { id: def.id, title, tag, emoji: def.emoji || '', origin: def.origin || '', url: location.protocol + '//' + HOST + '/' + def.id, lang: A.lang },
+        step(n = 1) {
+          for (let i = 0; i < n && f < total; i++) {
+            step(1 / FPS); f++;
+            // si la demo acaba (fin de partida, menú…), vuelve a empezar al momento
+            if (g.state === 'play' && g.demoOn) idle = 0; else if ((idle += 1 / FPS) > 1.5) { idle = 0; hide(); startDemo(); }
+          }
+          const t = f / FPS, kin = IN > 0 ? Math.min(1, Math.max(0, (IN - t) / 0.5)) : 0, kout = OUT > 0 ? Math.min(1, Math.max(0, (t - (DUR - OUT)) / 0.5)) : 0;
+          if (kin > 0) card(kin, false); else if (kout > 0) card(kout, true);
+          const cover = kin >= 1 || kout >= 1; hud.style.visibility = cover ? 'hidden' : ''; ov.style.visibility = cover ? 'hidden' : '';
+          return { frame: f, done: f >= total, state: g.state };
+        },
+      };
+      setTimeout(() => { hide(); startDemo(); window.arcadeRec.ready = true; document.title = 'REC_READY'; }, 30);
     }
     requestAnimationFrame(frame);
     return g;

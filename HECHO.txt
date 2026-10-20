@@ -1,6 +1,13 @@
 ARCADE PERDIDO + ARCADE PRO — LO QUE ESTÁ HECHO
 ================================================
-Fecha: 19-10-2026 · Versión de la PWA (games.js → ARCADE_VERSION): 2.30.0
+Fecha: 19-10-2026 · Versión de la PWA (games.js → ARCADE_VERSION): 2.31.0
+· v2.31.0: vídeos de cada juego con un programa C# (herramientas/grabador, ver su LEEME.txt): lee el sitemap, abre cada juego
+  en Chrome sin ventana con ?rec=1 o el user agent «ArcadeRecorder», y el juego (modo grabación de common.js, window.arcadeRec)
+  avanza fotograma a fotograma mientras el programa captura y ffmpeg monta el MP4 (vertical 1080×1920 y/o horizontal, 75 s,
+  cartelas de entrada y salida, música opcional y un .txt con el texto para publicar).
+  Web Mobile Hits (mobilehits.): juegos con la etiqueta «hit» (games.tags; la web la pide con sites.tags), de cualquier
+  colección. Nuevos: Machaca hormigas (Ant Smasher), Lanza cuchillos (Knife Hit), Corta frutas (Fruit Ninja), Salta nubes
+  (Doodle Jump), Teclas (Piano Tiles) y Carriles (Subway Surfers). Sigue en marcha: Clash Royale, Clash of Clans y más.
 · v2.30.0 (b): debajo de la cabecera de cada web salen sus subcategorías (también en el menú, la barra del móvil, el pie y
   los bloques de la portada): en educativos las asignaturas (Mates, Lengua, Lógica, Inglés), en solitarios las familias y
   en las demás sus categorías. Los 100 solitarios tienen ya familia (10 categorías nuevas, columna categories.col = 'soli':

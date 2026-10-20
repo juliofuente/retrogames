@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Aplastabichos · Arcade Perdido</title>
+<meta name="theme-color" content="#5c2e0e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css?v=6d7635e467">
+</head>
+<body class="game">
+<script src="config.js?v=84fed7f189"></script>
+<script src="common.js?v=e80717317d"></script>
+<script>
+(function () {
+  const { rand, ri, clamp, pick } = Arcade;
+  const T = Arcade.T;
+  // bichos: vida (toques), velocidad relativa, puntos · las abejas no se tocan
+  const KINDS = {
+    ant: { e: '🐜', hp: 1, sp: 1, pts: 10, r: 0.9 },
+    lady: { e: '🐞', hp: 1, sp: 1.6, pts: 20, r: 0.85 },
+    spider: { e: '🕷️', hp: 2, sp: 0.8, pts: 30, r: 1.05 },
+    roach: { e: '🦗', hp: 1, sp: 1.25, pts: 15, r: 0.95, zig: 1 },
+    bee: { e: '🐝', hp: 1, sp: 1.1, pts: -1, r: 0.9, bee: 1 },
+  };
+  function spawn(g) {
+    const s = g.s, L = g.lv, roll = Math.random();
+    const k = L >= 3 && roll < clamp(0.08 + L * 0.008, 0.08, 0.22) ? 'bee' : L >= 4 && roll < 0.32 ? 'spider' : L >= 2 && roll < 0.5 ? 'lady' : L >= 6 && roll < 0.62 ? 'roach' : 'ant';
+    const K = KINDS[k], sz = s.u * K.r;
+    s.bugs.push({ k, e: K.e, hp: K.hp, x: rand(sz, g.W - sz), y: g.top - sz, vx: rand(-0.3, 0.3), sp: s.speed * K.sp * rand(0.85, 1.15), sz, ph: rand(0, 6), hit: 0, bee: !!K.bee, zig: K.zig });
+  }
+  function smash(g, b) {
+    const s = g.s;
+    if (b.bee) { s.bugs.splice(s.bugs.indexOf(b), 1); Arcade.sfx.bad(); g.shake(0.25, 7); g.burst(b.x, b.y, { n: 10, emoji: '💢', size: 14, speed: 150 }); g.message(T('¡Las abejas no!', 'Not the bees!'), 0.9); hurt(g); return; }
+    b.hp--; b.hit = 0.2;
+    if (b.hp > 0) { Arcade.tone(500, 0.04, 'square', 0.05); return; }
+    s.bugs.splice(s.bugs.indexOf(b), 1); s.splats.push({ x: b.x, y: b.y, sz: b.sz, t: 3 });
+    s.combo = s.comboT > 0 ? s.combo + 1 : 1; s.comboT = 0.7;
+    const pts = KINDS[b.k].pts * Math.min(4, s.combo); g.addScore(pts, b.x, b.y - 20);
+    Arcade.sfx.pop(); g.burst(b.x, b.y, { n: 8, color: ['#5c2e0e', '#8b5a2b'], speed: 120 });
+    s.done++; if (s.done >= s.need) { s.won = true; g.confetti(60); g.addScore(100 * g.lv, g.W / 2, g.H / 2); setTimeout(() => { if (g.state === 'play') g.win(g.lives >= 3 ? 3 : g.lives >= 2 ? 2 : 1); }, 900); }
+  }
+  function hurt(g) { const s = g.s; if (s.won) return; s.flash = 0.4; if (!g.die()) return; }
+  function hitAt(g, x, y) {
+    const s = g.s; if (s.won) return;
+    let best = null, bd = 1e9;
+    for (const b of s.bugs) { const d = Math.hypot(b.x - x, b.y - y); if (d < b.sz * 0.75 + 12 && d < bd) { bd = d; best = b; } }
+    s.taps.push({ x, y, t: 0.25 });
+    if (best) smash(g, best); else Arcade.tone(180, 0.03, 'sine', 0.03);
+  }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Aplasta los bichos, salva el pícnic', deco: ['🐜', '🐞', '🕷️', '🐝', '🍉', '🧺'], font: 'round', bg: ['#e8590c', '#5c2e0e'],
+    music: { mode: 'major', bpm: 132, wave: 'square', style: 'bouncy', root: 60 }, voice: { wave: 'square', mul: 1, echo: 0.15 },
+    /*EN*/ en: { title: 'Bug Smasher', tag: 'Squash the bugs, save the picnic', help: 'Bugs are marching towards your picnic. Tap them to squash them before they reach the food. Spiders need two taps. Never tap a 🐝 bee: it stings and you lose a life. Every bug that reaches the bottom also costs a life. Squash quickly in a row for a combo. Squash the bugs each level asks for.', tvHelp: 'D-pad to a bug · OK squashes it.', dict: { '¡Las abejas no!': 'Not the bees!', 'Bichos: ': 'Bugs: ', '¡Se escapó!': 'One got away!' } },
+    /*TV*/ tvHelp: 'Cruceta hasta un bicho · OK lo aplasta.',
+    tv: { mode: 'tap', targets: (g) => (g.s.bugs || []).filter((b) => !b.bee && b.y > g.top).map((b) => ({ x: b.x - b.sz / 2, y: b.y - b.sz / 2, w: b.sz, h: b.sz })) },
+    id: 'hormigas', title: 'Aplastabichos', emoji: '🐜', color: '#ff922b', origin: 'Ant Smasher (Best Cool & Fun Games, 2010)', pad: false,
+    help: 'Los bichos van hacia tu pícnic. Tócalos para aplastarlos antes de que lleguen a la comida. Las arañas necesitan dos toques. No toques nunca una 🐝 abeja: te pica y pierdes una vida. Cada bicho que llega abajo también te quita una vida. Aplasta rápido y seguido para hacer combo. Aplasta los bichos que pide cada nivel.',
+    lives: 3, levels: 0, cap: 20,
+    /*SC*/ demo(g) {
+      const s = g.s; if (!s.bugs || s.won) return { wait: 0.3 };
+      const t = s.bugs.filter((b) => !b.bee && b.y > g.top + 10).sort((a, b) => b.y - a.y)[0];
+      if (!t) return { wait: 0.15 };
+      return { tap: [t.x + t.vx * 0.15, t.y + t.sp * 0.15], after: 0.12, say: s.done < 2 ? T('Aplasta los bichos antes de que lleguen abajo', 'Squash the bugs before they reach the bottom') : null };
+    },
+    setup(g) {
+      const L = g.lv;
+      g.s = { bugs: [], splats: [], taps: [], spawnT: 1, done: 0, need: 15 + Math.min(L, 20) * 3, combo: 0, comboT: 0, flash: 0, won: false,
+        speed: 0, every: clamp(1.15 - L * 0.035, 0.5, 1.15), u: clamp(g.W / 7, 44, 72) };
+      g.s.speed = clamp(70 + L * 5, 70, 170) * (g.H / 780);
+    },
+    layout(g) { if (g.s.bugs) g.s.u = clamp(g.W / 7, 44, 72); },
+    down(g, p) { hitAt(g, p.x, p.y); },
+    update(g, dt) {
+      const s = g.s; if (!s.bugs) return;
+      if (s.comboT > 0) s.comboT -= dt; if (s.flash > 0) s.flash -= dt;
+      for (const t of s.taps) t.t -= dt; s.taps = s.taps.filter((t) => t.t > 0);
+      for (const sp of s.splats) sp.t -= dt; s.splats = s.splats.filter((sp) => sp.t > 0);
+      if (s.won) return;
+      s.spawnT -= dt; if (s.spawnT <= 0) { spawn(g); if (g.lv >= 12 && Math.random() < 0.15) spawn(g); s.spawnT = s.every * rand(0.7, 1.3); }
+      const foodY = g.bot - s.u * 0.9;
+      for (const b of s.bugs.slice()) {
+        b.ph += dt * 8; b.hit = Math.max(0, b.hit - dt);
+        b.y += b.sp * dt; b.x += (b.vx + (b.zig ? Math.sin(b.ph * 0.6) * 1.4 : Math.sin(b.ph * 0.3) * 0.25)) * b.sp * dt;
+        if (b.x < b.sz / 2 || b.x > g.W - b.sz / 2) { b.vx = -b.vx; b.x = clamp(b.x, b.sz / 2, g.W - b.sz / 2); }
+        if (b.y > foodY) { s.bugs.splice(s.bugs.indexOf(b), 1); if (!b.bee) { Arcade.sfx.hit(); g.message(T('¡Se escapó!', 'One got away!'), 0.7); hurt(g); } }
+      }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      const c = 44; for (let y = 0; y < H; y += c) for (let x = 0; x < W; x += c) { ctx.fillStyle = ((x + y) / c) % 2 ? '#ffe3e3' : '#fff5f5'; ctx.fillRect(x, y, c, c); }
+      ctx.fillStyle = 'rgba(224,49,49,.18)'; for (let x = 0; x < W; x += c * 2) ctx.fillRect(x, 0, c, H);
+      if (!s.bugs) return;
+      for (const sp of s.splats) { ctx.globalAlpha = Math.min(1, sp.t); ctx.fillStyle = '#7a4a1e'; ctx.beginPath(); ctx.ellipse(sp.x, sp.y, sp.sz * 0.42, sp.sz * 0.3, 0.4, 0, 6.3); ctx.fill(); ctx.globalAlpha = 1; }
+      // comida
+      const fy = g.bot - s.u * 0.45; ctx.fillStyle = '#c92a2a'; ctx.fillRect(0, fy - s.u * 0.5, W, H);
+      ['🍉', '🧺', '🍰', '🥪', '🍓', '🧃', '🍉'].forEach((e, i, a) => Arcade.emoji(ctx, e, (i + 0.5) * W / a.length, fy, s.u * 0.8));
+      for (const b of s.bugs) {
+        const ang = Math.atan2(b.sp, (b.vx + Math.sin(b.ph * 0.3) * 0.25) * b.sp) + Math.PI / 2 + Math.PI;
+        ctx.save(); ctx.translate(b.x, b.y); ctx.rotate(b.bee ? Math.sin(b.ph) * 0.2 : ang); if (b.hit > 0) ctx.globalAlpha = 0.6;
+        Arcade.emoji(ctx, b.e, 0, 0, b.sz * (1 + Math.sin(b.ph * 2) * 0.04)); ctx.restore();
+        if (b.k === 'spider' && b.hp === 1) Arcade.emoji(ctx, '💫', b.x, b.y - b.sz * 0.5, b.sz * 0.4);
+      }
+      for (const t of s.taps) { ctx.strokeStyle = 'rgba(0,0,0,' + t.t * 2 + ')'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(t.x, t.y, 30 - t.t * 60, 0, 6.3); ctx.stroke(); }
+      if (s.flash > 0) { ctx.fillStyle = 'rgba(255,0,0,' + s.flash * 0.5 + ')'; ctx.fillRect(0, 0, W, H); }
+      Arcade.txt(ctx, T('Bichos: ', 'Bugs: ') + s.done + '/' + s.need, W / 2, g.top + 18, 16, '#5c2e0e', 'center', 900, 'rgba(255,255,255,.7)');
+      if (s.combo > 1 && s.comboT > 0) Arcade.txt(ctx, 'x' + Math.min(4, s.combo), W / 2, g.top + 42, 20, '#e8590c', 'center', 900);
+    },
+  });
+})();
+</script>
+</body>
+</html>

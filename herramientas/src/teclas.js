@@ -1,0 +1,78 @@
+// Teclas negras|#111111
+(function () {
+  const { rand, ri, clamp } = Arcade;
+  const T = Arcade.T;
+  const COLS = 4, KEYS = ['ArrowLeft', 'ArrowDown', 'ArrowUp', 'ArrowRight'];
+  const SONG = [0, 2, 4, 5, 7, 5, 4, 2, 0, 4, 7, 12, 7, 4, 2, 0, 5, 9, 12, 9, 5, 4, 2, 4];   // notas (semitonos) que suenan al tocar
+
+  function geo(g) { const s = g.s; s.cw = g.W / COLS; s.rh = clamp((g.bot - g.top) / 4.2, 90, 200); s.hitY = g.bot; }
+  function addRow(g) {
+    const s = g.s, last = s.rows[s.rows.length - 1], y = last ? last.y - s.rh : s.hitY - s.rh * 2;
+    let c = ri(0, COLS - 1); if (last && c === last.c && Math.random() < 0.6) c = (c + ri(1, 3)) % COLS;
+    const long = g.lv >= 6 && Math.random() < clamp(0.05 + g.lv * 0.01, 0, 0.22);
+    s.rows.push({ y, c, hit: false, h: long ? 2 : 1 }); if (long) s.rows.push({ y: y - s.rh, c, hit: false, skip: true });
+    s.made++;
+  }
+  function tapCol(g, c, y) {
+    const s = g.s; if (s.dead || s.won) return;
+    if (!s.started) { const r0 = s.rows.find((r) => !r.hit && !r.skip); if (r0 && r0.c === c) s.started = true; else if (r0) return fail(g, c, r0); }
+    const r = s.rows.find((x) => !x.hit && !x.skip);   // la más baja sin tocar
+    if (!r) return;
+    if (r.c !== c || (y != null && (y < r.y - s.rh * (r.h - 1) - s.rh * 0.6 || y > r.y + s.rh * 1.6))) return fail(g, c, r);
+    r.hit = true; if (r.h === 2) { const up = s.rows[s.rows.indexOf(r) + 1]; if (up && up.skip) up.hit = true; }
+    s.n++; g.addScore(r.h === 2 ? 3 : 1);
+    const note = SONG[s.n % SONG.length]; Arcade.tone(261.6 * Math.pow(2, note / 12), 0.25, 'triangle', 0.09);
+    if (s.n >= s.need) { s.won = true; g.confetti(60); g.addScore(80 * g.lv, g.W / 2, g.H / 2); setTimeout(() => { if (g.state === 'play') g.win(g.lives >= 3 ? 3 : g.lives >= 2 ? 2 : 1); }, 900); }
+  }
+  function fail(g, c, r) {
+    const s = g.s; s.dead = true; s.bad = { c, y: r ? r.y : s.hitY - s.rh, t: 0 }; Arcade.sfx.bad(); g.shake(0.25, 6);
+    setTimeout(() => { if (g.state !== 'play') return; if (g.die()) { s.dead = false; s.bad = null; s.started = false; const keep = s.rows.filter((x) => !x.hit); const off = (s.hitY - s.rh * 2) - keep[0].y; keep.forEach((x) => (x.y += off)); s.rows = keep; } }, 1000);
+  }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Toca solo las negras', deco: ['🎹', '🎵', '🎶', '⬛', '⬜', '🎼'], font: 'round', bg: ['#343a40', '#111111'],
+    music: { mode: 'major', bpm: 90, wave: 'sine', style: 'chill', root: 60 }, voice: { wave: 'triangle', mul: 1, echo: 0.4 },
+    /*EN*/ en: { title: 'Black Tiles', tag: 'Tap only the black ones', help: 'Black tiles come down the four lanes. Tap each black tile in order, from the bottom up. Never tap a white one, and don\'t let a black one get away at the bottom: either way you lose a life. Long tiles count triple. The tiles fall faster and faster.', tvHelp: '◀ ▼ ▲ ▶ = lanes 1 to 4.', dict: { 'Empieza aquí': 'Start here', 'Teclas: ': 'Tiles: ' } },
+    /*TV*/ tvHelp: '◀ ▼ ▲ ▶ = carriles 1 a 4.',
+    id: 'teclas', title: 'Teclas negras', emoji: '🎹', color: '#ced4da', origin: 'Piano Tiles / Don\'t Tap the White Tile (Umoni, 2014)', pad: false,
+    help: 'Por los cuatro carriles bajan teclas negras. Toca cada tecla negra en orden, de abajo arriba. No toques nunca una blanca ni dejes escapar una negra por abajo: en los dos casos pierdes una vida. Las teclas largas valen triple. Cada vez caen más deprisa.',
+    lives: 3, levels: 0, cap: 20,
+    /*SC*/ demo(g) {
+      const s = g.s; if (!s.rows || s.dead || s.won) return { wait: 0.1 };
+      const r = s.rows.find((x) => !x.hit && !x.skip); if (!r) return { wait: 0.05 };
+      if (s.started && r.y < s.hitY - s.rh * 3.2) return { wait: 0.03 };
+      return { tap: [(r.c + 0.5) * s.cw, r.y + s.rh / 2], after: 0.05, say: s.n ? null : T('Toca la negra más baja', 'Tap the lowest black tile') };
+    },
+    setup(g) {
+      g.s = { rows: [], made: 0, n: 0, need: 30 + Math.min(g.lv, 20) * 5, started: false, dead: false, won: false, speed: 0 };
+      geo(g); const s = g.s; while (s.rows.length < 8) addRow(g);
+      s.speed = clamp(2.2 + g.lv * 0.18, 2.2, 6.2);   // filas por segundo
+    },
+    layout(g) { if (g.s.rows) geo(g); },
+    down(g, p) { tapCol(g, clamp(Math.floor(p.x / g.s.cw), 0, COLS - 1), p.y); },
+    key(g, k, d) { if (!d) return; const i = KEYS.indexOf(k); if (i >= 0) tapCol(g, i, null); },
+    update(g, dt) {
+      const s = g.s; if (!s.rows || !s.started || s.dead || s.won) { if (s.bad) s.bad.t += dt; return; }
+      const v = s.speed * s.rh * (1 + s.n * 0.002) * dt; for (const r of s.rows) r.y += v;
+      const miss = s.rows.find((r) => !r.hit && !r.skip && r.y > s.hitY + 2); if (miss) { s.rows.forEach((r) => (r.y -= s.rh * 0.8)); return fail(g, miss.c, miss); }
+      s.rows = s.rows.filter((r) => r.y < g.H + s.rh * 2 || !r.hit);
+      while (s.rows.length && s.rows[s.rows.length - 1].y > g.top - s.rh * 2) addRow(g);
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      ctx.fillStyle = '#fafafa'; ctx.fillRect(0, 0, W, H);
+      if (!s.rows) return;
+      ctx.strokeStyle = '#dee2e6'; ctx.lineWidth = 1; for (let c = 1; c < COLS; c++) { ctx.beginPath(); ctx.moveTo(c * s.cw, 0); ctx.lineTo(c * s.cw, H); ctx.stroke(); }
+      for (const r of s.rows) {
+        if (r.skip) continue; const h = s.rh * r.h, y = r.y - s.rh * (r.h - 1);
+        ctx.fillStyle = r.hit ? 'rgba(52,58,64,.18)' : '#1a1a1a'; ctx.fillRect(r.c * s.cw + 1, y + 1, s.cw - 2, h - 2);
+        if (r.h === 2 && !r.hit) { ctx.fillStyle = '#4dabf7'; ctx.fillRect(r.c * s.cw + s.cw * 0.45, y + 10, s.cw * 0.1, h - 20); }
+        if (!s.started && r === s.rows.find((x) => !x.hit && !x.skip)) Arcade.txt(ctx, 'Empieza aquí', (r.c + 0.5) * s.cw, r.y + s.rh / 2, 14, '#fff', 'center', 900);
+      }
+      if (s.bad) { ctx.fillStyle = 'rgba(250,82,82,' + (0.5 + 0.4 * Math.sin(s.bad.t * 20)) + ')'; ctx.fillRect(s.bad.c * s.cw, s.bad.y, s.cw, s.rh); }
+      Arcade.txt(ctx, String(s.n), W / 2, g.top + 26, 34, '#e03131', 'center', 900, 'rgba(255,255,255,.8)');
+      const bw = Math.min(W - 40, 300); ctx.fillStyle = 'rgba(0,0,0,.1)'; Arcade.rr(ctx, W / 2 - bw / 2, g.top + 50, bw, 8, 4); ctx.fill();
+      ctx.fillStyle = '#e03131'; Arcade.rr(ctx, W / 2 - bw / 2, g.top + 50, bw * Math.min(1, s.n / s.need), 8, 4); ctx.fill();
+    },
+  });
+})();

@@ -1,0 +1,44 @@
+ArcadeRecorder · vídeos con la demo de cada juego (programa C#)
+================================================================
+
+Qué hace
+· Lee el sitemap de una web (o de un subdominio: arcadeplus, mobilehits, mesa…) y saca de él los juegos (/<id>/es y /<id>/en).
+· Abre cada juego en Chrome sin ventana con «?rec=1» y el user agent «… ArcadeRecorder/1.0». Con cualquiera de las dos cosas
+  el juego entra en modo grabación (pwa/common.js): no corre solo, la demo juega en automático y el programa lo avanza
+  fotograma a fotograma llamando a window.arcadeRec.step(1). Tras cada paso saca una captura y se la pasa a ffmpeg.
+  Así el vídeo va siempre a 30 fps aunque el ordenador sea lento.
+· Cada vídeo (75 s por defecto): cartela de entrada (emoji, título, lema, «Inspirado en…») · la demo jugando sola con sus
+  textos · cartela final con la dirección del juego en esa web. Junto a cada .mp4 deja un .txt con el texto para publicarlo.
+· Sin sonido del juego (el juego sintetiza el audio en directo y no se puede grabar paso a paso): con --musica se le pone
+  música de fondo (un archivo, o una carpeta y elige una al azar por vídeo), repetida y con fundido al final.
+
+Requisitos
+· .NET 8 SDK · Google Chrome (o Chromium / Edge) · ffmpeg en el PATH (o --ffmpeg ruta). Sin paquetes NuGet.
+
+Uso
+  cd herramientas/grabador
+  dotnet run -c Release -- --web https://arcadeplus.juegosboom.com
+  dotnet run -c Release -- --sitemap https://mobilehits.juegosboom.com/sitemap.xml --formato ambos --musica C:\musica --paralelo 3
+  dotnet run -c Release -- --web https://juegosboom.com --solo cuchillos,escoba --duracion 70 --idioma ambos
+
+Opciones
+  --sitemap URL | --web URL   de dónde saca los juegos (--web añade /sitemap.xml)
+  --salida carpeta            videos/<idioma>/<formato>/<id>.mp4 (+ .txt)          (videos)
+  --idioma es|en|ambos        (es)
+  --formato vertical|horizontal|ambos   vertical = 1080×1920 (TikTok, Shorts, Reels) · horizontal = 1920×1080   (vertical)
+  --duracion 75  --fps 30  --intro 3  --outro 4
+  --musica archivo|carpeta    --solo id1,id2    --max N    --rehacer (por defecto se saltan los que ya existen)
+  --paralelo N                juegos a la vez en el mismo Chrome (1)
+  --calidad 21                CRF de x264 (menos = mejor y más pesado)
+  --chrome ruta  --ffmpeg ruta
+
+Tiempos: cada fotograma lleva unos 100–150 ms (captura a 1080×1920), así que un vídeo de 75 s tarda 4–6 minutos; con
+--paralelo 3 o 4 se graban varios a la vez. Los juegos educativos que van aparte (carpeta educativos/) no tienen modo
+grabación: el programa los salta.
+
+Modo grabación en la página (por si se quiere usar desde otro programa)
+  URL: /<id>/es?rec=1&fps=30&dur=75&intro=3&outro=4&site=<host que sale en la cartela final>
+  window.arcadeRec.ready            true cuando ya se puede grabar
+  window.arcadeRec.info             { id, title, tag, emoji, origin, url, lang }
+  window.arcadeRec.frames           fotogramas totales (dur × fps)
+  window.arcadeRec.step(n)          avanza n fotogramas y pinta → { frame, done, state }

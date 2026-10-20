@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Carriles · Arcade Perdido</title>
+<meta name="theme-color" content="#3b2f5c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css?v=6d7635e467">
+</head>
+<body class="game">
+<script src="config.js?v=84fed7f189"></script>
+<script src="common.js?v=e80717317d"></script>
+<script>
+(function () {
+  const { rand, ri, clamp, pick } = Arcade;
+  const T = Arcade.T;
+  const F = 9;   // profundidad de la perspectiva (en «metros»)
+  // tipos: bar = valla baja (saltar) · low = cartel (agacharse) · train = vagón largo (cambiar de carril)
+  function row(g, z) {
+    const s = g.s, L = g.lv, out = [];
+    const nObs = Math.random() < clamp(0.25 + L * 0.03, 0.25, 0.65) ? 2 : 1, lanes = Arcade.shuffle([0, 1, 2]).slice(0, nObs);
+    for (const ln of lanes) {
+      const r = Math.random(), type = L >= 2 && r < 0.3 ? 'train' : L >= 3 && r < 0.55 ? 'low' : 'bar';
+      out.push({ ln, z, type, len: type === 'train' ? rand(6, 12) : 0.6 });
+    }
+    if (out.filter((o) => o.type === 'train').length >= 2 && out.length === 2) out[0].type = 'bar', out[0].len = 0.6;   // siempre queda paso
+    s.obs.push(...out);
+    const free = [0, 1, 2].filter((l) => !lanes.includes(l)); if (free.length && Math.random() < 0.6) { const ln = pick(free); for (let k = 0; k < 5; k++) s.coins.push({ ln, z: z + k * 1.2, h: 0 }); }
+  }
+  function geo(g) { const s = g.s; s.hy = g.top + (g.bot - g.top) * 0.18; s.by = g.bot - 30; s.lw = Math.min(g.W * 0.3, 170); }
+  const proj = (g, ln, z, h = 0) => { const s = g.s, k = F / (Math.max(-0.9, z) + F), y = s.hy + (s.by - s.hy) * k; return [g.W / 2 + (ln - 1) * s.lw * k, y - h * 60 * k, k]; };
+  function act(g, a) {
+    const s = g.s, p = s.p; if (s.dead || s.won) return;
+    if (a === 'left' && p.lane > 0) { p.lane--; Arcade.tone(500, 0.04, 'triangle', 0.04); }
+    if (a === 'right' && p.lane < 2) { p.lane++; Arcade.tone(500, 0.04, 'triangle', 0.04); }
+    if (a === 'up' && p.h <= 0.01) { p.vh = 7.2; p.slide = 0; Arcade.tone(620, 0.08, 'square', 0.05, 200); }
+    if (a === 'down') { p.slide = 0.65; if (p.h > 0) p.vh = -12; Arcade.noise(0.08, 0.06, 600); }
+  }
+  function crash(g) {
+    const s = g.s; if (s.dead) return; s.dead = true; Arcade.sfx.hit(); g.shake(0.35, 9); g.message(T('¡Choque!', 'Crash!'), 0.8);
+    setTimeout(() => { if (g.state !== 'play') return; if (g.die()) { s.dead = false; s.obs = s.obs.filter((o) => o.z > 14); s.p.inv = 1.2; } }, 900);
+  }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Corre, salta y cambia de vía', deco: ['🏃', '🚃', '🚧', '💰', '🛹', '👮'], font: 'impact', bg: ['#6741d9', '#3b2f5c'],
+    music: { mode: 'mixo', bpm: 150, wave: 'square', style: 'drive', root: 57 }, voice: { wave: 'square', mul: 1, echo: 0.2 },
+    /*EN*/ en: { title: 'Rail Rush', tag: 'Run, jump and switch tracks', help: 'You run along three tracks. Swipe left or right to switch track. Swipe up to jump over the 🚧 fences. Swipe down to slide under the signs. Wagons can\'t be jumped: switch track. Pick up 💰 for points. Each crash costs a life. Run the distance each level asks for.', tvHelp: '◀ ▶ switch track · ▲ jump · ▼ slide.', dict: { '¡Choque!': 'Crash!', 'm': 'm' } },
+    /*TV*/ tvHelp: '◀ ▶ cambiar de vía · ▲ saltar · ▼ agacharse.',
+    id: 'carriles', title: 'Carriles', emoji: '🛹', color: '#9775fa', origin: 'Subway Surfers (Kiloo, 2012) / Temple Run (Imangi, 2011)', pad: false,
+    help: 'Corres por tres vías. Desliza a izquierda o derecha para cambiar de vía. Desliza hacia arriba para saltar las vallas 🚧. Desliza hacia abajo para agacharte bajo los carteles. Los vagones no se saltan: cambia de vía. Coge las 💰 para sumar puntos. Cada choque te quita una vida. Recorre los metros que pide cada nivel.',
+    lives: 3, levels: 0, cap: 20,
+    /*SC*/ demo(g) {
+      const s = g.s; if (!s.p || s.dead || s.won) return { wait: 0.15 };
+      const p = s.p, see = s.v * 0.95, ahead = (ln) => s.obs.filter((o) => o.ln === ln && o.z + o.len > -0.2 && o.z < see).sort((a, b) => a.z - b.z)[0];
+      const o = ahead(p.lane), first = !s.said; if (first) s.said = 1;
+      const say = (es, en) => (first ? T(es, en) : null);
+      const blocked = (ln) => s.obs.some((x) => x.ln === ln && x.type === 'train' && x.z < see * 1.2 && x.z + x.len > -0.5);
+      if (o && o.type === 'train') { const opts = [p.lane - 1, p.lane + 1].filter((l) => l >= 0 && l <= 2 && !blocked(l)); if (opts.length) return { swipe: [g.W / 2, g.H * 0.6, opts[0] < p.lane ? 'left' : 'right'], after: 0.1, say: say('Un vagón: cambia de vía', 'A wagon: switch track') }; }
+      if (o && o.type === 'bar' && o.z < s.v * 0.32) return { swipe: [g.W / 2, g.H * 0.6, 'up'], after: 0.15, say: say('Salta la valla', 'Jump the fence') };
+      if (o && o.type === 'low' && o.z < s.v * 0.3) return { swipe: [g.W / 2, g.H * 0.5, 'down'], after: 0.1, say: say('Agáchate bajo el cartel', 'Slide under the sign') };
+      const c = s.coins.filter((x) => x.z > 1 && x.z < see).sort((a, b) => a.z - b.z)[0];
+      if (!o && c && c.ln !== p.lane && !blocked(c.ln) && Math.abs(c.ln - p.lane) === 1) return { swipe: [g.W / 2, g.H * 0.6, c.ln < p.lane ? 'left' : 'right'], after: 0.2 };
+      return { wait: 0.05 };
+    },
+    setup(g) {
+      g.s = { obs: [], coins: [], p: { lane: 1, lx: 1, h: 0, vh: 0, slide: 0, inv: 0, run: 0 }, dist: 0, nextRow: 22, dead: false, won: false };
+      geo(g); const s = g.s; s.goal = 500 + Math.min(g.lv, 30) * 60; s.v0 = clamp(13 + g.lv * 0.3, 13, 21); s.v = s.v0;
+      for (let z = 22; z < 70; z += s.gap = clamp(15 - g.lv * 0.2, 10.5, 15)) row(g, z); s.nextRow = 70;
+    },
+    layout(g) { if (g.s.p) geo(g); },
+    swipe(g, dir) { act(g, dir); },
+    key(g, k, d) { if (!d) return; act(g, { ArrowLeft: 'left', ArrowRight: 'right', ArrowUp: 'up', ' ': 'up', ArrowDown: 'down' }[k]); },
+    update(g, dt) {
+      const s = g.s, p = s.p; if (!s.obs) return;
+      p.lx += (p.lane - p.lx) * Math.min(1, dt * 14); p.run += dt * s.v;
+      if (p.vh || p.h > 0) { p.vh -= 26 * dt; p.h = Math.max(0, p.h + p.vh * dt); if (p.h === 0) p.vh = 0; }
+      if (p.slide > 0) p.slide -= dt; if (p.inv > 0) p.inv -= dt;
+      if (s.dead || s.won) return;
+      const dz = s.v * dt; s.dist += dz; s.v = s.v0 + s.dist / 400;
+      for (const o of s.obs) o.z -= dz; for (const c of s.coins) c.z -= dz;
+      s.nextRow -= dz; if (s.nextRow < 70) { row(g, 70 + s.gap * rand(0, 0.4)); s.nextRow += s.gap * rand(0.8, 1.3); }
+      const near = Math.abs(p.lx - p.lane) < 0.45;
+      for (const o of s.obs) {
+        if (o.hit || o.z > 0.35 || o.z + o.len < -0.35 || o.ln !== p.lane || !near || p.inv > 0) continue;
+        const ok = (o.type === 'bar' && p.h > 0.55) || (o.type === 'low' && p.slide > 0);
+        if (!ok) { o.hit = true; crash(g); break; }
+      }
+      for (const c of s.coins) if (!c.got && Math.abs(c.z) < 0.6 && c.ln === p.lane) { c.got = true; g.addScore(5); Arcade.sfx.coin(); }
+      s.obs = s.obs.filter((o) => o.z + o.len > -2); s.coins = s.coins.filter((c) => c.z > -1 && !c.got);
+      if (s.dist >= s.goal) { s.won = true; g.confetti(70); g.addScore(100 * g.lv, g.W / 2, g.H / 2); Arcade.sfx.win(); setTimeout(() => { if (g.state === 'play') g.win(g.lives >= 3 ? 3 : g.lives >= 2 ? 2 : 1); }, 1000); }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      const sky = ctx.createLinearGradient(0, 0, 0, H); sky.addColorStop(0, '#5f3dc4'); sky.addColorStop(0.3, '#ff8787'); sky.addColorStop(0.31, '#495057'); sky.addColorStop(1, '#343a40'); ctx.fillStyle = sky; ctx.fillRect(0, 0, W, H);
+      if (!s.p) return;
+      // edificios lejanos
+      for (let i = 0; i < 9; i++) { const bw = W / 7, bh = 40 + ((i * 53) % 70); ctx.fillStyle = i % 2 ? '#3b2f5c' : '#4c3d73'; ctx.fillRect(i * bw - 20, s.hy - bh, bw - 6, bh); }
+      // vías
+      const zs = [-0.9, 60];
+      for (let ln = 0; ln < 3; ln++) {
+        const [x1, y1, k1] = proj(g, ln, zs[0]), [x2, y2, k2] = proj(g, ln, zs[1]);
+        ctx.fillStyle = '#6c5b4a'; ctx.beginPath(); ctx.moveTo(x1 - s.lw * 0.45 * k1, y1); ctx.lineTo(x1 + s.lw * 0.45 * k1, y1); ctx.lineTo(x2 + s.lw * 0.45 * k2, y2); ctx.lineTo(x2 - s.lw * 0.45 * k2, y2); ctx.fill();
+        ctx.strokeStyle = '#ced4da'; ctx.lineWidth = 3; for (const off of [-0.28, 0.28]) { ctx.beginPath(); ctx.moveTo(x1 + off * s.lw * k1, y1); ctx.lineTo(x2 + off * s.lw * k2, y2); ctx.stroke(); }
+      }
+      for (let z = (-(s.dist % 2)); z < 60; z += 2) for (let ln = 0; ln < 3; ln++) { const [x, y, k] = proj(g, ln, z); ctx.fillStyle = 'rgba(60,40,20,.7)'; ctx.fillRect(x - s.lw * 0.35 * k, y - 2 * k, s.lw * 0.7 * k, 4 * k); }
+      // cosas, de lejos a cerca
+      const things = [];
+      for (const o of s.obs) things.push({ z: o.z, draw: () => {
+        const [x, y, k] = proj(g, o.ln, Math.max(o.z, -0.9));
+        if (o.type === 'train') { const [, y2, k2] = proj(g, o.ln, o.z + o.len), w1 = s.lw * 0.85 * k, w2 = s.lw * 0.85 * k2;
+          ctx.fillStyle = '#c92a2a'; ctx.beginPath(); ctx.moveTo(x - w1 / 2, y); ctx.lineTo(x + w1 / 2, y); ctx.lineTo(proj(g, o.ln, o.z + o.len)[0] + w2 / 2, y2 - 95 * k2); ctx.lineTo(proj(g, o.ln, o.z + o.len)[0] - w2 / 2, y2 - 95 * k2); ctx.fill();
+          ctx.fillStyle = '#e03131'; ctx.fillRect(x - w1 / 2, y - 95 * k, w1, 95 * k); ctx.fillStyle = '#a5d8ff'; ctx.fillRect(x - w1 * 0.35, y - 80 * k, w1 * 0.7, 30 * k); Arcade.emoji(ctx, '🚃', x, y - 40 * k, 40 * k); }
+        else if (o.type === 'bar') { ctx.fillStyle = '#f59f00'; ctx.fillRect(x - s.lw * 0.42 * k, y - 34 * k, s.lw * 0.84 * k, 14 * k); ctx.fillStyle = '#212529'; for (let i = 0; i < 4; i++) ctx.fillRect(x - s.lw * 0.42 * k + i * s.lw * 0.22 * k, y - 34 * k, s.lw * 0.1 * k, 14 * k); ctx.fillRect(x - s.lw * 0.4 * k, y - 22 * k, 4 * k, 22 * k); ctx.fillRect(x + s.lw * 0.38 * k, y - 22 * k, 4 * k, 22 * k); }
+        else { ctx.fillStyle = '#495057'; ctx.fillRect(x - s.lw * 0.4 * k, y - 110 * k, 5 * k, 110 * k); ctx.fillRect(x + s.lw * 0.38 * k, y - 110 * k, 5 * k, 110 * k); ctx.fillStyle = '#1c7ed6'; ctx.fillRect(x - s.lw * 0.42 * k, y - 110 * k, s.lw * 0.84 * k, 40 * k); Arcade.emoji(ctx, '⚠️', x, y - 90 * k, 26 * k); }
+      } });
+      for (const c of s.coins) things.push({ z: c.z, draw: () => { const [x, y, k] = proj(g, c.ln, c.z, 0.5); Arcade.emoji(ctx, '💰', x, y, 30 * k); } });
+      things.push({ z: 0, me: 1, draw: () => {
+        const p = s.p, [x, y, k] = proj(g, p.lx, 0, p.h), sl = p.slide > 0;
+        ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.beginPath(); ctx.ellipse(proj(g, p.lx, 0)[0], proj(g, p.lx, 0)[1], 28, 8, 0, 0, 6.3); ctx.fill();
+        if (!(p.inv > 0 && Math.floor(p.inv * 10) % 2)) Arcade.emoji(ctx, s.dead ? '😵' : sl ? '🛹' : '🏃', x, y - (sl ? 18 : 40), sl ? 46 : 64, { flip: true, rot: sl ? 0 : Math.sin(p.run * 2) * 0.08 });
+      } });
+      things.sort((a, b) => b.z - a.z || (a.me ? 1 : -1)).forEach((t) => t.draw());
+      // progreso
+      const bw = Math.min(W - 60, 300), t = Math.min(1, s.dist / s.goal);
+      ctx.fillStyle = 'rgba(0,0,0,.35)'; Arcade.rr(ctx, W / 2 - bw / 2, g.top + 10, bw, 12, 6); ctx.fill(); ctx.fillStyle = '#ffd43b'; Arcade.rr(ctx, W / 2 - bw / 2, g.top + 10, bw * t, 12, 6); ctx.fill();
+      Arcade.txt(ctx, Math.floor(s.dist) + ' / ' + s.goal + ' m', W / 2, g.top + 36, 14, '#fff', 'center', 900, 'rgba(0,0,0,.4)');
+    },
+  });
+})();
+</script>
+</body>
+</html>

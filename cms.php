@@ -329,7 +329,7 @@ if ($p === 'edit') {
   $hasSrc = !$isNew && is_file(__DIR__ . '/herramientas/src/' . $id . '.js'); $g = $isNew ? ['id' => '', 'slug_en' => '', 'collection_id' => 'pro', 'category_id' => array_key_first($L['cat']), 'control_id' => 'tocar', 'file' => '', 'url' => '', 'emoji' => '🎮', 'color' => '#ff6b6b', 'theme_color' => '#1a1033', 'bg1' => '#2b1a5c', 'bg2' => '#1a1033', 'font' => 'round', 'deco' => '[]', 'title_es' => '', 'title_en' => '', 'tag_es' => '', 'tag_en' => '', 'desc_es' => '', 'desc_en' => '', 'help_es' => '', 'help_en' => '', 'tvhelp_es' => '', 'tvhelp_en' => '', 'tv' => null, 'origin' => '', 'lives' => 3, 'levels' => 'endless', 'cap' => null, 'physics' => 0, 'added_version' => 'cms', 'sort' => 5000, 'subject_id' => null, 'age_min' => null, 'age_max' => null, 'langs' => 'es,en', 'app' => null, 'ages' => []] : $games[$id];
   if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $in = $_POST; $row = $g;
-    foreach (['title_es', 'title_en', 'tag_es', 'tag_en', 'desc_es', 'desc_en', 'help_es', 'help_en', 'tvhelp_es', 'tvhelp_en', 'origin', 'emoji', 'color', 'theme_color', 'bg1', 'bg2', 'levels', 'langs', 'app', 'added_version'] as $k) if (isset($in[$k])) $row[$k] = trim((string)$in[$k]);
+    foreach (['title_es', 'title_en', 'tag_es', 'tag_en', 'desc_es', 'desc_en', 'help_es', 'help_en', 'tvhelp_es', 'tvhelp_en', 'origin', 'emoji', 'color', 'theme_color', 'bg1', 'bg2', 'levels', 'langs', 'app', 'added_version', 'tags'] as $k) if (isset($in[$k])) $row[$k] = trim((string)$in[$k]);
     foreach (['collection_id' => $L['col'], 'category_id' => $L['cat'], 'control_id' => $L['ctrl'], 'subject_id' => $L['subj']] as $k => $opts) if (isset($in[$k])) $row[$k] = isset($opts[$in[$k]]) ? (string)$in[$k] : null;
     $row['tv'] = in_array($in['tv'] ?? '', ['cursor', 'cruceta'], true) ? $in['tv'] : null;
     foreach (['sort', 'lives', 'cap', 'age_min', 'age_max'] as $k) if (isset($in[$k])) $row[$k] = $in[$k] === '' ? null : (int)$in[$k];
@@ -398,6 +398,7 @@ if ($p === 'edit') {
     <?= $ta('help_es', 'Cómo se juega (español)', 'Puedes usar &lt;b&gt;negrita&lt;/b&gt;.') ?><?= $ta('help_en', 'Cómo se juega (inglés)') ?>
     <?= $t('tvhelp_es', 'Controles con mando (español)', '', 'w2') ?><?= $t('tvhelp_en', 'Controles con mando (inglés)', '', 'w2') ?>
     <?= $t('origin', 'Basado en', 'Juegos originales en los que se inspira.', 'full') ?>
+    <?= $t('tags', 'Etiquetas', 'Separadas por comas. «hit» = sale también en la web Mobile Hits (y en cualquier web que tenga esa etiqueta).') ?>
   </div></div>
   <div class="card"><h2 style="margin-top:0">Detalles</h2><div class="grid">
     <?= $n('lives', 'Vidas') ?><?= $t('levels', 'Niveles', 'Un número, «endless» (por récord) o «infinite».') ?><?= $n('cap', 'Nivel máximo de dificultad') ?>
@@ -508,7 +509,7 @@ if ($p === 'webs' || $p === 'web') {
   <div class="card" style="padding:4px 10px"><table class="resp"><thead><tr><th></th><th>Web</th><th>Subdominio</th><th>Colecciones</th><th>Tele</th><th></th></tr></thead><tbody>
   <?php foreach ($webs as $id => $w): ?>
     <tr><td class="em"><span style="display:inline-grid;place-items:center;width:34px;height:34px;border-radius:10px;background:<?= e($w['c_bg']) ?>;border:3px solid <?= e($w['c_accent']) ?>"><?= e($w['emoji']) ?></span></td><td class="t"><b><?= e($w['name_es']) ?></b><small><?= e($w['font']) ?></small></td>
-      <td><code><?= e($w['host']) ?></code></td><td><?= e($w['collections'] === '*' ? 'Todas' : implode(', ', array_map(function ($c) use ($cols) { return $cols[$c]['name_es'] ?? $c; }, explode(',', $w['collections'])))) ?></td><td><?= $w['tv'] ? '📺 Sí' : 'No' ?></td>
+      <td><code><?= e($w['host']) ?></code></td><td><?= e(trim(($w['collections'] === '*' ? 'Todas' : implode(', ', array_map(function ($c) use ($cols) { return $cols[$c]['name_es'] ?? $c; }, array_filter(explode(',', $w['collections']))))) . (($w['tags'] ?? '') !== '' ? ' + etiqueta «' . $w['tags'] . '»' : ''), ' +')) ?></td><td><?= $w['tv'] ? '📺 Sí' : 'No' ?></td>
       <td class="acts"><a class="btn sm" href="<?= e(cms_url(['p' => 'web', 'id' => $id])) ?>">✏️ Editar</a></td></tr>
   <?php endforeach ?></tbody></table></div>
   <a class="btn pri" href="<?= e(cms_url(['p' => 'web'])) ?>">＋ Nueva web</a>
@@ -516,15 +517,16 @@ if ($p === 'webs' || $p === 'web') {
   }
   $id = (string)($_GET['id'] ?? ''); $isNew = $id === ''; $err = '';
   if (!$isNew && !isset($webs[$id])) go(['p' => 'webs'], 'No existe.');
-  $w = $isNew ? ['id' => '', 'host' => '', 'name_es' => '', 'name_en' => '', 'emoji' => '🎮', 'tag_es' => '', 'tag_en' => '', 'desc_es' => '', 'desc_en' => '', 'collections' => '*', 'tv' => 0, 'font' => 'Nunito', 'c_bg' => '#f6f4fb', 'c_surface' => '#ffffff', 'c_text' => '#1d1a2e', 'c_muted' => '#6c6884', 'c_accent' => '#ffce3a', 'c_ink' => '#2a2100', 'sort' => count($webs)] : $webs[$id];
+  $w = $isNew ? ['id' => '', 'host' => '', 'name_es' => '', 'name_en' => '', 'emoji' => '🎮', 'tag_es' => '', 'tag_en' => '', 'desc_es' => '', 'desc_en' => '', 'collections' => '*', 'tv' => 0, 'font' => 'Nunito', 'c_bg' => '#f6f4fb', 'c_surface' => '#ffffff', 'c_text' => '#1d1a2e', 'c_muted' => '#6c6884', 'c_accent' => '#ffce3a', 'c_ink' => '#2a2100', 'sort' => count($webs), 'tags' => ''] : $webs[$id];
   if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!empty($_POST['delete']) && !$isNew) {
       if ($w['host'] === '*') go(['p' => 'web', 'id' => $id], 'La web «*» no se puede borrar: es la que sale por defecto.');
       $a->prepare('DELETE FROM sites WHERE id = ?')->execute([$id]); cms_log('cms', 'web ' . $id, 'borrada'); go(['p' => 'webs'], 'Web borrada.');
     }
-    $row = $w; foreach (['host', 'name_es', 'name_en', 'emoji', 'tag_es', 'tag_en', 'desc_es', 'desc_en', 'font', 'c_bg', 'c_surface', 'c_text', 'c_muted', 'c_accent', 'c_ink'] as $k) if (isset($_POST[$k])) $row[$k] = trim((string)$_POST[$k]);
+    $row = $w; foreach (['host', 'name_es', 'name_en', 'emoji', 'tag_es', 'tag_en', 'desc_es', 'desc_en', 'tags', 'font', 'c_bg', 'c_surface', 'c_text', 'c_muted', 'c_accent', 'c_ink'] as $k) if (isset($_POST[$k])) $row[$k] = trim((string)$_POST[$k]);
     $row['host'] = strtolower($row['host']); $row['tv'] = empty($_POST['tv']) ? 0 : 1; $row['sort'] = (int)($_POST['sort'] ?? 0);
-    $sel = array_values(array_intersect((array)($_POST['cols'] ?? []), array_keys($cols))); $row['collections'] = !empty($_POST['all']) || !$sel ? '*' : implode(',', $sel);
+    $sel = array_values(array_intersect((array)($_POST['cols'] ?? []), array_keys($cols))); $row['tags'] = implode(',', array_filter(array_map(function ($x) { return preg_replace('/[^a-z0-9-]/', '', strtolower(trim($x))); }, explode(',', (string)$row['tags']))));
+    $row['collections'] = !empty($_POST['all']) ? '*' : ($sel ? implode(',', $sel) : ($row['tags'] !== '' ? '' : '*'));
     if ($isNew) $row['id'] = cms_slug($row['host'] === '*' ? 'principal' : explode('.', $row['host'])[0]);
     if (!preg_match('/^(\*|[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9-]+)*)$/', $row['host'])) $err = 'El subdominio solo puede llevar minúsculas, números, guiones y puntos (o «*»).';
     foreach ($webs as $o) if ($o['id'] !== $id && ($o['host'] === $row['host'] || ($isNew && $o['id'] === $row['id']))) $err = 'Ya hay una web con ese subdominio.';
@@ -556,6 +558,7 @@ if ($p === 'webs' || $p === 'web') {
     <div class="w2"><label>Texto de la portada (inglés)</label><textarea name="desc_en"><?= e($w['desc_en']) ?></textarea></div>
     <div class="full"><label>Colecciones</label><label style="display:inline-flex;gap:6px;margin-right:14px"><input type="checkbox" name="all" value="1"<?= $w['collections'] === '*' ? ' checked' : '' ?>> Todas</label>
       <?php foreach ($cols as $cid => $c): ?><label style="display:inline-flex;gap:6px;margin-right:14px"><input type="checkbox" name="cols[]" value="<?= e($cid) ?>"<?= in_array($cid, $on, true) && $w['collections'] !== '*' ? ' checked' : '' ?>> <?= e($c['emoji'] . ' ' . $c['name_es']) ?></label><?php endforeach ?></div>
+    <?= $tx('tags', 'Etiquetas de juegos', 'Además de sus colecciones, enseña los juegos con estas etiquetas (p. ej. «hit»). Sin ninguna colección marcada y con etiqueta, solo esos juegos.') ?>
     <div class="full"><label style="display:inline-flex;gap:8px"><input type="checkbox" name="tv" value="1"<?= $w['tv'] ? ' checked' : '' ?>> 📺 Web para la tele</label><p class="hint">Marcada: solo juegos con mando, siempre en modo TV y la portada es la de la tele. Sin marcar: nunca hay modo TV.</p></div>
     <?= $tx('font', 'Fuente (Google Fonts)', 'Nunito, Rubik, Baloo 2, Lora, Fredoka, Playfair Display…') ?>
     <?= $col('c_bg', 'Fondo') ?><?= $col('c_surface', 'Tarjetas y cabecera') ?><?= $col('c_text', 'Texto') ?><?= $col('c_muted', 'Texto suave') ?><?= $col('c_accent', 'Acento (botones)') ?><?= $col('c_ink', 'Texto sobre el acento') ?>

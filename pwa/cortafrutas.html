@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Corta frutas · Arcade Perdido</title>
+<meta name="theme-color" content="#2b1a0e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css?v=6d7635e467">
+</head>
+<body class="game">
+<script src="config.js?v=84fed7f189"></script>
+<script src="common.js?v=e80717317d"></script>
+<script>
+(function () {
+  const { rand, ri, clamp, pick } = Arcade;
+  const T = Arcade.T;
+  const FRUITS = ['🍉', '🍍', '🍊', '🍎', '🍋', '🥝', '🍑', '🍓', '🍌', '🥥', '🍐', '🍇'];
+  const JUICE = { '🍉': '#ff4d6d', '🍍': '#ffd43b', '🍊': '#ff922b', '🍎': '#fa5252', '🍋': '#ffe066', '🥝': '#82c91e', '🍑': '#ffa94d', '🍓': '#e03131', '🍌': '#ffec99', '🥥': '#f8f9fa', '🍐': '#c0eb75', '🍇': '#9c36b5' };
+  const G = 980;
+
+  function launch(g) {
+    const s = g.s, L = g.lv, n = ri(1, clamp(1 + Math.floor(L / 4), 1, 4)), H = g.bot - g.top;
+    for (let i = 0; i < n; i++) {
+      const bomb = L >= 2 && Math.random() < clamp(0.06 + L * 0.012, 0.06, 0.25) && i === n - 1;
+      const x = rand(g.W * 0.15, g.W * 0.85), peak = rand(H * 0.45, H * 0.82), vy = -Math.sqrt(2 * G * peak) * s.k;
+      const vx = (g.W / 2 - x) * rand(0.2, 0.7) + rand(-40, 40);
+      s.items.push({ x, y: g.bot + 30, vx, vy, r: s.R, e: bomb ? '💣' : pick(FRUITS), bomb, rot: rand(0, 6), vr: rand(-4, 4), cut: false, delay: i * rand(0.1, 0.35) });
+    }
+  }
+  // ¿corta el segmento (x1,y1)-(x2,y2) al círculo?
+  function segHit(x1, y1, x2, y2, cx, cy, r) {
+    const dx = x2 - x1, dy = y2 - y1, l2 = dx * dx + dy * dy || 1, t = clamp(((cx - x1) * dx + (cy - y1) * dy) / l2, 0, 1);
+    return Math.hypot(x1 + dx * t - cx, y1 + dy * t - cy) < r;
+  }
+  function slice(g, x1, y1, x2, y2) {
+    const s = g.s; if (s.won) return; let n = 0;
+    for (const it of s.items) {
+      if (it.cut || it.delay > 0 || !segHit(x1, y1, x2, y2, it.x, it.y, it.r * 0.8)) continue;
+      it.cut = true;
+      if (it.bomb) { s.boom = 0.6; Arcade.sfx.boom(); g.shake(0.4, 10); g.burst(it.x, it.y, { n: 20, emoji: '💥', size: 20, speed: 260 }); g.message(T('¡Bomba!', 'Bomb!'), 0.9); if (!g.die()) return; continue; }
+      n++; const a = Math.atan2(y2 - y1, x2 - x1);
+      s.halves.push({ x: it.x, y: it.y, vx: it.vx - Math.sin(a) * 90, vy: it.vy, rot: it.rot, vr: -3, e: it.e, side: 0 }, { x: it.x, y: it.y, vx: it.vx + Math.sin(a) * 90, vy: it.vy, rot: it.rot, vr: 3, e: it.e, side: 1 });
+      s.splash.push({ x: it.x, y: it.y, c: JUICE[it.e] || '#ff6b6b', t: 2.5, r: it.r * rand(0.9, 1.3) });
+      g.burst(it.x, it.y, { n: 8, color: [JUICE[it.e] || '#ff6b6b', '#fff'], speed: 180 });
+      Arcade.noise(0.08, 0.12, 2400); s.done++;
+    }
+    if (n) {
+      g.addScore(n * 10 * (n >= 3 ? 2 : 1), x2, y2 - 30);
+      if (n >= 3) { g.message(T('¡Combo x', 'Combo x') + n + '!', 0.8); Arcade.sfx.combo(n); }
+      if (s.done >= s.need && !s.won) { s.won = true; g.confetti(60); g.addScore(100 * g.lv, g.W / 2, g.H / 2); setTimeout(() => { if (g.state === 'play') g.win(g.lives >= 3 ? 3 : g.lives >= 2 ? 2 : 1); }, 1000); }
+    }
+  }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Desliza el dedo y corta la fruta', deco: ['🍉', '🍍', '🍊', '🔪', '💣', '🍓'], font: 'impact', bg: ['#5c3a1a', '#2b1a0e'],
+    music: { mode: 'mixo', bpm: 124, wave: 'triangle', style: 'drive', root: 57 }, voice: { wave: 'triangle', mul: 1, echo: 0.25 },
+    /*EN*/ en: { title: 'Fruit Slicer', tag: 'Swipe and slice the fruit', help: 'Fruit flies up from the bottom. Swipe your finger across it to slice it. Never slice a 💣 bomb: you lose a life. Every fruit that falls without being cut also costs a life. Slice three or more in one swipe for a combo. Slice the fruit each level asks for.', tvHelp: '', dict: { '¡Bomba!': 'Bomb!', 'Frutas: ': 'Fruit: ', '¡Se cayó!': 'Dropped one!' } },
+    id: 'cortafrutas', title: 'Corta frutas', emoji: '🍉', color: '#ff6b6b', origin: 'Fruit Ninja (Halfbrick, 2010)', pad: false,
+    help: 'La fruta sale volando desde abajo. Desliza el dedo por encima para cortarla. No cortes nunca una 💣 bomba: pierdes una vida. Cada fruta que cae sin cortar también te quita una vida. Corta tres o más de un tajo para hacer combo. Corta las frutas que pide cada nivel.',
+    lives: 3, levels: 0, cap: 20,
+    /*SC*/ demo(g) {
+      const s = g.s; if (!s.items || s.won) return { wait: 0.2 };
+      const live = s.items.filter((it) => !it.cut && it.delay <= 0 && !it.bomb && it.y < g.bot - 20 && it.y > g.top + 20);
+      const bombs = s.items.filter((it) => !it.cut && it.bomb && it.delay <= 0);
+      const ok = live.filter((it) => bombs.every((b) => Math.hypot(b.x - it.x, b.y - it.y) > it.r * 2.6));
+      if (!ok.length) return { wait: 0.05 };
+      const dt = 0.1, at = (it) => [it.x + it.vx * dt, it.y + it.vy * dt + 0.5 * G * s.k * s.k * dt * dt];
+      const pts = ok.sort((a, b) => a.x - b.x).slice(0, 4).map(at), L = s.R * 1.4;
+      const path = [[pts[0][0] - L, pts[0][1] + L * 0.3], ...pts, [pts[pts.length - 1][0] + L, pts[pts.length - 1][1] - L * 0.3]];
+      return { drag: path, dur: 0.06 + pts.length * 0.04, after: 0.03, say: s.done ? null : T('Desliza el dedo por encima de la fruta', 'Swipe across the fruit') };
+    },
+    setup(g) {
+      g.s = { items: [], halves: [], splash: [], trail: [], wave: 1, done: 0, need: 20 + Math.min(g.lv, 20) * 4, won: false, boom: 0, last: null, k: Math.sqrt(Math.max(0.5, (g.bot - g.top) / 700)), R: clamp(g.W / 10, 30, 52) };
+    },
+    layout(g) { if (g.s.items) g.s.R = clamp(g.W / 10, 30, 52); },
+    down(g, p) { g.s.last = [p.x, p.y]; g.s.trail = [[p.x, p.y, 0.25]]; },
+    move(g, p) { const s = g.s; if (!s.last) return; slice(g, s.last[0], s.last[1], p.x, p.y); s.last = [p.x, p.y]; s.trail.push([p.x, p.y, 0.25]); },
+    up(g) { g.s.last = null; },
+    update(g, dt) {
+      const s = g.s; if (!s.items) return; const gk = G * s.k * s.k;
+      if (s.boom > 0) s.boom -= dt;
+      for (const t of s.trail) t[2] -= dt; s.trail = s.trail.filter((t) => t[2] > 0);
+      for (const sp of s.splash) sp.t -= dt; s.splash = s.splash.filter((sp) => sp.t > 0);
+      for (const h of s.halves) { h.vy += gk * dt; h.x += h.vx * dt; h.y += h.vy * dt; h.rot += h.vr * dt; } s.halves = s.halves.filter((h) => h.y < g.H + 80);
+      for (const it of s.items) { if (it.delay > 0) { it.delay -= dt; continue; } it.vy += gk * dt; it.x += it.vx * dt; it.y += it.vy * dt; it.rot += it.vr * dt; }
+      for (const it of s.items.slice()) if (it.cut || (it.vy > 0 && it.y > g.bot + 60)) { s.items.splice(s.items.indexOf(it), 1); if (!it.cut && !it.bomb && !s.won) { Arcade.sfx.hit(); g.message(T('¡Se cayó!', 'Dropped one!'), 0.6); g.die(); } }
+      if (!s.items.length && !s.won) { s.wave -= dt; if (s.wave <= 0) { launch(g); s.wave = clamp(1.1 - g.lv * 0.03, 0.4, 1.1); } }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      const bg = ctx.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, '#8b5a2b'); bg.addColorStop(1, '#3b2412'); ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      ctx.strokeStyle = 'rgba(0,0,0,.18)'; ctx.lineWidth = 2; for (let x = 0; x < W; x += 60) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x + 20, H); ctx.stroke(); }
+      if (!s.items) return;
+      for (const sp of s.splash) { ctx.globalAlpha = Math.min(0.6, sp.t / 2); ctx.fillStyle = sp.c; ctx.beginPath(); ctx.arc(sp.x, sp.y, sp.r, 0, 6.3); ctx.fill(); } ctx.globalAlpha = 1;
+      for (const it of s.items) if (it.delay <= 0) Arcade.emoji(ctx, it.e, it.x, it.y, it.r * 2, { rot: it.rot });
+      for (const h of s.halves) { ctx.save(); ctx.beginPath(); ctx.translate(h.x, h.y); ctx.rotate(h.rot); ctx.rect(h.side ? 0 : -s.R * 1.2, -s.R * 1.2, s.R * 1.2, s.R * 2.4); ctx.clip(); Arcade.emoji(ctx, h.e, 0, 0, s.R * 2); ctx.restore(); }
+      if (s.trail.length > 1) { ctx.lineCap = 'round'; for (let i = 1; i < s.trail.length; i++) { const a = s.trail[i - 1], b = s.trail[i]; ctx.strokeStyle = 'rgba(255,255,255,' + b[2] * 3.5 + ')'; ctx.lineWidth = 2 + b[2] * 30; ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke(); } }
+      if (s.boom > 0) { ctx.fillStyle = 'rgba(255,255,255,' + s.boom + ')'; ctx.fillRect(0, 0, W, H); }
+      Arcade.txt(ctx, T('Frutas: ', 'Fruit: ') + s.done + '/' + s.need, W / 2, g.top + 18, 16, '#fff', 'center', 900, 'rgba(0,0,0,.4)');
+    },
+  });
+})();
+</script>
+</body>
+</html>

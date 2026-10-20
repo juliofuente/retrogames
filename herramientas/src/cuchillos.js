@@ -1,0 +1,102 @@
+// Lanza cuchillos|#1b1b2f
+(function () {
+  const { rand, ri, clamp, pick } = Arcade;
+  const T = Arcade.T, TAU = Math.PI * 2;
+  const GAP = 0.2;   // separación mínima (radianes) entre dos cuchillos clavados
+  const angDist = (a, b) => { const d = ((a - b) % TAU + TAU) % TAU; return Math.min(d, TAU - d); };
+
+  function newLog(g) {
+    const s = g.s, L = g.lv, boss = L % 5 === 0;
+    s.need = clamp(5 + Math.floor(L / 2), 5, 12) + (boss ? 2 : 0); s.thrown = 0; s.boss = boss;
+    s.stuck = []; s.apples = []; s.rot = 0;
+    const pre = L < 3 ? 0 : clamp(Math.floor((L - 1) / 3), 1, 4);
+    for (let i = 0; i < pre; i++) { for (let k = 0; k < 30; k++) { const a = rand(0, TAU); if (s.stuck.every((x) => angDist(x.a, a) > GAP * 2.2)) { s.stuck.push({ a, pre: true }); break; } } }
+    const na = Math.random() < 0.6 ? 1 : 0; for (let i = 0; i < na; i++) { const a = rand(0, TAU); if (s.stuck.every((x) => angDist(x.a, a) > GAP * 1.5)) s.apples.push({ a }); }
+    // giro: velocidad base y un patrón (constante, cambia de sentido, acelera y frena)
+    s.spin = clamp(1.6 + L * 0.06, 1.6, 3.6) * (Math.random() < 0.5 ? -1 : 1); s.pat = L < 4 ? 0 : ri(0, L < 10 ? 1 : 2); s.pt = 0;
+    s.logHp = 1; s.bounce = 0; s.shake = 0;
+  }
+  function spinNow(s) {
+    if (s.pat === 1) return s.spin * (Math.sin(s.pt * 0.9) > -0.3 ? 1 : -0.8);
+    if (s.pat === 2) return s.spin * (0.35 + 1.1 * Math.abs(Math.sin(s.pt * 0.7)));
+    return s.spin;
+  }
+  function hitAngle(s) { return ((Math.PI / 2 - s.rot) % TAU + TAU) % TAU; }   // ángulo (en el tronco) del punto de abajo
+  function throwKnife(g) {
+    const s = g.s; if (s.fly || s.dead || s.clear || s.thrown >= s.need) return;
+    s.fly = { y: s.ky, v: -2600 }; Arcade.tone(700, 0.04, 'square', 0.04);
+  }
+  function land(g) {
+    const s = g.s, a = hitAngle(s);
+    if (s.stuck.some((k) => angDist(k.a, a) < GAP)) {   // choca con otro cuchillo
+      s.dead = true; s.bounceK = { x: g.W / 2, y: s.cy + s.R, vx: rand(-200, 200), vy: 300, rot: 0 }; Arcade.sfx.hit(); g.shake(0.3, 8);
+      g.message(T('¡Clinc!', 'Clang!'), 0.8);
+      setTimeout(() => { if (g.state !== 'play') return; if (g.die()) { s.dead = false; s.bounceK = null; s.thrown = Math.max(0, s.thrown); } }, 900); return;
+    }
+    s.stuck.push({ a }); s.thrown++; s.shake = 0.12; g.addScore(5 * g.lv); Arcade.noise(0.05, 0.12, 900);
+    g.burst(g.W / 2, s.cy + s.R, { n: 5, color: ['#d9a066', '#8b5a2b'], speed: 120, up: 60 });
+    const ap = s.apples.find((x) => angDist(x.a, a) < 0.22); if (ap) { s.apples.splice(s.apples.indexOf(ap), 1); g.addScore(50, g.W / 2, s.cy + s.R - 30); Arcade.sfx.coin(); }
+    if (s.thrown >= s.need) {
+      s.clear = 1; Arcade.sfx.boom(); g.shake(0.3, 6); g.confetti(40);
+      s.pieces = [0, 1, 2, 3].map((i) => ({ x: g.W / 2, y: s.cy, vx: (i % 2 ? 1 : -1) * rand(120, 260), vy: -rand(200, 400), r: rand(0, 6) }));
+      g.addScore(100 * g.lv, g.W / 2, s.cy);
+      setTimeout(() => { if (g.state === 'play') g.win(g.lives >= 3 ? 3 : g.lives >= 2 ? 2 : 1); }, 1100);
+    }
+  }
+  function geo(g) { const s = g.s; s.R = clamp(Math.min(g.W, g.bot - g.top) * 0.2, 70, 140); s.cy = g.top + (g.bot - g.top) * 0.33; s.ky = g.bot - 90; s.kl = clamp(s.R * 0.75, 50, 90); }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Clava todos sin tocar ninguno', deco: ['🔪', '🪵', '🍎', '🎯', '💥', '⭐'], font: 'impact', bg: ['#2b2d42', '#1b1b2f'],
+    music: { mode: 'minor', bpm: 128, wave: 'square', style: 'drive', root: 57 }, voice: { wave: 'square', mul: 1, echo: 0.2 },
+    /*EN*/ en: { title: 'Knife Throw', tag: 'Stick them all, hit none', help: 'Tap to throw a knife at the spinning log. It sticks where it lands. If it hits another knife, you lose a life. Throw all the knives to break the log. Apples 🍎 on the log give extra points. The log spins faster and changes direction in later levels, and every 5 levels there is a boss log.', tvHelp: 'OK throws a knife.', dict: { '¡Clinc!': 'Clang!', 'JEFE': 'BOSS' } },
+    /*TV*/ tvHelp: 'OK lanza un cuchillo.',
+    id: 'cuchillos', title: 'Lanza cuchillos', emoji: '🔪', color: '#ffd43b', origin: 'Knife Hit (Ketchapp, 2017)', pad: false,
+    help: 'Toca para lanzar un cuchillo al tronco que gira. Se queda clavado donde cae. Si da contra otro cuchillo, pierdes una vida. Lanza todos los cuchillos para romper el tronco. Las manzanas 🍎 del tronco dan puntos extra. En los niveles altos gira más rápido y cambia de sentido, y cada 5 niveles hay un tronco jefe.',
+    lives: 3, levels: 0, cap: 20,
+    /*SC*/ demo(g) {
+      const s = g.s; if (!s.stuck || s.fly || s.dead || s.clear) return { wait: 0.05 };
+      // apunta al centro del hueco más grande: así siempre caben todos
+      const tf = (s.ky - (s.cy + s.R)) / 2600, w = spinNow(s), a = ((Math.PI / 2 - (s.rot + w * (tf + 0.02))) % TAU + TAU) % TAU;
+      let best = 0, bv = -1; for (let i = 0; i < 72; i++) { const c = i / 72 * TAU, v = s.stuck.length ? Math.min(...s.stuck.map((k) => angDist(k.a, c))) : 9; if (v > bv) { bv = v; best = c; } }
+      if (angDist(a, best) < 0.06 || (bv > 1.2 && s.stuck.every((k) => angDist(k.a, a) > 0.5))) return { key: ' ', dur: 0.02, after: 0.12, say: s.thrown ? null : T('Lanza cuando el hueco de abajo esté libre', 'Throw when the gap at the bottom is clear') };
+      return { wait: 0.03 };
+    },
+    setup(g) { g.s = { fly: null, dead: false, clear: 0 }; geo(g); newLog(g); },
+    layout(g) { if (g.s.stuck) geo(g); },
+    down(g) { throwKnife(g); },
+    key(g, k, d) { if (d && (k === ' ' || k === 'ArrowUp')) throwKnife(g); },
+    update(g, dt) {
+      const s = g.s; if (!s.stuck) return;
+      s.pt += dt; if (!s.clear) s.rot += spinNow(s) * dt; s.shake = Math.max(0, s.shake - dt);
+      if (s.fly) { s.fly.y += s.fly.v * dt; if (s.fly.y <= s.cy + s.R) { s.fly = null; land(g); } }
+      if (s.bounceK) { const b = s.bounceK; b.vy += 1500 * dt; b.x += b.vx * dt; b.y += b.vy * dt; b.rot += dt * 12; }
+      if (s.pieces) for (const p of s.pieces) { p.vy += 1200 * dt; p.x += p.vx * dt; p.y += p.vy * dt; p.r += dt * 5; }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      const bg = ctx.createRadialGradient(W / 2, H * 0.35, 30, W / 2, H * 0.4, H * 0.8); bg.addColorStop(0, '#3d3f63'); bg.addColorStop(1, '#14142a'); ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      if (!s.stuck) return;
+      const cx = W / 2 + (s.shake > 0 ? rand(-3, 3) : 0), cy = s.cy - (s.shake > 0 ? 6 : 0), R = s.R;
+      if (!s.clear) {
+        // cuchillos clavados (por detrás) y tronco
+        for (const k of s.stuck) { const ang = k.a + s.rot; ctx.save(); ctx.translate(cx + Math.cos(ang) * R, cy + Math.sin(ang) * R); ctx.rotate(ang - Math.PI / 2); knife(ctx, 0, s.kl * 0.45, s.kl, k.pre); ctx.restore(); }
+        const lg = ctx.createRadialGradient(cx - R * 0.3, cy - R * 0.3, R * 0.1, cx, cy, R); lg.addColorStop(0, s.boss ? '#ffa94d' : '#e0b07a'); lg.addColorStop(1, s.boss ? '#a33a00' : '#8b5a2b');
+        ctx.fillStyle = lg; ctx.beginPath(); ctx.arc(cx, cy, R, 0, TAU); ctx.fill(); ctx.strokeStyle = '#5c3a1a'; ctx.lineWidth = 6; ctx.stroke();
+        ctx.strokeStyle = 'rgba(92,58,26,.45)'; ctx.lineWidth = 2; for (let r = R * 0.25; r < R; r += R * 0.22) { ctx.beginPath(); ctx.arc(cx, cy, r, s.rot, s.rot + TAU * 0.85); ctx.stroke(); }
+        if (s.boss) Arcade.emoji(ctx, '👹', cx, cy, R * 0.8, { rot: s.rot }); else Arcade.emoji(ctx, '🎯', cx, cy, R * 0.45, { rot: s.rot });
+        for (const a of s.apples) { const ang = a.a + s.rot; Arcade.emoji(ctx, '🍎', cx + Math.cos(ang) * (R + 14), cy + Math.sin(ang) * (R + 14), 30, { rot: ang + Math.PI / 2 }); }
+      } else if (s.pieces) for (const p of s.pieces) { ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.r); ctx.fillStyle = '#c08552'; ctx.beginPath(); ctx.moveTo(0, 0); ctx.arc(0, 0, R * 0.7, 0, Math.PI / 2); ctx.fill(); ctx.restore(); }
+      if (s.fly) { ctx.save(); ctx.translate(cx, s.fly.y); knife(ctx, 0, 0, s.kl); ctx.restore(); }
+      else if (!s.dead && !s.clear && s.thrown < s.need) { ctx.save(); ctx.translate(cx, s.ky); knife(ctx, 0, 0, s.kl); ctx.restore(); }
+      if (s.bounceK) { const b = s.bounceK; ctx.save(); ctx.translate(b.x, b.y); ctx.rotate(b.rot); knife(ctx, 0, 0, s.kl); ctx.restore(); }
+      // cuchillos que quedan
+      for (let i = 0; i < s.need; i++) { const used = i < s.thrown; ctx.save(); ctx.translate(26, g.bot - 30 - i * 26); ctx.rotate(-Math.PI / 4); ctx.globalAlpha = used ? 0.25 : 1; knife(ctx, 0, 0, 28); ctx.restore(); }
+      if (s.boss && !s.clear) Arcade.txt(ctx, 'JEFE', W / 2, g.top + 18, 18, '#ff8787', 'center', 900);
+    },
+  });
+  function knife(ctx, x, y, L, dim) {   // punta hacia arriba; (x,y) es el centro
+    ctx.fillStyle = dim ? '#adb5bd' : '#e9ecef'; ctx.beginPath(); ctx.moveTo(x, y - L / 2); ctx.lineTo(x + L * 0.09, y - L * 0.05); ctx.lineTo(x - L * 0.09, y - L * 0.05); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = dim ? '#868e96' : '#ced4da'; ctx.fillRect(x - L * 0.09, y - L * 0.06, L * 0.18, L * 0.08);
+    ctx.fillStyle = dim ? '#5c3a1a' : '#8b5a2b'; Arcade.rr(ctx, x - L * 0.07, y + L * 0.02, L * 0.14, L * 0.46, 4); ctx.fill();
+  }
+})();

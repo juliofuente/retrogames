@@ -94,7 +94,7 @@ function site_url(array $w): string {
 function subcats(): array {
   global $CATS, $COLS, $GAMES, $SUBJS;
   static $o = null; if ($o !== null) return $o;
-  $multi = count($COLS) > 1; $o = [];
+  $multi = count($COLS) > 1 && !FLAT; $o = [];
   foreach ($CATS as $c) {
     if ($multi && !empty($c['col'])) continue;
     if (!$multi && $c['id'] === 'educativos' && $SUBJS) continue;
@@ -111,9 +111,12 @@ function sites_path(?string $lang = null): string { global $L; return ($lang ?? 
 function sites_label(): string { return T('Ver todos los subsites', 'See all our sites'); }
 define('TVSITE', $WEB['tv']);
 $ALL_GAMES = $GAMES;
-if ($WEB['cols'] !== null) $COLS = array_intersect_key($COLS, array_flip($WEB['cols']));
-$GAMES = array_filter($GAMES, function ($g) use ($COLS) { return isset($COLS[$g['collection_id']]) && (!TVSITE || $g['tv']); });
-if (TVSITE) $COLS = array_filter($COLS, function ($c) use ($GAMES) { foreach ($GAMES as $g) if ($g['collection_id'] === $c['id']) return true; return false; });
+/* juegos de la web: los de sus colecciones y los que llevan alguna de sus etiquetas (games.tags) */
+$tagged = function ($g) use ($WEB) { return $WEB['tags'] && array_intersect($WEB['tags'], array_map('trim', explode(',', (string)($g['tags'] ?? '')))); };
+define('FLAT', (bool)$WEB['tags']);   // web por etiqueta (Mobile Hits): se enseña como una sola colección
+$inCol = function ($g) use ($WEB) { return $WEB['cols'] === null || in_array($g['collection_id'], $WEB['cols'], true); };
+$GAMES = array_filter($GAMES, function ($g) use ($inCol, $tagged) { return ($inCol($g) || $tagged($g)) && (!TVSITE || $g['tv']); });
+$COLS = array_filter($COLS, function ($c) use ($GAMES) { foreach ($GAMES as $g) if ($g['collection_id'] === $c['id']) return true; return false; });
 $used = function (string $f) use ($GAMES) { $o = []; foreach ($GAMES as $g) $o[(string)$g[$f]] = 1; return $o; };
 $CATS = array_intersect_key($CATS, $used('category_id'));
 $CTRLS = array_intersect_key($CTRLS, $used('control_id'));
@@ -403,7 +406,7 @@ function crumbs_html(array $items): string {
 
 function render(array $o): void {
   global $L, $SITE, $CATS, $COLS, $CTRLS, $GAMES, $VERSION, $SUBJS, $AGES, $WEB;
-  $font = site_font($WEB); $multi = count($COLS) > 1;
+  $font = site_font($WEB); $multi = count($COLS) > 1 && !FLAT;
   $status = $o['status'] ?? 200;
   http_response_code($status);
   header('Content-Type: text/html; charset=utf-8');
@@ -611,7 +614,7 @@ footer .fb{display:flex;align-items:center;gap:9px;font-weight:900;color:var(--t
 function page_home(): void {
   global $COLS, $CATS, $GAMES, $L, $SITE, $WEB, $SUBJS;
   if (TVSITE) serve_index('tv');   // la web de la tele: su portada es la de la PWA para el mando
-  $multi = count($COLS) > 1; $one = $multi ? null : reset($COLS);
+  $multi = count($COLS) > 1 && !FLAT; $one = $multi ? null : reset($COLS);
   $p = $L === 'en' ? '/en/' : '/';
   $byCol = []; foreach ($GAMES as $g) $byCol[$g['collection_id']][] = $g;
   $byCat = []; foreach ($GAMES as $g) $byCat[$g['category_id']][] = $g;

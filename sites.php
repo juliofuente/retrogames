@@ -5,26 +5,32 @@
      host         subdominio («arcadeplus»: vale para cualquier dominio) o el host entero («arcadeplus.juegosboom.com»).
                   «*» es la web por defecto: la que sale con cualquier otro host (el dominio sin subdominio, localhost…).
      collections  colecciones que enseña, separadas por comas («pro», «mesa,soli»), o «*» para todas.
+     tags         etiquetas de juego (games.tags, separadas por comas): la web enseña también los juegos que las llevan, sean de
+                  la colección que sean (p. ej. «hit» → Mobile Hits). Con colecciones vacías, solo esos juegos.
      tv           1 → web para la tele: solo los juegos que se juegan con mando, siempre en modo TV y con la portada de TV.
                   0 → nunca hay modo TV (ni detección automática, ni botón 📺, ni ?tv=1).
      name_*, emoji, tag_*, desc_*   nombre, emoji y textos de la portada.
      font, c_*    su aspecto: fuente de Google Fonts y colores (fondo, tarjetas, texto, texto suave, acento y texto sobre el acento).
    Desde una web no se puede pasar a otra: los juegos, colecciones, categorías y portadas de la PWA que no son suyos dan 404. */
 
-const SITE_COLS = ['id', 'host', 'name_es', 'name_en', 'emoji', 'tag_es', 'tag_en', 'desc_es', 'desc_en', 'collections', 'tv', 'font', 'c_bg', 'c_surface', 'c_text', 'c_muted', 'c_accent', 'c_ink', 'sort'];
+const SITE_COLS = ['id', 'host', 'name_es', 'name_en', 'emoji', 'tag_es', 'tag_en', 'desc_es', 'desc_en', 'collections', 'tv', 'font', 'c_bg', 'c_surface', 'c_text', 'c_muted', 'c_accent', 'c_ink', 'sort', 'tags'];
 
 function sites_ensure(PDO $db): void {
-  if ($db->query("SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = 'sites'")->fetchColumn()) return;
+  if ($db->query("SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = 'sites'")->fetchColumn()) {
+    if (!in_array('tags', array_column($db->query('PRAGMA table_info(sites)')->fetchAll(PDO::FETCH_ASSOC), 'name'), true)) $db->exec('ALTER TABLE sites ADD COLUMN tags TEXT');
+    return;
+  }
   $db->exec("CREATE TABLE sites (id TEXT PRIMARY KEY, host TEXT NOT NULL UNIQUE, name_es TEXT NOT NULL, name_en TEXT, emoji TEXT, tag_es TEXT, tag_en TEXT, desc_es TEXT, desc_en TEXT,
-    collections TEXT NOT NULL DEFAULT '*', tv INTEGER NOT NULL DEFAULT 0, font TEXT, c_bg TEXT, c_surface TEXT, c_text TEXT, c_muted TEXT, c_accent TEXT, c_ink TEXT, sort INTEGER DEFAULT 0)");
+    collections TEXT NOT NULL DEFAULT '*', tv INTEGER NOT NULL DEFAULT 0, font TEXT, c_bg TEXT, c_surface TEXT, c_text TEXT, c_muted TEXT, c_accent TEXT, c_ink TEXT, sort INTEGER DEFAULT 0, tags TEXT)");
   $seed = [
-    ['principal', '*', 'JuegosBoom', 'JuegosBoom', '🕹️', 'Todos los juegos en una sola web.', 'All the games in one place.', '', '', '*', 0, 'Nunito', '#f6f4fb', '#ffffff', '#1d1a2e', '#6c6884', '#ffce3a', '#2a2100', 0],
-    ['arcade', 'arcade', 'Arcade Perdido', 'Lost Arcade', '🕹️', 'Las recreativas que nadie volvió a hacer.', 'The arcade games nobody made again.', '', '', 'main', 0, 'Rubik', '#120c24', '#1d1638', '#f4effe', '#a89fc9', '#ff3d9a', '#ffffff', 1],
-    ['arcadeplus', 'arcadeplus', 'Arcade Pro', 'Arcade Pro', '✨', 'Los éxitos del móvil, hechos con emojis.', 'Mobile hits, made with emojis.', '', '', 'pro', 0, 'Baloo 2', '#0b1324', '#15213c', '#eef4ff', '#98a8c6', '#3de0ff', '#03252e', 2],
-    ['mesa', 'mesa', 'Juegos de mesa', 'Board games', '♟️', 'Los clásicos de tablero, contra la máquina.', 'Board classics, against the machine.', '', '', 'mesa', 0, 'Lora', '#f4ecdf', '#fffaf1', '#2b1d10', '#7a6450', '#b5762c', '#ffffff', 3],
-    ['solitarios', 'solitarios', 'Solitarios', 'Solitaire', '🃏', 'Cien solitarios con cartas grandes.', 'A hundred solitaires with big cards.', '', '', 'soli', 0, 'Playfair Display', '#0d3b26', '#145234', '#f3f7ef', '#a9c7b4', '#f2c14e', '#2b1d00', 4],
-    ['educativos', 'educativos', 'Juegos educativos', 'Educational games', '🎓', 'Aprender jugando, de 3 a 16 años.', 'Learning through play, ages 3 to 16.', '', '', 'edu', 0, 'Fredoka', '#eef7ff', '#ffffff', '#14324a', '#5b7890', '#ff8a3d', '#ffffff', 5],
-    ['tv', 'tv', 'Arcade TV', 'Arcade TV', '📺', 'Para jugar en la tele con el mando.', 'Play on your TV with the remote.', '', '', '*', 1, 'Nunito', '#0b0b14', '#17172a', '#f1f1fa', '#9a9ab8', '#7c5cff', '#ffffff', 6],
+    ['principal', '*', 'JuegosBoom', 'JuegosBoom', '🕹️', 'Todos los juegos en una sola web.', 'All the games in one place.', '', '', '*', 0, 'Nunito', '#f6f4fb', '#ffffff', '#1d1a2e', '#6c6884', '#ffce3a', '#2a2100', 0, ''],
+    ['arcade', 'arcade', 'Arcade Perdido', 'Lost Arcade', '🕹️', 'Las recreativas que nadie volvió a hacer.', 'The arcade games nobody made again.', '', '', 'main', 0, 'Rubik', '#120c24', '#1d1638', '#f4effe', '#a89fc9', '#ff3d9a', '#ffffff', 1, ''],
+    ['arcadeplus', 'arcadeplus', 'Arcade Pro', 'Arcade Pro', '✨', 'Los éxitos del móvil, hechos con emojis.', 'Mobile hits, made with emojis.', '', '', 'pro', 0, 'Baloo 2', '#0b1324', '#15213c', '#eef4ff', '#98a8c6', '#3de0ff', '#03252e', 2, ''],
+    ['mesa', 'mesa', 'Juegos de mesa', 'Board games', '♟️', 'Los clásicos de tablero, contra la máquina.', 'Board classics, against the machine.', '', '', 'mesa', 0, 'Lora', '#f4ecdf', '#fffaf1', '#2b1d10', '#7a6450', '#b5762c', '#ffffff', 3, ''],
+    ['solitarios', 'solitarios', 'Solitarios', 'Solitaire', '🃏', 'Cien solitarios con cartas grandes.', 'A hundred solitaires with big cards.', '', '', 'soli', 0, 'Playfair Display', '#0d3b26', '#145234', '#f3f7ef', '#a9c7b4', '#f2c14e', '#2b1d00', 4, ''],
+    ['educativos', 'educativos', 'Juegos educativos', 'Educational games', '🎓', 'Aprender jugando, de 3 a 16 años.', 'Learning through play, ages 3 to 16.', '', '', 'edu', 0, 'Fredoka', '#eef7ff', '#ffffff', '#14324a', '#5b7890', '#ff8a3d', '#ffffff', 5, ''],
+    ['tv', 'tv', 'Arcade TV', 'Arcade TV', '📺', 'Para jugar en la tele con el mando.', 'Play on your TV with the remote.', '', '', '*', 1, 'Nunito', '#0b0b14', '#17172a', '#f1f1fa', '#9a9ab8', '#7c5cff', '#ffffff', 6, ''],
+    ['mobilehits', 'mobilehits', 'Mobile Hits', 'Mobile Hits', '📱', 'Los juegos de móvil que lo petaron.', 'The mobile games that changed everything.', 'Los juegos que rompieron en el móvil, rehechos con emojis: de Angry Birds, Flappy Bird y 2048 a Clash Royale, Hearthstone y Knife Hit. Gratis, sin anuncios y sin descargar nada.', 'The games that broke through on mobile, remade with emojis: from Angry Birds, Flappy Bird and 2048 to Clash Royale, Hearthstone and Knife Hit. Free, no ads, nothing to download.', '', 0, 'Poppins', '#fff4ec', '#ffffff', '#24113a', '#7d6a8c', '#ff3d6e', '#ffffff', 7, 'hit'],
   ];
   $st = $db->prepare('INSERT INTO sites (' . implode(',', SITE_COLS) . ') VALUES (' . implode(',', array_fill(0, count(SITE_COLS), '?')) . ')');
   foreach ($seed as $r) $st->execute($r);
@@ -42,6 +48,7 @@ function site_for_host(PDO $db, string $host): array {
   if (!$hit) foreach ($rows as $r) if ($r['host'] === '*') { $hit = $r; break; }
   if (!$hit) $hit = ['id' => 'principal', 'host' => '*', 'name_es' => 'Arcade Perdido', 'name_en' => 'Arcade Perdido', 'emoji' => '🕹️', 'collections' => '*', 'tv' => 0];
   $hit['cols'] = trim((string)$hit['collections']) === '*' ? null : array_values(array_filter(array_map('trim', explode(',', (string)$hit['collections']))));
+  $hit['tags'] = array_values(array_filter(array_map('trim', explode(',', (string)($hit['tags'] ?? '')))));   // además, los juegos con estas etiquetas (games.tags)
   $hit['tv'] = (int)$hit['tv'] === 1;
   return $hit;
 }
