@@ -32,8 +32,20 @@ static class Program
 {
     static async Task<int> Main(string[] argv)
     {
+        Console.OutputEncoding = Encoding.UTF8;
+        bool interactive = argv.Length == 0;
+        if (interactive) argv = Ask.Run();   // sin argumentos: pregunta por consola (y recuerda las respuestas)
         var o = Options.Parse(argv);
-        if (o == null) { Options.Help(); return 1; }
+        if (o == null) { Options.Help(); if (interactive) Ask.Pause(); return 1; }
+        int rc;
+        try { rc = await Run(o); }
+        catch (Exception e) { Console.WriteLine("Error: " + e.Message); rc = 1; }
+        if (interactive) Ask.Pause();
+        return rc;
+    }
+
+    static async Task<int> Run(Options o)
+    {
         Directory.CreateDirectory(o.Out);
 
         if (o.Puzzles != null) return await RunPuzzles(o);
@@ -200,6 +212,58 @@ static class Program
             ? $"{S("emoji")} {S("title")} — {S("tag")}\n{(origin != "" ? "Inspired by " + origin + ". " : "")}Play it free, no ads, in your browser: {S("url")}\n\n#games #freegames #html5 #emoji #mobilegames #{tag}\n"
             : $"{S("emoji")} {S("title")} — {S("tag")}\n{(origin != "" ? "Inspirado en " + origin + ". " : "")}Juega gratis y sin anuncios en el navegador: {S("url")}\n\n#juegos #juegosgratis #html5 #emoji #juegosmovil #{tag}\n";
     }
+}
+
+/* ───────────── modo preguntas (al abrirlo sin argumentos, p. ej. con doble clic o F5) ───────────── */
+static class Ask
+{
+    const string File_ = "ArcadeRecorder.respuestas.json";
+    static Dictionary<string, string> last = new();
+
+    public static string[] Run()
+    {
+        try { if (File.Exists(File_)) last = JsonSerializer.Deserialize<Dictionary<string, string>>(File.ReadAllText(File_)) ?? new(); } catch { }
+        Console.WriteLine("ArcadeRecorder · vídeos de los juegos (Enter = la respuesta entre corchetes)\n");
+        var a = new List<string>();
+        string web = Q("web", "Web de la que grabar (subdominio o dominio)", "https://mobilehits.juegosboom.com").TrimEnd('/');
+        if (!web.StartsWith("http")) web = "https://" + web;
+        a.AddRange(new[] { "--web", web });
+        string modo = Q("modo", "¿Qué quieres grabar?  1 = demos de los juegos · 2 = retos (un vídeo por problema)", "1");
+        bool retos = modo.Trim() == "2";
+        if (retos)
+        {
+            a.AddRange(new[] { "--puzles", Q("puzles", "Juego de retos", "cerillas") });
+            a.AddRange(new[] { "--desde", Q("desde", "Desde el reto número", "1") });
+            var hasta = Q("hasta", "Hasta el reto número (Enter = todos)", "todos"); if (int.TryParse(hasta, out _)) a.AddRange(new[] { "--hasta", hasta });
+            a.AddRange(new[] { "--espera", Q("espera", "Segundos para pensar", "45") });
+        }
+        else
+        {
+            var solo = Q("solo", "Juegos concretos, separados por comas (Enter = todos los de la web)", "todos"); if (solo != "todos" && solo != "") a.AddRange(new[] { "--solo", solo });
+            a.AddRange(new[] { "--duracion", Q("duracion", "Segundos por vídeo", "75") });
+        }
+        a.AddRange(new[] { "--idioma", Q("idioma" + (retos ? "R" : "D"), "Idioma: es / en / ambos", retos ? "en" : "es") });
+        a.AddRange(new[] { "--formato", Q("formato", "Formato: vertical / horizontal / ambos", "vertical") });
+        var mus = Q("musica", "Música de fondo: archivo o carpeta (Enter = solo efectos)", "ninguna"); if (mus != "ninguna" && mus != "") a.AddRange(new[] { "--musica", mus.Trim('"') });
+        a.AddRange(new[] { "--paralelo", Q("paralelo", "Vídeos a la vez", "2") });
+        a.AddRange(new[] { "--salida", Q("salida", "Carpeta donde guardarlos", "videos") });
+        if (Q("rehacer", "¿Volver a grabar los que ya existen? s/n", "n").StartsWith("s", StringComparison.OrdinalIgnoreCase)) a.Add("--rehacer");
+        var chrome = Q("chrome", "Ruta de Chrome (Enter = buscarlo solo)", "auto"); if (chrome != "auto" && chrome != "") a.AddRange(new[] { "--chrome", chrome.Trim('"') });
+        try { File.WriteAllText(File_, JsonSerializer.Serialize(last, new JsonSerializerOptions { WriteIndented = true })); } catch { }
+        Console.WriteLine("\nArgumentos equivalentes (para ponerlos en un .bat):\n  ArcadeRecorder " + string.Join(" ", a.Select(x => x.Contains(' ') ? "\"" + x + "\"" : x)) + "\n");
+        return a.ToArray();
+    }
+
+    static string Q(string key, string text, string def)
+    {
+        var d = last.TryGetValue(key, out var v) && v != "" ? v : def;
+        Console.Write($"{text} [{d}]: ");
+        var r = (Console.ReadLine() ?? "").Trim();
+        if (r == "") r = d;
+        last[key] = r; return r;
+    }
+
+    public static void Pause() { Console.WriteLine("\nPulsa Enter para salir…"); try { Console.ReadLine(); } catch { } }
 }
 
 /* ───────────── opciones ───────────── */

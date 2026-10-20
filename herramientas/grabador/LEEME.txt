@@ -16,6 +16,8 @@ Requisitos
 · .NET 8 SDK · Google Chrome (o Chromium / Edge) · ffmpeg en el PATH (o --ffmpeg ruta). Sin paquetes NuGet.
 
 Uso
+  Sin argumentos (doble clic, o F5 en Visual Studio) pregunta todo por consola, recuerda las respuestas para la próxima vez
+  (ArcadeRecorder.respuestas.json) y enseña los argumentos equivalentes por si quieres ponerlos en un .bat.
   cd herramientas/grabador
   dotnet run -c Release -- --web https://arcadeplus.juegosboom.com
   dotnet run -c Release -- --sitemap https://mobilehits.juegosboom.com/sitemap.xml --formato ambos --musica C:\musica --paralelo 3
