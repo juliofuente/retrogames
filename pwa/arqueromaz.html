@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Arquero de mazmorra · Arcade Perdido</title>
+<meta name="theme-color" content="#2b2118">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css?v=6d7635e467">
+</head>
+<body class="game">
+<script src="config.js?v=84fed7f189"></script>
+<script src="common.js?v=3b61f0ca2c"></script>
+<script>
+(function () {
+  const { rand, ri, clamp, pick, shuffle } = Arcade;
+  const T = Arcade.T;
+  const RW = 11, RH = 15;   // sala en casillas
+  const FOES = {
+    slime: { e: '🟢', hp: 30, sp: 55, r: 14, dmg: 12, pts: 10 },
+    bat: { e: '🦇', hp: 18, sp: 95, r: 12, dmg: 10, pts: 12, fly: true },
+    skel: { e: '💀', hp: 40, sp: 35, r: 14, dmg: 12, pts: 15, shoot: 2.2 },
+    mage: { e: '🧙', hp: 55, sp: 25, r: 15, dmg: 14, pts: 25, shoot: 2.8, ring: true },
+    ogre: { e: '👹', hp: 180, sp: 40, r: 22, dmg: 25, pts: 60, shoot: 3.2, ring: true, boss: true },
+  };
+  const UPS = [
+    { id: 'multi', e: '🏹', es: 'Disparo doble', en: 'Double shot' },
+    { id: 'rate', e: '⚡', es: 'Disparas más rápido', en: 'Faster shots' },
+    { id: 'hp', e: '❤️', es: '+40 de vida y te curas', en: '+40 HP and heal' },
+    { id: 'dmg', e: '🔥', es: 'Flechas más fuertes', en: 'Stronger arrows' },
+    { id: 'side', e: '↔️', es: 'Flechas a los lados', en: 'Side arrows' },
+    { id: 'speed', e: '👟', es: 'Corres más', en: 'Run faster' },
+  ];
+  function geo(g) { const s = g.s, top = g.top + 34, bot = g.bot - 10 - (g.demoOn ? 36 : 0); s.c = Math.floor(Math.min((g.W - 12) / RW, (bot - top) / RH)); s.ox = Math.round((g.W - s.c * RW) / 2); s.oy = Math.round(top + (bot - top - s.c * RH) / 2); s.k = s.c / 34; }
+  const W2 = (s) => s.c * RW, H2 = (s) => s.c * RH;   // tamaño de la sala en px (coordenadas locales)
+  function blocked(s, x, y, r) { if (x < s.c * 0.5 + r || y < s.c * 0.5 + r || x > W2(s) - s.c * 0.5 - r || y > H2(s) - s.c * 0.5 - r) return true; for (const b of s.rocks) if (Math.abs(b.x - x) < s.c / 2 + r * 0.8 && Math.abs(b.y - y) < s.c / 2 + r * 0.8) return true; return false; }
+  function room(g) {
+    const s = g.s, L = g.lv, n = s.ri, boss = n === s.rooms - 1 && L % 2 === 0; s.rocks = []; s.foes = []; s.shots = []; s.arrows = []; s.door = false; s.fx = [];
+    const nr = ri(2, 6); for (let i = 0; i < nr; i++) { const x = ri(1, RW - 2), y = ri(3, RH - 5); s.rocks.push({ x: (x + 0.5) * s.c, y: (y + 0.5) * s.c }); }
+    const pool = ['slime', 'slime', 'bat']; if (L >= 2 || n >= 1) pool.push('skel'); if (L >= 5) pool.push('mage', 'bat'); if (L >= 9) pool.push('skel', 'mage');
+    const nf = boss ? 2 : clamp(3 + Math.floor(L / 5) + Math.floor(n / 2), 3, 7), mult = 1 + L * 0.04 + n * 0.04;
+    const add = (t) => { for (let k = 0; k < 40; k++) { const x = rand(s.c, W2(s) - s.c), y = rand(s.c, H2(s) * 0.55); if (!blocked(s, x, y, 16)) { const F = FOES[t]; s.foes.push({ t, x, y, hp: F.hp * mult, max: F.hp * mult, cd: rand(1, F.shoot || 2), ph: rand(0, 6), hit: 0 }); return; } } };
+    for (let i = 0; i < nf; i++) add(pick(pool)); if (boss) add('ogre');
+    s.hero.x = W2(s) / 2; s.hero.y = H2(s) - s.c * 1.5; s.hero.cd = 0.4; s.inv = 1;
+  }
+  function nearest(s) { let b = null, bd = 1e9; for (const f of s.foes) { const d = Math.hypot(f.x - s.hero.x, f.y - s.hero.y); if (d < bd) { bd = d; b = f; } } return b; }
+  function shoot(g) {
+    const s = g.s, h = s.hero, f = nearest(s); if (!f) return; const a = Math.atan2(f.y - h.y, f.x - h.x), sp = 520 * s.k, n = h.multi;
+    for (let i = 0; i < n; i++) { const off = (i - (n - 1) / 2) * 0.12; s.arrows.push({ x: h.x, y: h.y, vx: Math.cos(a + off) * sp, vy: Math.sin(a + off) * sp }); }
+    if (h.side) for (const da of [-Math.PI / 2, Math.PI / 2]) s.arrows.push({ x: h.x, y: h.y, vx: Math.cos(a + da) * sp, vy: Math.sin(a + da) * sp });
+    h.face = Math.cos(a) < 0 ? -1 : 1; Arcade.tone(900, 0.03, 'triangle', 0.03, -300);
+  }
+  function hurt(g, d) {
+    const s = g.s; if (s.inv > 0 || s.dead) return; s.hero.hp -= d; s.inv = 0.8; Arcade.sfx.hit ? Arcade.sfx.hit() : Arcade.tone(160, 0.1, 'square', 0.05); g.shake && g.shake(4);
+    if (s.hero.hp <= 0) { s.dead = true; Arcade.sfx.bad(); g.message(T('¡Caíste!', 'You fell!'), 1.1); setTimeout(() => { if (g.state === 'play' && g.die()) { s.dead = false; s.hero.hp = s.hero.max; room(g); } }, 1300); }
+  }
+  function offerUps(s) { s.choice = shuffle(UPS.filter((u) => !(u.id === 'side' && s.hero.side) && !(u.id === 'multi' && s.hero.multi >= 3))).slice(0, 2); }
+  function takeUp(g, u) { const h = g.s.hero; if (u.id === 'multi') h.multi++; if (u.id === 'rate') h.rate *= 0.78; if (u.id === 'hp') { h.max += 40; h.hp = h.max; } if (u.id === 'dmg') h.dmg *= 1.35; if (u.id === 'side') h.side = true; if (u.id === 'speed') h.sp *= 1.18; g.s.choice = null; Arcade.sfx.coin(); g.message(u.e + ' ' + T(u.es, u.en), 0.9); }
+  const toL = (s, p) => [p.x - s.ox, p.y - s.oy];
+  function cardRects(g) { const s = g.s, w = Math.min(150, (g.W - 50) / 2), h = 120, y = g.H / 2 - h / 2; return [0, 1].map((i) => ({ x: g.W / 2 + (i ? 10 : -10 - w), y, w, h })); }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Muévete para esquivar, para quieto para disparar', deco: ['🏹', '🦇', '💀', '🧙', '👹', '🚪'], font: 'impact', bg: ['#4a3b2a', '#2b2118'],
+    music: { mode: 'minor', bpm: 124, wave: 'square', style: 'drive', root: 52 }, voice: { wave: 'square', mul: 1, echo: 0.25 },
+    /*EN*/ en: { title: 'Dungeon Archer', tag: 'Move to dodge, stand still to shoot', help: 'Drag your finger anywhere to move your archer, like a joystick. When you let go and stand still, he shoots at the nearest enemy by himself. Dodge the enemy shots ⚪ and don\'t let them touch you. Clear the room and the door 🚪 at the top opens: walk through it. After each room choose an upgrade. Get through all the rooms of the level.', tvHelp: 'Arrows move; let go to shoot. OK chooses an upgrade.', dict: {} },
+    /*TV*/ tvHelp: 'Las flechas mueven; suelta para disparar. OK elige mejora.',
+    id: 'arqueromaz', title: 'Arquero de mazmorra', emoji: '🏹', color: '#ffa94d', origin: 'Archero (Habby, 2019)', pad: false,
+    help: 'Arrastra el dedo en cualquier parte para mover a tu arquero, como un joystick. Cuando sueltas y se queda quieto, dispara solo al enemigo más cercano. Esquiva los disparos enemigos ⚪ y que no te toquen. Limpia la sala y se abre la puerta 🚪 de arriba: pasa por ella. Después de cada sala elige una mejora. Supera todas las salas del nivel.',
+    lives: 3, levels: 0, cap: 20,
+    tv: { mode: 'tap', targets: (g) => (g.s.choice ? cardRects(g) : []) },
+    /*SC*/ demo(g) {
+      const s = g.s; if (!s.hero || s.dead || s.won) return { wait: 0.2 };
+      if (s.choice) { const r = cardRects(g)[ri(0, 1)]; return { tap: [r.x + r.w / 2, r.y + r.h / 2], after: 0.5, say: T('Elige una mejora', 'Choose an upgrade') }; }
+      const h = s.hero; let dx = 0, dy = 0;
+      if (s.door) {   // camino por casillas hasta la puerta, rodeando rocas
+        const cx0 = Math.floor(h.x / s.c), cy0 = Math.floor(h.y / s.c), goal = Math.floor(RW / 2), rock = new Set(s.rocks.map((b) => Math.floor(b.x / s.c) + ',' + Math.floor(b.y / s.c))), prev = new Map([[cx0 + ',' + cy0, null]]), q = [[cx0, cy0]]; let end = null;
+        for (let i = 0; i < q.length && !end; i++) { const [x, y] = q[i]; if (x === goal && y <= 1) { end = [x, y]; break; } for (const [ax, ay] of [[0, -1], [1, 0], [-1, 0], [0, 1]]) { const nx = x + ax, ny = y + ay, key = nx + ',' + ny; if (prev.has(key) || nx < 1 || nx > RW - 2 || ny < 1 || ny > RH - 2 || rock.has(key)) continue; prev.set(key, [x, y]); q.push([nx, ny]); } }
+        let tgt = [goal, 0]; if (end) { let cur = end, path = [cur]; while (prev.get(cur.join(','))) { cur = prev.get(cur.join(',')); path.push(cur); } path.reverse(); tgt = path[1] || [goal, 0]; if (path.length <= 2) tgt = [goal, 0]; }
+        dx = (tgt[0] + 0.5) * s.c - h.x; dy = (tgt[1] + 0.5) * s.c - h.y; if (tgt[1] === 0) dy = -s.c;
+      }
+      else {
+        // esquivar disparos que vienen
+        for (const b of s.shots) { const rx = h.x - b.x, ry = h.y - b.y, v2 = b.vx * b.vx + b.vy * b.vy, t = (rx * b.vx + ry * b.vy) / v2; if (t < 0 || t > 0.9) continue; const cx = b.x + b.vx * t - h.x, cy = b.y + b.vy * t - h.y; if (Math.hypot(cx, cy) < 30 * s.k) { const px = -b.vy, py = b.vx, sg = px * -cx + py * -cy > 0 ? 1 : -1; dx += px * sg; dy += py * sg; } }
+        // alejarse de los que se acercan
+        s.fleeT = s.fleeT || 0; if (s.fleeT > 1) { s.fleeT -= 0.6; } else for (const f of s.foes) { const d = Math.hypot(f.x - h.x, f.y - h.y); if (d < 85 * s.k) { dx += (h.x - f.x) / d * 200; dy += (h.y - f.y) / d * 200; } }
+        if (dx || dy) s.fleeT += 0.3; else s.fleeT = Math.max(0, s.fleeT - 0.12);
+        if (!dx && !dy) return { wait: 0.12, say: !s.said ? (s.said = 1, T('Suelta el dedo y dispara solo', 'Let go and he shoots by himself')) : null };
+      }
+      const a = Math.atan2(dy, dx), cx = g.W / 2, cy = g.H * 0.6, L = 50;
+      return { drag: [[cx, cy], [cx + Math.cos(a) * L, cy + Math.sin(a) * L], [cx + Math.cos(a) * L * 1.05, cy + Math.sin(a) * L * 1.05]], dur: 0.3, after: 0, say: !s.said2 ? (s.said2 = 1, T('Arrastra para moverte', 'Drag to move')) : null };
+    },
+    setup(g) {
+      const L = g.lv; g.s = { rooms: clamp(2 + Math.floor(L / 4), 2, 6), ri: 0, hero: { x: 0, y: 0, hp: 100, max: 100, multi: 1, rate: 0.65, dmg: 24, side: false, sp: 170, face: 1, cd: 0 }, keys: {}, fx: [] };
+      geo(g); room(g);
+    },
+    layout(g) { if (g.s.hero) geo(g); },
+    down(g, p) { const s = g.s; if (s.choice) { const i = cardRects(g).findIndex((r) => p.x > r.x && p.x < r.x + r.w && p.y > r.y && p.y < r.y + r.h); if (i >= 0) takeUp(g, s.choice[i]); s.skipUp = true; return; } s.joy = { x: p.x, y: p.y, dx: 0, dy: 0 }; },
+    move(g, p) { const j = g.s.joy; if (!j) return; j.dx = p.x - j.x; j.dy = p.y - j.y; const d = Math.hypot(j.dx, j.dy); if (d > 60) { j.x += j.dx / d * (d - 60); j.y += j.dy / d * (d - 60); j.dx = p.x - j.x; j.dy = p.y - j.y; } },
+    up(g) { g.s.joy = null; },
+    tap(g, p) { if (g.s.choice) this.down(g, p); },
+    key(g, k, d) { const s = g.s; s.keys[k] = d; if (d && k === ' ' && s.choice) takeUp(g, s.choice[0]); },
+    update(g, dt) {
+      const s = g.s, h = s.hero; if (!h) return;
+      for (const f of s.fx) f.t -= dt; s.fx = s.fx.filter((f) => f.t > 0);
+      if (s.dead || s.won || s.choice) return;
+      if (s.inv > 0) s.inv -= dt;
+      // movimiento
+      let mx = (s.keys.ArrowRight ? 1 : 0) - (s.keys.ArrowLeft ? 1 : 0), my = (s.keys.ArrowDown ? 1 : 0) - (s.keys.ArrowUp ? 1 : 0);
+      if (s.joy && Math.hypot(s.joy.dx, s.joy.dy) > 8) { mx = s.joy.dx; my = s.joy.dy; }
+      const ml = Math.hypot(mx, my), moving = ml > 0;
+      if (moving) { const v = h.sp * s.k * dt, nx = h.x + mx / ml * v, ny = h.y + my / ml * v; if (!blocked(s, nx, h.y, 12 * s.k)) h.x = nx; if (!blocked(s, h.x, ny, 12 * s.k) || (s.door && ny < s.c && Math.abs(h.x - W2(s) / 2) < s.c)) h.y = ny; if (mx) h.face = mx < 0 ? -1 : 1; h.walk = (h.walk || 0) + dt; }
+      else { h.cd -= dt; if (h.cd <= 0 && s.foes.length) { h.cd = h.rate; shoot(g); } }
+      // flechas
+      for (const a of s.arrows) { a.x += a.vx * dt; a.y += a.vy * dt; if (a.x < s.c * 0.5 || a.y < s.c * 0.5 || a.x > W2(s) - s.c * 0.5 || a.y > H2(s) - s.c * 0.5) a.dead = true; for (const f of s.foes) if (!a.dead && Math.hypot(f.x - a.x, f.y - a.y) < FOES[f.t].r * s.k + 4) { a.dead = true; f.hp -= h.dmg; f.hit = 0.12; if (f.hp <= 0 && !f.dead) { f.dead = true; g.addScore(FOES[f.t].pts, f.x + s.ox, f.y + s.oy); s.fx.push({ x: f.x, y: f.y, t: 0.4, e: '💥' }); Arcade.sfx.pop(); } } }
+      s.arrows = s.arrows.filter((a) => !a.dead); s.foes = s.foes.filter((f) => !f.dead);
+      // enemigos
+      for (const f of s.foes) {
+        const F = FOES[f.t], d = Math.hypot(h.x - f.x, h.y - f.y) || 1; f.ph += dt; if (f.hit > 0) f.hit -= dt;
+        let vx = (h.x - f.x) / d, vy = (h.y - f.y) / d; if (F.fly) { vx += Math.cos(f.ph * 3) * 0.8; vy += Math.sin(f.ph * 2.3) * 0.8; } if (F.shoot && d < 140 * s.k) { vx = -vx * 0.5; vy = -vy * 0.5; }
+        const v = F.sp * s.k * (1 + g.lv * 0.01) * dt, nx = f.x + vx * v, ny = f.y + vy * v; if (F.fly || !blocked(s, nx, f.y, F.r * s.k)) f.x = clamp(nx, s.c, W2(s) - s.c); if (F.fly || !blocked(s, f.x, ny, F.r * s.k)) f.y = clamp(ny, s.c, H2(s) - s.c);
+        if (d < (F.r + 12) * s.k) hurt(g, F.dmg);
+        if (F.shoot) { f.cd -= dt; if (f.cd <= 0) { f.cd = F.shoot * rand(0.8, 1.2) / (1 + g.lv * 0.02); const sp = 160 * s.k * (1 + g.lv * 0.008), a = Math.atan2(h.y - f.y, h.x - f.x);
+          if (F.ring) for (let i = 0; i < (F.boss ? 12 : 6); i++) { const b = a + i * Math.PI * 2 / (F.boss ? 12 : 6); s.shots.push({ x: f.x, y: f.y, vx: Math.cos(b) * sp * 0.8, vy: Math.sin(b) * sp * 0.8, dmg: F.dmg }); }
+          else s.shots.push({ x: f.x, y: f.y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, dmg: F.dmg }); } }
+      }
+      for (const b of s.shots) { b.x += b.vx * dt; b.y += b.vy * dt; if (blocked(s, b.x, b.y, 0)) b.dead = true; if (Math.hypot(b.x - h.x, b.y - h.y) < 13 * s.k) { b.dead = true; hurt(g, b.dmg); } }
+      s.shots = s.shots.filter((b) => !b.dead);
+      // sala limpia → puerta
+      if (!s.foes.length && !s.door) { s.door = true; s.shots = []; Arcade.tone(523, 0.12, 'triangle', 0.06); Arcade.tone(784, 0.18, 'triangle', 0.06); if (s.ri < s.rooms - 1) offerUps(s); }
+      if (s.door && h.y < s.c * 0.6) {
+        s.ri++; if (s.ri >= s.rooms) { s.won = true; g.confetti(70); Arcade.sfx.win(); g.addScore(150 * g.lv, g.W / 2, g.H / 2); setTimeout(() => { if (g.state === 'play') g.win(g.lives >= 3 ? 3 : g.lives >= 2 ? 2 : 1); }, 1000); }
+        else { room(g); g.message(T('Sala', 'Room') + ' ' + (s.ri + 1) + '/' + s.rooms, 0.8); }
+      }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H; ctx.fillStyle = '#1a1410'; ctx.fillRect(0, 0, W, H); if (!s.hero) return; const c = s.c, k = s.k, h = s.hero;
+      ctx.save(); ctx.translate(s.ox, s.oy);
+      for (let y = 0; y < RH; y++) for (let x = 0; x < RW; x++) { const wall = x === 0 || y === 0 || x === RW - 1 || y === RH - 1; ctx.fillStyle = wall ? '#4a3b2a' : (x + y) % 2 ? '#8c7356' : '#957b5c'; ctx.fillRect(x * c, y * c, c + 0.5, c + 0.5); if (wall) { ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.fillRect(x * c, y * c + c - 4, c, 4); } }
+      // puerta
+      const dx = (RW / 2 - 0.5) * c; ctx.fillStyle = s.door ? '#212529' : '#5c3d1e'; ctx.fillRect(dx, 0, c, c); Arcade.emoji(ctx, s.door ? '✨' : '🔒', dx + c / 2, c / 2, c * 0.6);
+      for (const b of s.rocks) Arcade.emoji(ctx, '🪨', b.x, b.y, c * 0.95);
+      for (const f of s.foes) { const F = FOES[f.t], r = F.r * k; ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.beginPath(); ctx.ellipse(f.x, f.y + r * 0.9, r, r * 0.3, 0, 0, 6.3); ctx.fill(); if (f.hit > 0) ctx.globalAlpha = 0.6; Arcade.emoji(ctx, F.e, f.x, f.y + (F.fly ? Math.sin(f.ph * 6) * 3 : 0), r * 2.3); ctx.globalAlpha = 1; ctx.fillStyle = '#000'; ctx.fillRect(f.x - r, f.y - r * 1.5, r * 2, 4); ctx.fillStyle = '#fa5252'; ctx.fillRect(f.x - r, f.y - r * 1.5, r * 2 * f.hp / f.max, 4); }
+      for (const a of s.arrows) { ctx.save(); ctx.translate(a.x, a.y); ctx.rotate(Math.atan2(a.vy, a.vx)); ctx.strokeStyle = '#fff3bf'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(-10 * k, 0); ctx.lineTo(8 * k, 0); ctx.stroke(); ctx.fillStyle = '#adb5bd'; ctx.beginPath(); ctx.moveTo(12 * k, 0); ctx.lineTo(5 * k, -4 * k); ctx.lineTo(5 * k, 4 * k); ctx.fill(); ctx.restore(); }
+      for (const b of s.shots) { ctx.fillStyle = '#e64980'; ctx.beginPath(); ctx.arc(b.x, b.y, 7 * k, 0, 6.3); ctx.fill(); ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(b.x, b.y, 3.5 * k, 0, 6.3); ctx.fill(); }
+      for (const f of s.fx) Arcade.emoji(ctx, f.e, f.x, f.y, 30 * k * (1 + (0.4 - f.t)));
+      if (!(s.inv > 0 && Math.floor(s.inv * 12) % 2)) { ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.beginPath(); ctx.ellipse(h.x, h.y + 14 * k, 13 * k, 4 * k, 0, 0, 6.3); ctx.fill(); Arcade.emoji(ctx, s.dead ? '😵' : '🧝', h.x, h.y - 2 * k + Math.abs(Math.sin((h.walk || 0) * 12)) * -3, 34 * k, { flip: h.face > 0 }); }
+      ctx.restore();
+      // joystick
+      if (s.joy) { ctx.strokeStyle = 'rgba(255,255,255,.35)'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(s.joy.x, s.joy.y, 60, 0, 6.3); ctx.stroke(); ctx.fillStyle = 'rgba(255,255,255,.35)'; ctx.beginPath(); ctx.arc(s.joy.x + s.joy.dx, s.joy.y + s.joy.dy, 22, 0, 6.3); ctx.fill(); }
+      // vida y salas
+      const bw = Math.min(160, W * 0.4), bx = 12, by = g.top + 8; ctx.fillStyle = 'rgba(0,0,0,.5)'; Arcade.rr(ctx, bx, by, bw, 12, 6); ctx.fill(); ctx.fillStyle = h.hp < h.max * 0.3 ? '#fa5252' : '#51cf66'; Arcade.rr(ctx, bx, by, bw * clamp(h.hp / h.max, 0, 1), 12, 6); ctx.fill();
+      Arcade.txt(ctx, Math.max(0, Math.ceil(h.hp)) + '', bx + bw + 8, by + 6, 12, '#fff', 'left', 900);
+      Arcade.txt(ctx, T('Sala', 'Room') + ' ' + (Math.min(s.ri, s.rooms - 1) + 1) + '/' + s.rooms, W - 12, by + 6, 14, '#ffd43b', 'right', 900);
+      // mejoras
+      if (s.choice) {
+        ctx.fillStyle = 'rgba(0,0,0,.6)'; ctx.fillRect(0, 0, W, H); Arcade.txt(ctx, T('Elige una mejora', 'Choose an upgrade'), W / 2, H / 2 - 90, 20, '#fff', 'center', 900);
+        cardRects(g).forEach((r, i) => { const u = s.choice[i]; ctx.fillStyle = '#fff4e6'; Arcade.rr(ctx, r.x, r.y, r.w, r.h, 14); ctx.fill(); ctx.strokeStyle = '#ffa94d'; ctx.lineWidth = 3; ctx.stroke(); Arcade.emoji(ctx, u.e, r.x + r.w / 2, r.y + 40, 40); Arcade.txt(ctx, T(u.es, u.en), r.x + r.w / 2, r.y + 92, 13, '#212529', 'center', 800); });
+      }
+    },
+  });
+})();
+</script>
+</body>
+</html>

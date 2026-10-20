@@ -1,0 +1,137 @@
+// Ludo|#f1f3f5
+(function () {
+  const { rand, ri, clamp, pick } = Arcade;
+  const T = Arcade.T;
+  // recorrido común de 52 casillas en un tablero de 15×15 (empieza en la salida del rojo)
+  const TRACK = [];
+  { const seg = (a, b, fixed, isRow) => { const st = a < b ? 1 : -1; for (let v = a; v !== b + st; v += st) TRACK.push(isRow ? [v, fixed] : [fixed, v]); };
+    seg(1, 5, 6, true); seg(5, 0, 6, false); TRACK.push([7, 0]); seg(0, 5, 8, false); seg(9, 14, 6, true); TRACK.push([14, 7]); seg(14, 9, 8, true); seg(9, 14, 8, false); TRACK.push([7, 14]); seg(14, 9, 6, false); seg(5, 0, 8, true); TRACK.push([0, 7]); TRACK.push([0, 6]); }
+  const SAFE = new Set([0, 8, 13, 21, 26, 34, 39, 47]);
+  const P = [
+    { name: ['Rojo', 'Red'], col: '#e03131', soft: '#ffc9c9', start: 0, home: [[1, 7], [2, 7], [3, 7], [4, 7], [5, 7]], base: [1.5, 1.5], face: '🙂' },
+    { name: ['Verde', 'Green'], col: '#2f9e44', soft: '#b2f2bb', start: 13, home: [[7, 1], [7, 2], [7, 3], [7, 4], [7, 5]], base: [10.5, 1.5], face: '🤖' },
+    { name: ['Amarillo', 'Yellow'], col: '#f08c00', soft: '#ffec99', start: 26, home: [[13, 7], [12, 7], [11, 7], [10, 7], [9, 7]], base: [10.5, 10.5], face: '🤖' },
+    { name: ['Azul', 'Blue'], col: '#1971c2', soft: '#a5d8ff', start: 39, home: [[7, 13], [7, 12], [7, 11], [7, 10], [7, 9]], base: [1.5, 10.5], face: '🤖' },
+  ];
+  const END = 56;   // 0..50 recorrido, 51..55 pasillo, 56 = en casa
+  const abs = (pi, pos) => (pos >= 0 && pos <= 50 ? (P[pi].start + pos) % 52 : -1);
+  function cellOf(pi, pos, k) { if (pos < 0) { const [bx, by] = P[pi].base; return [bx + (k % 2) * 2 + 0.5, by + Math.floor(k / 2) * 2 + 0.5]; } if (pos <= 50) { const [x, y] = TRACK[abs(pi, pos)]; return [x + 0.5, y + 0.5]; } if (pos < END) { const [x, y] = P[pi].home[pos - 51]; return [x + 0.5, y + 0.5]; } const off = [[-0.45, 0], [0, -0.45], [0.45, 0], [0, 0.45]][pi]; return [7.5 + off[0] + (k - 1.5) * 0.12, 7.5 + off[1] + (k - 1.5) * 0.12]; }
+  function legal(s, pi, roll) {
+    const out = []; s.tok[pi].forEach((pos, k) => {
+      if (pos === END) return; if (pos < 0) { if (roll === 6) out.push({ k, to: 0 }); return; }
+      const to = pos + roll; if (to > END) return; out.push({ k, to });
+    }); return out;
+  }
+  function victims(s, pi, to) { const a = abs(pi, to); if (a < 0 || SAFE.has(a)) return []; const v = []; s.players.forEach((q) => { if (q === pi) return; s.tok[q].forEach((p, k) => { if (abs(q, p) === a) v.push([q, k]); }); }); return v; }
+  function danger(s, pi, to) { const a = abs(pi, to); if (a < 0 || SAFE.has(a)) return 0; let d = 0; s.players.forEach((q) => { if (q === pi) return; s.tok[q].forEach((p) => { const b = abs(q, p); if (b < 0) return; const dist = (a - b + 52) % 52; if (dist >= 1 && dist <= 6 && p + dist <= 50) d++; }); }); return d; }
+  function choose(s, pi, roll, noise) {
+    const ms = legal(s, pi, roll); if (!ms.length) return null; let best = null;
+    for (const m of ms) { const from = s.tok[pi][m.k]; let v = m.to * 0.5;
+      v += victims(s, pi, m.to).length * 40; if (m.to === END) v += 30; if (from < 0) v += 25; if (SAFE.has(abs(pi, m.to)) || m.to > 50) v += 10;
+      v -= danger(s, pi, m.to) * 14; if (from >= 0 && from <= 50) v += danger(s, pi, from) * 10; v += rand(0, noise);
+      if (!best || v > best.v) best = { ...m, v }; }
+    return best;
+  }
+  function geo(g) { const s = g.s, size = Math.min(g.W - 16, g.bot - g.top - 150 - (g.demoOn ? 30 : 0)); s.u = size / 15; s.ox = (g.W - size) / 2; s.oy = g.top + 54; s.dx = g.W / 2; s.dy = s.oy + size + 48; }
+  const px = (s, c) => [s.ox + c[0] * s.u, s.oy + c[1] * s.u];
+  function nextTurn(g, again) {
+    const s = g.s; if (s.over) return;
+    if (!again) { s.sixes = 0; let i = s.players.indexOf(s.turn); do { i = (i + 1) % s.players.length; } while (s.tok[s.players[i]].every((p) => p === END)); s.turn = s.players[i]; }
+    s.phase = 'roll'; s.roll = 0; if (s.turn !== 0) s.wait = 0.35;
+  }
+  function doRoll(g) {
+    const s = g.s; if (s.phase !== 'roll') return; s.phase = 'rolling'; s.rollT = s.turn === 0 ? 0.45 : 0.3; Arcade.noise(0.3, 0.05, 1200);
+  }
+  function afterRoll(g) {
+    const s = g.s; s.roll = s.forced || ri(1, 6); s.forced = 0;
+    if (s.roll === 6) { s.sixes++; if (s.sixes >= 3) { g.message(T('Tres seises: pierdes el turno', 'Three sixes: turn lost'), 1); s.phase = 'pause'; s.wait = 1; s.then = () => nextTurn(g, false); return; } }
+    const ms = legal(s, s.turn, s.roll);
+    if (!ms.length) { s.phase = 'pause'; s.wait = 0.8; s.then = () => nextTurn(g, s.roll === 6); return; }
+    s.phase = 'pick'; if (s.turn !== 0) s.wait = 0.3; else if (ms.length === 1 || ms.every((m) => s.tok[0][m.k] < 0)) { s.wait = 0.45; s.auto = ms[0]; }
+  }
+  function move(g, m) {
+    const s = g.s, pi = s.turn, from = s.tok[pi][m.k]; s.phase = 'anim'; s.auto = null;
+    s.anim = { pi, k: m.k, path: from < 0 ? [0] : Array.from({ length: m.to - from }, (_, i) => from + 1 + i), t: 0, to: m.to };
+  }
+  function land(g) {
+    const s = g.s, { pi, k, to } = s.anim; s.anim = null; s.tok[pi][k] = to; let extra = s.roll === 6;
+    const vs = victims(s, pi, to); for (const [q, kk] of vs) { s.tok[q][kk] = -1; extra = true; const [x, y] = px(s, cellOf(pi, to, k)); g.burst(x, y, { n: 16, color: [P[q].col, '#fff'], speed: 180 }); if (pi === 0) { g.addScore(50, x, y); Arcade.sfx.pop(); } else if (q === 0) Arcade.sfx.bad(); }
+    if (vs.length) g.message(pi === 0 ? T('¡Comida!', 'Captured!') : T('¡Te han comido!', 'You got captured!'), 0.8);
+    if (to === END) { extra = true; Arcade.tone(880, 0.15, 'triangle', 0.06, 300); if (pi === 0) g.addScore(40); }
+    if (s.tok[pi].every((p) => p === END)) {
+      s.over = true;
+      if (pi === 0) { Arcade.sfx.win(); g.confetti(80); g.addScore(200 + 50 * g.lv, g.W / 2, g.H / 2); const lead = Math.max(...s.players.filter((q) => q).map((q) => s.tok[q].filter((p) => p === END).length)); setTimeout(() => { if (g.state === 'play') g.win(lead === 0 ? 3 : lead < s.n - 1 ? 2 : 1); }, 1200); }
+      else { Arcade.sfx.lose(); g.message(T('Gana el', 'The winner is') + ' ' + T(...P[pi].name), 1.5); setTimeout(() => { if (g.state === 'play' && g.die()) { const L = g.lv; g.def.setup(g); void L; } }, 1700); }
+      return;
+    }
+    nextTurn(g, extra);
+  }
+  function tokAt(g, p) { const s = g.s; let best = null, bd = s.u * 0.75; s.tok[0].forEach((pos, k) => { const [x, y] = px(s, cellOf(0, pos, k)); const d = Math.hypot(p.x - x, p.y - y); if (d < bd) { bd = d; best = k; } }); return best; }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Saca un 6, corre y come fichas', deco: ['🎲', '🔴', '🟢', '🟡', '🔵', '⭐'], font: 'round', bg: ['#f8f9fa', '#ced4da'],
+    music: { mode: 'major', bpm: 100, wave: 'triangle', style: 'bouncy', root: 62 }, voice: { wave: 'triangle', mul: 1, echo: 0.25 },
+    /*EN*/ en: { title: 'Ludo', tag: 'Roll a 6, race round and capture', help: 'You are red. Tap the die to roll. You start with one piece out; you need a 6 to bring out the others. Then tap the piece you want to move. Landing on an opponent sends it back to its base, except on the ⭐ and start squares, which are safe. A 6, a capture or getting a piece home gives you another roll. Go round the board, up your colour\'s lane and into the centre with the exact roll. Get all your pieces home first.', tvHelp: 'OK rolls; pick a piece with the arrows.', dict: {} },
+    /*TV*/ tvHelp: 'OK tira; elige ficha con las flechas.',
+    id: 'ludo', title: 'Ludo', emoji: '🎲', color: '#e03131', origin: 'Ludo King (Gametion, 2016) · Parchís', pad: false,
+    help: 'Eres el rojo. Toca el dado para tirar. Empiezas con una ficha fuera; para sacar las demás necesitas un 6. Luego toca la ficha que quieras mover. Si caes sobre un rival lo mandas a su casa, menos en las casillas ⭐ y de salida, que son seguras. Un 6, comer o meter una ficha en casa te da otra tirada. Da la vuelta al tablero, sube por el pasillo de tu color y entra en el centro con la tirada justa. Mete todas tus fichas antes que nadie.',
+    lives: 3, levels: 0, cap: 20,
+    tv: { mode: 'tap', targets: (g) => { const s = g.s; if (!s.tok || s.turn !== 0) return []; if (s.phase === 'roll') return [{ x: s.dx - s.u * 1.2, y: s.dy - s.u * 1.2, w: s.u * 2.4, h: s.u * 2.4 }]; if (s.phase === 'pick') return legal(s, 0, s.roll).map((m) => { const [x, y] = px(s, cellOf(0, s.tok[0][m.k], m.k)); return { x: x - s.u * 0.6, y: y - s.u * 0.6, w: s.u * 1.2, h: s.u * 1.2 }; }); return []; } },
+    /*SC*/ demo(g) {
+      const s = g.s; if (!s.tok || s.turn !== 0 || s.over) return { wait: 0.3 };
+      if (s.phase === 'roll') return { tap: [s.dx, s.dy], after: 0.4, say: !s.said ? (s.said = 1, T('Toca el dado para tirar', 'Tap the die to roll')) : null };
+      if (s.phase === 'pick' && !s.auto) { const m = choose(s, 0, s.roll, 2); if (!m) return { wait: 0.3 }; const [x, y] = px(s, cellOf(0, s.tok[0][m.k], m.k)); return { tap: [x, y], after: 0.4, say: !s.said2 ? (s.said2 = 1, T('Toca la ficha que quieras mover', 'Tap the piece you want to move')) : null }; }
+      return { wait: 0.2 };
+    },
+    setup(g) {
+      const L = g.lv, nt = L <= 5 ? 2 : 3, four = L >= 10;
+      g.s = { n: nt, players: four ? [0, 1, 2, 3] : [0, 2], tok: P.map(() => [0].concat(new Array(nt - 1).fill(-1))), turn: 0, phase: 'roll', roll: 0, sixes: 0, noise: clamp(30 - L * 1.4, 2, 30), dieShow: 6, over: false };
+      geo(g);
+    },
+    layout(g) { if (g.s.tok) geo(g); },
+    tap(g, p) {
+      const s = g.s; if (!s.tok || s.turn !== 0 || s.over) return;
+      if (s.phase === 'roll') { if (Math.hypot(p.x - s.dx, p.y - s.dy) < s.u * 2.2 || p.y > s.oy + s.u * 15) doRoll(g); return; }
+      if (s.phase === 'pick') { const k = tokAt(g, p); if (k == null) return; const m = legal(s, 0, s.roll).find((q) => q.k === k); if (m) move(g, m); else Arcade.tone(150, 0.06, 'square', 0.04); }
+    },
+    key(g, k, d) { if (d && k === ' ') { const s = g.s; if (s.phase === 'roll' && s.turn === 0) doRoll(g); } },
+    update(g, dt) {
+      const s = g.s; if (!s.tok) return;
+      if (s.phase === 'rolling') { s.rollT -= dt; s.dieShow = ri(1, 6); if (s.rollT <= 0) { afterRoll(g); s.dieShow = s.roll || s.dieShow; } return; }
+      if (s.anim) { const a = s.anim; a.t += dt; if (a.t >= 0.075) { a.t = 0; const step = a.path.shift(); s.tok[a.pi][a.k] = step; Arcade.tone(400 + step * 6, 0.03, 'sine', 0.03); if (!a.path.length) land(g); } return; }
+      if (s.wait > 0) { s.wait -= dt; if (s.wait > 0) return; }
+      if (s.phase === 'pause') { s.phase = 'x'; const f = s.then; s.then = null; if (f) f(); return; }
+      if (s.turn !== 0 && !s.over) { if (s.phase === 'roll') doRoll(g); else if (s.phase === 'pick') { const m = choose(s, s.turn, s.roll, s.noise); if (m) move(g, m); else nextTurn(g, false); } return; }
+      if (s.turn === 0 && s.phase === 'pick' && s.auto) move(g, s.auto);
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H; ctx.fillStyle = '#dee2e6'; ctx.fillRect(0, 0, W, H); if (!s.tok) return; const u = s.u;
+      ctx.fillStyle = '#fff'; ctx.fillRect(s.ox, s.oy, u * 15, u * 15);
+      // bases
+      P.forEach((q, i) => { const bx = [0, 9, 9, 0][i], by = [0, 0, 9, 9][i]; ctx.fillStyle = s.players.includes(i) ? q.col : '#adb5bd'; ctx.fillRect(s.ox + bx * u, s.oy + by * u, u * 6, u * 6); ctx.fillStyle = '#fff'; Arcade.rr(ctx, s.ox + (bx + 1) * u, s.oy + (by + 1) * u, u * 4, u * 4, u * 0.5); ctx.fill(); for (let k = 0; k < 4; k++) { const [cx, cy] = cellOf(i, -1, k); ctx.fillStyle = s.players.includes(i) ? q.soft : '#e9ecef'; ctx.beginPath(); ctx.arc(s.ox + cx * u, s.oy + cy * u, u * 0.55, 0, 6.3); ctx.fill(); } });
+      // casillas
+      ctx.strokeStyle = '#adb5bd'; ctx.lineWidth = 1;
+      TRACK.forEach(([x, y], i) => { const st = [0, 13, 26, 39].indexOf(i); ctx.fillStyle = st >= 0 ? P[st].col : '#fff'; ctx.fillRect(s.ox + x * u, s.oy + y * u, u, u); ctx.strokeRect(s.ox + x * u, s.oy + y * u, u, u); if (SAFE.has(i) && st < 0) Arcade.emoji(ctx, '⭐', s.ox + (x + 0.5) * u, s.oy + (y + 0.5) * u, u * 0.7); });
+      P.forEach((q) => q.home.forEach(([x, y]) => { ctx.fillStyle = q.col; ctx.fillRect(s.ox + x * u, s.oy + y * u, u, u); ctx.strokeRect(s.ox + x * u, s.oy + y * u, u, u); }));
+      // centro
+      const cx = s.ox + 7.5 * u, cy = s.oy + 7.5 * u; [[6, 6, 6, 9], [6, 6, 9, 6], [9, 6, 9, 9], [6, 9, 9, 9]].forEach((tr, i) => { const pi = [0, 1, 2, 3][i]; ctx.fillStyle = P[pi].col; ctx.beginPath(); ctx.moveTo(s.ox + tr[0] * u, s.oy + tr[1] * u); ctx.lineTo(s.ox + tr[2] * u, s.oy + tr[3] * u); ctx.lineTo(cx, cy); ctx.fill(); });
+      // fichas
+      const can = s.turn === 0 && s.phase === 'pick' ? legal(s, 0, s.roll).map((m) => m.k) : [];
+      const stack = {};
+      for (const pi of s.players) s.tok[pi].forEach((pos, k) => {
+        let [x, y] = px(s, cellOf(pi, pos, k)); const key = pos >= 0 && pos < END ? Math.round(x) + ',' + Math.round(y) : null; if (key) { stack[key] = (stack[key] || 0) + 1; x += (stack[key] - 1) * u * 0.18; y -= (stack[key] - 1) * u * 0.18; }
+        const glow = pi === 0 && can.includes(k), r = u * (pos === END ? 0.22 : 0.38) * (glow ? 1 + 0.1 * Math.sin(g.rt * 8) : 1);
+        ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.beginPath(); ctx.ellipse(x, y + r * 0.7, r, r * 0.4, 0, 0, 6.3); ctx.fill();
+        ctx.fillStyle = P[pi].col; ctx.beginPath(); ctx.arc(x, y, r, 0, 6.3); ctx.fill(); ctx.strokeStyle = glow ? '#ffd43b' : '#fff'; ctx.lineWidth = glow ? 3.5 : 2; ctx.stroke();
+        ctx.fillStyle = 'rgba(255,255,255,.55)'; ctx.beginPath(); ctx.arc(x - r * 0.3, y - r * 0.3, r * 0.3, 0, 6.3); ctx.fill();
+      });
+      // dado y turno
+      const q = P[s.turn], ds = u * 2; ctx.save(); ctx.translate(s.dx, s.dy); if (s.phase === 'rolling') ctx.rotate(Math.sin(g.rt * 30) * 0.3);
+      ctx.fillStyle = '#fff'; Arcade.rr(ctx, -ds / 2, -ds / 2, ds, ds, ds * 0.18); ctx.fill(); ctx.strokeStyle = q.col; ctx.lineWidth = s.turn === 0 && s.phase === 'roll' ? 4 + 2 * Math.sin(g.rt * 8) : 3; ctx.stroke();
+      const PIPS = { 1: [[0, 0]], 2: [[-1, -1], [1, 1]], 3: [[-1, -1], [0, 0], [1, 1]], 4: [[-1, -1], [1, -1], [-1, 1], [1, 1]], 5: [[-1, -1], [1, -1], [0, 0], [-1, 1], [1, 1]], 6: [[-1, -1], [1, -1], [-1, 0], [1, 0], [-1, 1], [1, 1]] };
+      ctx.fillStyle = '#212529'; for (const [a, b] of PIPS[s.dieShow || 6]) { ctx.beginPath(); ctx.arc(a * ds * 0.27, b * ds * 0.27, ds * 0.08, 0, 6.3); ctx.fill(); }
+      ctx.restore();
+      Arcade.txt(ctx, s.turn === 0 ? (s.phase === 'roll' ? T('Tu turno: toca el dado', 'Your turn: tap the die') : s.phase === 'pick' ? T('Elige una ficha', 'Pick a piece') : T('Tu turno', 'Your turn')) : T('Juega el', 'Playing:') + ' ' + T(...q.name), W / 2, g.top + 26, 15, q.col, 'center', 900);
+    },
+  });
+})();

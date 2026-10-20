@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Dispara burbujas · Arcade Perdido</title>
+<meta name="theme-color" content="#1864ab">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css?v=6d7635e467">
+</head>
+<body class="game">
+<script src="config.js?v=84fed7f189"></script>
+<script src="common.js?v=3b61f0ca2c"></script>
+<script>
+(function () {
+  const { rand, ri, clamp, pick } = Arcade;
+  const T = Arcade.T;
+  const C = 10;   // burbujas por fila (las impares, una menos)
+  const PAL = [['#ff6b6b', '🍓'], ['#4dabf7', '💧'], ['#51cf66', '🍀'], ['#fcc419', '⭐'], ['#cc5de8', '🍇'], ['#ff922b', '🍊']];
+  const rowLen = (r, s) => ((r + s.shift) % 2 ? C - 1 : C);
+  function geo(g) {
+    const s = g.s, w = Math.min(g.W - 16, 460); s.r = w / (C * 2); s.ox = (g.W - w) / 2; s.oy = g.top + 30; s.rh = s.r * Math.sqrt(3);
+    s.sx = g.W / 2; s.sy = g.bot - s.r * 2.6 - (g.demoOn ? 30 : 0); s.dead = s.sy - s.r * 2.6;
+  }
+  const pos = (s, r, c) => [s.ox + s.r + c * 2 * s.r + ((r + s.shift) % 2 ? s.r : 0), s.oy + s.r + r * s.rh + s.drop];
+  function cellAt(s, x, y) {
+    let best = null, bd = 1e9; const r0 = Math.round((y - s.oy - s.r - s.drop) / s.rh);
+    for (let r = Math.max(0, r0 - 1); r <= r0 + 1; r++) for (let c = 0; c < rowLen(r, s); c++) { const [px, py] = pos(s, r, c), d = Math.hypot(px - x, py - y); if (d < bd) { bd = d; best = [r, c]; } }
+    return best;
+  }
+  function nbrs(s, r, c) { const odd = (r + s.shift) % 2, out = [[r, c - 1], [r, c + 1]]; for (const dr of [-1, 1]) { if (odd) out.push([r + dr, c], [r + dr, c + 1]); else out.push([r + dr, c - 1], [r + dr, c]); } return out.filter(([rr, cc]) => rr >= 0 && cc >= 0 && cc < rowLen(rr, s)); }
+  const get = (s, r, c) => (s.grid[r] ? s.grid[r][c] : null);
+  function group(s, r, c, col) { const seen = new Set([r + ',' + c]), out = [[r, c]]; for (let i = 0; i < out.length; i++) for (const [rr, cc] of nbrs(s, ...out[i])) { const k = rr + ',' + cc; if (!seen.has(k) && get(s, rr, cc) && get(s, rr, cc).col === col) { seen.add(k); out.push([rr, cc]); } } return out; }
+  function floating(s) { const seen = new Set(), q = []; (s.grid[0] || []).forEach((b, c) => { if (b) { seen.add('0,' + c); q.push([0, c]); } }); for (let i = 0; i < q.length; i++) for (const [rr, cc] of nbrs(s, ...q[i])) { const k = rr + ',' + cc; if (!seen.has(k) && get(s, rr, cc)) { seen.add(k); q.push([rr, cc]); } } const out = []; s.grid.forEach((row, r) => row.forEach((b, c) => { if (b && !seen.has(r + ',' + c)) out.push([r, c]); })); return out; }
+  function colorsLeft(s) { const set = new Set(); for (const row of s.grid) for (const b of row) if (b) set.add(b.col); return [...set]; }
+  function newShot(s) { const cl = colorsLeft(s); return cl.length ? pick(cl) : 0; }
+  /* trayectoria: rebota en las paredes y para al tocar una burbuja o el techo → casilla donde se queda */
+  function trace(s, ang, keepPts) {
+    let x = s.sx, y = s.sy; const vx0 = Math.cos(ang), vy = -Math.sin(ang); let vx = vx0; const pts = [[x, y]], step = s.r * 0.35, L = s.ox + s.r, R = s.ox + C * 2 * s.r - s.r;
+    for (let i = 0; i < 900; i++) {
+      x += vx * step; y += vy * step;
+      if (x < L) { x = 2 * L - x; vx = -vx; pts.push([x, y]); } if (x > R) { x = 2 * R - x; vx = -vx; pts.push([x, y]); }
+      if (y < s.oy + s.r + s.drop) { pts.push([x, y]); return { cell: cellAt(s, x, Math.max(y, s.oy + s.r + s.drop)), pts }; }
+      const r0 = Math.round((y - s.oy - s.r - s.drop) / s.rh);
+      for (let r = Math.max(0, r0 - 1); r <= r0 + 1; r++) { const row = s.grid[r]; if (!row) continue; for (let c = 0; c < row.length; c++) { if (!row[c]) continue; const [px, py] = pos(s, r, c); if (Math.hypot(px - x, py - y) < s.r * 1.75) { pts.push([x, y]); let cell = cellAt(s, x, y); if (get(s, ...cell)) { const nb = nbrs(s, r, c).filter((q) => !get(s, ...q)).sort((a, b) => Math.hypot(pos(s, ...a)[0] - x, pos(s, ...a)[1] - y) - Math.hypot(pos(s, ...b)[0] - x, pos(s, ...b)[1] - y)); cell = nb[0] || cell; } return { cell, pts }; } } }
+    }
+    void keepPts; return { cell: null, pts };
+  }
+  function build(g) {
+    const s = g.s, L = g.lv, nc = clamp(3 + Math.floor(L / 4), 3, 6), rows = clamp(4 + Math.floor(L / 2), 4, 10);
+    s.ncol = nc; s.grid = []; s.shift = 0; s.drop = 0;
+    for (let r = 0; r < rows; r++) { s.grid[r] = []; for (let c = 0; c < rowLen(r, s); c++) { const left = c > 0 && s.grid[r][c - 1], up = r > 0 && s.grid[r - 1][c]; const col = Math.random() < 0.45 && left ? left.col : Math.random() < 0.35 && up ? up.col : ri(0, nc - 1); s.grid[r][c] = { col }; } }
+    for (let r = rows; r < 22; r++) s.grid[r] = new Array(rowLen(r, s)).fill(null);
+    s.cur = newShot(s); s.next = newShot(s); s.miss = 0; s.perDrop = clamp(7 - Math.floor(L / 4), 3, 7);
+  }
+  function addRow(g) {   // el techo baja una fila
+    const s = g.s; s.shift = 1 - s.shift; const nr = []; for (let c = 0; c < rowLen(0, s); c++) nr.push({ col: ri(0, s.ncol - 1) });
+    s.grid.unshift(nr); s.grid.length = 22; for (let r = 0; r < 22; r++) { if (!s.grid[r]) s.grid[r] = []; s.grid[r].length = rowLen(r, s); for (let c = 0; c < s.grid[r].length; c++) if (s.grid[r][c] === undefined) s.grid[r][c] = null; }
+    s.dropAnim = s.rh; Arcade.noise(0.2, 0.06, 200); g.shake && g.shake(4);
+  }
+  function fire(g) {
+    const s = g.s; if (s.fly || s.end || !s.cur && s.cur !== 0) return;
+    s.fly = { x: s.sx, y: s.sy, col: s.cur, res: trace(s, s.ang), i: 0, t: 0 }; s.cur = s.next; s.next = newShot(s); Arcade.tone(500, 0.06, 'triangle', 0.05, 300);
+  }
+  function land(g, f) {
+    const s = g.s, cell = f.res.cell; if (!cell) return; const [r, c] = cell; if (!s.grid[r]) return; s.grid[r][c] = { col: f.col };
+    const grp = group(s, r, c, f.col);
+    if (grp.length >= 3) {
+      for (const [rr, cc] of grp) { const [x, y] = pos(s, rr, cc); s.pop.push({ x, y, col: f.col, t: 0.3 }); s.grid[rr][cc] = null; }
+      const fl = floating(s); for (const [rr, cc] of fl) { const [x, y] = pos(s, rr, cc); s.falls.push({ x, y, col: s.grid[rr][cc].col, vy: rand(-100, 0), vx: rand(-60, 60) }); s.grid[rr][cc] = null; }
+      g.addScore(grp.length * 10 + fl.length * 20, ...pos(s, r, c)); Arcade.sfx.pop(); if (fl.length) { Arcade.sfx.combo(fl.length); g.message('+' + fl.length * 20, 0.6); }
+    } else { Arcade.tone(180, 0.05, 'square', 0.04); s.miss++; if (s.miss >= s.perDrop) { s.miss = 0; addRow(g); } }
+    if (!colorsLeft(s).length) { s.end = true; g.confetti(80); Arcade.sfx.win(); g.addScore(200 + 50 * g.lv, g.W / 2, g.H / 2); setTimeout(() => { if (g.state === 'play') g.win(g.lives >= 3 ? 3 : g.lives >= 2 ? 2 : 1); }, 1000); return; }
+    if (!colorsLeft(s).includes(s.cur)) s.cur = newShot(s); if (!colorsLeft(s).includes(s.next)) s.next = newShot(s);
+    // ¿llegan abajo?
+    let low = 0; s.grid.forEach((row, rr) => { if (row.some((b) => b)) low = rr; });
+    if (pos(s, low, 0)[1] + s.r > s.dead) { s.end = true; Arcade.sfx.bad(); g.message(T('¡Han llegado abajo!', 'They reached the bottom!'), 1.1); setTimeout(() => { if (g.state === 'play' && g.die()) { build(g); s.end = false; } }, 1200); }
+  }
+  /* IA: prueba muchos ángulos y elige el que más burbujas tira */
+  function bestShot(s) {
+    let best = null;
+    for (let a = 0.2; a <= Math.PI - 0.2; a += 0.025) {
+      const res = trace(s, a); if (!res.cell) continue; const [r, c] = res.cell; if (!s.grid[r] || get(s, r, c)) continue;
+      s.grid[r][c] = { col: s.cur }; const grp = group(s, r, c, s.cur); let sc = 0;
+      if (grp.length >= 3) { const saved = grp.map(([rr, cc]) => s.grid[rr][cc]); grp.forEach(([rr, cc]) => (s.grid[rr][cc] = null)); sc = grp.length * 10 + floating(s).length * 25 + 50; grp.forEach(([rr, cc], i) => (s.grid[rr][cc] = saved[i])); }
+      else sc = (grp.length - 1) * 12 - r * 0.5;
+      s.grid[r][c] = null; sc += rand(0, 2);
+      if (!best || sc > best.sc) best = { sc, a };
+    }
+    return best;
+  }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Junta tres del mismo color y que caigan', deco: ['🫧', '🍓', '💧', '🍀', '⭐', '🍇'], font: 'round', bg: ['#4dabf7', '#1864ab'],
+    music: { mode: 'major', bpm: 108, wave: 'triangle', style: 'bouncy', root: 64 }, voice: { wave: 'sine', mul: 1.1, echo: 0.3 },
+    /*EN*/ en: { title: 'Bubble Pop Shooter', tag: 'Match three of a colour and watch them fall', help: 'Drag your finger to aim; you\'ll see where the bubble goes. Let go to shoot. If it touches two or more of the same colour, they pop. Bubbles left hanging fall too and score double. Bubbles bounce off the side walls. Tap the bubble below to swap it with the next one. Every few shots that pop nothing, the ceiling comes down a row. Clear all the bubbles before they reach the bottom.', tvHelp: '◀ ▶ aim, OK shoot, ▼ swap.', dict: {} },
+    /*TV*/ tvHelp: '◀ ▶ apuntar, OK disparar, ▼ cambiar.',
+    id: 'disparaburbujas', title: 'Dispara burbujas', emoji: '🫧', color: '#4dabf7', origin: 'Bubble Shooter (Puzzle Bobble, Taito, 1994)', pad: false,
+    help: 'Arrastra el dedo para apuntar: verás por dónde irá la burbuja. Suelta para disparar. Si toca dos o más del mismo color, explotan. Las que se quedan colgando también caen y dan el doble. Las burbujas rebotan en las paredes. Toca la burbuja de abajo para cambiarla por la siguiente. Cada pocos disparos sin explotar nada, el techo baja una fila. Limpia todas las burbujas antes de que lleguen abajo.',
+    lives: 3, levels: 0, cap: 20,
+    /*SC*/ demo(g) {
+      const s = g.s; if (!s.grid || s.fly || s.end) return { wait: 0.2 };
+      const b = bestShot(s); if (!b) return { wait: 0.3 };
+      const d = s.r * 6, first = !s.said; s.said = 1;
+      return { drag: [[s.sx + Math.cos(b.a) * s.r * 2, s.sy - Math.sin(b.a) * s.r * 2], [s.sx + Math.cos(b.a) * d, s.sy - Math.sin(b.a) * d]], dur: 0.45, after: 0.5, say: first ? T('Arrastra para apuntar y suelta para disparar', 'Drag to aim and let go to shoot') : null };
+    },
+    setup(g) { g.s = { pop: [], falls: [], ang: Math.PI / 2, keys: {} }; geo(g); build(g); },
+    layout(g) { if (g.s.grid) geo(g); },
+    down(g, p) {
+      const s = g.s; if (s.end) return;
+      if (Math.hypot(p.x - (s.sx + s.r * 3.2), p.y - (s.sy + s.r * 0.6)) < s.r * 1.6 || Math.hypot(p.x - s.sx, p.y - s.sy) < s.r * 1.3) { [s.cur, s.next] = [s.next, s.cur]; Arcade.tone(700, 0.05, 'sine', 0.04); s.swapped = true; return; }
+      s.swapped = false; s.aiming = true; this.move(g, p);
+    },
+    move(g, p) { const s = g.s; if (!s.aiming) return; s.ang = clamp(Math.atan2(s.sy - p.y, p.x - s.sx), 0.15, Math.PI - 0.15); },
+    up(g) { const s = g.s; if (!s.aiming) return; s.aiming = false; fire(g); },
+    key(g, k, d) { const s = g.s; s.keys[k] = d; if (!d) return; if (k === ' ' || k === 'ArrowUp') fire(g); if (k === 'ArrowDown') [s.cur, s.next] = [s.next, s.cur]; },
+    update(g, dt) {
+      const s = g.s; if (!s.grid) return; geo(g);
+      if (s.keys.ArrowLeft) s.ang = Math.min(Math.PI - 0.15, s.ang + 1.6 * dt); if (s.keys.ArrowRight) s.ang = Math.max(0.15, s.ang - 1.6 * dt);
+      if (s.dropAnim) s.dropAnim = Math.max(0, s.dropAnim - dt * 200);
+      for (const p of s.pop) p.t -= dt; s.pop = s.pop.filter((p) => p.t > 0);
+      for (const f of s.falls) { f.vy += 1400 * dt; f.x += f.vx * dt; f.y += f.vy * dt; } s.falls = s.falls.filter((f) => f.y < g.H + 40);
+      const f = s.fly; if (f) {
+        let dist = 1500 * dt; const P = f.res.pts;
+        while (dist > 0 && f.i < P.length - 1) { const [ax, ay] = [f.x, f.y], [bx, by] = P[f.i + 1], d = Math.hypot(bx - ax, by - ay); if (d <= dist) { f.x = bx; f.y = by; f.i++; dist -= d; } else { f.x += (bx - ax) / d * dist; f.y += (by - ay) / d * dist; dist = 0; } }
+        if (f.i >= P.length - 1) { s.fly = null; land(g, f); }
+      }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      const bg = ctx.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, '#1864ab'); bg.addColorStop(1, '#0b3d6e'); ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      if (!s.grid) return; const r = s.r;
+      ctx.fillStyle = 'rgba(255,255,255,.06)'; ctx.fillRect(s.ox, s.oy, C * 2 * r, s.sy - s.oy + r * 2);
+      ctx.strokeStyle = 'rgba(255,107,107,.5)'; ctx.setLineDash([8, 6]); ctx.beginPath(); ctx.moveTo(s.ox, s.dead); ctx.lineTo(s.ox + C * 2 * r, s.dead); ctx.stroke(); ctx.setLineDash([]);
+      const bub = (x, y, col, sc = 1) => { const c = PAL[col]; const gr = ctx.createRadialGradient(x - r * 0.35, y - r * 0.35, r * 0.1, x, y, r * sc); gr.addColorStop(0, '#fff'); gr.addColorStop(0.25, c[0]); gr.addColorStop(1, c[0]); ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(x, y, r * 0.95 * sc, 0, 6.3); ctx.fill(); ctx.strokeStyle = 'rgba(0,0,0,.18)'; ctx.lineWidth = 1.5; ctx.stroke(); Arcade.emoji(ctx, c[1], x, y + 1, r * 0.95 * sc); };
+      ctx.save(); ctx.translate(0, -(s.dropAnim || 0));
+      s.grid.forEach((row, rr) => row.forEach((b, cc) => { if (b) bub(...pos(s, rr, cc), b.col); }));
+      ctx.restore();
+      for (const p of s.pop) { ctx.globalAlpha = p.t / 0.3; bub(p.x, p.y, p.col, 1 + (0.3 - p.t) * 2); ctx.globalAlpha = 1; }
+      for (const f of s.falls) bub(f.x, f.y, f.col);
+      // guía de puntería
+      if (!s.end && !s.fly) { const res = trace(s, s.ang); ctx.strokeStyle = 'rgba(255,255,255,.55)'; ctx.lineWidth = 3; ctx.setLineDash([2, 10]); ctx.lineCap = 'round'; ctx.beginPath(); res.pts.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y))); ctx.stroke(); ctx.setLineDash([]);
+        if (res.cell) { const [x, y] = pos(s, ...res.cell); ctx.strokeStyle = PAL[s.cur][0]; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x, y, r * 0.9, 0, 6.3); ctx.stroke(); } }
+      if (s.fly) bub(s.fly.x, s.fly.y, s.fly.col);
+      // cañón
+      ctx.save(); ctx.translate(s.sx, s.sy); ctx.rotate(-s.ang + Math.PI / 2); ctx.fillStyle = '#495057'; Arcade.rr(ctx, -r * 0.45, -r * 2.2, r * 0.9, r * 1.6, 5); ctx.fill(); ctx.restore();
+      ctx.fillStyle = '#343a40'; ctx.beginPath(); ctx.arc(s.sx, s.sy, r * 1.35, 0, 6.3); ctx.fill();
+      if (!s.fly) bub(s.sx, s.sy, s.cur);
+      bub(s.sx + r * 3.2, s.sy + r * 0.6, s.next, 0.7); Arcade.txt(ctx, '⇄', s.sx + r * 3.2, s.sy + r * 1.75, 12, '#fff', 'center', 900);
+      // disparos hasta que baje el techo
+      for (let i = 0; i < s.perDrop; i++) { ctx.fillStyle = i < s.perDrop - s.miss ? '#ffd43b' : 'rgba(255,255,255,.2)'; ctx.beginPath(); ctx.arc(s.sx - r * 3 - i * 10, s.sy + r * 0.6, 3.5, 0, 6.3); ctx.fill(); }
+    },
+  });
+})();
+</script>
+</body>
+</html>

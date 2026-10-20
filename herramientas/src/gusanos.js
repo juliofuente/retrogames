@@ -1,0 +1,148 @@
+// Gusanos|#12121f
+(function () {
+  const { rand, ri, clamp, pick } = Arcade;
+  const T = Arcade.T;
+  const R = 1300, SP = 7;   // radio de la arena y separación entre puntos del cuerpo
+  const SKINS = [['#ff6b6b', '#ffa8a8'], ['#4dabf7', '#a5d8ff'], ['#69db7c', '#b2f2bb'], ['#ffd43b', '#fff3bf'], ['#da77f2', '#eebefa'], ['#ff922b', '#ffd8a8'], ['#3bc9db', '#99e9f2'], ['#f783ac', '#fcc2d7']];
+  const NAMES = ['Lola', 'Rayo', 'Pixel', 'Nube', 'Zas', 'Kiwi', 'Moco', 'Turbo', 'Coco', 'Chispa', 'Bicho', 'Gominola', 'Toto', 'Fideo'];
+  const nPts = (m) => Math.min(420, Math.round(12 + m * 0.9));
+  const rad = (m) => 8 + Math.min(m, 500) * 0.022;
+  function worm(x, y, m, skin, me) { const a = rand(0, 6.28), pts = []; for (let i = 0; i < nPts(m); i++) pts.push({ x: x - Math.cos(a) * i * SP, y: y - Math.sin(a) * i * SP }); return { pts, a, ta: a, m, skin, me, boost: false, dead: false, think: 0, name: me ? '' : pick(NAMES) }; }
+  function safeSpot(s) { for (let t = 0; t < 60; t++) { const a = rand(0, 6.28), d = rand(0, R * 0.8), x = Math.cos(a) * d, y = Math.sin(a) * d; if (s.worms.every((w) => w.dead || w.pts.every((p, i) => i % 4 || Math.hypot(p.x - x, p.y - y) > 220))) return [x, y]; } return [0, 0]; }
+  function addFood(s, x, y, v, col) { s.food.push({ x, y, v, col: col || pick(SKINS)[0], ph: rand(0, 6) }); }
+  function kill(g, w) {
+    const s = g.s; w.dead = true;
+    for (let i = 0; i < w.pts.length; i += 2) { const p = w.pts[i]; addFood(s, p.x + rand(-8, 8), p.y + rand(-8, 8), Math.max(1, w.m / w.pts.length * 1.6), w.skin[0]); }
+    if (w.me) {
+      Arcade.sfx.bad(); g.shake && g.shake(6); s.respawn = 1.2; g.message(T('¡Chocaste!', 'You crashed!'), 1);
+    } else { const [x, y] = s.cam; if (Math.hypot(w.pts[0].x - x, w.pts[0].y - y) < 600) Arcade.sfx.pop(); s.botT = 2 + rand(0, 3); }
+  }
+  /* IA: comida cerca + evitar cuerpos y el borde; sirve para los rivales y para la demo */
+  function aiDir(s, w, lv) {
+    const h = w.pts[0], r = rad(w.m);
+    const blocked = (a, d) => { const x = h.x + Math.cos(a) * d, y = h.y + Math.sin(a) * d; if (Math.hypot(x, y) > R - r - 10) return true; for (const o of s.worms) { if (o.dead) continue; const st = o === w ? 12 : 0, rr = rad(o.m) + r + 6; for (let i = st; i < o.pts.length; i += 2) { const p = o.pts[i]; if (Math.abs(p.x - x) < rr && Math.abs(p.y - y) < rr && Math.hypot(p.x - x, p.y - y) < rr) return true; } } return false; };
+    // objetivo: el montón de comida más rentable cerca
+    let best = null, bs = -1;
+    for (const f of s.food) { const d = Math.hypot(f.x - h.x, f.y - h.y); if (d > 420) continue; const turn = Math.abs(((Math.atan2(f.y - h.y, f.x - h.x) - w.a + 9.42) % 6.283) - 3.14); const sc = f.v / (40 + d + turn * 60); if (sc > bs) { bs = sc; best = f; } }
+    let want = best ? Math.atan2(best.y - h.y, best.x - h.x) : w.a + rand(-0.3, 0.3);
+    if (Math.hypot(h.x, h.y) > R * 0.82) want = Math.atan2(-h.y, -h.x);
+    // agresivo: cortarle el paso a uno más pequeño
+    if (!w.me && lv >= 4 && Math.random() < 0.012 * Math.min(lv, 15)) for (const o of s.worms) { if (o === w || o.dead) continue; const oh = o.pts[0], d = Math.hypot(oh.x - h.x, oh.y - h.y); if (d < 260 && o.m < w.m * 1.2) { want = Math.atan2(oh.y + Math.sin(o.a) * 90 - h.y, oh.x + Math.cos(o.a) * 90 - h.x); w.boost = w.m > 25; break; } }
+    // esquivar: busca el ángulo libre más cercano al deseado
+    // la demo además huye de cabezas cercanas (que pueden cruzarse por delante)
+    if (w.me) for (const o of s.worms) { if (o === w || o.dead) continue; const oh = o.pts[0], px = oh.x + Math.cos(o.a) * 60, py = oh.y + Math.sin(o.a) * 60, d = Math.hypot(px - h.x, py - h.y); if (d < 150) { const away = Math.atan2(h.y - py, h.x - px), da = ((away - w.a + 9.42478) % 6.28318) - 3.14159; if (Math.abs(((want - away + 9.42478) % 6.28318) - 3.14159) > 1.2) want = w.a + clamp(da, -1.2, 1.2); } }
+    const look = w.me ? [30, 60, 95, 140 + r * 2] : [45, 90, 140 + r * 2];
+    const free = (a) => look.every((d) => !blocked(a, d));
+    if (!free(want)) { let found = null; for (let k = 1; k <= 12 && found == null; k++) for (const sg of [1, -1]) { const a = want + sg * k * 0.26; if (free(a)) { found = a; break; } } if (found != null) want = found; else { for (let k = 1; k <= 12; k++) { const a = w.a + k * 0.5; if (!blocked(a, 40)) { want = a; break; } } } }
+    return want;
+  }
+  function geo(g) { const s = g.s, me = s.me; s.z = clamp(Math.min(g.W, g.bot - g.top) / (560 + (me ? rad(me.m) * 14 : 0)), 0.35, 1.2); }
+  function toScr(g, x, y) { const s = g.s; return [g.W / 2 + (x - s.cam[0]) * s.z, (g.top + g.bot) / 2 + (y - s.cam[1]) * s.z]; }
+  function stepWorm(s, w, dt) {
+    const turn = clamp(4.2 - rad(w.m) * 0.09, 2.2, 4.2), d = ((w.ta - w.a + 9.42478) % 6.28318) - 3.14159;
+    w.a += clamp(d, -turn * dt, turn * dt);
+    const boosting = w.boost && w.m > 12, v = (boosting ? 290 : 150) * dt, h = w.pts[0];
+    if (boosting) { w.boostAcc = (w.boostAcc || 0) + dt; w.m -= 5 * dt; if (w.boostAcc > 0.12) { w.boostAcc = 0; const tl = w.pts[w.pts.length - 1]; addFood(s, tl.x, tl.y, 0.6, w.skin[0]); } }
+    const nx = h.x + Math.cos(w.a) * v, ny = h.y + Math.sin(w.a) * v;
+    // el cuerpo sigue a la cabeza a distancia fija
+    w.pts[0] = { x: nx, y: ny };
+    for (let i = 1; i < w.pts.length; i++) { const a = w.pts[i - 1], b = w.pts[i], dx = b.x - a.x, dy = b.y - a.y, dd = Math.hypot(dx, dy) || 1; if (dd > SP) { b.x = a.x + dx / dd * SP; b.y = a.y + dy / dd * SP; } }
+    const want = nPts(w.m); while (w.pts.length < want) { const tl = w.pts[w.pts.length - 1]; w.pts.push({ x: tl.x, y: tl.y }); } if (w.pts.length > want + 2) w.pts.length = want;
+  }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Come, crece y que choquen contigo', deco: ['🐍', '🟢', '🔴', '🟡', '⚡', '👑'], font: 'round', bg: ['#2b2d42', '#12121f'],
+    music: { mode: 'minor', bpm: 112, wave: 'triangle', style: 'chill', root: 57 }, voice: { wave: 'sine', mul: 1.1, echo: 0.3 },
+    /*EN*/ en: { title: 'Wiggle Worms', tag: 'Eat, grow and make them crash into you', help: 'Your worm follows your finger: hold it on the screen where you want to go. Eat the glowing dots to grow. If your head touches another worm, you crash; if their head touches your body, they crash and turn into food. Tap twice and hold to speed up (you lose a little size). Don\'t touch the edge of the arena. Reach the size each level asks for.', tvHelp: '◀ ▶ turn, OK speed up.', dict: {} },
+    /*TV*/ tvHelp: '◀ ▶ girar, OK acelerar.',
+    id: 'gusanos', title: 'Gusanos', emoji: '🐍', color: '#69db7c', origin: 'Slither.io (Steve Howse, 2016)', pad: false,
+    help: 'Tu gusano va hacia tu dedo: mantenlo en la pantalla hacia donde quieras ir. Come las bolitas brillantes para crecer. Si tu cabeza toca otro gusano, chocas; si la cabeza de otro toca tu cuerpo, choca él y se convierte en comida. Toca dos veces y mantén para acelerar (pierdes un poco de tamaño). No toques el borde de la arena. Llega al tamaño que pide cada nivel.',
+    lives: 3, levels: 0, cap: 20,
+    /*SC*/ demo(g) {
+      const s = g.s; if (!s.me || s.me.dead) return { wait: 0.3 };
+      const a = aiDir(s, s.me, g.lv), cx = g.W / 2, cy = (g.top + g.bot) / 2, d = Math.min(g.W, g.bot - g.top) * 0.28, first = !s.said; s.said = 1;
+      return { hold: [cx + Math.cos(a) * d, cy + Math.sin(a) * d], dur: 0.16, after: 0, say: first ? T('Mantén el dedo hacia donde quieras ir', 'Hold your finger where you want to go') : null };
+    },
+    setup(g) {
+      const L = g.lv; g.s = { worms: [], food: [], cam: [0, 0], goal: 50 + L * 12, botT: 0, keys: {}, tapUp: -9, pressT: 0 }; const s = g.s;
+      s.me = worm(0, 0, 14, SKINS[2], true); s.worms.push(s.me);
+      const nb = clamp(5 + Math.floor(L / 2), 5, 14);
+      for (let i = 0; i < nb; i++) { const [x, y] = safeSpot(s); s.worms.push(worm(x, y, rand(10, 30 + L * 6), SKINS[(i + 3) % SKINS.length], false)); }
+      for (let i = 0; i < 420; i++) { const a = rand(0, 6.28), d = Math.sqrt(Math.random()) * (R - 30); addFood(s, Math.cos(a) * d, Math.sin(a) * d, rand(0.6, 1.6)); }
+      s.cam = [s.me.pts[0].x, s.me.pts[0].y]; geo(g);
+    },
+    layout(g) { if (g.s && g.s.me) geo(g); },
+    down(g, p) { const s = g.s; s.press = true; s.pressAt = g.rt; s.boostTouch = g.rt - s.tapUp < 0.3 && s.lastLen < 0.13; s.fp = p; },
+    move(g, p) { g.s.fp = p; },
+    up(g) { const s = g.s; s.press = false; s.boostTouch = false; s.tapUp = g.rt; s.lastLen = g.rt - (s.pressAt || 0); },
+    key(g, k, d) { const s = g.s; s.keys[k] = d; },
+    update(g, dt) {
+      const s = g.s; if (!s.me) return; const me = s.me;
+      for (const f of s.food) f.ph += dt * 3;
+      if (!me.dead) {
+        if (s.press && s.fp) { const [hx, hy] = toScr(g, me.pts[0].x, me.pts[0].y); if (Math.hypot(s.fp.x - hx, s.fp.y - hy) > 6) me.ta = Math.atan2(s.fp.y - hy, s.fp.x - hx); }
+        if (s.keys.ArrowLeft) me.ta = me.a - 0.6; if (s.keys.ArrowRight) me.ta = me.a + 0.6;
+        me.boost = !!(s.boostTouch || s.keys[' ']);
+      }
+      for (const w of s.worms) {
+        if (w.dead || w.me) continue; w.think -= dt;
+        if (w.think <= 0) { w.think = rand(0.12, 0.25); w.boost = false; w.ta = aiDir(s, w, g.lv); if (Math.random() < 0.01) w.boost = w.m > 30; }
+      }
+      for (const w of s.worms) if (!w.dead) stepWorm(s, w, dt);
+      // comer
+      for (const w of s.worms) { if (w.dead) continue; const h = w.pts[0], r = rad(w.m) + 10; for (const f of s.food) { if (f.eaten) continue; const dx = f.x - h.x, dy = f.y - h.y; if (dx * dx + dy * dy < r * r) { f.eaten = true; w.m += f.v; if (w.me) { g.addScore(Math.round(f.v * 3)); if (Math.random() < 0.3) Arcade.tone(700 + rand(0, 300), 0.03, 'sine', 0.03); } } } }
+      s.food = s.food.filter((f) => !f.eaten);
+      while (s.food.length < 380) { const a = rand(0, 6.28), d = Math.sqrt(Math.random()) * (R - 30); addFood(s, Math.cos(a) * d, Math.sin(a) * d, rand(0.6, 1.6)); }
+      // choques: cabeza contra cuerpo ajeno o contra el borde
+      for (const w of s.worms) {
+        if (w.dead) continue; const h = w.pts[0], r = rad(w.m);
+        if (Math.hypot(h.x, h.y) > R - r) { kill(g, w); continue; }
+        for (const o of s.worms) { if (o === w || o.dead) continue; const rr = (rad(o.m) + r) * (w.me ? 0.62 : 0.8); let hitIt = false; for (let i = 1; i < o.pts.length; i++) { const p = o.pts[i]; if (Math.abs(p.x - h.x) < rr && Math.abs(p.y - h.y) < rr && Math.hypot(p.x - h.x, p.y - h.y) < rr) { hitIt = true; break; } }
+          if (hitIt) { if (w.me && s.inv > 0) continue; if (o.me && !w.me) { g.addScore(50, ...toScr(g, h.x, h.y)); g.message(T('¡Lo cazaste!', 'Got one!'), 0.8); } kill(g, w); break; } }
+      }
+      if (s.inv > 0) s.inv -= dt;
+      // nuevos rivales
+      if (s.worms.some((w) => w.dead && !w.me)) { s.botT -= dt; if (s.botT <= 0) { const i = s.worms.findIndex((w) => w.dead && !w.me), [x, y] = safeSpot(s); s.worms[i] = worm(x, y, rand(10, 30 + g.lv * 6), SKINS[ri(0, SKINS.length - 1)], false); s.botT = 1.5; } }
+      // volver a salir tras chocar
+      if (me.dead && s.respawn != null) { s.respawn -= dt; if (s.respawn <= 0) { s.respawn = null; if (g.state === 'play' && g.die()) { const [x, y] = safeSpot(s), m = Math.max(14, Math.round(me.m * 0.4)); s.me = worm(x, y, m, SKINS[2], true); s.worms[s.worms.indexOf(me)] = s.me; s.inv = 2; } } }
+      const h = s.me.pts[0]; if (!s.me.dead) { s.cam[0] += (h.x - s.cam[0]) * Math.min(1, dt * 8); s.cam[1] += (h.y - s.cam[1]) * Math.min(1, dt * 8); }
+      geo(g);
+      if (!s.won && !s.me.dead && s.me.m >= s.goal) { s.won = true; g.confetti(70); Arcade.sfx.win(); g.addScore(100 * g.lv, g.W / 2, g.H / 2); setTimeout(() => { if (g.state === 'play') g.win(g.lives >= 3 ? 3 : g.lives >= 2 ? 2 : 1); }, 900); }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H; ctx.fillStyle = '#12121f'; ctx.fillRect(0, 0, W, H); if (!s.me) return;
+      const z = s.z, [ox, oy] = toScr(g, 0, 0);
+      // fondo hexagonal sencillo
+      ctx.save(); ctx.beginPath(); ctx.arc(ox, oy, R * z, 0, 6.3); ctx.fillStyle = '#1c1c30'; ctx.fill(); ctx.clip();
+      const gs = 60 * z, sx = ((ox % gs) + gs) % gs, sy = ((oy % gs) + gs) % gs; ctx.strokeStyle = 'rgba(255,255,255,.04)'; ctx.lineWidth = 1;
+      for (let x = sx; x < W; x += gs) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); } for (let y = sy; y < H; y += gs) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+      ctx.restore();
+      ctx.strokeStyle = '#e03131'; ctx.lineWidth = 6 * z + 2; ctx.beginPath(); ctx.arc(ox, oy, R * z, 0, 6.3); ctx.stroke();
+      // comida
+      for (const f of s.food) { const [x, y] = toScr(g, f.x, f.y); if (x < -10 || y < -10 || x > W + 10 || y > H + 10) continue; const r = (2.5 + f.v * 2) * z * (1 + 0.15 * Math.sin(f.ph)); ctx.globalAlpha = 0.3; ctx.fillStyle = f.col; ctx.beginPath(); ctx.arc(x, y, r * 2.2, 0, 6.3); ctx.fill(); ctx.globalAlpha = 1; ctx.beginPath(); ctx.arc(x, y, r, 0, 6.3); ctx.fill(); }
+      // gusanos (de la cola a la cabeza)
+      for (const w of s.worms) {
+        if (w.dead) continue; const r = rad(w.m) * z, [hx, hy] = toScr(g, w.pts[0].x, w.pts[0].y);
+        if (hx < -900 * z - 200 || hx > W + 900 * z + 200 || hy < -900 * z - 200 || hy > H + 900 * z + 200) continue;
+        if (w.me && s.inv > 0 && Math.floor(s.inv * 8) % 2) ctx.globalAlpha = 0.45;
+        if (w.boost && w.m > 12) { ctx.shadowColor = w.skin[0]; ctx.shadowBlur = 16; }
+        for (let i = w.pts.length - 1; i >= 0; i -= 1) { if (i % 2 && i > 2) continue; const [x, y] = toScr(g, w.pts[i].x, w.pts[i].y); ctx.fillStyle = Math.floor(i / 6) % 2 ? w.skin[1] : w.skin[0]; ctx.beginPath(); ctx.arc(x, y, r, 0, 6.3); ctx.fill(); }
+        ctx.shadowBlur = 0;
+        // ojos
+        for (const sg of [-1, 1]) { const ex = hx + Math.cos(w.a + sg * 0.6) * r * 0.55, ey = hy + Math.sin(w.a + sg * 0.6) * r * 0.55; ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(ex, ey, r * 0.38, 0, 6.3); ctx.fill(); ctx.fillStyle = '#111'; ctx.beginPath(); ctx.arc(ex + Math.cos(w.a) * r * 0.15, ey + Math.sin(w.a) * r * 0.15, r * 0.2, 0, 6.3); ctx.fill(); }
+        if (w.me && s.won) Arcade.emoji(ctx, '👑', hx, hy - r * 2, r * 2.4);
+        else if (!w.me && w.name && z > 0.4) Arcade.txt(ctx, w.name, hx, hy - r - 10, 11, 'rgba(255,255,255,.6)', 'center', 700);
+        ctx.globalAlpha = 1;
+      }
+      // marcador: tamaño y clasificación
+      const me = s.me, t = clamp(me.m / s.goal, 0, 1), bw = Math.min(W - 200, 240), bx = (W - bw) / 2, by = g.top + 10;
+      ctx.fillStyle = 'rgba(255,255,255,.12)'; Arcade.rr(ctx, bx, by, bw, 10, 5); ctx.fill(); ctx.fillStyle = '#69db7c'; Arcade.rr(ctx, bx, by, bw * t, 10, 5); ctx.fill();
+      Arcade.txt(ctx, Math.floor(me.m) + ' / ' + s.goal, bx + bw / 2, by + 24, 12, '#fff', 'center', 900);
+      const rank = s.worms.filter((w) => !w.dead).sort((a, b) => b.m - a.m), pos = rank.indexOf(me) + 1;
+      if (pos > 0) Arcade.txt(ctx, '#' + pos + ' / ' + rank.length, W - 12, by + 5, 13, pos === 1 ? '#ffd43b' : '#adb5bd', 'right', 900);
+      // minimapa
+      const mr = 26, mx = 12 + mr, my = g.bot - 12 - mr - (g.demoOn ? 34 : 0); ctx.fillStyle = 'rgba(255,255,255,.08)'; ctx.beginPath(); ctx.arc(mx, my, mr, 0, 6.3); ctx.fill();
+      for (const w of s.worms) { if (w.dead) continue; ctx.fillStyle = w.me ? '#fff' : w.skin[0]; ctx.beginPath(); ctx.arc(mx + w.pts[0].x / R * mr, my + w.pts[0].y / R * mr, w.me ? 3 : 1.6, 0, 6.3); ctx.fill(); }
+    },
+  });
+})();

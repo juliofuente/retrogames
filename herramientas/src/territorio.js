@@ -1,0 +1,135 @@
+// Territorio|#f1f3f5
+(function () {
+  const { rand, ri, clamp, pick } = Arcade;
+  const T = Arcade.T;
+  const N = 46;   // casillas por lado
+  const DIRS = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] }, DK = Object.keys(DIRS);
+  const OPP = { up: 'down', down: 'up', left: 'right', right: 'left' };
+  const COLS = [['#4dabf7', '#a5d8ff', '😎'], ['#ff6b6b', '#ffc9c9', '😈'], ['#51cf66', '#b2f2bb', '🤠'], ['#fcc419', '#ffec99', '🤡'], ['#cc5de8', '#eebefa', '👽'], ['#ff922b', '#ffd8a8', '🤖'], ['#20c997', '#96f2d7', '🐸']];
+  const idx = (x, y) => y * N + x;
+  const inside = (x, y) => x >= 0 && y >= 0 && x < N && y < N;
+
+  function base(s, p, cx, cy) { for (let y = cy - 1; y <= cy + 1; y++) for (let x = cx - 1; x <= cx + 1; x++) if (inside(x, y)) s.own[idx(x, y)] = p.id; p.x = cx; p.y = cy; p.dir = pick(DK); p.next = p.dir; p.trail = []; p.dead = false; p.prog = 0; p.plan = null; }
+  function freeSpot(s) { for (let t = 0; t < 200; t++) { const x = ri(3, N - 4), y = ri(3, N - 4); let ok = true; for (let yy = y - 3; yy <= y + 3 && ok; yy++) for (let xx = x - 3; xx <= x + 3; xx++) if (s.own[idx(xx, yy)] || s.tr[idx(xx, yy)]) { ok = false; break; } if (ok) return [x, y]; } return [ri(3, N - 4), ri(3, N - 4)]; }
+  function count(s, id) { let n = 0; for (let i = 0; i < N * N; i++) if (s.own[i] === id) n++; return n; }
+  function claim(s, p) {
+    for (const i of p.trail) { s.own[i] = p.id; s.tr[i] = 0; } p.trail = [];
+    // rellena lo encerrado: todo lo que no se alcanza desde el borde sin pisar casillas propias
+    const seen = new Uint8Array(N * N), q = [];
+    for (let i = 0; i < N; i++) for (const [x, y] of [[i, 0], [i, N - 1], [0, i], [N - 1, i]]) { const k = idx(x, y); if (!seen[k] && s.own[k] !== p.id) { seen[k] = 1; q.push(k); } }
+    while (q.length) { const k = q.pop(), x = k % N, y = (k / N) | 0; for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const nx = x + dx, ny = y + dy; if (!inside(nx, ny)) continue; const nk = idx(nx, ny); if (!seen[nk] && s.own[nk] !== p.id) { seen[nk] = 1; q.push(nk); } } }
+    let gained = 0; for (let k = 0; k < N * N; k++) if (!seen[k] && s.own[k] !== p.id) { if (s.tr[k]) { const o = s.ps.find((z) => z.id === s.tr[k]); if (o && o !== p) killP(s, o, p); } s.own[k] = p.id; gained++; }
+    return gained;
+  }
+  function killP(s, p, by) {
+    if (p.dead) return; p.dead = true; for (const i of p.trail) s.tr[i] = 0; p.trail = [];
+    if (!p.me) { for (let i = 0; i < N * N; i++) if (s.own[i] === p.id) s.own[i] = 0; p.back = 3; }
+    if (s.onKill) s.onKill(p, by);
+  }
+  /* IA: sale de su zona, da un rodeo y vuelve por el camino más corto sin pisar su propia estela */
+  function homePath(s, p) {
+    const prev = new Int32Array(N * N).fill(-1), start = idx(p.x, p.y), q = [start]; prev[start] = start; let goal = -1;
+    for (let h = 0; h < q.length; h++) { const k = q[h]; if (k !== start && s.own[k] === p.id) { goal = k; break; } const x = k % N, y = (k / N) | 0;
+      for (const d of DK) { if (k === start && d === OPP[p.dir]) continue; const nx = x + DIRS[d][0], ny = y + DIRS[d][1]; if (!inside(nx, ny)) continue; const nk = idx(nx, ny); if (prev[nk] >= 0 || s.tr[nk] === p.id) continue; prev[nk] = k; q.push(nk); } }
+    if (goal < 0) return null; const path = []; for (let k = goal; k !== start; k = prev[k]) path.push(k); return path.reverse();
+  }
+  function dirTo(p, k) { const x = k % N, y = (k / N) | 0; return x > p.x ? 'right' : x < p.x ? 'left' : y > p.y ? 'down' : 'up'; }
+  function think(s, p, lv, bold) {
+    const home = s.own[idx(p.x, p.y)] === p.id;
+    const threat = s.ps.some((o) => o !== p && !o.dead && p.trail.some((k, i) => i % 2 === 0 && Math.abs(k % N - o.x) + Math.abs(((k / N) | 0) - o.y) < (p.me ? 10 : 6)));
+    if (!home && (threat || p.trail.length >= p.maxOut)) { const path = homePath(s, p); if (path && path.length) { p.next = dirTo(p, path[0]); return; } }
+    if (home) {
+      if (!p.plan || p.plan.done) { const out = pick(DK), side = pick(out === 'up' || out === 'down' ? ['left', 'right'] : ['up', 'down']); p.plan = { steps: [[out, ri(2 + bold, 4 + bold * 2)], [side, ri(2 + bold, 4 + bold * 2)], [OPP[out], 99]], i: 0, n: 0 }; p.maxOut = ri(8 + bold * 2, 12 + bold * 4); }
+    }
+    if (p.plan && !p.plan.done) { const st = p.plan.steps[p.plan.i]; if (p.plan.n >= st[1]) { p.plan.i++; p.plan.n = 0; if (p.plan.i >= p.plan.steps.length) { p.plan.done = true; } } const st2 = p.plan.steps[p.plan.i]; if (st2) p.next = st2[0]; }
+    // no ir contra el borde ni contra la propia estela
+    const ok = (d) => { const nx = p.x + DIRS[d][0], ny = p.y + DIRS[d][1]; if (!inside(nx, ny) || d === OPP[p.dir]) return false; const t = s.tr[idx(nx, ny)]; return t !== p.id && (p.me || !t || Math.random() < 0.1 + lv * 0.03); };
+    if (!ok(p.next)) { const alt = DK.filter(ok); if (alt.length) { if (!home) { const path = homePath(s, p); p.next = path && path.length ? dirTo(p, path[0]) : alt[0]; } else p.next = pick(alt); if (p.plan) p.plan.done = true; } }
+    void lv;
+  }
+  function geo(g) { const s = g.s; s.cs = Math.max(10, Math.min(g.W, g.bot - g.top) / 19); }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Sal, da la vuelta y quédate con el terreno', deco: ['🟦', '🟥', '🟩', '😎', '✂️', '🏁'], font: 'round', bg: ['#e9ecef', '#adb5bd'],
+    music: { mode: 'major', bpm: 120, wave: 'triangle', style: 'bouncy', root: 62 }, voice: { wave: 'triangle', mul: 1, echo: 0.2 },
+    /*EN*/ en: { title: 'Paper Land', tag: 'Go out, loop around and take the land', help: 'Your square 😎 never stops. Swipe to change direction. When you leave your colour you draw a line behind you. Get back to your colour and everything inside the loop becomes yours. If someone touches your line you lose a life, and if you touch theirs they\'re out. Don\'t cross your own line either. Take the % of the map each level asks for.', tvHelp: 'Arrows change direction.', dict: {} },
+    /*TV*/ tvHelp: 'Las flechas cambian de dirección.',
+    id: 'territorio', title: 'Territorio', emoji: '🟦', color: '#4dabf7', origin: 'Paper.io (Voodoo, 2016)', pad: false,
+    help: 'Tu cuadrado 😎 no para nunca. Desliza para cambiar de dirección. Cuando sales de tu color vas dibujando una línea. Vuelve a tu color y todo lo que quede dentro del rodeo es tuyo. Si alguien toca tu línea pierdes una vida, y si tú tocas la suya lo eliminas. Tampoco cruces tu propia línea. Consigue el % del mapa que pide cada nivel.',
+    lives: 3, levels: 0, cap: 20,
+    /*SC*/ demo(g) {
+      const s = g.s; if (!s.me || s.me.dead || s.won) return { wait: 0.2 };
+      const me = s.me, old = me.next; think(s, me, g.lv, 3); const d = me.next;
+      if (d === me.dir && d === old) return { wait: 0.05 };
+      const [hx, hy] = s.scr(me.x, me.y), first = !s.said; s.said = 1;
+      return { swipe: [hx, hy, d], len: 70, after: 0.02, say: first ? T('Sal de tu zona, da la vuelta y vuelve a ella', 'Leave your zone, loop around and come back') : null };
+    },
+    setup(g) {
+      const L = g.lv; g.s = { own: new Uint8Array(N * N), tr: new Uint8Array(N * N), ps: [], goal: Math.round(10 + Math.min(L, 20) * 1.1), fx: [] }; const s = g.s;
+      const nb = clamp(2 + Math.floor(L / 3), 2, 6);
+      for (let i = 0; i <= nb; i++) { const p = { id: i + 1, me: i === 0, col: COLS[i], speed: i === 0 ? 7.5 : 6 + Math.min(L, 20) * 0.06, bold: i === 0 ? 1 : ri(0, 1 + Math.floor(L / 5)) }; const [x, y] = i === 0 ? [N >> 1, N >> 1] : freeSpot(s); base(s, p, x, y); s.ps.push(p); }
+      s.me = s.ps[0]; s.cam = [s.me.x, s.me.y];
+      s.scr = (x, y) => [g.W / 2 + (x + 0.5 - s.cam[0]) * s.cs, (g.top + g.bot) / 2 + (y + 0.5 - s.cam[1]) * s.cs];
+      s.onKill = (p, by) => {
+        const [x, y] = s.scr(p.x, p.y); g.burst(x, y, { n: 16, color: [p.col[0], '#fff'], speed: 180 });
+        if (p.me) { Arcade.sfx.bad(); g.message(T('¡Te cortaron!', 'You got cut!'), 1); s.respawn = 1.2; }
+        else { Arcade.sfx.pop(); if (by && by.me) { g.addScore(100, x, y); g.message(T('¡Eliminado!', 'Knocked out!'), 0.8); } }
+      };
+      geo(g);
+    },
+    layout(g) { if (g.s && g.s.me) geo(g); },
+    swipe(g, dir) { const s = g.s, me = s.me; if (!me || me.dead || !DIRS[dir]) return; if (dir !== OPP[me.dir]) me.next = dir; },
+    key(g, k, d) { if (!d) return; const m = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right' }[k]; if (m) this.swipe(g, m); },
+    update(g, dt) {
+      const s = g.s; if (!s.me) return;
+      for (const f of s.fx) f.t -= dt; s.fx = s.fx.filter((f) => f.t > 0);
+      if (s.won) return;
+      for (const p of s.ps) {
+        if (p.dead) { if (!p.me) { p.back -= dt; if (p.back <= 0) { const [x, y] = freeSpot(s); base(s, p, x, y); } } continue; }
+        p.prog += p.speed * dt;
+        while (p.prog >= 1 && !p.dead) {
+          p.prog -= 1;
+          if (!p.me) think(s, p, g.lv, p.bold);
+          if (p.next !== OPP[p.dir]) p.dir = p.next;
+          const nx = p.x + DIRS[p.dir][0], ny = p.y + DIRS[p.dir][1];
+          if (!inside(nx, ny)) { if (p.me) { killP(s, p, null); break; } p.dir = OPP[p.dir]; p.next = p.dir; continue; }
+          p.x = nx; p.y = ny; const k = idx(nx, ny); if (p.plan && !p.plan.done) p.plan.n++;
+          if (s.tr[k]) { const o = s.ps.find((z) => z.id === s.tr[k]); if (o === p) { killP(s, p, null); break; } if (o) killP(s, o, p); }
+          if (s.own[k] === p.id) { if (p.trail.length) { const gn = claim(s, p); if (p.me) { g.addScore(gn * 2); Arcade.sfx.coin(); const [x, y] = s.scr(p.x, p.y); g.burst(x, y, { n: 10, color: [p.col[0]], speed: 140 }); } } }
+          else { s.tr[k] = p.id; p.trail.push(k); }
+          // choque de cabezas: pierde el que está fuera de su zona con la línea más larga
+          for (const o of s.ps) if (o !== p && !o.dead && o.x === p.x && o.y === p.y) { const loser = o.trail.length >= p.trail.length ? o : p; killP(s, loser, loser === o ? p : o); }
+        }
+      }
+      const me = s.me;
+      if (me.dead && s.respawn != null) { s.respawn -= dt; if (s.respawn <= 0) { s.respawn = null; if (g.state === 'play' && g.die()) { for (let i = 0; i < N * N; i++) if (s.own[i] === me.id) s.own[i] = 0; const [x, y] = freeSpot(s); base(s, me, x, y); } } }
+      const tx = me.x + 0.5 + (me.dead ? 0 : DIRS[me.dir][0] * (me.prog - 0.5)), ty = me.y + 0.5 + (me.dead ? 0 : DIRS[me.dir][1] * (me.prog - 0.5));
+      s.cam[0] += (tx - 0.5 - s.cam[0]) * Math.min(1, dt * 8); s.cam[1] += (ty - 0.5 - s.cam[1]) * Math.min(1, dt * 8);
+      s.pct = count(s, me.id) / (N * N) * 100;
+      if (!s.won && s.pct >= s.goal) { s.won = true; g.confetti(70); Arcade.sfx.win(); g.addScore(100 * g.lv, g.W / 2, g.H / 2); setTimeout(() => { if (g.state === 'play') g.win(g.lives >= 3 ? 3 : g.lives >= 2 ? 2 : 1); }, 900); }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H; ctx.fillStyle = '#868e96'; ctx.fillRect(0, 0, W, H); if (!s.me) return; const cs = s.cs;
+      const [x0, y0] = s.scr(0, 0); ctx.fillStyle = '#f8f9fa'; ctx.fillRect(x0 - cs / 2, y0 - cs / 2, N * cs, N * cs);
+      const cx0 = Math.max(0, Math.floor(s.cam[0] - W / cs / 2 - 1)), cx1 = Math.min(N - 1, Math.ceil(s.cam[0] + W / cs / 2 + 1)), cy0 = Math.max(0, Math.floor(s.cam[1] - H / cs / 2 - 1)), cy1 = Math.min(N - 1, Math.ceil(s.cam[1] + H / cs / 2 + 1));
+      const byId = {}; for (const p of s.ps) byId[p.id] = p;
+      for (let y = cy0; y <= cy1; y++) for (let x = cx0; x <= cx1; x++) {
+        const k = idx(x, y), [px, py] = s.scr(x, y);
+        if (s.own[k]) { const p = byId[s.own[k]]; ctx.fillStyle = p.col[0]; ctx.fillRect(px - cs / 2, py - cs / 2, cs + 0.5, cs + 0.5); ctx.fillStyle = 'rgba(0,0,0,.08)'; ctx.fillRect(px - cs / 2, py + cs / 2 - 3, cs + 0.5, 3); }
+        else if ((x + y) % 2) { ctx.fillStyle = '#f1f3f5'; ctx.fillRect(px - cs / 2, py - cs / 2, cs, cs); }
+        if (s.tr[k]) { const p = byId[s.tr[k]]; ctx.fillStyle = p.col[1]; ctx.fillRect(px - cs / 2 + 1, py - cs / 2 + 1, cs - 2, cs - 2); }
+      }
+      for (const p of s.ps) {
+        if (p.dead) continue; const f = p.prog - 0.5, [px, py] = s.scr(p.x + DIRS[p.dir][0] * f, p.y + DIRS[p.dir][1] * f);
+        if (px < -cs || py < -cs || px > W + cs || py > H + cs) continue;
+        ctx.fillStyle = 'rgba(0,0,0,.2)'; Arcade.rr(ctx, px - cs * 0.55, py - cs * 0.45, cs * 1.1, cs * 1.1, 5); ctx.fill();
+        ctx.fillStyle = p.col[0]; Arcade.rr(ctx, px - cs * 0.55, py - cs * 0.6, cs * 1.1, cs * 1.1, 5); ctx.fill(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
+        Arcade.emoji(ctx, p.col[2], px, py - cs * 0.05, cs * 0.85);
+      }
+      // marcador
+      const t = clamp((s.pct || 0) / s.goal, 0, 1), bw = Math.min(W - 200, 230), bx = (W - bw) / 2, by = g.top + 10;
+      ctx.fillStyle = 'rgba(0,0,0,.35)'; Arcade.rr(ctx, bx, by, bw, 12, 6); ctx.fill(); ctx.fillStyle = s.me.col[0]; Arcade.rr(ctx, bx, by, bw * t, 12, 6); ctx.fill();
+      Arcade.txt(ctx, (s.pct || 0).toFixed(1) + '% / ' + s.goal + '%', bx + bw / 2, by + 26, 12, '#fff', 'center', 900, 'rgba(0,0,0,.55)');
+    },
+  });
+})();

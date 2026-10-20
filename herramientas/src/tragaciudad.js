@@ -1,0 +1,143 @@
+// Agujero glotón|#343a40
+(function () {
+  const { rand, ri, clamp, pick } = Arcade;
+  const T = Arcade.T;
+  const WS = 1500, BLK = 250, ST = 70;   // mundo, manzana y anchura de calle
+  // objetos por tamaño (diámetro en unidades del mundo) y puntos
+  const KINDS = [
+    { e: ['🚶', '🧍', '🏃', '🐕', '🐈'], sz: 14, v: 1, where: 'walk' },
+    { e: ['🌳', '🌲', '🌴'], sz: 26, v: 2, where: 'park' },
+    { e: ['🚲', '🛴', '🛵'], sz: 20, v: 2, where: 'street' },
+    { e: ['🚗', '🚕', '🚙'], sz: 34, v: 4, where: 'street' },
+    { e: ['🚌', '🚚', '🚒'], sz: 48, v: 7, where: 'street' },
+    { e: ['🏠', '🏡', '⛪'], sz: 62, v: 12, where: 'block' },
+    { e: ['🏢', '🏬', '🏨'], sz: 88, v: 22, where: 'block' },
+    { e: ['🏰', '🏟️', '🗼'], sz: 120, v: 40, where: 'block' },
+  ];
+  function build(s, L) {
+    const objs = [];
+    for (let bx = 0; bx < WS; bx += BLK) for (let by = 0; by < WS; by += BLK) {
+      const x0 = bx + ST / 2, y0 = by + ST / 2, w = BLK - ST, park = Math.random() < 0.25;
+      if (park) { for (let i = 0; i < 9; i++) objs.push(mk(1, x0 + rand(15, w - 15), y0 + rand(15, w - 15))); for (let i = 0; i < 5; i++) objs.push(mk(0, x0 + rand(10, w - 10), y0 + rand(10, w - 10), true)); continue; }
+      // edificios en cuadrícula según el tamaño
+      const big = Math.random(), k = big < 0.15 ? 7 : big < 0.5 ? 6 : 5, n = k === 7 ? 1 : k === 6 ? 2 : 3, cell = w / n;
+      for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) objs.push(mk(k, x0 + cell * (i + 0.5), y0 + cell * (j + 0.5)));
+      for (let i = 0; i < 3; i++) objs.push(mk(0, x0 + rand(0, w), y0 + (Math.random() < 0.5 ? -6 : w + 6), true));
+    }
+    // tráfico por las calles
+    for (let i = 0; i < 70; i++) { const kind = pick([2, 3, 3, 3, 4]), hor = Math.random() < 0.5, lane = ri(0, Math.floor(WS / BLK)) * BLK + (Math.random() < 0.5 ? -ST / 4 : ST / 4), along = rand(0, WS); const o = mk(kind, hor ? along : lane, hor ? lane : along); o.vx = hor ? (lane % BLK < ST / 2 ? 1 : -1) * rand(30, 60) : 0; o.vy = hor ? 0 : (lane % BLK < ST / 2 ? -1 : 1) * rand(30, 60); if (o.x > 5 && o.y > 5 && o.x < WS - 5 && o.y < WS - 5) objs.push(o); }
+    void L; return objs;
+  }
+  function mk(k, x, y, walk) { const K = KINDS[k]; return { k, x, y, sz: K.sz * rand(0.9, 1.1), v: K.v, e: pick(K.e), vx: walk ? rand(-14, 14) : 0, vy: walk ? rand(-14, 14) : 0, fall: 0, gone: false }; }
+  const hole = (x, y, r, col, me) => ({ x, y, r, col, me, ta: 0, mv: false, think: 0, eaten: 0 });
+  const speedOf = (h) => 150 + h.r * 0.6;
+  function geo(g) { const s = g.s; s.z = clamp(Math.min(g.W, g.bot - g.top) / (s.me.r * 9 + 220), 0.22, 1.4); }
+  const scr = (g, x, y) => [g.W / 2 + (x - g.s.cam[0]) * g.s.z, (g.top + g.bot) / 2 + (y - g.s.cam[1]) * g.s.z];
+  /* IA: el objeto comestible más rentable cerca, huyendo de los agujeros más grandes */
+  function aim(s, h) {
+    let best = null, bs = 0;
+    for (const o of s.objs) { if (o.gone || o.fall || o.sz > h.r * 1.75) continue; const d = Math.hypot(o.x - h.x, o.y - h.y); if (d > 520) continue; const sc = o.v / (60 + d); if (sc > bs) { bs = sc; best = o; } }
+    let a = best ? Math.atan2(best.y - h.y, best.x - h.x) : Math.atan2(WS / 2 - h.y, WS / 2 - h.x) + rand(-1, 1);
+    for (const o of s.holes) if (o !== h && !o.dead && o.r > h.r * 1.1) { const d = Math.hypot(o.x - h.x, o.y - h.y); if (d < o.r * 2.5 + 140) { a = Math.atan2(h.y - o.y, h.x - o.x); break; } }
+    for (const o of s.holes) if (o !== h && !o.dead && h.r > o.r * 1.25 && !h.me) { const d = Math.hypot(o.x - h.x, o.y - h.y); if (d < 260) { a = Math.atan2(o.y - h.y, o.x - h.x); break; } }
+    return a;
+  }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Trágate la ciudad entera', deco: ['🕳️', '🏢', '🚗', '🌳', '🚶', '🏰'], font: 'round', bg: ['#495057', '#212529'],
+    music: { mode: 'major', bpm: 118, wave: 'square', style: 'bouncy', root: 60 }, voice: { wave: 'square', mul: 1, echo: 0.2 },
+    /*EN*/ en: { title: 'Hungry Hole', tag: 'Swallow the whole city', help: 'You are a hole in the ground. Hold your finger on the screen and the hole moves that way. Anything smaller than the hole falls in when you pass under it, and the hole grows. Start with people and trees, then cars, houses and buildings. Rival holes ⭕ eat too: if one is bigger than you and covers you, you lose a life. Reach the size each level asks for before time runs out.', tvHelp: 'Arrows move the hole.', dict: {} },
+    /*TV*/ tvHelp: 'Las flechas mueven el agujero.',
+    id: 'tragaciudad', title: 'Agujero glotón', emoji: '🕳️', color: '#748ffc', origin: 'Hole.io (Voodoo, 2018)', pad: false,
+    help: 'Eres un agujero en el suelo. Mantén el dedo en la pantalla y el agujero va hacia allí. Todo lo que sea más pequeño que el agujero se cae dentro al pasar por encima, y el agujero crece. Empieza por personas y árboles, luego coches, casas y edificios. Los agujeros rivales ⭕ también comen: si uno es más grande que tú y te tapa, pierdes una vida. Llega al tamaño que pide cada nivel antes de que se acabe el tiempo.',
+    lives: 3, levels: 0, cap: 20,
+    /*SC*/ demo(g) {
+      const s = g.s; if (!s.me || s.me.dead || s.won) return { wait: 0.3 };
+      const a = aim(s, s.me), cx = g.W / 2, cy = (g.top + g.bot) / 2, d = Math.min(g.W, g.bot - g.top) * 0.3, first = !s.said; s.said = 1;
+      return { hold: [cx + Math.cos(a) * d, cy + Math.sin(a) * d], dur: 0.3, after: 0, say: first ? T('Mantén el dedo hacia donde quieras ir', 'Hold your finger where you want to go') : null };
+    },
+    setup(g) {
+      const L = g.lv; g.s = { objs: build(null, L), holes: [], keys: {}, time: 100 - Math.min(L, 20), lvl: L, goal: Math.round(70 + Math.min(L, 14) * 5), fx: [] }; const s = g.s;
+      s.me = hole(WS / 2, WS / 2 + BLK / 2 - ST / 2 + BLK / 2, 22, '#748ffc', true); s.me.x = WS / 2; s.me.y = WS / 2; s.holes.push(s.me);
+      // despeja el sitio de salida (que empiece en una calle)
+      s.me.x = Math.round(WS / 2 / BLK) * BLK; s.me.y = s.me.x;
+      const nr = L >= 3 ? clamp(1 + Math.floor((L - 3) / 4), 1, 4) : 0, cols = ['#ff6b6b', '#ffd43b', '#69db7c', '#da77f2'];
+      for (let i = 0; i < nr; i++) { const c = [[BLK, BLK], [WS - BLK, BLK], [BLK, WS - BLK], [WS - BLK, WS - BLK]][i]; s.holes.push(hole(c[0], c[1], 18, cols[i], false)); }
+      s.cam = [s.me.x, s.me.y]; geo(g);
+    },
+    layout(g) { if (g.s && g.s.me) geo(g); },
+    down(g, p) { g.s.fp = p; g.s.press = true; },
+    move(g, p) { g.s.fp = p; },
+    up(g) { g.s.press = false; },
+    key(g, k, d) { g.s.keys[k] = d; },
+    update(g, dt) {
+      const s = g.s; if (!s.me) return; const me = s.me;
+      if (!s.won) s.time -= dt;
+      // tráfico y peatones
+      for (const o of s.objs) { if (o.gone) continue; if (o.fall) { o.fall += dt; if (o.fall > 0.5) o.gone = true; continue; } if (o.vx || o.vy) { o.x += o.vx * dt; o.y += o.vy * dt; if (o.x < 0) o.x += WS; if (o.x > WS) o.x -= WS; if (o.y < 0) o.y += WS; if (o.y > WS) o.y -= WS; } }
+      // mover agujeros
+      const kx = (s.keys.ArrowRight ? 1 : 0) - (s.keys.ArrowLeft ? 1 : 0), ky = (s.keys.ArrowDown ? 1 : 0) - (s.keys.ArrowUp ? 1 : 0);
+      if (!me.dead) { me.mv = false; if (s.press && s.fp) { const [hx, hy] = scr(g, me.x, me.y), dx = s.fp.x - hx, dy = s.fp.y - hy; if (Math.hypot(dx, dy) > 10) { me.ta = Math.atan2(dy, dx); me.mv = true; } } if (kx || ky) { me.ta = Math.atan2(ky, kx); me.mv = true; } }
+      for (const h of s.holes) {
+        if (h.dead) continue;
+        if (!h.me) { h.think -= dt; if (h.think <= 0) { h.think = rand(0.2, 0.5); h.ta = aim(s, h); } h.mv = true; }
+        if (h.mv) { const v = speedOf(h) * (h.me ? 1 : 0.8 + Math.min(g.lv, 20) * 0.01) * dt; h.x = clamp(h.x + Math.cos(h.ta) * v, h.r, WS - h.r); h.y = clamp(h.y + Math.sin(h.ta) * v, h.r, WS - h.r); }
+        // tragar
+        for (const o of s.objs) {
+          if (o.gone || o.fall || o.sz > h.r * 1.75) continue; const d = Math.hypot(o.x - h.x, o.y - h.y);
+          if (d < h.r - o.sz * 0.2) { o.fall = 0.001; o.hx = h.x; o.hy = h.y; o.by = h; h.r = Math.sqrt(h.r * h.r + o.sz * o.sz * (h.me ? 0.05 : 0.028 + Math.min(s.lvl, 12) * 0.001)); if (h.me) { g.addScore(o.v * 5); if (o.k >= 5) { Arcade.sfx.pop(); g.shake && g.shake(o.k - 3); } else Arcade.tone(300 + o.k * 80, 0.05, 'sine', 0.04, -150); } }
+        }
+      }
+      // un agujero grande se traga a otro más pequeño si lo tapa
+      for (const a of s.holes) for (const b of s.holes) {
+        if (a === b || a.dead || b.dead || a.r < b.r * 1.3) continue; if (Math.hypot(a.x - b.x, a.y - b.y) > a.r - b.r * 0.5) continue;
+        if (b.me && s.inv > 0) continue;
+        b.dead = true; a.r = Math.sqrt(a.r * a.r + b.r * b.r * 0.5);
+        if (b.me) { Arcade.sfx.bad(); g.message(T('¡Te tragaron!', 'You got swallowed!'), 1); s.respawn = 1.2; }
+        else { if (a.me) { g.addScore(100); g.message(T('¡Te comiste un rival!', 'You ate a rival!'), 0.9); Arcade.sfx.win(); } b.back = 4; }
+      }
+      for (const h of s.holes) if (h.dead && !h.me) { h.back -= dt; if (h.back <= 0) { h.dead = false; h.r = 18; h.x = rand(BLK, WS - BLK); h.y = rand(BLK, WS - BLK); if (Math.hypot(h.x - me.x, h.y - me.y) < 400) h.x = WS - h.x; } }
+      if (me.dead && s.respawn != null) { s.respawn -= dt; if (s.respawn <= 0) { s.respawn = null; if (g.state === 'play' && g.die()) { me.dead = false; me.r = Math.max(22, me.r * 0.6); s.inv = 2.5; } } }
+      if (s.inv > 0) s.inv -= dt;
+      if (s.objs.length > 600) s.objs = s.objs.filter((o) => !o.gone);
+      // cámara (se aleja al crecer)
+      s.cam[0] += (me.x - s.cam[0]) * Math.min(1, dt * 6); s.cam[1] += (me.y - s.cam[1]) * Math.min(1, dt * 6);
+      const zt = clamp(Math.min(g.W, g.bot - g.top) / (me.r * 9 + 220), 0.22, 1.4); s.z += (zt - s.z) * Math.min(1, dt * 2);
+      if (!s.won && me.r >= s.goal) { s.won = true; g.confetti(70); Arcade.sfx.win(); g.addScore(Math.round(s.time) * 10 + 100 * g.lv, g.W / 2, g.H / 2); setTimeout(() => { if (g.state === 'play') g.win(g.lives >= 3 ? 3 : g.lives >= 2 ? 2 : 1); }, 900); }
+      else if (!s.won && s.time <= 0 && !s.over) { s.over = true; g.message(T('¡Se acabó el tiempo!', 'Time\'s up!'), 1.2); Arcade.sfx.lose(); setTimeout(() => { if (g.state === 'play') { g.lives = 1; g.die(); } }, 1200); }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H; ctx.fillStyle = '#212529'; ctx.fillRect(0, 0, W, H); if (!s.me) return; const z = s.z;
+      // suelo: asfalto y aceras
+      const [ox, oy] = scr(g, 0, 0); ctx.fillStyle = '#495057'; ctx.fillRect(ox, oy, WS * z, WS * z);
+      for (let bx = 0; bx < WS; bx += BLK) for (let by = 0; by < WS; by += BLK) { const [x, y] = scr(g, bx + ST / 2, by + ST / 2), w = (BLK - ST) * z; if (x > W || y > H || x + w < 0 || y + w < 0) continue; ctx.fillStyle = '#ced4da'; Arcade.rr(ctx, x - 6 * z, y - 6 * z, w + 12 * z, w + 12 * z, 8 * z); ctx.fill(); ctx.fillStyle = '#8ce99a'; ctx.fillRect(x, y, w, w); }
+      ctx.strokeStyle = 'rgba(255,255,255,.5)'; ctx.lineWidth = Math.max(1, 2 * z); ctx.setLineDash([10 * z, 10 * z]);
+      for (let c = 0; c <= WS; c += BLK) { let [x, y] = scr(g, c, 0); ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y + WS * z); ctx.stroke(); [x, y] = scr(g, 0, c); ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + WS * z, y); ctx.stroke(); }
+      ctx.setLineDash([]);
+      // agujeros
+      for (const h of s.holes) {
+        if (h.dead) continue; const [x, y] = scr(g, h.x, h.y), r = h.r * z;
+        const gr = ctx.createRadialGradient(x, y, r * 0.2, x, y, r); gr.addColorStop(0, '#000'); gr.addColorStop(0.8, '#111'); gr.addColorStop(1, '#343a40');
+        if (h.me && s.inv > 0 && Math.floor(s.inv * 8) % 2) ctx.globalAlpha = 0.5;
+        ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(x, y, r, 0, 6.3); ctx.fill(); ctx.strokeStyle = h.col; ctx.lineWidth = Math.max(3, r * 0.12); ctx.stroke(); ctx.globalAlpha = 1;
+        if (!h.me) Arcade.txt(ctx, Math.round(h.r), x, y, Math.max(10, r * 0.5), h.col, 'center', 900);
+      }
+      // objetos (de arriba abajo para que se solapen bien)
+      const vis = s.objs.filter((o) => !o.gone).sort((a, b) => a.y - b.y);
+      for (const o of vis) {
+        let x = o.x, y = o.y, sc = 1;
+        if (o.fall) { const f = clamp(o.fall / 0.5, 0, 1); x = o.x + (o.by.x - o.x) * f; y = o.y + (o.by.y - o.y) * f; sc = 1 - f; }
+        const [px, py] = scr(g, x, y), sz = o.sz * z * sc * 1.15; if (px < -sz || py < -sz || px > W + sz || py > H + sz) continue;
+        if (o.fall) ctx.globalAlpha = 1 - clamp(o.fall / 0.5, 0, 1) * 0.6;
+        Arcade.emoji(ctx, o.e, px, py - sz * 0.15, sz, o.vx < 0 ? { flip: false } : o.vx > 0 ? { flip: true } : undefined); ctx.globalAlpha = 1;
+      }
+      // contorno de los agujeros por encima, para no perderlos bajo los edificios
+      for (const h of s.holes) { if (h.dead) continue; const [x, y] = scr(g, h.x, h.y); ctx.globalAlpha = 0.6; ctx.setLineDash([6, 5]); ctx.strokeStyle = h.col; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.arc(x, y, h.r * z, 0, 6.3); ctx.stroke(); ctx.setLineDash([]); ctx.globalAlpha = 1; }
+      // marcador
+      const me = s.me, t = clamp(me.r / s.goal, 0, 1), bw = Math.min(W - 200, 230), bx = (W - bw) / 2, by = g.top + 10;
+      ctx.fillStyle = 'rgba(0,0,0,.45)'; Arcade.rr(ctx, bx, by, bw, 12, 6); ctx.fill(); ctx.fillStyle = '#748ffc'; Arcade.rr(ctx, bx, by, bw * t, 12, 6); ctx.fill();
+      Arcade.txt(ctx, Math.floor(me.r) + ' / ' + s.goal, bx + bw / 2, by + 26, 12, '#fff', 'center', 900, 'rgba(0,0,0,.5)');
+      const tm = Math.max(0, Math.ceil(s.time)); Arcade.txt(ctx, '⏱ ' + Math.floor(tm / 60) + ':' + String(tm % 60).padStart(2, '0'), 12, by + 6, 15, tm <= 10 ? '#ff6b6b' : '#fff', 'left', 900, 'rgba(0,0,0,.5)');
+    },
+  });
+})();

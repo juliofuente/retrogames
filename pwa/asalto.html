@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Asalto a la aldea · Arcade Perdido</title>
+<meta name="theme-color" content="#2b4d1f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css?v=6d7635e467">
+</head>
+<body class="game">
+<script src="config.js?v=84fed7f189"></script>
+<script src="common.js?v=3b61f0ca2c"></script>
+<script>
+(function () {
+  const { rand, ri, clamp, pick, shuffle } = Arcade;
+  const T = Arcade.T;
+  const N = 20;   // aldea de N×N casillas
+  const TROOPS = {
+    barbaro: { e: '🧔', n1: T('Bárbaro', 'Barbarian'), hp: 110, d: 22, r: 0.8, rt: 1, sp: 2.2 },
+    arquera: { e: '🏹', n1: T('Arquera', 'Archer'), hp: 55, d: 18, r: 3.5, rt: 1, sp: 2.2 },
+    gigante: { e: '🗿', n1: T('Gigante', 'Giant'), hp: 700, d: 40, r: 0.9, rt: 2, sp: 1.3, defs: 1 },
+    rompe: { e: '💣', n1: T('Rompemuros', 'Wall Breaker'), hp: 40, d: 500, r: 0.6, rt: 1, sp: 3, walls: 1, boom: 1 },
+  };
+  const BLD = {
+    ayto: { e: '🏛️', w: 2, hp: 1600 }, mina: { e: '💰', w: 1, hp: 400 }, elixir: { e: '🧪', w: 1, hp: 400 }, casa: { e: '🛖', w: 1, hp: 300 },
+    canon: { e: '💥', w: 1, hp: 520, def: { r: 5, d: 26, rt: 0.8, ground: 1 } }, torre: { e: '🗼', w: 1, hp: 420, def: { r: 6.5, d: 16, rt: 0.9 } },
+    mortero: { e: '🎯', w: 1, hp: 480, def: { r: 7.5, d: 30, rt: 3, splash: 1.5, min: 2, ground: 1 } }, muro: { e: '', w: 1, hp: 260 },
+  };
+
+  /* ---------- aldea generada ---------- */
+  function village(L) {
+    const B = [], used = new Set(), key = (x, y) => x + ',' + y;
+    const put = (type, x, y) => { const w = BLD[type].w; for (let i = 0; i < w; i++) for (let j = 0; j < w; j++) if (used.has(key(x + i, y + j))) return false; for (let i = 0; i < w; i++) for (let j = 0; j < w; j++) used.add(key(x + i, y + j)); B.push({ type, x, y, w, hp: BLD[type].hp * (1 + L * 0.03), max: BLD[type].hp * (1 + L * 0.03), cd: rand(0, 1), e: BLD[type].e, def: BLD[type].def }); return true; };
+    const c = N / 2 - 1; put('ayto', c, c);
+    const ring = clamp(3 + Math.floor(L / 6), 3, 5);   // muro alrededor del ayuntamiento y las defensas
+    const nDef = clamp(2 + Math.floor(L / 3), 2, 7);
+    for (let k = 0; k < nDef; k++) { const t = k % 3 === 2 && L >= 6 ? 'mortero' : k % 2 ? 'torre' : 'canon'; for (let tries = 0; tries < 40; tries++) { const a = rand(0, 6.28), r = rand(1.8, ring - 0.6); if (put(t, Math.round(c + 0.5 + Math.cos(a) * r), Math.round(c + 0.5 + Math.sin(a) * r))) break; } }
+    if (L >= 2) for (let x = c - ring; x <= c + 1 + ring; x++) for (let y = c - ring; y <= c + 1 + ring; y++) if ((x === c - ring || x === c + 1 + ring || y === c - ring || y === c + 1 + ring) && Math.random() < clamp(0.55 + L * 0.03, 0.55, 1)) put('muro', x, y);
+    const nRes = 8 + Math.min(L, 10);
+    for (let k = 0; k < nRes; k++) for (let tries = 0; tries < 40; tries++) { const a = rand(0, 6.28), r = rand(ring + 1.5, ring + 4); if (put(pick(['mina', 'elixir', 'casa', 'casa']), Math.round(c + 0.5 + Math.cos(a) * r), Math.round(c + 0.5 + Math.sin(a) * r))) break; }
+    if (L >= 4) for (let k = 0; k < Math.floor(L / 4); k++) for (let tries = 0; tries < 30; tries++) { const a = rand(0, 6.28), r = rand(ring + 1.5, ring + 3.5); if (put(pick(['canon', 'torre']), Math.round(c + 0.5 + Math.cos(a) * r), Math.round(c + 0.5 + Math.sin(a) * r))) break; }
+    return B;
+  }
+  const cen = (b) => [b.x + b.w / 2, b.y + b.w / 2];
+  const notWall = (b) => b.type !== 'muro';
+
+  function geo(g) {
+    const s = g.s, W = g.W, top = g.top + 40, bot = g.bot - 104 - (g.demoOn ? 40 : 0);
+    s.k = Math.min((W - 12) / N, (bot - top) / N); s.ox = (W - N * s.k) / 2; s.oy = top + (bot - top - N * s.k) / 2;
+    const keys = Object.keys(TROOPS), bw = Math.min(84, (W - 24) / keys.length - 6);
+    s.btn = keys.map((t, i) => ({ t, x: W / 2 + (i - (keys.length - 1) / 2) * (bw + 6) - bw / 2, y: g.bot - 96 - (g.demoOn ? 40 : 0), w: bw, h: 76 }));
+  }
+  const scr = (g, x, y) => [g.s.ox + x * g.s.k, g.s.oy + y * g.s.k];
+  function forbidden(s, x, y) { for (const b of s.B) if (!b.dead && x > b.x - 1 && x < b.x + b.w + 1 && y > b.y - 1 && y < b.y + b.w + 1) return true; return x < 0.3 || y < 0.3 || x > N - 0.3 || y > N - 0.3; }
+  function deploy(g, t, x, y) {
+    const s = g.s; if (!s.left[t] || forbidden(s, x, y) || s.over) return false;
+    s.left[t]--; const c = TROOPS[t]; s.U.push({ t, x, y, hp: c.hp, max: c.hp, cd: 0.3, tgt: null, born: 0.3 }); s.started = true;
+    Arcade.tone(500, 0.04, 'square', 0.04); return true;
+  }
+  function destroyedPct(s) { const all = s.B.filter(notWall); return Math.round(100 * all.filter((b) => b.dead).length / all.length); }
+  function hurtB(g, b, n) {
+    const s = g.s; if (b.dead) return; b.hp -= n; b.hit = 0.12;
+    if (b.hp <= 0) { b.dead = true; const [x, y] = scr(g, ...cen(b)); g.burst(x, y, { n: b.type === 'ayto' ? 30 : 10, color: ['#adb5bd', '#ffd43b', '#868e96'], speed: 140 }); if (notWall(b)) { g.addScore(b.type === 'ayto' ? 300 : 40, x, y); Arcade.sfx.pop(); } if (b.type === 'ayto') { g.shake(0.35, 8); g.message(T('¡Ayuntamiento destruido! ⭐', 'Town Hall destroyed! ⭐'), 1.2); } checkStars(g); }
+  }
+  function stars(s) { const p = destroyedPct(s), th = s.B.find((b) => b.type === 'ayto').dead; return (p >= 50 ? 1 : 0) + (th ? 1 : 0) + (p >= 100 ? 1 : 0); }
+  function checkStars(g) { const s = g.s, st = stars(s); if (st > s.stars) { s.stars = st; Arcade.sfx.combo && Arcade.sfx.combo(3 + st); } if (destroyedPct(s) >= 100) finish(g); }
+  function finish(g) {
+    const s = g.s; if (s.over) return; s.over = true; const st = stars(s);
+    setTimeout(() => {
+      if (g.state !== 'play') return;
+      if (st > 0) { Arcade.sfx.win(); g.confetti(80); g.addScore(200 * g.lv * st, g.W / 2, g.H / 2); g.win(st); }
+      else { Arcade.sfx.lose(); g.message(T('Sin estrellas: menos del 50 %', 'No stars: under 50%'), 1.5); setTimeout(() => { if (g.state === 'play' && g.die()) Arcade.current.def.setup(g); }, 1700); }
+    }, 1000);
+  }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Despliega tus tropas y arrasa', deco: ['🏛️', '⚔️', '💣', '🗿', '🏹', '⭐'], font: 'round', bg: ['#4f8a33', '#2b4d1f'],
+    music: { mode: 'minor', bpm: 120, wave: 'square', style: 'epic', root: 57 }, voice: { wave: 'square', mul: 1, echo: 0.25 },
+    /*EN*/ en: { title: 'Village Raid', tag: 'Deploy your troops and wreck it all', help: 'Attack the village and destroy as much as you can before time runs out. Choose a troop below and tap outside the village to drop it; drag your finger to drop several in a row. You can\'t drop troops next to the buildings (the shaded area). Barbarians 🧔 hit whatever is closest. Archers 🏹 shoot over walls. Giants 🗿 go for the defences. Wall Breakers 💣 blow up walls. Cannons, towers and mortars shoot back. 50% destroyed = ⭐, the Town Hall = ⭐ and the whole village = ⭐.', tvHelp: 'D-pad to a troop · OK · then to a spot around the village · OK.', dict: { 'Elige una tropa': 'Pick a troop', 'Aquí no: lejos de los edificios': 'Not here: away from the buildings' } },
+    /*TV*/ tvHelp: 'Cruceta hasta una tropa · OK · luego a un sitio alrededor de la aldea · OK.',
+    tv: { mode: 'tap', targets: (g) => { const s = g.s; if (!s.B) return []; const out = s.btn.slice(); for (let i = 1; i < N; i += 3) for (const [x, y] of [[i, 0.6], [i, N - 0.6], [0.6, i], [N - 0.6, i]]) if (!forbidden(s, x, y)) { const [px, py] = scr(g, x, y); out.push({ x: px - s.k, y: py - s.k, w: s.k * 2, h: s.k * 2 }); } return out; } },
+    id: 'asalto', title: 'Asalto a la aldea', emoji: '⚔️', color: '#ffd43b', origin: 'Clash of Clans (Supercell, 2012)', pad: false,
+    help: 'Ataca la aldea y destruye todo lo que puedas antes de que acabe el tiempo. Elige una tropa abajo y toca fuera de la aldea para soltarla; arrastra el dedo para soltar varias seguidas. No se pueden soltar tropas pegadas a los edificios (la zona sombreada). Los bárbaros 🧔 pegan a lo que tienen más cerca. Las arqueras 🏹 disparan por encima de los muros. Los gigantes 🗿 van a por las defensas. Los rompemuros 💣 revientan los muros. Los cañones, torres y morteros disparan. 50 % destruido = ⭐, el ayuntamiento = ⭐ y la aldea entera = ⭐.',
+    lives: 3, levels: 0, cap: 20,
+    /*SC*/ demo(g) {
+      const s = g.s; if (!s.B || s.over) return { wait: 0.5 };
+      const first = !s.said; const say = (es, en) => (first ? (s.said = 1, T(es, en)) : null);
+      const order = ['gigante', 'rompe', 'barbaro', 'arquera'], t = order.find((k) => s.left[k] > 0); if (!t) return { wait: 1 };
+      if (s.sel !== t) { const b = s.btn.find((x) => x.t === t); return { tap: [b.x + b.w / 2, b.y + b.h / 2], after: 0.4, say: say('Elige una tropa', 'Pick a troop') }; }
+      if (s.since < (t === 'gigante' ? 0.4 : t === 'rompe' ? 1.6 : 0.25)) return { wait: 0.2 };
+      const side = s.side ?? (s.side = ri(0, 3)), a = ((side + 0.5) / 4) * 6.28 + rand(-0.25, 0.25);
+      let x = N / 2 + Math.cos(a) * N * 0.48, y = N / 2 + Math.sin(a) * N * 0.48; x = clamp(x, 0.5, N - 0.5); y = clamp(y, 0.5, N - 0.5);
+      const [px, py] = scr(g, x, y); return { tap: [px, py], after: 0.15, say: say('Suéltala fuera de la aldea', 'Drop it outside the village') };
+    },
+    setup(g) {
+      const L = g.lv;
+      g.s = { B: village(L), U: [], shots: [], left: { barbaro: 10 + Math.floor(L / 2), arquera: 8 + Math.floor(L / 3), gigante: 2 + Math.floor(L / 6), rompe: L >= 2 ? 2 + Math.floor(L / 8) : 0 }, sel: 'barbaro', time: 90, stars: 0, over: false, started: false, since: 9, why: '', whyT: 0 };
+      geo(g);
+    },
+    layout(g) { if (g.s.B) geo(g); },
+    down(g, p) { this.tapAt(g, p); g.s.drag = true; g.s.downAt = g.rt; },
+    move(g, p) { const s = g.s; if (!s.drag || !s.sel) return; if ((s.dragT || 0) > 0) return; s.dragT = 0.12; const x = (p.x - s.ox) / s.k, y = (p.y - s.oy) / s.k; if (p.y < s.btn[0].y - 10) deploy(g, s.sel, x, y); },
+    up(g) { g.s.drag = false; },
+    tapAt(g, p) {
+      const s = g.s; if (!s.B || s.over) return;
+      for (const b of s.btn) if (p.x >= b.x && p.x <= b.x + b.w && p.y >= b.y && p.y <= b.y + b.h) { if (s.left[b.t]) { s.sel = b.t; s.since = 0; Arcade.tone(640, 0.04, 'square', 0.04); } return; }
+      const x = (p.x - s.ox) / s.k, y = (p.y - s.oy) / s.k;
+      if (!s.left[s.sel]) { s.why = 'Elige una tropa'; s.whyT = 1.2; return; }
+      if (!deploy(g, s.sel, x, y)) { s.why = 'Aquí no: lejos de los edificios'; s.whyT = 1.2; s.redT = 0.6; Arcade.sfx.bad(); } else s.since = 0;
+    },
+    tap(g, p) { if (g.s.downAt != null && g.rt - g.s.downAt < 1) return; this.tapAt(g, p); },   // el toque ya lo atendió down()
+    update(g, dt) {
+      const s = g.s; if (!s.B) return; geo(g); if (s.whyT > 0) s.whyT -= dt; if (s.redT > 0) s.redT -= dt; if (s.dragT > 0) s.dragT -= dt; s.since += dt;
+      for (const sh of s.shots) sh.t += dt * 3; s.shots = s.shots.filter((x) => x.t < 1);
+      for (const b of s.B) if (b.hit > 0) b.hit -= dt;
+      if (s.over) return;
+      if (s.started) s.time -= dt;
+      const left = Object.values(s.left).reduce((a, b) => a + b, 0);
+      if (s.time <= 0 || (s.started && !left && !s.U.length)) { finish(g); return; }
+      // tropas
+      for (const u of s.U) {
+        const c = TROOPS[u.t]; if (u.born > 0) { u.born -= dt; continue; } u.cd -= dt;
+        if (!u.tgt || u.tgt.dead) {
+          let pool = s.B.filter((b) => !b.dead && (c.walls ? b.type === 'muro' : notWall(b)));
+          if (c.defs) { const d = pool.filter((b) => b.def); if (d.length) pool = d; }
+          if (!pool.length) pool = s.B.filter((b) => !b.dead && notWall(b));
+          u.tgt = pool.sort((a, b) => Math.hypot(...cen(a).map((v, i) => v - [u.x, u.y][i])) - Math.hypot(...cen(b).map((v, i) => v - [u.x, u.y][i])))[0] || null;
+        }
+        const t = u.tgt; if (!t) continue; const [tx, ty] = cen(t), d = Math.hypot(tx - u.x, ty - u.y) - t.w * 0.5;
+        if (d <= c.r) { if (u.cd <= 0) { u.cd = c.rt; if (c.boom) { s.B.filter((b) => b.type === 'muro' && !b.dead && Math.hypot(...cen(b).map((v, i) => v - [u.x, u.y][i])) < 1.6).forEach((b) => hurtB(g, b, c.d)); u.hp = 0; g.shake(0.15, 4); } else { hurtB(g, t, c.d); if (c.r > 1.5) s.shots.push({ x0: u.x, y0: u.y, x1: tx, y1: ty, t: 0, c: '#ffe066' }); else u.hit = 0.1; } } continue; }
+        // avanza; si choca con un muro (y no dispara por encima), lo ataca
+        const nx = u.x + ((tx - u.x) / (d + t.w * 0.5)) * c.sp * dt, ny = u.y + ((ty - u.y) / (d + t.w * 0.5)) * c.sp * dt;
+        const wall = c.r < 1.5 && !c.walls ? s.B.find((b) => b.type === 'muro' && !b.dead && nx > b.x - 0.2 && nx < b.x + 1.2 && ny > b.y - 0.2 && ny < b.y + 1.2) : null;
+        if (wall && t.type !== 'muro') { u.tgt = wall; continue; }
+        u.x = nx; u.y = ny;
+      }
+      // defensas
+      for (const b of s.B) {
+        if (b.dead || !b.def) continue; b.cd -= dt; if (b.cd > 0) continue;
+        const [bx, by] = cen(b), cand = s.U.filter((u) => u.hp > 0 && u.born <= 0).map((u) => [u, Math.hypot(u.x - bx, u.y - by)]).filter(([, d]) => d <= b.def.r && d >= (b.def.min || 0)).sort((a, c) => a[1] - c[1]);
+        if (!cand.length) continue; const [u] = cand[0]; b.cd = b.def.rt;
+        const hits = b.def.splash ? s.U.filter((o) => Math.hypot(o.x - u.x, o.y - u.y) < b.def.splash) : [u]; hits.forEach((o) => { o.hp -= b.def.d; o.hitT = 0.12; });
+        s.shots.push({ x0: bx, y0: by, x1: u.x, y1: u.y, t: 0, c: b.type === 'mortero' ? '#495057' : '#ff922b', big: b.type !== 'torre' });
+      }
+      s.U = s.U.filter((u) => { if (u.hp <= 0) { const [x, y] = scr(g, u.x, u.y); g.burst(x, y, { n: 6, color: ['#ff6b6b', '#fff'], speed: 90 }); return false; } return true; });
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H; ctx.fillStyle = '#2b4d1f'; ctx.fillRect(0, 0, W, H); if (!s.B) return;
+      const k = s.k;
+      for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) { const [px, py] = scr(g, x, y); ctx.fillStyle = (x + y) % 2 ? '#7cb85a' : '#73ad52'; ctx.fillRect(px, py, k + 0.5, k + 0.5); }
+      // zona prohibida
+      ctx.fillStyle = s.redT > 0 ? 'rgba(255,60,60,.25)' : 'rgba(0,0,0,.12)';
+      for (const b of s.B) if (!b.dead) { const [px, py] = scr(g, b.x - 1, b.y - 1); ctx.fillRect(px, py, (b.w + 2) * k, (b.w + 2) * k); }
+      // edificios
+      for (const b of s.B.slice().sort((a, c) => a.y - c.y)) {
+        const [px, py] = scr(g, b.x, b.y), sz = b.w * k;
+        if (b.type === 'muro') { if (b.dead) continue; ctx.fillStyle = '#868e96'; Arcade.rr(ctx, px + 1, py + 1, sz - 2, sz - 2, 3); ctx.fill(); ctx.fillStyle = '#adb5bd'; ctx.fillRect(px + 2, py + 2, sz - 4, sz * 0.35); continue; }
+        if (b.dead) { Arcade.emoji(ctx, '🪨', px + sz / 2, py + sz / 2, sz * 0.6); continue; }
+        ctx.fillStyle = 'rgba(0,0,0,.18)'; ctx.fillRect(px + 2, py + 3, sz - 2, sz - 2);
+        Arcade.emoji(ctx, b.e, px + sz / 2, py + sz / 2 - 2, sz * 0.95);
+        if (b.hit > 0) { ctx.fillStyle = 'rgba(255,255,255,.35)'; ctx.fillRect(px, py, sz, sz); }
+        if (b.hp < b.max) { ctx.fillStyle = 'rgba(0,0,0,.5)'; ctx.fillRect(px, py - 4, sz, 4); ctx.fillStyle = '#69db7c'; ctx.fillRect(px, py - 4, sz * b.hp / b.max, 4); }
+      }
+      for (const u of s.U) { const [px, py] = scr(g, u.x, u.y), sz = k * (u.t === 'gigante' ? 1.6 : 1.1); ctx.globalAlpha = u.born > 0 ? 0.5 : 1; Arcade.emoji(ctx, TROOPS[u.t].e, px, py - Math.abs(Math.sin(g.rt * 10 + u.x)) * 3 - (u.hit > 0 ? 3 : 0), sz); ctx.globalAlpha = 1; if (u.hp < u.max) { ctx.fillStyle = '#ff6b6b'; ctx.fillRect(px - sz / 2, py - sz * 0.7, sz * u.hp / u.max, 3); } }
+      for (const sh of s.shots) { const [x0, y0] = scr(g, sh.x0, sh.y0), [x1, y1] = scr(g, sh.x1, sh.y1), arc = sh.big ? Math.sin(sh.t * Math.PI) * 30 : 0; ctx.fillStyle = sh.c; ctx.beginPath(); ctx.arc(x0 + (x1 - x0) * sh.t, y0 + (y1 - y0) * sh.t - arc, sh.big ? 5 : 3, 0, 6.3); ctx.fill(); }
+      // marcador
+      const pct = destroyedPct(s), st = stars(s);
+      ctx.fillStyle = 'rgba(0,0,0,.5)'; Arcade.rr(ctx, 10, g.top + 4, W - 20, 30, 15); ctx.fill();
+      Arcade.txt(ctx, '⭐'.repeat(st) + '☆'.repeat(3 - st), 26, g.top + 19, 16, '#ffd43b', 'left', 900);
+      Arcade.txt(ctx, pct + '%', W / 2, g.top + 19, 16, '#fff', 'center', 900);
+      Arcade.txt(ctx, '⏱ ' + Math.ceil(s.time) + 's', W - 26, g.top + 19, 15, s.time < 15 ? '#ff8787' : '#fff', 'right', 900);
+      // tropas
+      for (const b of s.btn) { const n = s.left[b.t], sel = s.sel === b.t; ctx.fillStyle = sel ? '#ffd43b' : n ? 'rgba(255,255,255,.9)' : 'rgba(255,255,255,.3)'; Arcade.rr(ctx, b.x, b.y - (sel ? 6 : 0), b.w, b.h, 12); ctx.fill(); Arcade.emoji(ctx, TROOPS[b.t].e, b.x + b.w / 2, b.y + 28 - (sel ? 6 : 0), 30); Arcade.txt(ctx, '×' + n, b.x + b.w / 2, b.y + 60 - (sel ? 6 : 0), 14, '#212529', 'center', 900); }
+      if (s.whyT > 0) Arcade.txt(ctx, s.why, W / 2, s.btn[0].y - 16, 14, '#ffd8a8', 'center', 900, 'rgba(0,0,0,.6)');
+      else if (!s.started) Arcade.txt(ctx, T('Toca fuera de la aldea para atacar', 'Tap outside the village to attack'), W / 2, s.btn[0].y - 16, 14, '#fff', 'center', 900, 'rgba(0,0,0,.6)');
+    },
+  });
+})();
+</script>
+</body>
+</html>

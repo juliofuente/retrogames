@@ -857,7 +857,7 @@
         c.ph = 'rest'; c.rest = c.wait ?? 0.3; return;
       }
       if (c.ph === 'act') {
-        if (c.hold) { if (c.t >= (c.dur || 0.6)) { dUp(false); c.ph = 'rest'; c.rest = 0.35; } return; }
+        if (c.hold) { if (c.t >= (c.dur || 0.6)) { dUp(false); c.ph = 'rest'; c.rest = c.after ?? 0.35; } return; }
         if (c.drag) { const pts = c.drag, k = Math.min(1, c.t / (c.dur || 0.5)), segs = pts.length - 1, f = k * segs, i = Math.min(segs - 1, Math.floor(f)), u = f - i;
           DM.fx = pts[i][0] + (pts[i + 1][0] - pts[i][0]) * u; DM.fy = pts[i][1] + (pts[i + 1][1] - pts[i][1]) * u; dMove(DM.fx, DM.fy);
           if (k >= 1) { dUp(false); c.ph = 'rest'; c.rest = c.after ?? 0.4; } return; }

@@ -1,0 +1,79 @@
+// Bucle infinito|#2f3e46
+(function () {
+  const { rand, ri, clamp } = Arcade;
+  const T = Arcade.T;
+  // bits: 1 arriba, 2 derecha, 4 abajo, 8 izquierda
+  const rot = (m) => ((m << 1) | (m >> 3)) & 15;
+  const D = [[0, -1, 1, 4], [1, 0, 2, 8], [0, 1, 4, 1], [-1, 0, 8, 2]];
+  function generate(L) {
+    const w = clamp(4 + Math.floor(L / 4), 4, 8), h = clamp(Math.round(w * 1.4), 5, 11), p = clamp(0.52 + L * 0.006, 0.52, 0.64);
+    for (let tries = 0; tries < 40; tries++) {
+      const m = new Array(w * h).fill(0);
+      for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+        if (x < w - 1 && Math.random() < p) { m[y * w + x] |= 2; m[y * w + x + 1] |= 8; }
+        if (y < h - 1 && Math.random() < p) { m[y * w + x] |= 4; m[(y + 1) * w + x] |= 1; }
+      }
+      const used = m.filter((v) => v).length; if (used < w * h * 0.7) continue;
+      const cur = m.map((v) => { let r = v; for (let k = ri(0, 3); k > 0; k--) r = rot(r); return r; });
+      if (solved(cur, w, h)) continue;
+      // giros mínimos para cada pieza
+      let min = 0; m.forEach((v, i) => { let r = cur[i], k = 0; while (r !== v && k < 4) { r = rot(r); k++; } if (v === 5 || v === 10) k = k % 2; if (v === 15 || v === 0) k = 0; min += k; });
+      return { w, h, sol: m, cur, min };
+    }
+    return generate(Math.max(1, L - 1));
+  }
+  function solved(m, w, h) {
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { const v = m[y * w + x]; for (const [dx, dy, b, ob] of D) { if (!(v & b)) continue; const nx = x + dx, ny = y + dy; if (nx < 0 || ny < 0 || nx >= w || ny >= h || !(m[ny * w + nx] & ob)) return false; } }
+    return true;
+  }
+  function geo(g) { const s = g.s, aw = g.W - 24, ah = g.bot - g.top - 90 - (g.demoOn ? 40 : 0); s.cs = Math.floor(Math.min(aw / s.w, ah / s.h, 90)); s.ox = Math.round((g.W - s.cs * s.w) / 2); s.oy = Math.round(g.top + 50 + (ah - s.cs * s.h) / 2); }
+  const cxy = (s, i) => [s.ox + (i % s.w + 0.5) * s.cs, s.oy + (Math.floor(i / s.w) + 0.5) * s.cs];
+  function turn(g, i) {
+    const s = g.s; if (s.won || i < 0 || !s.cur[i] || s.cur[i] === 15) return;
+    s.cur[i] = rot(s.cur[i]); s.ang[i] -= Math.PI / 2; s.taps++; Arcade.tone(420 + (i % 7) * 30, 0.04, 'triangle', 0.04, 120);
+    if (solved(s.cur, s.w, s.h)) {
+      s.won = true; s.flip = 0; Arcade.sfx.win(); g.confetti(60);
+      const st = s.taps <= s.min + 2 ? 3 : s.taps <= s.min * 1.5 + 4 ? 2 : 1; g.addScore(100 + 40 * g.lv + st * 50, g.W / 2, g.H / 2);
+      setTimeout(() => { if (g.state === 'play') g.win(st); }, 1300);
+    }
+  }
+  const cellAt = (s, p) => { const x = Math.floor((p.x - s.ox) / s.cs), y = Math.floor((p.y - s.oy) / s.cs); return x >= 0 && y >= 0 && x < s.w && y < s.h ? y * s.w + x : -1; };
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Gira las piezas hasta cerrarlo todo', deco: ['➰', '🔄', '♾️', '⭕', '➖', '✨'], font: 'round', bg: ['#52796f', '#2f3e46'],
+    music: { mode: 'major', bpm: 76, wave: 'sine', style: 'chill', root: 60 }, voice: { wave: 'sine', mul: 1.1, echo: 0.4 },
+    /*EN*/ en: { title: 'Infinite Loop', tag: 'Turn the pieces until everything is closed', help: 'Each tap turns a piece a quarter turn. Turn them so every line joins another one and no end is left loose. The edges of the board are closed: no line can point outwards. When everything fits, the board lights up. Fewer turns = more stars.', tvHelp: 'Choose a piece and press OK to turn it.', dict: {} },
+    /*TV*/ tvHelp: 'Elige una pieza y pulsa OK para girarla.',
+    id: 'bucle', title: 'Bucle infinito', emoji: '➰', color: '#84a98c', origin: 'Infinity Loop (Balysv, 2015)', pad: false,
+    help: 'Cada toque gira una pieza un cuarto de vuelta. Gíralas para que cada línea se junte con otra y no quede ningún extremo suelto. Los bordes del tablero están cerrados: ninguna línea puede apuntar hacia fuera. Cuando todo encaja, el tablero se ilumina. Menos giros = más estrellas.',
+    lives: 0, levels: 0, cap: 20,
+    tv: { mode: 'tap', targets: (g) => { const s = g.s; if (!s.cur) return []; const out = []; s.cur.forEach((v, i) => { if (v && v !== 15) { const [x, y] = cxy(s, i); out.push({ x: x - s.cs / 2, y: y - s.cs / 2, w: s.cs, h: s.cs }); } }); return out; } },
+    /*SC*/ demo(g) {
+      const s = g.s; if (!s.cur || s.won) return { wait: 0.3 };
+      const i = s.cur.findIndex((v, k) => v !== s.sol[k] && !((s.sol[k] === 5 || s.sol[k] === 10) && v === rot(rot(s.sol[k]))));
+      if (i < 0) return { wait: 0.3 };
+      const [x, y] = cxy(s, i), first = !s.said; s.said = 1;
+      return { tap: [x, y], after: 0.22, say: first ? T('Toca una pieza para girarla', 'Tap a piece to turn it') : null };
+    },
+    setup(g) { const L = generate(g.lv); g.s = { w: L.w, h: L.h, sol: L.sol, cur: L.cur, min: L.min, taps: 0, ang: L.cur.map(() => 0) }; geo(g); },
+    layout(g) { if (g.s.cur) geo(g); },
+    tap(g, p) { turn(g, cellAt(g.s, p)); },
+    update(g, dt) { const s = g.s; if (!s.ang) return; for (let i = 0; i < s.ang.length; i++) s.ang[i] *= Math.max(0, 1 - dt * 16); if (s.won) s.flip = Math.min(1, (s.flip || 0) + dt * 2); },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H, f = s.flip || 0;
+      const lerp = (a, b) => { const pa = parseInt(a.slice(1), 16), pb = parseInt(b.slice(1), 16), c = [16, 8, 0].map((sh) => Math.round(((pa >> sh) & 255) * (1 - f) + ((pb >> sh) & 255) * f)); return 'rgb(' + c.join(',') + ')'; };
+      ctx.fillStyle = lerp('#2f3e46', '#f8f9fa'); ctx.fillRect(0, 0, W, H); if (!s.cur) return;
+      const cs = s.cs, lw = Math.max(5, cs * 0.16); ctx.strokeStyle = lerp('#f8f9fa', '#2f3e46'); ctx.fillStyle = ctx.strokeStyle; ctx.lineWidth = lw; ctx.lineCap = 'round';
+      s.cur.forEach((v, i) => {
+        if (!v) return; const [x, y] = cxy(s, i); ctx.save(); ctx.translate(x, y); ctx.rotate(s.ang[i]);
+        const r = cs / 2, bits = [1, 2, 4, 8].filter((b) => v & b), n = bits.length, vec = { 1: [0, -1], 2: [1, 0], 4: [0, 1], 8: [-1, 0] };
+        if (n === 1) { const [dx, dy] = vec[bits[0]]; ctx.beginPath(); ctx.moveTo(dx * r, dy * r); ctx.lineTo(0, 0); ctx.stroke(); ctx.beginPath(); ctx.arc(0, 0, cs * 0.2, 0, 6.3); ctx.lineWidth = lw * 0.8; ctx.stroke(); ctx.lineWidth = lw; }
+        else if (n === 2 && (v === 5 || v === 10)) { const [dx, dy] = vec[bits[0]]; ctx.beginPath(); ctx.moveTo(dx * r, dy * r); ctx.lineTo(-dx * r, -dy * r); ctx.stroke(); }
+        else if (n === 2) { const [ax, ay] = vec[bits[0]], [bx, by] = vec[bits[1]]; ctx.beginPath(); ctx.arc((ax + bx) * r, (ay + by) * r, r, 0, 6.3); ctx.save(); ctx.beginPath(); ctx.rect(-r, -r, cs, cs); ctx.clip(); ctx.beginPath(); ctx.arc((ax + bx) * r, (ay + by) * r, r, 0, 6.3); ctx.stroke(); ctx.restore(); }
+        else { for (const b of bits) { const [dx, dy] = vec[b]; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(dx * r, dy * r); ctx.stroke(); } ctx.beginPath(); ctx.arc(0, 0, lw * 0.9, 0, 6.3); ctx.fill(); }
+        ctx.restore();
+      });
+      Arcade.txt(ctx, s.won ? '✨' : T('Giros', 'Turns') + ' ' + s.taps, W / 2, g.top + 24, 15, lerp('#dee2e6', '#2f3e46'), 'center', 800);
+    },
+  });
+})();

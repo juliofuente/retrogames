@@ -1,0 +1,112 @@
+// Galletas sin fin|#3b2314
+(function () {
+  const { rand, ri, clamp } = Arcade;
+  const T = Arcade.T;
+  const B = [
+    { e: '🖱️', es: 'Cursor', en: 'Cursor', cost: 15, cps: 0.5 },
+    { e: '👵', es: 'Abuela', en: 'Grandma', cost: 100, cps: 4 },
+    { e: '🌾', es: 'Granja', en: 'Farm', cost: 1100, cps: 30 },
+    { e: '⛏️', es: 'Mina', en: 'Mine', cost: 12000, cps: 180 },
+    { e: '🏭', es: 'Fábrica', en: 'Factory', cost: 130000, cps: 1000 },
+    { e: '🏦', es: 'Banco', en: 'Bank', cost: 1.4e6, cps: 5600 },
+    { e: '🛕', es: 'Templo', en: 'Temple', cost: 2e7, cps: 31000 },
+    { e: '🚀', es: 'Cohete', en: 'Rocket', cost: 3.3e8, cps: 176000 },
+  ];
+  const TIERS = [5, 15, 40];
+  function fmt(n) { if (n < 10 && n % 1) return n.toFixed(1); if (n < 1000) return Math.floor(n) + ''; const u = ['', 'K', 'M', 'B', 'T', 'Q']; let i = 0; while (n >= 1000 && i < u.length - 1) { n /= 1000; i++; } return (n < 10 ? n.toFixed(2) : n < 100 ? n.toFixed(1) : Math.floor(n)) + u[i]; }
+  const price = (s, i) => Math.ceil(B[i].cost * Math.pow(1.15, s.own[i]));
+  const bcps = (s, i) => B[i].cps * Math.pow(2, s.up[i]);
+  function cps(s) { let c = 0; for (let i = 0; i < B.length; i++) c += s.own[i] * bcps(s, i); return c * (s.frenzy > 0 ? 7 : 1); }
+  const clickVal = (s) => (1 + cps(s) / (s.frenzy > 0 ? 7 : 1) * 0.04) * Math.pow(2, s.clickUp) * (s.frenzy > 0 ? 7 : 1);
+  function upgrades(s) {   // mejoras disponibles: x2 a un edificio al llegar a 5, 15 y 40, y dedos de oro
+    const out = []; for (let i = 0; i < B.length; i++) { const t = s.up[i]; if (t < TIERS.length && s.own[i] >= TIERS[t]) out.push({ kind: 'b', i, cost: B[i].cost * [10, 60, 400][t], e: B[i].e }); }
+    if (s.clickUp < 6 && s.total >= 50 * Math.pow(12, s.clickUp)) out.push({ kind: 'c', cost: 100 * Math.pow(12, s.clickUp), e: '👆' });
+    return out.sort((a, b) => a.cost - b.cost).slice(0, 4);
+  }
+  function geo(g) {
+    const s = g.s, top = g.top + 50, bot = g.bot - 8 - (g.demoOn ? 34 : 0), h = bot - top;
+    s.cr = Math.min(g.W * 0.24, h * 0.17); s.cx = g.W / 2; s.cy = top + s.cr + 6;
+    s.uy = s.cy + s.cr + 14; s.uh = 40; s.ly = s.uy + s.uh + 8; s.rows = Math.min(B.length, 8); s.rh = Math.max(30, Math.min(52, (bot - s.ly) / s.rows)); s.lx = 10; s.lw = g.W - 20;
+  }
+  function buy(g, i) { const s = g.s, p = price(s, i); if (s.c < p) { Arcade.tone(150, 0.05, 'square', 0.03); return false; } s.c -= p; s.own[i]++; Arcade.sfx.coin(); s.flash[i] = 0.3; return true; }
+  function buyUp(g, u) { const s = g.s; if (s.c < u.cost) return false; s.c -= u.cost; if (u.kind === 'b') s.up[u.i]++; else s.clickUp++; Arcade.tone(990, 0.12, 'triangle', 0.06, 300); g.message(u.kind === 'b' ? u.e + ' ×2' : '👆 ×2', 0.7); return true; }
+  function clickCookie(g, p) { const s = g.s, v = clickVal(s); s.c += v; s.total += v; s.pulse = 1; s.crumbs.push({ x: p.x + rand(-8, 8), y: p.y, t: 0.8, txt: '+' + fmt(v) }); if (s.crumbs.length > 30) s.crumbs.shift(); Arcade.tone(500 + rand(0, 200), 0.03, 'sine', 0.03); }
+  function hitRow(s, p) { if (p.x < s.lx || p.x > s.lx + s.lw) return -1; const i = Math.floor((p.y - s.ly) / s.rh); return i >= 0 && i < s.rows ? i : -1; }
+  function upRects(s, g) { const ups = upgrades(s), w = 46; return ups.map((u, k) => ({ u, x: g.W / 2 - (ups.length * (w + 8) - 8) / 2 + k * (w + 8), y: s.uy, w, h: s.uh })); }
+  function bestBuy(s) {   // la compra con mejor rendimiento (o la mejora) que ya se puede pagar o casi
+    let best = null; const now = cps(s) + 0.5;
+    for (let i = 0; i < B.length; i++) { if (i > 0 && s.own[i - 1] === 0) break; const p = price(s, i), roi = p / bcps(s, i) + Math.max(0, p - s.c) / now; if (!best || roi < best.roi) best = { kind: 'row', i, p, roi }; }
+    for (const u of upgrades(s)) { const gain = u.kind === 'b' ? s.own[u.i] * bcps(s, u.i) : clickVal(s) * 3, roi = u.cost / Math.max(gain, 0.1) + Math.max(0, u.cost - s.c) / now; if (roi < best.roi) best = { kind: 'up', u, p: u.cost, roi }; }
+    return best;
+  }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Toca la galleta y monta un imperio', deco: ['🍪', '👵', '🏭', '🌾', '🏦', '🚀'], font: 'round', bg: ['#6b4226', '#3b2314'],
+    music: { mode: 'major', bpm: 96, wave: 'triangle', style: 'chill', root: 60 }, voice: { wave: 'sine', mul: 1.1, echo: 0.35 },
+    /*EN*/ en: { title: 'Endless Cookies', tag: 'Tap the cookie and build an empire', help: 'Tap the big cookie 🍪 to bake cookies. Spend them on helpers: cursors, grandmas, farms, factories… each one bakes cookies by itself every second. Each helper costs a bit more than the last. The buttons above the list are upgrades that double production. If a golden cookie appears, tap it fast: everything ×7 for a while! Bake the cookies each level asks for; the faster, the more stars.', tvHelp: 'Choose the cookie or a helper and press OK.', dict: {} },
+    /*TV*/ tvHelp: 'Elige la galleta o un ayudante y pulsa OK.',
+    id: 'horno', title: 'Galletas sin fin', emoji: '🍪', color: '#e8b778', origin: 'Cookie Clicker (Orteil, 2013)', pad: false,
+    help: 'Toca la galleta grande 🍪 para hornear galletas. Gástalas en ayudantes: cursores, abuelas, granjas, fábricas… cada uno hornea galletas solo cada segundo. Cada ayudante cuesta un poco más que el anterior. Los botones encima de la lista son mejoras que duplican la producción. Si sale una galleta dorada, tócala rápido: ¡todo ×7 durante un rato! Hornea las galletas que pide cada nivel; cuanto antes, más estrellas.',
+    lives: 0, levels: 0, cap: 20,
+    tv: { mode: 'tap', targets: (g) => { const s = g.s; if (!s.own) return []; const out = [{ x: s.cx - s.cr, y: s.cy - s.cr, w: s.cr * 2, h: s.cr * 2 }]; if (s.gold) out.push({ x: s.gold.x - 30, y: s.gold.y - 30, w: 60, h: 60 }); for (const r of upRects(s, g)) out.push(r); for (let i = 0; i < s.rows; i++) out.push({ x: s.lx, y: s.ly + i * s.rh, w: s.lw, h: s.rh - 4 }); return out; } },
+    /*SC*/ demo(g) {
+      const s = g.s; if (!s.own || s.won) return { wait: 0.3 };
+      if (s.gold) return { tap: [s.gold.x, s.gold.y], after: 0.15, say: T('¡Galleta dorada!', 'Golden cookie!') };
+      const b = bestBuy(s);
+      if (b && s.c >= b.p) { if (b.kind === 'row') return { tap: [s.lx + s.lw / 2, s.ly + b.i * s.rh + s.rh / 2], after: 0.15, say: !s.said2 ? (s.said2 = 1, T('Compra ayudantes que hornean solos', 'Buy helpers that bake by themselves')) : null }; const r = upRects(s, g).find((q) => q.u.kind === b.u.kind && q.u.i === b.u.i); if (r) return { tap: [r.x + r.w / 2, r.y + r.h / 2], after: 0.15 }; }
+      return { tap: [s.cx + rand(-10, 10), s.cy + rand(-10, 10)], after: 0.09, say: !s.said ? (s.said = 1, T('Toca la galleta para hornear', 'Tap the cookie to bake')) : null };
+    },
+    setup(g) {
+      const L = g.lv; g.s = { c: 0, total: 0, own: B.map(() => 0), up: B.map(() => 0), clickUp: 0, goal: Math.round(400 * Math.pow(2.05, L - 1)), par: 55 + L * 5, t: 0, frenzy: 0, goldT: rand(12, 25), crumbs: [], flash: B.map(() => 0), pulse: 0 };
+      geo(g);
+    },
+    layout(g) { if (g.s.own) geo(g); },
+    tap(g, p) {
+      const s = g.s; if (!s.own || s.won) return;
+      if (s.gold && Math.hypot(p.x - s.gold.x, p.y - s.gold.y) < 34) { s.gold = null; s.frenzy = 10; Arcade.sfx.win(); g.message(T('¡Frenesí ×7!', 'Frenzy ×7!'), 1); g.burst(p.x, p.y, { n: 20, emoji: '✨', size: 14, speed: 200 }); return; }
+      if (Math.hypot(p.x - s.cx, p.y - s.cy) < s.cr * 1.05) { clickCookie(g, p); return; }
+      for (const r of upRects(s, g)) if (p.x > r.x && p.x < r.x + r.w && p.y > r.y && p.y < r.y + r.h) { buyUp(g, r.u); return; }
+      const i = hitRow(s, p); if (i >= 0 && (i === 0 || s.own[i - 1] > 0)) buy(g, i);
+    },
+    key(g, k, d) { if (d && k === ' ') this.tap(g, { x: g.s.cx, y: g.s.cy }); },
+    update(g, dt) {
+      const s = g.s; if (!s.own) return; geo(g);
+      for (const c of s.crumbs) { c.t -= dt; c.y -= 50 * dt; } s.crumbs = s.crumbs.filter((c) => c.t > 0);
+      for (let i = 0; i < B.length; i++) if (s.flash[i] > 0) s.flash[i] -= dt;
+      s.pulse = Math.max(0, s.pulse - dt * 6);
+      if (s.won) return;
+      s.t += dt; const v = cps(s) * dt; s.c += v; s.total += v;
+      if (s.frenzy > 0) s.frenzy -= dt;
+      if (s.gold) { s.gold.t -= dt; if (s.gold.t <= 0) s.gold = null; } else { s.goldT -= dt; if (s.goldT <= 0) { s.goldT = rand(20, 35); s.gold = { x: rand(40, g.W - 40), y: rand(g.top + 60, s.cy + s.cr), t: 5 }; Arcade.tone(1200, 0.1, 'sine', 0.05, 600); } }
+      if (s.total >= s.goal) { s.won = true; g.confetti(80); Arcade.sfx.win(); const st = s.t <= s.par ? 3 : s.t <= s.par * 1.6 ? 2 : 1; g.addScore(Math.round(100 + 40 * g.lv + st * 60), g.W / 2, g.H / 2); setTimeout(() => { if (g.state === 'play') g.win(st); }, 1100); }
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      const bg = ctx.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, '#6b4226'); bg.addColorStop(1, '#2b170c'); ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H); if (!s.own) return;
+      if (s.frenzy > 0) { ctx.fillStyle = `rgba(255,212,59,${0.12 + 0.08 * Math.sin(g.rt * 8)})`; ctx.fillRect(0, 0, W, H); }
+      // contador
+      Arcade.txt(ctx, '🍪 ' + fmt(s.c), W / 2, g.top + 16, 22, '#fff', 'center', 900, 'rgba(0,0,0,.5)');
+      Arcade.txt(ctx, fmt(cps(s)) + ' ' + T('por segundo', 'per second') + (s.frenzy > 0 ? '  ×7!' : ''), W / 2, g.top + 38, 12, s.frenzy > 0 ? '#ffd43b' : '#e9ecef', 'center', 700);
+      // meta y tiempo
+      const t = clamp(s.total / s.goal, 0, 1); ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.fillRect(0, g.top + 48, W, 4); ctx.fillStyle = '#ffd43b'; ctx.fillRect(0, g.top + 48, W * t, 4);
+      Arcade.txt(ctx, T('Meta', 'Goal') + ' ' + fmt(s.goal), 10, g.top + 62, 11, '#ffd8a8', 'left', 800); Arcade.txt(ctx, '⏱ ' + Math.floor(s.t) + 's' + (s.t <= s.par ? ' ⭐⭐⭐' : s.t <= s.par * 1.6 ? ' ⭐⭐' : ' ⭐'), W - 10, g.top + 62, 11, '#ffd8a8', 'right', 800);
+      // galleta
+      const sc = 1 + s.pulse * 0.06 + Math.sin(g.rt * 2) * 0.015; ctx.save(); ctx.translate(s.cx, s.cy); ctx.rotate(g.rt * 0.1); ctx.globalAlpha = 0.25; ctx.fillStyle = '#ffd43b'; for (let i = 0; i < 12; i++) { ctx.rotate(Math.PI / 6); ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(s.cr * 1.4, -s.cr * 0.12); ctx.lineTo(s.cr * 1.4, s.cr * 0.12); ctx.fill(); } ctx.restore(); ctx.globalAlpha = 1;
+      Arcade.emoji(ctx, '🍪', s.cx, s.cy, s.cr * 2 * sc);
+      for (const c of s.crumbs) { ctx.globalAlpha = c.t / 0.8; Arcade.txt(ctx, c.txt, c.x, c.y, 15, '#fff', 'center', 900, 'rgba(0,0,0,.4)'); } ctx.globalAlpha = 1;
+      if (s.gold) { const a = Math.min(1, s.gold.t); ctx.globalAlpha = a; ctx.save(); ctx.shadowColor = '#ffd43b'; ctx.shadowBlur = 20; Arcade.emoji(ctx, '🍪', s.gold.x, s.gold.y, 50 + Math.sin(g.rt * 10) * 4); ctx.restore(); Arcade.emoji(ctx, '✨', s.gold.x + 20, s.gold.y - 20, 20); ctx.globalAlpha = 1; }
+      // mejoras
+      for (const r of upRects(s, g)) { const ok = s.c >= r.u.cost; ctx.fillStyle = ok ? '#ffe8cc' : 'rgba(255,255,255,.15)'; Arcade.rr(ctx, r.x, r.y, r.w, r.h, 8); ctx.fill(); ctx.strokeStyle = ok ? '#ffd43b' : 'rgba(255,255,255,.2)'; ctx.lineWidth = 2; ctx.stroke(); Arcade.emoji(ctx, r.u.e, r.x + r.w / 2, r.y + 15, 18); Arcade.txt(ctx, fmt(r.u.cost), r.x + r.w / 2, r.y + 32, 9, ok ? '#212529' : '#ced4da', 'center', 800); }
+      // tienda
+      for (let i = 0; i < s.rows; i++) {
+        const y = s.ly + i * s.rh, b = B[i], open = i === 0 || s.own[i - 1] > 0, p = price(s, i), ok = open && s.c >= p, h = s.rh - 4;
+        ctx.fillStyle = s.flash[i] > 0 ? '#fff3bf' : ok ? '#f1e3d3' : 'rgba(255,255,255,.12)'; Arcade.rr(ctx, s.lx, y, s.lw, h, 8); ctx.fill();
+        if (!open) { Arcade.txt(ctx, '???', s.lx + s.lw / 2, y + h / 2, 13, 'rgba(255,255,255,.4)', 'center', 800); continue; }
+        Arcade.emoji(ctx, b.e, s.lx + h * 0.6, y + h / 2, h * 0.7);
+        Arcade.txt(ctx, T(b.es, b.en), s.lx + h * 1.2, y + h * 0.36, Math.min(14, h * 0.36), ok ? '#3b2314' : '#e9ecef', 'left', 900);
+        Arcade.txt(ctx, '🍪 ' + fmt(p) + '   +' + fmt(bcps(s, i)) + '/s', s.lx + h * 1.2, y + h * 0.72, Math.min(11, h * 0.3), ok ? '#6b4226' : '#ced4da', 'left', 700);
+        Arcade.txt(ctx, s.own[i] + '', s.lx + s.lw - 12, y + h / 2, Math.min(22, h * 0.6), ok ? '#3b2314' : 'rgba(255,255,255,.5)', 'right', 900);
+      }
+    },
+  });
+})();

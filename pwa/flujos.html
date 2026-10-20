@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Une los colores · Arcade Perdido</title>
+<meta name="theme-color" content="#141414">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css?v=6d7635e467">
+</head>
+<body class="game">
+<script src="config.js?v=84fed7f189"></script>
+<script src="common.js?v=3b61f0ca2c"></script>
+<script>
+(function () {
+  const { rand, ri, clamp, pick, shuffle } = Arcade;
+  const T = Arcade.T;
+  const COL = ['#fa5252', '#228be6', '#40c057', '#fab005', '#fd7e14', '#15aabf', '#be4bdb', '#e64980', '#868e96', '#82c91e', '#7950f2', '#a0522d'];
+
+  /* ---------- generador: camino hamiltoniano aleatorio (backbite) cortado en tramos ---------- */
+  function hamilton(n) {
+    let P = []; for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) P.push(y % 2 ? (n - 1 - x) + y * n : x + y * n);
+    const at = new Int32Array(n * n); const re = () => P.forEach((v, i) => (at[v] = i)); re();
+    const nb = (v) => { const x = v % n, y = (v / n) | 0, o = []; if (x > 0) o.push(v - 1); if (x < n - 1) o.push(v + 1); if (y > 0) o.push(v - n); if (y < n - 1) o.push(v + n); return o; };
+    for (let it = 0; it < n * n * 30; it++) {
+      if (Math.random() < 0.5) P.reverse(), re();
+      const v0 = P[0], cand = nb(v0).filter((u) => u !== P[1]), u = pick(cand), i = at[u];
+      const head = P.slice(0, i).reverse(); P = head.concat(P.slice(i)); for (let k = 0; k < i; k++) at[P[k]] = k;
+    }
+    return P;
+  }
+  function generate(L) {
+    const n = clamp(5 + Math.floor(L / 3), 5, 9), want = clamp(Math.round(n * 0.9 + L * 0.12), 4, COL.length);
+    for (let tries = 0; tries < 50; tries++) {
+      const P = hamilton(n), len = P.length;
+      // cortes con tramos de al menos 3 casillas
+      const cuts = new Set(); let guard = 0;
+      while (cuts.size < want - 1 && guard++ < 500) { const c = ri(3, len - 3); let ok = true; for (const d of cuts) if (Math.abs(d - c) < 3) ok = false; if (ok) cuts.add(c); }
+      if (cuts.size < want - 1) continue;
+      const cs = [0, ...[...cuts].sort((a, b) => a - b), len], paths = [];
+      for (let i = 0; i < cs.length - 1; i++) paths.push(P.slice(cs[i], cs[i + 1]));
+      // tramos que se tocan consigo mismos en recto (demasiado obvios) están bien; mezcla colores
+      const order = shuffle(paths.map((_, i) => i));
+      return { n, sol: paths.map((p, i) => ({ col: order[i], cells: p })) };
+    }
+    return generate(Math.max(1, L - 2));
+  }
+
+  function geo(g) { const s = g.s, n = s.n, avail = Math.min(g.W - 20, g.bot - g.top - 110 - (g.demoOn ? 40 : 0)); s.cs = Math.floor(avail / n); s.ox = Math.round((g.W - s.cs * n) / 2); s.oy = Math.round(g.top + 60 + (g.bot - g.top - 110 - (g.demoOn ? 40 : 0) - s.cs * n) / 2); }
+  const cxy = (s, v) => [s.ox + (v % s.n + 0.5) * s.cs, s.oy + (((v / s.n) | 0) + 0.5) * s.cs];
+  const cellOf = (s, p) => { const x = Math.floor((p.x - s.ox) / s.cs), y = Math.floor((p.y - s.oy) / s.cs); return x >= 0 && y >= 0 && x < s.n && y < s.n ? y * s.n + x : -1; };
+  const adj = (s, a, b) => { const ax = a % s.n, ay = (a / s.n) | 0, bx = b % s.n, by = (b / s.n) | 0; return Math.abs(ax - bx) + Math.abs(ay - by) === 1; };
+  function ownerOf(s, v) { for (let c = 0; c < s.paths.length; c++) { const i = s.paths[c].indexOf(v); if (i >= 0) return [c, i]; } return null; }
+  const dotCol = (s, v) => s.dots[v] ?? -1;
+  const done = (s, c) => { const p = s.paths[c]; return p.length > 1 && dotCol(s, p[0]) === c && dotCol(s, p[p.length - 1]) === c && p[0] !== p[p.length - 1]; };
+  function startAt(g, v) {
+    const s = g.s; if (v < 0) return false;
+    const dc = dotCol(s, v);
+    if (dc >= 0 && dc === s.act) { const p = s.paths[dc]; if (p.length && p[0] !== v && !done(s, dc) && adj(s, p[p.length - 1], v)) { extend(g, v); return false; } }
+    if (dc >= 0) { if (s.last !== dc) { s.moves++; s.last = dc; } s.paths[dc] = [v]; s.act = dc; return true; }
+    const o = ownerOf(s, v); if (o) { const [c, i] = o; if (s.last !== c) { s.moves++; s.last = c; } s.paths[c] = s.paths[c].slice(0, i + 1); s.act = c; return true; }
+    return false;
+  }
+  function extend(g, v) {
+    const s = g.s, c = s.act; if (c == null || v < 0) return; const p = s.paths[c], head = p[p.length - 1];
+    if (v === head) return;
+    const back = p.indexOf(v); if (back >= 0) { s.paths[c] = p.slice(0, back + 1); return; }
+    if (!adj(s, head, v)) return;
+    if (done(s, c)) return;   // ya está unido: no se alarga
+    const dc = dotCol(s, v); if (dc >= 0 && dc !== c) return;   // no se pisan puntos de otro color
+    const o = ownerOf(s, v); if (o) { const [oc, oi] = o; s.paths[oc] = s.paths[oc].slice(0, oi); }   // corta la tubería de otro color
+    p.push(v); Arcade.tone(300 + p.length * 25, 0.03, 'sine', 0.03);
+    if (dc === c && p.length > 1) { Arcade.tone(880, 0.12, 'triangle', 0.06, 300); const [x, y] = cxy(s, v); g.burst(x, y, { n: 10, color: [COL[c], '#fff'], speed: 120 }); check(g); }
+  }
+  function check(g) {
+    const s = g.s; if (s.won) return;
+    const all = s.paths.every((_, c) => done(s, c)); if (!all) return;
+    const filled = new Set(s.paths.flat()).size, total = s.n * s.n;
+    if (filled < total) { g.message(T('¡Rellena todo el tablero!', 'Fill the whole board!'), 1.2); return; }
+    s.won = true; Arcade.sfx.win(); g.confetti(70);
+    const nc = s.paths.length, st = s.moves <= nc ? 3 : s.moves <= nc + 3 ? 2 : 1; g.addScore(100 + 50 * g.lv + st * 50, g.W / 2, g.H / 2);
+    setTimeout(() => { if (g.state === 'play') g.win(st); }, 1000);
+  }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Une cada pareja y llena el tablero', deco: ['🔴', '🔵', '🟢', '🟡', '🟣', '🟠'], font: 'round', bg: ['#25262b', '#141414'],
+    music: { mode: 'major', bpm: 92, wave: 'sine', style: 'chill', root: 60 }, voice: { wave: 'sine', mul: 1.1, echo: 0.35 },
+    /*EN*/ en: { title: 'Colour Flow', tag: 'Join each pair and fill the board', help: 'Each colour has two dots. Drag from a dot to the other one of the same colour to draw a pipe. Pipes can\'t cross: if you go over another pipe, you cut it. Drag back over your pipe to undo. You win when every pair is joined and there\'s no empty square left. Fewer moves = more stars.', tvHelp: 'Choose a dot with OK, then the squares next to it.', dict: {} },
+    /*TV*/ tvHelp: 'Elige un punto con OK y luego las casillas de al lado.',
+    id: 'flujos', title: 'Une los colores', emoji: '🔴', color: '#fa5252', origin: 'Flow Free (Big Duck Games, 2012)', pad: false,
+    help: 'Cada color tiene dos puntos. Arrastra desde un punto hasta el otro del mismo color para dibujar una tubería. Las tuberías no se pueden cruzar: si pasas por encima de otra, la cortas. Vuelve hacia atrás por tu tubería para deshacer. Ganas cuando todas las parejas están unidas y no queda ninguna casilla vacía. Menos movimientos = más estrellas.',
+    lives: 0, levels: 0, cap: 20,
+    tv: { mode: 'tap', targets: (g) => { const s = g.s; if (!s.n) return []; const out = []; for (let v = 0; v < s.n * s.n; v++) { const [x, y] = cxy(s, v); out.push({ x: x - s.cs / 2, y: y - s.cs / 2, w: s.cs, h: s.cs }); } return out; } },
+    /*SC*/ demo(g) {
+      const s = g.s; if (!s.sol || s.won) return { wait: 0.3 };
+      const nx = s.sol.find((p) => !done(s, p.col)); if (!nx) return { wait: 0.3 };
+      const pts = nx.cells.map((v) => cxy(s, v)), first = !s.said; s.said = 1;
+      return { drag: pts, dur: 0.12 * pts.length + 0.2, after: 0.35, say: first ? T('Arrastra de un punto al otro del mismo color', 'Drag from one dot to the other of the same colour') : null };
+    },
+    setup(g) {
+      const lv = generate(g.lv), s = (g.s = { n: lv.n, dots: {}, paths: [], sol: lv.sol, moves: 0, act: null, last: null });
+      for (const p of lv.sol) { s.dots[p.cells[0]] = p.col; s.dots[p.cells[p.cells.length - 1]] = p.col; s.paths[p.col] = []; }
+      geo(g);
+    },
+    layout(g) { if (g.s.n) geo(g); },
+    down(g, p) { const s = g.s; s.downAt = g.rt; s.dragging = startAt(g, cellOf(s, p)); },
+    move(g, p) { const s = g.s; if (!s.dragging) return; const v = cellOf(s, p); if (v < 0) return;
+      // si el dedo salta casillas, recorre el camino recto entre medias
+      const c = s.act, head = s.paths[c][s.paths[c].length - 1]; if (v === head) return;
+      let x = head % s.n, y = (head / s.n) | 0; const tx = v % s.n, ty = (v / s.n) | 0; let guard = 0;
+      while ((x !== tx || y !== ty) && guard++ < 20) { if (Math.abs(tx - x) >= Math.abs(ty - y)) x += Math.sign(tx - x); else y += Math.sign(ty - y); extend(g, y * s.n + x); if (s.paths[c][s.paths[c].length - 1] !== y * s.n + x) break; }
+    },
+    up(g) { g.s.dragging = false; },
+    tap(g, p) {   // con el mando (o tocando casilla a casilla): elige punto y luego casillas vecinas
+      const s = g.s, v = cellOf(s, p); if (v >= 0 && s.act != null && dotCol(s, v) < 0) extend(g, v);
+    },
+    update() {},
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H; ctx.fillStyle = '#141414'; ctx.fillRect(0, 0, W, H); if (!s.n) return; const cs = s.cs, n = s.n;
+      // casillas con el color suave de su tubería
+      for (let c = 0; c < s.paths.length; c++) for (const v of s.paths[c] || []) { const [x, y] = cxy(s, v); ctx.fillStyle = COL[c] + '33'; ctx.fillRect(x - cs / 2, y - cs / 2, cs, cs); }
+      ctx.strokeStyle = '#495057'; ctx.lineWidth = 1; for (let i = 0; i <= n; i++) { ctx.beginPath(); ctx.moveTo(s.ox + i * cs, s.oy); ctx.lineTo(s.ox + i * cs, s.oy + n * cs); ctx.stroke(); ctx.beginPath(); ctx.moveTo(s.ox, s.oy + i * cs); ctx.lineTo(s.ox + n * cs, s.oy + i * cs); ctx.stroke(); }
+      ctx.strokeStyle = '#868e96'; ctx.lineWidth = 2; ctx.strokeRect(s.ox, s.oy, n * cs, n * cs);
+      // tuberías
+      ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+      for (let c = 0; c < s.paths.length; c++) { const p = s.paths[c]; if (!p || p.length < 2) continue; ctx.strokeStyle = COL[c]; ctx.lineWidth = cs * 0.34; ctx.beginPath(); p.forEach((v, i) => { const [x, y] = cxy(s, v); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }); ctx.stroke(); }
+      // puntos
+      for (const k in s.dots) { const v = +k, c = s.dots[k], [x, y] = cxy(s, v); const ok = done(s, c); ctx.fillStyle = COL[c]; ctx.beginPath(); ctx.arc(x, y, cs * 0.36, 0, 6.3); ctx.fill(); if (ok) { ctx.strokeStyle = '#fff'; ctx.lineWidth = 2.5; ctx.stroke(); } }
+      // cabeza activa
+      if (s.act != null && s.paths[s.act].length && !done(s, s.act)) { const p = s.paths[s.act], [x, y] = cxy(s, p[p.length - 1]); ctx.strokeStyle = COL[s.act]; ctx.globalAlpha = 0.5 + 0.3 * Math.sin(g.rt * 6); ctx.lineWidth = 3; ctx.strokeRect(x - cs / 2 + 2, y - cs / 2 + 2, cs - 4, cs - 4); ctx.globalAlpha = 1; }
+      // marcador
+      const nc = s.paths.length, nd = s.paths.filter((_, c) => done(s, c)).length, fill = Math.round(new Set(s.paths.flat()).size / (n * n) * 100);
+      Arcade.txt(ctx, T('Unidos', 'Flows') + ' ' + nd + '/' + nc + '   ·   ' + T('Movimientos', 'Moves') + ' ' + s.moves + '   ·   ' + fill + '%', W / 2, g.top + 44, 14, '#dee2e6', 'center', 800);
+    },
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,141 @@
+// Corta la cuerda|#1b3a4b
+(function () {
+  const { rand, ri, clamp } = Arcade;
+  const T = Arcade.T;
+  const WW = 10, WH = 16, G = 18, DT = 1 / 120, SEG = 0.45;   // mundo en «metros», gravedad, paso fijo, tramo de cuerda
+
+  /* ---------- física (verlet) ---------- */
+  function makeWorld(cfg) {
+    const w = { c: { x: cfg.cx, y: cfg.cy, px: cfg.cx, py: cfg.cy }, ropes: [], t: 0 };
+    for (const r of cfg.ropes) {
+      const n = Math.max(2, Math.round(r.len / SEG)), pts = [];
+      for (let i = 0; i <= n; i++) { const f = i / n, x = r.x + (cfg.cx - r.x) * f, y = r.y + (cfg.cy - r.y) * f; pts.push({ x, y, px: x, py: y }); }
+      w.ropes.push({ ax: r.x, ay: r.y, pts, seg: r.len / n, cut: -1 });
+    }
+    return w;
+  }
+  function stepWorld(w) {
+    w.t += DT; const c = w.c;
+    const mv = (p, gm) => { const vx = (p.x - p.px) * 0.998, vy = (p.y - p.py) * 0.998; p.px = p.x; p.py = p.y; p.x += vx; p.y += vy + G * gm * DT * DT; };
+    mv(c, 1);
+    for (const r of w.ropes) for (let i = 1; i < r.pts.length - 1; i++) mv(r.pts[i], 1);
+    for (let it = 0; it < 18; it++) for (const r of w.ropes) {
+      const P = r.pts; P[0].x = r.ax; P[0].y = r.ay;
+      if (r.cut < 0) { P[P.length - 1].x = c.x; P[P.length - 1].y = c.y; }
+      for (let i = 0; i < P.length - 1; i++) {
+        if (i === r.cut) continue;
+        const a = P[i], b = P[i + 1], dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy) || 1e-6, df = (d - r.seg) / d;
+        const wa = i === 0 ? 0 : 0.5, wb = i + 1 === P.length - 1 && r.cut < 0 ? 0.08 : 0.5, sum = wa + wb || 1;   // el caramelo pesa más
+        if (d > r.seg || true) { a.x += dx * df * wa / sum; a.y += dy * df * wa / sum; b.x -= dx * df * wb / sum; b.y -= dy * df * wb / sum; }
+      }
+      if (r.cut < 0) { c.x = P[P.length - 1].x; c.y = P[P.length - 1].y; }
+    }
+    if (w.ropes.every((r) => r.cut >= 0)) for (const r of w.ropes) { const P = r.pts; if (r.cut === P.length - 2) continue; }
+  }
+  function cutRope(r) { if (r.cut < 0) r.cut = Math.floor(r.pts.length / 2); }
+
+  /* ---------- niveles: se elige un plan de cortes, se simula y el monstruo y las estrellas van donde pasa el caramelo ---------- */
+  function generate(L) {
+    for (let tries = 0; tries < 300; tries++) {
+      const nr = clamp(1 + Math.floor((L + ri(0, 2)) / 3), 1, 3), ropes = [];
+      const cx = rand(2.5, 7.5), cy = rand(4, 6.5);
+      for (let i = 0; i < nr; i++) { const x = clamp(cx + rand(-4, 4), 0.6, WW - 0.6), y = rand(0.6, 2.6), d = Math.hypot(x - cx, y - cy); ropes.push({ x, y, len: d * rand(0.95, 1.25) }); }
+      const plan = ropes.map((r, i) => ({ i, t: 0.6 + i * rand(0.3, 1.4) + (L > 6 ? rand(0, 0.8) : 0) })).sort((a, b) => a.t - b.t);
+      const w = makeWorld({ cx, cy, ropes }); for (let k = 0; k < 90; k++) stepWorld(w);   // que asiente
+      const settled = { cx: w.c.x, cy: w.c.y };
+      const w2 = makeWorld({ cx: settled.cx, cy: settled.cy, ropes }); const path = []; let pi = 0;
+      for (let k = 0; k < 120 * 9; k++) { while (pi < plan.length && w2.t >= plan[pi].t) cutRope(w2.ropes[plan[pi++].i]); stepWorld(w2); if (k % 6 === 0) path.push([w2.c.x, w2.c.y, w2.t]); if (w2.c.y > WH + 1 || w2.c.x < -1 || w2.c.x > WW + 1) break; }
+      const after = path.filter((p) => p[2] > plan[plan.length - 1].t + 0.25 && p[1] < WH - 1.2 && p[0] > 0.8 && p[0] < WW - 0.8 && p[1] > settled.cy + 1.5);
+      if (after.length < 8) continue;
+      const end = after[after.length - 1]; if (end[1] < 8) continue;
+      // estrellas repartidas por el camino (antes y después de los cortes)
+      const pre = path.filter((p) => p[2] < plan[plan.length - 1].t && Math.hypot(p[0] - settled.cx, p[1] - settled.cy) > 1.2);
+      const stars = [];
+      const pickFrom = (arr, f) => { const p = arr[Math.floor(arr.length * f)]; if (p) stars.push({ x: p[0], y: p[1] }); };
+      if (pre.length > 4) pickFrom(pre, 0.6); pickFrom(after, 0.3); pickFrom(after, 0.65); if (stars.length < 3) pickFrom(after, 0.85);
+      // pinchos lejos del camino
+      const spikes = [];
+      if (L >= 3) for (let k = 0; k < Math.min(3, Math.floor(L / 3)); k++) for (let tt = 0; tt < 30; tt++) { const x = rand(1, WW - 1), y = rand(settled.cy + 1, WH - 2); if (path.every((p) => Math.hypot(p[0] - x, p[1] - y) > 1.5) && Math.hypot(end[0] - x, end[1] - y) > 2) { spikes.push({ x, y, w: rand(1.2, 2.4) }); break; } }
+      return { cx: settled.cx, cy: settled.cy, ropes, plan, stars: stars.slice(0, 3), monster: { x: end[0], y: end[1] + 0.2 }, spikes };
+    }
+    return generate(1);
+  }
+
+  function geo(g) { const s = g.s, top = g.top + 40, bot = g.bot - 20 - (g.demoOn ? 40 : 0); s.k = Math.min((g.W - 10) / WW, (bot - top) / WH); s.ox = (g.W - WW * s.k) / 2; s.oy = top + (bot - top - WH * s.k) / 2; }
+  const scr = (g, x, y) => [g.s.ox + x * g.s.k, g.s.oy + y * g.s.k];
+  function segX(a, b, c, d) { const den = (b[0] - a[0]) * (d[1] - c[1]) - (b[1] - a[1]) * (d[0] - c[0]); if (Math.abs(den) < 1e-9) return false; const u = ((c[0] - a[0]) * (d[1] - c[1]) - (c[1] - a[1]) * (d[0] - c[0])) / den, v = ((c[0] - a[0]) * (b[1] - a[1]) - (c[1] - a[1]) * (b[0] - a[0])) / den; return u >= 0 && u <= 1 && v >= 0 && v <= 1; }
+  function slice(g, a, b) {   // el dedo pasa de a a b (en el mundo): corta las cuerdas que cruza
+    const s = g.s; let any = false;
+    for (const r of s.w.ropes) { if (r.cut >= 0) continue; for (let i = 0; i < r.pts.length - 1; i++) if (segX(a, b, [r.pts[i].x, r.pts[i].y], [r.pts[i + 1].x, r.pts[i + 1].y])) { r.cut = i; any = true; break; } }
+    if (any) { Arcade.sfx.whoosh(); s.cuts++; }
+  }
+  function lose(g, why) { const s = g.s; if (s.end) return; s.end = true; Arcade.sfx.bad(); g.message(why, 1); setTimeout(() => { if (g.state === 'play') reset(g); }, 1100); }
+  function reset(g) { const s = g.s; s.w = makeWorld({ cx: s.lvl.cx, cy: s.lvl.cy, ropes: s.lvl.ropes }); s.got = s.lvl.stars.map(() => false); s.end = false; s.acc = 0; s.cuts = 0; s.pi = 0; s.tries++; }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Corta y que caiga en la boca', deco: ['🍬', '✂️', '⭐', '🐸', '🪢', '😋'], font: 'round', bg: ['#2c5d75', '#1b3a4b'],
+    music: { mode: 'major', bpm: 104, wave: 'triangle', style: 'bouncy', root: 62 }, voice: { wave: 'sine', mul: 1.1, echo: 0.3 },
+    /*EN*/ en: { title: 'Cut the Rope', tag: 'Cut it and drop it in the mouth', help: 'Feed the candy 🍬 to the hungry frog 🐸. The candy hangs from ropes: swipe your finger across a rope to cut it. Once it\'s free it falls and swings, so cut at the right moment. Grab the ⭐ on the way for more stars. Don\'t let it hit the spikes or fall off the screen. The order and timing of your cuts matter.', tvHelp: 'OK cuts the next rope.', dict: { '¡Ñam!': 'Yum!', '¡Se ha caído!': 'It fell!', '¡Pinchos!': 'Spikes!', 'Desliza para cortar': 'Swipe to cut' } },
+    /*TV*/ tvHelp: 'OK corta la siguiente cuerda.',
+    id: 'cortacuerda', title: 'Corta la cuerda', emoji: '🍬', color: '#69db7c', origin: 'Cut the Rope (ZeptoLab, 2010)', pad: false,
+    help: 'Dale el caramelo 🍬 a la rana glotona 🐸. El caramelo cuelga de cuerdas: pasa el dedo por encima de una cuerda para cortarla. Al soltarse cae y se balancea, así que corta en el momento justo. Coge las ⭐ por el camino para tener más estrellas. Que no toque los pinchos ni se caiga de la pantalla. El orden y el momento de los cortes importan.',
+    lives: 0, levels: 0, cap: 20,
+    /*SC*/ demo(g) {
+      const s = g.s; if (!s.w || s.end) return { wait: 0.3 };
+      const nx = s.lvl.plan.find((p) => s.w.ropes[p.i].cut < 0); if (!nx) return { wait: 0.3 };
+      if (s.w.t < nx.t - 0.05) return { wait: Math.min(0.2, nx.t - s.w.t) };
+      const r = s.w.ropes[nx.i]; cutRope(r); Arcade.sfx.whoosh(); s.cuts++; s.skipSwipe = true; const m = r.pts[Math.floor(r.pts.length / 2)], [x, y] = scr(g, m.x, m.y), first = !s.said; s.said = 1;
+      return { swipe: [x - 40, y, 'right'], len: 80, after: 0.1, say: first ? T('Desliza para cortar la cuerda', 'Swipe to cut the rope') : null };
+    },
+    setup(g) { g.s = { lvl: generate(g.lv), tries: -1, trail: [] }; reset(g); geo(g); },
+    layout(g) { if (g.s.w) geo(g); },
+    down(g, p) { g.s.last = [(p.x - g.s.ox) / g.s.k, (p.y - g.s.oy) / g.s.k]; },
+    move(g, p) { const s = g.s; if (!s.last || !s.w) return; const cur = [(p.x - s.ox) / s.k, (p.y - s.oy) / s.k]; if (!g.demoOn) slice(g, s.last, cur); s.trail.push({ x: p.x, y: p.y, t: 0.25 }); s.last = cur; },
+    up(g) { g.s.last = null; },
+    swipe(g, dir, p) {   // la demo (y el simulador) cortan con un deslizamiento: corta la siguiente cuerda del plan
+      const s = g.s; if (!s.w) return; if (s.skipSwipe) { s.skipSwipe = false; return; } const nx = s.lvl.plan.find((q) => s.w.ropes[q.i].cut < 0); if (nx) { cutRope(s.w.ropes[nx.i]); Arcade.sfx.whoosh(); s.cuts++; }
+      void dir; void p;
+    },
+    key(g, k, d) { if (d && (k === ' ' || k === 'ArrowDown')) this.swipe(g); },
+    update(g, dt) {
+      const s = g.s; if (!s.w) return; geo(g);
+      for (const t of s.trail) t.t -= dt; s.trail = s.trail.filter((t) => t.t > 0);
+      if (s.end || s.won) return;
+      s.acc += dt; while (s.acc >= DT) { s.acc -= DT; stepWorld(s.w); }
+      const c = s.w.c;
+      s.lvl.stars.forEach((st, i) => { if (!s.got[i] && Math.hypot(st.x - c.x, st.y - c.y) < 0.75) { s.got[i] = true; const [x, y] = scr(g, st.x, st.y); g.burst(x, y, { n: 12, color: ['#ffd43b', '#fff'], speed: 140 }); Arcade.sfx.coin(); g.addScore(50, x, y); } });
+      const m = s.lvl.monster; if (Math.hypot(m.x - c.x, m.y - c.y) < 0.9) {
+        s.won = true; Arcade.sfx.win(); g.confetti(60); const n = s.got.filter(Boolean).length; g.message(T('¡Ñam!', 'Yum!'), 1); g.addScore(150 + n * 100, ...scr(g, m.x, m.y));
+        setTimeout(() => { if (g.state === 'play') g.win(Math.max(1, n)); }, 1100); return;
+      }
+      for (const sp of s.lvl.spikes) if (c.x > sp.x - sp.w / 2 - 0.3 && c.x < sp.x + sp.w / 2 + 0.3 && Math.abs(c.y - sp.y) < 0.55) return lose(g, T('¡Pinchos!', 'Spikes!'));
+      if (c.y > WH + 0.5 || c.x < -0.8 || c.x > WW + 0.8) lose(g, T('¡Se ha caído!', 'It fell!'));
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H;
+      const bg = ctx.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, '#3b7a96'); bg.addColorStop(1, '#1b3a4b'); ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      if (!s.w) return; const k = s.k;
+      ctx.fillStyle = 'rgba(255,255,255,.05)'; ctx.fillRect(s.ox, s.oy, WW * k, WH * k);
+      // pinchos
+      for (const sp of s.lvl.spikes) { const [x, y] = scr(g, sp.x - sp.w / 2, sp.y), n = Math.max(3, Math.round(sp.w * 2.5)), w = sp.w * k / n; ctx.fillStyle = '#ced4da'; for (let i = 0; i < n; i++) { ctx.beginPath(); ctx.moveTo(x + i * w, y + k * 0.25); ctx.lineTo(x + i * w + w / 2, y - k * 0.35); ctx.lineTo(x + (i + 1) * w, y + k * 0.25); ctx.fill(); } ctx.fillStyle = '#495057'; ctx.fillRect(x, y + k * 0.2, sp.w * k, k * 0.15); }
+      // monstruo
+      { const m = s.lvl.monster, [x, y] = scr(g, m.x, m.y), c = s.w.c, near = Math.hypot(m.x - c.x, m.y - c.y) < 3; ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.beginPath(); ctx.ellipse(x, y + k * 0.7, k * 0.9, k * 0.25, 0, 0, 6.3); ctx.fill(); Arcade.emoji(ctx, s.won ? '😋' : near ? '😮' : '🐸', x, y + Math.sin(g.rt * 4) * 2, k * 1.7); }
+      // estrellas
+      s.lvl.stars.forEach((st, i) => { if (s.got[i]) return; const [x, y] = scr(g, st.x, st.y); Arcade.emoji(ctx, '⭐', x, y + Math.sin(g.rt * 3 + i) * 3, k * 0.95); });
+      // cuerdas
+      for (const r of s.w.ropes) {
+        const [ax, ay] = scr(g, r.ax, r.ay); ctx.fillStyle = '#495057'; ctx.beginPath(); ctx.arc(ax, ay, k * 0.22, 0, 6.3); ctx.fill(); ctx.fillStyle = '#adb5bd'; ctx.beginPath(); ctx.arc(ax, ay, k * 0.1, 0, 6.3); ctx.fill();
+        ctx.strokeStyle = '#a0522d'; ctx.lineWidth = Math.max(3, k * 0.12); ctx.lineCap = 'round';
+        ctx.beginPath(); r.pts.forEach((p, i) => { const [x, y] = scr(g, p.x, p.y); if (i === 0 || i === r.cut + 1) ctx.moveTo(x, y); else ctx.lineTo(x, y); }); ctx.stroke();
+        ctx.strokeStyle = 'rgba(255,255,255,.25)'; ctx.lineWidth = 1; ctx.stroke();
+      }
+      // caramelo
+      { const c = s.w.c, [x, y] = scr(g, c.x, c.y); ctx.save(); ctx.translate(x, y); ctx.rotate((c.x - c.px) * 8); Arcade.emoji(ctx, '🍬', 0, 0, k * 1.2); ctx.restore(); }
+      // rastro del dedo
+      if (s.trail.length > 1) { ctx.strokeStyle = 'rgba(255,255,255,.8)'; ctx.lineWidth = 4; ctx.lineCap = 'round'; ctx.beginPath(); s.trail.forEach((t, i) => (i ? ctx.lineTo(t.x, t.y) : ctx.moveTo(t.x, t.y))); ctx.stroke(); }
+      // marcador
+      const n = s.got.filter(Boolean).length; Arcade.txt(ctx, '⭐'.repeat(n) + '☆'.repeat(Math.max(0, s.lvl.stars.length - n)), W / 2, g.top + 20, 20, '#ffd43b', 'center', 900);
+      if (s.w.t < 2.5 && s.cuts === 0 && !g.demoOn) Arcade.txt(ctx, T('Desliza para cortar', 'Swipe to cut'), W / 2, g.top + 44, 14, '#fff', 'center', 800, 'rgba(0,0,0,.5)');
+    },
+  });
+})();

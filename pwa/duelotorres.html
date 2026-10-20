@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Duelo de torres · Arcade Perdido</title>
+<meta name="theme-color" content="#1f3b1a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css?v=6d7635e467">
+</head>
+<body class="game">
+<script src="config.js?v=84fed7f189"></script>
+<script src="common.js?v=3b61f0ca2c"></script>
+<script>
+(function () {
+  const { rand, clamp, pick, shuffle } = Arcade;
+  const T = Arcade.T;
+  const AW = 18, AH = 30, RIVER = 15, BR = [3.5, 14.5];   // arena en «casillas»
+  // c coste · hp vida · d daño · r alcance · rt cadencia · sp velocidad · n cuántos · b solo edificios · f vuela · sp2 salpica · spell
+  const CARDS = {
+    caballero: { e: '🤺', n1: T('Caballero', 'Knight'), c: 3, hp: 650, d: 80, r: 1, rt: 1.1, sp: 1.6 },
+    arqueras: { e: '🏹', n1: T('Arqueras', 'Archers'), c: 3, hp: 220, d: 45, r: 5, rt: 1.0, sp: 1.6, n: 2 },
+    puerco: { e: '🐗', n1: T('Montapuercos', 'Hog Rider'), c: 4, hp: 600, d: 130, r: 1, rt: 1.5, sp: 3.2, b: 1 },
+    gigante: { e: '🗿', n1: T('Gigante', 'Giant'), c: 5, hp: 2200, d: 130, r: 1, rt: 1.5, sp: 1.1, b: 1 },
+    esqueletos: { e: '💀', n1: T('Esqueletos', 'Skeletons'), c: 1, hp: 70, d: 45, r: 1, rt: 1, sp: 2.4, n: 3 },
+    dragon: { e: '🐉', n1: T('Dragón bebé', 'Baby Dragon'), c: 4, hp: 750, d: 70, r: 3.5, rt: 1.5, sp: 2, f: 1, splash: 1.4 },
+    pekka: { e: '🤖', n1: T('Mini P.E.K.K.A', 'Mini P.E.K.K.A'), c: 4, hp: 800, d: 320, r: 1, rt: 1.8, sp: 2.2 },
+    bola: { e: '☄️', n1: T('Bola de fuego', 'Fireball'), c: 4, spell: 1, d: 320, rad: 2.5 },
+    flechas: { e: '🎯', n1: T('Flechas', 'Arrows'), c: 3, spell: 1, d: 130, rad: 4 },
+  };
+  const DECK = ['caballero', 'arqueras', 'puerco', 'gigante', 'esqueletos', 'dragon', 'pekka', 'bola'];
+  const CPU_DECK = ['caballero', 'arqueras', 'puerco', 'gigante', 'esqueletos', 'dragon', 'pekka', 'flechas'];
+
+  function towers(side) {
+    const y = (v) => (side === 0 ? v : AH - v);
+    return [{ x: 3.5, y: y(23.5), hp: 1000, king: 0 }, { x: 14.5, y: y(23.5), hp: 1000, king: 0 }, { x: 9, y: y(27), hp: 1800, king: 1 }]
+      .map((t) => ({ ...t, side, kind: 'tower', max: t.hp, d: t.king ? 70 : 45, r: 6.5, rt: 0.8, cd: 0, sz: t.king ? 1.6 : 1.3, e: t.king ? '🏰' : '🗼', awake: !t.king }));
+  }
+  function spawn(g, side, key, x, y) {
+    const s = g.s, c = CARDS[key];
+    if (c.spell) { s.fx.push({ k: key, x, y, t: 0, side }); s.ents.filter((e) => e.side !== side && Math.hypot(e.x - x, e.y - y) < c.rad + (e.kind === 'tower' ? 1 : 0)).forEach((e) => hurt(g, e, e.kind === 'tower' ? c.d * 0.35 : c.d)); g.shake(0.2, 6); Arcade.sfx.boom && Arcade.sfx.boom(); return; }
+    for (let i = 0; i < (c.n || 1); i++) {
+      const a = (i / (c.n || 1)) * 6.28;
+      s.ents.push({ side, kind: 'unit', key, e: c.e, x: x + (c.n > 1 ? Math.cos(a) * 0.6 : 0), y: y + (c.n > 1 ? Math.sin(a) * 0.6 : 0), hp: c.hp, max: c.hp, d: c.d, r: c.r, rt: c.rt, sp: c.sp, b: c.b, f: c.f, splash: c.splash, cd: 0.6, sz: c.hp > 1500 ? 1.3 : 1, born: 0.5 });
+    }
+    Arcade.tone(side ? 260 : 520, 0.08, 'triangle', 0.06);
+  }
+  function hurt(g, e, n) {
+    const s = g.s; e.hp -= n; e.hit = 0.15;
+    if (e.kind === 'tower' && e.king) e.awake = true;
+    if (e.hp <= 0 && !e.dead) {
+      e.dead = true; const [x, y] = scr(g, e.x, e.y); g.burst(x, y, { n: e.kind === 'tower' ? 30 : 8, color: e.side ? ['#ff6b6b', '#ffd43b'] : ['#4dabf7', '#ffd43b'], speed: 150 });
+      if (e.kind === 'tower') {
+        s.crowns[1 - e.side] += e.king ? 3 - s.crowns[1 - e.side] : 1; g.shake(0.4, 10); Arcade.sfx.combo && Arcade.sfx.combo(4);
+        g.message(e.side ? T('¡Torre destruida! 👑', 'Tower down! 👑') : T('Han tirado una torre', 'You lost a tower'), 1.2);
+        s.ents.filter((t) => t.kind === 'tower' && t.side === e.side && t.king).forEach((t) => (t.awake = true));
+        if (e.king) end(g);
+      }
+    }
+  }
+  function end(g) {
+    const s = g.s; if (s.over) return; s.over = true;
+    let [a, b] = s.crowns;
+    if (a === b) {   // desempate: gana quien conserve más vida en sus torres
+      const life = (sd) => s.ents.filter((e) => e.kind === 'tower' && e.side === sd).reduce((t, e) => t + Math.max(0, e.hp) / e.max, 0);
+      const la = life(0), lb = life(1); if (Math.abs(la - lb) > 0.01) { if (la > lb) a += 0.5; else b += 0.5; g.message(T('Desempate por vida de las torres', 'Tie-break by tower health'), 1.2); }
+    }
+    setTimeout(() => {
+      if (g.state !== 'play') return;
+      if (a > b) { Arcade.sfx.win(); g.confetti(90); g.addScore(300 * g.lv + a * 200, g.W / 2, g.H / 2); g.win(Math.max(1, Math.min(3, Math.floor(a)))); }
+      else { g.message(a === b ? T('Empate: otra vez', 'Draw: again') : T('Gana el rival', 'The rival wins'), 1.5); setTimeout(() => { if (g.state !== 'play') return; if (a === b || g.die()) Arcade.current.def.setup(g); }, 1700); }
+    }, 900);
+  }
+
+  /* ---------- geometría ---------- */
+  function geo(g) {
+    const s = g.s, W = g.W, top = g.top + 34, bot = g.bot - 120 - (g.demoOn ? 40 : 0);
+    s.k = Math.min((W - 10) / AW, (bot - top) / AH); s.ox = (W - AW * s.k) / 2; s.oy = top + (bot - top - AH * s.k) / 2;
+    const cw = Math.min(78, (W - 70) / 4.4); s.cards = [0, 1, 2, 3].map((i) => ({ i, x: 60 + i * (cw + 8), y: g.bot - 108 - (g.demoOn ? 40 : 0), w: cw, h: cw * 1.2 }));
+  }
+  const scr = (g, x, y) => [g.s.ox + x * g.s.k, g.s.oy + y * g.s.k];
+  const toArena = (g, p) => [(p.x - g.s.ox) / g.s.k, (p.y - g.s.oy) / g.s.k];
+  const canPlace = (key, side, x, y) => x > 0.5 && x < AW - 0.5 && y > 0.5 && y < AH - 0.5 && (CARDS[key].spell || (side === 0 ? y > RIVER + 1 : y < RIVER - 1));
+
+  function play(g, side, hi, x, y) {
+    const s = g.s, P = s.P[side], key = P.hand[hi], c = CARDS[key]; if (!key || P.ex < c.c || !canPlace(key, side, x, y)) return false;
+    P.ex -= c.c; spawn(g, side, key, x, y); P.hand[hi] = P.next; P.next = P.queue.shift(); P.queue.push(key); return true;
+  }
+  /* IA (rival y demo): defiende si le atacan; si no, empuja por un carril cuando tiene elixir de sobra */
+  function think(g, side) {
+    const s = g.s, P = s.P[side], foes = s.ents.filter((e) => e.kind === 'unit' && e.side !== side && !e.dead), mine = (y) => (side === 0 ? y > RIVER : y < RIVER);
+    const threat = foes.filter((e) => mine(e.y)).sort((a, b) => b.hp - a.hp)[0];
+    const affordable = P.hand.map((k, i) => ({ k, i })).filter(({ k }) => CARDS[k].c <= P.ex);
+    if (!affordable.length) return null;
+    if (threat) {
+      const sp = affordable.find(({ k }) => CARDS[k].spell && foes.filter((e) => Math.hypot(e.x - threat.x, e.y - threat.y) < CARDS[k].rad).length >= 2);
+      if (sp) return { i: sp.i, x: threat.x, y: threat.y };
+      const u = affordable.filter(({ k }) => !CARDS[k].spell && !CARDS[k].b).sort((a, b) => CARDS[b.k].d - CARDS[a.k].d)[0];
+      if (u) return { i: u.i, x: clamp(threat.x + rand(-1, 1), 1, AW - 1), y: side === 0 ? clamp(threat.y + 2, RIVER + 1.5, AH - 1) : clamp(threat.y - 2, 1, RIVER - 1.5) };
+      return null;
+    }
+    if (P.ex < (side ? s.cpuSave : 7.5)) return null;
+    const lane = s.lane[side] ?? (s.lane[side] = pick([0, 1])), lx = BR[lane];
+    const tank = affordable.find(({ k }) => CARDS[k].b || CARDS[k].hp > 1000), u = tank || affordable.filter(({ k }) => !CARDS[k].spell)[0];
+    if (!u) return null;
+    if (Math.random() < 0.3) s.lane[side] = 1 - lane;
+    return { i: u.i, x: lx + rand(-0.8, 0.8), y: side === 0 ? (CARDS[u.k].b ? RIVER + 2 : RIVER + 4) : (CARDS[u.k].b ? RIVER - 2 : RIVER - 4) };
+  }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Cartas, elixir y tres torres', deco: ['🏰', '👑', '⚔️', '🐗', '🐉', '💧'], font: 'round', bg: ['#3d7a2a', '#1f3b1a'],
+    music: { mode: 'major', bpm: 132, wave: 'square', style: 'epic', root: 60 }, voice: { wave: 'square', mul: 1, echo: 0.25 },
+    /*EN*/ en: { title: 'Tower Duel', tag: 'Cards, elixir and three towers', help: 'Destroy the rival\'s towers before they destroy yours. Each card costs 💧 elixir, which refills over time. Tap a card and then a spot on your half of the arena to send it in. Troops walk to the nearest bridge and attack what they meet. The Giant and the Hog Rider only go for towers. Spells ☄️ can go anywhere. Each tower you destroy is a 👑 crown; the king tower is worth all three. When time runs out, whoever has more crowns wins. In the last 30 seconds elixir comes twice as fast.', tvHelp: 'D-pad to a card · OK · then to a spot in the arena · OK.', dict: { 'Elige una carta': 'Pick a card', 'Ahora toca la arena': 'Now tap the arena', '¡Elixir doble!': 'Double elixir!' } },
+    /*TV*/ tvHelp: 'Cruceta hasta una carta · OK · luego a un sitio de la arena · OK.',
+    tv: { mode: 'tap', targets: (g) => { const s = g.s; if (!s.P) return []; const out = s.cards.slice(); if (s.sel != null) for (let y = RIVER + 2; y < AH; y += 3) for (let x = 2; x < AW; x += 3) { const [px, py] = scr(g, x, y); out.push({ x: px - s.k, y: py - s.k, w: s.k * 2, h: s.k * 2 }); } return out; } },
+    id: 'duelotorres', title: 'Duelo de torres', emoji: '🏰', color: '#4dabf7', origin: 'Clash Royale (Supercell, 2016)', pad: false,
+    help: 'Derriba las torres del rival antes de que tire las tuyas. Cada carta cuesta 💧 elixir, que se recarga con el tiempo. Toca una carta y luego un sitio de tu mitad de la arena para sacarla. Las tropas van hacia el puente más cercano y atacan lo que encuentran. El Gigante y el Montapuercos solo van a por las torres. Los hechizos ☄️ se pueden tirar en cualquier sitio. Cada torre derribada es una 👑 corona; la del rey vale las tres. Al acabar el tiempo gana quien tenga más coronas. En los últimos 30 segundos el elixir va el doble de rápido.',
+    lives: 3, levels: 0, cap: 20,
+    /*SC*/ demo(g) {
+      const s = g.s; if (!s.P || s.over) return { wait: 0.5 };
+      const first = !s.said; const say = (es, en) => (first ? (s.said = 1, T(es, en)) : null);
+      if (s.dplan) { const a = s.dplan; s.dplan = null; const [x, y] = scr(g, a.x, a.y); return { tap: [x, y], after: 0.8, say: say('…y suéltala en tu mitad', '…and drop it on your half') }; }
+      const a = think(g, 0); if (!a) return { wait: 0.6 };
+      s.dplan = a; const c = s.cards[a.i]; return { tap: [c.x + c.w / 2, c.y + c.h / 2], after: 0.4, say: say('Elige una carta que puedas pagar', 'Pick a card you can afford') };
+    },
+    setup(g) {
+      const mk = (deck) => { const d = shuffle(deck.slice()); return { ex: 5, hand: d.slice(0, 4), next: d[4], queue: d.slice(5) }; };
+      g.s = { ents: towers(0).concat(towers(1)), P: [mk(DECK), mk(CPU_DECK)], fx: [], shots: [], crowns: [0, 0], time: 120, sel: null, over: false, lane: [null, null], cpuT: 2, cpuSave: clamp(9 - g.lv * 0.15, 6.5, 9), cpuRate: clamp(0.92 + g.lv * 0.012, 0.92, 1.25) };
+      geo(g);
+    },
+    layout(g) { if (g.s.P) geo(g); },
+    tap(g, p) {
+      const s = g.s; if (!s.P || s.over) return;
+      for (const c of s.cards) if (p.x >= c.x && p.x <= c.x + c.w && p.y >= c.y && p.y <= c.y + c.h) { s.sel = s.sel === c.i ? null : c.i; Arcade.tone(640, 0.04, 'square', 0.04); return; }
+      if (s.sel == null) { s.why = T('Elige una carta abajo', 'Pick a card below'); s.whyT = 1.2; return; }
+      const [x, y] = toArena(g, p), key = s.P[0].hand[s.sel];
+      if (!canPlace(key, 0, x, y)) { s.why = T('Solo en tu mitad de la arena', 'Only on your half of the arena'); s.whyT = 1.2; Arcade.sfx.bad(); return; }
+      if (s.P[0].ex < CARDS[key].c) { s.why = T('Te falta elixir 💧', 'Not enough elixir 💧'); s.whyT = 1.2; Arcade.sfx.bad(); return; }
+      play(g, 0, s.sel, x, y); s.sel = null;
+    },
+    update(g, dt) {
+      const s = g.s; if (!s.P) return; geo(g); if (s.whyT > 0) s.whyT -= dt;
+      for (const f of s.fx) f.t += dt * 2; s.fx = s.fx.filter((f) => f.t < 1); for (const sh of s.shots) sh.t += dt * 4; s.shots = s.shots.filter((x) => x.t < 1);
+      if (s.over) return;
+      s.time -= dt; const dbl = s.time < 30;
+      if (dbl && !s.dblSaid) { s.dblSaid = 1; g.message('¡Elixir doble!', 1.2); }
+      s.P.forEach((P, i) => { P.ex = Math.min(10, P.ex + dt / 2.8 * (dbl ? 2 : 1) * (i ? s.cpuRate : 1)); });
+      if (s.time <= 0) { s.time = 0; end(g); return; }
+      s.cpuT -= dt; if (s.cpuT <= 0) { const a = think(g, 1); if (a) play(g, 1, a.i, a.x, a.y); s.cpuT = rand(0.6, 1.4); }
+      // tropas y torres
+      for (const e of s.ents) {
+        if (e.dead) continue; if (e.born > 0) { e.born -= dt; continue; } if (e.hit > 0) e.hit -= dt; e.cd -= dt;
+        if (e.kind === 'tower' && !e.awake) continue;
+        const enemies = s.ents.filter((o) => !o.dead && o.side !== e.side && (!e.b || o.kind === 'tower') && !(o.f && e.r < 2 && e.kind === 'unit'));
+        let best = null, bd = 1e9; for (const o of enemies) { const d = Math.hypot(o.x - e.x, o.y - e.y) - (o.kind === 'tower' ? o.sz * 0.6 : 0); if (d < bd) { bd = d; best = o; } }
+        if (best && bd <= e.r + 0.3) { if (e.cd <= 0) { e.cd = e.rt; const targets = e.splash ? s.ents.filter((o) => !o.dead && o.side !== e.side && Math.hypot(o.x - best.x, o.y - best.y) < e.splash) : [best]; targets.forEach((o) => hurt(g, o, e.d)); if (e.r > 1.5) s.shots.push({ x0: e.x, y0: e.y, x1: best.x, y1: best.y, t: 0, side: e.side }); else e.lunge = 0.15; } continue; }
+        if (e.kind === 'tower') continue;
+        // andar: primero al puente si aún no ha cruzado el río (los voladores van directos)
+        const crossed = e.side === 0 ? e.y < RIVER - 0.6 : e.y > RIVER + 0.6;
+        let tx, ty; const sight = best && (bd < 5.5 || crossed || e.f);
+        if (sight) { tx = best.x; ty = best.y; } else { const bx = Math.abs(e.x - BR[0]) < Math.abs(e.x - BR[1]) ? BR[0] : BR[1]; tx = bx; ty = e.side === 0 ? RIVER - 1 : RIVER + 1; }
+        if (!e.f && !crossed && sight && ((e.side === 0 && ty < RIVER) || (e.side === 1 && ty > RIVER))) { const bx = Math.abs(e.x - BR[0]) < Math.abs(e.x - BR[1]) ? BR[0] : BR[1]; if (Math.abs(e.y - RIVER) < 2.2 || Math.abs(e.x - bx) > 0.3) { tx = bx; ty = e.side === 0 ? RIVER - 1 : RIVER + 1; } }
+        const dx = tx - e.x, dy = ty - e.y, d = Math.hypot(dx, dy) || 1; e.x += (dx / d) * e.sp * dt; e.y += (dy / d) * e.sp * dt; if (e.lunge > 0) e.lunge -= dt;
+      }
+      s.ents = s.ents.filter((e) => !e.dead || e.kind === 'tower');
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H; ctx.fillStyle = '#1f3b1a'; ctx.fillRect(0, 0, W, H); if (!s.P) return;
+      const k = s.k;
+      // hierba, río y puentes
+      for (let y = 0; y < AH; y++) for (let x = 0; x < AW; x++) { ctx.fillStyle = (x + y) % 2 ? '#69a84f' : '#5f9a47'; const [px, py] = scr(g, x, y); ctx.fillRect(px, py, k + 0.5, k + 0.5); }
+      { const [x0, y0] = scr(g, 0, RIVER - 0.8); ctx.fillStyle = '#4dabf7'; ctx.fillRect(x0, y0, AW * k, 1.6 * k); ctx.fillStyle = 'rgba(255,255,255,.25)'; for (let i = 0; i < 9; i++) ctx.fillRect(x0 + ((i * 47 + g.rt * 30) % (AW * k)), y0 + k * 0.6, k * 0.8, 2); }
+      for (const bx of BR) { const [x0, y0] = scr(g, bx - 1, RIVER - 1.1); ctx.fillStyle = '#a0522d'; ctx.fillRect(x0, y0, 2 * k, 2.2 * k); ctx.fillStyle = 'rgba(0,0,0,.2)'; for (let i = 0; i < 4; i++) ctx.fillRect(x0, y0 + i * 0.55 * k, 2 * k, 1.5); }
+      if (s.sel != null && !CARDS[s.P[0].hand[s.sel]].spell) { const [x0, y0] = scr(g, 0, RIVER + 1); ctx.fillStyle = 'rgba(255,255,255,' + (0.1 + 0.06 * Math.sin(g.rt * 6)) + ')'; ctx.fillRect(x0, y0, AW * k, (AH - RIVER - 1) * k); }
+      // entidades (de arriba abajo)
+      const list = s.ents.filter((e) => !e.dead || e.kind === 'tower').sort((a, b) => a.y - b.y);
+      for (const e of list) {
+        const [x, y] = scr(g, e.x, e.y), sz = e.sz * k * (e.kind === 'tower' ? 2 : 1.4);
+        if (e.kind === 'tower') {
+          if (e.dead) { Arcade.emoji(ctx, '🧱', x, y, sz * 0.8); continue; }
+          ctx.fillStyle = e.side ? '#c92a2a' : '#1c7ed6'; ctx.beginPath(); ctx.ellipse(x, y + sz * 0.4, sz * 0.55, sz * 0.22, 0, 0, 6.3); ctx.fill();
+          Arcade.emoji(ctx, e.e, x, y, sz); if (e.king) Arcade.emoji(ctx, '👑', x, y - sz * 0.55, sz * 0.4);
+        } else {
+          ctx.fillStyle = e.side ? 'rgba(224,49,49,.55)' : 'rgba(28,126,214,.55)'; ctx.beginPath(); ctx.ellipse(x, y + sz * 0.35, sz * 0.4, sz * 0.15, 0, 0, 6.3); ctx.fill();
+          const bob = Math.sin(g.rt * 10 + e.x) * 2 - (e.f ? 8 : 0), lu = e.lunge > 0 ? 4 : 0;
+          if (e.born > 0) ctx.globalAlpha = 1 - e.born; Arcade.emoji(ctx, e.e, x, y + bob - lu, sz, { flip: e.side === 1 }); ctx.globalAlpha = 1;
+        }
+        if (e.hit > 0) { ctx.fillStyle = 'rgba(255,255,255,.5)'; ctx.beginPath(); ctx.arc(x, y, sz * 0.4, 0, 6.3); ctx.fill(); }
+        if (!e.dead && e.hp < e.max) { const bw = sz * 0.9; ctx.fillStyle = 'rgba(0,0,0,.5)'; ctx.fillRect(x - bw / 2, y - sz * 0.75, bw, 5); ctx.fillStyle = e.side ? '#ff6b6b' : '#4dabf7'; ctx.fillRect(x - bw / 2, y - sz * 0.75, bw * Math.max(0, e.hp / e.max), 5); }
+      }
+      for (const sh of s.shots) { const [x0, y0] = scr(g, sh.x0, sh.y0), [x1, y1] = scr(g, sh.x1, sh.y1); ctx.fillStyle = sh.side ? '#ffa8a8' : '#d0ebff'; ctx.beginPath(); ctx.arc(x0 + (x1 - x0) * sh.t, y0 + (y1 - y0) * sh.t, 3, 0, 6.3); ctx.fill(); }
+      for (const f of s.fx) { const [x, y] = scr(g, f.x, f.y), r = CARDS[f.k].rad * k; ctx.globalAlpha = 1 - f.t; ctx.fillStyle = f.k === 'bola' ? '#ff922b' : '#ffe066'; ctx.beginPath(); ctx.arc(x, y, r * (0.5 + f.t * 0.5), 0, 6.3); ctx.fill(); ctx.globalAlpha = 1; Arcade.emoji(ctx, CARDS[f.k].e, x, y - (1 - f.t) * 60, 34); }
+      // marcador
+      const mm = Math.floor(s.time / 60), ss = Math.floor(s.time % 60);
+      ctx.fillStyle = 'rgba(0,0,0,.5)'; Arcade.rr(ctx, W / 2 - 70, g.top + 4, 140, 28, 14); ctx.fill();
+      Arcade.txt(ctx, '👑' + s.crowns[0] + '   ' + mm + ':' + String(ss).padStart(2, '0') + '   ' + s.crowns[1] + '👑', W / 2, g.top + 18, 14, s.time < 30 ? '#ff8787' : '#fff', 'center', 900);
+      // mano y elixir
+      const P = s.P[0], cy = s.cards[0].y;
+      ctx.fillStyle = 'rgba(0,0,0,.55)'; ctx.fillRect(0, cy - 10, W, H - cy + 10);
+      Arcade.txt(ctx, T('Sig.', 'Next'), 28, cy + 10, 10, '#ced4da', 'center', 800); Arcade.emoji(ctx, CARDS[P.next].e, 28, cy + 36, 26);
+      s.cards.forEach((c) => {
+        const key = P.hand[c.i], cd = CARDS[key], ok = P.ex >= cd.c, sel = s.sel === c.i;
+        ctx.fillStyle = sel ? '#ffd43b' : ok ? '#e7f5ff' : '#868e96'; Arcade.rr(ctx, c.x, c.y - (sel ? 8 : 0), c.w, c.h, 10); ctx.fill();
+        Arcade.emoji(ctx, cd.e, c.x + c.w / 2, c.y + c.h * 0.42 - (sel ? 8 : 0), c.w * 0.5);
+        Arcade.txt(ctx, cd.n1, c.x + c.w / 2, c.y + c.h * 0.82 - (sel ? 8 : 0), Math.min(11, c.w / 7), '#212529', 'center', 800);
+        ctx.fillStyle = '#ae3ec9'; ctx.beginPath(); ctx.arc(c.x + 10, c.y + 10 - (sel ? 8 : 0), 11, 0, 6.3); ctx.fill(); Arcade.txt(ctx, String(cd.c), c.x + 10, c.y + 11 - (sel ? 8 : 0), 13, '#fff', 'center', 900);
+      });
+      const by = cy + s.cards[0].h + 6, bw = W - 24; ctx.fillStyle = 'rgba(255,255,255,.12)'; Arcade.rr(ctx, 12, by, bw, 16, 8); ctx.fill();
+      ctx.fillStyle = '#cc5de8'; Arcade.rr(ctx, 12, by, bw * P.ex / 10, 16, 8); ctx.fill(); Arcade.txt(ctx, '💧 ' + Math.floor(P.ex), 30, by + 8, 12, '#fff', 'center', 900);
+      if (s.whyT > 0) Arcade.txt(ctx, s.why, W / 2, cy - 22, 14, '#ffd8a8', 'center', 900, 'rgba(0,0,0,.6)');
+      else if (s.sel != null) Arcade.txt(ctx, 'Ahora toca la arena', W / 2, cy - 22, 14, '#fff', 'center', 900, 'rgba(0,0,0,.6)');
+    },
+  });
+})();
+</script>
+</body>
+</html>

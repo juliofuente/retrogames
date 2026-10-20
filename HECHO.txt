@@ -1,6 +1,15 @@
 ARCADE PERDIDO + ARCADE PRO — LO QUE ESTÁ HECHO
 ================================================
-Fecha: 19-10-2026 · Versión de la PWA (games.js → ARCADE_VERSION): 2.32.0
+Fecha: 20-10-2026 · Versión de la PWA (games.js → ARCADE_VERSION): 2.33.0
+· v2.33.0: Mobile Hits completo: 14 juegos nuevos (302 en total), todos con la etiqueta hit, demo que juega sola, mando de TV
+  y ayuda corta en español e inglés.
+  - Arcade Pro: Duelo de torres (Clash Royale), Asalto a la aldea (Clash of Clans), Corta la cuerda (Cut the Rope),
+    Mochila cohete (Jetpack Joyride), Gusanos (Slither.io), Agujero glotón (Hole.io), Territorio (Paper.io),
+    Dispara burbujas (Bubble Shooter), Une los colores (Flow Free, tableros generados que siempre se pueden llenar),
+    Bucle infinito (Infinity Loop), Cuesta arriba (Hill Climb Racing), Arquero de mazmorra (Archero, con mejoras entre salas)
+    y Galletas sin fin (Cookie Clicker).
+  - Juegos de mesa: Ludo (Ludo King / parchís) contra 1 o 3 rivales.
+  common.js: en la demo, el paso «hold» acepta «after» (para mantener pulsado a ráfagas cortas).
 · v2.32.0: Cerillas (pro / puzles, etiqueta hit), rehecho a partir de «Matchsticks Puzzle» (promocionesycolecciones.com/scoundrel):
   269 problemas resolubles de los 315 originales (el solucionador nuevo prueba todas las combinaciones de dígitos; el viejo cortaba
   la búsqueda y tardaba al cargar), ordenados de fácil a difícil, con sus soluciones guardadas. Más intuitivo: dibujado en canvas,

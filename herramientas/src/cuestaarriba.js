@@ -1,0 +1,129 @@
+// Cuesta arriba|#4dabf7
+(function () {
+  const { rand, ri, clamp } = Arcade;
+  const T = Arcade.T;
+  const SEG = 110, DT = 1 / 120, PXM = 12;   // tramo del terreno, paso fijo de la física, píxeles por metro (del mundo)
+  const WB = 34, WR = 15, GRAV = 900, MASS = 1, INER = 1900;   // media batalla, radio de rueda, gravedad, masa e inercia
+
+  /* ---------- terreno: puntos cada SEG con subidas que se hacen más empinadas con la distancia ---------- */
+  function terrain(s, upTo) {
+    while (s.tx.length * SEG < upTo) {
+      const i = s.tx.length, d = i * SEG / PXM, L = s.L;
+      if (i < 4) { s.tx.push(0); continue; }
+      const steep = clamp(0.25 + d / 900 * (0.6 + L * 0.04) + L * 0.015, 0.25, 1.15), prev = s.tx[i - 1], prev2 = s.tx[i - 2];
+      let dy = (prev - prev2) * 0.5 + rand(-1, 1) * steep * SEG * 0.6; dy = clamp(dy, -steep * SEG, steep * SEG);
+      s.tx.push(clamp(prev + dy, -2600, 2600));
+      // monedas y gasolina
+      if (i > 6 && i % 3 === 0 && Math.random() < 0.6) for (let k = 0; k < 4; k++) s.items.push({ x: i * SEG + k * 24, kind: 'coin', got: false });
+      if (i > 6 && d - s.lastFuel > 140 + L * 6) { s.lastFuel = d; s.items.push({ x: i * SEG + SEG / 2, kind: 'fuel', got: false }); }
+    }
+  }
+  function G(s, x) { const i = Math.floor(x / SEG), u = x / SEG - i; if (i < 0) return s.tx[0]; const a = s.tx[i] ?? 0, b = s.tx[i + 1] ?? a, m = (1 - Math.cos(u * Math.PI)) / 2; return a + (b - a) * m; }   // y del suelo (hacia abajo +)
+  const dG = (s, x) => (G(s, x + 2) - G(s, x - 2)) / 4;
+
+  function wheels(c) { const ca = Math.cos(c.a), sa = Math.sin(c.a); return [-1, 1].map((sg) => { const ox = sg * WB, oy = 14; return { rx: ox * ca - oy * sa, ry: ox * sa + oy * ca }; }); }
+  function physics(g, s, pedal) {
+    const c = s.car; let fx = 0, fy = GRAV * MASS, tq = 0, ground = 0;
+    for (const w of wheels(c)) {
+      const wx = c.x + w.rx, wy = c.y + w.ry, gy = G(s, wx), sl = dG(s, wx), nl = Math.hypot(sl, 1), nx = sl / nl, ny = -1 / nl, tx = 1 / nl, ty = sl / nl;
+      const pen = (wy + WR - gy) / nl; if (pen <= 0) continue; ground++;
+      const vx = c.vx - c.w * w.ry, vy = c.vy + c.w * w.rx, vn = vx * nx + vy * ny, vt = vx * tx + vy * ty;
+      let Fn = Math.max(0, 4200 * pen - 90 * vn);
+      let Ft = 0; const maxT = Fn * 1.1;
+      if (pedal > 0 && s.fuel > 0) Ft = vt < s.vmax ? 1300 : 0; else if (pedal < 0) Ft = vt > 40 ? -1600 : vt > -120 ? -700 : 0; else Ft = -vt * 0.6;
+      Ft = clamp(Ft, -maxT, maxT) - vt * 0.15;
+      const Fx = nx * Fn + tx * Ft, Fy = ny * Fn + ty * Ft; fx += Fx; fy += Fy; tq += w.rx * Fy - w.ry * Fx;
+    }
+    if (!ground) tq += pedal > 0 ? -2.6 * INER : pedal < 0 ? 2.6 * INER : 0;   // en el aire: acelerar levanta el morro, frenar lo baja
+    c.vx += fx / MASS * DT; c.vy += fy / MASS * DT; c.w += tq / INER * DT; c.w *= ground ? 0.985 : 0.995;
+    c.x += c.vx * DT; c.y += c.vy * DT; c.a += c.w * DT; c.ground = ground;
+    c.spin = (c.spin || 0) + (ground ? (c.vx * DT) / WR : 0);
+  }
+  function headPos(c) { const ca = Math.cos(c.a), sa = Math.sin(c.a), ox = -4, oy = -30; return [c.x + ox * ca - oy * sa, c.y + ox * sa + oy * ca]; }
+  function crash(g, why) {
+    const s = g.s; if (s.out) return; s.out = true; Arcade.sfx.bad(); g.shake && g.shake(8); g.message(why, 1.1);
+    setTimeout(() => { if (g.state === 'play' && g.die()) { const c = s.car, x = Math.max(SEG * 2, c.x - 60); Object.assign(c, { x, y: G(s, x) - 40, vx: 0, vy: 0, a: Math.atan(dG(s, x)), w: 0 }); s.fuel = Math.max(s.fuel, 60); s.out = false; s.stuck = 0; } }, 1200);
+  }
+
+  Arcade.game({
+    /*THEME*/ home: 'indexpro.html', tag: 'Acelera, frena y no vuelques', deco: ['🚙', '⛰️', '⛽', '🪙', '🏁', '💨'], font: 'impact', bg: ['#74c0fc', '#2b8a3e'],
+    music: { mode: 'major', bpm: 128, wave: 'square', style: 'drive', root: 55 }, voice: { wave: 'square', mul: 1, echo: 0.2 },
+    /*EN*/ en: { title: 'Uphill Rush', tag: 'Speed up, brake and don\'t flip over', help: 'Hold the right side of the screen to accelerate and the left side to brake or reverse. In the air, accelerating lifts the nose and braking lowers it: land on both wheels. If the driver\'s head hits the ground, you crash. The car uses fuel: pick up the ⛽ cans on the way. Grab the 🪙. Reach the flag of each level.', tvHelp: '▶ accelerate, ◀ brake.', dict: {} },
+    /*TV*/ tvHelp: '▶ acelerar, ◀ frenar.',
+    id: 'cuestaarriba', title: 'Cuesta arriba', emoji: '🚙', color: '#ff6b6b', origin: 'Hill Climb Racing (Fingersoft, 2012)', pad: false,
+    help: 'Mantén pulsado el lado derecho de la pantalla para acelerar y el izquierdo para frenar o ir marcha atrás. En el aire, acelerar levanta el morro y frenar lo baja: aterriza con las dos ruedas. Si la cabeza del conductor toca el suelo, vuelcas. El coche gasta gasolina: coge los bidones ⛽ por el camino. Coge las 🪙. Llega a la bandera de cada nivel.',
+    lives: 3, levels: 0, cap: 20,
+    /*SC*/ demo(g) {
+      const s = g.s; if (!s.car || s.out || s.won) return { wait: 0.2 };
+      const c = s.car, ahead = Math.atan(dG(s, c.x + 60)), here = Math.atan(dG(s, c.x)), first = !s.said; s.said = 1;
+      let pedal = 1;
+      if (c.ground) { if (c.a - here < -0.45 && c.w < 0.3) pedal = 0; if (c.a - here < -0.75) pedal = -1; if (here > 0.45 && c.vx > 260) pedal = 0; if (c.vx > 330 && ahead > 0.3) pedal = -1; }
+      else { const want = ahead * 0.9 + here * 0.1; pedal = c.a > want + 0.12 ? 1 : c.a < want - 0.12 ? -1 : 0; }
+      const say = first ? T('Mantén la derecha para acelerar y la izquierda para frenar', 'Hold right to speed up and left to brake') : null;
+      if (!pedal) return { wait: 0.08, say };
+      return { hold: [pedal > 0 ? g.W * 0.58 : g.W * 0.42, g.bot - 90], dur: 0.1, after: 0, say };
+    },
+    setup(g) {
+      const L = g.lv; g.s = { L, tx: [], items: [], lastFuel: 0, fuel: 100, coins: 0, pedal: 0, keys: {}, goal: Math.round(350 + Math.min(L, 25) * 45), acc: 0, cam: [0, 0], vmax: 420 + Math.min(L, 20) * 6, smoke: [] }; const s = g.s;
+      terrain(s, 3000); const x = SEG * 2; s.car = { x, y: G(s, x) - 40, vx: 0, vy: 0, a: 0, w: 0 }; s.cam = [x, s.car.y]; s.z = 1; s.scr = (x2, y2) => [g.W * 0.38 + (x2 - s.cam[0]) * s.z, (g.top + g.bot) * 0.5 + (y2 - s.cam[1]) * s.z];
+    },
+    down(g, p) { g.s.pedal = p.x > g.W / 2 ? 1 : -1; },
+    move(g, p) { g.s.pedal = p.x > g.W / 2 ? 1 : -1; },
+    up(g) { g.s.pedal = 0; },
+    key(g, k, d) { const s = g.s; s.keys[k] = d; },
+    update(g, dt) {
+      const s = g.s; if (!s.car) return; const c = s.car;
+      const pedal = s.out || s.won ? 0 : s.keys.ArrowRight || s.keys.ArrowUp || s.keys[' '] ? 1 : s.keys.ArrowLeft || s.keys.ArrowDown ? -1 : s.pedal;
+      terrain(s, c.x + g.W * 3);
+      s.acc += Math.min(dt, 0.05); while (s.acc >= DT) { s.acc -= DT; physics(g, s, s.won ? -1 : pedal); }
+      if (pedal > 0 && !s.out) { s.fuel -= dt * (3.2 + s.L * 0.08); if (Math.random() < 0.4) s.smoke.push({ x: c.x - 40 * Math.cos(c.a), y: c.y - 40 * Math.sin(c.a) + 4, t: 0.6 }); }
+      s.fuel = Math.max(0, s.fuel);
+      for (const p of s.smoke) { p.t -= dt; p.y -= 30 * dt; } s.smoke = s.smoke.filter((p) => p.t > 0);
+      // objetos
+      for (const it of s.items) { if (it.got || Math.abs(it.x - c.x) > 40) continue; const iy = G(s, it.x) - 34; if (Math.abs(iy - c.y) < 50) { it.got = true; const [sx, sy] = s.scr(it.x, iy); if (it.kind === 'coin') { g.addScore(10); s.coins++; Arcade.sfx.coin(); } else { s.fuel = 100; Arcade.tone(660, 0.15, 'triangle', 0.06, 400); g.float && g.float('⛽ 100%', sx, sy); } } }
+      s.items = s.items.filter((it) => it.x > c.x - g.W);
+      if (!s.out && !s.won) {
+        const [hx, hy] = headPos(c); if (hy > G(s, hx) - 4) crash(g, T('¡Volcaste!', 'You flipped!'));
+        if (s.fuel <= 0 && Math.abs(c.vx) < 15) { s.stuck = (s.stuck || 0) + dt; if (s.stuck > 1.5) crash(g, T('¡Sin gasolina!', 'Out of fuel!')); } else s.stuck = 0;
+        if (Math.abs(c.vx) < 6 && pedal > 0 && s.fuel > 0) { s.jam = (s.jam || 0) + dt; if (s.jam > 4) { s.jam = 0; crash(g, T('¡Atascado!', 'Stuck!')); } } else s.jam = 0;
+      }
+      const m = Math.floor((c.x - SEG * 2) / PXM); if (m > (s.best || 0)) { g.addScore(m - (s.best || 0)); s.best = m; }
+      if (!s.won && m >= s.goal) { s.won = true; g.confetti(70); Arcade.sfx.win(); g.addScore(100 * g.lv, g.W / 2, g.H / 2); setTimeout(() => { if (g.state === 'play') g.win(g.lives >= 3 ? 3 : g.lives >= 2 ? 2 : 1); }, 1100); }
+      // cámara
+      s.z = clamp((g.bot - g.top) / 560, 0.7, 1.4);
+      s.cam[0] += (c.x + c.vx * 0.25 - s.cam[0]) * Math.min(1, dt * 5); s.cam[1] += (c.y - s.cam[1]) * Math.min(1, dt * 4);
+      s.scr = (x, y) => [g.W * 0.38 + (x - s.cam[0]) * s.z, (g.top + g.bot) * 0.5 + (y - s.cam[1]) * s.z];
+    },
+    draw(g, ctx) {
+      const s = g.s, W = g.W, H = g.H; if (!s.car || !s.scr) { ctx.fillStyle = '#74c0fc'; ctx.fillRect(0, 0, W, H); return; } const z = s.z;
+      const sky = ctx.createLinearGradient(0, 0, 0, H); sky.addColorStop(0, '#4dabf7'); sky.addColorStop(1, '#d0ebff'); ctx.fillStyle = sky; ctx.fillRect(0, 0, W, H);
+      // montañas al fondo
+      ctx.fillStyle = 'rgba(73,80,87,.25)'; ctx.beginPath(); ctx.moveTo(0, H); for (let x = 0; x <= W; x += 20) ctx.lineTo(x, H * 0.55 + Math.sin((x + s.cam[0] * 0.15) / 90) * 40 + Math.sin((x + s.cam[0] * 0.15) / 37) * 15); ctx.lineTo(W, H); ctx.fill();
+      // terreno
+      const x0 = s.cam[0] - W * 0.38 / z - 20, x1 = x0 + W / z + 40;
+      ctx.beginPath(); let first = true; for (let x = x0; x <= x1; x += 8) { const [px, py] = s.scr(x, G(s, x)); first ? ctx.moveTo(px, py) : ctx.lineTo(px, py); first = false; }
+      ctx.lineTo(W + 10, H + 10); ctx.lineTo(-10, H + 10); ctx.closePath(); ctx.fillStyle = '#8d6e63'; ctx.fill();
+      ctx.strokeStyle = '#2f9e44'; ctx.lineWidth = 9 * z; ctx.lineJoin = 'round'; ctx.beginPath(); first = true; for (let x = x0; x <= x1; x += 8) { const [px, py] = s.scr(x, G(s, x)); first ? ctx.moveTo(px, py) : ctx.lineTo(px, py); first = false; } ctx.stroke();
+      // meta
+      const gx = SEG * 2 + s.goal * PXM; if (gx > x0 && gx < x1) { const [px, py] = s.scr(gx, G(s, gx)); ctx.fillStyle = '#495057'; ctx.fillRect(px - 2, py - 70 * z, 4, 70 * z); Arcade.emoji(ctx, '🏁', px + 14 * z, py - 64 * z, 30 * z); }
+      // objetos
+      for (const it of s.items) { if (it.got || it.x < x0 || it.x > x1) continue; const [px, py] = s.scr(it.x, G(s, it.x) - 30); Arcade.emoji(ctx, it.kind === 'coin' ? '🪙' : '⛽', px, py + Math.sin(g.rt * 4 + it.x) * 3, (it.kind === 'coin' ? 20 : 30) * z); }
+      for (const p of s.smoke) { const [px, py] = s.scr(p.x, p.y); ctx.globalAlpha = p.t / 0.6 * 0.5; ctx.fillStyle = '#adb5bd'; ctx.beginPath(); ctx.arc(px, py, (10 - p.t * 8) * z, 0, 6.3); ctx.fill(); } ctx.globalAlpha = 1;
+      // coche
+      const c = s.car, [cx, cy] = s.scr(c.x, c.y);
+      ctx.save(); ctx.translate(cx, cy); ctx.rotate(c.a); ctx.scale(z, z);
+      ctx.strokeStyle = '#343a40'; ctx.lineWidth = 4; for (const sg of [-1, 1]) { ctx.beginPath(); ctx.moveTo(sg * WB, 14); ctx.lineTo(sg * (WB - 8), 0); ctx.stroke(); }
+      ctx.fillStyle = '#e03131'; Arcade.rr(ctx, -50, -12, 100, 22, 7); ctx.fill(); ctx.fillStyle = '#c92a2a'; ctx.fillRect(-50, 4, 100, 6);
+      ctx.fillStyle = '#ffe066'; ctx.fillRect(44, -8, 6, 6); ctx.fillStyle = '#495057'; ctx.fillRect(-14, -26, 4, 16);
+      Arcade.emoji(ctx, s.out ? '😵' : '🧑', -4, -30, 26, { flip: true });
+      for (const sg of [-1, 1]) { ctx.save(); ctx.translate(sg * WB, 14); ctx.rotate(c.spin || 0); ctx.fillStyle = '#212529'; ctx.beginPath(); ctx.arc(0, 0, WR, 0, 6.3); ctx.fill(); ctx.fillStyle = '#adb5bd'; ctx.beginPath(); ctx.arc(0, 0, WR * 0.5, 0, 6.3); ctx.fill(); ctx.strokeStyle = '#495057'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(-WR * 0.5, 0); ctx.lineTo(WR * 0.5, 0); ctx.moveTo(0, -WR * 0.5); ctx.lineTo(0, WR * 0.5); ctx.stroke(); ctx.restore(); }
+      ctx.restore();
+      // marcador: distancia y gasolina
+      const m = Math.min(s.goal, s.best || 0), bw = Math.min(W - 200, 240), bx = (W - bw) / 2, by = g.top + 10;
+      ctx.fillStyle = 'rgba(0,0,0,.35)'; Arcade.rr(ctx, bx, by, bw, 10, 5); ctx.fill(); ctx.fillStyle = '#ffd43b'; Arcade.rr(ctx, bx, by, bw * m / s.goal, 10, 5); ctx.fill();
+      Arcade.txt(ctx, m + ' / ' + s.goal + ' m', bx + bw / 2, by + 22, 12, '#fff', 'center', 900, 'rgba(0,0,0,.5)');
+      const fw = 90, fx = 12, fy = by + 34; Arcade.emoji(ctx, '⛽', fx + 8, fy + 5, 16); ctx.fillStyle = 'rgba(0,0,0,.35)'; Arcade.rr(ctx, fx + 20, fy, fw, 10, 5); ctx.fill(); ctx.fillStyle = s.fuel < 25 ? '#fa5252' : '#51cf66'; Arcade.rr(ctx, fx + 20, fy, fw * s.fuel / 100, 10, 5); ctx.fill();
+      if (!g.demoOn && (s.best || 0) < 5) { Arcade.txt(ctx, '◀ ' + T('Frenar', 'Brake'), 20, g.bot - 30, 15, '#fff', 'left', 900, 'rgba(0,0,0,.5)'); Arcade.txt(ctx, T('Acelerar', 'Gas') + ' ▶', W - 20, g.bot - 30, 15, '#fff', 'right', 900, 'rgba(0,0,0,.5)'); }
+    },
+  });
+})();
