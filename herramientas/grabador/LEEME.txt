@@ -42,3 +42,12 @@ Modo grabación en la página (por si se quiere usar desde otro programa)
   window.arcadeRec.info             { id, title, tag, emoji, origin, url, lang }
   window.arcadeRec.frames           fotogramas totales (dur × fps)
   window.arcadeRec.step(n)          avanza n fotogramas y pinta → { frame, done, state }
+
+Vídeos de retos (un vídeo por problema): --puzles <id>
+  Para juegos con escena de reto propia (por ahora «cerillas»): un vídeo vertical por problema, en inglés por defecto:
+  «How would you solve this? You can move ONE match», cuenta atrás (--espera, 45 s), la solución animada y un cierre
+  «Play 269 puzzles like this» con la dirección de la web. Junto a cada vídeo, un .txt para publicarlo (sin destripar).
+  dotnet run -c Release -- --web https://mobilehits.juegosboom.com --puzles cerillas --paralelo 3
+  dotnet run -c Release -- --web https://mobilehits.juegosboom.com --puzles cerillas --desde 1 --hasta 20 --idioma en
+  Salida: videos/cerillas/en/vertical/cerillas-001.mp4 … (unos 59 s cada uno: 2,5 s de entrada, 45 de espera, 7,5 de solución y 4 de cierre)
+  En la página: /cerillas/en?rec=1&quiz=N&wait=45&site=<host>; window.arcadeRec.quizCount = número de retos.

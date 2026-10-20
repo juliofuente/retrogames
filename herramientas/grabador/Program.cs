@@ -36,6 +36,8 @@ static class Program
         if (o == null) { Options.Help(); return 1; }
         Directory.CreateDirectory(o.Out);
 
+        if (o.Puzzles != null) return await RunPuzzles(o);
+
         // 1. juegos del sitemap: las direcciones /<id>/es y /<id>/en son las de jugar (las fichas son /juego/<id>)
         Console.WriteLine($"Sitemap: {o.Sitemap}");
         using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(60) };
@@ -65,6 +67,40 @@ static class Program
 
         // 2. Chrome sin ventana con el puerto de depuración
         using var chrome = await Chrome.Start(o.ChromePath);
+        return await RunJobs(chrome, o, jobs);
+    }
+
+    /* modo retos (--puzles <id>): un vídeo por problema con la escena propia del juego (recScene), p. ej. Cerillas:
+       pregunta, cuenta atrás, solución animada y cierre con la dirección */
+    static async Task<int> RunPuzzles(Options o)
+    {
+        var baseUrl = new Uri(o.Sitemap).GetLeftPart(UriPartial.Authority);
+        using var chrome = await Chrome.Start(o.ChromePath);
+        int count;
+        await using (var page = await chrome.NewPage())
+        {
+            await page.Send("Page.enable");
+            await page.Send("Network.setUserAgentOverride", new { userAgent = chrome.UserAgent + " ArcadeRecorder/1.0" });
+            await page.Send("Page.navigate", new { url = $"{baseUrl}/{o.Puzzles}/{o.Langs[0]}?rec=1&quiz=1" });
+            count = 0;
+            for (int i = 0; i < 80 && count == 0; i++) { await Task.Delay(300); try { count = (await page.Eval("window.arcadeRec && window.arcadeRec.ready ? window.arcadeRec.quizCount : 0")).GetInt32(); } catch { } }
+        }
+        if (count == 0) { Console.WriteLine($"{o.Puzzles} no tiene vídeos de retos (recScene) o no carga en {baseUrl}"); return 1; }
+        int from = Math.Max(1, o.From), to = o.To > 0 ? Math.Min(o.To, count) : count;
+        Console.WriteLine($"{o.Puzzles}: {count} retos · se graban del {from} al {to}");
+        var jobs = new Queue<Job>();
+        for (int q = from; q <= to; q++) foreach (var lang in o.Langs) foreach (var fmt in o.Formats)
+        {
+            var mp4 = Path.Combine(o.Out, o.Puzzles, lang, fmt, $"{o.Puzzles}-{q:000}.mp4");
+            if (!o.Redo && File.Exists(mp4)) continue;
+            jobs.Enqueue(new Job(baseUrl, o.Puzzles, lang, fmt, mp4, q));
+        }
+        Console.WriteLine($"{jobs.Count} vídeos por grabar");
+        return jobs.Count == 0 ? 0 : await RunJobs(chrome, o, jobs);
+    }
+
+    static async Task<int> RunJobs(Chrome chrome, Options o, Queue<Job> jobs)
+    {
         int ok = 0, fail = 0; var total = jobs.Count; var sw = Stopwatch.StartNew();
         var workers = Enumerable.Range(0, Math.Max(1, o.Parallel)).Select(async w =>
         {
@@ -80,14 +116,16 @@ static class Program
         return fail > 0 ? 2 : 0;
     }
 
-    record Job(string Base, string Id, string Lang, string Format, string Mp4);
+    record Job(string Base, string Id, string Lang, string Format, string Mp4, int Quiz = 0);
 
     static async Task<bool> Record(Chrome chrome, Options o, Job j)
     {
         bool vertical = j.Format == "vertical";
         int w = vertical ? 540 : 960, h = vertical ? 960 : 540;   // ×2 de densidad = 1080×1920 o 1920×1080
         var host = new Uri(j.Base).Authority;
-        var url = $"{j.Base}/{j.Id}/{j.Lang}?rec=1&fps={o.Fps}&dur={o.Duration}&intro={o.Intro}&outro={o.Outro}&site={Uri.EscapeDataString(host)}";
+        var url = j.Quiz > 0
+            ? $"{j.Base}/{j.Id}/{j.Lang}?rec=1&fps={o.Fps}&quiz={j.Quiz}&wait={o.Wait}&site={Uri.EscapeDataString(host)}"
+            : $"{j.Base}/{j.Id}/{j.Lang}?rec=1&fps={o.Fps}&dur={o.Duration}&intro={o.Intro}&outro={o.Outro}&site={Uri.EscapeDataString(host)}";
         await using var page = await chrome.NewPage();
         await page.Send("Page.enable");
         await page.Send("Emulation.setDeviceMetricsOverride", new { width = w, height = h, deviceScaleFactor = 2, mobile = vertical });
@@ -129,9 +167,19 @@ static class Program
         await ff.WaitForExitAsync();
         if (ff.ExitCode != 0 || !File.Exists(tmp)) { Console.WriteLine($"  ✗ {j.Id}: ffmpeg terminó con error {ff.ExitCode}"); return false; }
         File.Move(tmp, j.Mp4, true);
-        File.WriteAllText(Path.ChangeExtension(j.Mp4, ".txt"), Caption(info, j.Lang));
+        File.WriteAllText(Path.ChangeExtension(j.Mp4, ".txt"), j.Quiz > 0 ? QuizCaption(info, j.Lang) : Caption(info, j.Lang));
         Console.WriteLine($"  ✓ {j.Mp4} ({new FileInfo(j.Mp4).Length / 1024} KB, {sw.Elapsed.TotalSeconds:0}s)");
         return true;
+    }
+
+    // texto de un vídeo de reto: «¿lo resolverías?» sin destripar la solución
+    static string QuizCaption(JsonElement i, string lang)
+    {
+        string S(string k) => i.TryGetProperty(k, out var v) ? (v.ValueKind == JsonValueKind.Number ? v.GetRawText() : v.GetString() ?? "") : "";
+        string n = S("count"), act = S("action"), what = n == "1" ? "ONE match" : n + " matches";
+        return lang == "en"
+            ? $"🔥 Matchstick puzzle #{S("puzzle")}: {S("equation")} is wrong. Can you {act} {what} to make it true? 🤔\nAnswer at the end 👀 Comment yours before it shows!\nPlay {S("total")} puzzles like this, free and with no ads: {S("url")}\n\n#matchstickpuzzle #puzzle #brainteaser #riddle #math #iqtest #fyp\n"
+            : $"🔥 Reto de cerillas #{S("puzzle")}: {S("equation")} está mal. ¿Sabrías arreglarlo? 🤔\nLa solución, al final 👀 ¡Comenta la tuya antes!\nJuega {S("total")} retos como este, gratis y sin anuncios: {S("url")}\n\n#cerillas #acertijo #retomental #matematicas #puzzle #fyp\n";
     }
 
     // texto para publicar el vídeo (TikTok, Shorts, Reels…)
@@ -150,6 +198,7 @@ static class Program
 class Options
 {
     public string Sitemap = ""; public string Out = "videos"; public List<string> Langs = new() { "es" }; public List<string> Formats = new() { "vertical" };
+    public string? Puzzles; public int Wait = 45, From = 1, To = 0; bool langSet;
     public int Duration = 75, Fps = 30, Intro = 3, Outro = 4, Parallel = 1, Crf = 21, Max = 0, JpegQuality = 90;
     public bool Redo; public string? Music, ChromePath, FfmpegPath = "ffmpeg"; public HashSet<string> Only = new();
     readonly Random rnd = new();
@@ -166,7 +215,11 @@ class Options
                 case "--sitemap": o.Sitemap = v(); break;
                 case "--web": o.Sitemap = v().TrimEnd('/') + "/sitemap.xml"; break;
                 case "--salida": o.Out = v(); break;
-                case "--idioma": { var x = v(); o.Langs = x == "ambos" ? new() { "es", "en" } : new() { x }; break; }
+                case "--puzles": o.Puzzles = v(); break;
+                case "--espera": o.Wait = int.Parse(v()); break;
+                case "--desde": o.From = int.Parse(v()); break;
+                case "--hasta": o.To = int.Parse(v()); break;
+                case "--idioma": { o.langSet = true; var x = v(); o.Langs = x == "ambos" ? new() { "es", "en" } : new() { x }; break; }
                 case "--formato": { var x = v(); o.Formats = x == "ambos" ? new() { "vertical", "horizontal" } : new() { x }; break; }
                 case "--duracion": o.Duration = int.Parse(v()); break;
                 case "--fps": o.Fps = int.Parse(v()); break;
@@ -184,12 +237,14 @@ class Options
                 default: Console.WriteLine("Opción desconocida: " + k); return null;
             }
         }
+        if (o.Puzzles != null && !o.langSet) o.Langs = new() { "en" };   // los retos, por defecto en inglés
         if (o.Sitemap == "" || o.Langs.Any(l => l != "es" && l != "en") || o.Formats.Any(f => f != "vertical" && f != "horizontal")) return null;
         return o;
     }
     public static void Help() => Console.WriteLine("Uso: ArcadeRecorder --sitemap https://tu-web/sitemap.xml [--salida videos] [--idioma es|en|ambos] [--formato vertical|horizontal|ambos]\n" +
         "       [--duracion 75] [--fps 30] [--intro 3] [--outro 4] [--musica archivo|carpeta] [--solo id1,id2] [--max N] [--rehacer]\n" +
-        "       [--paralelo N] [--calidad 21] [--chrome ruta] [--ffmpeg ruta]");
+        "       [--paralelo N] [--calidad 21] [--chrome ruta] [--ffmpeg ruta]\n" +
+        "Retos (un vídeo por problema): ArcadeRecorder --web https://mobilehits.juegosboom.com --puzles cerillas [--espera 45] [--desde 1] [--hasta 269]");
     public string? PickMusic()
     {
         if (string.IsNullOrEmpty(Music)) return null;

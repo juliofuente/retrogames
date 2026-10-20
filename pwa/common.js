@@ -1305,7 +1305,8 @@
       const FPS = num('fps', 30), DUR = num('dur', 75), IN = num('intro', 3), OUT = num('outro', 4), HOST = Q.get('site') || location.host;
       const EN = A.lang === 'en', title = EN && def.en && def.en.title ? def.en.title : def.title, tag = EN && def.en && def.en.tag ? def.en.tag : def.tag || '';
       const bg = def.bg || ['#2b1a5c', '#1a1033'];
-      let f = 0, idle = 0; const total = Math.round(DUR * FPS);
+      const CUST = def.recScene ? def.recScene(g, Q) : null;   // escena propia del juego (p. ej. los retos de Cerillas)
+      let f = 0, idle = 0; const total = Math.round((CUST ? CUST.dur : DUR) * FPS);
       const card = (k, outro) => {   // cartela de entrada y de salida, pintada encima del juego
         ctx.setTransform(A.dpr, 0, 0, A.dpr, 0, 0); ctx.globalAlpha = k;
         const gr = ctx.createLinearGradient(0, 0, 0, g.H); gr.addColorStop(0, bg[0]); gr.addColorStop(1, bg[1]); ctx.fillStyle = gr; ctx.fillRect(0, 0, g.W, g.H);
@@ -1324,8 +1325,14 @@
       };
       window.arcadeRec = {
         ready: false, fps: FPS, frames: total,
-        info: { id: def.id, title, tag, emoji: def.emoji || '', origin: def.origin || '', url: location.protocol + '//' + HOST + '/' + def.id, lang: A.lang },
+        info: Object.assign({ id: def.id, title, tag, emoji: def.emoji || '', origin: def.origin || '', url: location.protocol + '//' + HOST + '/' + def.id, lang: A.lang }, CUST && CUST.info || {}),
+        quizCount: def.recCount || 0,
         step(n = 1) {
+          if (CUST) {
+            for (let i = 0; i < n && f < total; i++) { f++; ctx.setTransform(A.dpr, 0, 0, A.dpr, 0, 0); ctx.save(); CUST.frame(f / FPS, 1 / FPS, ctx); ctx.restore(); }
+            hud.style.visibility = 'hidden'; ov.style.visibility = 'hidden';
+            return { frame: f, done: f >= total, state: 'scene' };
+          }
           for (let i = 0; i < n && f < total; i++) {
             step(1 / FPS); f++;
             // si la demo acaba (fin de partida, menú…), vuelve a empezar al momento
@@ -1337,7 +1344,7 @@
           return { frame: f, done: f >= total, state: g.state };
         },
       };
-      setTimeout(() => { hide(); startDemo(); window.arcadeRec.ready = true; document.title = 'REC_READY'; }, 30);
+      setTimeout(() => { hide(); if (!CUST) startDemo(); window.arcadeRec.ready = true; document.title = 'REC_READY'; }, 30);
     }
     requestAnimationFrame(frame);
     return g;

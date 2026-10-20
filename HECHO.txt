@@ -1,6 +1,12 @@
 ARCADE PERDIDO + ARCADE PRO — LO QUE ESTÁ HECHO
 ================================================
-Fecha: 19-10-2026 · Versión de la PWA (games.js → ARCADE_VERSION): 2.31.0
+Fecha: 19-10-2026 · Versión de la PWA (games.js → ARCADE_VERSION): 2.32.0
+· v2.32.0: Cerillas (pro / puzles, etiqueta hit), rehecho a partir de «Matchsticks Puzzle» (promocionesycolecciones.com/scoundrel):
+  269 problemas resolubles de los 315 originales (el solucionador nuevo prueba todas las combinaciones de dígitos; el viejo cortaba
+  la búsqueda y tardaba al cargar), ordenados de fácil a difícil, con sus soluciones guardadas. Más intuitivo: dibujado en canvas,
+  tocar cerilla → tocar hueco (sin arrastrar), cómo se lee la cuenta en cada momento (✓/✗), cerillas que quedan, deshacer,
+  reiniciar, pista en dos pasos (qué cerilla y a qué hueco), sin cronómetro que agobie, demo que resuelve y mando de TV.
+  Vídeos de retos para TikTok en inglés: ArcadeRecorder --puzles cerillas (common.js: def.recScene / def.recCount).
 · v2.31.0: vídeos de cada juego con un programa C# (herramientas/grabador, ver su LEEME.txt): lee el sitemap, abre cada juego
   en Chrome sin ventana con ?rec=1 o el user agent «ArcadeRecorder», y el juego (modo grabación de common.js, window.arcadeRec)
   avanza fotograma a fotograma mientras el programa captura y ffmpeg monta el MP4 (vertical 1080×1920 y/o horizontal, 75 s,
