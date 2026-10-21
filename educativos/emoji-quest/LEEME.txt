@@ -1,0 +1,13 @@
+Emoji Quest · aventura en inglés (juego de rol con emojis)
+=========================================================
+- index.html: el juego (mapa, diálogos, minijuegos, combate final). historia.js: TODO el contenido (zonas, personajes,
+  lecciones, misiones, preguntas de repaso y vocabulario); para añadir o cambiar misiones solo hay que tocar ese archivo.
+- 9 zonas en un mapa de 3×3: Emoji Village (saludos, nombre, ¿qué tal?), Sunny School (números, edad), Rainbow Garden
+  (colores), Yummy Market (comida, I like / Do you like, Can I have…, please?), Happy Farm (animales, have / has),
+  Busy Town (Where is…? in / on / under / next to / behind), Sports Park (can / can't), Cosy Library (presente
+  continuo) y Dragon Castle (pasado y combate final con el dragón).
+- Cada estructura nueva sale antes en una tarjeta (qué es, patrón, ejemplos con voz y truco) y queda en el cuaderno 📖.
+- Eventos: diálogos con traducción opcional, preguntas, construir frases, minijuegos (oír y elegir, parejas, contar,
+  deletrear, lluvia de palabras), regalos que abren la siguiente zona, repaso con los personajes de zonas terminadas
+  y tienda de sombreros con las estrellas ⭐.
+- Se guarda en el navegador (localStorage, clave «emoji-quest-v1»). La voz usa la síntesis del navegador (inglés británico).

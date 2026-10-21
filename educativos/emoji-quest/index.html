@@ -1,0 +1,603 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#2e7d32">
+<meta name="description" content="Emoji Quest: un juego de rol con emojis para aprender inglés. Habla con los personajes, cumple misiones, juega a minijuegos y vence al dragón.">
+<title>Emoji Quest · Aventura en inglés</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#1d2a1f;--soft:#5b6b5d;--panel:#fffdf6;--edge:#d8cfb5;--ok:#2e9e4f;--bad:#e5484d;--gold:#ffb703;--sky:#3a86ff;--fx:'Baloo 2','Trebuchet MS',system-ui,sans-serif}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;background:#1b3a1f;color:var(--ink);font-family:var(--fx);-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+button{font:inherit;color:inherit;cursor:pointer}
+[hidden]{display:none!important}
+#map{position:fixed;inset:0;width:100%;height:100%;touch-action:none}
+.btn{border:0;border-radius:14px;padding:.45rem .9rem;min-height:46px;font-weight:800;font-size:1.05rem;background:#fff;color:var(--ink);box-shadow:0 4px 0 var(--edge);display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 var(--edge)}
+.btn.go{background:var(--ok);color:#fff;box-shadow:0 4px 0 #1f6d36}
+.btn.blue{background:var(--sky);color:#fff;box-shadow:0 4px 0 #1f4fa0}
+.btn.round{width:46px;padding:0;border-radius:50%}
+.btn[disabled]{opacity:.45;pointer-events:none}
+/* HUD */
+#hud{position:fixed;left:0;right:0;top:0;display:flex;align-items:center;gap:8px;padding:max(8px,env(safe-area-inset-top)) 10px 6px;pointer-events:none}
+#hud>*{pointer-events:auto}
+.me{display:flex;align-items:center;gap:8px;background:rgba(255,253,246,.94);border-radius:999px;padding:4px 12px 4px 4px;box-shadow:0 3px 0 rgba(0,0,0,.2);min-width:0}
+.me .av{width:38px;height:38px;border-radius:50%;background:#e8f5e9;display:grid;place-items:center;font-size:24px;position:relative}
+.me .av i{position:absolute;top:-14px;font-style:normal;font-size:18px}
+.me b{font-size:1rem;line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:26vw}
+.xp{width:64px;height:7px;background:#e0e0e0;border-radius:4px;overflow:hidden;margin-top:3px}.xp i{display:block;height:100%;background:var(--gold)}
+.pill{background:rgba(255,253,246,.94);border-radius:999px;padding:4px 12px;font-weight:800;box-shadow:0 3px 0 rgba(0,0,0,.2);white-space:nowrap}
+#hud .sp{flex:1}
+#quest{position:fixed;left:50%;transform:translateX(-50%);top:calc(max(8px,env(safe-area-inset-top)) + 52px);background:rgba(29,42,31,.85);color:#fff;border-radius:12px;padding:5px 12px;font-weight:700;font-size:.95rem;max-width:calc(100% - 20px);text-align:center;pointer-events:none}
+/* diálogos */
+#dlg{position:fixed;left:0;right:0;bottom:0;padding:0 10px max(10px,env(safe-area-inset-bottom));display:flex;justify-content:center;z-index:10}
+.box{background:var(--panel);border-radius:22px 22px 18px 18px;box-shadow:0 -4px 0 rgba(0,0,0,.08),0 10px 30px rgba(0,0,0,.35);width:min(680px,100%);padding:12px 14px 14px;animation:up .25s ease-out}
+@keyframes up{from{transform:translateY(40px);opacity:0}}
+.who{display:flex;align-items:center;gap:10px}
+.who .face{font-size:44px;line-height:1;animation:talk .6s ease-in-out 3}
+@keyframes talk{50%{transform:translateY(-4px) rotate(-4deg)}}
+.who .nm{font-weight:800;color:var(--soft);font-size:.95rem}
+.en{font-size:clamp(1.25rem,5.4vw,1.6rem);font-weight:800;line-height:1.2;margin:4px 0 2px}
+.es{color:var(--soft);font-size:1rem;line-height:1.25;min-height:1.2em}
+.es.hide{filter:blur(6px);cursor:pointer}
+.row{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:10px}
+.opts{display:grid;gap:8px;margin-top:10px}
+.opt{border:0;border-radius:14px;background:#fff;box-shadow:0 4px 0 var(--edge);padding:.55rem .8rem;font-weight:800;font-size:clamp(1.05rem,4.6vw,1.25rem);text-align:left;min-height:50px;display:flex;align-items:center;gap:10px}
+.opt:active{transform:translateY(3px)}
+.opt.ok{background:#d3f9d8;box-shadow:0 4px 0 #8ce99a}
+.opt.no{background:#ffe3e3;box-shadow:0 4px 0 #ffa8a8;opacity:.6;pointer-events:none;text-decoration:line-through}
+.opt.big{font-size:2.2rem;justify-content:center}
+.optgrid{grid-template-columns:repeat(3,1fr)}
+.hint{background:#fff4d6;border-radius:12px;padding:6px 10px;margin-top:8px;font-size:.98rem}
+.shake{animation:shake .35s}
+@keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.q{font-weight:800;color:var(--sky);font-size:.9rem;margin-top:6px}
+/* construir frase */
+.line{min-height:56px;background:#2b3a55;border-radius:14px;padding:8px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:8px}
+.tiles{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;justify-content:center}
+.tile{border:0;border-radius:12px;background:#fff;box-shadow:0 4px 0 var(--edge);font-weight:800;font-size:1.2rem;padding:.3rem .75rem;min-height:46px}
+.tile.on{background:#ffd166;box-shadow:0 4px 0 #c99a2e}
+.tile.ghost{opacity:.25;pointer-events:none}
+/* capas a pantalla completa */
+.ov{position:fixed;inset:0;z-index:20;background:rgba(15,30,18,.62);display:grid;place-items:center;padding:12px}
+.card{background:var(--panel);border-radius:24px;width:min(560px,100%);max-height:calc(100% - 10px);overflow:auto;padding:16px 18px;box-shadow:0 12px 40px rgba(0,0,0,.4);animation:pop .3s cubic-bezier(.3,1.4,.5,1)}
+@keyframes pop{from{transform:scale(.85);opacity:0}}
+.card h2{margin:0 0 4px;font-size:clamp(1.4rem,6vw,1.9rem);line-height:1.1}
+.card .badge{display:inline-block;background:var(--gold);border-radius:8px;padding:0 8px;font-weight:800;font-size:.85rem}
+.pat{background:#2b3a55;color:#fff;border-radius:12px;padding:8px 12px;font-weight:800;font-size:1.1rem;margin:8px 0}
+.exs{list-style:none;padding:0;margin:6px 0;display:grid;gap:6px}
+.exs li{display:flex;align-items:center;gap:8px;background:#f3efe2;border-radius:12px;padding:6px 8px}
+.exs .btn{width:38px;min-height:38px;padding:0;border-radius:50%;flex:none;font-size:.95rem}
+.exs small{display:block;color:var(--soft);font-weight:500}
+.tip{background:#fff4d6;border-radius:12px;padding:8px 10px;margin-top:8px}
+mark{background:#ffe066;border-radius:4px;padding:0 3px}
+/* minijuegos */
+.game{width:min(560px,100%);background:var(--panel);border-radius:24px;padding:14px;box-shadow:0 12px 40px rgba(0,0,0,.4);position:relative}
+.gtop{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.gtop h3{margin:0;font-size:1.15rem}
+.prog{display:flex;gap:4px}.prog i{width:14px;height:8px;border-radius:4px;background:#ddd}.prog i.d{background:var(--ok)}
+.big{font-size:64px;text-align:center;line-height:1.15;margin:10px 0}
+.pairs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.pairs .opt{justify-content:center;text-align:center}
+.pairs .opt.sel{background:#ffd166;box-shadow:0 4px 0 #c99a2e}
+.pairs .opt.done{visibility:hidden}
+.rain{position:relative;height:min(58vh,420px);background:linear-gradient(#bde0fe,#e7f5ff);border-radius:16px;overflow:hidden;margin-top:10px;touch-action:none}
+.drop{position:absolute;left:0;top:0;border:0;border-radius:14px;background:#fff;box-shadow:0 3px 0 rgba(0,0,0,.15);padding:4px 10px;font-weight:800;font-size:1.05rem;white-space:nowrap}
+.drop.hit{background:#d3f9d8}.drop.bad{background:#ffe3e3}
+.letters{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:10px}
+.letters .tile{min-width:46px;text-transform:uppercase}
+.word{display:flex;gap:6px;justify-content:center;margin-top:8px;min-height:50px}
+.word span{width:40px;height:48px;border-bottom:4px solid #2b3a55;font-size:1.6rem;font-weight:800;text-align:center;text-transform:uppercase}
+/* combate */
+.boss{text-align:center}
+.bossrow{display:flex;justify-content:space-around;align-items:flex-end;margin:6px 0}
+.bossrow .f{font-size:64px;line-height:1}.bossrow .d{font-size:96px;line-height:1}
+.hp{height:12px;background:#eee;border-radius:6px;overflow:hidden;margin-top:4px;width:120px}.hp i{display:block;height:100%;background:var(--bad);transition:width .3s}
+.hits{animation:hitf .45s}
+@keyframes hitf{30%{transform:translateX(10px) scale(1.1);filter:brightness(2)}}
+.toast{position:fixed;left:50%;top:22%;transform:translateX(-50%);background:var(--ink);color:#fff;border-radius:16px;padding:10px 18px;font-weight:800;font-size:1.15rem;z-index:40;box-shadow:0 10px 30px rgba(0,0,0,.4);animation:pop .3s;text-align:center;pointer-events:none}
+.start{background:radial-gradient(#4caf50,#1b5e20);color:#fff}
+.start .card{color:var(--ink)}
+.avs{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:10px 0}
+.avs button{font-size:38px;width:62px;height:62px;border-radius:16px;border:3px solid transparent;background:#f3efe2}
+.avs button.on{border-color:var(--ok);background:#d3f9d8}
+input.name{width:100%;font:inherit;font-size:1.3rem;font-weight:800;border:3px solid var(--edge);border-radius:14px;padding:8px 12px;text-align:center}
+.list{display:grid;gap:8px;margin-top:8px}
+.list .opt{font-size:1.05rem}
+@media (prefers-reduced-motion:reduce){*{animation:none!important}}
+</style>
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2798436891455671" crossorigin="anonymous"></script>
+</head>
+<body>
+<canvas id="map"></canvas>
+<div id="hud" hidden>
+  <div class="me"><span class="av" id="hav"></span><span><b id="hname"></b><div class="xp"><i id="hxp"></i></div></span></div>
+  <span class="pill" id="hlv"></span>
+  <span class="sp"></span>
+  <span class="pill" id="hstars"></span>
+  <button class="btn round" id="bQuest" aria-label="Misiones">📜</button>
+  <button class="btn round" id="bBook" aria-label="Cuaderno">📖</button>
+  <button class="btn round" id="bSound" aria-label="Sonido">🔊</button>
+</div>
+<div id="quest" hidden></div>
+<div id="dlg" hidden></div>
+<div id="ov" class="ov" hidden></div>
+
+<script src="historia.js"></script>
+<script>
+(() => {
+const { V, L, Z } = window.EQ;
+const $ = (id) => document.getElementById(id);
+const pick = (a) => a[Math.floor(Math.random() * a.length)];
+const shuffle = (a) => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+/* ================= partida guardada ================= */
+const KEY = 'emoji-quest-v1';
+const fresh = () => ({ name: 'Alex', av: '🧒', hat: '', hats: [], stars: 0, xp: 0, ch: 0, step: 0, items: [], seen: [], pos: null, done: false });
+let S = null;
+try { S = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) {}
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} };
+let sound = true;
+const nm = (s) => String(s).replace(/\{name\}/g, S ? S.name : 'Alex');
+
+/* ================= sonido y voz ================= */
+let ac;
+function tone(fs, { dur = 0.12, type = 'triangle', gap = 0.08, vol = 0.12 } = {}) {
+  if (!sound) return;
+  try { ac = ac || new (window.AudioContext || window.webkitAudioContext)(); const t0 = ac.currentTime + 0.01;
+    fs.forEach((f, i) => { const o = ac.createOscillator(), g = ac.createGain(), t = t0 + i * gap; o.type = type; o.frequency.value = f; g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + 0.01); g.gain.exponentialRampToValueAtTime(0.001, t + dur); o.connect(g).connect(ac.destination); o.start(t); o.stop(t + dur + 0.03); }); } catch (e) {}
+}
+const SFX = { tap: () => tone([660], { dur: 0.05 }), ok: () => tone([523, 659, 784]), bad: () => tone([240, 190], { type: 'square', vol: 0.06, dur: 0.15, gap: 0.1 }), win: () => tone([523, 659, 784, 1047, 784, 1047, 1319], { gap: 0.1, dur: 0.18 }), step: () => tone([180 + Math.random() * 40], { dur: 0.03, vol: 0.03, type: 'sine' }), coin: () => tone([988, 1319], { dur: 0.08, gap: 0.06 }) };
+function speak(t) { window.__lastSpeak = t; if (!sound || !t) return; try { speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(String(t).replace(/[^\p{L}\p{N}\s'.,!?-]/gu, ' ')); u.lang = 'en-GB'; u.rate = 0.88; speechSynthesis.speak(u); } catch (e) {} }
+
+/* ================= el mapa: 3×3 zonas de 9×7 rodeadas de árboles ================= */
+const MW = 31, MH = 25;
+const roomOf = (i) => Z[i];
+function zoneAt(x, y) { const rx = Math.floor(x / 10), ry = Math.floor(y / 8); return Z.findIndex((z) => z.pos[0] === rx && z.pos[1] === ry); }
+const gates = []; // {x,y,after: índice de la zona que hay que terminar}
+for (let i = 0; i < Z.length - 1; i++) {
+  const [ax, ay] = Z[i].pos, [bx, by] = Z[i + 1].pos;
+  if (ay === by) gates.push({ x: Math.max(ax, bx) * 10, y: ay * 8 + 4, after: i });
+  else gates.push({ x: ax * 10 + 5, y: Math.max(ay, by) * 8, after: i });
+}
+const gateAt = (x, y) => gates.find((g) => g.x === x && g.y === y);
+const NPCS = []; Z.forEach((z, zi) => z.npcs.forEach((n) => NPCS.push({ ...n, zi, x: z.pos[0] * 10 + n.at[0], y: z.pos[1] * 8 + n.at[1] })));
+const npcAt = (x, y) => NPCS.find((n) => n.x === x && n.y === y && !(n.boss && S.done));
+const landAt = (x, y) => { const zi = zoneAt(x, y); if (zi < 0) return null; const z = Z[zi]; return x === z.pos[0] * 10 + 2 && y === z.pos[1] * 8 + 2 ? z.land : null; };
+function isWall(x, y) { return x <= 0 || y <= 0 || x >= MW - 1 || y >= MH - 1 || x % 10 === 0 || y % 8 === 0; }
+function walkable(x, y) {
+  if (x < 0 || y < 0 || x >= MW || y >= MH) return false;
+  const g = gateAt(x, y); if (g) return S.ch > g.after;
+  if (isWall(x, y)) return false;
+  if (landAt(x, y)) return false;
+  if (npcAt(x, y)) return false;
+  return true;
+}
+function decoAt(x, y) {   // adornos que se pisan
+  const zi = zoneAt(x, y); if (zi < 0 || isWall(x, y)) return null; const z = Z[zi], rx = x - z.pos[0] * 10, ry = y - z.pos[1] * 8;
+  const spots = [[1, 7], [9, 1], [9, 7], [4, 1], [1, 4], [8, 7]]; const k = spots.findIndex(([a, b]) => a === rx && b === ry);
+  return k >= 0 ? z.deco[k % z.deco.length] : null;
+}
+function onPath(x, y) {   // camino de tierra del centro de la zona a sus puertas
+  const zi = zoneAt(x, y); if (zi < 0) return false; const z = Z[zi], cx = z.pos[0] * 10 + 5, cy = z.pos[1] * 8 + 4;
+  for (const g of gates) { const gz = [zoneAt(g.x - 1, g.y), zoneAt(g.x + 1, g.y), zoneAt(g.x, g.y - 1), zoneAt(g.x, g.y + 1)]; if (!gz.includes(zi)) continue;
+    if (g.y === cy && ((x >= Math.min(g.x, cx) && x <= Math.max(g.x, cx) && y === cy))) return true;
+    if (g.x === cx && ((y >= Math.min(g.y, cy) && y <= Math.max(g.y, cy) && x === cx))) return true; }
+  return false;
+}
+function bfs(sx, sy, tx, ty) {
+  const prev = new Map(), k = (x, y) => x + ',' + y, q = [[sx, sy]]; prev.set(k(sx, sy), null);
+  for (let i = 0; i < q.length; i++) { const [x, y] = q[i]; if (x === tx && y === ty) break;
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const nx = x + dx, ny = y + dy; if (prev.has(k(nx, ny)) || !walkable(nx, ny)) continue; prev.set(k(nx, ny), [x, y]); q.push([nx, ny]); } }
+  if (!prev.has(k(tx, ty))) return null; const path = []; let c = [tx, ty]; while (c && !(c[0] === sx && c[1] === sy)) { path.push(c); c = prev.get(k(c[0], c[1])); } return path.reverse();
+}
+
+/* ================= dibujo ================= */
+const cv = $('map'), ctx = cv.getContext('2d'), FONT = "'Baloo 2','Trebuchet MS',sans-serif";
+let W = 0, H = 0, TS = 56, cam = { x: 0, y: 0 }, busy = false, t0 = performance.now();
+const hero = { x: 5, y: 20, px: 5, py: 20, path: [], face: 1, walkT: 0, target: null };
+function resize() { const d = devicePixelRatio || 1; W = innerWidth; H = innerHeight; cv.width = W * d; cv.height = H * d; ctx.setTransform(d, 0, 0, d, 0, 0); TS = Math.max(40, Math.min(76, Math.min(W / 9.4, H / 11))); }
+addEventListener('resize', resize); resize();
+const emo = (e, x, y, s) => { ctx.fillStyle = '#000'; ctx.font = `${s}px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(e, x, y); };
+function shade(hex, f) { const n = parseInt(hex.slice(1), 16), r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255, m = (c) => Math.max(0, Math.min(255, Math.round(c * f))); return `rgb(${m(r)},${m(g)},${m(b)})`; }
+function currentNpc() { if (!S || S.done || S.ch >= Z.length) return null; const st = Z[S.ch].steps[S.step]; return st ? NPCS.find((n) => n.zi === S.ch && n.id === st.npc) : null; }
+function draw(now) {
+  const t = (now - t0) / 1000;
+  ctx.fillStyle = '#1b3a1f'; ctx.fillRect(0, 0, W, H);
+  if (!S) { requestAnimationFrame(draw); return; }
+  // cámara
+  const tx = hero.px * TS + TS / 2 - W / 2, ty = hero.py * TS + TS / 2 - H / 2 + TS * 0.4;
+  cam.x += (Math.max(-TS, Math.min(MW * TS - W + TS, tx)) - cam.x) * 0.15; cam.y += (Math.max(-TS * 1.5, Math.min(MH * TS - H + TS * 1.4, ty)) - cam.y) * 0.15;
+  const x0 = Math.max(0, Math.floor(cam.x / TS)), x1 = Math.min(MW - 1, Math.ceil((cam.x + W) / TS)), y0 = Math.max(0, Math.floor(cam.y / TS)), y1 = Math.min(MH - 1, Math.ceil((cam.y + H) / TS));
+  for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
+    const sx = x * TS - cam.x, sy = y * TS - cam.y, zi = zoneAt(Math.min(x, MW - 2), Math.min(y, MH - 2)), z = Z[zi] || Z[0];
+    const g = gateAt(x, y), wall = isWall(x, y) && !g;
+    ctx.fillStyle = wall ? '#2e5e2c' : (onPath(x, y) || (g && S.ch > g.after)) ? z.path : ((x + y) % 2 ? z.ground : shade(z.ground, 0.96));
+    ctx.fillRect(sx, sy, TS + 1, TS + 1);
+    if (wall) emo((x * 7 + y * 3) % 5 === 0 ? '🌲' : '🌳', sx + TS / 2, sy + TS / 2, TS * 0.86);
+    else if (g && S.ch <= g.after) { emo('🚧', sx + TS / 2, sy + TS / 2, TS * 0.8); }
+    else { const d = decoAt(x, y); if (d) emo(d, sx + TS / 2, sy + TS / 2, TS * 0.55); const l = landAt(x, y); if (l) { emo(l, sx + TS / 2, sy + TS * 0.42, TS * 1.25); } }
+  }
+  // zonas bloqueadas, más oscuras
+  Z.forEach((z, i) => { if (i <= S.ch) return; const sx = z.pos[0] * 10 * TS - cam.x, sy = z.pos[1] * 8 * TS - cam.y; ctx.fillStyle = 'rgba(10,20,10,.45)'; ctx.fillRect(sx + TS, sy + TS, 9 * TS, 7 * TS); emo('🔒', sx + 5.5 * TS, sy + 4.5 * TS, TS * 1.2); });
+  // carteles con el nombre de la zona
+  Z.forEach((z, i) => { if (i > S.ch) return; const sx = (z.pos[0] * 10 + 5.5) * TS - cam.x, sy = (z.pos[1] * 8 + 1) * TS - cam.y + TS * 0.12; ctx.font = `800 ${Math.round(TS * 0.3)}px ${FONT}`; const w = ctx.measureText(z.name).width + 16; ctx.fillStyle = 'rgba(255,253,246,.9)'; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(sx - w / 2, sy - TS * 0.22, w, TS * 0.44, 10) : ctx.rect(sx - w / 2, sy - TS * 0.22, w, TS * 0.44); ctx.fill(); ctx.fillStyle = '#3e2f1c'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(z.name, sx, sy + 1); });
+  // personajes
+  const cur = currentNpc();
+  for (const n of NPCS) {
+    if ((n.boss && S.done) || n.zi > S.ch) continue;
+    const sx = n.x * TS - cam.x + TS / 2, sy = n.y * TS - cam.y + TS / 2; if (sx < -TS || sy < -TS || sx > W + TS || sy > H + TS) continue;
+    ctx.fillStyle = 'rgba(0,0,0,.18)'; ctx.beginPath(); ctx.ellipse(sx, sy + TS * 0.34, TS * 0.3, TS * 0.1, 0, 0, 6.3); ctx.fill();
+    const bob = Math.sin(t * 2 + n.x) * TS * 0.03;
+    emo(n.e, sx, sy + bob, n.boss ? TS * 1.2 : TS * 0.84);
+    let badge = ''; if (cur === n) badge = '❗'; else if (n.shop && S.ch > 3) badge = '🛒'; else if (n.zi < S.ch) badge = '💬';
+    if (badge) emo(badge, sx + TS * 0.28, sy - TS * 0.5 + Math.sin(t * 5) * TS * 0.05, TS * (badge === '❗' ? 0.5 : 0.34));
+  }
+  // protagonista
+  { const sx = hero.px * TS - cam.x + TS / 2, sy = hero.py * TS - cam.y + TS / 2, hop = hero.path.length || hero.moving ? Math.abs(Math.sin(t * 14)) * TS * 0.08 : 0;
+    ctx.fillStyle = 'rgba(0,0,0,.2)'; ctx.beginPath(); ctx.ellipse(sx, sy + TS * 0.34, TS * 0.28, TS * 0.1, 0, 0, 6.3); ctx.fill();
+    ctx.save(); ctx.translate(sx, sy - hop); if (hero.face < 0) ctx.scale(-1, 1); emo(S.av, 0, 0, TS * 0.84); ctx.restore();
+    if (S.hat) emo(S.hat, sx, sy - hop - TS * 0.42, TS * 0.46); }
+  // flecha hacia la misión si queda fuera de la pantalla
+  if (cur) { const nx = cur.x * TS - cam.x + TS / 2, ny = cur.y * TS - cam.y + TS / 2; if (nx < 0 || ny < 90 || nx > W || ny > H - 20) { const cx = W / 2, cy = H / 2, a = Math.atan2(ny - cy, nx - cx), r = Math.min(W, H) * 0.42; ctx.save(); ctx.translate(cx + Math.cos(a) * r, cy + Math.sin(a) * r); ctx.rotate(a); ctx.fillStyle = 'rgba(255,183,3,.95)'; ctx.beginPath(); ctx.moveTo(18, 0); ctx.lineTo(-10, -12); ctx.lineTo(-10, 12); ctx.fill(); ctx.restore(); } }
+  step(1 / 60);
+  requestAnimationFrame(draw);
+}
+function step(dt) {
+  if (!hero.path.length) { hero.moving = false; return; }
+  const [nx, ny] = hero.path[0]; const sp = 6.5 * dt;
+  const dx = nx - hero.px, dy = ny - hero.py, d = Math.hypot(dx, dy);
+  if (dx) hero.face = dx > 0 ? 1 : -1;
+  if (d <= sp) { hero.px = nx; hero.py = ny; hero.x = nx; hero.y = ny; hero.path.shift(); SFX.step();
+    if (!hero.path.length) { S.pos = [hero.x, hero.y]; save(); const tg = hero.target; hero.target = null; if (tg) talk(tg); } }
+  else { hero.px += dx / d * sp; hero.py += dy / d * sp; hero.moving = true; }
+}
+requestAnimationFrame(draw);
+
+/* ================= moverse: tocar el suelo o a un personaje · flechas del teclado ================= */
+function goTo(x, y) {
+  if (busy || !S) return;
+  const n = npcAt(x, y);
+  if (n && n.zi > S.ch) { toast('🔒 Todavía no puedes llegar ahí'); return; }
+  if (n) {
+    if (Math.abs(n.x - hero.x) + Math.abs(n.y - hero.y) === 1) { hero.path = []; talk(n); return; }
+    let best = null; for (const [dx, dy] of [[0, 1], [0, -1], [1, 0], [-1, 0]]) { const p = bfs(hero.x, hero.y, n.x + dx, n.y + dy); if (p && (!best || p.length < best.length)) best = p; }
+    if (best) { hero.path = best; hero.target = n; } else toast('🚧 No puedes llegar todavía'); return;
+  }
+  if (!walkable(x, y)) { const g = gateAt(x, y); if (g) toast('🚧 Esta puerta se abre al terminar la zona'); return; }
+  const p = bfs(hero.x, hero.y, x, y); if (p) { hero.path = p; hero.target = null; }
+}
+cv.addEventListener('pointerdown', (e) => { if (!S) return; const x = Math.floor((e.clientX + cam.x) / TS), y = Math.floor((e.clientY + cam.y) / TS); goTo(x, y); });
+addEventListener('keydown', (e) => {
+  if (!S || busy || !$('ov').hidden) return; const d = { ArrowUp: [0, -1], ArrowDown: [0, 1], ArrowLeft: [-1, 0], ArrowRight: [1, 0], w: [0, -1], s: [0, 1], a: [-1, 0], d: [1, 0] }[e.key]; if (!d || hero.path.length) return;
+  e.preventDefault(); const nx = hero.x + d[0], ny = hero.y + d[1]; if (d[0]) hero.face = d[0];
+  const n = npcAt(nx, ny); if (n) { goTo(nx, ny); return; } if (walkable(nx, ny)) hero.path = [[nx, ny]];
+});
+
+/* ================= HUD ================= */
+function hud() {
+  $('hud').hidden = false; $('hav').innerHTML = esc(S.av) + (S.hat ? `<i>${S.hat}</i>` : ''); $('hname').textContent = S.name;
+  const lv = 1 + Math.floor(S.xp / 100); $('hlv').textContent = 'Lv ' + lv; $('hxp').style.width = (S.xp % 100) + '%'; $('hstars').textContent = '⭐ ' + S.stars; $('bSound').textContent = sound ? '🔊' : '🔇';
+  const cur = currentNpc(), q = $('quest');
+  if (S.done) { q.hidden = false; q.textContent = '🏆 ¡Eres un héroe del inglés! Habla con quien quieras para practicar'; }
+  else if (cur) { q.hidden = false; q.textContent = '📜 ' + Z[S.ch].steps[S.step].hint; }
+  else q.hidden = true;
+}
+function gain(xp, stars) { const lv = 1 + Math.floor(S.xp / 100); S.xp += xp; S.stars += stars || 0; if (stars) SFX.coin(); if (1 + Math.floor(S.xp / 100) > lv) toast('⬆️ ¡Nivel ' + (1 + Math.floor(S.xp / 100)) + '!'); save(); hud(); }
+function toast(t, ms = 1600) { const d = document.createElement('div'); d.className = 'toast'; d.textContent = t; document.body.appendChild(d); setTimeout(() => d.remove(), ms); }
+
+/* ================= diálogos (promesas) ================= */
+const dlg = $('dlg');
+function closeDlg() { dlg.hidden = true; dlg.innerHTML = ''; }
+function whoHTML(n) { return `<div class="who"><span class="face">${n ? n.e : S.av}</span><span class="nm">${esc(n ? n.name : S.name)}</span></div>`; }
+function say(n, en, es) {
+  return new Promise((res) => {
+    dlg.hidden = false; dlg.innerHTML = `<div class="box">${whoHTML(n)}<div class="en">${esc(nm(en))}</div><div class="es hide" title="Toca para ver la traducción">${esc(nm(es))}</div>
+      <div class="row"><button class="btn round" data-k="hear">🔊</button><button class="btn" data-k="es">👁️ Español</button><button class="btn go" data-k="next">▶</button></div></div>`;
+    speak(nm(en));
+    dlg.onclick = (e) => { const k = e.target.closest('[data-k]')?.dataset.k || (e.target.closest('.es') ? 'es' : '');
+      if (k === 'hear') speak(nm(en)); if (k === 'es') dlg.querySelector('.es').classList.remove('hide'); if (k === 'next') { SFX.tap(); dlg.onclick = null; closeDlg(); res(); } };
+  });
+}
+function ask(n, q) {
+  return new Promise((res) => {
+    let wrong = 0; const opts = shuffle(q.opts.map((o, i) => ({ o, ok: q.ok.includes(i) }))); const emojiOnly = q.opts.every((o) => !/[a-z]/i.test(o));
+    dlg.hidden = false; dlg.innerHTML = `<div class="box">${whoHTML(n)}<div class="en">${esc(nm(q.en))}</div>${q.es ? `<div class="es hide">${esc(nm(q.es))}</div>` : ''}
+      ${q.q ? `<div class="q">${esc(q.q)}</div>` : ''}<div class="opts${emojiOnly ? ' optgrid' : ''}">${opts.map((x, i) => `<button class="opt${emojiOnly ? ' big' : ''}" data-i="${i}">${esc(nm(x.o))}</button>`).join('')}</div>
+      <div class="row"><button class="btn round" data-k="hear">🔊</button>${q.es ? '<button class="btn" data-k="es">👁️ Español</button>' : ''}</div></div>`;
+    if (q.es) speak(nm(q.en).replace(/___/g, 'blank'));
+    dlg.onclick = async (e) => {
+      const k = e.target.closest('[data-k]')?.dataset.k || (e.target.closest('.es') ? 'es' : '');
+      if (k === 'hear') speak(nm(q.en).replace(/___/g, 'blank')); if (k === 'es') dlg.querySelector('.es')?.classList.remove('hide');
+      const b = e.target.closest('.opt'); if (!b) return; const x = opts[+b.dataset.i];
+      if (x.ok) { b.classList.add('ok'); SFX.ok(); speak(nm(x.o)); dlg.onclick = null; gain(wrong ? 5 : 10, wrong ? 1 : 2); await sleep(900); closeDlg(); res(true); }
+      else { wrong++; b.classList.add('no'); SFX.bad(); const box = dlg.querySelector('.box'); box.classList.remove('shake'); void box.offsetWidth; box.classList.add('shake');
+        if (!dlg.querySelector('.hint')) dlg.querySelector('.opts').insertAdjacentHTML('afterend', `<div class="hint">💡 ${q.why || 'Casi. Lee otra vez la pregunta (o mira la traducción) e inténtalo de nuevo.'}</div>`); }
+    };
+  });
+}
+function build(es, en) {
+  return new Promise((res) => {
+    const words = en.split(' '); let tiles, picked = [], fails = 0;
+    do { tiles = shuffle(words.map((w, i) => ({ w, i }))); } while (words.length > 1 && tiles.every((t, k) => t.i === k));
+    const render = () => {
+      dlg.hidden = false; dlg.innerHTML = `<div class="box"><div class="q">🧩 Monta la frase en inglés</div><div class="en" style="font-size:1.15rem">«${esc(es)}»</div>
+        <div class="line">${picked.map((ti, k) => `<button class="tile on" data-u="${k}">${esc(tiles[ti].w)}</button>`).join('') || '<span style="color:#9fb0d0">Toca las palabras en orden…</span>'}</div>
+        <div class="tiles">${tiles.map((t, ti) => `<button class="tile${picked.includes(ti) ? ' ghost' : ''}" data-p="${ti}">${esc(t.w)}</button>`).join('')}</div>
+        ${fails >= 2 ? `<div class="hint">💡 Empieza por: <b>${esc(words.slice(0, Math.min(words.length - 1, fails - 1)).join(' '))}…</b></div>` : ''}
+        <div class="row"><button class="btn" data-k="clear">🧹</button><button class="btn go" data-k="ok" ${picked.length === words.length ? '' : 'disabled'}>¡Listo! ✔</button></div></div>`;
+    };
+    render();
+    dlg.onclick = async (e) => {
+      const p = e.target.closest('[data-p]'), u = e.target.closest('[data-u]'), k = e.target.closest('[data-k]')?.dataset.k;
+      if (p) { picked.push(+p.dataset.p); SFX.tap(); speak(tiles[+p.dataset.p].w); render(); }
+      if (u) { picked.splice(+u.dataset.u, 1); render(); }
+      if (k === 'clear') { picked = []; render(); }
+      if (k === 'ok') {
+        if (picked.map((i) => tiles[i].w).join(' ') === words.join(' ')) { SFX.ok(); speak(en); dlg.onclick = null; gain(fails ? 8 : 15, fails ? 1 : 3); dlg.querySelector('.line').style.background = '#2e9e4f'; await sleep(1100); closeDlg(); res(); }
+        else { fails++; SFX.bad(); picked = []; render(); dlg.querySelector('.box').classList.add('shake'); }
+      }
+    };
+  });
+}
+function lessonCard(id, again) {
+  return new Promise((res) => {
+    const l = L[id]; if (!S.seen.includes(id)) { S.seen.push(id); save(); }
+    const hl = (s) => esc(s);
+    $('ov').hidden = false; $('ov').innerHTML = `<div class="card"><span class="badge">${again ? '📖 Cuaderno' : '✨ ¡Nueva estructura!'}</span><h2>${l.icon} ${esc(l.t)}</h2><p style="margin:2px 0;color:var(--soft)">${l.es}</p>
+      <div class="pat">${esc(l.pat)}</div><p style="margin:6px 0">${l.use}</p>
+      <ul class="exs">${l.ex.map(([en, es, e]) => `<li><button class="btn" data-say="${esc(en)}">🔊</button><span style="font-size:1.4rem">${e}</span><span><b>${hl(en)}</b><small>${esc(es)}</small></span></li>`).join('')}</ul>
+      <div class="tip">💡 ${l.tip}</div><div class="row"><button class="btn go" data-k="ok">${again ? 'Cerrar' : '¡Entendido! ▶'}</button></div></div>`;
+    speak(l.ex[0][0]);
+    $('ov').onclick = (e) => { const s = e.target.closest('[data-say]'); if (s) speak(s.dataset.say); if (e.target.closest('[data-k="ok"]')) { SFX.tap(); $('ov').onclick = null; $('ov').hidden = true; $('ov').innerHTML = ''; res(); } };
+  });
+}
+function give(it) {
+  return new Promise((res) => {
+    S.items.push(it.e); save(); SFX.win();
+    $('ov').hidden = false; $('ov').innerHTML = `<div class="card" style="text-align:center"><div class="big">${it.e}</div><h2>¡Has conseguido ${esc(it.es)}!</h2><p class="en" style="font-size:1.2rem">You got ${esc(it.en)}!</p><div class="row" style="justify-content:center"><button class="btn go" data-k="ok">¡Genial! ▶</button></div></div>`;
+    speak('You got ' + it.en + '!');
+    $('ov').onclick = (e) => { if (e.target.closest('[data-k]')) { $('ov').onclick = null; $('ov').hidden = true; res(); } };
+  });
+}
+
+/* ================= minijuegos ================= */
+function gameShell(title, inner) { $('ov').hidden = false; $('ov').innerHTML = `<div class="game"><div class="gtop"><h3>🎮 ${esc(title)}</h3><span class="prog" id="gprog"></span></div><div id="gbody">${inner || ''}</div></div>`; }
+const prog = (n, d) => { $('gprog').innerHTML = Array.from({ length: n }, (_, i) => `<i class="${i < d ? 'd' : ''}"></i>`).join(''); };
+function endGame(title) {
+  return new Promise((res) => { SFX.win(); gain(20, 5);
+    $('gbody').innerHTML = `<div style="text-align:center"><div class="big">🏆</div><h3>${esc(title || '¡Minijuego superado!')}</h3><p>+20 XP · +5 ⭐</p><button class="btn go" data-k="ok">Seguir ▶</button></div>`;
+    $('ov').onclick = (e) => { if (e.target.closest('[data-k]')) { $('ov').onclick = null; $('ov').hidden = true; $('ov').innerHTML = ''; res(); } }; });
+}
+async function gListen(g) {   // oír una palabra y tocar su dibujo
+  const set = V[g.set], rounds = shuffle(set).slice(0, 6); gameShell(g.title);
+  for (let r = 0; r < rounds.length; r++) {
+    prog(rounds.length, r); const tgt = rounds[r], opts = shuffle([tgt, ...shuffle(set.filter((x) => x !== tgt)).slice(0, 3)]);
+    await new Promise((res) => {
+      $('gbody').innerHTML = `<p style="text-align:center;margin:8px 0">Escucha y toca el dibujo</p><div style="text-align:center"><button class="btn blue" data-k="hear" style="font-size:1.3rem">🔊 Escuchar otra vez</button></div>
+        <div class="opts optgrid" style="grid-template-columns:1fr 1fr">${opts.map((o, i) => `<button class="opt big" data-i="${i}">${o[0]}</button>`).join('')}</div>`;
+      setTimeout(() => speak(tgt[1]), 250);
+      $('ov').onclick = (e) => { if (e.target.closest('[data-k="hear"]')) speak(tgt[1]); const b = e.target.closest('.opt'); if (!b) return; const o = opts[+b.dataset.i];
+        if (o === tgt) { b.classList.add('ok'); b.innerHTML += `<span style="font-size:1rem">${esc(o[1])}</span>`; SFX.ok(); $('ov').onclick = null; setTimeout(res, 700); } else { b.classList.add('no'); SFX.bad(); } };
+    });
+  }
+  prog(rounds.length, rounds.length); await endGame();
+}
+async function gPairs(g) {   // unir dibujo y palabra
+  const items = shuffle(V[g.set]).slice(0, 5); gameShell(g.title);
+  const left = shuffle(items), right = shuffle(items); let sel = null, done = 0;
+  $('gbody').innerHTML = `<p style="text-align:center;margin:8px 0">Toca un dibujo y luego su palabra</p><div class="pairs">${left.map((x, i) => `<button class="opt big" data-l="${i}">${x[0]}</button><button class="opt" data-r="${right.indexOf(right[i])}" data-ri="${i}">${esc(right[i][1])}</button>`).join('')}</div>`;
+  prog(items.length, 0);
+  await new Promise((res) => {
+    $('ov').onclick = (e) => {
+      const l = e.target.closest('[data-l]'), r = e.target.closest('[data-ri]');
+      if (l) { $('gbody').querySelectorAll('.sel').forEach((x) => x.classList.remove('sel')); l.classList.add('sel'); sel = left[+l.dataset.l]; SFX.tap(); }
+      if (r) { const w = right[+r.dataset.ri]; speak(w[1]); if (!sel) { r.classList.add('shake'); setTimeout(() => r.classList.remove('shake'), 400); return; }
+        if (sel === w) { SFX.ok(); const lb = $('gbody').querySelector('.sel'); lb.classList.add('done'); r.classList.add('done'); sel = null; done++; prog(items.length, done); if (done === items.length) { $('ov').onclick = null; setTimeout(res, 500); } }
+        else { SFX.bad(); r.classList.add('no'); setTimeout(() => r.classList.remove('no'), 600); } }
+    };
+  });
+  await endGame();
+}
+async function gCount(g) {   // contar emojis y elegir el número
+  const set = V.nums, emos = ['🍎', '⭐', '🐟', '🎈', '🐤', '🍪', '🌸', '⚽']; gameShell(g.title);
+  for (let r = 0; r < 6; r++) {
+    prog(6, r); const n = 1 + Math.floor(Math.random() * 10), e = pick(emos), tgt = set[n - 1], opts = shuffle([tgt, ...shuffle(set.filter((x) => x !== tgt)).slice(0, 2)]);
+    await new Promise((res) => {
+      $('gbody').innerHTML = `<div class="big" style="font-size:40px;letter-spacing:4px">${e.repeat(n)}</div><p style="text-align:center;margin:4px 0">How many? <small>(¿cuántos hay?)</small></p><div class="opts">${opts.map((o, i) => `<button class="opt" data-i="${i}">${esc(o[1])}</button>`).join('')}</div>`;
+      speak('How many?');
+      $('ov').onclick = (ev) => { const b = ev.target.closest('.opt'); if (!b) return; const o = opts[+b.dataset.i]; speak(o[1]);
+        if (o === tgt) { b.classList.add('ok'); SFX.ok(); $('ov').onclick = null; setTimeout(res, 700); } else { b.classList.add('no'); SFX.bad(); } };
+    });
+  }
+  prog(6, 6); await endGame();
+}
+async function gSpell(g) {   // deletrear
+  const words = shuffle(V[g.set].filter((x) => x[1].length <= 6 && !x[1].includes(' '))).slice(0, 4); gameShell(g.title);
+  for (let r = 0; r < words.length; r++) {
+    prog(words.length, r); const [e, w, es] = words[r]; const letters = shuffle([...w, ...shuffle('abcdefghilmnoprstuw'.split('').filter((c) => !w.includes(c))).slice(0, 2)]); let typed = [];
+    await new Promise((res) => {
+      const render = () => { $('gbody').innerHTML = `<div class="big">${e}</div><p style="text-align:center;margin:0;color:var(--soft)">${esc(es)}</p><div class="word">${[...w].map((c, i) => `<span>${typed[i] != null ? letters[typed[i]] : ''}</span>`).join('')}</div>
+        <div class="letters">${letters.map((c, i) => `<button class="tile${typed.includes(i) ? ' ghost' : ''}" data-i="${i}">${c}</button>`).join('')}</div><div class="row" style="justify-content:center"><button class="btn" data-k="back">⌫</button><button class="btn blue" data-k="hear">🔊</button></div>`; };
+      render(); setTimeout(() => speak(w), 300);
+      $('ov').onclick = (ev) => { const b = ev.target.closest('[data-i]'), k = ev.target.closest('[data-k]')?.dataset.k;
+        if (k === 'hear') speak(w); if (k === 'back') { typed.pop(); render(); }
+        if (b) { typed.push(+b.dataset.i); SFX.tap(); render();
+          if (typed.length === w.length) { const got = typed.map((i) => letters[i]).join(''); if (got === w) { SFX.ok(); speak(w); $('ov').onclick = null; $('gbody').querySelector('.word').style.color = '#2e9e4f'; setTimeout(res, 800); } else { SFX.bad(); setTimeout(() => { typed = []; render(); }, 500); } } } };
+    });
+  }
+  prog(words.length, words.length); await endGame();
+}
+async function gRain(g) {   // lluvia de palabras: tocar solo las buenas
+  const good = g.goodList || V[g.good].map((x) => [x[0], x[1]]), bad = g.badList || g.bad.flatMap((k) => V[k].map((x) => [x[0], x[1]])), need = 8;
+  let tries = 0;
+  while (true) {
+    gameShell(g.title, `<p style="text-align:center;margin:6px 0">Toca las palabras correctas antes de que caigan · <b id="rs">0</b> / ${need}</p><div class="rain" id="rain"></div>`); prog(need, 0);
+    const box = $('rain'), drops = []; let score = 0, t = 0, next = 0, last = performance.now(), over = false;
+    const ok = await new Promise((res) => {
+      const spawn = () => { const isGood = Math.random() < 0.55, w = isGood ? pick(good) : pick(bad), el = document.createElement('button'); el.className = 'drop'; el.textContent = w[0] + ' ' + w[1]; box.appendChild(el);
+        const d = { el, good: isGood, word: w[1], x: Math.random() * Math.max(10, box.clientWidth - 150), y: -40, v: 55 + Math.random() * 35 + tries * -5 }; el.style.transform = `translate(${d.x}px,${d.y}px)`; drops.push(d);
+        el.onpointerdown = (ev) => { ev.preventDefault(); if (d.dead) return; d.dead = true; speak(d.word); if (d.good) { score++; el.classList.add('hit'); SFX.ok(); $('rs').textContent = score; prog(need, score); if (score >= need) { over = true; res(true); } } else { score = Math.max(0, score - 1); el.classList.add('bad'); SFX.bad(); $('rs').textContent = score; prog(need, score); } setTimeout(() => el.remove(), 300); }; };
+      const loop = (now) => { if (over) return; const dt = Math.min(0.05, (now - last) / 1000); last = now; t += dt; next -= dt; if (next <= 0) { spawn(); next = 0.85; }
+        for (const d of drops) { if (d.dead) continue; d.y += d.v * dt; d.el.style.transform = `translate(${d.x}px,${d.y}px)`; if (d.y > box.clientHeight) { d.dead = true; d.el.remove(); } }
+        if (t > 32) { over = true; res(false); return; } requestAnimationFrame(loop); };
+      requestAnimationFrame(loop);
+    });
+    if (ok) break;
+    tries++;
+    await new Promise((res) => { $('gbody').insertAdjacentHTML('beforeend', `<div style="text-align:center;margin-top:10px"><p>¡Casi! Se acabó el tiempo.</p><button class="btn go" data-k="again">Otra vez ↻</button></div>`); $('ov').onclick = (e) => { if (e.target.closest('[data-k]')) { $('ov').onclick = null; res(); } }; });
+  }
+  await endGame();
+}
+function playGame(g) { return { listen: gListen, pairs: gPairs, count: gCount, spell: gSpell, rain: gRain }[g.kind](g); }
+
+/* ================= el jefe final: el dragón ================= */
+async function bossFight(n) {
+  const pool = shuffle(Z.flatMap((z) => z.review.concat(z.steps.flatMap((s) => s.ev.filter((e) => e.t === 'ask' && !/\{name\}|¿/.test(e.en)))))).slice(0, 30);
+  let dragon = 8, hearts = 3, qi = 0;
+  while (dragon > 0) {
+    const q = pool[qi++ % pool.length];
+    const r = await new Promise((res) => {
+      const opts = shuffle(q.opts.map((o, i) => ({ o, ok: q.ok.includes(i) })));
+      $('ov').hidden = false; $('ov').innerHTML = `<div class="game boss"><div class="gtop"><h3>⚔️ English Battle</h3><span>${'❤️'.repeat(hearts)}${'🖤'.repeat(3 - hearts)}</span></div>
+        <div class="bossrow"><div><div class="f" id="bh">${S.av}</div>${S.hat ? '' : ''}</div><div><div class="d" id="bd">🐉</div><div class="hp"><i style="width:${dragon / 8 * 100}%"></i></div></div></div>
+        <div class="en">${esc(nm(q.en))}</div>${q.es ? `<div class="es hide">${esc(nm(q.es))}</div>` : ''}<div class="opts">${opts.map((x, i) => `<button class="opt" data-i="${i}">${esc(nm(x.o))}</button>`).join('')}</div></div>`;
+      if (q.es) speak(nm(q.en).replace(/___/g, 'blank'));
+      $('ov').onclick = (e) => { if (e.target.closest('.es')) e.target.closest('.es').classList.remove('hide'); const b = e.target.closest('.opt'); if (!b) return; $('ov').onclick = null; const x = opts[+b.dataset.i];
+        if (x.ok) { b.classList.add('ok'); SFX.ok(); $('bd').classList.add('hits'); $('bd').insertAdjacentHTML('afterend', '<div style="font-size:30px">✨💥</div>'); speak(nm(x.o)); setTimeout(() => res(true), 900); }
+        else { b.classList.add('no'); SFX.bad(); $('bh').classList.add('hits'); $('bh').insertAdjacentHTML('afterend', '<div style="font-size:30px">🔥</div>'); const right = opts.find((o) => o.ok); $('ov').querySelectorAll('.opt').forEach((el, i) => { if (opts[i].ok) el.classList.add('ok'); }); speak(nm(right.o)); setTimeout(() => res(false), 1600); } };
+    });
+    if (r) { dragon--; gain(10, 2); } else { hearts--; if (hearts <= 0) {
+      await new Promise((res) => { $('ov').innerHTML = `<div class="card" style="text-align:center"><div class="big">🐉🔥</div><h2>¡El dragón ha ganado esta vez!</h2><p>Repasa en el cuaderno 📖 y vuelve a intentarlo.</p><div class="row" style="justify-content:center"><button class="btn go" data-k="ok">Volver a intentarlo ⚔️</button></div></div>`; $('ov').onclick = (e) => { if (e.target.closest('[data-k]')) { $('ov').onclick = null; res(); } }; });
+      dragon = 8; hearts = 3; } }
+  }
+  $('ov').hidden = true;
+  return true;
+}
+
+/* ================= hablar con un personaje ================= */
+async function talk(n) {
+  if (busy) return; busy = true; hero.face = n.x >= hero.x ? 1 : -1;
+  try {
+    const cur = currentNpc();
+    if (cur === n) await runStep();
+    else if (n.shop && S.ch > 3) await hatShop(n);
+    else if (n.zi < S.ch || S.done) await practice(n);
+    else if (n.zi === S.ch) { const st = Z[S.ch].steps[S.step]; const t = NPCS.find((x) => x.zi === S.ch && x.id === st.npc); await say(n, pick(['Hi, {name}! Nice day, isn\'t it?', 'Hello! How are you today?', 'Hi there! I\'m busy now.']), 'Pista: primero habla con ' + t.name + ' ' + t.e); }
+  } finally { busy = false; closeDlg(); hud(); }
+}
+async function runStep() {
+  const z = Z[S.ch], st = z.steps[S.step], n = NPCS.find((x) => x.zi === S.ch && x.id === st.npc);
+  for (const e of st.ev) {
+    if (e.t === 'say') await say(n, e.en, e.es);
+    else if (e.t === 'lesson') { closeDlg(); await lessonCard(e.id); }
+    else if (e.t === 'ask') await ask(n, e);
+    else if (e.t === 'build') await build(e.es, e.en);
+    else if (e.t === 'game') { closeDlg(); await playGame(e); }
+    else if (e.t === 'give') { closeDlg(); await give(e); }
+    else if (e.t === 'boss') { closeDlg(); await bossFight(n); }
+  }
+  S.step++; gain(15, 3);
+  if (S.step >= z.steps.length) {
+    S.ch++; S.step = 0; save();
+    if (S.ch >= Z.length) { S.done = true; save(); await ending(); }
+    else { SFX.win(); await zoneDone(z); }
+  }
+  save(); hud();
+}
+function zoneDone(z) {
+  return new Promise((res) => {
+    gain(30, 20); const nz = Z[S.ch];
+    $('ov').hidden = false; $('ov').innerHTML = `<div class="card" style="text-align:center"><div class="big">🎉</div><h2>¡Zona completada!</h2><p>Has terminado <b>${esc(z.name)}</b> (${esc(z.es)}). +20 ⭐</p>
+      <p>Se ha abierto la puerta 🚧 a <b>${esc(nz.name)}</b> (${esc(nz.es)}). ¡Sigue la flecha amarilla!</p><div class="row" style="justify-content:center"><button class="btn go" data-k="ok">¡Vamos! ▶</button></div></div>`;
+    speak('Well done!');
+    $('ov').onclick = (e) => { if (e.target.closest('[data-k]')) { $('ov').onclick = null; $('ov').hidden = true; res(); } };
+  });
+}
+async function practice(n) {
+  const z = Z[n.zi], q = pick(z.review);
+  await say(n, pick(['Hi again, {name}! Can you answer this?', 'Hello, {name}! A quick question for you!', "Let's practise, {name}!"]), '¡Hola otra vez! ¿Respondes a esta pregunta? (repaso: +⭐)');
+  await ask(n, q);
+}
+async function hatShop(n) {
+  const HATS = [['🧢', 'a cap', 'una gorra', 30], ['👒', 'a sun hat', 'un sombrero de paja', 50], ['🎩', 'a top hat', 'una chistera', 70], ['🎓', 'a graduation cap', 'un birrete', 100], ['👑', 'a crown', 'una corona', 160]];
+  await say(n, 'Welcome to my hat shop! What would you like?', '¡Bienvenido a mi tienda de sombreros! ¿Qué te gustaría?');
+  await new Promise((res) => {
+    const render = () => { $('ov').hidden = false; $('ov').innerHTML = `<div class="card"><h2>🛒 Hat shop</h2><p>Tienes <b>⭐ ${S.stars}</b>. Toca un sombrero para comprarlo o ponértelo.</p><div class="list">${HATS.map(([e, en, es, p], i) => { const own = S.hats.includes(e); return `<button class="opt" data-i="${i}" ${!own && S.stars < p ? 'disabled style="opacity:.5"' : ''}><span style="font-size:2rem">${e}</span><span>${esc(en)}<br><small style="color:var(--soft);font-weight:500">${esc(es)} · ${own ? (S.hat === e ? '✅ puesto' : 'tuyo') : '⭐ ' + p}</small></span></button>`; }).join('')}
+      <button class="opt" data-i="-1"><span style="font-size:2rem">🙂</span><span>No hat<br><small style="color:var(--soft);font-weight:500">sin sombrero</small></span></button></div><div class="row"><button class="btn go" data-k="ok">Goodbye! 👋</button></div></div>`; };
+    render();
+    $('ov').onclick = (e) => { const b = e.target.closest('[data-i]'); if (b) { const i = +b.dataset.i; if (i < 0) { S.hat = ''; } else { const [h, en, , p] = HATS[i]; if (!S.hats.includes(h)) { if (S.stars < p) return; S.stars -= p; S.hats.push(h); SFX.coin(); speak('Here you are! ' + en + '!'); } S.hat = h; } save(); hud(); render(); }
+      if (e.target.closest('[data-k]')) { $('ov').onclick = null; $('ov').hidden = true; speak('Goodbye!'); res(); } };
+  });
+}
+function ending() {
+  return new Promise((res) => {
+    SFX.win();
+    $('ov').hidden = false; $('ov').innerHTML = `<div class="card" style="text-align:center"><div class="big">🏆🐉💤</div><h2>You are an English hero!</h2><p>¡<b>${esc(S.name)}</b> ha vencido al dragón con su inglés! El dragón se ha dormido y Emoji Village está a salvo.</p>
+      <div class="pat" style="text-align:center">🎖️ English Hero · ${esc(S.name)} · Lv ${1 + Math.floor(S.xp / 100)} · ⭐ ${S.stars}</div><p>Ahora puedes pasear por todo el mapa: los personajes con 💬 te hacen preguntas de repaso y en el mercado 🛒 puedes comprar sombreros.</p>
+      <div class="row" style="justify-content:center"><button class="btn go" data-k="ok">¡Hurra! ▶</button></div></div>`;
+    speak('Congratulations! You are an English hero!');
+    $('ov').onclick = (e) => { if (e.target.closest('[data-k]')) { $('ov').onclick = null; $('ov').hidden = true; res(); } };
+  });
+}
+
+/* ================= menús: misiones y cuaderno ================= */
+$('bQuest').onclick = () => {
+  if (busy) return; SFX.tap();
+  $('ov').hidden = false; $('ov').innerHTML = `<div class="card"><h2>📜 Misiones</h2><div class="list">${Z.map((z, i) => `<div class="opt" style="display:block;${i > S.ch ? 'opacity:.45' : ''}"><b>${i < S.ch || S.done ? '✅' : i === S.ch ? '▶️' : '🔒'} ${esc(z.name)}</b> <small style="color:var(--soft)">${esc(z.es)} · ${z.lessons.map((l) => L[l].icon + ' ' + esc(L[l].t)).join(' · ')}</small>
+    ${i === S.ch && !S.done ? `<ol style="margin:6px 0 0;padding-left:20px;font-weight:600;font-size:.95rem">${z.steps.map((s, k) => `<li style="${k < S.step ? 'text-decoration:line-through;color:var(--soft)' : ''}">${esc(s.hint)}</li>`).join('')}</ol>` : ''}</div>`).join('')}</div>
+    <p style="color:var(--soft)">Objetos: ${S.items.join(' ') || '—'}</p><div class="row"><button class="btn" data-k="reset">🗑️ Empezar de cero</button><button class="btn go" data-k="ok">Cerrar</button></div></div>`;
+  $('ov').onclick = (e) => { const k = e.target.closest('[data-k]')?.dataset.k; if (k === 'ok') { $('ov').hidden = true; $('ov').onclick = null; } if (k === 'reset' && confirmReset()) { S = null; try { localStorage.removeItem(KEY); } catch (_) {} $('ov').onclick = null; startScreen(); } };
+};
+let resetArm = 0; function confirmReset() { if (Date.now() - resetArm < 3000) return true; resetArm = Date.now(); toast('Toca otra vez para borrar la partida'); return false; }
+$('bBook').onclick = () => {
+  if (busy) return; SFX.tap();
+  const seen = Object.keys(L).filter((k) => S.seen.includes(k)), sets = [['greet', 'Saludos'], ['nums', 'Números'], ['colours', 'Colores'], ['food', 'Comida'], ['animals', 'Animales'], ['preps', 'Dónde'], ['actions', 'Acciones'], ['ing', '-ing'], ['past', 'Pasado']].filter((_, i) => i <= S.ch || S.done);
+  $('ov').hidden = false; $('ov').innerHTML = `<div class="card"><h2>📖 Mi cuaderno</h2><p style="color:var(--soft);margin:0">Toca una estructura para repasarla. Toca una palabra para oírla.</p>
+    <div class="list">${seen.map((k) => `<button class="opt" data-l="${k}">${L[k].icon} ${esc(L[k].t)}</button>`).join('') || '<p>Todavía nada: ¡habla con los personajes!</p>'}</div>
+    ${sets.map(([k, t]) => `<h3 style="margin:12px 0 4px">${esc(t)}</h3><div style="display:flex;flex-wrap:wrap;gap:6px">${V[k].map((w) => `<button class="tile" data-w="${esc(w[1])}" title="${esc(w[2])}">${w[0]} ${esc(w[1])}</button>`).join('')}</div>`).join('')}
+    <div class="row"><button class="btn go" data-k="ok">Cerrar</button></div></div>`;
+  $('ov').onclick = async (e) => { const l = e.target.closest('[data-l]'), w = e.target.closest('[data-w]'); if (w) speak(w.dataset.w);
+    if (l) { $('ov').onclick = null; await lessonCard(l.dataset.l, true); $('bBook').onclick(); return; }
+    if (e.target.closest('[data-k]')) { $('ov').hidden = true; $('ov').onclick = null; } };
+};
+$('bSound').onclick = () => { sound = !sound; try { speechSynthesis.cancel(); } catch (e) {} hud(); };
+
+/* ================= inicio ================= */
+function startScreen() {
+  $('hud').hidden = true; $('quest').hidden = true; closeDlg();
+  const has = !!S; const AVS = ['🧒', '👧', '👦', '🧒🏽', '👧🏾', '👦🏻', '🧑🏼', '👧🏽'];
+  let av = (S && S.av) || AVS[0];
+  $('ov').hidden = false; $('ov').className = 'ov start'; $('ov').innerHTML = `<div class="card" style="text-align:center"><div class="big" style="font-size:54px">🗺️🐉</div><h2>Emoji Quest</h2><p style="margin:0 0 6px;color:var(--soft)">Una aventura para aprender inglés: habla con la gente del pueblo, cumple misiones, juega y vence al dragón.</p>
+    ${has ? `<div class="row" style="justify-content:center"><button class="btn go" data-k="cont" style="font-size:1.25rem">▶ Continuar con ${esc(S.av)} ${esc(S.name)}</button></div><p style="color:var(--soft);margin:12px 0 4px">o empieza una nueva partida:</p>` : ''}
+    <p style="font-weight:800;margin:6px 0 0">Elige tu personaje</p><div class="avs">${AVS.map((a) => `<button data-av="${a}" class="${a === av ? 'on' : ''}">${a}</button>`).join('')}</div>
+    <input class="name" id="nm" maxlength="12" placeholder="Tu nombre" value="${has ? esc(S.name) : ''}" aria-label="Tu nombre">
+    <p style="color:var(--soft);font-size:.92rem">👆 Toca el suelo para andar · toca a la gente para hablar · los que tienen ❗ te dan misiones</p>
+    <div class="row" style="justify-content:center"><button class="btn ${has ? '' : 'go'}" data-k="new" style="font-size:1.2rem">${has ? 'Nueva partida' : '¡Empezar la aventura! ▶'}</button></div></div>`;
+  $('ov').onclick = (e) => {
+    const a = e.target.closest('[data-av]'); if (a) { av = a.dataset.av; $('ov').querySelectorAll('[data-av]').forEach((b) => b.classList.toggle('on', b === a)); SFX.tap(); }
+    const k = e.target.closest('[data-k]')?.dataset.k;
+    if (k === 'cont') begin();
+    if (k === 'new') { const name = ($('nm').value || '').trim().replace(/[<>{}]/g, '').slice(0, 12) || 'Alex'; if (has && !confirmReset()) return; S = fresh(); S.name = name; S.av = av; save(); begin(true); }
+  };
+}
+async function begin(isNew) {
+  $('ov').onclick = null; $('ov').hidden = true; $('ov').className = 'ov'; $('ov').innerHTML = '';
+  const start = Z[0].pos; const p = S.pos && walkable(S.pos[0], S.pos[1]) ? S.pos : [start[0] * 10 + 5, start[1] * 8 + 4];
+  Object.assign(hero, { x: p[0], y: p[1], px: p[0], py: p[1], path: [] }); cam.x = hero.px * TS - W / 2; cam.y = hero.py * TS - H / 2;
+  hud();
+  if (isNew) { busy = true; await say({ e: '🧚', name: 'Fairy Flo' }, 'Hello, {name}! Welcome to Emoji Village. Talk to the Mayor!', '¡Hola, {name}! Bienvenido a Emoji Village. ¡Habla con el alcalde! (Toca al personaje con ❗ para ir hacia él)'); busy = false; closeDlg(); }
+}
+startScreen();
+window.__EQ = { get S() { return S; }, talk: (id) => talk(NPCS.find((n) => n.id === id && n.zi === S.ch) || NPCS.find((n) => n.id === id)), NPCS, gates, walkable, bfs };
+})();
+</script>
+<script src="https://bitelchux.github.io//beebomstats.js"></script>
+</body>
+</html>
