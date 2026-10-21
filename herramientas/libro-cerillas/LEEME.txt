@@ -1,0 +1,8 @@
+Libro «Puzles de cerillas» (español) a partir de los retos del juego Cerillas (herramientas/src/cerillas.js)
+==========================================================================================================
+1) python3 render.py   → dibuja cada reto y su solución en img/ (blanco y negro, para imprimir) y crea puzzles.json
+                          (quita los retos repetidos: 268 de los 269 del juego)
+2) node libro.js       → Puzles_de_cerillas.docx (6×9 pulgadas, para Kindle Create / KDP; necesita el paquete npm «docx»)
+Contenido: portada, créditos, cómo se juega con un ejemplo, chuleta de los números y trucos, 4 niveles (3 retos por
+página con hueco para la respuesta) y soluciones (en negro las cerillas que se mueven o añaden, de puntos las que se quitan,
+y todas las soluciones posibles).
