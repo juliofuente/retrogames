@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#FFE7A1">
-<meta name="description" content="Juego para niños: monta frases en inglés pieza a pieza y desbloquea niveles.">
+<meta name="description" content="Juego para niños: monta frases en inglés pieza a pieza y aprende las palabras pequeñas (a, the, some, what, who…) con su significado y ejemplos.">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -126,6 +126,41 @@ button{font:inherit;color:inherit;cursor:pointer}
   .blk{font-size:clamp(1rem,5.4vh,1.5rem)}
   .chip{min-height:40px}
 }
+
+
+/* ---------- PALABRAS PEQUEÑAS ---------- */
+.trackhead{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:10px}
+.trackhead h2{margin:0;font-family:var(--f-display);font-size:clamp(1.3rem,5.5vw,1.8rem);text-shadow:0 2px 0 #fff}
+.trackhead p{margin:2px 0 0;color:var(--ink-soft);font-size:.92rem}
+.node .wl{font-weight:700;font-size:.78rem;color:var(--c);text-align:center;max-width:7.5rem}
+.wbox{background:var(--panel);border-radius:18px;padding:12px 14px;box-shadow:0 4px 0 var(--edge);display:grid;place-items:center;min-height:76px}
+.sent{font-family:var(--f-display);font-size:clamp(1.35rem,6.4vw,2rem);line-height:1.3;text-align:center;text-wrap:balance}
+.gap{display:inline-block;min-width:2.6em;margin:0 .15em;padding:0 .2em;border-bottom:4px dashed var(--c-subj);color:var(--c-subj);text-align:center}
+.gap.ok{border-bottom-style:solid;color:var(--ok)}
+.wbig{display:flex;align-items:center;justify-content:center;gap:12px}
+.bigw{font-family:var(--f-display);font-weight:800;font-size:clamp(2.4rem,12vw,3.6rem);color:var(--c-subj);line-height:1}
+.opts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;align-content:start}
+.opt{min-height:58px;border:0;border-radius:16px;background:#fff;color:var(--ink);font:800 clamp(1.2rem,5.4vw,1.6rem)/1.1 var(--f-display);box-shadow:0 5px 0 var(--edge);padding:.3rem .5rem;transition:transform .08s}
+.opt.es-opt{font-size:clamp(1rem,4.4vw,1.25rem)}
+.opt:active{transform:translateY(4px);box-shadow:0 1px 0 var(--edge)}
+.opt.no{opacity:.35;text-decoration:line-through;pointer-events:none}
+.opt.small{min-height:48px;display:grid;gap:2px;font-size:1.15rem;box-shadow:0 3px 0 var(--edge);background:var(--panel-soft)}
+.opt.small small{font:400 .78rem var(--f-body);color:var(--ink-soft)}
+.gloss{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px;margin-top:6px}
+.tiles,.tiles-line{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;align-items:center}
+.tile{border:0;border-radius:12px;background:#fff;color:var(--ink);font:700 clamp(1.1rem,5vw,1.45rem) var(--f-body);padding:.35rem .7rem;min-height:48px;box-shadow:0 4px 0 var(--edge)}
+.tile.on{background:var(--c-subj);color:#fff;box-shadow:0 4px 0 color-mix(in srgb,var(--c-subj) 60%,#000)}
+.tile.ghost{opacity:.25;box-shadow:none}
+.pu2{font-family:var(--f-display);font-size:1.6rem}
+.wacts{grid-template-columns:repeat(auto-fit,minmax(0,1fr));padding-left:58px}
+.card .mean{font-size:1.15rem}
+.exs{list-style:none;padding:0!important;display:grid;gap:6px}
+.exs li{display:flex;align-items:center;gap:8px;background:var(--panel-soft);border-radius:12px;padding:6px 8px}
+.exs .round{width:36px;height:36px;min-height:36px;flex:none;font-size:.95rem}
+.exe{font-size:1.2em}
+.tip{background:#FFF3C4;border-radius:12px;padding:6px 10px}
+.exline{background:var(--panel-soft);border-radius:12px;padding:8px 12px;font-size:1.2rem;line-height:1.35}
+mark{background:#FFE066;color:inherit;border-radius:5px;padding:0 .12em}
 
 /* ---------- OVERLAYS ---------- */
 .ov{position:fixed;inset:0;z-index:20;background:rgba(38,36,74,.45);display:grid;place-items:center;padding:12px max(16px,env(safe-area-inset-right,0px)) 12px max(16px,env(safe-area-inset-left,0px))}
@@ -409,7 +444,7 @@ function optLabel(col,id){
 }
 
 /* ================= ESTADO ================= */
-let prog={unlocked:1,stars:{}};
+let prog={unlocked:1,stars:{},wu:1,ws:{}};
 try{const r=localStorage.getItem('fabrica-frases-v2');if(r)prog=Object.assign(prog,JSON.parse(r))}catch(e){}
 const save=()=>{try{localStorage.setItem('fabrica-frases-v2',JSON.stringify(prog))}catch(e){}};
 const blank=m=>({aux:m==='s'?'':null,neg:'',subj:null,verb:null,end:'',obj:null});
@@ -417,7 +452,7 @@ let st={screen:'map',sound:true,li:0,free:false,round:0,rounds:[],target:null,op
 const hot=window.claude?.hot;if(hot?.data?.st)st=hot.data.st;
 hot?.snapshot?.(()=>({st}));
 const $=id=>document.getElementById(id);
-const totalStars=()=>Object.values(prog.stars).reduce((a,b)=>a+b,0);
+const totalStars=()=>Object.values(prog.stars).reduce((a,b)=>a+b,0)+Object.values(prog.ws||{}).reduce((a,b)=>a+b,0);
 
 /* ================= SONIDO ================= */
 let ac;
@@ -483,12 +518,19 @@ function renderMap(){
     </button>`}).join('');
   const freeOk=prog.unlocked>=4;
   $('map').innerHTML=`<div class="maptop">
-      <div class="logo">${pipSvg('')}<div><h1>Fábrica de Frases</h1><p>¡Monta frases en inglés y desbloquea niveles!</p></div></div>
-      <div class="right"><span class="pill">${STAR}${totalStars()} / ${LEVELS.length*3}</span>
+      <div class="logo">${pipSvg('')}<div><h1>Fábrica de Frases</h1><p>¡Monta frases en inglés y aprende las palabras pequeñas!</p></div></div>
+      <div class="right"><span class="pill">${STAR}${totalStars()} / ${(LEVELS.length+WPH.length)*3}</span>
       <button class="toy white" id="freeBtn" ${freeOk?'':'disabled title="Se desbloquea al pasar el nivel 3"'}>🛠️ Taller libre${freeOk?'':' 🔒'}</button>
       <button class="toy white round" id="sndBtn" aria-label="Sonido">${soundIcon()}</button></div>
     </div>
-    <div class="path" id="path">${nodes}</div>`;
+    <div class="path" id="path">${nodes}</div>
+    <div class="trackhead"><div><h2>🧩 Palabras pequeñas</h2><p>a, the, this, to, for, what, who, some, any… una a una: qué significan, para qué sirven y ejemplos.</p></div>
+      <button class="toy white" id="glossBtn">📖 Mis palabras</button></div>
+    <div class="path">${WPH.map((P,i)=>{const locked=i>=prog.wu,s=prog.ws[i]||0;
+      return `<button class="node${locked?' locked':''}${i===prog.wu-1&&!s?' current':''}" data-wlvl="${i}" style="--c:${P.c}" aria-label="Fase ${i+1}: ${P.name}">
+        <span class="disc">${P.icon}<span class="num">${i+1}</span></span><span class="nm">${P.name}</span>
+        <span class="wl">${P.words.join(' · ')||'todas'}</span>
+        <span class="st">${[0,1,2].map(k=>`<svg viewBox="0 0 24 24" class="${k<s?'on':''}"><path d="M12 2l2.9 6.6 7.1.6-5.4 4.7 1.6 7L12 17.3 5.8 21l1.6-7L2 9.2l7.1-.6z"/></svg>`).join('')}</span></button>`}).join('')}</div>`;
   const cur=$('path').querySelector('.current')||$('path').children[Math.min(done-1,LEVELS.length-1)];
   if(cur)requestAnimationFrame(()=>cur.scrollIntoView({block:'nearest'}));
 }
@@ -624,8 +666,309 @@ function randomFree(){
   renderPlay();speak(analyze(st.mode,st.sel).en);
 }
 
+/* ================= PALABRAS PEQUEÑAS (a, the, some, what…) ================= */
+/* Cada palabra: es = qué significa · use = para qué sirve · ex = ejemplos [inglés, español, emoji] · tip = truco · r = regla corta
+   S = frases de práctica [inglés con _ donde va la palabra, español, emoji, explicación opcional, palabras que NO se ofrecen como fallo] */
+const WORDS={
+ a:{g:'art',es:'un / una',use:'Para hablar de UNA cosa cualquiera, no de una concreta. Va delante de palabras que empiezan por sonido de consonante (b, c, d, p, t…).',
+  ex:[['a dog','un perro','🐶'],['a banana','un plátano','🍌'],['I have a cat.','Tengo un gato.','🐱']],
+  tip:'<b>a</b> y <b>an</b> significan lo mismo (un, una). Solo cambian según cómo SUENA la palabra que va detrás.',r:'<b>a</b> va delante de un sonido de consonante: a dog, a car.',
+  S:[['I have _ dog.','Tengo un perro.','🐶'],['She wants _ banana.','Ella quiere un plátano.','🍌'],['This is _ ball.','Esto es una pelota.','⚽'],['He has _ red car.','Él tiene un coche rojo.','🚗'],['I see _ bird.','Veo un pájaro.','🐦'],['We need _ pencil.','Necesitamos un lápiz.','✏️'],['My mum is _ teacher.','Mi madre es profesora.','👩‍🏫','En inglés las profesiones llevan <b>a</b>: She is a teacher.'],['She has _ unicorn.','Ella tiene un unicornio.','🦄','<b>unicorn</b> empieza por u, pero suena «iú» (sonido de consonante). Por eso <b>a</b> unicorn.']]},
+ an:{g:'art',es:'un / una',use:'Igual que <b>a</b>, pero delante de palabras que empiezan por sonido de vocal (a, e, i, o, u). Así se pronuncia más fácil.',
+  ex:[['an apple','una manzana','🍎'],['an egg','un huevo','🥚'],['an elephant','un elefante','🐘']],
+  tip:'Fíjate en el SONIDO, no en la letra: <b>an hour</b> (la h no suena) pero <b>a unicorn</b> (suena «iú»).',r:'<b>an</b> va delante de un sonido de vocal: an apple, an egg.',
+  S:[['I eat _ apple.','Me como una manzana.','🍎'],['She has _ egg.','Ella tiene un huevo.','🥚'],['I see _ elephant.','Veo un elefante.','🐘'],['He wants _ orange.','Él quiere una naranja.','🍊'],['It is _ ice cream.','Es un helado.','🍦'],['We wait for _ hour.','Esperamos una hora.','⏰','<b>hour</b> empieza por h, pero la h no suena: se dice «áuer». Por eso <b>an</b> hour.'],['I have _ idea!','¡Tengo una idea!','💡']]},
+ the:{g:'art',es:'el, la, los, las',use:'Para hablar de una cosa CONCRETA, que ya sabemos cuál es, o de algo que solo hay uno (el sol, la luna). Vale para singular y plural y no cambia nunca.',
+  ex:[['the sun','el sol','☀️'],['the dogs','los perros','🐶'],['I have a cat. The cat is black.','Tengo un gato. El gato es negro.','🐈‍⬛']],
+  tip:'Primero dices <b>a</b> (un gato cualquiera); cuando ya sabemos de qué gato hablas, dices <b>the</b> (el gato).',r:'<b>the</b> = el, la, los, las: una cosa concreta que ya conocemos.',
+  S:[['_ sun is hot.','El sol quema.','☀️'],['Open _ door, please.','Abre la puerta, por favor.','🚪'],['_ dogs are in the garden.','Los perros están en el jardín.','🐶'],['I like _ red ball.','Me gusta la pelota roja.','🔴'],['Where is _ cat?','¿Dónde está el gato?','🐱'],['Look at _ moon!','¡Mira la luna!','🌙'],['I have a bike. _ bike is blue.','Tengo una bici. La bici es azul.','🚲']]},
+ this:{g:'dem',es:'este, esta, esto',use:'Para señalar UNA cosa que está CERCA de ti, que casi puedes tocar.',
+  ex:[['this book','este libro','📕👇'],['This is my dog.','Este es mi perro.','🐶'],['I like this game.','Me gusta este juego.','🎮']],
+  tip:'Piensa en «aquí»: <b>this</b> = esto de aquí 👇.',r:'<b>this</b> = este, esta: UNA cosa cerca de ti 👇.',
+  S:[['_ is my book.','Este es mi libro.','📕👇'],['I like _ cake.','Me gusta esta tarta.','🎂👇'],['_ apple is green.','Esta manzana es verde.','🍏👇'],['Is _ your pen?','¿Es este tu boli?','🖊️👇'],['_ game is fun.','Este juego es divertido.','🎮👇']]},
+ that:{g:'dem',es:'ese, esa, eso, aquel',use:'Para señalar UNA cosa que está LEJOS de ti, allí.',
+  ex:[['that star','esa estrella','⭐👉'],['That is a plane.','Eso es un avión.','✈️'],['Look at that dog!','¡Mira ese perro!','🐕']],
+  tip:'Piensa en «allí»: <b>that</b> = eso de allí 👉.',r:'<b>that</b> = ese, esa, aquel: UNA cosa lejos 👉.',
+  S:[['_ is a plane.','Eso es un avión.','✈️👉'],['Look at _ bird!','¡Mira ese pájaro!','🐦👉'],['_ house is big.','Aquella casa es grande.','🏠👉'],['Who is _ boy?','¿Quién es ese niño?','👦👉'],['_ mountain is very high.','Esa montaña es muy alta.','⛰️👉']]},
+ these:{g:'dem',es:'estos, estas',use:'Como <b>this</b>, pero para VARIAS cosas que están cerca de ti.',
+  ex:[['these shoes','estos zapatos','👟👇'],['These are my friends.','Estos son mis amigos.','👫'],['I like these cookies.','Me gustan estas galletas.','🍪']],
+  tip:'this → <b>these</b>: de una a varias, cerca. La palabra de detrás va en plural: these cats.',r:'<b>these</b> = estos, estas: VARIAS cosas cerca 👇.',
+  S:[['_ are my shoes.','Estos son mis zapatos.','👟👇'],['I like _ cookies.','Me gustan estas galletas.','🍪👇'],['_ flowers are red.','Estas flores son rojas.','🌹👇'],['Are _ your books?','¿Son estos tus libros?','📚👇'],['_ grapes are sweet.','Estas uvas son dulces.','🍇👇']]},
+ those:{g:'dem',es:'esos, esas, aquellos',use:'Como <b>that</b>, pero para VARIAS cosas que están lejos de ti.',
+  ex:[['those trees','esos árboles','🌳👉'],['Those are clouds.','Esas son nubes.','☁️'],['Look at those birds!','¡Mira esos pájaros!','🐦🐦']],
+  tip:'that → <b>those</b>: de una a varias, lejos.',r:'<b>those</b> = esos, esas, aquellos: VARIAS cosas lejos 👉.',
+  S:[['_ are clouds.','Esas son nubes.','☁️👉'],['Look at _ horses!','¡Mira esos caballos!','🐎👉'],['_ trees are very tall.','Aquellos árboles son muy altos.','🌳👉'],['Who are _ girls?','¿Quiénes son esas niñas?','👧👉'],['_ stars are bright.','Esas estrellas brillan mucho.','✨👉']]},
+ and:{g:'conj',es:'y',use:'Para unir dos cosas o dos ideas que van juntas.',
+  ex:[['cats and dogs','gatos y perros','🐱🐶'],['red and blue','rojo y azul','🔴🔵'],['I eat and I drink.','Como y bebo.','🍽️']],
+  tip:'<b>and</b> suma: esto Y esto.',r:'<b>and</b> = y: une dos cosas que van juntas.',
+  S:[['I have a cat _ a dog.','Tengo un gato y un perro.','🐱🐶'],['We play _ we sing.','Jugamos y cantamos.','⚽🎤'],['She is tall _ strong.','Ella es alta y fuerte.','💪'],['Tom _ Ana are friends.','Tom y Ana son amigos.','👫'],['I like milk _ cookies.','Me gusta la leche con galletas.','🥛🍪','En español decimos «con», pero en inglés es «milk and cookies»: leche Y galletas.']]},
+ but:{g:'conj',es:'pero',use:'Para unir dos ideas que van en CONTRA: la segunda es una sorpresa o un problema.',
+  ex:[["I like cats, but I don't like dogs.",'Me gustan los gatos, pero no los perros.','🐱🐶'],['It is small but fast.','Es pequeño pero rápido.','🐭'],['I want to play, but it is late.','Quiero jugar, pero es tarde.','🌙']],
+  tip:'Si la segunda parte «lleva la contraria», usa <b>but</b>.',r:'<b>but</b> = pero: une dos ideas que van en contra.',
+  S:[["I like apples, _ I don't like pears.",'Me gustan las manzanas, pero no las peras.','🍎🍐'],['It is cold, _ it is sunny.','Hace frío, pero hace sol.','🥶☀️'],['He is small, _ he is very fast.','Es pequeño, pero muy rápido.','🐭'],['I want to play, _ I am tired.','Quiero jugar, pero estoy cansado.','😴']]},
+ or:{g:'conj',es:'o',use:'Para ELEGIR entre dos cosas: una U otra.',
+  ex:[['Tea or milk?','¿Té o leche?','🍵🥛'],['Red or blue?','¿Rojo o azul?','🔴🔵'],['Do you want an apple or a banana?','¿Quieres una manzana o un plátano?','🍎🍌']],
+  tip:'Si hay que elegir, usa <b>or</b>.',r:'<b>or</b> = o: para elegir entre dos cosas.',
+  S:[['Tea _ milk?','¿Té o leche?','🍵🥛'],['Is it a cat _ a dog?','¿Es un gato o un perro?','🐱🐶'],['Do you want pizza _ pasta?','¿Quieres pizza o pasta?','🍕🍝'],['We can walk _ go by bus.','Podemos ir andando o en autobús.','🚶🚌']]},
+ my:{g:'pos',es:'mi, mis',use:'Para decir que algo es MÍO (de <b>I</b>). No cambia aunque sean varias cosas.',
+  ex:[['my dog','mi perro','🐶'],['my shoes','mis zapatos','👟'],['This is my house.','Esta es mi casa.','🏠']],
+  tip:'<b>my</b> = de mí: my book, my books… siempre my.',r:'<b>my</b> = mi, mis: es mío.',
+  S:[['This is _ room.','Esta es mi habitación.','🛏️'],['I love _ mum.','Quiero a mi madre.','👩'],['_ shoes are new.','Mis zapatos son nuevos.','👟'],['Where is _ pencil?','¿Dónde está mi lápiz?','✏️']]},
+ your:{g:'pos',es:'tu, tus (y vuestro)',use:'Para decir que algo es TUYO (de <b>you</b>). También sirve para «vuestro».',
+  ex:[['your bag','tu mochila','🎒'],['Is this your pen?','¿Es este tu boli?','🖊️'],['Wash your hands.','Lávate las manos.','🧼']],
+  tip:'Ojo: en inglés se dice «tus manos» (<b>your hands</b>), no «las manos».',r:'<b>your</b> = tu, tus: es tuyo.',
+  S:[['Is this _ bag?','¿Es esta tu mochila?','🎒'],['What is _ name?','¿Cómo te llamas?','📛','<b>What is your name?</b> = ¿cuál es tu nombre? Así se pregunta cómo se llama alguien.'],['Wash _ hands.','Lávate las manos.','🧼'],['I like _ hat.','Me gusta tu sombrero.','🎩']]},
+ his:{g:'pos',es:'su, sus (de él)',use:'Para decir que algo es DE ÉL: de un chico o de un hombre.',
+  ex:[['his bike','su bici (de él)','🚲👦'],['Tom and his dog','Tom y su perro','👦🐶'],['That is his ball.','Esa es su pelota (de él).','⚽']],
+  tip:'<b>his</b> va con <b>he</b>: he → his.',r:'<b>his</b> = su, sus (de él).',
+  S:[['Tom loves _ dog.','Tom quiere a su perro.','👦🐶'],['_ bike is red.','Su bici es roja (de él).','🚲👦'],['Leo and _ dad play football.','Leo y su padre juegan al fútbol.','👦👨⚽'],["He can't find _ shoes.",'Él no encuentra sus zapatos.','👦👟']]},
+ her:{g:'pos',es:'su, sus (de ella)',use:'Para decir que algo es DE ELLA: de una chica o de una mujer.',
+  ex:[['her cat','su gato (de ella)','🐱👧'],['Ana and her mum','Ana y su madre','👧👩'],['Her hair is long.','Su pelo es largo (de ella).','💇‍♀️']],
+  tip:'<b>her</b> va con <b>she</b>: she → her. En español «su» vale para los dos; en inglés no.',r:'<b>her</b> = su, sus (de ella).',
+  S:[['Ana loves _ cat.','Ana quiere a su gato.','👧🐱'],['_ hair is long.','Su pelo es largo (de ella).','👧💇‍♀️'],['She is with _ grandma.','Ella está con su abuela.','👧👵'],['Mia and _ mum are at home.','Mia y su madre están en casa.','👧👩']]},
+ to:{g:'prep',es:'a, hacia (y une dos verbos)',use:'Sirve para dos cosas: 1) decir ADÓNDE vas: go to school. 2) unir dos verbos: want to play = querer jugar.',
+  ex:[['I go to school.','Voy al colegio.','🏫'],['We walk to the park.','Caminamos al parque.','🌳'],['I want to play.','Quiero jugar.','⚽']],
+  tip:'Detrás de want, like, need… el segundo verbo lleva <b>to</b>: I like to read.',r:'<b>to</b> = a, hacia (adónde vas) o une dos verbos: want to eat.',
+  S:[['I go _ school.','Voy al colegio.','🏫'],['We walk _ the park.','Caminamos al parque.','🌳'],['I want _ play.','Quiero jugar.','⚽'],['She likes _ dance.','A ella le gusta bailar.','💃'],['Come _ my house!','¡Ven a mi casa!','🏠'],['They need _ sleep.','Necesitan dormir.','😴']]},
+ for:{g:'prep',es:'para, por, durante',use:'Para decir para QUIÉN o para QUÉ es algo, y cuánto TIEMPO dura algo.',
+  ex:[['This is for you.','Esto es para ti.','🎁'],['Milk for breakfast.','Leche para desayunar.','🥛'],['I slept for ten hours.','Dormí durante diez horas.','😴']],
+  tip:'«Para ti», «para desayunar», «durante dos días» → <b>for</b>. Pero «quiero jugar» → want <b>to</b> play.',r:'<b>for</b> = para (alguien o algo) o durante (un tiempo).',
+  S:[['This gift is _ you.','Este regalo es para ti.','🎁'],['Thank you _ the cake!','¡Gracias por la tarta!','🎂','<b>Thank you for…</b> = gracias por…'],['We have eggs _ breakfast.','Tomamos huevos para desayunar.','🍳'],['I waited _ two hours.','Esperé durante dos horas.','⏰'],['This book is _ kids.','Este libro es para niños.','📚']]},
+ in:{g:'prep',es:'en, dentro de',use:'Para decir que algo está DENTRO de un sitio: una caja, una habitación, una ciudad. También con los meses y los años.',
+  ex:[['in the box','dentro de la caja','📦'],['in my room','en mi habitación','🛏️'],['in July','en julio','📅']],
+  tip:'Imagina una caja: si está dentro, es <b>in</b>.',r:'<b>in</b> = dentro de (una caja, una habitación, una ciudad, un mes).',
+  S:[['The cat is _ the box.','El gato está dentro de la caja.','🐱📦'],['I live _ Madrid.','Vivo en Madrid.','🏙️'],['The fish are _ the water.','Los peces están en el agua.','🐟'],['My birthday is _ May.','Mi cumple es en mayo.','🎂'],['The milk is _ the fridge.','La leche está en la nevera.','🥛']]},
+ on:{g:'prep',es:'en, encima de, sobre',use:'Para decir que algo está ENCIMA de una superficie, tocándola. También con los días de la semana.',
+  ex:[['on the table','en la mesa','🍽️'],['on the wall','en la pared','🖼️'],['on Monday','el lunes','📅']],
+  tip:'Si está apoyado encima, es <b>on</b>. Los días también: on Monday.',r:'<b>on</b> = encima de, sobre (tocando). Y con los días: on Monday.',
+  S:[['The book is _ the table.','El libro está en la mesa.','📕'],['There is a picture _ the wall.','Hay un cuadro en la pared.','🖼️'],['We have English _ Monday.','Tenemos inglés el lunes.','📅'],['The cat is _ the bed.','El gato está encima de la cama.','🐱🛏️',null,['in']],['Put your hat _ your head.','Ponte el sombrero en la cabeza.','🎩']]},
+ at:{g:'prep',es:'en (un sitio concreto), a (una hora)',use:'Para un PUNTO o sitio concreto: at home, at school, at the door. Y para las horas: at 5 o\'clock.',
+  ex:[['at home','en casa','🏠'],['at school','en el colegio','🏫'],["at 8 o'clock",'a las 8','🕗']],
+  tip:'Horas → <b>at</b>. Días → <b>on</b>. Meses → <b>in</b>.',r:'<b>at</b> = en un sitio concreto (at home, at school) y con las horas (at 8).',
+  S:[['I am _ home.','Estoy en casa.','🏠'],['We are _ school.','Estamos en el colegio.','🏫',null,['in']],["I get up _ 7 o'clock.",'Me levanto a las 7.','⏰'],['Someone is _ the door.','Hay alguien en la puerta.','🚪'],['See you _ lunch time!','¡Nos vemos a la hora de comer!','🍽️']]},
+ with:{g:'prep',es:'con',use:'Para decir con QUIÉN o con QUÉ haces algo.',
+  ex:[['with my friends','con mis amigos','👫'],['tea with milk','té con leche','🍵'],['I write with a pen.','Escribo con un boli.','🖊️']],
+  tip:'<b>with</b> = con. Lo contrario es <b>without</b> = sin.',r:'<b>with</b> = con.',
+  S:[['I play _ my friends.','Juego con mis amigos.','👫'],['I like tea _ milk.','Me gusta el té con leche.','🍵'],['She cuts it _ scissors.','Ella lo corta con tijeras.','✂️'],['Come _ me!','¡Ven conmigo!','🙋'],['A boy _ a red hat.','Un niño con un gorro rojo.','👦🧢']]},
+ of:{g:'prep',es:'de',use:'Para decir de qué está lleno o hecho algo, o que es una parte de algo: a glass of water, a piece of cake.',
+  ex:[['a glass of water','un vaso de agua','🥛'],['a piece of cake','un trozo de tarta','🍰'],['the end of the film','el final de la peli','🎬']],
+  tip:'Ojo: «el perro de Ana» no es «the dog of Ana», se dice <b>Ana\'s dog</b>.',r:'<b>of</b> = de: un vaso de agua, un trozo de tarta.',
+  S:[['A glass _ water, please.','Un vaso de agua, por favor.','🥛'],['I want a piece _ cake.','Quiero un trozo de tarta.','🍰'],['A box _ chocolates.','Una caja de bombones.','🍫'],['It is the end _ the story.','Es el final del cuento.','📖'],['A lot _ people.','Mucha gente.','👥','<b>a lot of</b> = mucho, muchos.']]},
+ what:{g:'q',es:'qué, cuál',use:'Para preguntar por COSAS: qué es, qué quieres, qué haces.',
+  ex:[['What is this?','¿Qué es esto?','❓'],['What do you want?','¿Qué quieres?','🤔'],['What is your name?','¿Cómo te llamas?','📛']],
+  tip:'Las preguntas en inglés empiezan por la palabra de pregunta: <b>What…? Who…? Where…?</b>',r:'<b>what</b> = qué: pregunta por cosas.',
+  S:[['_ is this?','¿Qué es esto?','❓📦'],['_ do you want?','¿Qué quieres?','🤔'],['_ is your name?','¿Cómo te llamas?','📛'],['_ colour is it?','¿De qué color es?','🎨'],['_ are you eating?','¿Qué estás comiendo?','😋']]},
+ who:{g:'q',es:'quién, quiénes',use:'Para preguntar por PERSONAS.',
+  ex:[['Who is she?','¿Quién es ella?','👧'],['Who wants pizza?','¿Quién quiere pizza?','🍕'],['Who are they?','¿Quiénes son?','👥']],
+  tip:'<b>what</b> → cosas · <b>who</b> → personas.',r:'<b>who</b> = quién: pregunta por personas.',
+  S:[['_ is that girl?','¿Quién es esa niña?','👧'],['_ wants ice cream?','¿Quién quiere helado?','🍦'],['_ is your teacher?','¿Quién es tu profe?','👩‍🏫'],['_ are they?','¿Quiénes son?','👥'],['_ is at the door?','¿Quién está en la puerta?','🚪']]},
+ where:{g:'q',es:'dónde, adónde',use:'Para preguntar por el LUGAR.',
+  ex:[['Where is my bag?','¿Dónde está mi mochila?','🎒'],['Where do you live?','¿Dónde vives?','🏠'],['Where are you going?','¿Adónde vas?','🚶']],
+  tip:'Se suele responder con in, on, at…: in the box, at home.',r:'<b>where</b> = dónde: pregunta por el lugar.',
+  S:[['_ is the cat?','¿Dónde está el gato?','🐱❓'],['_ do you live?','¿Dónde vives?','🏠'],['_ are my shoes?','¿Dónde están mis zapatos?','👟'],['_ are you going?','¿Adónde vas?','🚶'],['_ is the toilet, please?','¿Dónde está el baño, por favor?','🚻']]},
+ when:{g:'q',es:'cuándo',use:'Para preguntar por el MOMENTO: qué día, a qué hora…',
+  ex:[['When is your birthday?','¿Cuándo es tu cumple?','🎂'],['When do we eat?','¿Cuándo comemos?','🍽️'],['When can I play?','¿Cuándo puedo jugar?','🎮']],
+  tip:'Se suele responder con today, tomorrow, at 5, on Monday…',r:'<b>when</b> = cuándo: pregunta por el momento.',
+  S:[['_ is your birthday?','¿Cuándo es tu cumple?','🎂'],['_ do we eat?','¿Cuándo comemos?','🍽️'],['_ does the film start?','¿Cuándo empieza la peli?','🎬'],['_ can I play?','¿Cuándo puedo jugar?','🎮'],['_ is the party?','¿Cuándo es la fiesta?','🎉']]},
+ why:{g:'q',es:'por qué',use:'Para preguntar la RAZÓN de algo.',
+  ex:[['Why are you sad?','¿Por qué estás triste?','😢'],['Why is the sky blue?','¿Por qué el cielo es azul?','🌤️'],['Why not?','¿Por qué no?','🤷']],
+  tip:'A <b>why</b> se responde con <b>because</b> (porque).',r:'<b>why</b> = por qué: pregunta la razón.',
+  S:[['_ are you sad?','¿Por qué estás triste?','😢'],['_ is the sky blue?','¿Por qué el cielo es azul?','🌤️'],['_ do you like cats?','¿Por qué te gustan los gatos?','🐱'],['_ are you late?','¿Por qué llegas tarde?','⏰']]},
+ because:{g:'conj',es:'porque',use:'Para dar la RAZÓN de algo. Es la respuesta a <b>why</b>.',
+  ex:[['I am happy because it is sunny.','Estoy contento porque hace sol.','☀️'],['Why? Because I like it.','¿Por qué? Porque me gusta.','😍'],['I eat because I am hungry.','Como porque tengo hambre.','🍔']],
+  tip:'¿Por qué? (pregunta) = <b>why</b> · porque (respuesta) = <b>because</b>.',r:'<b>because</b> = porque: da la razón.',
+  S:[['I am happy _ it is sunny.','Estoy contento porque hace sol.','😊☀️'],['I eat _ I am hungry.','Como porque tengo hambre.','🍔'],['She is in bed _ she is ill.','Está en la cama porque está enferma.','🤒'],['I like dogs _ they are funny.','Me gustan los perros porque son graciosos.','🐶']]},
+ how:{g:'q',es:'cómo',use:'Para preguntar de qué MANERA se hace algo o cómo está algo o alguien.',
+  ex:[['How are you?','¿Cómo estás?','🙂'],['How do you say "gato"?','¿Cómo se dice «gato»?','🐱'],['How old are you?','¿Cuántos años tienes?','🎂']],
+  tip:'<b>How old…?</b> = ¿cuántos años…? · <b>How many…?</b> = ¿cuántos…?',r:'<b>how</b> = cómo: pregunta de qué manera o cómo está algo.',
+  S:[['_ are you?','¿Cómo estás?','🙂'],['_ old are you?','¿Cuántos años tienes?','🎂','<b>How old are you?</b> = ¿cuántos años tienes? (literalmente: ¿cómo de viejo eres?)'],['_ do you say "perro"?','¿Cómo se dice «perro»?','🐶'],['_ do you go to school?','¿Cómo vas al colegio?','🚌'],['_ is your grandma?','¿Cómo está tu abuela?','👵']]},
+ some:{g:'qty',es:'algo de, unos, unas',use:'Para una cantidad que no decimos exacta, en frases AFIRMATIVAS. También para OFRECER o pedir algo.',
+  ex:[['I have some apples.','Tengo unas manzanas.','🍎'],['I want some water.','Quiero algo de agua.','💧'],['Would you like some cake?','¿Quieres un poco de tarta?','🎂']],
+  tip:'<b>some</b> → frases normales (sin not). Y al ofrecer algo: Would you like some tea?',r:'<b>some</b> = algo de, unos: en frases afirmativas y al ofrecer algo.',
+  S:[['I have _ apples.','Tengo unas manzanas.','🍎'],['I want _ water.','Quiero algo de agua.','💧'],['She has _ friends here.','Ella tiene algunos amigos aquí.','👫'],['Would you like _ cake?','¿Quieres un poco de tarta?','🎂','Para OFRECER algo se usa <b>some</b>, aunque sea una pregunta.'],['We need _ eggs.','Necesitamos unos huevos.','🥚']]},
+ any:{g:'qty',es:'algo de, ningún (con «no» y en preguntas)',use:'Lo mismo que <b>some</b>, pero en frases NEGATIVAS (no hay ninguno) y en PREGUNTAS.',
+  ex:[["I don't have any money.",'No tengo nada de dinero.','💸'],['Do you have any pets?','¿Tienes mascotas?','🐶'],["There aren't any cookies.",'No hay galletas.','🍪']],
+  tip:'Con <b>not / don\'t</b> → any. En preguntas → any (menos al ofrecer algo: some).',r:'<b>any</b> = en frases con not (ninguno) y en preguntas.',
+  S:[["I don't have _ money.",'No tengo nada de dinero.','💸'],['Do you have _ pets?','¿Tienes mascotas?','🐶❓'],["There isn't _ milk.",'No hay leche.','🥛🚫'],['Are there _ cookies?','¿Hay galletas?','🍪❓'],["He doesn't have _ brothers.",'Él no tiene hermanos.','👦']]},
+ much:{g:'qty',es:'mucho, mucha',use:'Para cosas que NO se pueden contar una a una (agua, dinero, tiempo), sobre todo con not y en preguntas.',
+  ex:[["I don't have much time.",'No tengo mucho tiempo.','⏰'],['How much water?','¿Cuánta agua?','💧'],['How much is it?','¿Cuánto cuesta?','💶']],
+  tip:'<b>How much…?</b> = ¿cuánto…? Y para preguntar precios: How much is it?',r:'<b>much</b> = mucho, mucha con cosas que no se cuentan: water, money, time.',
+  S:[["I don't have _ time.",'No tengo mucho tiempo.','⏰'],['How _ water do you drink?','¿Cuánta agua bebes?','💧'],['How _ is it?','¿Cuánto cuesta?','💶'],["There isn't _ milk.",'No hay mucha leche.','🥛'],['Thank you very _!','¡Muchas gracias!','🙏','<b>Thank you very much</b> = muchísimas gracias. Es una frase fija.']]},
+ many:{g:'qty',es:'muchos, muchas',use:'Para cosas que SÍ se pueden contar (1, 2, 3…): libros, amigos, perros.',
+  ex:[['many books','muchos libros','📚'],['How many cats?','¿Cuántos gatos?','🐱'],['I have many friends.','Tengo muchos amigos.','👫']],
+  tip:'Si lo puedes contar y va en plural, usa <b>many</b>: many cars. Si no, <b>much</b>: much milk.',r:'<b>many</b> = muchos, muchas con cosas que se cuentan: books, cats.',
+  S:[['I have _ friends.','Tengo muchos amigos.','👫'],['How _ cats do you have?','¿Cuántos gatos tienes?','🐱'],['There are _ stars.','Hay muchas estrellas.','✨'],['She reads _ books.','Ella lee muchos libros.','📚'],['How _ people are there?','¿Cuánta gente hay?','👥','<b>people</b> (gente) se cuenta: one person, two people. Por eso many.']]}
+};
+const WPH=[
+ {name:'Un, una',icon:'🍎',c:'#7A4DFF',words:['a','an']},
+ {name:'El, la, los',icon:'☀️',c:'#D9409F',words:['the']},
+ {name:'Este y ese',icon:'👇',c:'#F07F00',words:['this','that']},
+ {name:'Estos y esos',icon:'👉',c:'#0B9B9B',words:['these','those']},
+ {name:'Y, pero, o',icon:'➕',c:'#D6262C',words:['and','but','or']},
+ {name:'Mi y tu',icon:'🎒',c:'#7A4DFF',words:['my','your']},
+ {name:'De él, de ella',icon:'👫',c:'#F2405F',words:['his','her']},
+ {name:'A y para',icon:'🎁',c:'#0B9B9B',words:['to','for']},
+ {name:'Dentro y encima',icon:'📦',c:'#F07F00',words:['in','on']},
+ {name:'En casa, a las 8',icon:'🏠',c:'#D9409F',words:['at']},
+ {name:'Con y de',icon:'🍵',c:'#7A4DFF',words:['with','of']},
+ {name:'¿Qué? ¿Quién?',icon:'❓',c:'#D6262C',words:['what','who']},
+ {name:'¿Dónde? ¿Cuándo?',icon:'🗺️',c:'#0B9B9B',words:['where','when']},
+ {name:'¿Por qué? ¿Cómo?',icon:'🤔',c:'#F2405F',words:['why','because','how']},
+ {name:'Algo de',icon:'🍪',c:'#F07F00',words:['some','any']},
+ {name:'Mucho y muchos',icon:'📚',c:'#7A4DFF',words:['much','many']},
+ {name:'Gran repaso',icon:'👑',c:'#FFB800',words:[],final:true}
+];
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+const wItems=w=>WORDS[w].S.map(a=>({w,en:a[0],es:a[1],e:a[2],why:a[3]||'',no:a[4]||[]}));
+const wCapG=it=>/^_|[.?!] _/.test(it.en);
+const wFull=it=>it.en.replace('_',wCapG(it)?cap(it.w):it.w);
+const wLearned=pi=>WPH.slice(0,pi+1).flatMap(p=>p.words);
+const wCount=it=>wFull(it).split(' ').length;
+function hl(en,w){return esc(en).replace(new RegExp('(^|[^A-Za-z\'])('+w+')(?![A-Za-z\'])','gi'),'$1<mark>$2</mark>')}
+function wDistract(it,learned){
+  const g=WORDS[it.w].g;let peers=learned.filter(x=>x!==it.w&&WORDS[x].g===g&&!it.no.includes(x));
+  if(!peers.length)peers=learned.filter(x=>x!==it.w&&!it.no.includes(x));
+  return shuffle(peers).slice(0,3);
+}
+function wGap(it,learned){return{type:'gap',it,opts:shuffle([it.w,...wDistract(it,learned)])}}
+function wOrder(it){const words=wFull(it).replace(/[.?!]$/,'').split(' ');let tiles;do{tiles=shuffle(words.map((t,i)=>({t,i})))}while(words.length>1&&tiles.every((x,k)=>x.i===k));return{type:'order',it,words,tiles,end:/[?!]$/.test(it.en)?it.en.slice(-1):'.'}}
+function wMean(w,learned){const seen=new Set([WORDS[w].es]),others=[];for(const x of shuffle(learned))if(x!==w&&!seen.has(WORDS[x].es)&&others.length<3){seen.add(WORDS[x].es);others.push(WORDS[x].es)}
+  if(others.length<2)for(const x of shuffle(Object.keys(WORDS)))if(!seen.has(WORDS[x].es)&&others.length<2){seen.add(WORDS[x].es);others.push(WORDS[x].es)}
+  return{type:'mean',w,opts:shuffle([WORDS[w].es,...others])}}
+function buildWRounds(pi){
+  const P=WPH[pi],learned=wLearned(pi),out=[],used=new Set();
+  const take=(w,pred)=>{const c=shuffle(wItems(w)).filter(it=>!used.has(it.en)&&(!pred||pred(it)));const it=c[0];if(it)used.add(it.en);return it};
+  if(P.final){
+    const all=Object.keys(WORDS);
+    for(let k=0;k<12;k++){const w=pick(all),it=take(w,k%3===2?x=>wCount(x)<=7:null);if(it)out.push(k%3===2?wOrder(it):wGap(it,all))}
+    return out;
+  }
+  const body=[];
+  P.words.forEach(w=>{for(let k=0;k<(P.words.length>2?2:3);k++){const it=take(w);if(it)body.push(wGap(it,learned))}});
+  const ow=pick(P.words),oi=take(ow,x=>wCount(x)<=7);if(oi)body.push(wOrder(oi));
+  shuffle(learned.filter(w=>!P.words.includes(w))).slice(0,2).forEach(w=>{const it=take(w);if(it)body.push({...wGap(it,learned),review:true})});
+  return[...P.words.map(w=>wMean(w,learned)),...shuffle(body)];
+}
+
+/* tarjeta de palabra: qué significa, para qué sirve, ejemplos y truco */
+function wordCardHTML(w,title,buttons){
+  const W=WORDS[w];
+  return `${pipSvg('happy')}<h2>${title}</h2><div class="txt">
+    <div class="wbig"><span class="bigw">${w}</span><button class="toy white round" data-act="hear" data-say="${w}" aria-label="Escuchar">🔊</button></div>
+    <p class="mean">Significa: <b>${W.es}</b></p>
+    <p><b>¿Para qué sirve?</b> ${W.use}</p>
+    <p><b>Ejemplos:</b></p><ul class="exs">${W.ex.map(([en,es,e])=>`<li><button class="toy white round" data-act="hear" data-say="${esc(en)}" aria-label="Escuchar">🔊</button><span><span class="exe">${e}</span> <b>${hl(en,w)}</b><br><span class="trad">${es}</span></span></li>`).join('')}</ul>
+    <p class="tip">💡 ${W.tip}</p></div>
+    <div class="row">${buttons}</div>`;
+}
+function introW(pi){
+  const P=WPH[pi];st.wp=pi;st.wci=0;
+  if(P.final){overlay(`${pipSvg('happy')}<h2>${P.icon} ${P.name}</h2><div class="txt"><p>¡Todas las palabras mezcladas! 12 retos para ser <b>Maestro de las palabras pequeñas</b>.</p><div class="words">${Object.keys(WORDS).map(w=>`<span>${w}</span>`).join('')}</div></div>
+    <div class="row"><button class="toy white" data-act="map">🗺️ Mapa</button><button class="toy go" data-act="wstart">¡A jugar! ▶</button></div>`);return}
+  wIntroCard();
+}
+function wIntroCard(){
+  const P=WPH[st.wp],i=st.wci,n=P.words.length,w=P.words[i];
+  const title=`✨ Palabra nueva${n>1?` ${i+1}/${n}`:''}`;
+  const btn=(i>0?'<button class="toy white" data-act="wprev">◀ Anterior</button>':'<button class="toy white" data-act="map">🗺️ Mapa</button>')+(i<n-1?'<button class="toy go" data-act="wnext">Siguiente palabra ▶</button>':'<button class="toy go" data-act="wstart">¡A practicar! ▶</button>');
+  overlay(wordCardHTML(w,title,btn));setTimeout(()=>speak(w),250);
+}
+function startW(pi){st.free=false;st.wp=pi;st.wr=buildWRounds(pi);st.wi=0;st.wmis=0;st.wstreak=0;wSetup();st.screen='wplay';$('map').hidden=true;$('play').hidden=false;renderW()}
+function wSetup(){const r=st.wr[st.wi];st.wpick=[];st.wbad=[];st.wtries=0;st.pipMood='';if(r.type==='mean')setTimeout(()=>speak(r.w),300)}
+function renderW(){
+  const P=WPH[st.wp],r=st.wr[st.wi],dots=st.wr.map((_,k)=>`<i class="${k<st.wi?'done':k===st.wi?'now':''}"></i>`).join('');
+  let ask,box,board,acts;
+  const cardBtn=()=>`<button class="toy white" data-act="wgloss">📖 Mis palabras</button>`;
+  if(r.type==='mean'){
+    ask=`<div class="es">¿Qué significa esta palabra?</div>`;
+    box=`<div class="wbig"><span class="bigw">${r.w}</span><button class="toy white round" data-act="hear" data-say="${r.w}" aria-label="Escuchar">🔊</button></div>`;
+    board=`<div class="opts">${r.opts.map(o=>`<button class="opt es-opt${st.wbad.includes(o)?' no':''}" data-opt="${esc(o)}">${o}</button>`).join('')}</div>`;
+    acts=`<span></span>`;
+  }else if(r.type==='gap'){
+    const [a,b]=r.it.en.split('_');
+    ask=`<div class="prompt"><span class="emo">${r.it.e}</span><span class="es">${r.it.es}</span></div><div class="tags"><span class="tag">🧩 Completa la frase</span>${r.review?'<span class="tag rev">Repaso</span>':''}</div>`;
+    box=`<div class="sent">${esc(a)}<span class="gap">?</span>${esc(b)}</div>`;
+    board=`<div class="opts">${r.opts.map(o=>`<button class="opt${st.wbad.includes(o)?' no':''}" data-opt="${o}">${wCapG(r.it)?cap(o):o}</button>`).join('')}</div>`;
+    acts=cardBtn(r.it.w);
+  }else{
+    ask=`<div class="prompt"><span class="emo">${r.it.e}</span><span class="es">${r.it.es}</span></div><div class="tags"><span class="tag">🔀 Ordena las palabras</span></div>`;
+    box=`<div class="sent tiles-line">${st.wpick.map((ti,k)=>`<button class="tile on" data-unpick="${k}">${esc(r.tiles[ti].t)}</button>`).join('')||'<span class="trad">Toca las palabras en orden…</span>'}<span class="pu2">${st.wpick.length===r.words.length?r.end:''}</span></div>`;
+    board=`<div class="tiles">${r.tiles.map((x,ti)=>st.wpick.includes(ti)?`<span class="tile ghost">${esc(x.t)}</span>`:`<button class="tile" data-pick="${ti}">${esc(x.t)}</button>`).join('')}</div>`;
+    acts=`${cardBtn(r.it.w)}<button class="toy white" data-act="wclear">🧹 Borrar</button><button class="toy go" data-act="wcheck" ${st.wpick.length===r.words.length?'':'disabled'}>¡Listo! ✔</button>`;
+  }
+  $('play').innerHTML=`<div class="topbar">
+      <button class="toy white round" id="backBtn" aria-label="Volver al mapa">🗺️</button>
+      <span class="lvlname">${P.icon} ${st.wp+1}. ${P.name}</span>
+      <div class="dots">${dots}</div>
+      <span class="pill streak" title="Racha">🔥 ${st.wstreak}</span>
+      <button class="toy white round" id="sndBtn" aria-label="Sonido">${soundIcon()}</button>
+    </div>
+    <div class="stage"><div class="say">${pipSvg(st.pipMood)}<div class="bubble">${ask}</div></div><div class="wbox">${box}</div></div>
+    <div class="board" id="board">${board}</div>
+    <div class="actions wacts">${acts}</div>`;
+}
+function wGood(){
+  const r=st.wr[st.wi];st.wstreak++;SFX.good();confetti(st.wstreak>=3?90:50);st.pipMood='happy';renderW();
+  const last=st.wi+1>=st.wr.length,next=`<button class="toy go" data-act="wnextRound">${last?'Terminar 🏁':'Siguiente ▶'}</button>`;
+  if(r.type==='mean'){const W=WORDS[r.w],ex=W.ex[W.ex.length-1];speak(ex[0]);
+    overlay(`${pipSvg('happy')}<h2>${pick(['¡Genial!','¡Muy bien!','¡Eso es!'])}</h2><div class="txt"><p><b>${r.w}</b> = ${W.es}</p><div class="exline">${ex[2]} <b>${hl(ex[0],r.w)}</b><br><span class="trad">${ex[1]}</span></div></div>
+      <div class="row"><button class="toy white" data-act="hear" data-say="${esc(ex[0])}">🔊 Otra vez</button>${next}</div>`,'good');return}
+  const full=wFull(r.it);setTimeout(()=>speak(full),350);
+  overlay(`${pipSvg('happy')}<h2>${pick(['¡Genial!','¡Muy bien!','¡Bravo!','¡Lo has clavado!','¡Fantástico!'])}${st.wstreak>=3?' 🔥'+st.wstreak:''}</h2>
+    <div class="txt"><div class="exline">${r.it.e} <b>${hl(full,r.it.w)}</b><br><span class="trad">${r.it.es}</span></div>${r.it.why?`<p>💡 ${r.it.why}</p>`:''}</div>
+    <div class="row"><button class="toy white" data-act="hear" data-say="${esc(full)}">🔊 Otra vez</button>${next}</div>`,'good');
+}
+function wBad(chosen){
+  const r=st.wr[st.wi];st.wmis++;st.wstreak=0;st.wtries++;SFX.bad();st.pipMood='sad';
+  if(chosen!=null&&!st.wbad.includes(chosen))st.wbad.push(chosen);
+  renderW();
+  const reveal=st.wtries>=2||(r.type!=='order'&&r.opts.length-st.wbad.length<=1);
+  if(r.type==='mean'){
+    const W=WORDS[r.w];
+    if(!reveal){overlay(`${pipSvg('sad')}<h2>¡Casi!</h2><div class="txt"><p>Pista: ${W.r}</p></div><div class="row"><button class="toy go" data-act="close2">Otra vez 🔧</button></div>`,'bad');return}
+    overlay(`${pipSvg('sad')}<h2>Era «${W.es}»</h2><div class="txt"><p><b>${r.w}</b> = ${W.es}</p><p>${W.use}</p></div><div class="row"><button class="toy go" data-act="wnextRound">Seguir ▶</button></div>`,'bad');return;
+  }
+  const W=WORDS[r.it.w],full=wFull(r.it);
+  if(!reveal){
+    const tip=r.type==='gap'&&WORDS[chosen]?`<p>Recuerda: ${WORDS[chosen].r}</p><p>Mira bien lo que dice Pip: <b>${r.it.es}</b></p>`:`<p>Las palabras no van en ese orden. ${/^[¿]/.test(r.it.es)?'En las preguntas, la palabra de pregunta va primero.':'En inglés suele ir: ¿quién? + verbo + lo demás.'}</p>`;
+    overlay(`${pipSvg('sad')}<h2>¡Casi!</h2><div class="txt">${tip}</div><div class="row"><button class="toy go" data-act="close2">Lo intento otra vez 🔧</button></div>`,'bad');return;
+  }
+  overlay(`${pipSvg('sad')}<h2>Así se dice:</h2><div class="txt"><div class="exline">${r.it.e} <b>${hl(full,r.it.w)}</b><br><span class="trad">${r.it.es}</span></div><p>${r.it.why||W.r}</p></div>
+    <div class="row"><button class="toy white" data-act="hear" data-say="${esc(full)}">🔊 Escuchar</button><button class="toy go" data-act="wnextRound">Seguir ▶</button></div>`,'meh');
+}
+function wAnswer(val){
+  const r=st.wr[st.wi];if(st.wbad.includes(val))return;
+  const ok=r.type==='mean'?val===WORDS[r.w].es:val===r.it.w;
+  if(ok){if(r.type==='gap'){const g=document.querySelector('.gap');if(g){g.textContent=wCapG(r.it)?cap(val):val;g.classList.add('ok')}}wGood()}else wBad(val);
+}
+function finishW(){
+  const s=st.wmis<=1?3:st.wmis<=3?2:1,pi=st.wp;
+  prog.ws[pi]=Math.max(prog.ws[pi]||0,s);prog.wu=Math.max(prog.wu,Math.min(pi+2,WPH.length));save();
+  SFX.win();confetti(160);
+  const last=pi===WPH.length-1,P=WPH[pi];
+  overlay(`${pipSvg('happy')}<h2>${last?'¡Maestro de las palabras!':'¡Fase completada!'}</h2>
+    <div class="txt"><div class="bigstars">${[0,1,2].map(k=>starSvg(k<s,.25+k*.3)).join('')}</div>
+    ${P.words.length?`<p>Ya sabes usar: ${P.words.map(w=>`<b>${w}</b>`).join(', ')}. Las tienes en 📖 Mis palabras.</p>`:''}
+    <p>${s===3?'¡Perfecto!':s===2?'¡Muy bien! Repite la fase para las 3 estrellas.':'¡Conseguido! Practica un poco más para ganar más estrellas.'}</p>
+    ${!last?`<p>Siguiente: <b>${WPH[pi+1].icon} ${WPH[pi+1].name}</b>${WPH[pi+1].words.length?' ('+WPH[pi+1].words.join(', ')+')':''}</p>`:''}</div>
+    <div class="row"><button class="toy white" data-act="map">🗺️ Mapa</button>${last?'':'<button class="toy go" data-act="wnextPhase">Siguiente fase ▶</button>'}</div>`,'good');
+}
+function glossary(){
+  const learned=[];WPH.forEach((p,i)=>{if(prog.ws[i]||(st.screen==='wplay'&&i===st.wp))learned.push(...p.words)});
+  overlay(`${pipSvg('happy')}<h2>📖 Mis palabras</h2><div class="txt">${learned.length?`<p>Toca una palabra para ver qué significa, para qué sirve y sus ejemplos.</p>
+    <div class="gloss">${learned.map(w=>`<button class="opt small" data-act="wcard" data-w="${w}" data-from="gloss"><b>${w}</b><small>${WORDS[w].es}</small></button>`).join('')}</div>`:'<p>Todavía no tienes palabras. ¡Empieza por la fase 1 de <b>Palabras pequeñas</b>!</p>'}</div>
+    <div class="row"><button class="toy go" data-act="closeMap">Cerrar</button></div>`);
+}
+
 document.addEventListener('click',e=>{
   const t=e.target;
+  if(st.screen==='wplay'&&$('ov').hidden){
+    const o=t.closest('[data-opt]');if(o){SFX.tap();wAnswer(o.dataset.opt);return}
+    const pk=t.closest('[data-pick]');if(pk){const r=st.wr[st.wi],i=+pk.dataset.pick;st.wpick.push(i);SFX.tap();speak(r.tiles[i].t.replace(/[,]/g,''));renderW();return}
+    const up=t.closest('[data-unpick]');if(up){st.wpick.splice(+up.dataset.unpick,1);SFX.tap();renderW();return}
+  }
+  const wn=t.closest('[data-wlvl]');
+  if(wn){const i=+wn.dataset.wlvl;if(i>=prog.wu){SFX.bad();return}SFX.pop();introW(i);return}
   const chip=t.closest('.chip');
   if(chip){
     const col=chip.dataset.col,id=chip.dataset.id;
@@ -647,13 +990,25 @@ document.addEventListener('click',e=>{
     if(act==='nextRound'){closeOv();st.round++;if(st.round>=st.rounds.length){finishLevel();return}setupRound();renderPlay(false)}
     if(act==='map'){closeOv();show('map')}
     if(act==='nextLvl'){closeOv();introLevel(st.li+1)}
+    if(act==='wnext'){st.wci++;SFX.pop();wIntroCard()}
+    if(act==='wprev'){st.wci=Math.max(0,st.wci-1);wIntroCard()}
+    if(act==='wstart'){closeOv();startW(st.wp)}
+    if(act==='wcard'){const el=t.closest('[data-act]'),w=el.dataset.w,g=el.dataset.from==='gloss';SFX.pop();overlay(wordCardHTML(w,'📖 '+w,g?'<button class="toy white" data-act="wgloss">◀ Mis palabras</button><button class="toy go" data-act="closeMap">Cerrar</button>':'<button class="toy go" data-act="close2">Seguir ▶</button>'));speak(w)}
+    if(act==='wgloss')glossary();
+    if(act==='closeMap')closeOv();
+    if(act==='close2'){closeOv();st.pipMood='';renderW()}
+    if(act==='wclear'){st.wpick=[];SFX.tap();renderW()}
+    if(act==='wcheck'){const r=st.wr[st.wi];if(st.wpick.map(i=>r.tiles[i].t).join(' ')===r.words.join(' ')){st.wpick=r.tiles.map((_,ti)=>ti).sort((a,b)=>r.tiles[a].i-r.tiles[b].i);wGood()}else wBad(null)}
+    if(act==='wnextRound'){closeOv();st.wi++;if(st.wi>=st.wr.length){finishW();return}wSetup();renderW()}
+    if(act==='wnextPhase'){closeOv();introW(st.wp+1)}
     return;
   }
   const jump=t.closest('[data-jump]');if(jump){$('col-'+jump.dataset.jump)?.scrollIntoView({block:'nearest',behavior:'smooth'});return}
   const mb=t.closest('[data-mode]');
   if(mb&&st.free){const m=mb.dataset.mode;if(m!==st.mode){st.mode=m;if(m==='q'&&st.sel.aux==='')st.sel.aux=null;if(m==='s'&&st.sel.aux===null)st.sel.aux='';if(m==='q'&&st.sel.neg==='not')st.sel.neg="n't";renderPlay()}return}
   const id=t.closest('button')?.id;
-  if(id==='sndBtn'){st.sound=!st.sound;try{speechSynthesis.cancel()}catch(_){};st.screen==='map'?renderMap():renderPlay(false)}
+  if(id==='sndBtn'){st.sound=!st.sound;try{speechSynthesis.cancel()}catch(_){};st.screen==='map'?renderMap():st.screen==='wplay'?renderW():renderPlay(false)}
+  if(id==='glossBtn'){SFX.pop();glossary()}
   if(id==='backBtn'){SFX.tap();show('map')}
   if(id==='freeBtn'){st.free=true;st.mode='s';st.sel=blank('s');st.pipMood='';prevKeys=new Set();SFX.pop();show('play')}
   if(id==='checkBtn')check();
