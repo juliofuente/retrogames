@@ -330,6 +330,7 @@ if ($p === 'edit') {
   if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $in = $_POST; $row = $g;
     foreach (['title_es', 'title_en', 'tag_es', 'tag_en', 'desc_es', 'desc_en', 'help_es', 'help_en', 'tvhelp_es', 'tvhelp_en', 'origin', 'emoji', 'color', 'theme_color', 'bg1', 'bg2', 'levels', 'langs', 'app', 'added_version', 'tags'] as $k) if (isset($in[$k])) $row[$k] = trim((string)$in[$k]);
+    if (isset($in['cats'])) { $row['cats'] = implode(',', array_values(array_filter(array_unique(array_map('trim', explode(',', (string)$in['cats']))), function ($c) use ($L, $row) { return isset($L['cat'][$c]) && $c !== ($row['category_id'] ?? ''); }))) ?: null; }
     foreach (['collection_id' => $L['col'], 'category_id' => $L['cat'], 'control_id' => $L['ctrl'], 'subject_id' => $L['subj']] as $k => $opts) if (isset($in[$k])) $row[$k] = isset($opts[$in[$k]]) ? (string)$in[$k] : null;
     $row['tv'] = in_array($in['tv'] ?? '', ['cursor', 'cruceta'], true) ? $in['tv'] : null;
     foreach (['sort', 'lives', 'cap', 'age_min', 'age_max'] as $k) if (isset($in[$k])) $row[$k] = $in[$k] === '' ? null : (int)$in[$k];
@@ -398,6 +399,7 @@ if ($p === 'edit') {
     <?= $ta('help_es', 'Cómo se juega (español)', 'Puedes usar &lt;b&gt;negrita&lt;/b&gt;.') ?><?= $ta('help_en', 'Cómo se juega (inglés)') ?>
     <?= $t('tvhelp_es', 'Controles con mando (español)', '', 'w2') ?><?= $t('tvhelp_en', 'Controles con mando (inglés)', '', 'w2') ?>
     <?= $t('origin', 'Basado en', 'Juegos originales en los que se inspira.', 'full') ?>
+    <?= $t('cats', 'Otras categorías', 'Además de la principal, separadas por comas (ids): ' . e(implode(', ', array_keys($L['cat']))) . '. Los de la etiqueta «hit» salen solos en «Éxitos de móvil».') ?>
     <?= $t('tags', 'Etiquetas', 'Separadas por comas. «hit» = sale también en la web Mobile Hits (y en cualquier web que tenga esa etiqueta).') ?>
   </div></div>
   <div class="card"><h2 style="margin-top:0">Detalles</h2><div class="grid">

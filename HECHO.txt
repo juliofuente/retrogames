@@ -1,6 +1,15 @@
 ARCADE PERDIDO + ARCADE PRO — LO QUE ESTÁ HECHO
 ================================================
-Fecha: 20-10-2026 · Versión de la PWA (games.js → ARCADE_VERSION): 2.33.0
+Fecha: 20-10-2026 · Versión de la PWA (games.js → ARCADE_VERSION): 2.34.0
+· v2.34.0: categorías reorganizadas y varias por juego (games.cats = categorías extra, la principal sigue en category_id;
+  CMS → juego → «Otras categorías»). Nuevas: 📱 Éxitos de móvil (sola: los juegos con la etiqueta «hit»), 🔢 Números y cálculo,
+  🎯 Puntería y disparos, 🌀 Laberintos y 🧠 Palabras y memoria. Renombradas: Puzles y lógica, Plataformas y corredores y
+  ♟️ Juegos de tablero (/categoria/juegos-de-tablero; la URL antigua redirige). 99 juegos recolocados.
+  Sin repetidos en los listados: los educativos que abren un juego del arcade (Apagón, Nim, Sumas…) cuentan como ese juego
+  (uniq_games en rejillas, rankings, listas y JSON-LD); títulos repetidos renombrados (Almacén de cartas, ¿Qué hora es?…).
+  Google AdSense (anuncios automáticos, ca-pub-2798436891455671) y el script de estadísticas beebomstats.js en todas las
+  páginas (index.php los añade a todo el HTML que sirve; los educativos los llevan en su HTML), salvo en ?rec=1 / ?shot=1.
+  ads.txt en la raíz (sirve para todos los subdominios; .htaccess lo deja pasar). Quitados los «sin anuncios» de la web.
 · v2.33.0 (c): Palabras pequeñas ampliado a 98 palabras, casi 600 frases y 45 fases (con 3 repasos y gran repaso final):
   pronombres, am/is/are, was/were, have/has, do/does/don't/doesn't, did/didn't, can/can't, will, must, its/our/their,
   here/there, más preposiciones, which, me/him/us/them, tiempo, frecuencia, very/too/also/only, so/if, more/most/than y

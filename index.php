@@ -55,6 +55,26 @@ if ($path !== '/' && $path !== '/en/' && $path !== '/pwa/' && substr($path, -1) 
 /* ---------- CMS (/cms): panel para editar el catálogo y los ajustes (todo en data/arcade.sqlite) ---------- */
 if ($path === '/cms') { $CMS_URL = url('/cms'); $SITE_URL = url('/'); require __DIR__ . '/cms.php'; exit; }
 
+/* ---------- anuncios de Google (AdSense automático) y estadísticas en todas las páginas HTML que salen de aquí ----------
+   Se añaden al final, sobre la respuesta ya hecha: el script de AdSense antes de </head> y el de estadísticas antes de </body>.
+   No se repiten si la página ya los trae (los educativos que se sirven tal cual también los llevan en su HTML). */
+define('ADSENSE_CLIENT', 'ca-pub-2798436891455671');
+function ads_html(string $html): string {
+  foreach (headers_list() as $hd) if (stripos($hd, 'content-type:') === 0 && stripos($hd, 'text/html') === false) return $html;
+  if (stripos($html, '<html') === false && stripos($html, '<!doctype') === false) return $html;
+  if (preg_match('/(^|&)(rec|shot)=1/', (string)($_SERVER['QUERY_STRING'] ?? '')) || stripos((string)($_SERVER['HTTP_USER_AGENT'] ?? ''), 'ArcadeRecorder') !== false) return $html;   // grabador de vídeos y capturas: sin anuncios encima
+  if (stripos($html, 'adsbygoogle.js') === false) {
+    $ad = '<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=' . ADSENSE_CLIENT . '" crossorigin="anonymous"></script>';
+    $p = stripos($html, '</head>'); if ($p === false) $p = stripos($html, '<body'); if ($p !== false) $html = substr_replace($html, $ad . "\n", $p, 0);
+  }
+  if (stripos($html, 'beebomstats.js') === false) {
+    $st = '<script src="https://bitelchux.github.io//beebomstats.js"></script>';
+    $p = strripos($html, '</body>'); $html = $p !== false ? substr_replace($html, $st . "\n", $p, 0) : $html . "\n" . $st;
+  }
+  return $html;
+}
+ob_start('ads_html');
+
 /* ---------- datos ---------- */
 $dbFile = __DIR__ . '/data/arcade.sqlite';
 if (!is_file($dbFile) || !class_exists('PDO')) { http_response_code(503); header('Content-Type: text/plain; charset=utf-8'); echo "Falta data/arcade.sqlite o la extensión pdo_sqlite.\n"; exit; }
@@ -72,6 +92,20 @@ $AGES = []; foreach ($db->query('SELECT * FROM age_groups ORDER BY sort') as $r)
 $GAMES = []; foreach ($db->query('SELECT * FROM games WHERE deleted_at IS NULL ORDER BY sort') as $r) { $r['based'] = []; $r['ages'] = []; $GAMES[$r['id']] = $r; }
 foreach ($db->query('SELECT * FROM game_age_groups') as $r) if (isset($GAMES[$r['game_id']])) $GAMES[$r['game_id']]['ages'][] = $r['age_group_id'];
 foreach ($db->query('SELECT * FROM based_on ORDER BY game_id, sort') as $r) if (isset($GAMES[$r['game_id']])) $GAMES[$r['game_id']]['based'][] = $r;
+/* categorías de cada juego: la principal (category_id), las extra (games.cats) y «Éxitos de móvil» para los que llevan la etiqueta «hit» */
+foreach ($GAMES as &$g) {
+  $cs = array_merge([(string)$g['category_id']], array_map('trim', explode(',', (string)($g['cats'] ?? ''))));
+  if (in_array('hit', array_map('trim', explode(',', (string)($g['tags'] ?? ''))), true)) $cs[] = 'exitos';
+  $g['cats'] = array_values(array_unique(array_filter($cs, function ($c) use ($CATS) { return $c !== '' && isset($CATS[$c]); })));
+}
+unset($g);
+function in_cat(array $g, string $c): bool { return in_array($c, $g['cats'], true); }
+/* sin repetidos: los educativos que abren un juego del arcade (Apagón, Nim…) cuentan como ese juego; si están los dos, se queda el del arcade */
+function uniq_games(array $games): array {
+  $o = [];
+  foreach ($games as $g) { $k = edu_ref($g) ?? $g['id']; $k = preg_replace('/\.html$|\?.*$/', '', $k); if (!isset($o[$k]) || (is_edu($o[$k]) && !is_edu($g))) $o[$k] = $g; }
+  return array_values($o);
+}
 $VERSION = $META['version'] ?? '';
 $LASTMOD = $META['actualizado'] ?? date('Y-m-d');
 
@@ -98,8 +132,8 @@ function subcats(): array {
   foreach ($CATS as $c) {
     if ($multi && !empty($c['col'])) continue;
     if (!$multi && $c['id'] === 'educativos' && $SUBJS) continue;
-    $gs = array_values(array_filter($GAMES, function ($g) use ($c) { return $g['category_id'] === $c['id']; }));
-    if ($gs) $o[] = ['e' => $c['emoji'], 'n' => f($c, 'name'), 'p' => cat_path($c), 'g' => $gs];
+    $gs = uniq_games(array_filter($GAMES, function ($g) use ($c) { return in_cat($g, $c['id']); }));
+    if ($gs && (count($gs) < count(uniq_games($GAMES)) || count($CATS) === 1)) $o[] = ['e' => $c['emoji'], 'n' => f($c, 'name'), 'p' => cat_path($c), 'g' => $gs];   // la que tiene todos los juegos de la web (Éxitos en Mobile Hits) no aporta
   }
   if (!$multi) foreach ($SUBJS as $c) {
     $gs = array_values(array_filter($GAMES, function ($g) use ($c) { return $g['subject_id'] === $c['id']; }));
@@ -118,7 +152,7 @@ $inCol = function ($g) use ($WEB) { return $WEB['cols'] === null || in_array($g[
 $GAMES = array_filter($GAMES, function ($g) use ($inCol, $tagged) { return ($inCol($g) || $tagged($g)) && (!TVSITE || $g['tv']); });
 $COLS = array_filter($COLS, function ($c) use ($GAMES) { foreach ($GAMES as $g) if ($g['collection_id'] === $c['id']) return true; return false; });
 $used = function (string $f) use ($GAMES) { $o = []; foreach ($GAMES as $g) $o[(string)$g[$f]] = 1; return $o; };
-$CATS = array_intersect_key($CATS, $used('category_id'));
+$CATS = array_intersect_key($CATS, (function () use ($GAMES) { $o = []; foreach ($GAMES as $g) foreach ($g['cats'] as $c) $o[$c] = 1; return $o; })());
 $CTRLS = array_intersect_key($CTRLS, $used('control_id'));
 if (!isset($COLS['edu'])) { $SUBJS = []; $AGES = []; }
 $SITE = $WEB['name_es'];
@@ -265,7 +299,7 @@ function played_rows(array $g): string {
   return $o;
 }
 function rank_html(array $games, int $n = 6, string $what = ''): string {
-  $o = ''; $st = stats();
+  $o = ''; $st = stats(); $games = uniq_games($games);
   $ids = array_column($games, null, 'id');
   $mine = array_values(array_filter(array_map(function ($id) use ($ids) { return $ids[$id] ?? null; }, array_keys($st['myfav']))));
   if ($mine) { $o .= '<h2>' . h(T('❤️ Tus favoritos', '❤️ Your favourites')) . '</h2><ul class="grid">'; foreach (array_slice($mine, 0, 12) as $g) $o .= card($g, '', url(play_path($g))); $o .= '</ul>'; }
@@ -317,7 +351,7 @@ function crumbs_ld(array $items): array {
   return ['@type' => 'BreadcrumbList', '@id' => abs_url($items[count($items) - 1][1]) . '#breadcrumb', 'itemListElement' => $l];
 }
 function itemlist_ld(string $p, string $name, array $games): array {
-  $l = []; $i = 1;
+  $l = []; $i = 1; $games = uniq_games($games);
   foreach ($games as $g) $l[] = ['@type' => 'ListItem', 'position' => $i++, 'url' => abs_url(game_path($g)), 'name' => f($g, 'title')];
   return ['@type' => 'ItemList', '@id' => abs_url($p) . '#list', 'name' => $name, 'numberOfItems' => count($games), 'itemListOrder' => 'https://schema.org/ItemListUnordered', 'itemListElement' => $l];
 }
@@ -397,7 +431,7 @@ function card(array $g, string $extra = '', ?string $href = null, int $pos = 0):
     . '<span class="tx"><b>' . h(f($g, 'title')) . '</b><span class="tg">' . h(f($g, 'tag') ?: cut(f($g, 'desc'), 70)) . '</span>'
     . '<span class="ch">' . $chips . $extra . '</span></span></a></li>';
 }
-function grid(array $games): string { return '<ul class="grid">' . implode('', array_map('card', $games)) . '</ul>'; }
+function grid(array $games): string { return '<ul class="grid">' . implode('', array_map('card', uniq_games($games))) . '</ul>'; }
 function crumbs_html(array $items): string {
   $o = []; $n = count($items);
   foreach ($items as $i => [$name, $p]) $o[] = $i < $n - 1 ? '<a href="' . h(url($p)) . '">' . h($name) . '</a>' : '<span aria-current="page">' . h($name) . '</span>';
@@ -603,7 +637,7 @@ footer .fb{display:flex;align-items:center;gap:9px;font-weight:900;color:var(--t
   <div class="links">
     <?php foreach ($CTRLS as $c): ?><a href="<?= h(url(ctrl_path($c))) ?>"><?= h(T('Control: ', 'Control: ') . f($c, 'name')) ?></a><?php endforeach; ?>
   </div>
-  <p><?= h($SITE) ?> · <?= count($GAMES) ?> <?= h(T('juegos gratis y sin anuncios', 'free games, no ads')) ?> · v<?= h($VERSION) ?> · <a href="<?= h(url('/sitemap.xml')) ?>">Sitemap</a></p>
+  <p><?= h($SITE) ?> · <?= count($GAMES) ?> <?= h(T('juegos gratis', 'free games')) ?> · v<?= h($VERSION) ?> · <a href="<?= h(url('/sitemap.xml')) ?>">Sitemap</a></p>
 </div></footer>
 </body>
 </html>
@@ -617,12 +651,11 @@ function page_home(): void {
   $multi = count($COLS) > 1 && !FLAT; $one = $multi ? null : reset($COLS);
   $p = $L === 'en' ? '/en/' : '/';
   $byCol = []; foreach ($GAMES as $g) $byCol[$g['collection_id']][] = $g;
-  $byCat = []; foreach ($GAMES as $g) $byCat[$g['category_id']][] = $g;
   $new = array_values(array_filter($GAMES, function ($g) { return $g['added_version'] !== null && !is_edu($g); }));
   $na = arcade_count(); $ne = count($GAMES) - $na;
   ob_start(); ?>
   <?php $ft = top_games(array_values(array_filter($GAMES, function ($g) { return !is_edu($g) && shot_url($g, false); })), 'all', 1)[0] ?? ($new[0] ?? null) ?? array_values(array_filter($GAMES, function ($g) { return shot_url($g, false); }))[0] ?? null; ?>
-  <div class="hello"><h1><?php if ($WEB['host'] === '*'): ?><?= T('Juega un rato. <em>Sin anuncios.</em>', 'Play a little. <em>No ads.</em>') ?><?php else: ?><?= h($WEB['emoji'] . ' ' . $SITE) ?><?php endif; ?></h1><?php if ($WEB['host'] !== '*' && f($WEB, 'tag')): ?><p class="lead" style="margin:0 0 6px"><?= h(f($WEB, 'tag')) ?></p><?php endif; ?></div>
+  <div class="hello"><h1><?php if ($WEB['host'] === '*'): ?><?= T('Juega un rato. <em>Gratis.</em>', 'Play a little. <em>For free.</em>') ?><?php else: ?><?= h($WEB['emoji'] . ' ' . $SITE) ?><?php endif; ?></h1><?php if ($WEB['host'] !== '*' && f($WEB, 'tag')): ?><p class="lead" style="margin:0 0 6px"><?= h(f($WEB, 'tag')) ?></p><?php endif; ?></div>
   <nav class="chips" aria-label="<?= h(T('Categorías', 'Categories')) ?>">
     <?php foreach (['soli', 'mesa', 'edu'] as $k): if (!$multi || empty($COLS[$k]) || empty($byCol[$k])) continue; ?><a class="col-chip" href="<?= h(url(col_path($COLS[$k]))) ?>"><?= h($COLS[$k]['emoji'] . ' ' . f($COLS[$k], 'name')) ?><b><?= count($byCol[$k]) ?></b></a><?php endforeach; ?>
     <?php foreach (subcats() as $c): ?><a href="<?= h(url($c['p'])) ?>"><?= h($c['e'] . ' ' . $c['n']) ?><b><?= count($c['g']) ?></b></a><?php endforeach; ?>
@@ -637,7 +670,7 @@ function page_home(): void {
   </a>
   <?php endif; ?>
   <?php if (f($WEB, 'desc') !== '' || !$multi): ?><p class="lead" style="margin-top:18px"><?= h(f($WEB, 'desc') ?: f($one, 'desc')) ?></p><?php else: ?>
-  <p class="lead" style="margin-top:18px"><?= h(T($na . ' juegos HTML5 hechos con emojis: mecánicas de recreativa olvidadas y los grandes éxitos de móvil. Sin anuncios, sin descargas, con hasta 120 niveles, tres modos de dificultad y funcionan sin conexión. Se juegan con el dedo o con el mando de la tele. Y además ' . $ne . ' juegos educativos de mates, lengua, lógica e inglés para niños de 3 a 16 años.', $na . ' HTML5 games made with emojis: forgotten arcade mechanics and the big mobile hits. No ads, no downloads, up to 120 levels, three difficulty modes and they work offline. Play with your finger or with the TV remote. Plus ' . $ne . ' educational games for maths, language, logic and English for kids aged 3 to 16.')) ?></p><?php endif; ?>
+  <p class="lead" style="margin-top:18px"><?= h(T($na . ' juegos HTML5 hechos con emojis: mecánicas de recreativa olvidadas y los grandes éxitos de móvil. Sin descargas ni registros, con hasta 120 niveles, tres modos de dificultad y funcionan sin conexión. Se juegan con el dedo o con el mando de la tele. Y además ' . $ne . ' juegos educativos de mates, lengua, lógica e inglés para niños de 3 a 16 años.', $na . ' HTML5 games made with emojis: forgotten arcade mechanics and the big mobile hits. No downloads, no sign-up, up to 120 levels, three difficulty modes and they work offline. Play with your finger or with the TV remote. Plus ' . $ne . ' educational games for maths, language, logic and English for kids aged 3 to 16.')) ?></p><?php endif; ?>
   <?php if ($new): ?><h2><?= h(T('✨ Novedades', '✨ New games')) ?> <span class="cnt"><?= count($new) ?></span></h2><?= grid(array_slice($new, 0, 10)) ?><?php endif; ?>
   <?php if ($multi && !empty($byCol['soli'])): $sc = $COLS['soli']; ?>
   <h2><a href="<?= h(url(col_path($sc))) ?>"><?= h($sc['emoji'] . ' ' . f($sc, 'name')) ?></a> <span class="cnt"><?= count($byCol['soli']) ?></span></h2>
@@ -664,8 +697,8 @@ function page_home(): void {
     <?php if ($n > 10): ?><p><a class="more" href="<?= h(url($c['p'])) ?>"><?= h(T('Ver los ' . $n . ' juegos de ' . mb_strtolower($c['n']), 'See all ' . $n . ' ' . mb_strtolower($c['n']) . ' games')) ?> →</a></p><?php endif; ?>
   <?php endforeach; ?>
   <?php $body = ob_get_clean();
-  $title = !$multi ? $SITE . ' · ' . count($GAMES) . T(' juegos gratis y sin anuncios', ' free games, no ads') : T($SITE . ' · ' . $na . ' juegos arcade y ' . $ne . ' educativos gratis', $SITE . ' · ' . $na . ' arcade and ' . $ne . ' educational games, free');
-  $desc = f($WEB, 'desc') !== '' ? f($WEB, 'desc') : (!$multi ? f($one, 'desc') : null) ?? T('Juega gratis y sin anuncios a ' . $na . ' juegos HTML5 con emojis (puzles, arcade, un toque, física y estrategia) y a ' . $ne . ' juegos educativos de mates, lengua, lógica e inglés para niños. Para móvil, PC y Android TV.', 'Play ' . $na . ' free, ad-free HTML5 emoji games (puzzles, arcade, one-tap, physics, strategy) and ' . $ne . ' educational maths, language, logic and English games for kids. For phone, PC and Android TV.');
+  $title = !$multi ? $SITE . ' · ' . count($GAMES) . T(' juegos gratis', ' free games') : T($SITE . ' · ' . $na . ' juegos arcade y ' . $ne . ' educativos gratis', $SITE . ' · ' . $na . ' arcade and ' . $ne . ' educational games, free');
+  $desc = f($WEB, 'desc') !== '' ? f($WEB, 'desc') : (!$multi ? f($one, 'desc') : null) ?? T('Juega gratis a ' . $na . ' juegos HTML5 con emojis (puzles, arcade, un toque, física y estrategia) y a ' . $ne . ' juegos educativos de mates, lengua, lógica e inglés para niños. Para móvil, PC y Android TV.', 'Play ' . $na . ' free HTML5 emoji games (puzzles, arcade, one-tap, physics, strategy) and ' . $ne . ' educational maths, language, logic and English games for kids. For phone, PC and Android TV.');
   render(['path' => $p, 'title' => $title, 'desc' => $desc, 'alt' => ['/', '/en/'], 'body' => $body, 'back' => true,
     'ld' => [app_ld(), page_ld('CollectionPage', $p, $title, $desc, ['about' => ['@id' => abs_url('/#app')], 'mainEntity' => ['@id' => abs_url($p) . '#list']]), itemlist_ld($p, T('Todos los juegos', 'All games'), array_values($GAMES))]]);
 }
@@ -685,6 +718,7 @@ function edu_tiles(?string $skip = null): string {
 }
 
 function page_list(string $p, array $alt, string $h1, string $lead, array $games, array $crumbs, string $title, string $desc, array $extraBody = []): void {
+  $games = uniq_games($games);
   ob_start(); ?>
   <?= crumbs_html($crumbs) ?>
   <h1><?= h($h1) ?></h1>
@@ -706,7 +740,7 @@ function page_collection(array $c): void {
   $open = TVSITE ? url('/') . '?sec=' . $c['id'] : url('/' . $c['index_file']);
   $play = '<div class="btns" style="margin-bottom:18px"><a class="btn pri" href="' . h($open) . '">▶ ' . h(T('Abrir ' . $n, 'Open ' . $n)) . '</a></div>';
   global $CATS; $tl = '';
-  foreach ($CATS as $k) { $cn = count(array_filter($games, function ($g) use ($k) { return $g['category_id'] === $k['id']; })); if ($cn && $cn < count($games)) $tl .= '<li><a class="tile" href="' . h(url(cat_path($k))) . '"><span class="e" aria-hidden="true">' . h($k['emoji']) . '</span><span><b>' . h(f($k, 'name')) . '</b><small>' . $cn . ' ' . h(T('juegos', 'games')) . '</small></span></a></li>'; }
+  foreach ($CATS as $k) { $cn = count(uniq_games(array_filter($games, function ($g) use ($k) { return in_cat($g, $k['id']); }))); if ($cn && $cn < count($games)) $tl .= '<li><a class="tile" href="' . h(url(cat_path($k))) . '"><span class="e" aria-hidden="true">' . h($k['emoji']) . '</span><span><b>' . h(f($k, 'name')) . '</b><small>' . $cn . ' ' . h(T('juegos', 'games')) . '</small></span></a></li>'; }
   if ($tl) $play .= '<ul class="tiles" style="margin-bottom:8px">' . $tl . '</ul>';
   if ($c['id'] === 'edu') $play = edu_tiles() . '<h2>' . h(T('Todos los juegos educativos', 'All educational games')) . '</h2>';   // sin portada aparte: esta es su portada
   page_list($p, [col_path($c, 'es'), col_path($c, 'en')], $c['id'] === 'edu' ? T('🎓 Juegos educativos', '🎓 Educational games') : $n, f($c, 'desc'), $games, [[T('Inicio', 'Home'), home_path()], [$n, $p]],
@@ -717,7 +751,7 @@ function home_path(): string { return T('/', '/en/'); }
 
 function page_category(array $c): void {
   global $GAMES, $SITE;
-  $games = array_values(array_filter($GAMES, function ($g) use ($c) { return $g['category_id'] === $c['id']; }));
+  $games = array_values(array_filter($GAMES, function ($g) use ($c) { return in_cat($g, $c['id']); }));
   $p = cat_path($c); $n = f($c, 'name');
   $low = mb_strtolower($n, 'UTF-8'); $own = preg_match('/^juegos\b|\bgames\b/u', $low);   // «Juegos de mesa…» ya lleva la palabra
   $hd = $own ? $n : T('Juegos de ' . $low, $n . ' games');
@@ -845,7 +879,7 @@ function page_game_edu(array $g): void {
   $faq = [
     [T('¿Para qué edad es ' . $t . '?', 'What age is ' . $t . ' for?'), T('Está pensado para niños de ' . $g['age_min'] . ' a ' . $g['age_max'] . ' años', 'It is designed for kids aged ' . $g['age_min'] . ' to ' . $g['age_max']) . ($g['levels'] === 'infinite' ? T(': la dificultad sube poco a poco con cada nivel y se adapta a la edad del perfil.', ': difficulty rises little by little with each level and adapts to the profile age.') : '.')],
     [T('¿Qué se aprende con ' . $t . '?', 'What do kids learn with ' . $t . '?'), f($s, 'name') . ': ' . f($g, 'desc')],
-    [T('¿Es gratis?', 'Is it free?'), T('Sí. Es gratis, sin anuncios ni compras, y no hace falta registrarse: se juega en el navegador del móvil, la tablet o el ordenador.', 'Yes. It is free, with no ads or purchases, and no sign-up: play in the browser on a phone, tablet or computer.')],
+    [T('¿Es gratis?', 'Is it free?'), T('Sí. Es gratis, sin compras, y no hace falta registrarse: se juega en el navegador del móvil, la tablet o el ordenador.', 'Yes. It is free, with no purchases and no sign-up: play in the browser on a phone, tablet or computer.')],
     [T('¿En qué idiomas está?', 'Which languages is it in?'), langs_label($g) . '.'],
   ];
   ob_start(); ?>
@@ -856,7 +890,7 @@ function page_game_edu(array $g): void {
     <div>
       <div class="ttl"><div class="big" aria-hidden="true" style="background:linear-gradient(135deg,<?= h($g['bg1']) ?>,<?= h($g['bg2']) ?>)"><?= h($g['emoji']) ?></div><h1><?= h($t) ?></h1></div>
       <p class="lead" style="margin-top:12px"><?= h(f($g, 'desc')) ?></p>
-      <div class="facts-mini"><span><?= h($s['emoji'] . ' ' . f($s, 'name')) ?></span><span><?= h(ages_label($g)) ?></span><span><?= h(T('Gratis · sin anuncios', 'Free · no ads')) ?></span></div>
+      <div class="facts-mini"><span><?= h($s['emoji'] . ' ' . f($s, 'name')) ?></span><span><?= h(ages_label($g)) ?></span><span><?= h(T('Gratis · sin descargas', 'Free · no download')) ?></span></div>
       <div class="btns"><a class="btn pri" href="<?= h(url(play_path($g))) ?>">▶ <?= h(T('Jugar gratis', 'Play for free')) ?></a></div>
     </div>
   </div>
@@ -869,7 +903,7 @@ function page_game_edu(array $g): void {
       <dt><?= h(T('Niveles', 'Levels')) ?></dt><dd><?= h($g['levels'] === 'infinite' ? T('Infinitos, la dificultad sube poco a poco', 'Endless, difficulty rises gradually') : T('Por niveles', 'Level-based')) ?></dd>
       <dt><?= h(T('Idiomas', 'Languages')) ?></dt><dd><?= h(langs_label($g)) ?></dd>
       <dt><?= h(T('Plataformas', 'Platforms')) ?></dt><dd><?= h(T('Navegador (móvil, tablet, PC)', 'Browser (phone, tablet, PC)')) ?></dd>
-      <dt><?= h(T('Precio', 'Price')) ?></dt><dd><?= h(T('Gratis, sin anuncios', 'Free, no ads')) ?></dd>
+      <dt><?= h(T('Precio', 'Price')) ?></dt><dd><?= h(T('Gratis', 'Free')) ?></dd>
       <?= played_rows($g) ?>
     </dl>
   </section>
@@ -891,7 +925,7 @@ function page_game(array $g): void {
   $c = $CATS[$g['category_id']]; $col = $COLS[$g['collection_id']]; $ct = $CTRLS[$g['control_id']];
   $p = game_path($g); $t = f($g, 'title');
   $crumbs = [[T('Inicio', 'Home'), home_path()], [f($col, 'name'), col_path($col)], [f($c, 'name'), cat_path($c)], [$t, $p]];
-  $related = array_values(array_filter($GAMES, function ($x) use ($g) { return $x['category_id'] === $g['category_id'] && $x['id'] !== $g['id'] && !is_edu($x); }));
+  $related = uniq_games(array_filter($GAMES, function ($x) use ($g) { return in_cat($x, $g['category_id']) && $x['id'] !== $g['id'] && !is_edu($x) && (edu_ref($g) ?? '') !== $x['id']; }));
   usort($related, function ($a, $b) use ($g) { return ($a['collection_id'] === $g['collection_id'] ? 0 : 1) - ($b['collection_id'] === $g['collection_id'] ? 0 : 1) ?: $a['sort'] - $b['sort']; });
   $related = array_slice($related, 0, 6);
   $ids = array_keys(array_filter($GAMES, function ($x) { return !is_edu($x); })); $i = array_search($g['id'], $ids, true);
@@ -900,7 +934,7 @@ function page_game(array $g): void {
   $lives = (int)$g['lives'] === 0 ? T('Sin vidas: puedes reintentar siempre', 'No lives: retry as often as you like') : $g['lives'];
   $faq = [
     [T('¿Cómo se juega a ' . $t . '?', 'How do you play ' . $t . '?'), plain(f($g, 'help'))],
-    [T('¿' . $t . ' es gratis?', 'Is ' . $t . ' free?'), T('Sí. Es gratis, no tiene anuncios ni compras y no hace falta registrarse ni descargar nada: se juega en el navegador.', 'Yes. It is free, with no ads or purchases, and you do not need to sign up or download anything: it runs in your browser.')],
+    [T('¿' . $t . ' es gratis?', 'Is ' . $t . ' free?'), T('Sí. Es gratis, no tiene compras y no hace falta registrarse ni descargar nada: se juega en el navegador.', 'Yes. It is free, with no purchases, and you do not need to sign up or download anything: it runs in your browser.')],
     [T('¿Se puede jugar sin conexión?', 'Can I play offline?'), T('Necesita conexión para cargarse; una vez abierto, la partida sigue aunque se corte internet.', 'It needs a connection to load; once open, the game keeps running even if the connection drops.')],
     [T('¿Se puede jugar en la tele con el mando?', 'Can I play it on a TV with the remote?'), $g['tv'] ? T('Sí, en Android TV, Google TV o Fire TV. ', 'Yes, on Android TV, Google TV or Fire TV. ') . plain(f($g, 'tvhelp')) . T(' Pueden jugar hasta 4 personas por turnos.', ' Up to 4 people can play taking turns.') : T('No: este juego necesita pantalla táctil.', 'No: this game needs a touch screen.')],
   ];
@@ -914,7 +948,7 @@ function page_game(array $g): void {
       <div class="ttl"><div class="big" aria-hidden="true" style="background:linear-gradient(135deg,<?= h($g['bg1'] ?: $g['color']) ?>,<?= h($g['bg2'] ?: '#111') ?>)"><?= h($g['emoji']) ?></div><h1><?= h($t) ?></h1></div>
       <p class="tagl"><?= h(f($g, 'tag')) ?></p>
       <p class="lead"><?= h(f($g, 'desc')) ?></p>
-      <div class="facts-mini"><span><?= h($c['emoji'] . ' ' . f($c, 'name')) ?></span><span>👆 <?= h(f($ct, 'name')) ?></span><?php if ($g['tv']): ?><span>📺 TV</span><?php endif; ?><span><?= h(T('Gratis · sin anuncios', 'Free · no ads')) ?></span></div>
+      <div class="facts-mini"><span><?= h($c['emoji'] . ' ' . f($c, 'name')) ?></span><span>👆 <?= h(f($ct, 'name')) ?></span><?php if ($g['tv']): ?><span>📺 TV</span><?php endif; ?><span><?= h(T('Gratis · sin descargas', 'Free · no download')) ?></span></div>
       <div class="btns">
         <a class="btn pri" href="<?= h(url(play_path($g))) ?>">▶ <?= h(T('Jugar gratis', 'Play for free')) ?></a>
         
@@ -931,7 +965,7 @@ function page_game(array $g): void {
       <h2 style="margin-top:0"><?= h(T('Ficha del juego', 'Game details')) ?></h2>
       <dl class="facts">
         <dt><?= h(T('Colección', 'Collection')) ?></dt><dd><a href="<?= h(url(col_path($col))) ?>"><?= h(f($col, 'name')) ?></a></dd>
-        <dt><?= h(T('Categoría', 'Category')) ?></dt><dd><a href="<?= h(url(cat_path($c))) ?>"><?= h($c['emoji'] . ' ' . f($c, 'name')) ?></a></dd>
+        <dt><?= h(count($g['cats']) > 1 ? T('Categorías', 'Categories') : T('Categoría', 'Category')) ?></dt><dd><?= implode(' · ', array_map(function ($k) use ($CATS) { return '<a href="' . h(url(cat_path($CATS[$k]))) . '">' . h($CATS[$k]['emoji'] . ' ' . f($CATS[$k], 'name')) . '</a>'; }, array_values(array_filter($g['cats'], function ($k) use ($CATS) { return isset($CATS[$k]); })))) ?></dd>
         <dt><?= h(T('Control', 'Controls')) ?></dt><dd><a href="<?= h(url(ctrl_path($ct))) ?>"><?= h(f($ct, 'name')) ?></a></dd>
         <dt><?= h(T('Niveles', 'Levels')) ?></dt><dd><?= h(levels_label($g)) ?></dd>
         <dt><?= h(T('Vidas', 'Lives')) ?></dt><dd><?= h((string)$lives) ?></dd>
@@ -939,7 +973,7 @@ function page_game(array $g): void {
         <dt><?= h(T('Jugadores', 'Players')) ?></dt><dd><?= h($g['tv'] ? T('1 (táctil) · 1–4 por turnos (TV)', '1 (touch) · 1–4 taking turns (TV)') : '1') ?></dd>
         <dt><?= h(T('Idiomas', 'Languages')) ?></dt><dd><?= h(T('Español, inglés', 'Spanish, English')) ?></dd>
         <dt><?= h(T('Plataformas', 'Platforms')) ?></dt><dd><?= h(T('Navegador (móvil, tablet, PC)', 'Browser (phone, tablet, PC)') . ($g['tv'] ? ', Android TV, Fire TV' : '')) ?></dd>
-        <dt><?= h(T('Precio', 'Price')) ?></dt><dd><?= h(T('Gratis, sin anuncios', 'Free, no ads')) ?></dd>
+        <dt><?= h(T('Precio', 'Price')) ?></dt><dd><?= h(T('Gratis', 'Free')) ?></dd>
         <?= played_rows($g) ?>
         <?php if ($based): ?><dt><?= h(T('Inspirado en', 'Inspired by')) ?></dt><dd><?= h($based) ?></dd><?php endif; ?>
       </dl>
@@ -955,7 +989,7 @@ function page_game(array $g): void {
   </nav>
   <?php $body = ob_get_clean();
   $title = T($t . ': juego gratis online', $t . ': free online game') . ' (' . ($based ? cut($g['based'][0]['name'], 30) . ', ' : '') . T('móvil y TV', 'phone & TV') . ') · ' . $SITE;
-  $desc = f($g, 'desc') . ' ' . T('Gratis, sin anuncios y sin conexión.', 'Free, no ads, works offline.') . ($based ? ' ' . T('Inspirado en ', 'Inspired by ') . $g['based'][0]['name'] . '.' : '');
+  $desc = f($g, 'desc') . ' ' . T('Gratis y funciona sin conexión.', 'Free and works offline.') . ($based ? ' ' . T('Inspirado en ', 'Inspired by ') . $g['based'][0]['name'] . '.' : '');
   render(['path' => $p, 'title' => $title, 'ogtitle' => $t . ' · ' . $SITE, 'desc' => $desc, 'alt' => [game_path($g, 'es'), game_path($g, 'en')], 'body' => $body, 'theme' => $g['theme_color'] ?: $g['color'], 'image' => shot_url($g, false) ? '/pwa/capturas/' . $g['id'] . '.webp' : null,
     'icon' => icon_url($g), 'ogtype' => 'website',
     'ld' => [page_ld('ItemPage', $p, $title, $desc, ['breadcrumb' => ['@id' => abs_url($p) . '#breadcrumb'], 'mainEntity' => ['@id' => abs_url($p) . '#game'], 'primaryImageOfPage' => shot_url($g, false) ? abs_url('/pwa/capturas/' . $g['id'] . '.webp') : abs_url('/icono/' . $g['id'] . '.svg')]),
@@ -1171,7 +1205,7 @@ if (count($seg) === 2) {
   if ($k === ($EN ? 'game' : 'juego')) { $g = $EN ? find_by($GAMES, 'slug_en', $arg) : ($GAMES[$arg] ?? null); if ($g) { page_game($g); exit; } }
   if ($k === ($EN ? 'play' : 'jugar')) { $g = $EN ? find_by($GAMES, 'slug_en', $arg) : ($GAMES[$arg] ?? null); if ($g) redirect(url(play_path($g)) . (isset($_SERVER['QUERY_STRING']) && $_SERVER['QUERY_STRING'] !== '' ? '?' . $_SERVER['QUERY_STRING'] : '')); }
   if ($k === ($EN ? 'category' : 'categoria')) { $c = find_by($CATS, $EN ? 'slug_en' : 'slug_es', $arg); if ($c) { page_category($c); exit; } }
-  if ($k === ($EN ? 'category' : 'categoria') && ($to = ['cartas-y-palabras' => 'tablero-cartas-y-palabras', 'cards-and-words' => 'board-cards-and-words'][$arg] ?? null) && ($c = find_by($CATS, $EN ? 'slug_en' : 'slug_es', $to))) redirect(url(cat_path($c)));   // nombres que tuvo la categoría unas horas
+  if ($k === ($EN ? 'category' : 'categoria') && ($to = ['cartas-y-palabras' => 'juegos-de-tablero', 'cards-and-words' => 'tabletop-games', 'tablero-cartas-y-palabras' => 'juegos-de-tablero', 'board-cards-and-words' => 'tabletop-games'][$arg] ?? null) && ($c = find_by($CATS, $EN ? 'slug_en' : 'slug_es', $to))) redirect(url(cat_path($c)));   // nombres que tuvo la categoría unas horas
   if ($k === ($EN ? 'category' : 'categoria') && $arg === ($EN ? 'board-games' : 'juegos-de-mesa') && isset($COLS['mesa'])) redirect(url(col_path($COLS['mesa'])));   // antes fue categoría; ahora es colección
   if ($k === ($EN ? 'collection' : 'coleccion')) { $c = find_by($COLS, $EN ? 'slug_en' : 'slug_es', $arg); if ($c) { page_collection($c); exit; } }
   if ($k === ($EN ? 'subject' : 'asignatura')) { $c = find_by($SUBJS, $EN ? 'slug_en' : 'slug_es', $arg); if ($c) { page_subject($c); exit; } }

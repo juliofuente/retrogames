@@ -26,6 +26,8 @@ AddDefaultCharset utf-8
   # Archivos internos y código descargable: nunca se sirven
   RewriteRule ^(data|herramientas|autonomos)(/|$) - [F,L]
   RewriteRule (^|/)\.(?!well-known) - [F,L]
+  # ads.txt (Google AdSense) sí se sirve, igual en todos los subdominios
+  RewriteRule ^ads\.txt$ - [L]
   RewriteRule \.(sqlite|sqlite3|db|py|md|txt|sh|json\.bak)$ - [F,L,NC]
 
   # /index.html (la antigua portada estática) → index.php lo redirige a /

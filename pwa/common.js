@@ -1317,7 +1317,7 @@
           if (tag) A.txt(ctx, tag, g.W / 2, cy + m * 0.39, m * 0.05, 'rgba(255,255,255,.88)', 'center', 800);
           if (def.origin) A.txt(ctx, (EN ? 'Inspired by ' : 'Inspirado en ') + String(def.origin).split(' / ')[0], g.W / 2, cy + m * 0.47, m * 0.04, 'rgba(255,255,255,.7)', 'center', 700);
         } else {
-          A.txt(ctx, EN ? 'Play it free, no ads' : 'Juega gratis y sin anuncios', g.W / 2, cy + m * 0.4, m * 0.055, 'rgba(255,255,255,.9)', 'center', 800);
+          A.txt(ctx, EN ? 'Play it for free' : 'Juega gratis', g.W / 2, cy + m * 0.4, m * 0.055, 'rgba(255,255,255,.9)', 'center', 800);
           const w = Math.min(g.W * 0.9, m * 0.08 * HOST.length * 0.62 + 60); ctx.fillStyle = accent; A.rr(ctx, g.W / 2 - w / 2, cy + m * 0.48, w, m * 0.13, m * 0.065); ctx.fill();
           A.txt(ctx, HOST + '/' + def.id, g.W / 2, cy + m * 0.545, Math.min(m * 0.065, (w - 30) / (HOST.length + def.id.length + 1) * 1.8), '#fff', 'center', 900, 'rgba(0,0,0,.35)');
         }
