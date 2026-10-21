@@ -4,9 +4,15 @@ Juego para niños para aprender a montar frases en inglés.
 
 Dos caminos en el mapa:
 - Fábrica de frases: montar frases con columnas (quién, auxiliar, verbo, final, qué).
-- Palabras pequeñas: 17 fases que presentan poco a poco las palabras más comunes
-  (a, an, the, this, that, these, those, and, but, or, my, your, his, her, to, for, in, on, at,
-  with, of, what, who, where, when, why, because, how, some, any, much, many) y un gran repaso.
+- Palabras pequeñas: 45 fases (con 3 repasos y un gran repaso final) que presentan poco a poco
+  98 palabras comunes del inglés: pronombres (I, you, he, she, it, we, they, me, him, us, them),
+  am/is/are, was/were, have/has, do/does/don't/doesn't, did/didn't, can/can't, will, must,
+  artículos y demostrativos, posesivos (my, your, his, her, its, our, their), preposiciones
+  (in, on, at, under, behind, near, between, from, with, without, of, to, for), preguntas
+  (what, who, where, when, why, how, which), some/any/much/many, here/there, now/today/
+  yesterday/tomorrow, before/after, always/usually/sometimes/never, very/too/also/only,
+  and/but/or/because/so/if, more/most/than y something/anything/nothing/everything/everyone.
+  Casi 600 frases de práctica con traducción.
   Antes de usar una palabra nueva sale su tarjeta: qué significa, para qué sirve, ejemplos con
   voz y un truco. Luego se practica con «¿qué significa?», completar la frase y ordenar palabras,
   con repaso de las fases anteriores. «📖 Mis palabras» guarda las tarjetas de lo aprendido.
@@ -18,5 +24,5 @@ Dos caminos en el mapa:
 
 Para usarlo: sube la carpeta a tu servidor y abre index.html.
 También funciona abriendo index.html directamente, pero sin modo offline ni instalación.
-El progreso (niveles y estrellas) se guarda en el navegador (localStorage, clave "fabrica-frases-v2"; las palabras en wu/ws).
+El progreso (niveles y estrellas) se guarda en el navegador (localStorage, clave "fabrica-frases-v2"; las palabras en wu2/ws2).
 La voz usa la síntesis de voz del navegador (inglés británico).
