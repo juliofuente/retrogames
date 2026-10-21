@@ -1,6 +1,9 @@
 ARCADE PERDIDO + ARCADE PRO — LO QUE ESTÁ HECHO
 ================================================
-Fecha: 20-10-2026 · Versión de la PWA (games.js → ARCADE_VERSION): 2.35.0
+Fecha: 20-10-2026 · Versión de la PWA (games.js → ARCADE_VERSION): 2.36.0
+· v2.36.0: Emoji Quest con el vocabulario completo de la Fábrica de Frases: las 98 palabras pequeñas (mismas tarjetas y
+  588 frases, un personaje profesor por zona, repasos), y los verbos y tiempos de la fábrica (like, play, eat, watch, want,
+  go, drink, visit; could; was/were + -ing; have/has + participio). palabras.js se genera con herramientas/eq-palabras.js.
 · v2.35.0: Emoji Quest (educativos, inglés, /emoji-quest): juego de rol con emojis para aprender inglés. Mapa de 9 zonas
   que se abren al terminar la anterior, personajes con misiones (❗), tarjeta de cada estructura antes de usarla (cuaderno 📖),
   diálogos con voz y traducción opcional, preguntas, montar frases, 5 minijuegos (oír y elegir, parejas, contar, deletrear,

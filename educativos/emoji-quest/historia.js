@@ -301,5 +301,83 @@ window.EQ = (function () {
         { en: 'Last night I ___ TV. 📺', es: 'Anoche vi la tele.', opts: ['watched', 'watch', 'watching'], ok: [0] },
         { en: 'I ___ a dragon yesterday! 🐉', es: '¡Ayer vi un dragón!', opts: ['saw', 'see', 'seed'], ok: [0] }] },
   ];
+  /* ---------- palabras pequeñas: las 98 de la Fábrica de Frases (tarjetas y frases en palabras.js) ----------
+     En cada zona hay un personaje que las enseña. words = fases de la Fábrica (índices de EQW.P), en el orden en que salen;
+     las fases de repaso (11, 25, 33 y el gran repaso 44) mezclan todas las palabras vistas hasta ese momento.
+     Sus misiones se intercalan con las de la zona, siempre antes de la última (la que abre la puerta o el dragón). */
+  const T = {
+    village: { e: '🦉', name: 'Ollie the Owl', at: [8, 3], words: [0, 1, 2, 3] },            // I you · he she it · we they · am is are
+    school: { e: '🤖', name: 'Robo', at: [8, 3], words: [4, 5, 6, 7, 8] },                    // a an · the · this that · these those · my your
+    garden: { e: '🐝', name: 'Bea the Bee', at: [8, 3], words: [9, 10, 12, 13, 11] },         // his her · its our their · and but or · not no · repaso 1
+    market: { e: '🐒', name: 'Momo', at: [8, 3], words: [15, 16, 31, 32] },                   // do does · don't doesn't · some any · much many
+    farm: { e: '🐑', name: 'Woolly', at: [8, 3], words: [14, 18, 22, 30] },                   // have has · here there · with of · me him us them
+    town: { e: '🧑‍🚒', name: 'Firefighter Fin', at: [8, 5], words: [19, 20, 21, 23, 27, 24] }, // in on · at · under behind near · without between from · where when · to for
+    sports: { e: '🦘', name: 'Joey', at: [8, 3], words: [17, 25, 26, 28, 29] },              // can can't · repaso 2 · what who · why because how · which
+    library: { e: '🧚', name: 'Fairy Flo', at: [8, 3], words: [33, 34, 37, 39, 40, 41] },    // repaso 3 · was were · now today… · always… · very too… · so if
+    castle: { e: '👻', name: 'Boo the Ghost', at: [2, 6], words: [35, 36, 38, 42, 43, 44] },  // did didn't · will must · before after · more most than · something… · gran repaso
+  };
+  Z.forEach((z) => { z.teacher = T[z.id]; });
+
+  /* ---------- los verbos y tiempos de la Fábrica de Frases ----------
+     (like, play, eat, watch, want, go, drink, visit · could · was/were + -ing · have/has + participio)
+     Cada misión extra entra justo antes de la última misión de su zona. */
+  V.verbs = [['😍', 'like', 'gustar'], ['🤸', 'play', 'jugar'], ['🍽️', 'eat', 'comer'], ['📺', 'watch', 'ver (la tele)'], ['🙏', 'want', 'querer'], ['🚶', 'go', 'ir'], ['🥤', 'drink', 'beber'], ['🧳', 'visit', 'visitar']];
+  V.fun = [['⚽', 'football', 'fútbol (en EE. UU.: soccer)'], ['🎬', 'cartoons', 'dibujos animados'], ['🎮', 'video games', 'videojuegos'], ['📺', 'TV', 'la tele'], ['🦁', 'the zoo', 'el zoo'], ['👵', 'grandma', 'la abuela'], ['🎂', 'cake', 'tarta'], ['🏠', 'home', 'casa']];
+  Object.assign(L, {
+    verbs: { t: 'Verbos de cada día', icon: '🏃', es: 'Los 8 verbos de la Fábrica de Frases y cómo cambian.', pat: 'like · play · eat · watch · want · go · drink · visit',
+      use: 'Con <b>he, she, it</b> el verbo lleva <b>-s</b>: she <b>likes</b>, he <b>watches</b>, it <b>goes</b>. Con <b>-ing</b>, lo que pasa ahora: I\'m <b>drinking</b>. En pasado: liked, played, watched, wanted, visited… y los irregulares <b>ate</b>, <b>went</b>, <b>drank</b>.',
+      ex: [['She watches cartoons.', 'Ella ve dibujos animados.', '🎬'], ['I want some pizza.', 'Quiero pizza.', '🍕'], ['We drank milk.', 'Bebimos leche.', '🥛']], tip: 'watch → <b>watches</b> y go → <b>goes</b>: si acaba en -ch, -sh, -o… se añade <b>-es</b>.' },
+    could: { t: 'Podía / ¿podrías…?', icon: '🙋', es: 'could es el pasado de can, y también sirve para pedir algo con educación.', pat: 'I could ___. · I couldn\'t ___. · Could you ___, please?',
+      use: '<b>could</b> = podía, sabía (en el pasado). <b>couldn\'t</b> = no podía. Y <b>Could you…?</b> = ¿podrías…?, más educado que Can you…?',
+      ex: [['When I was two, I couldn\'t swim.', 'Cuando tenía dos años, no sabía nadar.', '🏊'], ['Yesterday I could see the sea.', 'Ayer podía ver el mar.', '🌊'], ['Could you help me, please?', '¿Podrías ayudarme, por favor?', '🙏']], tip: 'Detrás de <b>could</b> el verbo va tal cual, sin -s ni -ed: she could <b>play</b>.' },
+    wasing: { t: 'Estaba haciendo…', icon: '⏪', es: 'Para lo que estaba pasando en un momento del pasado.', pat: 'I was ___ing. · They were ___ing. · I wasn\'t / weren\'t ___ing.',
+      use: '<b>was</b> con I, he, she, it; <b>were</b> con you, we, they; y el verbo con <b>-ing</b>. Negativo: <b>wasn\'t</b>, <b>weren\'t</b>. Pregunta: <b>What were you doing?</b>',
+      ex: [['I was watching TV.', 'Estaba viendo la tele.', '📺'], ['They were playing football.', 'Estaban jugando al fútbol.', '⚽'], ['She wasn\'t sleeping.', 'Ella no estaba durmiendo.', '😴']], tip: 'Es como «estaba» + «-ando/-iendo»: was eat<b>ing</b> = estaba comiendo.' },
+    perfect: { t: 'He comido, ha ido…', icon: '✅', es: 'have / has + participio: lo que has hecho (alguna vez o hace poco).', pat: 'I have eaten. · She has gone. · Have you ever ___? → Yes, I have. / No, I haven\'t.',
+      use: '<b>have</b> con I, you, we, they y <b>has</b> con he, she, it. Luego el participio: played, watched, visited… y los irregulares <b>eaten</b>, <b>gone</b>, <b>seen</b>, <b>drunk</b>. Negativo: <b>haven\'t</b>, <b>hasn\'t</b>.',
+      ex: [['I have eaten all the cake!', '¡Me he comido toda la tarta!', '🎂'], ['Grandma has gone home.', 'La abuela se ha ido a casa.', '👵'], ['Have you ever seen a dragon?', '¿Has visto alguna vez un dragón?', '🐉']], tip: '<b>ever</b> = alguna vez. <b>never</b> = nunca: I have never seen a dragon.' },
+  });
+  const EXTRA = {
+    market: { npc: 'kid', hint: 'Habla otra vez con Leo 🧒', lesson: 'verbs', ev: [
+      { t: 'say', en: "Hi, {name}! I want to play. What do you want?", es: '¡Hola, {name}! Yo quiero jugar. ¿Tú qué quieres?' },
+      { t: 'lesson', id: 'verbs' },
+      { t: 'ask', en: 'My sister ___ cartoons every day. 🎬', es: 'Mi hermana ve dibujos animados todos los días.', opts: ['watches', 'watch', 'watching'], ok: [0], why: 'Con <b>she</b> el verbo lleva -s; watch acaba en -ch, así que <b>watches</b>.' },
+      { t: 'ask', en: 'I ___ some milk, please. 🥛', es: 'Quiero leche, por favor.', opts: ['want', 'wants', 'wanting'], ok: [0] },
+      { t: 'ask', en: 'He ___ to school by bus. 🚌', es: 'Él va al colegio en autobús.', opts: ['goes', 'go', 'gos'], ok: [0], why: 'go → <b>goes</b> (con -es).' },
+      { t: 'ask', en: 'Yesterday we ___ orange juice. 🧃', es: 'Ayer bebimos zumo de naranja.', opts: ['drank', 'drinked', 'drink'], ok: [0], why: '<b>drink</b> es irregular: en pasado es <b>drank</b>.' },
+      { t: 'ask', en: 'Last summer they ___ the zoo. 🦁', es: 'El verano pasado visitaron el zoo.', opts: ['visited', 'visit', 'visiting'], ok: [0] },
+      { t: 'ask', en: 'Look! The cat is ___ milk. 🐱🥛', es: '¡Mira! El gato está bebiendo leche.', opts: ['drinking', 'drink', 'drinks'], ok: [0] },
+      { t: 'game', kind: 'pairs', set: 'verbs', title: 'Une cada dibujo con su verbo' },
+      { t: 'game', kind: 'listen', set: 'fun', title: 'Escucha y toca el dibujo' },
+      { t: 'build', es: 'Mi hermano ve dibujos animados.', en: 'My brother watches cartoons' }] },
+    sports: { npc: 'penguin', hint: 'Habla otra vez con Pingu 🐧', lesson: 'could', ev: [
+      { t: 'say', en: "When I was a baby, I couldn't swim. Now I can!", es: 'Cuando era un bebé, no sabía nadar. ¡Ahora sí!' },
+      { t: 'lesson', id: 'could' },
+      { t: 'ask', en: 'When I was two, I ___ ride a bike. 🚲', es: 'Cuando tenía dos años, no sabía montar en bici.', opts: ["couldn't", "can't", "don't"], ok: [0], why: 'Es el pasado («cuando tenía dos años»): <b>couldn\'t</b>.' },
+      { t: 'ask', en: '___ you open the door, please? 🚪', es: '¿Podrías abrir la puerta, por favor?', opts: ['Could', 'Do', 'Are'], ok: [0] },
+      { t: 'ask', en: 'Yesterday it was foggy. We ___ see the ball. 🌫️⚽', es: 'Ayer había niebla. No podíamos ver la pelota.', opts: ["couldn't", 'could', "didn't can"], ok: [0] },
+      { t: 'ask', en: 'Could you help me, please?', es: '¿Podrías ayudarme, por favor?', opts: ['Yes, of course!', 'Yes, I could swim.', 'No, I am.'], ok: [0] },
+      { t: 'build', es: 'No podía encontrar mi pelota.', en: "I couldn't find my ball" }] },
+    library: { npc: 'grandma', hint: 'Habla otra vez con Grandma Ann 👵', lesson: 'wasing', ev: [
+      { t: 'say', en: 'Yesterday at five I was reading. What were you doing, {name}?', es: 'Ayer a las cinco yo estaba leyendo. ¿Qué estabas haciendo tú, {name}?' },
+      { t: 'lesson', id: 'wasing' },
+      { t: 'ask', en: 'Yesterday at five I ___ watching cartoons. 🎬', es: 'Ayer a las cinco estaba viendo dibujos animados.', opts: ['was', 'were', 'am'], ok: [0] },
+      { t: 'ask', en: 'Tom and Lily ___ playing video games. 🎮', es: 'Tom y Lily estaban jugando a los videojuegos.', opts: ['were', 'was', 'are'], ok: [0], why: 'Son dos (they): <b>were</b>.' },
+      { t: 'ask', en: 'Were you sleeping? — No, I ___.', es: '¿Estabas durmiendo? — No.', opts: ["wasn't", "weren't", "didn't"], ok: [0] },
+      { t: 'ask', en: "The dogs ___ eating. They were sleeping. 🐶😴", es: 'Los perros no estaban comiendo. Estaban durmiendo.', opts: ["weren't", "wasn't", "don't"], ok: [0] },
+      { t: 'ask', en: 'What were you doing? 🥛', es: '¿Qué estabas haciendo?', opts: ['I was drinking milk.', 'I was drink milk.', 'I were drinking milk.'], ok: [0] },
+      { t: 'ask', en: 'And today? — Today we are ___ Grandpa. 👴', es: '¿Y hoy? — Hoy estamos visitando al abuelo.', opts: ['visiting', 'visit', 'visited'], ok: [0] },
+      { t: 'build', es: 'Estábamos jugando al fútbol.', en: 'We were playing football' }] },
+    castle: { npc: 'wizard', hint: 'Habla otra vez con Merlin 🧙', lesson: 'perfect', ev: [
+      { t: 'say', en: 'Have you ever seen a dragon, {name}? I have!', es: '¿Has visto alguna vez un dragón, {name}? ¡Yo sí!' },
+      { t: 'lesson', id: 'perfect' },
+      { t: 'ask', en: 'Have you ever seen a dragon?', es: '¿Has visto alguna vez un dragón?', opts: ['No, I haven\'t.', 'No, I don\'t.', 'No, I am not.'], ok: [0] },
+      { t: 'ask', en: 'I have ___ all the pizza! 🍕', es: '¡Me he comido toda la pizza!', opts: ['eaten', 'ate', 'eat'], ok: [0], why: 'Detrás de <b>have</b> va el participio: eat → <b>eaten</b>.' },
+      { t: 'ask', en: 'Grandma ___ gone home. 👵🏠', es: 'La abuela se ha ido a casa.', opts: ['has', 'have', 'is'], ok: [0], why: 'Con he/she/it (la abuela = she): <b>has</b>.' },
+      { t: 'ask', en: 'We ___ visited the castle before. 🏰', es: 'No hemos visitado el castillo antes.', opts: ["haven't", "hasn't", "don't"], ok: [0] },
+      { t: 'ask', en: 'The dragon ___ drunk all the water! 🐉💧', es: '¡El dragón se ha bebido toda el agua!', opts: ['has', 'have', 'did'], ok: [0] },
+      { t: 'build', es: 'He visto un dragón.', en: 'I have seen a dragon' }] },
+  };
+  Z.forEach((z) => { const x = EXTRA[z.id]; if (!x) return; z.lessons.push(x.lesson); z.steps.splice(z.steps.length - 1, 0, { npc: x.npc, hint: x.hint, ev: x.ev }); });
   return { V, L, Z };
 })();

@@ -75,6 +75,9 @@ button{font:inherit;color:inherit;cursor:pointer}
 .exs small{display:block;color:var(--soft);font-weight:500}
 .tip{background:#fff4d6;border-radius:12px;padding:8px 10px;margin-top:8px}
 mark{background:#ffe066;border-radius:4px;padding:0 3px}
+.wbig{display:flex;align-items:center;gap:12px;margin:6px 0}.wbig span{font-size:2.6rem;font-weight:900;color:#2b3a55;line-height:1}
+.mean{font-size:1.15rem;margin:4px 0}.bigw{font-size:2.4rem;font-weight:900;text-align:center;margin:4px 0 8px;color:#2b3a55}
+.wlist{display:flex;flex-wrap:wrap;gap:6px}
 /* minijuegos */
 .game{width:min(560px,100%);background:var(--panel);border-radius:24px;padding:14px;box-shadow:0 12px 40px rgba(0,0,0,.4);position:relative}
 .gtop{display:flex;align-items:center;justify-content:space-between;gap:8px}
@@ -127,10 +130,25 @@ input.name{width:100%;font:inherit;font-size:1.3rem;font-weight:800;border:3px s
 <div id="dlg" hidden></div>
 <div id="ov" class="ov" hidden></div>
 
+<script src="palabras.js"></script>
 <script src="historia.js"></script>
 <script>
 (() => {
 const { V, L, Z } = window.EQ;
+const EW = window.EQW.W, EP = window.EQW.P;   // las palabras pequeñas de la Fábrica de Frases
+/* el profe de palabras de cada zona y sus misiones, intercaladas antes de la última misión de la zona */
+Z.forEach((z) => {
+  const t = z.teacher; if (!t) return;
+  z.npcs.push({ id: 'words', e: t.e, name: t.name, at: t.at, teacher: true });
+  const ws = t.words.map((p) => ({ npc: 'words', wp: p, hint: EP[p].words.length ? `Palabras nuevas con ${t.name} ${t.e}: ${EP[p].words.join(', ')}` : `${EP[p].name} de palabras con ${t.name} ${t.e}` }));
+  const base = z.steps, slots = Math.max(1, base.length - 1), out = [];
+  base.forEach((st, i) => { if (i === base.length - 1 && base.length > 1) out.push(...ws.splice(0)); out.push(st);
+    if (i < slots) out.push(...ws.splice(0, Math.ceil(ws.length / (slots - i)))); });
+  out.push(...ws); z.steps = out;
+});
+const WORDER = Z.flatMap((z) => (z.teacher ? z.teacher.words : []));               // fases en el orden del juego
+const learnedUpTo = (p) => WORDER.slice(0, WORDER.indexOf(p) + 1).flatMap((i) => EP[i].words);
+const ALLW = Object.keys(EW);
 const $ = (id) => document.getElementById(id);
 const pick = (a) => a[Math.floor(Math.random() * a.length)];
 const shuffle = (a) => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
@@ -138,10 +156,10 @@ const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replac
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 /* ================= partida guardada ================= */
-const KEY = 'emoji-quest-v1';
-const fresh = () => ({ name: 'Alex', av: '🧒', hat: '', hats: [], stars: 0, xp: 0, ch: 0, step: 0, items: [], seen: [], pos: null, done: false });
+const KEY = 'emoji-quest-v2';
+const fresh = () => ({ name: 'Alex', av: '🧒', hat: '', hats: [], stars: 0, xp: 0, ch: 0, step: 0, items: [], seen: [], words: [], pos: null, done: false });
 let S = null;
-try { S = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) {}
+try { S = JSON.parse(localStorage.getItem(KEY) || 'null'); if (S && !S.words) S.words = []; } catch (e) {}
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} };
 let sound = true;
 const nm = (s) => String(s).replace(/\{name\}/g, S ? S.name : 'Alex');
@@ -309,14 +327,14 @@ function ask(n, q) {
   return new Promise((res) => {
     let wrong = 0; const opts = shuffle(q.opts.map((o, i) => ({ o, ok: q.ok.includes(i) }))); const emojiOnly = q.opts.every((o) => !/[a-z]/i.test(o));
     dlg.hidden = false; dlg.innerHTML = `<div class="box">${whoHTML(n)}<div class="en">${esc(nm(q.en))}</div>${q.es ? `<div class="es hide">${esc(nm(q.es))}</div>` : ''}
-      ${q.q ? `<div class="q">${esc(q.q)}</div>` : ''}<div class="opts${emojiOnly ? ' optgrid' : ''}">${opts.map((x, i) => `<button class="opt${emojiOnly ? ' big' : ''}" data-i="${i}">${esc(nm(x.o))}</button>`).join('')}</div>
+      ${q.q ? `<div class="q">${esc(q.q)}</div>` : ''}${q.big ? `<div class="bigw">${esc(q.big)}</div>` : ''}<div class="opts${emojiOnly ? ' optgrid' : ''}">${opts.map((x, i) => `<button class="opt${emojiOnly ? ' big' : ''}" data-i="${i}">${esc(nm(x.o))}</button>`).join('')}</div>
       <div class="row"><button class="btn round" data-k="hear">🔊</button>${q.es ? '<button class="btn" data-k="es">👁️ Español</button>' : ''}</div></div>`;
-    if (q.es) speak(nm(q.en).replace(/___/g, 'blank'));
+    const sq = q.say ?? (q.es ? nm(q.en).replace(/___/g, 'blank') : ''); if (sq) speak(sq);
     dlg.onclick = async (e) => {
       const k = e.target.closest('[data-k]')?.dataset.k || (e.target.closest('.es') ? 'es' : '');
-      if (k === 'hear') speak(nm(q.en).replace(/___/g, 'blank')); if (k === 'es') dlg.querySelector('.es')?.classList.remove('hide');
+      if (k === 'hear') speak(sq || nm(q.en)); if (k === 'es') dlg.querySelector('.es')?.classList.remove('hide');
       const b = e.target.closest('.opt'); if (!b) return; const x = opts[+b.dataset.i];
-      if (x.ok) { b.classList.add('ok'); SFX.ok(); speak(nm(x.o)); dlg.onclick = null; gain(wrong ? 5 : 10, wrong ? 1 : 2); await sleep(900); closeDlg(); res(true); }
+      if (x.ok) { b.classList.add('ok'); SFX.ok(); speak(nm(q.full || x.o)); if (q.full) dlg.querySelector('.en').innerHTML = hlw(nm(q.full), q.w); dlg.onclick = null; gain(wrong ? 5 : 10, wrong ? 1 : 2); await sleep(900); closeDlg(); res(true); }
       else { wrong++; b.classList.add('no'); SFX.bad(); const box = dlg.querySelector('.box'); box.classList.remove('shake'); void box.offsetWidth; box.classList.add('shake');
         if (!dlg.querySelector('.hint')) dlg.querySelector('.opts').insertAdjacentHTML('afterend', `<div class="hint">💡 ${q.why || 'Casi. Lee otra vez la pregunta (o mira la traducción) e inténtalo de nuevo.'}</div>`); }
     };
@@ -324,7 +342,7 @@ function ask(n, q) {
 }
 function build(es, en) {
   return new Promise((res) => {
-    const words = en.split(' '); let tiles, picked = [], fails = 0;
+    const words = en.split(' '); let tiles, picked = [], fails = 0; window.__lastBuild = en;
     do { tiles = shuffle(words.map((w, i) => ({ w, i }))); } while (words.length > 1 && tiles.every((t, k) => t.i === k));
     const render = () => {
       dlg.hidden = false; dlg.innerHTML = `<div class="box"><div class="q">🧩 Monta la frase en inglés</div><div class="en" style="font-size:1.15rem">«${esc(es)}»</div>
@@ -358,6 +376,62 @@ function lessonCard(id, again) {
     $('ov').onclick = (e) => { const s = e.target.closest('[data-say]'); if (s) speak(s.dataset.say); if (e.target.closest('[data-k="ok"]')) { SFX.tap(); $('ov').onclick = null; $('ov').hidden = true; $('ov').innerHTML = ''; res(); } };
   });
 }
+/* ---------- palabras pequeñas (como en la Fábrica de Frases) ---------- */
+const hlw = (en, w) => esc(en).replace(new RegExp("(^|[^A-Za-z'])(" + String(w).replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ")(?![A-Za-z'])", 'gi'), '$1<mark>$2</mark>');
+function wordCard(w, again) {
+  return new Promise((res) => {
+    const d = EW[w]; if (!S.words.includes(w)) { S.words.push(w); save(); }
+    $('ov').hidden = false; $('ov').innerHTML = `<div class="card"><span class="badge">${again ? '📖 Cuaderno' : '✨ ¡Palabra nueva!'}</span>
+      <div class="wbig"><span>${esc(w)}</span><button class="btn round" data-say="${esc(w)}" aria-label="Escuchar">🔊</button></div>
+      <p class="mean">Significa: <b>${esc(d.es)}</b></p><p style="margin:6px 0"><b>¿Para qué sirve?</b> ${d.use}</p>
+      <ul class="exs">${d.ex.map(([en, es, e]) => `<li><button class="btn" data-say="${esc(en)}">🔊</button><span style="font-size:1.4rem">${e}</span><span><b>${hlw(en, w)}</b><small>${esc(es)}</small></span></li>`).join('')}</ul>
+      <div class="tip">💡 ${d.tip}</div><div class="row"><button class="btn go" data-k="ok">${again ? 'Cerrar' : '¡Entendido! ▶'}</button></div></div>`;
+    speak(w); setTimeout(() => speak(d.ex[0][0]), 900);
+    $('ov').onclick = (e) => { const s = e.target.closest('[data-say]'); if (s) speak(s.dataset.say); if (e.target.closest('[data-k="ok"]')) { SFX.tap(); $('ov').onclick = null; $('ov').hidden = true; $('ov').innerHTML = ''; res(); } };
+  });
+}
+const capW = (t) => t.charAt(0).toUpperCase() + t.slice(1);
+const wItems = (w) => EW[w].S.map((a) => ({ w, en: a[0], es: a[1], e: a[2], why: a[3] || '', no: a[4] || [] }));
+const wCapG = (it) => /^_|[.?!] _/.test(it.en);
+const wFull = (it) => it.en.replace('_', wCapG(it) ? capW(it.w) : it.w);
+function wGap(it, learned) {   // completar la frase con la palabra que falta
+  const g = EW[it.w].g; let peers = learned.filter((x) => x !== it.w && EW[x].g === g && !it.no.includes(x));
+  if (peers.length < 2) peers = peers.concat(shuffle(learned.filter((x) => x !== it.w && !peers.includes(x) && !it.no.includes(x))));
+  const opts = [it.w, ...shuffle(peers.slice(0, 6)).slice(0, 2)].map((o) => (wCapG(it) ? capW(o) : o));
+  return { en: it.e + '  ' + it.en.replace('_', '___'), es: it.es, q: 'Elige la palabra que falta', opts, ok: [0], why: it.why || EW[it.w].r, full: wFull(it), w: it.w };
+}
+function wMean(w, learned) {   // ¿qué significa?
+  const seen = new Set([EW[w].es]), others = [];
+  for (const x of shuffle(learned).concat(shuffle(ALLW))) if (x !== w && !seen.has(EW[x].es) && others.length < 2) { seen.add(EW[x].es); others.push(EW[x].es); }
+  return { en: '', big: w, q: '¿Qué significa?', opts: [EW[w].es, ...others], ok: [0], say: w, full: w, w, why: 'Mira otra vez la tarjeta: ' + EW[w].r };
+}
+const wOrder = (it) => ({ order: true, es: it.es, en: wFull(it).replace(/[.?!]$/, '') });
+const wShort = (it) => wFull(it).split(' ').length <= 7;
+function wRounds(p) {
+  const P = EP[p], learned = learnedUpTo(p), used = new Set(), out = [];
+  const take = (w, pred) => { const it = shuffle(wItems(w)).find((x) => !used.has(x.en) && (!pred || pred(x))); if (it) used.add(it.en); return it; };
+  if (!P.words.length) {   // repaso: palabras ya vistas, más peso a las últimas
+    const recent = learned.slice(-12), n = P.final ? 12 : 8;
+    for (let k = 0; k < n * 3 && out.length < n; k++) { const w = Math.random() < 0.5 ? pick(recent) : pick(learned), ord = out.length % 4 === 3, it = take(w, ord ? wShort : null); if (it) out.push(ord ? wOrder(it) : wGap(it, learned)); }
+    return out;
+  }
+  const per = P.words.length === 1 ? 3 : P.words.length === 2 ? 2 : 1, body = [];
+  P.words.forEach((w) => { for (let k = 0; k < per; k++) { const it = take(w); if (it) body.push(wGap(it, learned)); } });
+  const oi = take(pick(P.words), wShort); if (oi) body.push(wOrder(oi));
+  const old = learned.filter((w) => !P.words.includes(w)); if (old.length) { const it = take(pick(old)); if (it) body.push(wGap(it, learned)); }
+  return [...P.words.map((w) => wMean(w, learned)), ...shuffle(body)];
+}
+async function wordStep(n, p) {
+  const P = EP[p], ws = P.words;
+  if (!ws.length) await say(n, P.final ? "It's the big review, {name}! All the little words!" : "Let's review the little words, {name}!", P.final ? '¡Es el gran repaso, {name}! ¡Todas las palabras pequeñas!' : '¡Vamos a repasar las palabras pequeñas, {name}!');
+  else {
+    await say(n, `Hi, {name}! ${ws.length > 1 ? 'New little words' : 'A new little word'}: ${ws.join(', ')}!`, `¡Hola, {name}! ${ws.length > 1 ? 'Palabras nuevas' : 'Una palabra nueva'}: ${ws.join(', ')}. Mira bien la tarjeta antes de usarla.`);
+    for (const w of ws) { closeDlg(); await wordCard(w); }
+  }
+  for (const r of wRounds(p)) { if (r.order) await build(r.es, r.en); else await ask(n, r); }
+  await say(n, pick(['Well done, {name}!', 'Great job, {name}!', 'Fantastic, {name}!', 'You are a word star, {name}!']), ws.length ? `¡Muy bien! Ya sabes usar: ${ws.join(', ')}. Están en tu cuaderno 📖.` : '¡Muy bien! ¡Repaso superado!');
+}
+
 function give(it) {
   return new Promise((res) => {
     S.items.push(it.e); save(); SFX.win();
@@ -459,7 +533,8 @@ function playGame(g) { return { listen: gListen, pairs: gPairs, count: gCount, s
 
 /* ================= el jefe final: el dragón ================= */
 async function bossFight(n) {
-  const pool = shuffle(Z.flatMap((z) => z.review.concat(z.steps.flatMap((s) => s.ev.filter((e) => e.t === 'ask' && !/\{name\}|¿/.test(e.en)))))).slice(0, 30);
+  const pool = shuffle(shuffle(Z.flatMap((z) => z.review.concat(z.steps.flatMap((s) => (s.ev || []).filter((e) => e.t === 'ask' && !/\{name\}|¿/.test(e.en)))))).slice(0, 20)
+    .concat(shuffle(ALLW).slice(0, 14).map((w) => wGap(pick(wItems(w)), ALLW))));
   let dragon = 8, hearts = 3, qi = 0;
   while (dragon > 0) {
     const q = pool[qi++ % pool.length];
@@ -470,8 +545,8 @@ async function bossFight(n) {
         <div class="en">${esc(nm(q.en))}</div>${q.es ? `<div class="es hide">${esc(nm(q.es))}</div>` : ''}<div class="opts">${opts.map((x, i) => `<button class="opt" data-i="${i}">${esc(nm(x.o))}</button>`).join('')}</div></div>`;
       if (q.es) speak(nm(q.en).replace(/___/g, 'blank'));
       $('ov').onclick = (e) => { if (e.target.closest('.es')) e.target.closest('.es').classList.remove('hide'); const b = e.target.closest('.opt'); if (!b) return; $('ov').onclick = null; const x = opts[+b.dataset.i];
-        if (x.ok) { b.classList.add('ok'); SFX.ok(); $('bd').classList.add('hits'); $('bd').insertAdjacentHTML('afterend', '<div style="font-size:30px">✨💥</div>'); speak(nm(x.o)); setTimeout(() => res(true), 900); }
-        else { b.classList.add('no'); SFX.bad(); $('bh').classList.add('hits'); $('bh').insertAdjacentHTML('afterend', '<div style="font-size:30px">🔥</div>'); const right = opts.find((o) => o.ok); $('ov').querySelectorAll('.opt').forEach((el, i) => { if (opts[i].ok) el.classList.add('ok'); }); speak(nm(right.o)); setTimeout(() => res(false), 1600); } };
+        if (x.ok) { b.classList.add('ok'); SFX.ok(); $('bd').classList.add('hits'); $('bd').insertAdjacentHTML('afterend', '<div style="font-size:30px">✨💥</div>'); speak(nm(q.full || x.o)); setTimeout(() => res(true), 900); }
+        else { b.classList.add('no'); SFX.bad(); $('bh').classList.add('hits'); $('bh').insertAdjacentHTML('afterend', '<div style="font-size:30px">🔥</div>'); const right = opts.find((o) => o.ok); $('ov').querySelectorAll('.opt').forEach((el, i) => { if (opts[i].ok) el.classList.add('ok'); }); speak(nm(q.full || right.o)); setTimeout(() => res(false), 1600); } };
     });
     if (r) { dragon--; gain(10, 2); } else { hearts--; if (hearts <= 0) {
       await new Promise((res) => { $('ov').innerHTML = `<div class="card" style="text-align:center"><div class="big">🐉🔥</div><h2>¡El dragón ha ganado esta vez!</h2><p>Repasa en el cuaderno 📖 y vuelve a intentarlo.</p><div class="row" style="justify-content:center"><button class="btn go" data-k="ok">Volver a intentarlo ⚔️</button></div></div>`; $('ov').onclick = (e) => { if (e.target.closest('[data-k]')) { $('ov').onclick = null; res(); } }; });
@@ -494,7 +569,8 @@ async function talk(n) {
 }
 async function runStep() {
   const z = Z[S.ch], st = z.steps[S.step], n = NPCS.find((x) => x.zi === S.ch && x.id === st.npc);
-  for (const e of st.ev) {
+  if (st.wp != null) await wordStep(n, st.wp);
+  for (const e of st.ev || []) {
     if (e.t === 'say') await say(n, e.en, e.es);
     else if (e.t === 'lesson') { closeDlg(); await lessonCard(e.id); }
     else if (e.t === 'ask') await ask(n, e);
@@ -521,7 +597,8 @@ function zoneDone(z) {
   });
 }
 async function practice(n) {
-  const z = Z[n.zi], q = pick(z.review);
+  const z = Z[n.zi], zw = z.teacher ? z.teacher.words.flatMap((p) => EP[p].words) : [], known = S.words.length ? S.words : ALLW;
+  const q = zw.length && (n.teacher || Math.random() < 0.4) ? wGap(pick(wItems(pick(zw))), known) : pick(z.review);
   await say(n, pick(['Hi again, {name}! Can you answer this?', 'Hello, {name}! A quick question for you!', "Let's practise, {name}!"]), '¡Hola otra vez! ¿Respondes a esta pregunta? (repaso: +⭐)');
   await ask(n, q);
 }
@@ -550,7 +627,7 @@ function ending() {
 /* ================= menús: misiones y cuaderno ================= */
 $('bQuest').onclick = () => {
   if (busy) return; SFX.tap();
-  $('ov').hidden = false; $('ov').innerHTML = `<div class="card"><h2>📜 Misiones</h2><div class="list">${Z.map((z, i) => `<div class="opt" style="display:block;${i > S.ch ? 'opacity:.45' : ''}"><b>${i < S.ch || S.done ? '✅' : i === S.ch ? '▶️' : '🔒'} ${esc(z.name)}</b> <small style="color:var(--soft)">${esc(z.es)} · ${z.lessons.map((l) => L[l].icon + ' ' + esc(L[l].t)).join(' · ')}</small>
+  $('ov').hidden = false; $('ov').innerHTML = `<div class="card"><h2>📜 Misiones</h2><div class="list">${Z.map((z, i) => `<div class="opt" style="display:block;${i > S.ch ? 'opacity:.45' : ''}"><b>${i < S.ch || S.done ? '✅' : i === S.ch ? '▶️' : '🔒'} ${esc(z.name)}</b> <small style="color:var(--soft)">${esc(z.es)} · ${z.lessons.map((l) => L[l].icon + ' ' + esc(L[l].t)).join(' · ')}${z.teacher ? ' · 🔤 ' + esc(z.teacher.words.flatMap((p) => EP[p].words).join(', ') || 'repaso') : ''}</small>
     ${i === S.ch && !S.done ? `<ol style="margin:6px 0 0;padding-left:20px;font-weight:600;font-size:.95rem">${z.steps.map((s, k) => `<li style="${k < S.step ? 'text-decoration:line-through;color:var(--soft)' : ''}">${esc(s.hint)}</li>`).join('')}</ol>` : ''}</div>`).join('')}</div>
     <p style="color:var(--soft)">Objetos: ${S.items.join(' ') || '—'}</p><div class="row"><button class="btn" data-k="reset">🗑️ Empezar de cero</button><button class="btn go" data-k="ok">Cerrar</button></div></div>`;
   $('ov').onclick = (e) => { const k = e.target.closest('[data-k]')?.dataset.k; if (k === 'ok') { $('ov').hidden = true; $('ov').onclick = null; } if (k === 'reset' && confirmReset()) { S = null; try { localStorage.removeItem(KEY); } catch (_) {} $('ov').onclick = null; startScreen(); } };
@@ -558,12 +635,14 @@ $('bQuest').onclick = () => {
 let resetArm = 0; function confirmReset() { if (Date.now() - resetArm < 3000) return true; resetArm = Date.now(); toast('Toca otra vez para borrar la partida'); return false; }
 $('bBook').onclick = () => {
   if (busy) return; SFX.tap();
-  const seen = Object.keys(L).filter((k) => S.seen.includes(k)), sets = [['greet', 'Saludos'], ['nums', 'Números'], ['colours', 'Colores'], ['food', 'Comida'], ['animals', 'Animales'], ['preps', 'Dónde'], ['actions', 'Acciones'], ['ing', '-ing'], ['past', 'Pasado']].filter((_, i) => i <= S.ch || S.done);
+  const seen = Object.keys(L).filter((k) => S.seen.includes(k)), sets = [['greet', 'Saludos', 0], ['nums', 'Números', 1], ['colours', 'Colores', 2], ['food', 'Comida', 3], ['verbs', 'Verbos', 3], ['fun', 'Tiempo libre', 3], ['animals', 'Animales', 4], ['preps', 'Dónde', 5], ['actions', 'Acciones', 6], ['ing', '-ing', 7], ['past', 'Pasado', 8]].filter((x) => x[2] <= S.ch || S.done);
   $('ov').hidden = false; $('ov').innerHTML = `<div class="card"><h2>📖 Mi cuaderno</h2><p style="color:var(--soft);margin:0">Toca una estructura para repasarla. Toca una palabra para oírla.</p>
     <div class="list">${seen.map((k) => `<button class="opt" data-l="${k}">${L[k].icon} ${esc(L[k].t)}</button>`).join('') || '<p>Todavía nada: ¡habla con los personajes!</p>'}</div>
+    <h3 style="margin:12px 0 4px">🔤 Palabras pequeñas · ${S.words.length}/${ALLW.length}</h3><div class="wlist">${ALLW.filter((w) => S.words.includes(w)).map((w) => `<button class="tile" data-pw="${esc(w)}" title="${esc(EW[w].es)}">${esc(w)}</button>`).join('') || '<span style="color:var(--soft)">Te las enseñan los personajes de cada zona.</span>'}</div>
     ${sets.map(([k, t]) => `<h3 style="margin:12px 0 4px">${esc(t)}</h3><div style="display:flex;flex-wrap:wrap;gap:6px">${V[k].map((w) => `<button class="tile" data-w="${esc(w[1])}" title="${esc(w[2])}">${w[0]} ${esc(w[1])}</button>`).join('')}</div>`).join('')}
     <div class="row"><button class="btn go" data-k="ok">Cerrar</button></div></div>`;
-  $('ov').onclick = async (e) => { const l = e.target.closest('[data-l]'), w = e.target.closest('[data-w]'); if (w) speak(w.dataset.w);
+  $('ov').onclick = async (e) => { const l = e.target.closest('[data-l]'), w = e.target.closest('[data-w]'), pw = e.target.closest('[data-pw]'); if (w) speak(w.dataset.w);
+    if (pw) { $('ov').onclick = null; await wordCard(pw.dataset.pw, true); $('bBook').onclick(); return; }
     if (l) { $('ov').onclick = null; await lessonCard(l.dataset.l, true); $('bBook').onclick(); return; }
     if (e.target.closest('[data-k]')) { $('ov').hidden = true; $('ov').onclick = null; } };
 };

@@ -6,8 +6,15 @@ Emoji Quest · aventura en inglés (juego de rol con emojis)
   (colores), Yummy Market (comida, I like / Do you like, Can I have…, please?), Happy Farm (animales, have / has),
   Busy Town (Where is…? in / on / under / next to / behind), Sports Park (can / can't), Cosy Library (presente
   continuo) y Dragon Castle (pasado y combate final con el dragón).
+- Las 98 «palabras pequeñas» de la Fábrica de Frases (I, you, the, some, any, which, because, never…), con sus mismas
+  tarjetas y sus 588 frases: en cada zona hay un personaje que las enseña (🦉 Ollie, 🤖 Robo, 🐝 Bea, 🐒 Momo, 🐑 Woolly,
+  🧑‍🚒 Fin, 🦘 Joey, 🧚 Flo, 👻 Boo), en el mismo orden que la Fábrica y con sus repasos. Tarjeta de cada palabra antes de
+  usarla, luego «¿qué significa?», completar frases y ordenar palabras. Quedan en el cuaderno 📖 y salen en el dragón.
+  palabras.js se genera desde la Fábrica: si cambias allí WORDS o WPH, ejecuta  node herramientas/eq-palabras.js
+- Los verbos y tiempos de la Fábrica: like, play, eat, watch, want, go, drink, visit (con -s, -ing y pasado), could /
+  couldn't, was / were + -ing y have / has + participio (I have eaten, she has gone).
 - Cada estructura nueva sale antes en una tarjeta (qué es, patrón, ejemplos con voz y truco) y queda en el cuaderno 📖.
 - Eventos: diálogos con traducción opcional, preguntas, construir frases, minijuegos (oír y elegir, parejas, contar,
   deletrear, lluvia de palabras), regalos que abren la siguiente zona, repaso con los personajes de zonas terminadas
   y tienda de sombreros con las estrellas ⭐.
-- Se guarda en el navegador (localStorage, clave «emoji-quest-v1»). La voz usa la síntesis del navegador (inglés británico).
+- Se guarda en el navegador (localStorage, clave «emoji-quest-v2»). La voz usa la síntesis del navegador (inglés británico).
