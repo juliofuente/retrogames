@@ -1327,6 +1327,7 @@
         ready: false, fps: FPS, frames: total,
         info: Object.assign({ id: def.id, title, tag, emoji: def.emoji || '', origin: def.origin || '', url: location.protocol + '//' + HOST + '/' + def.id, lang: A.lang }, CUST && CUST.info || {}),
         quizCount: def.recCount || 0,
+        scene: CUST ? CUST.kind || 'scene' : null,   // 'tutorial' en los solitarios (?tut=1); 'scene' en los retos
         cues: CUST && CUST.cues || [],   // sonidos de la escena: [{ t (s), s: 'tick'|'tock'|'pop'|'kick'|'hat'|'boom'|'whoosh'|'ding'|'drum' }]
         step(n = 1) {
           if (CUST) {

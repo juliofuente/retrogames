@@ -1,6 +1,9 @@
 ARCADE PERDIDO + ARCADE PRO — LO QUE ESTÁ HECHO
 ================================================
 Fecha: 20-10-2026 · Versión de la PWA (games.js → ARCADE_VERSION): 2.36.0
+· Vídeos «cómo se juega» de los solitarios: escena recScene en pwa/cartas.js (?rec=1&tut=1: entrada, tutorial con montones
+  resaltados, jugadas de ejemplo con el dedo y cierre con la dirección) y modo 3 / --tutoriales en herramientas/grabador
+  (idioma, jugadas, velocidad de lectura, URL, frases y texto para publicar configurables). Quitado «sin anuncios» de los vídeos.
 · Arcade Watch (carpeta wearos/): app Android en Java para relojes Wear OS con QuickJS. Motor de la web sin DOM (core.js),
   canvas falso que manda órdenes de dibujo a Java, puente JNI, sonido sintetizado, corona, vibración. Lleva Lanza cuchillos,
   Leñador y Helicóptero; se han probado sin errores los 44 juegos de un toque y de mantener. Ver wearos/LEEME.txt.

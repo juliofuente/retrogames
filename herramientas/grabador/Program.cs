@@ -20,6 +20,14 @@
 //   --rehacer             vuelve a grabar los que ya existen (por defecto se saltan)
 //   --paralelo N          juegos a la vez (1)         --calidad 21  (CRF de x264: menos = mejor y más pesado)
 //   --chrome ruta         ejecutable de Chrome si no lo encuentra solo    --ffmpeg ruta
+//
+// Tutoriales de los solitarios (--tutoriales): un vídeo «cómo se juega» por solitario de la web (los 100 de Arcade.paciencia):
+// cartela de entrada, los pasos del tutorial con los montones resaltados, unas jugadas de ejemplo explicadas y hechas
+// despacio, y cartela final con la dirección del juego. Opciones (los textos admiten «español | english»):
+//   --jugadas 6           jugadas de ejemplo tras el tutorial       --lectura 1   (1,3 = cada texto un 30 % más de tiempo)
+//   --url-juego "{host}/{id}"  dirección que se anuncia ({host} {id} {lang} {web})
+//   --gancho "…"  frase de la entrada   --cta "…"  frase final   --extra "…"  línea extra final («-» = ninguna)
+//   --texto "…"   texto del .txt para publicar ({emoji} {title} {tag} {url} {steps} {moves}) · --outro-tutorial 5.5  segundos de cierre
 using System.Diagnostics;
 using System.Net.WebSockets;
 using System.Text;
@@ -49,6 +57,7 @@ static class Program
         Directory.CreateDirectory(o.Out);
 
         if (o.Puzzles != null) return await RunPuzzles(o);
+        if (o.Tutorials) return await RunTutorials(o);
 
         // 1. juegos del sitemap: las direcciones /<id>/es y /<id>/en son las de jugar (las fichas son /juego/<id>)
         Console.WriteLine($"Sitemap: {o.Sitemap}");
@@ -111,6 +120,59 @@ static class Program
         return jobs.Count == 0 ? 0 : await RunJobs(chrome, o, jobs);
     }
 
+    /* modo tutoriales (--tutoriales): un vídeo «cómo se juega» por cada solitario del sitemap */
+    static async Task<int> RunTutorials(Options o)
+    {
+        Console.WriteLine($"Sitemap: {o.Sitemap}");
+        using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(60) };
+        http.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 ArcadeRecorder/1.0");
+        string xml = await http.GetStringAsync(o.Sitemap);
+        var games = new List<(string Base, string Id)>();
+        foreach (Match m in Regex.Matches(xml, @"<loc>\s*(https?://[^<\s]+?)/([a-z0-9][a-z0-9-]*)/(es|en)\s*</loc>"))
+        {
+            var (b, id) = (m.Groups[1].Value, m.Groups[2].Value);
+            if (!games.Any(g => g.Id == id)) games.Add((b, id));
+        }
+        if (o.Only.Count > 0) games = games.Where(g => o.Only.Contains(g.Id)).ToList();
+        // solo los solitarios: su página usa el motor de solitarios (Arcade.paciencia, en cartas.js); la escoba, la brisca… no
+        var soli = new List<(string Base, string Id)>(); var sem = new SemaphoreSlim(8);
+        await Task.WhenAll(games.Select(async g =>
+        {
+            await sem.WaitAsync();
+            try { var html = await http.GetStringAsync($"{g.Base}/{g.Id}/es"); if (html.Contains("cartas.js") && html.Contains("Arcade.paciencia")) lock (soli) soli.Add(g); }
+            catch { }
+            finally { sem.Release(); }
+        }));
+        soli = soli.OrderBy(g => games.FindIndex(x => x.Id == g.Id)).ToList();
+        if (o.Max > 0) soli = soli.Take(o.Max).ToList();
+        Console.WriteLine($"{soli.Count} solitarios (de {games.Count} juegos)");
+        if (soli.Count == 0) return 1;
+        var jobs = new Queue<Job>();
+        foreach (var g in soli) foreach (var lang in o.Langs) foreach (var fmt in o.Formats)
+        {
+            var mp4 = Path.Combine(o.Out, "tutoriales", lang, fmt, g.Id + ".mp4");
+            if (!o.Redo && File.Exists(mp4)) continue;
+            jobs.Enqueue(new Job(g.Base, g.Id, lang, fmt, mp4, 0, true));
+        }
+        Console.WriteLine($"{jobs.Count} vídeos por grabar");
+        if (jobs.Count == 0) return 0;
+        using var chrome = await Chrome.Start(o.ChromePath);
+        return await RunJobs(chrome, o, jobs);
+    }
+
+    // texto «español | english» → el del idioma (si no hay «|», el mismo para los dos)
+    public static string? Lang(string? v, string lang)
+    {
+        if (v == null) return null;
+        var p = v.Split('|');
+        return (p.Length > 1 ? (lang == "en" ? p[1] : p[0]) : v).Trim();
+    }
+    static string TutorialUrl(Options o, Job j)
+    {
+        var host = new Uri(j.Base).Authority;
+        return o.UrlTemplate.Replace("{host}", host).Replace("{id}", j.Id).Replace("{lang}", j.Lang).Replace("{web}", j.Base.TrimEnd('/'));
+    }
+
     static async Task<int> RunJobs(Chrome chrome, Options o, Queue<Job> jobs)
     {
         int ok = 0, fail = 0; var total = jobs.Count; var sw = Stopwatch.StartNew();
@@ -128,16 +190,26 @@ static class Program
         return fail > 0 ? 2 : 0;
     }
 
-    record Job(string Base, string Id, string Lang, string Format, string Mp4, int Quiz = 0);
+    record Job(string Base, string Id, string Lang, string Format, string Mp4, int Quiz = 0, bool Tut = false);
 
     static async Task<bool> Record(Chrome chrome, Options o, Job j)
     {
         bool vertical = j.Format == "vertical";
         int w = vertical ? 540 : 960, h = vertical ? 960 : 540;   // ×2 de densidad = 1080×1920 o 1920×1080
         var host = new Uri(j.Base).Authority;
-        var url = j.Quiz > 0
-            ? $"{j.Base}/{j.Id}/{j.Lang}?rec=1&fps={o.Fps}&quiz={j.Quiz}&wait={o.Wait}&site={Uri.EscapeDataString(host)}"
-            : $"{j.Base}/{j.Id}/{j.Lang}?rec=1&fps={o.Fps}&dur={o.Duration}&intro={o.Intro}&outro={o.Outro}&site={Uri.EscapeDataString(host)}";
+        string E(string? v) => Uri.EscapeDataString(v ?? "");
+        var inv = System.Globalization.CultureInfo.InvariantCulture;
+        string url;
+        if (j.Tut)
+        {
+            url = $"{j.Base}/{j.Id}/{j.Lang}?rec=1&fps={o.Fps}&tut=1&moves={o.Moves}&read={o.Read.ToString(inv)}&site={E(host)}&url={E(TutorialUrl(o, j))}";
+            if (o.TutOutro > 0) url += "&outro=" + o.TutOutro.ToString(inv);
+            foreach (var (k, v) in new[] { ("hook", o.Hook), ("cta", o.Cta), ("extra", o.Extra) })
+                if (v != null) url += $"&{k}=" + E(v == "-" ? "" : Lang(v, j.Lang));
+        }
+        else url = j.Quiz > 0
+            ? $"{j.Base}/{j.Id}/{j.Lang}?rec=1&fps={o.Fps}&quiz={j.Quiz}&wait={o.Wait}&site={E(host)}"
+            : $"{j.Base}/{j.Id}/{j.Lang}?rec=1&fps={o.Fps}&dur={o.Duration}&intro={o.Intro}&outro={o.Outro}&site={E(host)}";
         await using var page = await chrome.NewPage();
         await page.Send("Page.enable");
         await page.Send("Emulation.setDeviceMetricsOverride", new { width = w, height = h, deviceScaleFactor = 2, mobile = vertical });
@@ -154,6 +226,11 @@ static class Program
             if (ready) break;
         }
         if (!ready) { Console.WriteLine($"  – {j.Id}: no tiene modo grabación, se salta"); return false; }
+        if (j.Tut)
+        {
+            string scene = ""; try { scene = (await page.Eval("String(window.arcadeRec.scene || '')")).GetString() ?? ""; } catch { }
+            if (scene != "tutorial") { Console.WriteLine($"  – {j.Id}: no tiene vídeo de tutorial (¿falta subir pwa/cartas.js nuevo a la web?), se salta"); return false; }
+        }
         var info = JsonDocument.Parse((await page.Eval("JSON.stringify(window.arcadeRec.info)")).GetString()!).RootElement;
         int frames = (await page.Eval("window.arcadeRec.frames")).GetInt32();
         string title = info.GetProperty("title").GetString() ?? j.Id;
@@ -187,7 +264,7 @@ static class Program
         if (ff.ExitCode != 0 || !File.Exists(tmp)) { Console.WriteLine($"  ✗ {j.Id}: ffmpeg terminó con error {ff.ExitCode}"); return false; }
         if (sfx != null) try { File.Delete(sfx); } catch { }
         File.Move(tmp, j.Mp4, true);
-        File.WriteAllText(Path.ChangeExtension(j.Mp4, ".txt"), j.Quiz > 0 ? QuizCaption(info, j.Lang) : Caption(info, j.Lang));
+        File.WriteAllText(Path.ChangeExtension(j.Mp4, ".txt"), j.Tut ? TutorialCaption(info, j.Lang, o) : j.Quiz > 0 ? QuizCaption(info, j.Lang) : Caption(info, j.Lang));
         Console.WriteLine($"  ✓ {j.Mp4} ({new FileInfo(j.Mp4).Length / 1024} KB, {sw.Elapsed.TotalSeconds:0}s)");
         return true;
     }
@@ -198,8 +275,20 @@ static class Program
         string S(string k) => i.TryGetProperty(k, out var v) ? (v.ValueKind == JsonValueKind.Number ? v.GetRawText() : v.GetString() ?? "") : "";
         string n = S("count"), act = S("action"), what = n == "1" ? "ONE match" : n + " matches";
         return lang == "en"
-            ? $"🔥 Matchstick puzzle #{S("puzzle")}: {S("equation")} is wrong. Can you {act} {what} to make it true? 🤔\nAnswer at the end 👀 Comment yours before it shows!\nPlay {S("total")} puzzles like this, free and with no ads: {S("url")}\n\n#matchstickpuzzle #puzzle #brainteaser #riddle #math #iqtest #fyp\n"
-            : $"🔥 Reto de cerillas #{S("puzzle")}: {S("equation")} está mal. ¿Sabrías arreglarlo? 🤔\nLa solución, al final 👀 ¡Comenta la tuya antes!\nJuega {S("total")} retos como este, gratis y sin anuncios: {S("url")}\n\n#cerillas #acertijo #retomental #matematicas #puzzle #fyp\n";
+            ? $"🔥 Matchstick puzzle #{S("puzzle")}: {S("equation")} is wrong. Can you {act} {what} to make it true? 🤔\nAnswer at the end 👀 Comment yours before it shows!\nPlay {S("total")} puzzles like this for free: {S("url")}\n\n#matchstickpuzzle #puzzle #brainteaser #riddle #math #iqtest #fyp\n"
+            : $"🔥 Reto de cerillas #{S("puzzle")}: {S("equation")} está mal. ¿Sabrías arreglarlo? 🤔\nLa solución, al final 👀 ¡Comenta la tuya antes!\nJuega gratis a {S("total")} retos como este: {S("url")}\n\n#cerillas #acertijo #retomental #matematicas #puzzle #fyp\n";
+    }
+
+    // texto de un vídeo de tutorial («cómo se juega»); con --texto se cambia por una plantilla propia
+    static string TutorialCaption(JsonElement i, string lang, Options o)
+    {
+        string S(string k) => i.TryGetProperty(k, out var v) ? (v.ValueKind == JsonValueKind.Number ? v.GetRawText() : v.GetString() ?? "") : "";
+        string tag = Regex.Replace(S("id"), "[^a-z0-9]", "");
+        var tpl = Lang(o.CaptionTemplate, lang) ?? (lang == "en"
+            ? "{emoji} {title}: how to play, in one minute 🃏\n{tag}. The rules step by step and a few example moves.\nPlay it free in your browser: {url}\n\n#solitaire #cardgames #howtoplay #patience #tutorial #{id}\n"
+            : "{emoji} {title}: cómo se juega, en un minuto 🃏\n{tag}. Las reglas paso a paso y unas jugadas de ejemplo.\nJuega gratis en el navegador: {url}\n\n#solitario #juegosdecartas #comosejuega #paciencia #tutorial #{id}\n");
+        foreach (var k in new[] { "emoji", "title", "tag", "url", "steps", "moves" }) tpl = tpl.Replace("{" + k + "}", S(k));
+        return tpl.Replace("{id}", tag).Replace("\\n", "\n");
     }
 
     // texto para publicar el vídeo (TikTok, Shorts, Reels…)
@@ -209,8 +298,8 @@ static class Program
         string tag = Regex.Replace(S("id"), "[^a-z0-9]", "");
         var origin = S("origin").Split(" / ")[0];
         return lang == "en"
-            ? $"{S("emoji")} {S("title")} — {S("tag")}\n{(origin != "" ? "Inspired by " + origin + ". " : "")}Play it free, no ads, in your browser: {S("url")}\n\n#games #freegames #html5 #emoji #mobilegames #{tag}\n"
-            : $"{S("emoji")} {S("title")} — {S("tag")}\n{(origin != "" ? "Inspirado en " + origin + ". " : "")}Juega gratis y sin anuncios en el navegador: {S("url")}\n\n#juegos #juegosgratis #html5 #emoji #juegosmovil #{tag}\n";
+            ? $"{S("emoji")} {S("title")} — {S("tag")}\n{(origin != "" ? "Inspired by " + origin + ". " : "")}Play it free in your browser: {S("url")}\n\n#games #freegames #html5 #emoji #mobilegames #{tag}\n"
+            : $"{S("emoji")} {S("title")} — {S("tag")}\n{(origin != "" ? "Inspirado en " + origin + ". " : "")}Juega gratis en el navegador: {S("url")}\n\n#juegos #juegosgratis #html5 #emoji #juegosmovil #{tag}\n";
     }
 }
 
@@ -225,12 +314,22 @@ static class Ask
         try { if (File.Exists(File_)) last = JsonSerializer.Deserialize<Dictionary<string, string>>(File.ReadAllText(File_)) ?? new(); } catch { }
         Console.WriteLine("ArcadeRecorder · vídeos de los juegos (Enter = la respuesta entre corchetes)\n");
         var a = new List<string>();
-        string web = Q("web", "Web de la que grabar (subdominio o dominio)", "https://mobilehits.juegosboom.com").TrimEnd('/');
+        string web = Q("web", "Web de la que grabar (subdominio o dominio; para los tutoriales, la de solitarios)", "https://mobilehits.juegosboom.com").TrimEnd('/');
         if (!web.StartsWith("http")) web = "https://" + web;
         a.AddRange(new[] { "--web", web });
-        string modo = Q("modo", "¿Qué quieres grabar?  1 = demos de los juegos · 2 = retos (un vídeo por problema)", "1");
-        bool retos = modo.Trim() == "2";
-        if (retos)
+        string modo = Q("modo", "¿Qué quieres grabar?  1 = demos de los juegos · 2 = retos (un vídeo por problema) · 3 = tutoriales de los solitarios", "1").Trim();
+        bool retos = modo == "2", tuts = modo == "3";
+        if (tuts)
+        {
+            a.Add("--tutoriales");
+            var solo = Q("soloT", "Solitarios concretos, separados por comas (Enter = todos los de la web)", "todos"); if (solo != "todos" && solo != "") a.AddRange(new[] { "--solo", solo });
+            a.AddRange(new[] { "--jugadas", Q("jugadas", "Jugadas de ejemplo después del tutorial", "6") });
+            a.AddRange(new[] { "--lectura", Q("lectura", "Velocidad de lectura (1 = normal, 1.3 = más despacio)", "1") });
+            a.AddRange(new[] { "--url-juego", Q("urlJuego", "Dirección que se anuncia ({host} {id} {lang} {web})", "{host}/{id}") });
+            foreach (var (k, txt, opt) in new[] { ("gancho", "Frase de la entrada («es | en», Enter = la de serie)", "--gancho"), ("cta", "Frase final («es | en», Enter = la de serie)", "--cta"), ("extra", "Línea extra final («es | en», - = ninguna, Enter = la de serie)", "--extra") })
+            { var v = Q(k, txt, "auto"); if (v != "auto" && v != "") a.AddRange(new[] { opt, v }); }
+        }
+        else if (retos)
         {
             a.AddRange(new[] { "--puzles", Q("puzles", "Juego de retos", "cerillas") });
             a.AddRange(new[] { "--desde", Q("desde", "Desde el reto número", "1") });
@@ -242,7 +341,7 @@ static class Ask
             var solo = Q("solo", "Juegos concretos, separados por comas (Enter = todos los de la web)", "todos"); if (solo != "todos" && solo != "") a.AddRange(new[] { "--solo", solo });
             a.AddRange(new[] { "--duracion", Q("duracion", "Segundos por vídeo", "75") });
         }
-        a.AddRange(new[] { "--idioma", Q("idioma" + (retos ? "R" : "D"), "Idioma: es / en / ambos", retos ? "en" : "es") });
+        a.AddRange(new[] { "--idioma", Q("idioma" + (retos ? "R" : tuts ? "T" : "D"), "Idioma: es / en / ambos", retos ? "en" : tuts ? "ambos" : "es") });
         a.AddRange(new[] { "--formato", Q("formato", "Formato: vertical / horizontal / ambos", "vertical") });
         var mus = Q("musica", "Música de fondo: archivo o carpeta (Enter = solo efectos)", "ninguna"); if (mus != "ninguna" && mus != "") a.AddRange(new[] { "--musica", mus.Trim('"') });
         a.AddRange(new[] { "--paralelo", Q("paralelo", "Vídeos a la vez", "2") });
@@ -273,6 +372,7 @@ class Options
     public string? Puzzles; public int Wait = 45, From = 1, To = 0; bool langSet; public bool NoSfx; public double MusicVolume = 0.35;
     public int Duration = 75, Fps = 30, Intro = 3, Outro = 4, Parallel = 1, Crf = 21, Max = 0, JpegQuality = 90;
     public bool Redo; public string? Music, ChromePath, FfmpegPath = "ffmpeg"; public HashSet<string> Only = new();
+    public bool Tutorials; public int Moves = 6; public double Read = 1, TutOutro = 0; public string UrlTemplate = "{host}/{id}"; public string? Hook, Cta, Extra, CaptionTemplate;
     readonly Random rnd = new();
 
     public static Options? Parse(string[] a)
@@ -288,6 +388,15 @@ class Options
                 case "--web": o.Sitemap = v().TrimEnd('/') + "/sitemap.xml"; break;
                 case "--salida": o.Out = v(); break;
                 case "--puzles": o.Puzzles = v(); break;
+                case "--tutoriales": o.Tutorials = true; break;
+                case "--jugadas": o.Moves = int.Parse(v()); break;
+                case "--lectura": o.Read = double.Parse(v().Replace(',', '.'), System.Globalization.CultureInfo.InvariantCulture); break;
+                case "--url-juego": o.UrlTemplate = v(); break;
+                case "--gancho": o.Hook = v(); break;
+                case "--cta": o.Cta = v(); break;
+                case "--extra": o.Extra = v(); break;
+                case "--texto": o.CaptionTemplate = v(); break;
+                case "--outro-tutorial": o.TutOutro = double.Parse(v().Replace(',', '.'), System.Globalization.CultureInfo.InvariantCulture); break;
                 case "--sin-efectos": o.NoSfx = true; break;
                 case "--volumen-musica": o.MusicVolume = double.Parse(v(), System.Globalization.CultureInfo.InvariantCulture); break;
                 case "--espera": o.Wait = int.Parse(v()); break;
@@ -318,7 +427,9 @@ class Options
     public static void Help() => Console.WriteLine("Uso: ArcadeRecorder --sitemap https://tu-web/sitemap.xml [--salida videos] [--idioma es|en|ambos] [--formato vertical|horizontal|ambos]\n" +
         "       [--duracion 75] [--fps 30] [--intro 3] [--outro 4] [--musica archivo|carpeta] [--solo id1,id2] [--max N] [--rehacer]\n" +
         "       [--paralelo N] [--calidad 21] [--chrome ruta] [--ffmpeg ruta]\n" +
-        "Retos (un vídeo por problema): ArcadeRecorder --web https://mobilehits.juegosboom.com --puzles cerillas [--espera 45] [--desde 1] [--hasta 269]");
+        "Retos (un vídeo por problema): ArcadeRecorder --web https://mobilehits.juegosboom.com --puzles cerillas [--espera 45] [--desde 1] [--hasta 269]\n" +
+        "Tutoriales de solitarios: ArcadeRecorder --web https://solitarios.juegosboom.com --tutoriales [--idioma ambos] [--jugadas 6] [--lectura 1]\n" +
+        "       [--url-juego \"{host}/{id}\"] [--gancho \"es | en\"] [--cta \"es | en\"] [--extra \"es | en\"] [--texto \"plantilla\"] [--outro-tutorial 5.5]");
     public string? PickMusic()
     {
         if (string.IsNullOrEmpty(Music)) return null;

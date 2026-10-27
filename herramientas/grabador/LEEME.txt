@@ -60,3 +60,33 @@ números gigantes con destello rojo), «TIME'S UP!», la cerilla de la solución
 sello «SOLVED ✅», confeti y cierre con cerillas cayendo y el enlace.
 Sonido: la página da las marcas (window.arcadeRec.cues) y el programa sintetiza los efectos (ritmo, ticks, golpes, whoosh,
 redoble, campana) en un WAV que mezcla con la música si se pone --musica (a --volumen-musica 0.35). --sin-efectos los quita.
+
+Vídeos «cómo se juega» de los solitarios: --tutoriales  (o modo 3 en las preguntas)
+  Un vídeo por solitario (todos los que usan pwa/cartas.js: ~100), en español, inglés o los dos:
+  · Cartela de entrada: emoji, título, «📖 CÓMO SE JUEGA» y una frase gancho («Aprende a jugar en un minuto»).
+  · El tutorial del juego paso a paso (el mismo que sale al jugar, tutSteps en cartas.js): objetivo, la mesa, celdas, mazo…
+    con los montones de cada paso resaltados y el resto oscurecido; el texto aparece palabra a palabra en un cuadro
+    grande, con barra de progreso arriba. Cada texto dura según lo largo que sea (--lectura lo alarga o acorta).
+  · Jugadas de ejemplo (--jugadas, 6): la pista del juego elige la jugada, se explica («Pon el 7♠ sobre el 8♠: uno menos.
+    Así se destapa una carta.») y un dedo 👆 la hace despacio arrastrando la carta (o tocando el mazo, la pareja…).
+  · Abajo, mientras dura, un pie con el juego y su dirección.
+  · Cartela final: «¡Ahora te toca a ti!», la frase final (--cta), la dirección en grande (--url-juego) y una línea extra (--extra).
+  · Efectos de sonido sintetizados en cada paso y jugada; con --musica, además, música de fondo.
+  Ejemplos:
+    dotnet run -c Release -- --web https://solitarios.juegosboom.com --tutoriales --idioma ambos --paralelo 3
+    dotnet run -c Release -- --web https://solitarios.juegosboom.com --tutoriales --solo arana,cartalibre --jugadas 8 --lectura 1.2
+    dotnet run -c Release -- --web https://solitarios.juegosboom.com --tutoriales --url-juego "juegosboom.com/{id}" ^
+         --cta "Juega gratis en | Play free at" --extra "Más de 100 solitarios | Over 100 solitaires" --musica C:\musica
+  Opciones propias (los textos admiten «español | english»; si no llevan «|», se usa el mismo en los dos idiomas):
+    --jugadas 6                 jugadas de ejemplo después del tutorial (0 = solo el tutorial)
+    --lectura 1                 tiempo de lectura de cada texto (1,3 = un 30 % más; 0,8 = más rápido)
+    --url-juego "{host}/{id}"   dirección que se anuncia; {host} = dominio de --web, {id}, {lang}, {web} = --web completa
+    --gancho "…"                frase de la entrada            --cta "…"   frase final (encima de la dirección)
+    --extra "…"                 línea final debajo de la dirección («-» = ninguna)
+    --texto "…"                 plantilla del .txt para publicar: {emoji} {title} {tag} {url} {steps} {moves} {id}; \n = salto
+    --outro-tutorial 5.5        segundos de la cartela final
+  Salida: videos/tutoriales/<idioma>/<formato>/<id>.mp4 + .txt. Duran entre 60 y 90 s según el juego y --jugadas.
+  En la página: /<id>/<idioma>?rec=1&tut=1&moves=6&read=1&url=…&hook=…&cta=…&extra=…&outro=5.5
+  (window.arcadeRec.scene = 'tutorial'; si la web aún tiene el cartas.js antiguo, el programa avisa y se salta el juego).
+  Para grabar sin subir nada a la web: arranca la web en tu PC (php -S 127.0.0.1:8080 -t . herramientas/router.php, desde la
+  carpeta del repositorio) y usa --web http://127.0.0.1:8080 --url-juego "solitarios.juegosboom.com/{id}".

@@ -857,6 +857,177 @@
         const k = s.st.p[m.f].length - m.n;
         return { drag: [center(g, m.f, k), dropPoint(g, m.t)], dur: 0.42, after: 0.18, say };
       },
+      /* ---------- vídeo «cómo se juega» (ArcadeRecorder --tutoriales): /<id>/<idioma>?rec=1&tut=1 ----------
+         Cartela de entrada, los pasos del tutorial con sus montones resaltados, unas jugadas de ejemplo explicadas y hechas
+         despacio, y cartela final con la dirección del juego. Parámetros de la URL (todos opcionales):
+           moves=6   jugadas de ejemplo          read=1   velocidad de lectura (1,3 = textos un 30 % más tiempo en pantalla)
+           url=…     dirección que se anuncia     hook=…   frase de la entrada      cta=…  frase final      extra=…  línea extra final
+           outro=5   segundos de la cartela final   intro=3,2   segundos de la entrada */
+      recScene(g, Q) {
+        if (!Q.has('tut')) return null;
+        const D0 = this, num = (k, d) => (Q.has(k) && Q.get(k) !== '' && isFinite(+Q.get(k)) ? +Q.get(k) : d);
+        const NM = Math.max(0, Math.min(40, Math.round(num('moves', 6)))), READ = Math.max(0.4, num('read', 1));
+        const host = Q.get('site') || location.host, id = g.def.id, title = g.def.title, emo = g.def.emoji || '🃏';
+        const url = Q.get('url') || host + '/' + id;
+        const hook = Q.get('hook') || T('Aprende a jugar en un minuto', 'Learn to play in one minute');
+        const cta = Q.get('cta') || T('Juega gratis en el navegador', 'Play free in your browser');
+        const extra = Q.has('extra') ? Q.get('extra') : T('Más de 100 solitarios con cartas grandes', 'Over 100 solitaires with big cards');
+        const accent = g.def.color || '#ffd43b', bg = g.def.bg || ['#147a52', '#0d3b2e'];
+        g.demoOn = true; g.level = 1; D0.setup(g); const s = g.s; s.tutPend = null; g.score = 0;
+        // línea de tiempo: el tiempo de cada texto depende de lo largo que sea
+        const readT = (txt, lo, hi) => Math.max(lo, Math.min(hi, (1.4 + String(txt).split(/\s+/).length * 0.3) * READ));
+        const steps = tutSteps(g);
+        const TI = Math.max(1.5, num('intro', 3.2)), OUT = Math.max(2.5, num('outro', 5.5));
+        let t = TI; const tl = [];
+        steps.forEach((st, i) => { const d = readT(st.t, 3.6, 12); tl.push({ kind: 'step', i, st, t0: t, t1: t + d }); t += d; });
+        const MR = 3.4 * READ, MA = 1.3, MP = 0.9;   // por jugada: leer, moverse, pausa
+        for (let j = 0; j < NM; j++) { tl.push({ kind: 'move', j, t0: t, t1: t + MR + MA + MP }); t += MR + MA + MP; }
+        const TO = t, DUR = t + OUT;
+        const cues = [{ t: 0.05, s: 'whoosh' }, { t: 0.35, s: 'pop' }, { t: TO + 0.1, s: 'whoosh' }, { t: TO + 0.6, s: 'ding' }];
+        tl.forEach((p) => { if (p.kind === 'step') cues.push({ t: p.t0 + 0.05, s: 'pop' }); else { cues.push({ t: p.t0 + 0.05, s: 'tick' }, { t: p.t0 + MR + 0.05, s: 'whoosh' }, { t: p.t0 + MR + MA, s: 'pop' }); } });
+        const FS = Math.round(Math.max(17, Math.min(30, Math.min(g.W, g.H) * 0.05)));
+        const ease = (k) => 1 - Math.pow(1 - Math.max(0, Math.min(1, k)), 3), backE = (k) => { k = Math.max(0, Math.min(1, k)); const c = 1.7; return 1 + (c + 1) * Math.pow(k - 1, 3) + c * Math.pow(k - 1, 2); };
+        const TF = A.TFONT || A.FONT;
+        // jugadas: se eligen al llegar a cada una (con la pista del juego) y se recuerdan
+        const mv = [];
+        function moveOf(j) {
+          if (mv[j] !== undefined) return mv[j];
+          const m = s.done ? null : hint(g);
+          let plan = null;
+          if (m && m.f != null) {   // origen y destino de la primera carta que se mueve, para dibujar el arrastre
+            const L = layoutCards(g), k = s.st.p[m.f].length - m.n, base = L.find((o) => o.pile === m.f && o.k === k), c = s.st.p[m.f][k];
+            const keep = s.st; s.st = apply(keep, s.D, m); const L2 = layoutCards(g); s.st = keep;
+            const dst = L2.find((o) => o.c === c || o.c === c % DOWN);
+            const dp = dropPoint(g, m.t);
+            if (base) plan = { k, x0: base.px, y0: base.py, x1: dst ? dst.px : dp[0] - s.cw / 2, y1: dst ? dst.py : dp[1] - s.ch * 0.6 };
+          }
+          mv[j] = m ? { m, text: explain(g, m), plan, done: false } : null;
+          return mv[j];
+        }
+        function tapPoints(m) {
+          if (m.stock) { const i = kinds(s.D, 'stock')[0]; return [center(g, i, s.st.p[i].length - 1)]; }
+          if (m.rdl) { const b = s.btns.find((q) => q.id === 'rdl'); return b ? [[b.x + b.w / 2, b.y + b.h / 2]] : []; }
+          if (m.single != null) return [center(g, m.single, s.st.p[m.single].length - 1)];
+          if (m.pair) return m.pair.map((i) => center(g, i, s.st.p[i].length - 1));
+          return [];
+        }
+        // dibujo: oscurecer todo menos lo resaltado, cuadro de texto que aparece palabra a palabra, cabecera
+        function dim(ctx, rs, k) {
+          ctx.save(); ctx.globalAlpha = 0.6 * k; ctx.fillStyle = '#0b0820'; ctx.beginPath(); ctx.rect(0, 0, g.W, g.H);
+          for (const r of rs) { const q = Math.min(12, r.w / 2, r.h / 2); ctx.moveTo(r.x + q, r.y); ctx.arcTo(r.x + r.w, r.y, r.x + r.w, r.y + r.h, q); ctx.arcTo(r.x + r.w, r.y + r.h, r.x, r.y + r.h, q); ctx.arcTo(r.x, r.y + r.h, r.x, r.y, q); ctx.arcTo(r.x, r.y, r.x + r.w, r.y, q); ctx.closePath(); }
+          ctx.fill('evenodd'); ctx.restore();
+          const pulse = 0.6 + 0.4 * Math.sin(g.rt * 5);
+          for (const r of rs) { ctx.save(); ctx.globalAlpha = k; ctx.strokeStyle = `rgba(255,212,59,${pulse})`; ctx.lineWidth = 4; A.rr(ctx, r.x, r.y, r.w, r.h, 12); ctx.stroke(); ctx.restore(); }
+        }
+        function box(ctx, text, rs, tt, label) {
+          const bw = Math.min(g.W - 28, 640), lines = wrapText(ctx, text, bw - 40, FS), lh = FS * 1.34, lab = label ? FS * 0.75 + 12 : 0, bh = 30 + lab + lines.length * lh;
+          const top = rs.length ? Math.min(...rs.map((r) => r.y)) : g.H / 2, bot = rs.length ? Math.max(...rs.map((r) => r.y + r.h)) : g.H / 2;
+          const y = bot + 18 + bh < g.H - 24 ? bot + 18 : top - 18 - bh > 70 ? top - 18 - bh : g.H - bh - 28, x = (g.W - bw) / 2;
+          const k = backE(tt / 0.35);
+          ctx.save(); ctx.translate(g.W / 2, y + bh / 2); ctx.scale(k, k); ctx.translate(-g.W / 2, -(y + bh / 2));
+          ctx.shadowColor = 'rgba(0,0,0,.45)'; ctx.shadowBlur = 22; ctx.fillStyle = '#fffdf5'; A.rr(ctx, x, y, bw, bh, 18); ctx.fill(); ctx.shadowBlur = 0;
+          ctx.fillStyle = accent; A.rr(ctx, x, y, 8, bh, 4); ctx.fill();
+          if (label) A.txt(ctx, label, x + 22, y + 14 + FS * 0.37, FS * 0.62, '#e8590c', 'left', 900);
+          let shown = Math.floor(tt / 0.07) + 1;   // palabras que ya se ven
+          lines.forEach((ln, n) => {
+            const ws = ln.split(' '), part = ws.slice(0, Math.max(0, shown)).join(' '); shown -= ws.length;
+            if (part) A.txt(ctx, part, x + 22, y + 15 + lab + n * lh + FS * 0.55, FS, '#212529', 'left', 700);
+          });
+          ctx.restore();
+          return { y, h: bh };
+        }
+        function header(ctx, text, sub) {
+          ctx.save(); ctx.font = '900 ' + Math.round(FS * 0.72) + 'px ' + A.FONT;
+          const w = Math.min(g.W - 20, ctx.measureText(text).width + FS * 1.6), h = FS * 1.35, y = 10;
+          ctx.fillStyle = 'rgba(0,0,0,.62)'; A.rr(ctx, g.W / 2 - w / 2, y, w, h, h / 2); ctx.fill(); ctx.restore();
+          A.txt(ctx, text, g.W / 2, y + h / 2 + 1, FS * 0.72, '#fff', 'center', 900);
+          if (sub != null) { ctx.fillStyle = 'rgba(255,255,255,.2)'; A.rr(ctx, g.W / 2 - w / 2 + 14, y + h + 6, w - 28, 6, 3); ctx.fill(); ctx.fillStyle = accent; A.rr(ctx, g.W / 2 - w / 2 + 14, y + h + 6, (w - 28) * sub, 6, 3); ctx.fill(); }
+        }
+        function footer(ctx) {
+          const txt = emo + ' ' + title + '  ·  ' + url.replace(/^https?:\/\//, ''), fz = Math.round(FS * 0.7);
+          ctx.save(); ctx.font = '900 ' + fz + 'px ' + A.FONT; const w = Math.min(g.W - 24, ctx.measureText(txt).width + fz * 2), h = fz * 2.1, y = g.H - h - 18;
+          ctx.globalAlpha = 0.92; ctx.fillStyle = 'rgba(0,0,0,.55)'; A.rr(ctx, g.W / 2 - w / 2, y, w, h, h / 2); ctx.fill(); ctx.restore();
+          A.txt(ctx, txt, g.W / 2, y + h / 2 + 1, Math.min(fz, (g.W - 50) / Math.max(1, txt.length) * 1.8), '#fff', 'center', 900);
+        }
+        function finger(ctx, x, y, press) { A.emoji(ctx, '👆', x + s.cw * 0.12, y + s.cw * 0.45, s.cw * 0.85 * (1 - press * 0.12), { rot: -0.15 }); if (press > 0) { ctx.save(); ctx.globalAlpha = press * 0.7; ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(x, y, 12 + (1 - press) * 26, 0, TAU2); ctx.stroke(); ctx.restore(); } }
+        const TAU2 = Math.PI * 2;
+        function card(ctx, k, a, b) {   // cartela de entrada (a = segundos desde que empezó) o de salida (b)
+          const m = Math.min(g.W, g.H), cy = g.H * (b != null ? 0.3 : 0.36), e = backE((b != null ? b : a) / 0.5), at = (t0) => k * Math.min(1, Math.max(0, ((b != null ? b : a) - t0) * 3));
+          ctx.save(); ctx.globalAlpha = k;
+          const gr = ctx.createLinearGradient(0, 0, 0, g.H); gr.addColorStop(0, bg[0]); gr.addColorStop(1, bg[1]); ctx.fillStyle = gr; ctx.fillRect(0, 0, g.W, g.H);
+          ctx.globalAlpha = k * 0.12; for (let i = 0; i < 14; i++) { const em = ['♠️', '♥️', '♦️', '♣️'][i % 4], x = ((i * 0.37 + g.rt * 0.03) % 1) * g.W, y = ((i * 0.61 + g.rt * 0.05 * (i % 3 + 1)) % 1.2) * g.H - 40; A.emoji(ctx, em, x, y, 42, { rot: Math.sin(g.rt + i) * 0.4 }); }
+          ctx.restore();
+          ctx.save(); ctx.globalAlpha = k; ctx.translate(g.W / 2, cy + Math.sin(g.rt * 3) * m * 0.012); ctx.scale(e, e); ctx.rotate(Math.sin(g.rt * 1.7) * 0.06); A.emoji(ctx, emo, 0, 0, m * 0.26); ctx.restore();
+          ctx.save(); ctx.globalAlpha = k;
+          A.txt(ctx, title, g.W / 2, cy + m * 0.25, Math.min(m * 0.11, (g.W * 0.9) / Math.max(5, title.length) * 1.75), '#fff', 'center', 900, 'rgba(0,0,0,.5)', TF);
+          ctx.restore();
+          if (b == null) {
+            const k2 = backE((a - 0.35) / 0.4), lb = '📖 ' + T('CÓMO SE JUEGA', 'HOW TO PLAY');
+            ctx.save(); ctx.globalAlpha = k; ctx.translate(g.W / 2, cy + m * 0.38); ctx.scale(k2, k2);
+            ctx.font = '900 ' + Math.round(m * 0.05) + 'px ' + A.FONT; const w = ctx.measureText(lb).width + m * 0.08;
+            ctx.fillStyle = accent; A.rr(ctx, -w / 2, -m * 0.045, w, m * 0.09, m * 0.045); ctx.fill(); A.txt(ctx, lb, 0, 2, m * 0.05, '#1b1b2f', 'center', 900);
+            ctx.restore();
+            ctx.save(); ctx.globalAlpha = at(0.8); A.txt(ctx, hook, g.W / 2, cy + m * 0.5, m * 0.042, 'rgba(255,255,255,.92)', 'center', 800); ctx.restore();
+          } else {
+            ctx.save(); ctx.globalAlpha = k; A.txt(ctx, T('¡Ahora te toca a ti!', 'Now it\'s your turn!'), g.W / 2, cy + m * 0.37, m * 0.055, '#ffe066', 'center', 900, 'rgba(0,0,0,.4)'); ctx.restore();
+            ctx.save(); ctx.globalAlpha = at(0.6); A.txt(ctx, cta, g.W / 2, cy + m * 0.48, m * 0.045, '#fff', 'center', 800); ctx.restore();
+            const e3 = backE((b - 0.9) / 0.4), bob = 1 + 0.035 * Math.sin(g.rt * 6);
+            ctx.save(); ctx.globalAlpha = k; ctx.translate(g.W / 2, cy + m * 0.6); ctx.scale(e3 * bob, e3 * bob);
+            ctx.font = '900 ' + Math.round(m * 0.052) + 'px ' + A.FONT; const uw = Math.min(g.W * 0.94, ctx.measureText(url).width + m * 0.12), sz = Math.min(m * 0.052, (g.W * 0.94 - m * 0.12) / Math.max(1, url.length) * 1.75);
+            ctx.fillStyle = accent; A.rr(ctx, -uw / 2, -m * 0.06, uw, m * 0.12, m * 0.06); ctx.fill(); A.txt(ctx, url, 0, 2, sz, '#1b1b2f', 'center', 900);
+            ctx.restore();
+            if (extra) { ctx.save(); ctx.globalAlpha = at(1.5); A.txt(ctx, extra, g.W / 2, cy + m * 0.74, m * 0.04, 'rgba(255,255,255,.85)', 'center', 800); ctx.restore(); }
+          }
+        }
+        return {
+          kind: 'tutorial', dur: DUR, cues,
+          info: { kind: 'tutorial', firstMove: +(tl.find((p) => p.kind === 'move') || { t0: TO }).t0.toFixed(2), outro: +TO.toFixed(2), id, title, url: /^https?:/.test(url) ? url : 'https://' + url, steps: steps.length, moves: NM, tag: g.def.tag || '', emoji: emo },
+          frame(t, dt, ctx) {
+            A.fdt = dt; A.fno++; g.rt = t; g.t = t;
+            const ph = tl.find((p) => t >= p.t0 && t < p.t1);
+            let rs = [], text = null, tt = 0, label = null, head = null, prog = null;
+            s.hl = null;
+            if (ph && ph.kind === 'step') {
+              const st = ph.st; rs = tutRects(g, st); text = st.t; tt = t - ph.t0; if (st.move) s.hl = { m: st.move, t: 9 };
+              head = '📖 ' + T('Cómo se juega', 'How to play') + ' · ' + (ph.i + 1) + '/' + steps.length; prog = (ph.i + (t - ph.t0) / (ph.t1 - ph.t0)) / steps.length;
+            } else if (ph && ph.kind === 'move') {
+              const M = moveOf(ph.j), lt = t - ph.t0;
+              head = '▶ ' + T('Jugada de ejemplo', 'Example move') + ' ' + (ph.j + 1) + '/' + NM; prog = (ph.j + lt / (ph.t1 - ph.t0)) / NM;
+              if (M) {
+                const m = M.m; text = M.text; tt = lt; label = T('JUGADA', 'MOVE') + ' ' + (ph.j + 1);
+                if (!M.rs) M.rs = tutRects(g, { move: m });   // se recuerdan: el cuadro de texto no salta al terminar la jugada
+                rs = M.rs; if (!M.done) s.hl = { m, t: 9 };
+                if (lt >= MR && !M.done) {
+                  const a = (lt - MR) / MA;
+                  if (M.plan) {   // arrastre de la carta con el dedo
+                    const e = ease(a), lift = Math.sin(Math.min(1, a) * Math.PI) * s.ch * 0.35;
+                    const x = M.plan.x0 + (M.plan.x1 - M.plan.x0) * e, y = M.plan.y0 + (M.plan.y1 - M.plan.y0) * e - lift;
+                    s.drag = { pile: m.f, k: M.plan.k, n: m.n, dx: 0, dy: 0, x, y, moved: true }; M.fx = x + s.cw / 2; M.fy = y + s.ch * 0.35;
+                  }
+                  if (a >= 1) { s.drag = null; s.hl = null; M.done = true; commit(g, m); }
+                }
+              } else { text = T('No quedan más jugadas en este reparto.', 'No more moves in this deal.'); tt = lt; }
+            }
+            if (!(ph && ph.kind === 'move' && mv[ph.j] && !mv[ph.j].done && t - ph.t0 >= MR)) s.drag = null;
+            D0.update(g, dt);
+            ctx.save(); D0.draw(g, ctx); ctx.restore();
+            if (text && t < TO) {
+              dim(ctx, rs, Math.min(1, tt * 4));
+              // dedo: sigue la carta arrastrada o toca donde haga falta
+              if (ph.kind === 'move' && mv[ph.j]) {
+                const M = mv[ph.j], lt = t - ph.t0;
+                if (M.plan && M.fx != null && !M.done) finger(ctx, M.fx, M.fy, 0.6);
+                else if (!M.plan && lt >= MR - 0.5 && lt < MR + MA) { const pts = tapPoints(M.m); pts.forEach(([x, y], q) => { const lq = lt - MR + 0.5 - q * 0.45; if (lq >= 0) finger(ctx, x, y, Math.max(0, 1 - lq * 2.5)); }); if (lt >= MR + MA - 0.35 && !M.done) { M.done = true; s.hl = null; commit(g, M.m); } }
+              }
+              const bx = box(ctx, text, rs, tt, label);
+              if (bx.y + bx.h < g.H - FS * 3.2) footer(ctx);   // abajo sobra sitio (vídeo vertical): el juego y su dirección
+            }
+            if (head && t < TO) header(ctx, head, prog);
+            if (t < TI + 0.5) card(ctx, t < TI ? 1 : 1 - (t - TI) / 0.5, t, null);
+            if (t >= TO) card(ctx, Math.min(1, (t - TO) / 0.45), null, t - TO);
+          },
+        };
+      },
       tv: { mode: 'tap', targets: (g) => {
         const s = g.s; if (!s.D) return []; const o = [];
         if (s.tut) { const b = tutBox(g); return [{ x: b.next.x, y: b.next.y, w: b.next.w, h: b.next.h, instant: true }]; }
