@@ -1,0 +1,1 @@
+QuickJS-ng 0.17.0 (github.com/quickjs-ng/quickjs, commit 270b8c97, 2026-10-20). Solo los archivos de la biblioteca, sin cambios.

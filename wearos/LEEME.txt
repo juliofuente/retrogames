@@ -1,0 +1,94 @@
+Arcade Watch · los juegos de Arcade Pro en un reloj Wear OS
+===========================================================
+App de Android en Java para relojes con Wear OS 3 o posterior (Galaxy Watch 4 en adelante, Pixel Watch,
+TicWatch, etc.). Los juegos son los mismos archivos de la web (herramientas/src/<id>.js) y se ejecutan
+con QuickJS, un motor de JavaScript pequeño que va dentro de la app (Wear OS no trae WebView).
+
+Lleva 3 juegos: Lanza cuchillos, Leñador (también se juega con la corona) y Helicóptero.
+
+
+Cómo se compila e instala
+-------------------------
+1. Instala Android Studio. La primera vez que abras el proyecto, te pedirá descargar el SDK, el NDK
+   y CMake: acepta (los necesita para compilar QuickJS).
+2. Abre ESTA carpeta (wearos), no la raíz del repositorio. Espera a que termine «Gradle sync».
+3. Para probar sin reloj: Tools → Device Manager → Add device → Wear OS → «Wear OS Large Round»
+   (o «Small Round») con una imagen de Android 13 o 14. Pulsa ▶ Run.
+4. Para probar en el reloj:
+   · En el reloj: Ajustes → Sistema → Información → toca 7 veces «Versión de software» o
+     «Número de compilación» para activar las Opciones de desarrollador.
+   · Opciones de desarrollador → Depuración por ADB y Depuración inalámbrica (el reloj y el
+     ordenador en la misma wifi).
+   · En Android Studio: Device Manager → Pair devices using Wi-Fi (o en una terminal:
+     adb pair IP:PUERTO y luego adb connect IP:PUERTO, con los datos que enseña el reloj).
+   · Elige el reloj arriba y pulsa ▶ Run.
+5. APK para instalar o subir: Build → Generate Signed App Bundle / APK. Para Google Play se sube
+   un .aab firmado; en la ficha de Play marca que es una app para Wear OS.
+
+
+Cómo se juega en el reloj
+-------------------------
+· Lista de juegos: gira la corona o el bisel, desliza a los lados o toca ‹ › para cambiar de juego.
+  Toca en el centro para jugar. La primera vez sale una tarjeta corta de «¿Cómo se juega?».
+· Volver: desliza desde el borde izquierdo hacia la derecha (el gesto normal de Wear OS).
+  Jugando → pausa · en la pausa → lista de juegos · en la lista → sale de la app.
+· Leñador: también se corta girando la corona (horario = derecha, antihorario = izquierda).
+· Se guardan la mejor puntuación y el nivel al que has llegado en cada juego.
+· La pantalla se queda encendida solo mientras juegas.
+
+
+Cómo añadir más juegos
+----------------------
+1. Escribe su id en app/src/main/assets/games/lista.txt (el nombre de herramientas/src/<id>.js).
+2. Compila. Gradle copia solo los juegos de herramientas/src antes de cada compilación (tarea
+   copiarJuegos), así que el reloj lleva siempre la misma versión que la web. Si un juego usa física
+   (@phys), también se copia pwa/phys.js.
+Se han probado con el motor del reloj (sin errores) los 44 juegos de un toque y de mantener:
+aleteo, alas, balanza, bote, candado, carretera, cientos, circuito, cuchillos, cuestaarriba, doscoches,
+encaje, escaleras, estallido, gancho, golpecolor, helice, helicoptero, honda, horno, lenador, minero,
+montana, orbita, pasarela, pinchos, planetita, propulsor, puente, punteria, reaccion, reflejos, resorte,
+saltacolor, saltanubes, salto, tambaleante, teclas, teeter, torre, torregiro, torreta, trepamuros, volteo.
+Algunos ponen textos en las esquinas y en una pantalla redonda se cortan un poco (reflejos, pasarela,
+torregiro): se arreglaría en el propio juego con márgenes un poco mayores.
+
+
+Cómo está hecho
+---------------
+app/src/main/assets/js/canvas.js   canvas 2D falso: los juegos pintan como siempre (ctx.fillRect, arc,
+                                   fillText…) y cada orden se apunta en un Float32Array.
+app/src/main/assets/js/core.js     el motor de la web (pwa/common.js) sin DOM: niveles, vidas, puntos,
+                                   efectos, emojis, sonidos… y los menús pintados para pantalla redonda.
+app/src/main/assets/games/         los juegos (copiados de herramientas/src).
+app/src/main/cpp/arcade_jni.c      puente entre Java y QuickJS (JNI).
+app/src/main/cpp/quickjs/          QuickJS-ng 0.17.0 sin cambios (licencia MIT, ver LICENSE).
+java/…/JsEngine.java               carga el motor JS y le pide fotogramas, toques, corona…
+java/…/Ops.java                    lee las órdenes de dibujo y se las pasa a quien pinta (Painter).
+java/…/AndroidPainter.java         las pinta en el Canvas de Android (los emojis, en caché de mapas de bits).
+java/…/GameView.java               bucle a 60 fps, toques, corona, teclas, gesto de volver, guardado.
+java/…/Synth.java                  sonidos sintetizados como en la web (AudioTrack) y vibración.
+java/…/MainActivity.java           la única pantalla.
+
+En cada fotograma: Java llama a __frame(ms) → el juego se actualiza y pinta en el canvas falso → Java
+copia las órdenes (un array de números) y las pinta. Los juegos ven siempre un lienzo de 300 × 300 y la app
+lo escala al tamaño del reloj. No hay música de fondo (gasta batería y el altavoz es pequeño); sí efectos.
+Tiempos medidos en un PC: 0,7 ms de JavaScript por fotograma; en un reloj se espera unas 5-8 veces más,
+de sobra para 60 fps. Android Studio muestra los tiempos reales en Logcat (filtro: ArcadeWatch).
+
+
+Prueba en el PC (sin reloj)
+---------------------------
+prueba-escritorio/probar.sh compila QuickJS + el puente para Linux, usa las mismas clases JsEngine y Ops
+que la app, pinta con Java2D en vez de Android, juega con un bot (bot.js) y deja capturas redondas en
+prueba-escritorio/capturas. Con «./probar.sh 454 aleteo,torre,…» prueba otros juegos de herramientas/src.
+Necesita gcc, un JDK y python3 con Pillow y la fuente Noto Color Emoji.
+
+
+Pendiente / a tener en cuenta
+-----------------------------
+· No se ha podido compilar el APK ni probar en un reloj real (aquí no hay SDK de Android): el código
+  Java se ha comprobado contra clases simuladas y el motor, el puente C y los juegos se han probado de
+  verdad en el PC. Lo primero al abrirlo: Run en el emulador redondo.
+· Si la corona va al revés en algún reloj, cambia el signo en GameView.onGenericMotionEvent;
+  si va demasiado sensible o lenta, ROTARY_STEP.
+· Para publicar en Play: icono redondo y capturas del reloj; la política de Play pide targetSdk actual
+  (está en 34; súbelo en app/build.gradle si Play lo pide).

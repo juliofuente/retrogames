@@ -1,6 +1,9 @@
 ARCADE PERDIDO + ARCADE PRO — LO QUE ESTÁ HECHO
 ================================================
 Fecha: 20-10-2026 · Versión de la PWA (games.js → ARCADE_VERSION): 2.36.0
+· Arcade Watch (carpeta wearos/): app Android en Java para relojes Wear OS con QuickJS. Motor de la web sin DOM (core.js),
+  canvas falso que manda órdenes de dibujo a Java, puente JNI, sonido sintetizado, corona, vibración. Lleva Lanza cuchillos,
+  Leñador y Helicóptero; se han probado sin errores los 44 juegos de un toque y de mantener. Ver wearos/LEEME.txt.
 · v2.36.0: Emoji Quest con el vocabulario completo de la Fábrica de Frases: las 98 palabras pequeñas (mismas tarjetas y
   588 frases, un personaje profesor por zona, repasos), y los verbos y tiempos de la fábrica (like, play, eat, watch, want,
   go, drink, visit; could; was/were + -ing; have/has + participio). palabras.js se genera con herramientas/eq-palabras.js.

@@ -1,0 +1,5 @@
+# Juegos que van en el reloj, en este orden (el nombre es el de herramientas/src/<id>.js).
+# Para añadir otro: escribe su id aquí y vuelve a compilar.
+cuchillos
+lenador
+helicoptero

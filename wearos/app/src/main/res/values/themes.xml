@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Pantalla completa y negra. Se desactiva «deslizar para cerrar» de Wear OS: el gesto de volver lo gestiona
+         el juego (desliza desde el borde izquierdo: pausa → lista de juegos → salir). -->
+    <style name="Tema" parent="@android:style/Theme.DeviceDefault.NoActionBar.Fullscreen">
+        <item name="android:windowBackground">@android:color/black</item>
+        <item name="android:windowSwipeToDismiss">false</item>
+        <item name="android:windowNoTitle">true</item>
+    </style>
+</resources>

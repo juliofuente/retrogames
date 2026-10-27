@@ -1,0 +1,53 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'com.juegosboom.arcadewatch'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId 'com.juegosboom.arcadewatch'
+        minSdk 30          // Wear OS 3 o posterior
+        targetSdk 34
+        versionCode 1
+        versionName '1.0'
+        ndk {
+            abiFilters 'armeabi-v7a', 'arm64-v8a', 'x86', 'x86_64'   // relojes de 32 y 64 bits y el emulador
+        }
+    }
+
+    externalNativeBuild {
+        cmake {
+            path 'src/main/cpp/CMakeLists.txt'
+            version '3.22.1'
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+// Copia los juegos de la web (herramientas/src) a los assets antes de compilar, para que el reloj tenga siempre la última
+// versión. Si el proyecto se abre fuera del repositorio, se usan las copias que ya hay en src/main/assets/games.
+def webGames = file('../../herramientas/src')
+tasks.register('copiarJuegos', Copy) {
+    onlyIf { webGames.exists() }
+    def ids = file('src/main/assets/games/lista.txt').readLines().collect { it.trim() }.findAll { it && !it.startsWith('#') }
+    from(webGames) { include ids.collect { it + '.js' } }
+    into 'src/main/assets/games'
+}
+tasks.register('copiarFisica', Copy) {   // motor de física de la web, para los juegos marcados con @phys
+    onlyIf { file('../../pwa/phys.js').exists() }
+    from '../../pwa/phys.js'
+    into 'src/main/assets/js'
+}
+preBuild.dependsOn 'copiarJuegos', 'copiarFisica'
