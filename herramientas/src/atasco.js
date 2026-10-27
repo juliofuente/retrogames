@@ -86,6 +86,7 @@
     id: 'atasco', title: 'Atasco', emoji: '🚗', color: '#ff6b6b', origin: 'Rush Hour (ThinkFun)',
     help: 'Desliza los vehículos (<b>arrástralos</b> en su dirección: los coches solo van hacia delante o hacia atrás) para dejar paso al <b>coche rojo</b> 🚗 hasta la salida de la derecha. Cada nivel es un puzle distinto y más difícil. Menos movimientos, más estrellas.',
     lives: 0, levels: 0, cap: 22,
+    quiz: { goal: (g) => ({ es: 'Saca el coche rojo 🚗 en ' + g.s.min + ' movimientos', en: 'Get the red car 🚗 out in ' + g.s.min + ' moves' }), par: (g) => g.s.min, moves: (g) => g.s.moves },
     demo(g) {
       const s = g.s; if (s.exit || s.drag) return { wait: 0.3 };
       const key = (p) => p.join(',');

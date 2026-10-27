@@ -68,6 +68,7 @@
     id: 'ranas', title: 'Ranas', emoji: '🐸', color: '#69db7c', origin: 'Frogs / Fore and Aft (Lutanho)',
     help: 'Las ranas 🐸 y las tortugas 🐢 quieren <b>cambiarse de lado</b>. Las ranas solo van hacia la <b>derecha</b> (o hacia abajo) y las tortugas hacia la <b>izquierda</b> (o hacia arriba), nunca hacia atrás. Cada una puede pasar a la casilla <b>vacía</b> de al lado o <b>saltar por encima</b> de un animal a la vacía de detrás. <b>Toca</b> un animal para moverlo (si tiene dos opciones, toca luego dónde). Más adelante llegan los tableros de dos cuadrados. «Mínimo» te dice los movimientos justos.',
     lives: 0, levels: 0, cap: 9,
+    quiz: { levels: 9, from: 4, count: 6, goal: (g) => ({ es: 'Cambia de lado ranas 🐸 y tortugas 🐢 en ' + g.s.par + ' saltos', en: 'Swap the frogs 🐸 and turtles 🐢 in ' + g.s.par + ' moves' }), par: (g) => g.s.par, moves: (g) => g.s.moves },
     /*SC*/ demo(g) {
       const s = g.s; if (s.done || s.anim) return { wait: 0.25 };
       if (!s.plan || s.planAt !== s.st.join('')) { s.plan = bfs(s.b, s.st) || []; }

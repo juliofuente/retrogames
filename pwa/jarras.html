@@ -14,7 +14,7 @@
 </head>
 <body class="game">
 <script src="config.js?v=84fed7f189"></script>
-<script src="common.js?v=ddaec3de69"></script>
+<script src="common.js?v=a830dfbdd8"></script>
 <script>
 (function () {
   const { ri, clamp, shuffle, pick } = Arcade;
@@ -96,6 +96,7 @@
     id: 'jarras', title: 'Jarras', emoji: '🏺', color: '#74c0fc', origin: 'Water jug puzzle / Gallony (Lutanho)',
     help: 'Consigue <b>exactamente los litros</b> que pide el nivel en alguna de las jarras. Las jarras no tienen marcas: solo sabes cuánto cabe en cada una. <b>Toca una jarra</b> para elegirla y luego: <b>otra jarra</b> para echar el agua en ella (hasta que una se vacíe o la otra se llene), el <b>grifo</b> 🚰 para llenarla o el <b>desagüe</b> para vaciarla. En algunos niveles no hay grifo: tienes que repartir el agua de la jarra grande. «Mínimo» te dice los pasos que hacen falta como poco.',
     lives: 0, levels: 0, cap: 22,
+    quiz: { goal: (g) => ({ es: 'Consigue exactamente ' + g.s.target + ' litros en ' + g.s.par + ' pasos', en: 'Measure exactly ' + g.s.target + ' liters in ' + g.s.par + ' steps' }), par: (g) => g.s.par, moves: (g) => g.s.ops },
     /*SC*/ demo(g) {
       const s = g.s; if (s.done || s.anim) return { wait: 0.3 };
       const path = bfs(s.st, s.caps, s.tap, (st) => st.includes(s.target)); const op = path && path[0]; if (!op) return { wait: 0.4 };

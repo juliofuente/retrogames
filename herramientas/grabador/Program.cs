@@ -28,6 +28,12 @@
 //   --url-juego "{host}/{id}"  dirección que se anuncia ({host} {id} {lang} {web})
 //   --gancho "…"  frase de la entrada   --cta "…"  frase final   --extra "…"  línea extra final («-» = ninguna)
 //   --texto "…"   texto del .txt para publicar ({emoji} {title} {tag} {url} {steps} {moves}) · --outro-tutorial 5.5  segundos de cierre
+//
+// Retos (--puzles <id>): un vídeo por problema · pregunta, cuenta atrás, solución y cierre con la dirección:
+//   cerillas (escena propia) · atasco, jarras, ranas, apagon, clavijas (escena de reto común del motor: la solución la juega
+//   el solucionador del juego) · secuencias (página educativos/brain-academy/video-secuencias; --serie 5 = 5 preguntas por vídeo)
+//   --espera N  segundos para pensar · --desde/--hasta · --gancho/--cta/--extra · --url-juego · --pagina "ruta?x={lang}" (otra página)
+//   El .txt para publicar lo escribe la propia página (info.caption) si lo trae.
 using System.Diagnostics;
 using System.Net.WebSockets;
 using System.Text;
@@ -102,9 +108,9 @@ static class Program
         {
             await page.Send("Page.enable");
             await page.Send("Network.setUserAgentOverride", new { userAgent = chrome.UserAgent + " ArcadeRecorder/1.0" });
-            await page.Send("Page.navigate", new { url = $"{baseUrl}/{o.Puzzles}/{o.Langs[0]}?rec=1&quiz=1" });
+            await page.Send("Page.navigate", new { url = PuzzleUrl(o, baseUrl, o.Langs[0], 1) });
             count = 0;
-            for (int i = 0; i < 80 && count == 0; i++) { await Task.Delay(300); try { count = (await page.Eval("window.arcadeRec && window.arcadeRec.ready ? window.arcadeRec.quizCount : 0")).GetInt32(); } catch { } }
+            for (int i = 0; i < 300 && count == 0; i++) { await Task.Delay(300); try { count = (await page.Eval("window.arcadeRec && window.arcadeRec.ready ? window.arcadeRec.quizCount : 0")).GetInt32(); } catch { } }
         }
         if (count == 0) { Console.WriteLine($"{o.Puzzles} no tiene vídeos de retos (recScene) o no carga en {baseUrl}"); return 1; }
         int from = Math.Max(1, o.From), to = o.To > 0 ? Math.Min(o.To, count) : count;
@@ -112,7 +118,7 @@ static class Program
         var jobs = new Queue<Job>();
         for (int q = from; q <= to; q++) foreach (var lang in o.Langs) foreach (var fmt in o.Formats)
         {
-            var mp4 = Path.Combine(o.Out, o.Puzzles, lang, fmt, $"{o.Puzzles}-{q:000}.mp4");
+            var mp4 = Path.Combine(o.Out, o.Puzzles, lang, fmt, o.Set > 1 ? $"{o.Puzzles}-{o.Set}x-{q:000}.mp4" : $"{o.Puzzles}-{q:000}.mp4");
             if (!o.Redo && File.Exists(mp4)) continue;
             jobs.Enqueue(new Job(baseUrl, o.Puzzles, lang, fmt, mp4, q));
         }
@@ -158,6 +164,18 @@ static class Program
         if (jobs.Count == 0) return 0;
         using var chrome = await Chrome.Start(o.ChromePath);
         return await RunJobs(chrome, o, jobs);
+    }
+
+    /* dirección de un reto: el juego en /<id>/<idioma>, o una página propia (--pagina; la de las secuencias de Brain Academy
+       viene de serie) con {lang} {id} en la ruta */
+    public static readonly Dictionary<string, string> Pages = new() { ["secuencias"] = "educativos/brain-academy/video-secuencias?lang={lang}" };
+    static string PuzzleUrl(Options o, string baseUrl, string lang, int q, string? extra = null)
+    {
+        var page = o.Page ?? (Pages.TryGetValue(o.Puzzles!, out var pg) ? pg : null);
+        var u = page != null ? baseUrl.TrimEnd('/') + "/" + page.TrimStart('/').Replace("{lang}", lang).Replace("{id}", o.Puzzles) : $"{baseUrl}/{o.Puzzles}/{lang}";
+        u += (u.Contains('?') ? "&" : "?") + $"rec=1&quiz={q}";
+        if (o.Set > 1) u += "&set=" + o.Set;
+        return u + (extra ?? "");
     }
 
     // texto «español | english» → el del idioma (si no hay «|», el mismo para los dos)
@@ -207,9 +225,16 @@ static class Program
             foreach (var (k, v) in new[] { ("hook", o.Hook), ("cta", o.Cta), ("extra", o.Extra) })
                 if (v != null) url += $"&{k}=" + E(v == "-" ? "" : Lang(v, j.Lang));
         }
-        else url = j.Quiz > 0
-            ? $"{j.Base}/{j.Id}/{j.Lang}?rec=1&fps={o.Fps}&quiz={j.Quiz}&wait={o.Wait}&site={E(host)}"
-            : $"{j.Base}/{j.Id}/{j.Lang}?rec=1&fps={o.Fps}&dur={o.Duration}&intro={o.Intro}&outro={o.Outro}&site={E(host)}";
+        else if (j.Quiz > 0)
+        {
+            // espera: la que se pida; si no, 45 s en Cerillas y la de serie de cada página (20 s los retos del motor, 10 s las secuencias)
+            int wait = o.Wait > 0 ? o.Wait : j.Id == "cerillas" ? 45 : 0;
+            var extra = $"&fps={o.Fps}&site={E(host)}" + (wait > 0 ? $"&wait={wait}" : "") + (o.UrlSet ? "&url=" + E(TutorialUrl(o, j)) : "");
+            foreach (var (k, v) in new[] { ("hook", o.Hook), ("cta", o.Cta), ("extra", o.Extra) })
+                if (v != null) extra += $"&{k}=" + E(v == "-" ? "" : Lang(v, j.Lang));
+            url = PuzzleUrl(o, j.Base, j.Lang, j.Quiz, extra);
+        }
+        else url = $"{j.Base}/{j.Id}/{j.Lang}?rec=1&fps={o.Fps}&dur={o.Duration}&intro={o.Intro}&outro={o.Outro}&site={E(host)}";
         await using var page = await chrome.NewPage();
         await page.Send("Page.enable");
         await page.Send("Emulation.setDeviceMetricsOverride", new { width = w, height = h, deviceScaleFactor = 2, mobile = vertical });
@@ -219,7 +244,7 @@ static class Program
 
         // espera a que el juego diga que está listo (los que no tienen modo grabación, como los educativos aparte, se saltan)
         var t0 = DateTime.UtcNow; bool ready = false;
-        while ((DateTime.UtcNow - t0).TotalSeconds < 25)
+        while ((DateTime.UtcNow - t0).TotalSeconds < (j.Quiz > 0 ? 120 : 25))   // los retos ensayan antes la solución: tardan más
         {
             await Task.Delay(300);
             try { ready = (await page.Eval("!!(window.arcadeRec && window.arcadeRec.ready)")).GetBoolean(); } catch { }
@@ -273,6 +298,7 @@ static class Program
     static string QuizCaption(JsonElement i, string lang)
     {
         string S(string k) => i.TryGetProperty(k, out var v) ? (v.ValueKind == JsonValueKind.Number ? v.GetRawText() : v.GetString() ?? "") : "";
+        if (S("caption") != "") return S("caption");   // la página trae su propio texto (retos del motor, secuencias…)
         string n = S("count"), act = S("action"), what = n == "1" ? "ONE match" : n + " matches";
         return lang == "en"
             ? $"🔥 Matchstick puzzle #{S("puzzle")}: {S("equation")} is wrong. Can you {act} {what} to make it true? 🤔\nAnswer at the end 👀 Comment yours before it shows!\nPlay {S("total")} puzzles like this for free: {S("url")}\n\n#matchstickpuzzle #puzzle #brainteaser #riddle #math #iqtest #fyp\n"
@@ -331,10 +357,14 @@ static class Ask
         }
         else if (retos)
         {
-            a.AddRange(new[] { "--puzles", Q("puzles", "Juego de retos", "cerillas") });
+            var pz = Q("puzles", "Juego de retos: cerillas, atasco, jarras, ranas, apagon, clavijas o secuencias", "cerillas").Trim().ToLowerInvariant();
+            a.AddRange(new[] { "--puzles", pz });
+            if (pz == "secuencias") a.AddRange(new[] { "--serie", Q("serie", "Preguntas por vídeo: 1 o 5 (de fácil a genio)", "1") });
             a.AddRange(new[] { "--desde", Q("desde", "Desde el reto número", "1") });
             var hasta = Q("hasta", "Hasta el reto número (Enter = todos)", "todos"); if (int.TryParse(hasta, out _)) a.AddRange(new[] { "--hasta", hasta });
-            a.AddRange(new[] { "--espera", Q("espera", "Segundos para pensar", "45") });
+            var esp = Q("esperaR", "Segundos para pensar (Enter = los de serie: 45 cerillas, 20 los demás, 10 secuencias, 6 en las de 5)", "auto"); if (int.TryParse(esp, out _)) a.AddRange(new[] { "--espera", esp });
+            foreach (var (k, txt, opt) in new[] { ("ganchoR", "Frase de la entrada («es | en», Enter = la de serie)", "--gancho"), ("urlR", "Dirección que se anuncia ({host} {id}; Enter = la del juego)", "--url-juego") })
+            { var v = Q(k, txt, "auto"); if (v != "auto" && v != "") a.AddRange(new[] { opt, v }); }
         }
         else
         {
@@ -369,10 +399,10 @@ static class Ask
 class Options
 {
     public string Sitemap = ""; public string Out = "videos"; public List<string> Langs = new() { "es" }; public List<string> Formats = new() { "vertical" };
-    public string? Puzzles; public int Wait = 45, From = 1, To = 0; bool langSet; public bool NoSfx; public double MusicVolume = 0.35;
+    public string? Puzzles; public int Wait = 0, From = 1, To = 0; bool langSet; public bool NoSfx; public double MusicVolume = 0.35;
     public int Duration = 75, Fps = 30, Intro = 3, Outro = 4, Parallel = 1, Crf = 21, Max = 0, JpegQuality = 90;
     public bool Redo; public string? Music, ChromePath, FfmpegPath = "ffmpeg"; public HashSet<string> Only = new();
-    public bool Tutorials; public int Moves = 6; public double Read = 1, TutOutro = 0; public string UrlTemplate = "{host}/{id}"; public string? Hook, Cta, Extra, CaptionTemplate;
+    public bool Tutorials; public int Moves = 6; public double Read = 1, TutOutro = 0; public string UrlTemplate = "{host}/{id}"; public bool UrlSet; public string? Page; public int Set = 1; public string? Hook, Cta, Extra, CaptionTemplate;
     readonly Random rnd = new();
 
     public static Options? Parse(string[] a)
@@ -391,7 +421,7 @@ class Options
                 case "--tutoriales": o.Tutorials = true; break;
                 case "--jugadas": o.Moves = int.Parse(v()); break;
                 case "--lectura": o.Read = double.Parse(v().Replace(',', '.'), System.Globalization.CultureInfo.InvariantCulture); break;
-                case "--url-juego": o.UrlTemplate = v(); break;
+                case "--url-juego": o.UrlTemplate = v(); o.UrlSet = true; break;
                 case "--gancho": o.Hook = v(); break;
                 case "--cta": o.Cta = v(); break;
                 case "--extra": o.Extra = v(); break;
@@ -400,6 +430,8 @@ class Options
                 case "--sin-efectos": o.NoSfx = true; break;
                 case "--volumen-musica": o.MusicVolume = double.Parse(v(), System.Globalization.CultureInfo.InvariantCulture); break;
                 case "--espera": o.Wait = int.Parse(v()); break;
+                case "--pagina": o.Page = v(); break;
+                case "--serie": o.Set = int.Parse(v()); break;
                 case "--desde": o.From = int.Parse(v()); break;
                 case "--hasta": o.To = int.Parse(v()); break;
                 case "--idioma": { o.langSet = true; var x = v(); o.Langs = x == "ambos" ? new() { "es", "en" } : new() { x }; break; }
@@ -427,7 +459,8 @@ class Options
     public static void Help() => Console.WriteLine("Uso: ArcadeRecorder --sitemap https://tu-web/sitemap.xml [--salida videos] [--idioma es|en|ambos] [--formato vertical|horizontal|ambos]\n" +
         "       [--duracion 75] [--fps 30] [--intro 3] [--outro 4] [--musica archivo|carpeta] [--solo id1,id2] [--max N] [--rehacer]\n" +
         "       [--paralelo N] [--calidad 21] [--chrome ruta] [--ffmpeg ruta]\n" +
-        "Retos (un vídeo por problema): ArcadeRecorder --web https://mobilehits.juegosboom.com --puzles cerillas [--espera 45] [--desde 1] [--hasta 269]\n" +
+        "Retos (un vídeo por problema): ArcadeRecorder --web https://mobilehits.juegosboom.com --puzles cerillas|atasco|jarras|ranas|apagon|clavijas [--espera 45] [--desde 1] [--hasta 269]\n" +
+        "Secuencias: ArcadeRecorder --web https://educativos.juegosboom.com --puzles secuencias [--serie 5] [--desde 1] [--hasta 30]\n" +
         "Tutoriales de solitarios: ArcadeRecorder --web https://solitarios.juegosboom.com --tutoriales [--idioma ambos] [--jugadas 6] [--lectura 1]\n" +
         "       [--url-juego \"{host}/{id}\"] [--gancho \"es | en\"] [--cta \"es | en\"] [--extra \"es | en\"] [--texto \"plantilla\"] [--outro-tutorial 5.5]");
     public string? PickMusic()

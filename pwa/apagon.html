@@ -14,7 +14,7 @@
 </head>
 <body class="game">
 <script src="config.js?v=84fed7f189"></script>
-<script src="common.js?v=ddaec3de69"></script>
+<script src="common.js?v=a830dfbdd8"></script>
 <script>
 (function () {
   const { ri, clamp, shuffle } = Arcade;
@@ -65,6 +65,7 @@
     id: 'apagon', title: 'Apagón', emoji: '💡', color: '#ffe066', origin: 'Lights Out (Tiger Electronics, 1995 · Lutanho)',
     help: '<b>Toca</b> una luz para cambiarla: cambia ella y también las que la tocan <b>en cruz</b> (se encienden o se apagan). <b>Apaga todas</b> las luces. Cada tablero sale de uno apagado, así que siempre tiene solución; el marcador «Mínimo» dice las pulsaciones que hacen falta como poco. En algunos niveles los interruptores cambian las <b>diagonales</b> (lo verás dibujado arriba).',
     lives: 0, levels: 0, cap: 20,
+    quiz: { goal: (g) => ({ es: 'Apaga todas las luces en ' + g.s.par + ' toques', en: 'Turn off all the lights in ' + g.s.par + ' taps' }), par: (g) => g.s.par, moves: (g) => g.s.presses },
     /*SC*/ demo(g) {
       const s = g.s; if (s.done) return { wait: 0.4 };
       const sol = solve(s.b, s.n, s.shape); if (!sol) return { wait: 0.4 };

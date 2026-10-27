@@ -1,6 +1,15 @@
 ARCADE PERDIDO + ARCADE PRO — LO QUE ESTÁ HECHO
 ================================================
 Fecha: 20-10-2026 · Versión de la PWA (games.js → ARCADE_VERSION): 2.36.0
+· Vídeos de retos con solución (herramientas/grabador --puzles <id>):
+  - Escena de reto común en pwa/common.js (quizScene, ?rec=1&quiz=N): Atasco, Jarras, Ranas, Apagón y Clavijas declaran
+    def.quiz = { goal, par, moves }; gancho, objetivo, cuenta atrás, «TIME'S UP», la solución la juega el solucionador del
+    juego con el dedo («MOVE 3/6»), «SOLVED ✅» y cierre con la dirección. Azar con semilla y setTimeout con reloj virtual:
+    el reto N siempre es igual.
+  - Secuencias lógicas (Brain Academy): educativos/brain-academy/video-secuencias (usa el generador de games/secuencias.html):
+    una pregunta por vídeo (--serie 1) o cinco de fácil a genio (--serie 5), con la regla explicada en español o inglés.
+  - El grabador usa el texto para publicar que da la página (info.caption); espera por defecto según el juego; nuevas
+    opciones --serie y --pagina; .bat para retos del motor y secuencias.
 · Vídeos «cómo se juega» de los solitarios: escena recScene en pwa/cartas.js (?rec=1&tut=1: entrada, tutorial con montones
   resaltados, jugadas de ejemplo con el dedo y cierre con la dirección) y modo 3 / --tutoriales en herramientas/grabador
   (idioma, jugadas, velocidad de lectura, URL, frases y texto para publicar configurables). Quitado «sin anuncios» de los vídeos.

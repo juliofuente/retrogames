@@ -1299,13 +1299,139 @@
       A.muted = true; A.musicOn = false; if (padOn) setPad(false); hud.style.display = "none"; ov.style.display = "none";
       setTimeout(() => { hide(); startDemo(); let n = 0; const ff = () => { for (let i = 0; i < 12; i++) step(1 / 60); if (++n < (+(/[?&]t=(\d+)/.exec(location.search) || [0, 6])[1]) * 5) setTimeout(ff, 0); else document.title = "SHOT_READY"; }; ff(); }, 30);
     }
+    /* --- vídeo de reto común (ArcadeRecorder --puzles <id>): /<id>/<idioma>?rec=1&quiz=N&wait=20 ---
+       Para los puzles con solucionador que declaran def.quiz = { goal(g) → {es, en}, par(g) → movimientos mínimos,
+       moves(g) → movimientos hechos, levels y from (solo si hay pocos niveles fijos: del from al levels), count }. El reto N siempre es el mismo:
+       Math.random lleva semilla y los setTimeout del juego van con un reloj virtual que avanza con el vídeo.
+       Gancho · objetivo («Saca el coche rojo en 8 movimientos») · cuenta atrás · «TIME'S UP» · la solución la juega la
+       demo del propio juego (su solucionador) · «SOLVED ✅» · cierre con la dirección. Antes se hace una pasada en seco
+       para saber cuánto dura la solución y dónde caen las jugadas (para los sonidos). */
+    function quizScene(Q) {
+      const n = Math.max(1, Math.round(+Q.get('quiz') || 1)), WAIT = Math.max(3, +(Q.get('wait') || 20)), host = Q.get('site') || location.host, FPSQ = +(Q.get('fps') || 30);
+      const URLQ = Q.get('url') || host + '/' + def.id, title = EN && def.en && def.en.title ? def.en.title : def.title;
+      const HOOK = Q.get('hook') || T('SOLO EL 1 % LO RESUELVE 🤯', 'ONLY 1% CAN SOLVE THIS 🤯');
+      // reloj virtual para los setTimeout de los juegos
+      window.__realSetTimeout = window.setTimeout.bind(window);
+      let vt = 0, vq = [], vid = 1;
+      window.setTimeout = (fn, ms, ...a) => { const id = vid++; vq.push({ id, at: vt + (+ms || 0), fn, a }); return id; };
+      window.clearTimeout = (id) => { vq = vq.filter((x) => x.id !== id); };
+      function runTimers() {
+        for (let k = 0; k < 200; k++) {
+          let i = -1; for (let j = 0; j < vq.length; j++) if (vq[j].at <= vt && (i < 0 || vq[j].at < vq[i].at)) i = j;
+          if (i < 0) return; const x = vq.splice(i, 1)[0]; try { x.fn(...x.a); } catch (e) { console.error(e); }
+        }
+      }
+      const fixed = def.quiz.levels, L = def.levels || 60;
+      const from = def.quiz.from || 1, level = fixed ? ((n - 1) % (fixed - from + 1)) + from : Math.max(1, Math.min(L, Math.floor(L * (0.12 + (((n - 1) * 0.137) % 0.7))) + 1));
+      let goal = '', par = 0;
+      function reset() {
+        Math.random = rng(hash(def.id + '|reto|' + n)); vt = 0; vq = []; vid = 1;
+        Object.assign(g, { level, score: 0, lives: def.lives ?? 3, t: 0, rt: 0, lt: 99, parts: [], floats: [], rings: [], banner: null, flashT: 0, iris: 0, shakeT: 0, demoOn: false, mp: null, tapFx: null, swipeFx: null });
+        g.pointers.clear();
+        g.top = Math.max(g.top, Math.round(g.H * (g.W > g.H ? 0.2 : 0.19))); g.bot = Math.min(g.bot, Math.round(g.H * (g.W > g.H ? 0.86 : 0.85)));
+        g.s = {}; def.setup(g); def.layout && def.layout(g); g.state = 'play';
+        const gl = def.quiz.goal(g); goal = typeof gl === 'string' ? gl : EN ? gl.en : gl.es; par = def.quiz.par ? def.quiz.par(g) : 0;
+        Object.assign(DM, { end: false, said: true, q: [], cur: null, fx: g.W / 2, fy: g.bot - 40, press: 0, say: null, sayT: 0, t: 0, p: null, auto: true, pause: null, chunkT: 0, lastPause: null, btns: null, sent: null });
+      }
+      const T1 = 2.4, T2 = 5, T3 = T2 + WAIT, T4 = T3 + 1.4;
+      const movesNow = () => { try { return def.quiz.moves ? def.quiz.moves(g) : 0; } catch (_) { return 0; } };
+      function advance(t, dt) {
+        vt += dt * 1000; runTimers();
+        if (t >= T4 && !g.demoOn && g.state === 'play') g.demoOn = true;
+        step(dt); DM.say = null; DM.sayT = 0;
+      }
+      // pasada en seco: cuánto tarda la solución y cuándo cae cada jugada
+      reset();
+      const moveT = []; let TS = 0, last = movesNow();
+      for (let f = 1; f <= Math.round((T4 + 150) * FPSQ); f++) {
+        const t = f / FPSQ; advance(t, 1 / FPSQ);
+        const mv = movesNow(); if (mv !== last) { if (mv > last) moveT.push(t); last = mv; }
+        if (t > T4 && (g.state === 'win' || g.state === 'over' || g.state === 'menu')) { TS = t; break; }
+      }
+      if (!TS) TS = T4 + 150;
+      reset();
+      const T5 = TS + 2.2, TO = T5, DUR = TO + 5;
+      const cues = [{ t: 0.05, s: 'boom' }];
+      [T1, T1 + 0.25, T1 + 0.5, T1 + 0.75].forEach((t) => cues.push({ t, s: 'pop' }));
+      for (let t = T2; t < T3 - 0.01; t += 0.5) cues.push({ t, s: Math.round((t - T2) * 2) % 2 ? 'hat' : 'kick' });
+      for (let k = 1; k <= Math.min(10, WAIT); k++) cues.push({ t: T3 - k, s: k <= 5 ? 'tock' : 'tick' });
+      cues.push({ t: T3, s: 'boom' }, { t: T4 - 0.6, s: 'drum' });
+      moveT.forEach((t) => cues.push({ t, s: 'pop' }));
+      cues.push({ t: TS, s: 'ding' }, { t: TO + 0.1, s: 'whoosh' }, { t: TO + 0.5, s: 'ding' });
+      // dibujo de los rótulos
+      const FT = (sz) => '900 ' + Math.round(sz) + 'px ' + (A.TFONT || A.FONT);
+      const back = (k) => { k = Math.max(0, Math.min(1, k)); const c = 1.9; return 1 + (c + 1) * Math.pow(k - 1, 3) + c * Math.pow(k - 1, 2); };
+      function caption(words, x, y, size, t0, t, o = {}) {
+        ctx.save(); ctx.font = FT(size); ctx.textBaseline = 'middle'; ctx.lineJoin = 'round';
+        const sp = size * 0.28, ws = words.map((w) => ctx.measureText(w).width), maxW = g.W * 0.92, lines = [[]]; let lw = 0;
+        words.forEach((w, i) => { if (lw + ws[i] > maxW && lines[lines.length - 1].length) { lines.push([]); lw = 0; } lines[lines.length - 1].push(i); lw += ws[i] + sp; });
+        const per = o.per || 0.18, shown = Math.floor((t - t0) / per) + 1;
+        lines.forEach((ln, li) => {
+          const tw = ln.reduce((a2, i) => a2 + ws[i] + sp, -sp); let cx = x - tw / 2; const cy = y + (li - (lines.length - 1) / 2) * size * 1.15;
+          for (const i of ln) {
+            if (i < shown) { const k = Math.max(0, Math.min(1, (t - t0 - i * per) / 0.16)), sc = 0.6 + 0.4 * back(k);
+              ctx.save(); ctx.translate(cx + ws[i] / 2, cy); ctx.scale(sc, sc); ctx.lineWidth = size * 0.2; ctx.strokeStyle = '#000'; ctx.strokeText(words[i], -ws[i] / 2, 0);
+              ctx.fillStyle = o.color ? o.color(i, words[i]) : '#fff'; ctx.fillText(words[i], -ws[i] / 2, 0); ctx.restore(); }
+            cx += ws[i] + sp;
+          }
+        });
+        ctx.restore();
+      }
+      function pillQ(text, x, y, size, bg, fg) { ctx.save(); ctx.font = FT(size); const w = Math.min(g.W * 0.94, ctx.measureText(text).width + size * 1.2); ctx.fillStyle = bg; A.rr(ctx, x - w / 2, y - size * 0.8, w, size * 1.6, size * 0.8); ctx.fill(); ctx.restore(); A.txt(ctx, text, x, y + 1, Math.min(size, size * (g.W * 0.9) / Math.max(1, w)), fg, 'center', 900, null, A.TFONT); }
+      const m0 = () => Math.min(g.W, g.H), words = (s2) => String(s2).split(' ').filter(Boolean);
+      const URLFULL = /^https?:/.test(URLQ) ? URLQ : 'https://' + URLQ;
+      return {
+        kind: 'quiz', dur: DUR, cues,
+        info: { puzzle: n, level, title, goal, par, url: URLFULL, total: def.quiz.count || 500,
+          caption: T('🧩 ' + title + ' · reto #' + n + ': ' + goal + '. ¿Lo consigues? 🤔\nLa solución, al final 👀 ¡Comenta la tuya antes!\nJuega gratis a cientos de retos como este: ' + URLFULL + '\n\n#acertijo #retomental #puzzle #logica #' + def.id + ' #fyp\n',
+            '🧩 ' + title + ' · puzzle #' + n + ': ' + goal + '. Can you do it? 🤔\nSolution at the end 👀 Comment yours first!\nPlay hundreds of puzzles like this for free: ' + URLFULL + '\n\n#puzzle #brainteaser #logic #riddle #' + def.id + ' #fyp\n') },
+        frame(t, dt, c) {
+          if (t < TO + 0.6) advance(t, dt);
+          const W = g.W, H = g.H, m = m0();
+          // franja de arriba para los rótulos
+          const gr = ctx.createLinearGradient(0, 0, 0, g.top + 10); gr.addColorStop(0, 'rgba(0,0,0,.72)'); gr.addColorStop(1, 'rgba(0,0,0,0)'); ctx.fillStyle = gr; ctx.fillRect(0, 0, W, g.top + 10);
+          if (t < TO) { const k = back((t - 0.1) / 0.4); ctx.save(); ctx.translate(W / 2, H * 0.035 + 8); ctx.scale(k, k); pillQ('🧩 ' + T('RETO', 'PUZZLE') + ' #' + n, 0, 0, m * 0.035, def.color || '#ff922b', '#fff'); ctx.restore(); }
+          const capY = H * (W > H ? 0.12 : 0.105), cs = m * (W > H ? 0.06 : 0.068);
+          if (t < T1) caption(words(HOOK), W / 2, capY, cs, 0.15, t, { per: 0.2, color: (i, w) => (/\d/.test(w) ? '#ffd43b' : '#fff') });
+          else if (t < T3) {
+            const left = T3 - t;
+            if (t < T2 + 3 || left > 10) caption(words(goal.toUpperCase()), W / 2, capY, cs * 0.82, T1, t, { per: 0.16, color: (i, w) => (/\d/.test(w) ? '#ffd43b' : '#fff') });
+            else caption(words(T('ÚLTIMOS 10 SEGUNDOS ⏰', 'LAST 10 SECONDS ⏰')), W / 2, capY, cs, T3 - 10, t, { per: 0.15 });
+            if (t >= T2) {   // cuenta atrás abajo
+              const wide = W > H, r = wide ? m * 0.07 : Math.min(m * 0.055, (H - g.bot) * 0.42), cy = wide ? H - r * 1.7 : H - Math.min(H * 0.075, (H - g.bot) / 2 + 4), cx = wide ? W - r * 1.9 : W / 2, f = left / WAIT;
+              ctx.save(); ctx.translate(cx, cy); ctx.fillStyle = 'rgba(0,0,0,.45)'; ctx.beginPath(); ctx.arc(0, 0, r * 1.2, 0, TAU2); ctx.fill();
+              ctx.lineCap = 'round'; ctx.lineWidth = r * 0.2; ctx.strokeStyle = 'rgba(255,255,255,.15)'; ctx.beginPath(); ctx.arc(0, 0, r, 0, TAU2); ctx.stroke();
+              ctx.strokeStyle = left <= 5 ? '#ff6b6b' : '#ffd43b'; ctx.beginPath(); ctx.arc(0, 0, r, -Math.PI / 2, -Math.PI / 2 + TAU2 * f); ctx.stroke(); ctx.restore();
+              A.txt(ctx, String(Math.ceil(left)), cx, cy + 2, r * 0.95, '#fff', 'center', 900, '#000', A.TFONT);
+              const msgs = [T('PIÉNSALO 🤔', 'PAUSE AND THINK 🤔'), T('COMENTA TU SOLUCIÓN 👇', 'COMMENT YOUR SOLUTION 👇'), T('ETIQUETA A UN GENIO 🧠', 'TAG A GENIUS 🧠')];
+              if (left > 10 && W < H) { const idx = Math.floor((t - T2) / 6) % 3; caption(words(msgs[idx]), W / 2, cy - r * 2.1, m * 0.042, T2 + Math.floor((t - T2) / 6) * 6, t, { per: 0.1 }); }
+            }
+          } else if (t < T4) { const k = back((t - T3) / 0.3); ctx.save(); ctx.translate(W / 2, capY); ctx.scale(k, k); ctx.rotate(-0.05); pillQ(T('⏰ ¡TIEMPO!', "⏰ TIME'S UP!"), 0, 0, cs, '#e03131', '#fff'); ctx.restore(); }
+          else if (t < TS) { caption(words(T('¡LA SOLUCIÓN! 👇', "HERE'S THE SOLUTION 👇")), W / 2, capY, cs, T4, t, { per: 0.16 });
+            const mv = movesNow(); if (par) pillQ(T('MOVIMIENTO ', 'MOVE ') + Math.min(par, mv + (DM.cur ? 1 : 0)) + '/' + par, W / 2, H - Math.min(H * 0.06, (H - g.bot) / 2), m * 0.04, 'rgba(0,0,0,.6)', '#ffe066'); }
+          else if (t < TO) { const k = Math.max(0, Math.min(1, (t - TS) / 0.25)), sc = 2.2 - 1.2 * (1 - Math.pow(1 - k, 3));
+            ctx.save(); ctx.globalAlpha = k; ctx.translate(W / 2, capY); ctx.rotate(-0.06); ctx.scale(sc, sc); pillQ(T('¡RESUELTO! ✅', 'SOLVED ✅') + (par ? '  ' + par + ' ' + T('MOV.', 'MOVES') : ''), 0, 0, cs * 0.85, '#2f9e44', '#fff'); ctx.restore(); }
+          if (t >= T3 && t < T3 + 0.35) { ctx.fillStyle = 'rgba(255,80,80,' + (0.55 - (t - T3) * 1.5) + ')'; ctx.fillRect(0, 0, W, H); }
+          if (t >= TO) {   // cierre
+            const tt = t - TO, k = Math.min(1, tt / 0.4);
+            ctx.save(); ctx.globalAlpha = 0.94 * k; const g2 = ctx.createLinearGradient(0, 0, 0, H); g2.addColorStop(0, def.bg ? def.bg[0] : '#2b1a5c'); g2.addColorStop(1, def.bg ? def.bg[1] : '#1a1033'); ctx.fillStyle = g2; ctx.fillRect(0, 0, W, H); ctx.restore();
+            const e = back((tt - 0.1) / 0.5); ctx.save(); ctx.globalAlpha = k; ctx.translate(W / 2, H * 0.28); ctx.scale(e, e); ctx.rotate(Math.sin(t * 3) * 0.08); A.emoji(ctx, def.emoji || '🧩', 0, 0, m * 0.24); ctx.restore();
+            caption(words(T('CIENTOS DE RETOS COMO ESTE', 'HUNDREDS OF PUZZLES LIKE THIS')), W / 2, H * 0.45, m * 0.065, TO + 0.3, t, { per: 0.14 });
+            if (tt > 1.1) { const a = Math.min(1, (tt - 1.1) * 3); ctx.save(); ctx.globalAlpha = a; pillQ(T('GRATIS • SIN DESCARGAS', 'FREE • NO DOWNLOAD'), W / 2, H * 0.55, m * 0.035, 'rgba(255,255,255,.14)', '#ffe8cc'); ctx.restore(); }
+            if (tt > 1.5) { const e3 = back((tt - 1.5) / 0.4), bob = 1 + 0.04 * Math.sin(t * 6); ctx.save(); ctx.translate(W / 2, H * 0.66); ctx.scale(e3 * bob, e3 * bob); pillQ(URLQ, 0, 0, m * 0.05, def.color || '#ff922b', '#fff'); ctx.restore(); }
+            if (tt > 2.2) caption(words(T('SÍGUENOS PARA MÁS RETOS ➕', 'FOLLOW FOR DAILY PUZZLES ➕')), W / 2, H * 0.84, m * 0.045, TO + 2.2, t, { per: 0.12 });
+          }
+        },
+      };
+    }
+    const TAU2 = Math.PI * 2;
     if (REC) {   // grabación: el programa C# llama a arcadeRec.step() por cada fotograma del vídeo
       A.muted = true; A.musicOn = false; if (padOn) setPad(false); for (const k of ['hP', 'hPad']) if ($(k)) $(k).style.visibility = 'hidden';
       const Q = new URLSearchParams(location.search), num = (k, d) => (Q.has(k) && isFinite(+Q.get(k)) ? +Q.get(k) : d);
       const FPS = num('fps', 30), DUR = num('dur', 75), IN = num('intro', 3), OUT = num('outro', 4), HOST = Q.get('site') || location.host;
       const EN = A.lang === 'en', title = EN && def.en && def.en.title ? def.en.title : def.title, tag = EN && def.en && def.en.tag ? def.en.tag : def.tag || '';
       const bg = def.bg || ['#2b1a5c', '#1a1033'];
-      const CUST = def.recScene ? def.recScene(g, Q) : null;   // escena propia del juego (p. ej. los retos de Cerillas)
+      const CUST = def.recScene ? def.recScene(g, Q) : def.quiz && Q.has('quiz') ? quizScene(Q) : null;   // escena propia (retos de Cerillas…) o la de reto común
       let f = 0, idle = 0; const total = Math.round((CUST ? CUST.dur : DUR) * FPS);
       const card = (k, outro) => {   // cartela de entrada y de salida, pintada encima del juego
         ctx.setTransform(A.dpr, 0, 0, A.dpr, 0, 0); ctx.globalAlpha = k;
@@ -1326,7 +1452,7 @@
       window.arcadeRec = {
         ready: false, fps: FPS, frames: total,
         info: Object.assign({ id: def.id, title, tag, emoji: def.emoji || '', origin: def.origin || '', url: location.protocol + '//' + HOST + '/' + def.id, lang: A.lang }, CUST && CUST.info || {}),
-        quizCount: def.recCount || 0,
+        quizCount: def.recCount || (def.quiz ? def.quiz.count || 500 : 0),
         scene: CUST ? CUST.kind || 'scene' : null,   // 'tutorial' en los solitarios (?tut=1); 'scene' en los retos
         cues: CUST && CUST.cues || [],   // sonidos de la escena: [{ t (s), s: 'tick'|'tock'|'pop'|'kick'|'hat'|'boom'|'whoosh'|'ding'|'drum' }]
         step(n = 1) {
@@ -1346,7 +1472,7 @@
           return { frame: f, done: f >= total, state: g.state };
         },
       };
-      setTimeout(() => { hide(); if (!CUST) startDemo(); window.arcadeRec.ready = true; document.title = 'REC_READY'; }, 30);
+      (window.__realSetTimeout || setTimeout)(() => { hide(); if (!CUST) startDemo(); window.arcadeRec.ready = true; document.title = 'REC_READY'; }, 30);
     }
     requestAnimationFrame(frame);
     return g;

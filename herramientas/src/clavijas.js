@@ -85,6 +85,7 @@
     id: 'clavijas', title: 'Clavijas', emoji: '🎯', color: '#e8a33d', origin: 'Peg Solitaire / Peggy (Lutanho)',
     help: 'Una clavija puede <b>saltar sobre otra vecina</b> (en horizontal o vertical, nunca en diagonal) hasta un agujero vacío justo detrás, y la que salta se quita. <b>Desliza</b> una clavija hacia donde quieras, o tócala y luego toca el agujero. Deja <b>una sola clavija</b> en el tablero (en el centro, puntos extra). Los primeros niveles son las figuras clásicas (Cruz, Más, Chimenea, Flecha, Pirámide, Diamante); luego vienen tableros generados al revés desde una sola clavija, el tablero europeo y, de vez en cuando, el solitario completo. ↩️ deshace y 🔄 empieza de nuevo.',
     lives: 0, levels: 0, cap: 26,
+    quiz: { goal: (g) => ({ es: 'Deja una sola clavija en ' + (g.s.pegs.size - 1) + ' saltos', en: 'Leave just one peg in ' + (g.s.pegs.size - 1) + ' jumps' }), par: (g) => g.s.pegs.size - 1, moves: (g) => g.s.moves },
     /*SC*/ demo(g) {
       const s = g.s; if (s.done || s.hop) return { wait: 0.3 };
       const sol = solve(s.holes, s.pegs, 30000); if (!sol || !sol.length) return { tap: [s.btn[0].x + 50, s.btn[0].y + 17], after: 0.5 };
