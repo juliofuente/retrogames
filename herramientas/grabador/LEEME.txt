@@ -62,20 +62,40 @@ El reto N es siempre el mismo (azar con semilla). Ranas tiene 6 retos (sus nivel
   dotnet run -c Release -- --web https://juegosboom.com --puzles atasco --desde 1 --hasta 30 --idioma ambos
   En la página: /atasco/en?rec=1&quiz=N&wait=20&site=<host>
 
-Secuencias lógicas (Brain Academy): --puzles secuencias, en la web de los educativos. Graba la página
-educativos/brain-academy/video-secuencias (con --pagina se puede usar otra). Dos formatos:
-  --serie 1 (por defecto): una pregunta «¿qué va después?» con 4 opciones, 10 s para pensar, la respuesta vuela al hueco y
-            una caja explica la regla (unos 26 s). Salida secuencias-001.mp4…
-  --serie 5: cinco preguntas de FÁCIL a GENIO, 6 s cada una, barra de progreso y «¿cuántas has acertado?» (unos 73 s).
-            Salida secuencias-5x-001.mp4…
-  dotnet run -c Release -- --web https://educativos.juegosboom.com --puzles secuencias --hasta 30 --idioma ambos
-  dotnet run -c Release -- --web https://educativos.juegosboom.com --puzles secuencias --serie 5 --hasta 10
-  La dirección que se anuncia es <web>/secuencias-logicas (cámbiala con --url-juego "{host}/otra").
-  Las preguntas salen del mismo generador del juego, con semilla: el vídeo N siempre es igual.
+Retos educativos (mates, lengua, inglés y lógica): --puzles <pack>, en la web de los educativos. Graba la página
+educativos/video-retos?pack=<pack> (con --pagina se puede usar otra). Cada vídeo: gancho, la pregunta con 4 opciones (A-D),
+cuenta atrás, «¡TIEMPO!», la respuesta marcada y una caja que explica por qué (la regla o las operaciones), y cierre con la
+dirección. El reto N de cada pack sale siempre igual. Packs:
+  secuencias   Secuencias lógicas: «¿qué va después?» (el generador del juego). es/en · 10 s · → /secuencias-logicas
+  problemas    Problemas de Primaria de 1.º a 6.º (el banco del juego), con las operaciones. Solo es · 18 s · → /problemas-primaria
+  emojimates   El reto viral de emojis (🍎+🍎+🍎=30…), con la prioridad de × y ÷. es/en · 15 s · → /balanza-de-emojis
+  calculo      Cálculo mental: tablas, %, fracciones, prioridad de operaciones, trucos. es/en · 10 s · → /calculo-relampago
+  balanza      Balanzas de emojis: ¿cuántos 🍎 equilibran la última? es/en · 14 s · → /balanza-de-emojis
+  ortografia   ¿Cuál está bien escrita? (b/v, h, g/j, ll/y, tildes…) con la regla. Solo es · 8 s · → la web
+  spelling     Lo mismo en inglés (definitely, separate…). Solo en · 8 s
+  ingles       Inglés para hispanohablantes: ¿qué palabra falta? (las 588 frases de la Fábrica de Frases). Solo es · 9 s
+               · → /fabrica-de-frases
+Dos formatos:
+  --serie 1 (por defecto): una pregunta (unos 25–35 s). Salida <pack>-001.mp4…
+  --serie 5: cinco preguntas de FÁCIL a GENIO (en problemas, de 1.º a 6.º), barra de progreso y «¿cuántas has acertado?»
+            (unos 75–100 s). Salida <pack>-5x-001.mp4…
+Si no se pone --idioma, se graba en los idiomas que tenga el pack (si se pide uno que no tiene, se avisa y se salta).
+  dotnet run -c Release -- --web https://educativos.juegosboom.com --puzles problemas --hasta 30
+  dotnet run -c Release -- --web https://educativos.juegosboom.com --puzles emojimates --serie 5 --hasta 10 --idioma ambos
+  Las secuencias de antes (educativos/brain-academy/video-secuencias) ahora redirigen a esta página.
+  El contenido de ortografía y spelling está en educativos/video-retos-datos.js (una línea por palabra: buena|mal|mal|mal|regla).
 
-Opciones comunes de los retos: --espera N (segundos para pensar; por defecto 45 cerillas, 20 los del motor, 10 o 6 las
-secuencias) · --gancho "es | en" · --cta / --extra (secuencias) · --url-juego · --desde / --hasta.
+Opciones comunes de los retos: --espera N (segundos para pensar; por defecto 45 cerillas, 20 los del motor y los de cada
+pack educativo) · --url-juego "{host}/otra" · --desde / --hasta.
+Textos configurables (todos admiten «español | english»; «-» = ninguno):
+  --gancho "…"    el texto de la entrada          --pregunta "…"  la pregunta (packs educativos)
+  --final "…"     el titular del cierre («¿LO HAS ACERTADO?»)
+  --cta "…"       la frase del cierre             --extra "…"     la línea final
+  --siguenos "…"  «SÍGUENOS…» (cerillas y retos del motor)
 El .txt para publicar lo escribe la propia página (window.arcadeRec.info.caption) cuando lo trae.
+
+Música de fondo: si existe una carpeta «mimusica» junto al programa (o donde se lanza), cada vídeo lleva una canción al azar
+de ella, mezclada con los efectos (--volumen-musica 0.35). --musica archivo|carpeta para otra; --sin-musica para ninguna.
 
 Estilo TikTok de los retos (cerillas): gancho «ONLY 1% CAN SOLVE THIS 🤯», cerillas que caen y rebotan, subtítulos palabra a
 palabra con contorno, fondo de rayos y brasas, emojis flotando, barra de progreso y cuenta atrás (los 5 últimos segundos en

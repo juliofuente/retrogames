@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Retos educativos · vídeo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
+<style>html,body{margin:0;height:100%;overflow:hidden;background:#1d1147}canvas{display:block;width:100vw;height:100vh}</style>
+</head><body><canvas id="c"></canvas>
+<script src="problemas-primaria/banco.js"></script>
+<script src="emoji-quest/palabras.js"></script>
+<script src="video-retos-datos.js"></script>
+<script>
+/* Vídeos de retos educativos para ArcadeRecorder (herramientas/grabador --puzles <pack>): pregunta, cuenta atrás,
+   respuesta y explicación, en vertical u horizontal. Todo se pinta en función del tiempo t (determinista: el reto N
+   de un pack siempre sale igual) y window.arcadeRec.step(n) avanza n fotogramas.
+   URL: video-retos.html?pack=<pack>&rec=1&quiz=N&lang=es|en&fps=30
+     pack: secuencias · problemas (solo es) · emojimates · calculo · balanza · ortografia (es) · spelling (en) · ingles (es)
+     set=1 (una pregunta) · set=5 (cinco, de fácil a genio) · wait (segundos para pensar; cada pack trae los suyos)
+     site / url (dirección que se anuncia) · textos: hook (entrada), ask (la pregunta), end (titular del cierre),
+     cta (frase del cierre), extra (línea final; vacía = ninguna)
+   Los packs reutilizan el contenido de los juegos: el generador de Secuencias lógicas (brain-academy), el banco de
+   Problemas de Primaria, las 588 frases de la Fábrica de Frases (vía emoji-quest/palabras.js) y video-retos-datos.js. */
+(async function () {
+  'use strict';
+  const Q = new URLSearchParams(location.search);
+  const num = (k, d) => (Q.has(k) && Q.get(k) !== '' && isFinite(+Q.get(k)) ? +Q.get(k) : d);
+  const LANG = (Q.get('lang') || (/\/en(\/|$)/.test(location.pathname) ? 'en' : 'es')) === 'en' ? 'en' : 'es', EN = LANG === 'en';
+  const T = (es, en) => (EN ? en : es);
+  const N = Math.max(1, Math.round(num('quiz', 1))), SET = num('set', 1) >= 5 ? 5 : 1, FPS = num('fps', 30);
+  const host = Q.get('site') || location.host;
+
+  /* ---------- azar con semilla ---------- */
+  const hash = (s) => { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; };
+  const rng = (seed) => () => { seed |= 0; seed = (seed + 0x6d2b79f5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+  const ri = (r, a, b) => a + Math.floor(r() * (b - a + 1)), pick = (r, a) => a[Math.floor(r() * a.length)];
+  const shuffle = (r, a) => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+  const LV5 = [[T('FÁCIL', 'EASY'), '#51cf66'], [T('NORMAL', 'MEDIUM'), '#4dabf7'], [T('DIFÍCIL', 'HARD'), '#fcc419'], [T('EXPERTO', 'EXPERT'), '#ff922b'], [T('GENIO 🧠', 'GENIUS 🧠'), '#ff6b6b']];
+  // opciones: la buena y 3 distractores distintos, en orden fijo por semilla
+  function options(r, ans, cands, fmt = String) {
+    const seen = new Set([fmt(ans)]), out = [];
+    for (const c of cands) { const s = fmt(c); if (c == null || seen.has(s) || out.length >= 3) continue; seen.add(s); out.push(s); }
+    const opts = shuffle(r, [fmt(ans)].concat(out));
+    return { opts, ok: opts.indexOf(fmt(ans)) };
+  }
+  // operación con prioridad (× y ÷ antes que + y −): pasos explicados y el resultado «de izquierda a derecha» (el fallo típico)
+  function calc(tk) {
+    const steps = [], v = tk.slice();
+    for (let i = 1; i < v.length; i += 2) if (v[i] === '×' || v[i] === '÷') { const a = v[i - 1], b = v[i + 1], c = v[i] === '×' ? a * b : a / b; steps.push(a + ' ' + v[i] + ' ' + b + ' = ' + c); v.splice(i - 1, 3, c); i -= 2; }
+    let acc = v[0]; for (let i = 1; i < v.length; i += 2) { const b = v[i + 1], c = v[i] === '+' ? acc + b : acc - b; steps.push(acc + ' ' + v[i] + ' ' + b + ' = ' + c); acc = c; }
+    let lr = tk[0]; for (let i = 1; i < tk.length; i += 2) { const b = tk[i + 1]; lr = tk[i] === '+' ? lr + b : tk[i] === '−' ? lr - b : tk[i] === '×' ? lr * b : lr / b; }
+    return { val: acc, steps, lr, prio: tk.some((x, i) => i % 2 && (x === '×' || x === '÷')) && tk.some((x, i) => i % 2 && (x === '+' || x === '−')) };
+  }
+  const nearby = (r, a) => shuffle(r, [a + 1, a - 1, a + 2, a - 2, a + 10, a - 10, a + 5, a - 5, a * 2, Math.round(a / 2)]).filter((x) => x >= 0 && x !== a);
+
+  /* ---------- packs ---------- */
+  const PACKS = {};
+
+  // Secuencias lógicas: el MISMO generador que el juego (games/secuencias.html, bloque GEN_START…GEN_END)
+  PACKS.secuencias = {
+    langs: ['es', 'en'], url: 'secuencias-logicas', icon: '🧠', title: T('Secuencias lógicas', 'Logic sequences'), wait: [10, 6], count: 999,
+    hook: [T('SOLO EL 3 % LO ACIERTA', 'ONLY 3% GET THIS RIGHT'), T('5 SECUENCIAS · ¿HASTA DÓNDE LLEGAS?', '5 SEQUENCES · HOW FAR CAN YOU GO?')],
+    ask: T('¿QUÉ VA DESPUÉS? 🤔', 'WHAT COMES NEXT? 🤔'), extra: T('Juegos de lógica para todas las edades', 'Logic games for all ages'),
+    tags: T('#logica #acertijo #retomental #testdeinteligencia #secuencias #fyp', '#logic #puzzle #brainteaser #iqtest #riddle #fyp'),
+    teaser: T('¿Qué va después?', 'What comes next?'),
+    async init() {
+      const src = await (await fetch('brain-academy/games/secuencias.html', { cache: 'no-store' })).text();
+      const code = src.slice(src.indexOf('/*GEN_START*/'), src.indexOf('/*GEN_END*/'));
+      const box = { D: 0 };
+      this.G = new Function('H', code + '\nreturn { genQuestion, key, mkRand, hashSeed, shuf };')({ D: () => box.D }); this.box = box;
+    },
+    levels: () => (SET === 5 ? [1, 3, 5, 7, 9].map((D, i) => ({ p: D, label: LV5[i][0], color: LV5[i][1] })) : [{ p: 1.6 + ((N - 1) * 0.37) % 7.6 }]),
+    gen(r, D, i, salt) {
+      const { genQuestion, key, mkRand, hashSeed, shuf } = this.G, level = N * 7 + i + salt * 100;
+      for (let q = 0; q < 40; q++) {
+        this.box.D = D; const G = genQuestion(9, level, q + i * 41);
+        const b = G.blanks[0], seq = G.seq.slice(0, b + 1);
+        if (seq.length > 14 || seq.length < 3) continue;
+        const ans = G.seq[b], others = G.choices.filter((t) => key(t) !== key(ans));
+        if (!others.length) continue;
+        const rr2 = mkRand(hashSeed(level, q, 31337, i));
+        const opts = shuf(rr2, [ans].concat(shuf(rr2, others).slice(0, 3)));
+        const P = { kind: 'seq', type: G.type, seq, b, ans, opts, ok: opts.findIndex((t) => key(t) === key(ans)), meta: G.meta || {} };
+        P.rule = seqRule(P); P.answer = ans.t === 'e' || ans.t === 's' ? ans.v || ans.e : ans.t === 'g' ? ans.n : ans.v;
+        return P;
+      }
+      return null;
+    },
+  };
+  const sgn = (v) => (v >= 0 ? '+' + v : '−' + Math.abs(v));
+  function seqRule(P) {
+    const m = P.meta, t = P.type, v = m.v, i = P.b;
+    if (t.startsWith('rep')) return { text: T('Este bloque se repite una y otra vez:', 'This block repeats again and again:'), toks: P.seq.slice(0, m.p) };
+    switch (t) {
+      case 'groups': { const d = m.arith[1] - m.arith[0]; return { text: T('Cada grupo tiene ' + Math.abs(d) + (d > 0 ? ' más' : ' menos') + ' que el anterior.', 'Each group has ' + Math.abs(d) + (d > 0 ? ' more' : ' fewer') + ' than the one before.'), lines: [m.arith[i - 1] + ' ' + sgn(d) + ' = ' + m.arith[i]] }; }
+      case 'countNum': { const d = v[1] - v[0]; return { text: T('Cada número es el anterior ' + sgn(d) + '.', 'Each number is the one before ' + sgn(d) + '.'), lines: [v[i - 1] + ' ' + sgn(d) + ' = ' + v[i]] }; }
+      case 'letters': { const d = Math.abs(v[1] - v[0]); return { text: d === 1 ? T('Las letras siguen el abecedario, una detrás de otra.', 'The letters follow the alphabet, one after another.') : T('Las letras van saltando de ' + d + ' en ' + d + ' en el abecedario.', 'The letters jump ' + d + ' places along the alphabet.') }; }
+      case 'diffPat': { const a = v[1] - v[0], c = v[2] - v[1]; return { text: T('Los saltos se alternan: ' + sgn(a) + ' y ' + sgn(c) + '.', 'The jumps take turns: ' + sgn(a) + ' then ' + sgn(c) + '.'), lines: [v[i - 1] + ' ' + sgn(v[i] - v[i - 1]) + ' = ' + v[i]] }; }
+      case 'secondDiff': { const ds = []; for (let k = 1; k <= Math.min(i, 5); k++) ds.push(sgn(v[k] - v[k - 1])); return { text: T('Los saltos crecen cada vez: ' + ds.join(', ') + '…', 'The jumps keep growing: ' + ds.join(', ') + '…'), lines: [v[i - 1] + ' ' + sgn(v[i] - v[i - 1]) + ' = ' + v[i]] }; }
+      case 'geometric': { const r = v[1] / v[0]; return { text: T('Cada número se multiplica por ' + r + '.', 'Each number is multiplied by ' + r + '.'), lines: [v[i - 1] + ' × ' + r + ' = ' + v[i]] }; }
+      case 'interleave': { const s1 = v[2] - v[0], s2 = v[3] - v[1]; return { text: T('Dos filas se turnan: una va ' + sgn(s1) + ' y la otra ' + sgn(s2) + '.', 'Two rows take turns: one goes ' + sgn(s1) + ', the other ' + sgn(s2) + '.'), lines: [v[i - 2] + ' ' + sgn(v[i] - v[i - 2]) + ' = ' + v[i]] }; }
+      case 'squares': { const n = Math.round(Math.sqrt(v[i])); return { text: T('Son números al cuadrado: 1×1, 2×2, 3×3…', 'They are square numbers: 1×1, 2×2, 3×3…'), lines: [n + ' × ' + n + ' = ' + v[i]] }; }
+      case 'fibo': return { text: T('Cada número es la suma de los dos anteriores.', 'Each number is the sum of the two before it.'), lines: [v[i - 2] + ' + ' + v[i - 1] + ' = ' + v[i]] };
+      case 'cycle': return { text: T('Gira ' + m.k + (m.k === 1 ? ' paso' : ' pasos') + ' cada vez' + (m.dir < 0 ? ', hacia atrás.' : '.'), 'It turns ' + m.k + (m.k === 1 ? ' step' : ' steps') + ' each time' + (m.dir < 0 ? ', backwards.' : '.')) };
+      case 'mirror': return { text: T('Es un espejo: la segunda mitad es la primera al revés.', 'It\'s a mirror: the second half is the first one reversed.') };
+      case 'mixed': return { text: T('Se alternan dos patrones: los dibujos se repiten y los números van ' + sgn(m.step) + '.', 'Two patterns take turns: the pictures repeat and the numbers go ' + sgn(m.step) + '.') };
+    }
+    return { text: '' };
+  }
+
+  // Problemas de Primaria: el banco del juego (problemas-primaria/banco.js), de 1.º a 6.º
+  PACKS.problemas = {
+    langs: ['es'], url: 'problemas-primaria', icon: '🎒', title: 'Problemas de Primaria', wait: [18, 14], count: 999,
+    hook: ['¿SABRÍAS RESOLVER ESTE PROBLEMA DE PRIMARIA? 🎒', '¿ERES MÁS LISTO QUE UN NIÑO DE PRIMARIA? 🎒'],
+    ask: '¿CUÁL ES LA SOLUCIÓN? 🤔', extra: 'Cientos de problemas de 1.º a 6.º de Primaria',
+    tags: '#matematicas #primaria #problemas #retomental #calculomental #fyp', teaser: '¿Sabrías resolverlo?',
+    levels: () => (SET === 5 ? [1, 2, 3, 4, 6].map((g, i) => ({ p: g, label: g + '.º DE PRIMARIA', color: LV5[i][1] })) : [{ p: 1 + ((N - 1) * 5) % 6, label: (1 + ((N - 1) * 5) % 6) + '.º DE PRIMARIA', color: '#ffd43b' }]),
+    gen(r, grade) {
+      const PR = window.PROBLEMAS, A = PR.B[grade], Nf = PR.N;
+      for (let k = 0; k < 60; k++) {
+        const p = pick(r, A)(r, 0.2 + r() * 0.6); if (p.ans.length !== 1 || p.t.length > 210) continue;
+        const a = p.ans[0], unit = ((p.res.match(/\{\}\s*([^\s.,;]+)/) || [])[1] || ''), u = unit.length <= 3 ? ' ' + unit : '';
+        const parseN = (s) => { const m = String(s).match(/−?\d[\d.]*(,\d+)?/); return m ? +m[0].replace('−', '-').replace(/\./g, '').replace(',', '.') : null; };
+        const inter = p.ops.map((o) => parseN(o.split('=').pop())).filter((x) => x != null && x !== a && x > 0);
+        const near = Number.isInteger(a) ? nearby(r, a) : [a + 1, a - 1, a * 10, a / 10, a + 0.5].map((x) => Math.round(x * 100) / 100).filter((x) => x > 0);
+        const fmt = (x) => Nf(x) + u, o = options(r, a, inter.concat(near), fmt);
+        return { kind: 'card', emoji: p.e, text: p.t, opts: o.opts, ok: o.ok, answer: fmt(a), rule: { text: p.res.replace('{}', Nf(a)), lines: p.ops.slice(0, 5) } };
+      }
+      return null;
+    },
+  };
+
+  // Mates con emojis: el reto viral de «cuánto vale cada dibujo» (con la prioridad de × sobre +)
+  const EPOOLS = [['🍎', '🍌', '🍇'], ['🐶', '🐱', '🐭'], ['🍩', '🍪', '🧁'], ['⚽', '🏀', '🎾'], ['🚗', '🚲', '🛴'], ['🍓', '🍋', '🥥'], ['🌞', '🌙', '⭐'], ['🦊', '🐸', '🐵']];
+  PACKS.emojimates = {
+    langs: ['es', 'en'], url: 'balanza-de-emojis', icon: '🍎', title: T('Mates con emojis', 'Emoji maths'), wait: [15, 10], count: 999,
+    hook: [T('EL 90 % FALLA ESTE RETO 🤯', '90% GET THIS WRONG 🤯'), T('5 RETOS DE EMOJIS · ¿HASTA DÓNDE LLEGAS?', '5 EMOJI PUZZLES · HOW FAR CAN YOU GO?')],
+    ask: T('¿CUÁNTO VALE LA ÚLTIMA? 🤔', 'WHAT DOES THE LAST ONE EQUAL? 🤔'), extra: T('Juegos de mates y lógica gratis', 'Free maths and logic games'),
+    tags: T('#matematicas #acertijo #retomental #emojis #calculomental #fyp', '#math #puzzle #brainteaser #emoji #mathchallenge #fyp'), teaser: T('¿Cuánto vale cada dibujo?', 'What is each picture worth?'),
+    levels: () => (SET === 5 ? [1, 2, 3, 4, 5].map((l, i) => ({ p: l, label: LV5[i][0], color: LV5[i][1] })) : [{ p: [2, 3, 4, 2, 5, 3][(N - 1) % 6] }]),
+    gen(r, L) {
+      const [x, y, z] = shuffle(r, pick(r, EPOOLS));
+      let a = ri(r, 3, 10), b = ri(r, 2, 9), c = ri(r, 1, Math.max(1, b - 1));
+      if (b === a) b = a > 5 ? a - 2 : a + 2;
+      if (L >= 3) { c = ri(r, 2, 4); b = c * ri(r, 2, 4); a = ri(r, 2, 6); }
+      if (L === 4 && a <= b) a = b + ri(r, 1, 5);
+      const V = { [x]: a, [y]: b, [z]: c }, rows = [];
+      if (L <= 2) rows.push([x, '+', x, '+', x, '=', 3 * a], [x, '+', y, '+', y, '=', a + 2 * b], [y, '−', z, '=', b - c]);
+      else if (L === 3) rows.push([x, '+', x, '=', 2 * a], [x, '×', y, '=', a * b], [y, '÷', z, '=', b / c]);
+      else if (L === 4) rows.push([x, '+', y, '=', a + b], [x, '−', y, '=', a - b], [y, '÷', z, '=', b / c]);
+      else rows.push([x, '×', x, '=', a * a], [x, '+', y, '+', y, '=', a + 2 * b], [y, '÷', z, '=', b / c]);
+      const qt = L === 1 ? [z, '+', x, '+', y] : L === 2 ? [x, '+', y, '×', z] : L === 3 ? [z, '+', x, '×', y] : L === 4 ? [x, '−', y, '÷', z] : [x, '+', x, '×', y, '−', z];
+      const nums = qt.map((t, i) => (i % 2 ? t : V[t])), C = calc(nums);
+      if (C.val < 0 || !Number.isInteger(C.val)) return null;
+      rows.push(qt.concat(['=', '?']));
+      const o = options(r, C.val, [C.lr].concat(nearby(r, C.val)));
+      const lines = [x + ' = ' + a + '   ' + y + ' = ' + b + '   ' + z + ' = ' + c, nums.join(' ')].concat(C.steps).slice(0, 5);
+      return { kind: 'card', rows, opts: o.opts, ok: o.ok, answer: String(C.val), rule: { text: C.prio ? T('Primero averigua cada dibujo. ¡Ojo! × y ÷ van antes que + y −.', 'Work out each picture first. Careful! × and ÷ come before + and −.') : T('Primero averigua cada dibujo con las pistas.', 'Work out each picture from the clues first.'), lines } };
+    },
+  };
+
+  // Cálculo mental: tablas, porcentajes, fracciones, prioridad de operaciones y trucos
+  PACKS.calculo = {
+    langs: ['es', 'en'], url: 'calculo-relampago', icon: '🧮', title: T('Cálculo mental', 'Mental maths'), wait: [10, 7], count: 999,
+    hook: [T('CASI NADIE ACIERTA ESTA OPERACIÓN 😱', 'ALMOST NOBODY GETS THIS RIGHT 😱'), T('5 OPERACIONES · ¿HASTA DÓNDE LLEGAS?', '5 SUMS · HOW FAR CAN YOU GO?')],
+    ask: T('¿CUÁNTO ES? 🧮', 'WHAT IS IT? 🧮'), extra: T('Juegos de cálculo mental gratis', 'Free mental maths games'),
+    tags: T('#matematicas #calculomental #retomental #acertijo #mates #fyp', '#math #mentalmath #brainteaser #mathchallenge #quiz #fyp'), teaser: T('¿Cuánto es?', 'What is it?'),
+    levels: () => (SET === 5 ? [1, 2, 3, 4, 5].map((l, i) => ({ p: l, label: LV5[i][0], color: LV5[i][1] })) : [{ p: [4, 2, 5, 3, 4, 1, 5][(N - 1) % 7] }]),
+    gen(r, L) {
+      let expr, val, cands = [], text, lines;
+      if (L === 1) { const a = ri(r, 6, 9), b = ri(r, 6, 9); if (r() < 0.5) { expr = a + ' × ' + b; val = a * b; cands = [a * b + a, a * b - b, a * (b + 1), (a - 1) * b]; text = T('La tabla del ' + a + '.', 'The ' + a + ' times table.'); lines = [a + ' × ' + b + ' = ' + val]; }
+        else { expr = a * b + ' ÷ ' + a; val = b; cands = [b + 1, b - 1, a, b + 2]; text = T('Dividir es buscar qué número por ' + a + ' da ' + a * b + '.', 'Dividing means finding what times ' + a + ' makes ' + a * b + '.'); lines = [a + ' × ' + b + ' = ' + a * b, a * b + ' ÷ ' + a + ' = ' + b]; } }
+      else if (L === 2) { const p = pick(r, [10, 20, 25, 50, 75]), d = { 10: 10, 20: 5, 25: 4, 50: 2, 75: 4 }[p], base = d * ri(r, 3, 24) * (p === 75 ? 1 : 1); val = base * p / 100;
+        expr = T(p + ' % de ' + base, p + '% of ' + base); cands = [base / 10, val + 5, val * 2, base - val, val - 5].filter((x) => x > 0 && Number.isInteger(x));
+        text = p === 75 ? T('El 75 % son tres cuartas partes.', '75% is three quarters.') : T('El ' + p + ' % es dividir entre ' + d + '.', p + '% means dividing by ' + d + '.'); lines = p === 75 ? [base + ' ÷ 4 = ' + base / 4, base / 4 + ' × 3 = ' + val] : [base + ' ÷ ' + d + ' = ' + val]; }
+      else if (L === 3) { const dd = pick(r, [3, 4, 5, 6, 8]), nn = ri(r, 2, dd - 1), base = dd * ri(r, 3, 15); val = base / dd * nn;
+        expr = T(nn + '/' + dd + ' de ' + base, nn + '/' + dd + ' of ' + base); cands = [base / dd, val + base / dd, base - val, val - base / dd];
+        text = T('Divide entre el de abajo y multiplica por el de arriba.', 'Divide by the bottom number, multiply by the top one.'); lines = [base + ' ÷ ' + dd + ' = ' + base / dd, base / dd + ' × ' + nn + ' = ' + val]; }
+      else if (L === 4) { const a = ri(r, 2, 20), b = ri(r, 2, 9), c = ri(r, 2, 9), tk = r() < 0.6 ? [a, '+', b, '×', c] : [b * c + a, '−', b, '×', c]; const C = calc(tk); if (C.val < 0) return null;
+        expr = tk.join(' '); val = C.val; cands = [C.lr].concat(nearby(r, val)); text = T('¡Ojo! Primero se multiplica y luego se suma o se resta.', 'Careful! Multiply first, then add or subtract.'); lines = C.steps; }
+      else { const kind = ri(r, 0, 2);
+        if (kind === 0) { const a = ri(r, 3, 9), tk = [a, '+', a, '÷', a, '+', a], C = calc(tk); expr = tk.join(' '); val = C.val; cands = [C.lr, 2 * a + 2, 1].concat(nearby(r, val)); text = T('Primero la división: ' + a + ' ÷ ' + a + ' = 1.', 'Division first: ' + a + ' ÷ ' + a + ' = 1.'); lines = C.steps; }
+        else if (kind === 1) { const k = ri(r, 3, 9); expr = '99 × ' + k; val = 99 * k; cands = [990 + k, 100 * k, val + 10, val - 9]; text = T('Truco: 99 es 100 − 1.', 'Trick: 99 is 100 − 1.'); lines = ['100 × ' + k + ' = ' + 100 * k, 100 * k + ' − ' + k + ' = ' + val]; }
+        else { const a = ri(r, 2, 9), b = ri(r, 2, 6), c = ri(r, 1, b - 1 || 1), d = ri(r, 2, 9); const inner = b - c; expr = d + ' + ' + a + ' × (' + b + ' − ' + c + ')'; val = d + a * inner; cands = [(d + a) * inner, d + a * b - c, val + a].concat(nearby(r, val));
+          text = T('Primero el paréntesis, luego × y al final +.', 'Brackets first, then ×, then +.'); lines = [b + ' − ' + c + ' = ' + inner, a + ' × ' + inner + ' = ' + a * inner, d + ' + ' + a * inner + ' = ' + val]; } }
+      if (!Number.isInteger(val)) return null;
+      const o = options(r, val, cands.concat(nearby(r, val)));
+      return { kind: 'card', expr: expr + ' = ?', opts: o.opts, ok: o.ok, answer: String(val), rule: { text, lines } };
+    },
+  };
+
+  // Balanza de emojis: cuánto pesa la última en unidades del primer emoji
+  const BPOOLS = [['🍎', '🍌', '🍉', '🍍'], ['🍓', '🍐', '🥥', '🎃'], ['🐭', '🐱', '🐶', '🐻'], ['🪙', '💎', '👑', '🏆'], ['🍪', '🧁', '🍰', '🎂'], ['🐣', '🐔', '🦃', '🦢']];
+  PACKS.balanza = {
+    langs: ['es', 'en'], url: 'balanza-de-emojis', icon: '⚖️', title: T('Balanza de emojis', 'Emoji balance'), wait: [14, 10], count: 999,
+    hook: [T('¿CUÁNTO PESA? SOLO LOS GENIOS LO SACAN ⚖️', 'ONLY GENIUSES CAN SOLVE THIS ⚖️'), T('5 BALANZAS · ¿HASTA DÓNDE LLEGAS?', '5 SCALES · HOW FAR CAN YOU GO?')],
+    ask: T('¿CUÁNTOS EQUILIBRAN LA ÚLTIMA? ⚖️', 'HOW MANY BALANCE THE LAST ONE? ⚖️'), extra: T('Juegos de lógica gratis', 'Free logic games'),
+    tags: T('#logica #acertijo #retomental #balanza #matematicas #fyp', '#logic #puzzle #brainteaser #math #riddle #fyp'), teaser: T('¿Cuántos equilibran la balanza?', 'How many balance the scale?'),
+    levels: () => (SET === 5 ? [1, 2, 2, 3, 4].map((l, i) => ({ p: l, label: LV5[i][0], color: LV5[i][1] })) : [{ p: [2, 3, 2, 4, 3][(N - 1) % 5] }]),
+    gen(r, tier) {
+      const E = pick(r, BPOOLS), val = [1, 0, 0, 0], clues = []; let q;
+      if (tier === 1) { const k = ri(r, 2, 5); val[1] = k; clues.push([[[1, 1]], [[0, k]]]); q = [[1, ri(r, 2, 3)]]; }
+      else if (tier === 2) { const k1 = ri(r, 2, 3), k2 = ri(r, 2, 3); val[1] = k1; val[2] = k1 * k2; clues.push([[[1, 1]], [[0, k1]]], [[[2, 1]], [[1, k2]]]); q = [[2, ri(r, 1, 2)]]; }
+      else if (tier === 3) { const k1 = ri(r, 2, 4), k2 = ri(r, 1, 4); val[1] = k1; val[2] = k1 + k2; clues.push([[[1, 1]], [[0, k1]]], [[[2, 1]], [[1, 1], [0, k2]]]); q = r() < 0.5 ? [[1, 1], [2, 1]] : [[2, 2]]; }
+      else { const k1 = ri(r, 2, 3), k3 = ri(r, 1, 3); val[1] = k1; val[2] = 2 * k1; val[3] = 2 * k1 + k3; clues.push([[[1, 1]], [[0, k1]]], [[[2, 1]], [[1, 2]]], [[[3, 1]], [[2, 1], [0, k3]]]); q = r() < 0.5 ? [[3, 1], [1, 1]] : [[3, 1], [2, 1]]; }
+      const ans = q.reduce((s, [i, c]) => s + val[i] * c, 0), fmt = (n) => n + ' ' + E[0];
+      const o = options(r, ans, [ans + 1, ans - 1, ans + val[1], ans - val[1], ans + 2, q.reduce((s, [, c]) => s + c, 0)].concat(nearby(r, ans)).filter((x) => x > 0), fmt);
+      const lines = []; for (let i = 1; i < 4; i++) if (val[i]) lines.push('1 ' + E[i] + ' = ' + val[i] + ' ' + E[0]);
+      lines.push(q.map(([i, c]) => c + ' ' + E[i]).join(' + ') + ' = ' + (q.length > 1 ? q.map(([i, c]) => c * val[i]).join(' + ') : q[0][1] + ' × ' + val[q[0][0]]) + ' = ' + ans + ' ' + E[0]);
+      return { kind: 'card', scales: { E, clues, q }, opts: o.opts, ok: o.ok, answer: fmt(ans), rule: { text: T('Pasa cada dibujo a ' + E[0] + ', balanza a balanza:', 'Turn each picture into ' + E[0] + ', scale by scale:'), lines: lines.slice(-5) } };
+    },
+  };
+
+  // Ortografía (es) y spelling (en): ¿cuál está bien escrita?
+  const spellPack = (key, lang) => ({
+    langs: [lang], icon: '✍️', wait: [8, 6], url: '',
+    get list() { return (this._l = this._l || window.VR_DATOS[key].trim().split('\n').map((l) => l.split('|'))); },
+    get count() { return this.list.length; },
+    levels() { const n = this.list.length; return SET === 5 ? [0, 1, 2, 3, 4].map((i) => ({ p: [Math.floor(i * n / 5), Math.floor((i + 1) * n / 5)], label: LV5[i][0], color: LV5[i][1] })) : [{ p: [(N - 1) % n, (N - 1) % n + 1] }]; },
+    gen(r, [a, b]) {
+      const e = SET === 5 ? this.list[ri(r, a, b - 1)] : this.list[a], o = options(r, e[0], e.slice(1, 4));
+      return { kind: 'card', text: key === 'spelling' ? 'Only ONE of these 4 words is spelled right 👇' : 'Solo UNA de estas 4 palabras está bien escrita 👇', emoji: '✍️', opts: o.opts, ok: o.ok, answer: e[0], rule: { text: e[4], lines: ['✅ ' + e[0]] } };
+    },
+  });
+  PACKS.ortografia = Object.assign(spellPack('ortografia', 'es'), {
+    title: 'Ortografía', hook: ['EL 80 % FALLA ESTA PALABRA ✍️', '5 PALABRAS · ¿CUÁNTAS ACIERTAS? ✍️'], ask: '¿CUÁL ESTÁ BIEN ESCRITA? ✍️',
+    extra: 'Juegos de lengua gratis', tags: '#ortografia #lengua #español #retomental #faltasdeortografia #fyp', teaser: '¿Cuál está bien escrita?',
+  });
+  PACKS.spelling = Object.assign(spellPack('spelling', 'en'), {
+    title: 'Spelling', hook: ['80% SPELL THIS WORD WRONG ✍️', '5 WORDS · HOW MANY CAN YOU SPELL? ✍️'], ask: 'WHICH ONE IS SPELLED RIGHT? ✍️',
+    extra: 'Free word games', tags: '#spelling #english #grammar #quiz #wordgame #fyp', teaser: 'Which one is spelled right?',
+  });
+
+  // Inglés (para hispanohablantes): ¿qué palabra falta? Las frases de la Fábrica de Frases
+  const RELATED = [['be', 'have', 'do', 'mod', 'neg'], ['art', 'dem', 'qty', 'indef'], ['prep', 'place', 'time'], ['pron', 'objp', 'pos'], ['q'], ['conj'], ['freq', 'deg', 'cmp']];
+  PACKS.ingles = {
+    langs: ['es'], url: 'fabrica-de-frases', icon: '🇬🇧', title: 'Inglés: ¿qué palabra falta?', wait: [9, 7], count: 588,
+    hook: ['¿SABES INGLÉS? SOLO EL 20 % ACIERTA ESTA 🇬🇧', '5 FRASES EN INGLÉS · ¿HASTA DÓNDE LLEGAS? 🇬🇧'], ask: '¿QUÉ PALABRA FALTA? 🇬🇧',
+    extra: 'Aprende inglés jugando, gratis', tags: '#ingles #aprenderingles #english #inglesfacil #gramatica #fyp', teaser: '¿Qué palabra falta?',
+    get items() {
+      if (this._i) return this._i;
+      const W = window.EQW.W, order = []; window.EQW.P.forEach((ph) => (ph.words || []).forEach((w) => { if (W[w] && !order.includes(w)) order.push(w); }));
+      Object.keys(W).forEach((w) => { if (!order.includes(w)) order.push(w); });
+      this._i = []; order.forEach((w, wi) => (W[w].S || []).forEach((s) => { if (s[0].includes('_')) this._i.push({ w, s, k: wi / order.length }); }));
+      return this._i;
+    },
+    levels() { return SET === 5 ? [0, 1, 2, 3, 4].map((i) => ({ p: i, label: LV5[i][0], color: LV5[i][1] })) : [{ p: -1 }]; },
+    gen(r, band) {
+      const W = window.EQW.W, I = this.items, n = I.length;
+      const it = band < 0 ? I[((N - 1) * 37) % n] : I[Math.min(n - 1, Math.floor((band + r()) * n / 5))];
+      const g = W[it.w].g, rel = RELATED.find((x) => x.includes(g)) || [g], no = (it.s[4] || []).map((x) => x.toLowerCase());
+      const same = shuffle(r, Object.keys(W).filter((w) => w !== it.w && W[w].g === g)), near = shuffle(r, Object.keys(W).filter((w) => w !== it.w && W[w].g !== g && rel.includes(W[w].g)));
+      const cands = same.concat(near).filter((w) => !no.includes(w.toLowerCase()) && w.toLowerCase() !== it.w.toLowerCase());
+      if (cands.length < 3) return null;
+      const o = options(r, it.w, cands), full = it.s[0].replace('_', it.w);
+      let why = it.s[3] || W[it.w].use || ''; if (why.length > 170) why = why.slice(0, why.lastIndexOf(' ', 165)) + '…';
+      return { kind: 'card', emoji: it.s[2], text: it.s[0], sub: it.s[1], blank: true, opts: o.opts, ok: o.ok, answer: it.w, rule: { text: '«' + it.w + '» = ' + W[it.w].es + '. ' + why.replace(/<[^>]+>/g, ''), lines: [full] } };
+    },
+  };
+
+  const PK = Q.get('pack') || 'secuencias', PACK = PACKS[PK] || PACKS.secuencias;
+  const SUPPORTED = PACK.langs.includes(LANG);
+  if (PACK.init) await PACK.init();
+  const WAIT = Math.max(3, num('wait', PACK.wait[SET === 5 ? 1 : 0]));
+  const URLT = Q.get('url') || host + (PACK.url ? '/' + PACK.url : '');
+  const HOOK = Q.get('hook') || PACK.hook[SET === 5 ? 1 : 0];
+  const ASK = Q.get('ask') || PACK.ask;
+  const END = Q.get('end') || (SET === 5 ? T('¿CUÁNTAS HAS ACERTADO? COMENTA TU NOTA /5 👇', 'HOW MANY DID YOU GET? COMMENT YOUR SCORE /5 👇') : T('¿LO HAS ACERTADO? 😎', 'DID YOU GET IT? 😎'));
+  const CTA = Q.get('cta') || T('Miles de retos como este, gratis', 'Thousands of puzzles like this, free');
+  const EXTRA = Q.has('extra') ? Q.get('extra') : PACK.extra;
+
+  const LEVELS = PACK.levels();
+  const QS = LEVELS.map((L, i) => {
+    for (let salt = 0; salt < 30; salt++) { const P = PACK.gen(rng(hash(PK + '|' + N + '|' + i + '|' + salt)), L.p, i, salt); if (P) return Object.assign(P, { label: L.label || '', color: L.color || '#ffd43b' }); }
+    throw new Error('sin pregunta');
+  });
+
+  /* ---------- línea de tiempo ---------- */
+  const ITEM = 0.11, REVEAL = SET === 5 ? 3.8 : 5.6, TU = 1.2;
+  const segs = []; let t = SET === 5 ? 2.6 : 2.4;
+  QS.forEach((P, i) => {
+    const s = { P, i, t0: t }; s.tOpt = t + 0.5 + (P.kind === 'seq' ? P.seq.length * ITEM : 0.8) + 0.2; s.tQ = s.tOpt + 0.6; s.tUp = s.tQ + WAIT; s.tR = s.tUp + TU; s.t1 = s.tR + REVEAL + (P.rule.lines ? Math.min(2, P.rule.lines.length * 0.35) : 0);
+    segs.push(s); t = s.t1 + (SET === 5 ? 0.3 : 0);
+  });
+  const TO = t, OUT = 5, DUR = TO + OUT;
+  const cues = [{ t: 0.05, s: 'boom' }];
+  segs.forEach((s) => {
+    if (s.P.kind === 'seq') s.P.seq.forEach((_, k) => { if (k % 2 === 0) cues.push({ t: s.t0 + 0.5 + k * ITEM, s: 'pop' }); }); else cues.push({ t: s.t0 + 0.4, s: 'pop' }, { t: s.t0 + 0.7, s: 'pop' });
+    cues.push({ t: s.tOpt, s: 'whoosh' });
+    for (let x = s.tQ; x < s.tUp - 0.01; x += 0.5) cues.push({ t: x, s: Math.round((x - s.tQ) * 2) % 2 ? 'hat' : 'kick' });
+    for (let k = 1; k <= Math.min(5, WAIT); k++) cues.push({ t: s.tUp - k, s: k <= 3 ? 'tock' : 'tick' });
+    cues.push({ t: s.tUp, s: 'boom' }, { t: s.tR, s: 'drum' }, { t: s.tR + 0.8, s: 'ding' }, { t: s.tR + 1.4, s: 'pop' });
+  });
+  cues.push({ t: TO + 0.2, s: 'whoosh' }, { t: TO + 0.8, s: 'ding' });
+
+  /* ---------- dibujo ---------- */
+  const cv = document.getElementById('c'), ctx = cv.getContext('2d');
+  let W = 540, H = 960, dpr = 1;
+  function resize() { dpr = window.devicePixelRatio || 1; W = innerWidth; H = innerHeight; cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); }
+  resize(); addEventListener('resize', resize);
+  const FF = '"Fredoka","Nunito",system-ui,sans-serif', EF = '"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v)), ease = (k) => 1 - Math.pow(1 - clamp(k, 0, 1), 3);
+  const back = (k) => { k = clamp(k, 0, 1); const c = 1.9; return 1 + (c + 1) * Math.pow(k - 1, 3) + c * Math.pow(k - 1, 2); };
+  function rr(x, y, w, h, r) { r = Math.min(r, w / 2, h / 2); ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
+  function txt(s, x, y, size, color, o = {}) {
+    ctx.save(); ctx.font = (o.w || 700) + ' ' + Math.round(size) + 'px ' + (o.f || FF); ctx.textAlign = o.a || 'center'; ctx.textBaseline = 'middle';
+    if (o.mw) { const w = ctx.measureText(s).width; if (w > o.mw) { ctx.translate(x, y); ctx.scale(o.mw / w, o.mw / w); x = 0; y = 0; } }
+    if (o.stroke) { ctx.lineJoin = 'round'; ctx.lineWidth = o.sw || size * 0.2; ctx.strokeStyle = o.stroke; ctx.strokeText(s, x, y); }
+    ctx.fillStyle = color; ctx.fillText(s, x, y); ctx.restore();
+  }
+  // emoji con sombra (así se ven ⚪ y los claros) y con fillStyle opaco: Chrome pinta los emojis con la transparencia del color de relleno
+  function emo(e, x, y, size) { ctx.save(); ctx.shadowColor = 'rgba(40,20,90,.35)'; ctx.shadowBlur = Math.max(2, size * 0.08); ctx.shadowOffsetY = size * 0.03; ctx.fillStyle = '#000'; ctx.font = Math.round(size) + 'px ' + EF; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(e, x, y + size * 0.06); ctx.restore(); }
+  function tok(tk, cx, cy, s) {   // ficha de la secuencia (emoji, número, letra, tamaño, grupo)
+    if (tk.t === 'e') emo(tk.v, cx, cy, s * 0.62);
+    else if (tk.t === 'n' || tk.t === 'l') { const d = String(tk.v).length, nf = d <= 2 ? 0.52 : d === 3 ? 0.42 : d === 4 ? 0.34 : d === 5 ? 0.28 : 0.24; txt(String(tk.v), cx, cy + s * 0.02, s * nf, tk.t === 'n' ? '#5b3fd1' : '#e2457e'); }
+    else if (tk.t === 's') emo(tk.e, cx, cy, s * [0.28, 0.5, 0.8][tk.s]);
+    else if (tk.t === 'g') { const n = tk.n, gc = n <= 3 ? n : n === 4 ? 2 : n <= 9 ? 3 : 4, rows = Math.ceil(n / gc), f = Math.min(0.55, 0.86 / Math.max(gc, rows)) * s, st = f * 1.05;
+      for (let k = 0; k < n; k++) { const r = Math.floor(k / gc), c = k % gc, inRow = Math.min(gc, n - r * gc); emo(tk.e, cx + (c - (inRow - 1) / 2) * st, cy + (r - (rows - 1) / 2) * st, f); } }
+  }
+  function tile(x, y, s, o = {}) {
+    ctx.save();
+    if (o.shadow !== false) { ctx.shadowColor = 'rgba(0,0,0,.28)'; ctx.shadowBlur = s * 0.16; ctx.shadowOffsetY = s * 0.05; }
+    const g = ctx.createLinearGradient(x, y, x + s, y + s); g.addColorStop(0, o.c1 || '#f6f2ff'); g.addColorStop(1, o.c2 || '#d9ccff');
+    ctx.fillStyle = g; rr(x, y, o.w || s, s, s * 0.24); ctx.fill(); ctx.restore();
+    if (o.ring) { ctx.save(); ctx.lineWidth = Math.max(3, s * 0.06); ctx.strokeStyle = o.ring; rr(x, y, o.w || s, s, s * 0.24); ctx.stroke(); ctx.restore(); }
+  }
+  function caption(words, x, y, size, t0, tt, o = {}) {   // subtítulo palabra a palabra con contorno
+    ctx.save(); ctx.font = '700 ' + size + 'px ' + FF; ctx.textBaseline = 'middle'; ctx.lineJoin = 'round';
+    const sp = size * 0.28, ws = words.map((w) => ctx.measureText(w).width), maxW = W * 0.9, lines = [[]]; let lw = 0;
+    words.forEach((w, i) => { if (lw + ws[i] > maxW && lines[lines.length - 1].length) { lines.push([]); lw = 0; } lines[lines.length - 1].push(i); lw += ws[i] + sp; });
+    const per = o.per || 0.16, shown = Math.floor((tt - t0) / per) + 1;
+    lines.forEach((ln, li) => {
+      const tw = ln.reduce((a, i) => a + ws[i] + sp, -sp); let cx = x - tw / 2; const cy = y + (li - (lines.length - 1) / 2) * size * 1.18;
+      for (const i of ln) {
+        if (i < shown) { const k = clamp((tt - t0 - i * per) / 0.16, 0, 1), sc = 0.6 + 0.4 * back(k);
+          ctx.save(); ctx.translate(cx + ws[i] / 2, cy); ctx.scale(sc, sc); ctx.lineWidth = size * 0.2; ctx.strokeStyle = '#000'; ctx.strokeText(words[i], -ws[i] / 2, 0);
+          ctx.fillStyle = o.color ? o.color(i) : '#fff'; ctx.fillText(words[i], -ws[i] / 2, 0); ctx.restore(); }
+        cx += ws[i] + sp;
+      }
+    });
+    ctx.restore();
+  }
+  const words = (s) => String(s).split(' ').filter(Boolean);
+  function pill(s, x, y, size, bg, fg) { ctx.save(); ctx.font = '700 ' + size + 'px ' + FF; const w = Math.min(W * 0.94, ctx.measureText(s).width + size * 1.3); ctx.fillStyle = bg; rr(x - w / 2, y - size * 0.82, w, size * 1.64, size * 0.82); ctx.fill(); ctx.restore(); txt(s, x, y + 1, size, fg, { mw: W * 0.9 }); }
+  function wrap(s, maxW, size, wt = 600) { ctx.font = wt + ' ' + Math.round(size) + 'px ' + FF; const out = []; let cur = ''; for (const w of String(s).split(' ')) { const t2 = cur ? cur + ' ' + w : w; if (ctx.measureText(t2).width > maxW && cur) { out.push(cur); cur = w; } else cur = t2; } if (cur) out.push(cur); return out; }
+
+  const FLOAT = ['🧠', '🤔', '💡', '❓', '🔢', '✨', '🧩', '⭐'];
+  function background(tt, hot) {
+    const g = ctx.createLinearGradient(0, 0, W * 0.3, H); g.addColorStop(0, hot ? '#5c1030' : '#3b1d8f'); g.addColorStop(0.55, hot ? '#2a0b2a' : '#24125e'); g.addColorStop(1, '#120a33');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    ctx.save(); ctx.globalAlpha = 0.07; ctx.translate(W / 2, H * 0.45); ctx.rotate(tt * 0.08);
+    for (let k = 0; k < 12; k++) { ctx.rotate(Math.PI / 6); ctx.fillStyle = k % 2 ? '#b197fc' : '#748ffc'; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(-W * 0.14, H); ctx.lineTo(W * 0.14, H); ctx.fill(); }
+    ctx.restore();
+    ctx.save(); ctx.globalAlpha = 0.1;
+    for (let k = 0; k < 12; k++) { const y = ((k * 0.137 + 1 - tt * (0.02 + (k % 4) * 0.008)) % 1 + 1) % 1, x = (k * 0.293 + Math.sin(tt * 0.6 + k) * 0.02) % 1; emo(FLOAT[k % FLOAT.length], x * W, y * H, Math.min(W, H) * 0.06); }
+    ctx.restore();
+  }
+  function timer(cx, cy, r, left, frac) {
+    if (left <= 3) { const k = 1 - (left % 1 || 1), sc = 1.7 - 0.7 * ease(k * 3); ctx.save(); ctx.globalAlpha = clamp((left % 1 || 1) * 3, 0, 1); ctx.translate(cx, cy); ctx.scale(sc, sc); txt(String(Math.ceil(left)), 0, 0, r * 1.5, '#ff6b6b', { stroke: '#000', sw: r * 0.16 }); ctx.restore(); return; }
+    ctx.save(); ctx.translate(cx, cy);
+    ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.beginPath(); ctx.arc(0, 0, r * 1.18, 0, 6.3); ctx.fill();
+    ctx.lineCap = 'round'; ctx.lineWidth = r * 0.18; ctx.strokeStyle = 'rgba(255,255,255,.15)'; ctx.beginPath(); ctx.arc(0, 0, r, 0, 6.3); ctx.stroke();
+    ctx.strokeStyle = left <= 5 ? '#ff6b6b' : '#ffd43b'; ctx.beginPath(); ctx.arc(0, 0, r, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * frac); ctx.stroke();
+    ctx.restore(); txt(String(Math.ceil(left)), cx, cy + 2, r * 0.95, '#fff', { stroke: '#000', sw: 7 });
+  }
+  // la caja de la explicación (regla + operaciones)
+  function ruleBox(R, y0, tt, tShow, land) {
+    if (tt < tShow) return;
+    const k = back((tt - tShow) / 0.4), m = Math.min(W, H), bw = Math.min(W * 0.92, 700), fz = m * (SET === 5 ? 0.05 : 0.056), tl = R.text ? wrap('💡 ' + R.text, bw - 44, fz) : [];
+    const L = R.lines || [], lz = fz * 1.08, toksH = R.toks ? m * 0.12 + 14 : 0, bh = 30 + tl.length * fz * 1.3 + toksH + L.length * lz * 1.45 + (L.length ? 6 : 0);
+    const y = land ? Math.min(Math.max(y0, H * 0.25), H - bh - 16) : Math.max(y0, Math.min(H - bh - 50, y0 + 20));
+    ctx.save(); ctx.translate(W / 2, y + bh / 2); ctx.scale(k, k); ctx.translate(-W / 2, -(y + bh / 2));
+    ctx.shadowColor = 'rgba(0,0,0,.4)'; ctx.shadowBlur = 24; ctx.fillStyle = '#fffdf5'; rr(W / 2 - bw / 2, y, bw, bh, 20); ctx.fill(); ctx.shadowBlur = 0;
+    ctx.fillStyle = '#40c057'; rr(W / 2 - bw / 2, y, 9, bh, 4); ctx.fill();
+    tl.forEach((ln, i) => txt(ln, W / 2 - bw / 2 + 26, y + 18 + fz * 0.65 + i * fz * 1.3, fz, '#212529', { a: 'left', w: 600 }));
+    let yy = y + 18 + tl.length * fz * 1.3 + 4;
+    if (R.toks) { const ts = Math.min(m * 0.12, (bw - 50) / R.toks.length - 6); R.toks.forEach((tk, i) => { const x = W / 2 - (R.toks.length * (ts + 6) - 6) / 2 + i * (ts + 6); tile(x, yy, ts, { shadow: false, ring: '#d0bfff' }); tok(tk, x + ts / 2, yy + ts / 2, ts); }); yy += ts + 14; }
+    L.forEach((ln, i) => { const a = clamp((tt - tShow - 0.35 - i * 0.35) / 0.25, 0, 1); if (a <= 0) return; ctx.save(); ctx.globalAlpha = a; txt(ln, W / 2, yy + lz * 0.75 + i * lz * 1.45, lz, i === L.length - 1 ? '#2f9e44' : '#5b3fd1', { w: 700, mw: bw - 40 }); ctx.restore(); });
+    ctx.restore();
+  }
+  function header(S, tt, qy) {
+    const P = S.P, m = Math.min(W, H);
+    if (SET === 5) { const k = back((tt - S.t0) / 0.35); ctx.save(); ctx.translate(W / 2, H * 0.085); ctx.scale(k, k); pill(T('NIVEL ', 'LEVEL ') + (S.i + 1) + '/5 · ' + P.label, 0, 0, m * 0.045, P.color, '#1b1033'); ctx.restore();
+      for (let k2 = 0; k2 < 5; k2++) { ctx.fillStyle = k2 < S.i ? 'rgba(255,255,255,.85)' : k2 === S.i ? P.color : 'rgba(255,255,255,.2)'; rr(W / 2 - 80 + k2 * 33, H * 0.135, 28, 7, 3.5); ctx.fill(); } }
+    else if (P.label) { const k = back((tt - S.t0) / 0.35); ctx.save(); ctx.translate(W / 2, H * 0.085); ctx.scale(k, k); pill(P.label, 0, 0, m * 0.04, P.color, '#1b1033'); ctx.restore(); }
+    if (tt < S.tUp) caption(words(ASK), W / 2, qy, m * (ASK.length > 24 ? 0.062 : 0.072), S.t0 + 0.15, tt, { per: 0.12 });
+    else if (tt < S.tR) { const k = back((tt - S.tUp) / 0.3); ctx.save(); ctx.translate(W / 2, qy); ctx.scale(k, k); ctx.rotate(-0.05); pill(T('⏰ ¡TIEMPO!', "⏰ TIME'S UP!"), 0, 0, m * 0.07, '#e03131', '#fff'); ctx.restore(); }
+    else caption(words(T('¡LA RESPUESTA! 👇', "HERE'S THE ANSWER 👇")), W / 2, qy, m * 0.07, S.tR, tt, { per: 0.12 });
+  }
+  function commentsLine(S, tt, land) {
+    if (SET !== 1 || land || tt < S.tQ || tt >= S.tUp) return;
+    const msgs = [T('COMENTA TU RESPUESTA 👇', 'COMMENT YOUR ANSWER 👇'), T('¿A, B, C O D? 🤔', 'A, B, C OR D? 🤔'), T('ETIQUETA A UN GENIO 🧠', 'TAG A GENIUS 🧠')], idx = Math.floor((tt - S.tQ) / 3.4) % 3;
+    caption(words(msgs[idx]), W / 2, H * 0.95, Math.min(W, H) * 0.048, S.tQ + Math.floor((tt - S.tQ) / 3.4) * 3.4, tt, { per: 0.1 });
+  }
+
+  /* --- preguntas de secuencia (fichas) --- */
+  function layoutSeq(P) {
+    const n = P.seq.length, land = W > H, per = land ? Math.min(n, 9) : Math.min(n, n <= 5 ? 5 : n <= 8 ? 4 : 5);
+    const rows = Math.ceil(n / per), gap = Math.min(W, H) * 0.022, s = Math.min(land ? H * 0.2 : W * 0.17, (W * 0.92 - gap * (per - 1)) / per, (land ? H * 0.42 : H * 0.36) / rows - gap);
+    const top = land ? H * 0.26 : H * 0.24, pos = [];
+    for (let k = 0; k < n; k++) { const r = Math.floor(k / per), inRow = Math.min(per, n - r * per), c = k % per; pos.push([W / 2 + (c - (inRow - 1) / 2) * (s + gap) - s / 2, top + r * (s + gap)]); }
+    return { pos, s, bottom: top + rows * (s + gap) };
+  }
+  function drawSeq(S, tt) {
+    const P = S.P, L = layoutSeq(P), s = L.s, land = W > H;
+    header(S, tt, SET === 5 ? H * 0.19 : H * 0.165);
+    const fly = clamp((tt - S.tR - 0.6) / 0.6, 0, 1);
+    P.seq.forEach((tk, k) => {
+      const [x, y] = L.pos[k], a = clamp((tt - S.t0 - 0.5 - k * ITEM) / 0.25, 0, 1); if (a <= 0) return;
+      const sc = back(a); ctx.save(); ctx.translate(x + s / 2, y + s / 2); ctx.scale(sc, sc); ctx.translate(-s / 2, -s / 2);
+      if (tk.t === 'sep') { ctx.fillStyle = '#b197fc'; rr(s * 0.44, s * 0.05, s * 0.12, s * 0.9, s * 0.06); ctx.fill(); ctx.restore(); return; }
+      if (k === P.b) {
+        if (fly >= 1) { tile(0, 0, s, { c1: '#e9fff1', c2: '#c3f5d3', ring: '#40c057' }); tok(P.ans, s / 2, s / 2, s); }
+        else { const pulse = 1 + 0.06 * Math.sin(tt * 7); ctx.translate(s / 2, s / 2); ctx.scale(pulse, pulse); ctx.translate(-s / 2, -s / 2);
+          ctx.fillStyle = 'rgba(255,255,255,.12)'; rr(0, 0, s, s, s * 0.24); ctx.fill(); ctx.setLineDash([s * 0.12, s * 0.08]); ctx.lineWidth = Math.max(3, s * 0.05); ctx.strokeStyle = '#ffd43b'; rr(0, 0, s, s, s * 0.24); ctx.stroke(); ctx.setLineDash([]);
+          txt('?', s / 2, s / 2 + 2, s * 0.6, '#ffd43b'); }
+      } else { tile(0, 0, s); tok(tk, s / 2, s / 2, s); }
+      ctx.restore();
+    });
+    const n = P.opts.length, TR = Math.min(W, H) * (SET === 5 ? 0.07 : 0.08);
+    let cols = land ? n : n <= 2 ? n : 2;
+    if (!land && n > 2 && Math.min(W * 0.25, (H * 0.9 - (L.bottom + TR * 2.4 + 34)) / Math.ceil(n / 2) - 30) < W * 0.18) cols = n;
+    const rowsO = Math.ceil(n / cols);
+    const oy0 = land ? Math.min(H - H * 0.2 - 30, L.bottom + 28) : L.bottom + TR * 2.4 + 34;
+    const os = Math.min(land ? H * 0.2 : W * 0.25, (W * 0.84 - (cols - 1) * 18) / cols, land ? 999 : (H * 0.9 - oy0) / rowsO - 30), opos = [];
+    for (let k = 0; k < n; k++) { const r = Math.floor(k / cols), c = k % cols, inRow = Math.min(cols, n - r * cols); opos.push([W / 2 + (c - (inRow - 1) / 2) * (os + 18 + (cols > 2 ? 0 : os * 0.25)) - os / 2, oy0 + r * (os + 30)]); }
+    const ao = clamp((tt - S.tOpt) / 0.35, 0, 1), ofade = 1 - clamp((tt - S.tR - 1.3) / 0.35, 0, 1);
+    if (ao > 0 && ofade > 0) P.opts.forEach((tk, k) => {
+      const [x, y] = opos[k], ok = k === P.ok, rev = tt >= S.tR;
+      if (rev && ok && fly > 0) { const [bx, by] = L.pos[P.b], e = ease(fly); if (fly < 1) { const fx = x + (bx - x) * e, fy = y + (by - y) * e - Math.sin(fly * Math.PI) * os * 0.6, fs = os + (s - os) * e; tile(fx, fy, fs, { ring: '#40c057' }); tok(tk, fx + fs / 2, fy + fs / 2, fs); } }
+      const sc = back(clamp(ao * 1.4 - k * 0.12, 0, 1)) * (rev && ok ? 1 + 0.08 * Math.sin((tt - S.tR) * 12) * Math.max(0, 1 - (tt - S.tR)) : 1);
+      ctx.save(); ctx.globalAlpha = (rev && !ok ? 0.28 : 1) * ofade; ctx.translate(x + os / 2, y + os / 2); ctx.scale(sc, sc); ctx.translate(-os / 2, -os / 2);
+      tile(0, 0, os, rev && ok ? { c1: '#e9fff1', c2: '#b2f2bb', ring: '#40c057' } : {}); if (!(rev && ok && fly > 0 && fly < 1)) tok(tk, os / 2, os / 2, os);
+      ctx.fillStyle = rev && ok ? '#2f9e44' : '#7048e8'; ctx.beginPath(); ctx.arc(os * 0.08, os * 0.08, os * 0.15, 0, 6.3); ctx.fill(); txt('ABCD'[k], os * 0.08, os * 0.09, os * 0.17, '#fff');
+      if (rev && !ok) { ctx.strokeStyle = '#ff6b6b'; ctx.lineWidth = os * 0.06; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(os * 0.25, os * 0.25); ctx.lineTo(os * 0.75, os * 0.75); ctx.moveTo(os * 0.75, os * 0.25); ctx.lineTo(os * 0.25, os * 0.75); ctx.stroke(); }
+      ctx.restore();
+    });
+    if (tt >= S.tQ && tt < S.tUp) { const left = S.tUp - tt; timer(land ? W * 0.9 : W / 2, land ? H * 0.16 : L.bottom + TR * 1.2 + 14, TR, left, left / WAIT); }
+    commentsLine(S, tt, land);
+    ruleBox(S.P.rule, land ? L.bottom + 16 : L.bottom + 40, tt, S.tR + 1.4, land);
+  }
+
+  /* --- preguntas de tarjeta (texto, operación, emojis, balanzas) --- */
+  function measureCard(P, bw) {
+    const m = Math.min(W, H), land = W > H, k = land ? 0.85 : 1, parts = []; let h = 24;
+    if (P.rows) { const rh = m * 0.14 * k * (P.rows.length > 4 ? 0.85 : 1); parts.push({ t: 'rows', h: rh * P.rows.length, rh }); h += rh * P.rows.length; }
+    if (P.scales) { const n = P.scales.clues.length + 1, sh = Math.min(m * 0.18 * k, (land ? H * 0.5 : H * 0.42) / n); parts.push({ t: 'scales', h: sh * n, sh }); h += sh * n; }
+    if (P.big) { const s = m * 0.2 * k; parts.push({ t: 'big', h: s * 1.1, s }); h += s * 1.1; }
+    if (P.emoji && !P.rows) { const s = m * 0.13 * k; parts.push({ t: 'emoji', h: s * 1.15, s }); h += s * 1.15; }
+    if (P.text) { let fz = m * 0.062, L = wrap(P.text, bw - 48, fz, 700); if (L.length > (land ? 4 : 5)) { fz = m * 0.052; L = wrap(P.text, bw - 48, fz, 700); } parts.push({ t: 'text', h: L.length * fz * 1.32, fz, L }); h += L.length * fz * 1.32 + 6; }
+    if (P.sub) { const fz = m * 0.05 * k, L = wrap('«' + P.sub + '»', bw - 48, fz, 600); parts.push({ t: 'sub', h: L.length * fz * 1.3, fz, L }); h += L.length * fz * 1.3 + 4; }
+    if (P.expr) { ctx.font = '700 100px ' + FF; const fz = Math.min(m * 0.15 * k, (bw - 60) / (Math.max(ctx.measureText(P.expr).width, ctx.measureText(P.expr.replace('?', P.answer)).width) / 100)); parts.push({ t: 'expr', h: fz * 1.5, fz }); h += fz * 1.5; }
+    return { parts, h: h + 18 };
+  }
+  function drawCardBody(P, M, x0, y0, bw, tt, S, solved) {
+    let y = y0 + 24; const cx = x0 + bw / 2;
+    for (const p of M.parts) {
+      if (p.t === 'emoji') emo(P.emoji, cx, y + p.h / 2, p.s);
+      if (p.t === 'big') emo(P.big, cx, y + p.h / 2, p.s);
+      if (p.t === 'text') p.L.forEach((ln, i) => {
+        const ly = y + p.fz * 0.66 + i * p.fz * 1.32;
+        if (!P.blank) { txt(ln, cx, ly, p.fz, '#212529', { w: 700 }); return; }
+        // frase con hueco: «_» se pinta como raya amarilla y, resuelto, con la palabra en verde
+        ctx.font = '700 ' + Math.round(p.fz) + 'px ' + FF; const ws = ln.split(' '), sp = p.fz * 0.28, show = (w) => (w.includes('_') ? w.replace('_', solved ? P.answer : '____') : w);
+        const tw = ws.reduce((a, w) => a + ctx.measureText(show(w)).width + sp, -sp); let xx = cx - tw / 2;
+        ws.forEach((w) => { const s2 = show(w), wd = ctx.measureText(s2).width; if (w.includes('_')) { ctx.fillStyle = solved ? '#d3f9d8' : '#fff3bf'; rr(xx - 4, ly - p.fz * 0.62, wd + 8, p.fz * 1.24, 8); ctx.fill(); }
+          txt(s2, xx + wd / 2, ly, p.fz, w.includes('_') ? (solved ? '#2f9e44' : '#e8590c') : '#212529', { w: 700 }); xx += wd + sp; });
+      });
+      if (p.t === 'sub') p.L.forEach((ln, i) => txt(ln, cx, y + p.fz * 0.66 + i * p.fz * 1.3, p.fz, '#6741d9', { w: 600 }));
+      if (p.t === 'expr') { const s2 = solved ? P.expr.replace('?', P.answer) : P.expr; ctx.font = '700 ' + Math.round(p.fz) + 'px ' + FF; const wq = ctx.measureText(s2).width, base = s2.slice(0, s2.lastIndexOf(solved ? P.answer : '?')), wb = ctx.measureText(base).width;
+        txt(base, cx - wq / 2, y + p.h / 2, p.fz, '#3b2a7a', { a: 'left' }); txt(solved ? P.answer : '?', cx - wq / 2 + wb, y + p.h / 2, p.fz, solved ? '#2f9e44' : '#e8590c', { a: 'left' }); }
+      if (p.t === 'rows') P.rows.forEach((row, ri2) => {
+        const a = clamp((tt - S.t0 - 0.45 - ri2 * 0.25) / 0.25, 0, 1); if (a <= 0) return; const ry = y + ri2 * p.rh + p.rh / 2, es = p.rh * 0.62, isQ = ri2 === P.rows.length - 1;
+        const items = row.map((it, j) => (isQ && j === row.length - 1 && solved ? P.answer : it)), wsz = items.map((it) => (typeof it === 'string' && /\p{Extended_Pictographic}/u.test(it) ? es * 1.12 : (ctx.font = '700 ' + Math.round(es * 0.8) + 'px ' + FF, ctx.measureText(String(it)).width + es * 0.3)));
+        let tw = wsz.reduce((s2, w) => s2 + w, 0), sc = Math.min(1, (bw - 30) / tw); let xx = cx - tw * sc / 2;
+        if (isQ) { ctx.fillStyle = 'rgba(255,212,59,.22)'; rr(x0 + 10, ry - p.rh * 0.46, bw - 20, p.rh * 0.92, 14); ctx.fill(); }
+        ctx.save(); ctx.globalAlpha = a; items.forEach((it, j) => { const w = wsz[j] * sc, isE = typeof it === 'string' && /\p{Extended_Pictographic}/u.test(it);
+          if (isE) emo(it, xx + w / 2, ry, es * sc); else txt(String(it), xx + w / 2, ry + 2, es * 0.8 * sc, isQ && j === row.length - 1 ? (solved ? '#2f9e44' : '#e8590c') : '#3b2a7a'); xx += w; }); ctx.restore();
+      });
+      if (p.t === 'scales') { const { E, clues, q } = P.scales, all = clues.concat([[q, null]]);
+        all.forEach(([Lf, Rt], si) => { const a = clamp((tt - S.t0 - 0.45 - si * 0.25) / 0.25, 0, 1); if (a <= 0) return; const sy = y + si * p.sh, isQ = Rt === null;
+          ctx.save(); ctx.globalAlpha = a; const bx = cx, by = sy + p.sh * 0.78, half = bw * 0.36;
+          ctx.strokeStyle = isQ ? '#7048e8' : '#a77c52'; ctx.lineWidth = Math.max(3, p.sh * 0.05); ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(bx - half, by); ctx.lineTo(bx + half, by); ctx.stroke();
+          ctx.fillStyle = '#a77c52'; ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(bx - p.sh * 0.1, by + p.sh * 0.17); ctx.lineTo(bx + p.sh * 0.1, by + p.sh * 0.17); ctx.fill();
+          const pan = (side, px) => { const list = []; side.forEach(([i, c]) => { for (let k = 0; k < c; k++) list.push(E[i]); }); const n = list.length, per = Math.min(n, 6), rows = Math.ceil(n / per), es = Math.min(p.sh * 0.42, (half * 0.95) / per, (p.sh * 0.66) / rows);
+            list.forEach((e, k) => { const r2 = Math.floor(k / per), c2 = k % per, inRow = Math.min(per, n - r2 * per); emo(e, px + (c2 - (inRow - 1) / 2) * es, by - es * 0.6 - (rows - 1 - r2) * es * 0.95, es); }); };
+          pan(Lf, bx - half / 2);
+          if (!isQ) pan(Rt, bx + half / 2);
+          else if (solved) pan([[0, +String(P.answer).split(' ')[0]]], bx + half / 2);
+          else txt('? × ' + E[0], bx + half / 2, by - p.sh * 0.3, p.sh * 0.3, '#e8590c');
+          txt('=', bx, by - p.sh * 0.3, p.sh * 0.3, '#a77c52'); ctx.restore(); }); }
+      y += p.h + (p.t === 'text' ? 6 : p.t === 'sub' ? 4 : 0);
+    }
+  }
+  function drawCard(S, tt) {
+    const P = S.P, land = W > H, m = Math.min(W, H), qy = SET === 5 ? H * 0.19 : H * 0.165;
+    header(S, tt, qy);
+    const bw = land ? Math.min(W * 0.62, 760) : Math.min(W * 0.92, 700), M = measureCard(P, bw), x0 = W / 2 - bw / 2, y0 = land ? H * 0.25 : (SET === 5 ? H * 0.245 : H * 0.225);
+    const solved = tt >= S.tR + 0.6, a = back((tt - S.t0 - 0.25) / 0.35);
+    if (a > 0) { ctx.save(); ctx.translate(W / 2, y0 + M.h / 2); ctx.scale(a, a); ctx.translate(-W / 2, -(y0 + M.h / 2));
+      ctx.shadowColor = 'rgba(0,0,0,.35)'; ctx.shadowBlur = 26; ctx.shadowOffsetY = 6; const g = ctx.createLinearGradient(0, y0, 0, y0 + M.h); g.addColorStop(0, '#ffffff'); g.addColorStop(1, '#efe9ff'); ctx.fillStyle = g; rr(x0, y0, bw, M.h, 26); ctx.fill(); ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
+      if (solved) { ctx.lineWidth = 5; ctx.strokeStyle = '#40c057'; rr(x0, y0, bw, M.h, 26); ctx.stroke(); }
+      drawCardBody(P, M, x0, y0, bw, tt, S, solved); ctx.restore(); }
+    const cardB = y0 + M.h, TR = m * (SET === 5 ? 0.065 : 0.072);
+    // opciones: 2 × 2 en vertical, en fila en horizontal
+    const n = P.opts.length, cols = land ? n : 2, rowsO = Math.ceil(n / cols), gap = m * 0.035;
+    const ow = Math.min(land ? (W * 0.9 - gap * (cols - 1)) / cols : (W * 0.9 - gap) / 2, 340), oh = m * (land ? 0.11 : 0.14);
+    const oy0 = land ? Math.min(H - oh - 20, cardB + 24) : Math.min(H * 0.86 - rowsO * (oh + gap), cardB + TR * 2.6 + 24);
+    const ao = clamp((tt - S.tOpt) / 0.35, 0, 1), ofade = 1 - clamp((tt - S.tR - 1.3) / 0.35, 0, 1);
+    if (ao > 0 && ofade > 0) P.opts.forEach((o, k) => {
+      const r2 = Math.floor(k / cols), c2 = k % cols, x = W / 2 + (c2 - (cols - 1) / 2) * (ow + gap) - ow / 2, y = oy0 + r2 * (oh + gap), ok = k === P.ok, rev = tt >= S.tR;
+      const sc = back(clamp(ao * 1.4 - k * 0.12, 0, 1)) * (rev && ok ? 1 + 0.08 * Math.sin((tt - S.tR) * 12) * Math.max(0, 1 - (tt - S.tR)) : 1);
+      ctx.save(); ctx.globalAlpha = (rev && !ok ? 0.3 : 1) * ofade; ctx.translate(x + ow / 2, y + oh / 2); ctx.scale(sc, sc); ctx.translate(-ow / 2, -oh / 2);
+      tile(0, 0, oh, Object.assign({ w: ow }, rev && ok ? { c1: '#e9fff1', c2: '#b2f2bb', ring: '#40c057' } : {}));
+      ctx.fillStyle = rev && ok ? '#2f9e44' : '#7048e8'; ctx.beginPath(); ctx.arc(oh * 0.42, oh / 2, oh * 0.26, 0, 6.3); ctx.fill(); txt('ABCD'[k], oh * 0.42, oh / 2 + 1, oh * 0.3, '#fff');
+      const isE = /\p{Extended_Pictographic}/u.test(o), fz = oh * (o.length > 12 ? 0.36 : 0.44);
+      txt(o, oh * 0.78 + (ow - oh * 0.78) / 2, oh / 2 + 2, fz, rev && ok ? '#2b8a3e' : '#3b2a7a', { mw: ow - oh * 0.95, f: isE ? FF + ',' + EF : FF });
+      if (rev && !ok) { ctx.strokeStyle = '#ff6b6b'; ctx.lineWidth = oh * 0.07; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(ow * 0.2, oh / 2); ctx.lineTo(ow * 0.92, oh / 2); ctx.stroke(); }
+      ctx.restore();
+    });
+    if (tt >= S.tQ && tt < S.tUp) { const left = S.tUp - tt; timer(land ? W * 0.9 : W / 2, land ? H * 0.16 : Math.min(cardB + TR * 1.3 + 12, oy0 - TR * 1.3), TR, left, left / WAIT); }
+    commentsLine(S, tt, land);
+    ruleBox(P.rule, cardB + (land ? 14 : 26), tt, S.tR + 1.4, land);
+  }
+
+  function outro(tt) {
+    const k = clamp(tt / 0.4, 0, 1), m = Math.min(W, H);
+    ctx.save(); ctx.globalAlpha = 0.93 * k; ctx.fillStyle = '#140b38'; ctx.fillRect(0, 0, W, H); ctx.restore();
+    const e = back((tt - 0.1) / 0.5); ctx.save(); ctx.globalAlpha = k; ctx.translate(W / 2, H * 0.27); ctx.scale(e, e); ctx.rotate(Math.sin(tt * 3) * 0.08); emo(PACK.icon, 0, 0, m * 0.24); ctx.restore();
+    caption(words(END), W / 2, H * 0.43, m * (END.length > 26 ? 0.06 : 0.075), 0.3, tt, { per: 0.12, color: (i) => (/\/5|\d/.test(words(END)[i]) ? '#ffd43b' : '#fff') });
+    if (tt > 1.2 && CTA) { const a = clamp((tt - 1.2) * 3, 0, 1); ctx.save(); ctx.globalAlpha = a; txt(CTA, W / 2, H * 0.55, m * 0.045, '#e5dbff', { w: 600, mw: W * 0.9 }); ctx.restore(); }
+    if (tt > 1.6) { const e3 = back((tt - 1.6) / 0.4), bob = 1 + 0.04 * Math.sin(tt * 6); ctx.save(); ctx.translate(W / 2, H * 0.65); ctx.scale(e3 * bob, e3 * bob);
+      ctx.font = '700 ' + Math.round(m * 0.052) + 'px ' + FF; const w = Math.min(W * 0.94, ctx.measureText(URLT).width + m * 0.12); ctx.fillStyle = '#ffd43b'; rr(-w / 2, -m * 0.065, w, m * 0.13, m * 0.065); ctx.fill(); ctx.restore();
+      ctx.save(); ctx.translate(W / 2, H * 0.65); ctx.scale(e3 * bob, e3 * bob); txt(URLT, 0, 2, m * 0.052, '#1b1033', { mw: W * 0.86 }); ctx.restore(); }
+    if (tt > 2.3 && EXTRA) { ctx.save(); ctx.globalAlpha = clamp((tt - 2.3) * 3, 0, 1); txt(EXTRA, W / 2, H * 0.76, m * 0.04, 'rgba(255,255,255,.8)', { w: 600, mw: W * 0.9 }); ctx.restore(); }
+  }
+
+  function frame(tt) {
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const S = segs.find((s) => tt >= s.t0 && tt < s.t1) || (tt < segs[0].t0 ? null : segs[segs.length - 1]);
+    background(tt, S && tt >= S.tUp && tt < S.tR);
+    if (tt < segs[0].t0 + 0.3) {   // entrada: gancho
+      const k = 1 - clamp((tt - (segs[0].t0 - 0.2)) / 0.4, 0, 1), hw = words(HOOK);
+      ctx.save(); ctx.globalAlpha = k; emo(PACK.icon, W / 2, H * 0.27, Math.min(W, H) * 0.18 * back((tt - 0.05) / 0.4)); caption(hw, W / 2, H * 0.43, Math.min(W, H) * 0.08, 0.15, tt, { per: 0.14, color: (i) => (/\d/.test(hw[i]) ? '#ffd43b' : '#fff') }); ctx.restore();
+    }
+    if (S && tt < TO) (S.P.kind === 'seq' ? drawSeq : drawCard)(S, tt);
+    if (SET === 5) for (const s2 of segs) { const d = tt - s2.t0; if (s2.i > 0 && d >= -0.3 && d < 0.3) { ctx.fillStyle = 'rgba(255,255,255,' + (0.5 - Math.abs(d) * 1.6) + ')'; ctx.fillRect(0, 0, W, H); } }
+    if (S && tt >= S.tUp && tt < S.tUp + 0.35) { ctx.fillStyle = 'rgba(255,80,80,' + (0.5 - (tt - S.tUp) * 1.4) + ')'; ctx.fillRect(0, 0, W, H); }
+    if (tt >= TO) outro(tt - TO);
+  }
+
+  /* ---------- interfaz de grabación ---------- */
+  const total = Math.round(DUR * FPS); let f = 0;
+  const URLFULL = /^https?:/.test(URLT) ? URLT : 'https://' + URLT;
+  const capText = SET === 5
+    ? PACK.icon + ' ' + T('5 retos de ' + PACK.title.toLowerCase() + ', de fácil a genio. ¿Hasta dónde llegas? Comenta tu nota /5 👇', '5 ' + PACK.title.toLowerCase() + ' puzzles, from easy to genius. How far can you go? Comment your score /5 👇')
+    : PACK.icon + ' ' + PACK.teaser + ' ' + T('Reto #' + N + '. La respuesta, al final 👀 ¡Comenta la tuya antes!', 'Puzzle #' + N + '. Answer at the end 👀 Comment yours first!');
+  window.arcadeRec = {
+    ready: false, fps: FPS, frames: total, quizCount: PACK.count || 999, scene: 'quiz', cues, unsupported: !SUPPORTED, langs: PACK.langs,
+    info: { id: PK, title: PACK.title, puzzle: N, set: SET, total: PACK.count || 999, url: URLFULL, lang: LANG, langs: PACK.langs, answers: QS.map((P) => P.answer),
+      caption: capText + '\n' + CTA + ': ' + URLFULL + '\n\n' + PACK.tags + '\n' },
+    step(n = 1) { for (let i = 0; i < n && f < total; i++) f++; frame(f / FPS); return { frame: f, done: f >= total, state: 'scene' }; },
+  };
+  try { await document.fonts.ready; } catch (_) {}
+  frame(0);
+  window.arcadeRec.ready = true; document.title = 'REC_READY';
+  if (!Q.has('rec')) { const t0 = performance.now(); (function loop(now) { const tt = ((now - t0) / 1000) % DUR; frame(tt); requestAnimationFrame(loop); })(t0); }
+})().catch((e) => { document.title = 'ERROR'; console.error(e); });
+</script></body></html>

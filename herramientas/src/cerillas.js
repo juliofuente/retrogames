@@ -190,6 +190,8 @@
     recScene(g, Q) {
       if (!Q.has('quiz')) return null;
       const n = clamp(+Q.get('quiz') || 1, 1, PUZ.length), wait = +(Q.get('wait') || 45), host = Q.get('site') || location.host;
+      // textos configurables (grabador: --gancho --final --cta --extra --siguenos --url-juego)
+      const W_ = (k, d) => (Q.get(k) ? Q.get(k).split(' ').filter(Boolean) : d), HOOK = W_('hook', ['ONLY', '1%', 'CAN', 'SOLVE', 'THIS', '🤯']), ENDW = W_('end', ['DID', 'YOU', 'GET', 'IT?', '😎']), CTAW = W_('cta', ['PLAY', String(PUZ.length), 'PUZZLES', 'LIKE', 'THIS']), EXTRA = Q.has('extra') ? Q.get('extra') : 'FREE • NO DOWNLOAD', FOLLOW = W_('follow', ['FOLLOW', 'FOR', 'DAILY', 'PUZZLES', '➕']), URLQ = Q.get('url') || host + '/cerillas';
       const P = PUZ[n - 1], tk = toks(P[0]), pl = plan(tk, P[3][0]), sol = P[3][0], solSegs = segsOf(toks(sol));
       const verb = { m: 'MOVE', r: 'REMOVE', a: 'ADD' }[P[1]], cnt = P[2] === 1 ? 'ONE' : String(P[2]).replace('2', 'TWO').replace('3', 'THREE').replace('4', 'FOUR');
       // línea de tiempo
@@ -239,7 +241,7 @@
       const headOf = (i, lift = 0) => { const [x1, y1, x2, y2] = segEnds(s, i); return [x2 - (x2 - x1) * 0.08, y2 - (y2 - y1) * 0.08 - lift]; };
       return {
         dur: DUR, cues,
-        info: { puzzle: n, total: PUZ.length, equation: pretty(P[0]), action: verb.toLowerCase(), count: P[2], solution: pretty(sol), url: 'https://' + host + '/cerillas' },
+        info: { puzzle: n, total: PUZ.length, equation: pretty(P[0]), action: verb.toLowerCase(), count: P[2], solution: pretty(sol), url: /^https?:/.test(URLQ) ? URLQ : 'https://' + URLQ },
         frame(t, dt, ctx) {
           const W = g.W, H = g.H; g.rt = t; geo(g);
           // cámara: pequeños golpes de zoom y temblor en los momentos fuertes
@@ -291,7 +293,7 @@
           if (solving && !done && P[1] === 'a') pl.to.forEach((ti) => { const [c1, d1, c2, d2] = segEnds(s, ti); stick(ctx, c1, d1, c2, d2, s.th, { alpha: mv, glow: '#69db7c' }); const [hx, hy] = headOf(ti); if (mv < 1) flame(ctx, hx, hy, s.th * 2, t, mv); });
           // ---- textos y fases ----
           const capY = H * 0.215;
-          if (t < T1) caption(ctx, ['ONLY', '1%', 'CAN', 'SOLVE', 'THIS', '🤯'], W / 2, capY, 46, 0.15, t, { per: 0.2 });
+          if (t < T1) caption(ctx, HOOK, W / 2, capY, 46, 0.15, t, { per: 0.2, color: (i) => (/\d/.test(HOOK[i]) ? '#ffd43b' : '#fff') });
           else if (t < T2) caption(ctx, [verb, cnt, P[2] === 1 ? 'MATCH' : 'MATCHES', 'TO', 'FIX', 'IT', '🔥'], W / 2, capY, 44, T1, t, { per: 0.25 });
           else if (t < T3) {
             const left = T3 - t, msgs = [['PAUSE', 'AND', 'THINK', '🤔'], [verb, 'ONLY', cnt, P[2] === 1 ? 'MATCH' : 'MATCHES'], ['COMMENT', 'YOUR', 'ANSWER', '👇'], ['TAG', 'A', 'FRIEND', 'WHO', 'CAN', '🧠'], ['LAST', '10', 'SECONDS', '⏰']];
@@ -299,7 +301,7 @@
             caption(ctx, msgs[idx], W / 2, capY, 42, start, t, { per: 0.18 });
           } else if (t < T4) { const k = back((t - T3) / 0.3); ctx.save(); ctx.translate(W / 2, capY); ctx.scale(k, k); ctx.rotate(-0.06); pill(ctx, "⏰ TIME'S UP!", 0, 0, 42, '#e03131', '#fff'); ctx.restore(); }
           else if (t < T5) caption(ctx, ['HERE’S', 'THE', 'ANSWER', '👇'], W / 2, capY, 46, T4, t, { per: 0.2 });
-          else if (t < T6) caption(ctx, ['DID', 'YOU', 'GET', 'IT?', '😎'], W / 2, capY, 48, T5 + 0.3, t, { per: 0.2 });
+          else if (t < T6) caption(ctx, ENDW, W / 2, capY, 48, T5 + 0.3, t, { per: 0.2 });
           else if (t < T7) caption(ctx, ['COMMENT', 'YES', 'OR', 'NO', '👇'], W / 2, capY, 46, T6, t, { per: 0.2, color: (i) => (i === 1 ? '#69db7c' : i === 3 ? '#ff6b6b' : '#fff') });
           // lectura de la operación (mal / bien)
           if (t >= 1.3 && t < T7) {
@@ -337,10 +339,10 @@
             const k = clamp((t - T7) / 0.4, 0, 1); ctx.fillStyle = 'rgba(18,9,4,' + 0.93 * k + ')'; ctx.fillRect(0, 0, W, H);
             for (const r of rain) { const y = ((t - T7) * r.v + r.d / 4) % 1.2 - 0.1; ctx.save(); ctx.globalAlpha = 0.5 * k; ctx.translate(r.x * W, y * H); ctx.rotate(r.r + (t - T7) * r.vr); stick(ctx, -20, 0, 20, 0, 6); ctx.restore(); }
             const e = back((t - T7 - 0.1) / 0.5); ctx.save(); ctx.globalAlpha = k; ctx.translate(W / 2, H * 0.3); ctx.scale(e, e); ctx.rotate(Math.sin(t * 3) * 0.08); Arcade.emoji(ctx, '🔥', 0, 0, Math.min(W, H) * 0.22); ctx.restore();
-            caption(ctx, ['PLAY', String(PUZ.length), 'PUZZLES', 'LIKE', 'THIS'], W / 2, H * 0.47, 46, T7 + 0.3, t, { per: 0.16, color: (i) => (i === 1 ? '#ffd43b' : '#fff') });
-            if (t > T7 + 1.2) { const e2 = back((t - T7 - 1.2) / 0.35); ctx.save(); ctx.translate(W / 2, H * 0.56); ctx.scale(e2, e2); pill(ctx, 'FREE • NO DOWNLOAD', 0, 0, 18, 'rgba(255,255,255,.14)', '#ffe8cc'); ctx.restore(); }
-            if (t > T7 + 1.6) { const e3 = back((t - T7 - 1.6) / 0.4), bob = 1 + 0.04 * Math.sin(t * 6); ctx.save(); ctx.translate(W / 2, H * 0.67); ctx.scale(e3 * bob, e3 * bob); const url = host + '/cerillas'; ctx.font = FONT(24); const w = Math.min(W * 0.94, ctx.measureText(url).width + 60); ctx.fillStyle = '#ff922b'; Arcade.rr(ctx, -w / 2, -34, w, 68, 34); ctx.fill(); ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(url, 0, 2); ctx.restore(); Arcade.emoji(ctx, '👆', W / 2 + Math.sin(t * 5) * 6, H * 0.76 + Math.abs(Math.sin(t * 5)) * 10, 46); }
-            if (t > T7 + 2.3) caption(ctx, ['FOLLOW', 'FOR', 'DAILY', 'PUZZLES', '➕'], W / 2, H * 0.86, 30, T7 + 2.3, t, { per: 0.12 });
+            caption(ctx, CTAW, W / 2, H * 0.47, 46, T7 + 0.3, t, { per: 0.16, color: (i) => (/\d/.test(CTAW[i]) ? '#ffd43b' : '#fff') });
+            if (t > T7 + 1.2 && EXTRA) { const e2 = back((t - T7 - 1.2) / 0.35); ctx.save(); ctx.translate(W / 2, H * 0.56); ctx.scale(e2, e2); pill(ctx, EXTRA, 0, 0, 18, 'rgba(255,255,255,.14)', '#ffe8cc'); ctx.restore(); }
+            if (t > T7 + 1.6) { const e3 = back((t - T7 - 1.6) / 0.4), bob = 1 + 0.04 * Math.sin(t * 6); ctx.save(); ctx.translate(W / 2, H * 0.67); ctx.scale(e3 * bob, e3 * bob); const url = URLQ; ctx.font = FONT(24); const w = Math.min(W * 0.94, ctx.measureText(url).width + 60); ctx.fillStyle = '#ff922b'; Arcade.rr(ctx, -w / 2, -34, w, 68, 34); ctx.fill(); ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(url, 0, 2); ctx.restore(); Arcade.emoji(ctx, '👆', W / 2 + Math.sin(t * 5) * 6, H * 0.76 + Math.abs(Math.sin(t * 5)) * 10, 46); }
+            if (t > T7 + 2.3) caption(ctx, FOLLOW, W / 2, H * 0.86, 30, T7 + 2.3, t, { per: 0.12 });
           }
         },
       };

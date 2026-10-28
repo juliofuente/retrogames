@@ -1,6 +1,13 @@
 ARCADE PERDIDO + ARCADE PRO — LO QUE ESTÁ HECHO
 ================================================
 Fecha: 20-10-2026 · Versión de la PWA (games.js → ARCADE_VERSION): 2.36.0
+· Vídeos de retos educativos (educativos/video-retos.html, grabador --puzles <pack>): secuencias, problemas de Primaria
+  (banco del juego, solo es), mates con emojis, cálculo mental, balanzas, ortografía (es), spelling (en) e inglés «¿qué
+  palabra falta?» (frases de la Fábrica de Frases, solo es); una pregunta o cinco de fácil a genio, con la explicación.
+  Contenido de ortografía/spelling en educativos/video-retos-datos.js. video-secuencias.html redirige aquí.
+  Arreglado: los emojis de las fichas salían translúcidos (Chrome los pinta con la transparencia del fillStyle).
+  Grabador: música de fondo por defecto de la carpeta «mimusica» (--sin-musica), textos configurables en todos los retos
+  (--gancho --pregunta --final --cta --extra --siguenos, también en Cerillas y en la escena común del motor).
 · Vídeos de retos con solución (herramientas/grabador --puzles <id>):
   - Escena de reto común en pwa/common.js (quizScene, ?rec=1&quiz=N): Atasco, Jarras, Ranas, Apagón y Clavijas declaran
     def.quiz = { goal, par, moves }; gancho, objetivo, cuenta atrás, «TIME'S UP», la solución la juega el solucionador del

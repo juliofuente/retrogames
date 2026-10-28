@@ -15,7 +15,9 @@
 //   --idioma es|en|ambos  (es)            --formato vertical|horizontal|ambos  (vertical = 1080×1920, horizontal = 1920×1080)
 //   --duracion 75         segundos por vídeo (cartelas incluidas)        --fps 30
 //   --intro 3 --outro 4   segundos de las cartelas de entrada y salida
-//   --musica archivo|carpeta  música de fondo (si es carpeta, una al azar por vídeo; se repite y se funde al final)
+//   --musica archivo|carpeta  música de fondo (si es carpeta, una al azar por vídeo; se repite y se funde al final). Sin decir
+//                         nada, se usa la carpeta «mimusica» si existe (junto al programa o donde se lanza) · --sin-musica la quita
+//                         · --volumen-musica 0.35
 //   --solo id1,id2        solo esos juegos            --max N   como mucho N juegos
 //   --rehacer             vuelve a grabar los que ya existen (por defecto se saltan)
 //   --paralelo N          juegos a la vez (1)         --calidad 21  (CRF de x264: menos = mejor y más pesado)
@@ -32,7 +34,11 @@
 // Retos (--puzles <id>): un vídeo por problema · pregunta, cuenta atrás, solución y cierre con la dirección:
 //   cerillas (escena propia) · atasco, jarras, ranas, apagon, clavijas (escena de reto común del motor: la solución la juega
 //   el solucionador del juego) · secuencias (página educativos/brain-academy/video-secuencias; --serie 5 = 5 preguntas por vídeo)
-//   --espera N  segundos para pensar · --desde/--hasta · --gancho/--cta/--extra · --url-juego · --pagina "ruta?x={lang}" (otra página)
+//   Educativos (página educativos/video-retos): secuencias · problemas (es) · emojimates · calculo · balanza · ortografia (es) ·
+//   spelling (en) · ingles (es); todos con --serie 1 o 5.
+//   --espera N  segundos para pensar · --desde/--hasta · --url-juego · --pagina "ruta?x={lang}" (otra página)
+//   Textos (todos admiten «español | english»): --gancho (entrada) · --pregunta · --final (titular del cierre) · --cta · --extra
+//   («-» = ninguna) · --siguenos (cerillas y retos del motor)
 //   El .txt para publicar lo escribe la propia página (info.caption) si lo trae.
 using System.Diagnostics;
 using System.Net.WebSockets;
@@ -61,6 +67,7 @@ static class Program
     static async Task<int> Run(Options o)
     {
         Directory.CreateDirectory(o.Out);
+        if (o.Music != null) Console.WriteLine(Directory.Exists(o.Music) ? $"Música de fondo: una canción al azar de {o.Music} ({Directory.GetFiles(o.Music).Count(f => Regex.IsMatch(f, @"\.(mp3|m4a|aac|ogg|wav|flac)$", RegexOptions.IgnoreCase))} canciones)" : $"Música de fondo: {o.Music}");
 
         if (o.Puzzles != null) return await RunPuzzles(o);
         if (o.Tutorials) return await RunTutorials(o);
@@ -111,6 +118,9 @@ static class Program
             await page.Send("Page.navigate", new { url = PuzzleUrl(o, baseUrl, o.Langs[0], 1) });
             count = 0;
             for (int i = 0; i < 300 && count == 0; i++) { await Task.Delay(300); try { count = (await page.Eval("window.arcadeRec && window.arcadeRec.ready ? window.arcadeRec.quizCount : 0")).GetInt32(); } catch { } }
+            // idiomas en los que existe (la ortografía y los problemas, solo en español; spelling, solo en inglés)
+            try { var ls = (await page.Eval("JSON.stringify(window.arcadeRec.langs || null)")).GetString(); var arr = ls == null || ls == "null" ? null : JsonSerializer.Deserialize<List<string>>(ls);
+                if (arr != null) { var drop = o.Langs.Where(l => !arr.Contains(l)).ToList(); if (drop.Count > 0) Console.WriteLine($"{o.Puzzles} no está en {string.Join(", ", drop)}: se graba solo en {string.Join(", ", arr)}"); o.Langs = o.Langs.Where(arr.Contains).ToList(); if (o.Langs.Count == 0) o.Langs = arr.Take(1).ToList(); } } catch { }
         }
         if (count == 0) { Console.WriteLine($"{o.Puzzles} no tiene vídeos de retos (recScene) o no carga en {baseUrl}"); return 1; }
         int from = Math.Max(1, o.From), to = o.To > 0 ? Math.Min(o.To, count) : count;
@@ -168,7 +178,8 @@ static class Program
 
     /* dirección de un reto: el juego en /<id>/<idioma>, o una página propia (--pagina; la de las secuencias de Brain Academy
        viene de serie) con {lang} {id} en la ruta */
-    public static readonly Dictionary<string, string> Pages = new() { ["secuencias"] = "educativos/brain-academy/video-secuencias?lang={lang}" };
+    public static readonly string[] EduPacks = { "secuencias", "problemas", "emojimates", "calculo", "balanza", "ortografia", "spelling", "ingles" };
+    public static readonly Dictionary<string, string> Pages = EduPacks.ToDictionary(p => p, p => "educativos/video-retos?pack={id}&lang={lang}");
     static string PuzzleUrl(Options o, string baseUrl, string lang, int q, string? extra = null)
     {
         var page = o.Page ?? (Pages.TryGetValue(o.Puzzles!, out var pg) ? pg : null);
@@ -230,7 +241,7 @@ static class Program
             // espera: la que se pida; si no, 45 s en Cerillas y la de serie de cada página (20 s los retos del motor, 10 s las secuencias)
             int wait = o.Wait > 0 ? o.Wait : j.Id == "cerillas" ? 45 : 0;
             var extra = $"&fps={o.Fps}&site={E(host)}" + (wait > 0 ? $"&wait={wait}" : "") + (o.UrlSet ? "&url=" + E(TutorialUrl(o, j)) : "");
-            foreach (var (k, v) in new[] { ("hook", o.Hook), ("cta", o.Cta), ("extra", o.Extra) })
+            foreach (var (k, v) in new[] { ("hook", o.Hook), ("ask", o.Ask), ("end", o.End), ("cta", o.Cta), ("extra", o.Extra), ("follow", o.Follow) })
                 if (v != null) extra += $"&{k}=" + E(v == "-" ? "" : Lang(v, j.Lang));
             url = PuzzleUrl(o, j.Base, j.Lang, j.Quiz, extra);
         }
@@ -357,13 +368,17 @@ static class Ask
         }
         else if (retos)
         {
-            var pz = Q("puzles", "Juego de retos: cerillas, atasco, jarras, ranas, apagon, clavijas o secuencias", "cerillas").Trim().ToLowerInvariant();
+            Console.WriteLine("  Educativos: secuencias · problemas (es) · emojimates · calculo · balanza · ortografia (es) · spelling (en) · ingles (es)");
+            Console.WriteLine("  Juegos: cerillas · atasco · jarras · ranas · apagon · clavijas");
+            var pz = Q("puzles", "Juego de retos", "secuencias").Trim().ToLowerInvariant();
             a.AddRange(new[] { "--puzles", pz });
-            if (pz == "secuencias") a.AddRange(new[] { "--serie", Q("serie", "Preguntas por vídeo: 1 o 5 (de fácil a genio)", "1") });
+            if (Program.EduPacks.Contains(pz)) a.AddRange(new[] { "--serie", Q("serie", "Preguntas por vídeo: 1 o 5 (de fácil a genio)", "1") });
             a.AddRange(new[] { "--desde", Q("desde", "Desde el reto número", "1") });
             var hasta = Q("hasta", "Hasta el reto número (Enter = todos)", "todos"); if (int.TryParse(hasta, out _)) a.AddRange(new[] { "--hasta", hasta });
             var esp = Q("esperaR", "Segundos para pensar (Enter = los de serie: 45 cerillas, 20 los demás, 10 secuencias, 6 en las de 5)", "auto"); if (int.TryParse(esp, out _)) a.AddRange(new[] { "--espera", esp });
-            foreach (var (k, txt, opt) in new[] { ("ganchoR", "Frase de la entrada («es | en», Enter = la de serie)", "--gancho"), ("urlR", "Dirección que se anuncia ({host} {id}; Enter = la del juego)", "--url-juego") })
+            foreach (var (k, txt, opt) in new[] { ("ganchoR", "Texto de la entrada («es | en», Enter = el de serie)", "--gancho"), ("preguntaR", "Texto de la pregunta («es | en», Enter = el de serie)", "--pregunta"),
+                ("finalR", "Titular del cierre, p. ej. «¿LO HAS ACERTADO? | DID YOU GET IT?» (Enter = el de serie)", "--final"), ("ctaR", "Frase del cierre («es | en», Enter = la de serie)", "--cta"),
+                ("extraR", "Línea final («es | en», - = ninguna, Enter = la de serie)", "--extra"), ("urlR", "Dirección que se anuncia ({host} {id}; Enter = la del juego)", "--url-juego") })
             { var v = Q(k, txt, "auto"); if (v != "auto" && v != "") a.AddRange(new[] { opt, v }); }
         }
         else
@@ -373,7 +388,8 @@ static class Ask
         }
         a.AddRange(new[] { "--idioma", Q("idioma" + (retos ? "R" : tuts ? "T" : "D"), "Idioma: es / en / ambos", retos ? "en" : tuts ? "ambos" : "es") });
         a.AddRange(new[] { "--formato", Q("formato", "Formato: vertical / horizontal / ambos", "vertical") });
-        var mus = Q("musica", "Música de fondo: archivo o carpeta (Enter = solo efectos)", "ninguna"); if (mus != "ninguna" && mus != "") a.AddRange(new[] { "--musica", mus.Trim('"') });
+        var mus = Q("musica2", "Música de fondo: archivo o carpeta (Enter = la carpeta «mimusica» si existe; «no» = sin música)", "auto");
+        if (mus.Equals("no", StringComparison.OrdinalIgnoreCase)) a.Add("--sin-musica"); else if (mus != "auto" && mus != "") a.AddRange(new[] { "--musica", mus.Trim('"') });
         a.AddRange(new[] { "--paralelo", Q("paralelo", "Vídeos a la vez", "2") });
         a.AddRange(new[] { "--salida", Q("salida", "Carpeta donde guardarlos", "videos") });
         if (Q("rehacer", "¿Volver a grabar los que ya existen? s/n", "n").StartsWith("s", StringComparison.OrdinalIgnoreCase)) a.Add("--rehacer");
@@ -402,7 +418,7 @@ class Options
     public string? Puzzles; public int Wait = 0, From = 1, To = 0; bool langSet; public bool NoSfx; public double MusicVolume = 0.35;
     public int Duration = 75, Fps = 30, Intro = 3, Outro = 4, Parallel = 1, Crf = 21, Max = 0, JpegQuality = 90;
     public bool Redo; public string? Music, ChromePath, FfmpegPath = "ffmpeg"; public HashSet<string> Only = new();
-    public bool Tutorials; public int Moves = 6; public double Read = 1, TutOutro = 0; public string UrlTemplate = "{host}/{id}"; public bool UrlSet; public string? Page; public int Set = 1; public string? Hook, Cta, Extra, CaptionTemplate;
+    public bool Tutorials; public int Moves = 6; public double Read = 1, TutOutro = 0; public string UrlTemplate = "{host}/{id}"; public bool UrlSet; public string? Page; public int Set = 1; public string? Hook, Cta, Extra, CaptionTemplate, Ask, End, Follow; public bool NoMusic;
     readonly Random rnd = new();
 
     public static Options? Parse(string[] a)
@@ -441,6 +457,10 @@ class Options
                 case "--intro": o.Intro = int.Parse(v()); break;
                 case "--outro": o.Outro = int.Parse(v()); break;
                 case "--musica": o.Music = v(); break;
+                case "--sin-musica": o.NoMusic = true; break;
+                case "--pregunta": o.Ask = v(); break;
+                case "--final": o.End = v(); break;
+                case "--siguenos": o.Follow = v(); break;
                 case "--solo": foreach (var x in v().Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)) o.Only.Add(x); break;
                 case "--max": o.Max = int.Parse(v()); break;
                 case "--rehacer": o.Redo = true; break;
@@ -452,7 +472,12 @@ class Options
                 default: Console.WriteLine("Opción desconocida: " + k); return null;
             }
         }
-        if (o.Puzzles != null && !o.langSet) o.Langs = new() { "en" };   // los retos, por defecto en inglés
+        if (o.Puzzles != null && !o.langSet) o.Langs = Program.EduPacks.Contains(o.Puzzles) ? new() { "es", "en" } : new() { "en" };   // los retos, en inglés; los educativos, en los idiomas que tengan
+        // música de fondo: si no se dice nada y existe la carpeta «mimusica» (junto al programa o donde se lanza), una canción al azar por vídeo
+        if (o.NoMusic) o.Music = null;
+        else if (o.Music == null)
+            foreach (var d in new[] { Directory.GetCurrentDirectory(), AppContext.BaseDirectory, Path.Combine(AppContext.BaseDirectory, "..", "..", "..") })
+                if (Directory.Exists(Path.Combine(d, "mimusica"))) { o.Music = Path.GetFullPath(Path.Combine(d, "mimusica")); break; }
         if (o.Sitemap == "" || o.Langs.Any(l => l != "es" && l != "en") || o.Formats.Any(f => f != "vertical" && f != "horizontal")) return null;
         return o;
     }
@@ -460,7 +485,8 @@ class Options
         "       [--duracion 75] [--fps 30] [--intro 3] [--outro 4] [--musica archivo|carpeta] [--solo id1,id2] [--max N] [--rehacer]\n" +
         "       [--paralelo N] [--calidad 21] [--chrome ruta] [--ffmpeg ruta]\n" +
         "Retos (un vídeo por problema): ArcadeRecorder --web https://mobilehits.juegosboom.com --puzles cerillas|atasco|jarras|ranas|apagon|clavijas [--espera 45] [--desde 1] [--hasta 269]\n" +
-        "Secuencias: ArcadeRecorder --web https://educativos.juegosboom.com --puzles secuencias [--serie 5] [--desde 1] [--hasta 30]\n" +
+        "Educativos: ArcadeRecorder --web https://educativos.juegosboom.com --puzles secuencias|problemas|emojimates|calculo|balanza|ortografia|spelling|ingles [--serie 5] [--desde 1] [--hasta 30]\n" +
+        "Textos: --gancho --pregunta --final --cta --extra --siguenos (\"español | english\") · Música: carpeta mimusica, --musica, --sin-musica\n" +
         "Tutoriales de solitarios: ArcadeRecorder --web https://solitarios.juegosboom.com --tutoriales [--idioma ambos] [--jugadas 6] [--lectura 1]\n" +
         "       [--url-juego \"{host}/{id}\"] [--gancho \"es | en\"] [--cta \"es | en\"] [--extra \"es | en\"] [--texto \"plantilla\"] [--outro-tutorial 5.5]");
     public string? PickMusic()

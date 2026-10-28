@@ -1310,6 +1310,8 @@
       const n = Math.max(1, Math.round(+Q.get('quiz') || 1)), WAIT = Math.max(3, +(Q.get('wait') || 20)), host = Q.get('site') || location.host, FPSQ = +(Q.get('fps') || 30);
       const URLQ = Q.get('url') || host + '/' + def.id, title = EN && def.en && def.en.title ? def.en.title : def.title;
       const HOOK = Q.get('hook') || T('SOLO EL 1 % LO RESUELVE 🤯', 'ONLY 1% CAN SOLVE THIS 🤯');
+      // textos del cierre (grabador: --final --cta --extra --siguenos)
+      const ENDQ = Q.get('end') || '', CTAQ = Q.get('cta') || T('CIENTOS DE RETOS COMO ESTE', 'HUNDREDS OF PUZZLES LIKE THIS'), EXTRAQ = Q.has('extra') ? Q.get('extra') : T('GRATIS • SIN DESCARGAS', 'FREE • NO DOWNLOAD'), FOLLOWQ = Q.has('follow') ? Q.get('follow') : T('SÍGUENOS PARA MÁS RETOS ➕', 'FOLLOW FOR DAILY PUZZLES ➕');
       // reloj virtual para los setTimeout de los juegos
       window.__realSetTimeout = window.setTimeout.bind(window);
       let vt = 0, vq = [], vid = 1;
@@ -1410,16 +1412,17 @@
           else if (t < TS) { caption(words(T('¡LA SOLUCIÓN! 👇', "HERE'S THE SOLUTION 👇")), W / 2, capY, cs, T4, t, { per: 0.16 });
             const mv = movesNow(); if (par) pillQ(T('MOVIMIENTO ', 'MOVE ') + Math.min(par, mv + (DM.cur ? 1 : 0)) + '/' + par, W / 2, H - Math.min(H * 0.06, (H - g.bot) / 2), m * 0.04, 'rgba(0,0,0,.6)', '#ffe066'); }
           else if (t < TO) { const k = Math.max(0, Math.min(1, (t - TS) / 0.25)), sc = 2.2 - 1.2 * (1 - Math.pow(1 - k, 3));
-            ctx.save(); ctx.globalAlpha = k; ctx.translate(W / 2, capY); ctx.rotate(-0.06); ctx.scale(sc, sc); pillQ(T('¡RESUELTO! ✅', 'SOLVED ✅') + (par ? '  ' + par + ' ' + T('MOV.', 'MOVES') : ''), 0, 0, cs * 0.85, '#2f9e44', '#fff'); ctx.restore(); }
+            ctx.save(); ctx.globalAlpha = k; ctx.translate(W / 2, capY); ctx.rotate(-0.06); ctx.scale(sc, sc); pillQ(T('¡RESUELTO! ✅', 'SOLVED ✅') + (par ? '  ' + par + ' ' + T('MOV.', 'MOVES') : ''), 0, 0, cs * 0.85, '#2f9e44', '#fff'); ctx.restore();
+            if (ENDQ) caption(words(ENDQ), W / 2, capY + cs * 1.6, cs * 0.8, TS + 0.4, t, { per: 0.14 }); }
           if (t >= T3 && t < T3 + 0.35) { ctx.fillStyle = 'rgba(255,80,80,' + (0.55 - (t - T3) * 1.5) + ')'; ctx.fillRect(0, 0, W, H); }
           if (t >= TO) {   // cierre
             const tt = t - TO, k = Math.min(1, tt / 0.4);
             ctx.save(); ctx.globalAlpha = 0.94 * k; const g2 = ctx.createLinearGradient(0, 0, 0, H); g2.addColorStop(0, def.bg ? def.bg[0] : '#2b1a5c'); g2.addColorStop(1, def.bg ? def.bg[1] : '#1a1033'); ctx.fillStyle = g2; ctx.fillRect(0, 0, W, H); ctx.restore();
             const e = back((tt - 0.1) / 0.5); ctx.save(); ctx.globalAlpha = k; ctx.translate(W / 2, H * 0.28); ctx.scale(e, e); ctx.rotate(Math.sin(t * 3) * 0.08); A.emoji(ctx, def.emoji || '🧩', 0, 0, m * 0.24); ctx.restore();
-            caption(words(T('CIENTOS DE RETOS COMO ESTE', 'HUNDREDS OF PUZZLES LIKE THIS')), W / 2, H * 0.45, m * 0.065, TO + 0.3, t, { per: 0.14 });
-            if (tt > 1.1) { const a = Math.min(1, (tt - 1.1) * 3); ctx.save(); ctx.globalAlpha = a; pillQ(T('GRATIS • SIN DESCARGAS', 'FREE • NO DOWNLOAD'), W / 2, H * 0.55, m * 0.035, 'rgba(255,255,255,.14)', '#ffe8cc'); ctx.restore(); }
+            caption(words(CTAQ), W / 2, H * 0.45, m * 0.065, TO + 0.3, t, { per: 0.14 });
+            if (tt > 1.1 && EXTRAQ) { const a = Math.min(1, (tt - 1.1) * 3); ctx.save(); ctx.globalAlpha = a; pillQ(EXTRAQ, W / 2, H * 0.55, m * 0.035, 'rgba(255,255,255,.14)', '#ffe8cc'); ctx.restore(); }
             if (tt > 1.5) { const e3 = back((tt - 1.5) / 0.4), bob = 1 + 0.04 * Math.sin(t * 6); ctx.save(); ctx.translate(W / 2, H * 0.66); ctx.scale(e3 * bob, e3 * bob); pillQ(URLQ, 0, 0, m * 0.05, def.color || '#ff922b', '#fff'); ctx.restore(); }
-            if (tt > 2.2) caption(words(T('SÍGUENOS PARA MÁS RETOS ➕', 'FOLLOW FOR DAILY PUZZLES ➕')), W / 2, H * 0.84, m * 0.045, TO + 2.2, t, { per: 0.12 });
+            if (tt > 2.2 && FOLLOWQ) caption(words(FOLLOWQ), W / 2, H * 0.84, m * 0.045, TO + 2.2, t, { per: 0.12 });
           }
         },
       };
