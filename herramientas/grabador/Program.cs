@@ -66,6 +66,9 @@ static class Program
     static async Task<int> Main(string[] argv)
     {
         Console.OutputEncoding = Encoding.UTF8;
+        // números siempre con punto (ffmpeg, URLs…) aunque Windows esté en español
+        System.Globalization.CultureInfo.DefaultThreadCurrentCulture = System.Globalization.CultureInfo.InvariantCulture;
+        System.Globalization.CultureInfo.CurrentCulture = System.Globalization.CultureInfo.InvariantCulture;
         bool interactive = argv.Length == 0;
         if (interactive) argv = Ask.Run();   // sin argumentos: pregunta por consola (y recuerda las respuestas)
         try { Console.InputEncoding = Encoding.UTF8; } catch { }
@@ -658,7 +661,7 @@ static class Ffmpeg
         if (sfx != null) { a.AddRange(new[] { "-i", sfx }); isfx = ia++; }
         if (music != null) { a.AddRange(new[] { "-stream_loop", "-1", "-i", music }); imus = ia++; }
         a.AddRange(new[] { "-map", "0:v", "-c:v", "libx264", "-pix_fmt", "yuv420p", "-preset", "veryfast", "-crf", o.Crf.ToString(), "-r", o.Fps.ToString() });
-        string fade = $"afade=t=in:d=1,afade=t=out:st={Math.Max(0, seconds - 2):0.##}:d=2";
+        string fade = "afade=t=in:d=1,afade=t=out:st=" + Math.Max(0, seconds - 2).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) + ":d=2";
         if (isfx >= 0 && imus >= 0)
             a.AddRange(new[] { "-filter_complex", $"[{imus}:a]volume={o.MusicVolume.ToString(System.Globalization.CultureInfo.InvariantCulture)},{fade}[m];[{isfx}:a][m]amix=inputs=2:duration=first:normalize=0[a]", "-map", "[a]" });
         else if (isfx >= 0) a.AddRange(new[] { "-map", isfx + ":a" });
