@@ -2,3 +2,10 @@ bin/
 obj/
 ArcadeRecorder.respuestas.json
 videos/
+juegos/
+opciones/
+prueba/
+Game2Video.exe
+*.pdb
+mimusica/*
+!mimusica/LEEME.txt

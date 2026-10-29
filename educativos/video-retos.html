@@ -1,8 +1,12 @@
 <!DOCTYPE html>
 <html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Retos educativos · vídeo</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
-<style>html,body{margin:0;height:100%;overflow:hidden;background:#1d1147}canvas{display:block;width:100vw;height:100vh}</style>
+<style>
+/* Fredoka (OFL) en local: así el vídeo sale igual sin conexión */
+@font-face{font-family:'Fredoka';font-weight:500;font-display:block;src:url(fonts/fredoka-latin-500-normal.woff2) format('woff2')}
+@font-face{font-family:'Fredoka';font-weight:600;font-display:block;src:url(fonts/fredoka-latin-600-normal.woff2) format('woff2')}
+@font-face{font-family:'Fredoka';font-weight:700;font-display:block;src:url(fonts/fredoka-latin-700-normal.woff2) format('woff2')}
+html,body{margin:0;height:100%;overflow:hidden;background:#1d1147}canvas{display:block;width:100vw;height:100vh}</style>
 </head><body><canvas id="c"></canvas>
 <script src="problemas-primaria/banco.js"></script>
 <script src="emoji-quest/palabras.js"></script>
@@ -558,7 +562,7 @@
       caption: capText + '\n' + CTA + ': ' + URLFULL + '\n\n' + PACK.tags + '\n' },
     step(n = 1) { for (let i = 0; i < n && f < total; i++) f++; frame(f / FPS); return { frame: f, done: f >= total, state: 'scene' }; },
   };
-  try { await document.fonts.ready; } catch (_) {}
+  try { await Promise.all([500, 600, 700].map((w) => document.fonts.load(w + ' 40px Fredoka'))); await document.fonts.ready; } catch (_) {}
   frame(0);
   window.arcadeRec.ready = true; document.title = 'REC_READY';
   if (!Q.has('rec')) { const t0 = performance.now(); (function loop(now) { const tt = ((now - t0) / 1000) % DUR; frame(tt); requestAnimationFrame(loop); })(t0); }

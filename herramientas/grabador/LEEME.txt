@@ -1,3 +1,38 @@
+Game2Video (antes ArcadeRecorder) · LO NUEVO
+==========================================
+1. Compílalo una vez con compilar.bat: deja Game2Video.exe en esta carpeta (si no, los .bat usan «dotnet run»).
+2. Sin conexión: por defecto los juegos NO se cargan de la web. La primera vez se bajan de GitHub (solo pwa/ y educativos/,
+   unos 15 MB) a la carpeta «juegos» y se sirven desde un servidor propio en 127.0.0.1, sin pasar por el proxy de la oficina.
+   · actualizar_juegos.bat (o --solo-bajar / --actualizar) los vuelve a bajar cuando haya cambios en GitHub.
+   · Si tienes el repositorio clonado con git: --local C:\ruta\retrogames (con --actualizar hace git pull).
+   · --online graba de la web de verdad, como antes. --web sigue diciendo qué dirección se anuncia en los vídeos.
+   · Si GitHub tampoco es accesible, baja el zip del repositorio en otro sitio y descomprímelo en la carpeta «juegos».
+3. Preguntar una vez y repetir en bucle: cada .bat llama primero a
+      Game2Video --preguntar opciones\x.txt web=https://...,idioma=ambos,desde=1,hasta=20,gancho,final,cta,extra
+   que pregunta solo esas opciones (Enter = el valor entre corchetes, que es el de la vez anterior o el de serie; * = volver
+   al de serie; - = vacío) y las guarda en opciones\x.txt. Luego el bucle llama a
+      Game2Video --opciones opciones\x.txt --puzles %%p
+   sin preguntar nada. Lo que vaya detrás de --opciones manda sobre el archivo (p. ej. --serie 5). El archivo se puede editar
+   a mano (una opción y su valor por línea). Claves que se pueden preguntar: web idioma formato desde hasta serie espera
+   gancho pregunta final cta extra siguenos url solo duracion jugadas lectura musica paralelo salida.
+4. .bat de ejemplo:
+   01_educativos_1_pregunta.bat       todos los packs educativos, una pregunta por vídeo
+   02_educativos_5_preguntas.bat      todos los packs, cinco preguntas por vídeo (de fácil a genio)
+   03_mates.bat                       problemas, emojimates, calculo, balanza
+   04_lengua_e_ingles.bat             ortografia, ingles, spelling
+   05_secuencias_1_y_5.bat            secuencias de una y de cinco preguntas
+   06_retos_juegos.bat                atasco, jarras, ranas, apagon, clavijas
+   07_cerillas.bat                    los 269 retos de cerillas
+   08_tutoriales_solitarios.bat       «cómo se juega» de los solitarios
+   09_demos_juegos.bat                demos de los juegos de una web
+   10_educativos_vertical_y_horizontal.bat   los dos formatos a la vez
+   11_repetir_sin_preguntar.bat       con las opciones guardadas, sin preguntar (para tareas programadas)
+   12_un_pack_a_elegir.bat            eliges pack o juego y luego sus opciones
+   13_probar_un_video.bat             un vídeo de prueba, sin preguntar
+   14_desde_la_web_online.bat         como 01 pero cargando de la web (--online)
+   actualizar_juegos.bat · compilar.bat
+5. Música de fondo: pon canciones en la carpeta «mimusica» (una al azar por vídeo).
+
 ArcadeRecorder · vídeos con la demo de cada juego (programa C#)
 ================================================================
 

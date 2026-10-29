@@ -40,7 +40,20 @@
 //   Textos (todos admiten «español | english»): --gancho (entrada) · --pregunta · --final (titular del cierre) · --cta · --extra
 //   («-» = ninguna) · --siguenos (cerillas y retos del motor)
 //   El .txt para publicar lo escribe la propia página (info.caption) si lo trae.
+//
+// Sin conexión (por defecto): los juegos se cargan de una copia local con un servidor propio en 127.0.0.1, sin pasar por el
+// proxy. La primera vez se bajan de GitHub (solo pwa/ y educativos/, unos 15 MB) a la carpeta «juegos».
+//   --local carpeta   otra copia (p. ej. un git clone del repositorio) · --actualizar   vuelve a bajarla (o git pull)
+//   --solo-bajar      solo baja/actualiza la copia y sale · --online   graba de la web de verdad (--web) como antes
+//   --web sigue diciendo qué dirección se anuncia en los vídeos y en los textos.
+// Preguntar una vez y repetir en bucle (para los .bat):
+//   Game2Video --preguntar opciones\x.txt web,idioma,desde,hasta=20,gancho,cta   pregunta esas opciones (con su valor por
+//   defecto o el de la vez anterior) y las guarda · Game2Video --opciones opciones\x.txt --puzles calculo   las usa sin
+//   preguntar (también vale @opciones\x.txt). Las opciones que van detrás mandan sobre las del archivo.
 using System.Diagnostics;
+using System.IO.Compression;
+using System.Net;
+using System.Net.Sockets;
 using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
@@ -55,8 +68,10 @@ static class Program
         Console.OutputEncoding = Encoding.UTF8;
         bool interactive = argv.Length == 0;
         if (interactive) argv = Ask.Run();   // sin argumentos: pregunta por consola (y recuerda las respuestas)
+        try { Console.InputEncoding = Encoding.UTF8; } catch { }
         var o = Options.Parse(argv);
         if (o == null) { Options.Help(); if (interactive) Ask.Pause(); return 1; }
+        if (o.AskFile != null) return Ask.ToFile(o.AskFile, o.AskSpec);   // --preguntar: solo pregunta y guarda las respuestas
         int rc;
         try { rc = await Run(o); }
         catch (Exception e) { Console.WriteLine("Error: " + e.Message); rc = 1; }
@@ -69,20 +84,64 @@ static class Program
         Directory.CreateDirectory(o.Out);
         if (o.Music != null) Console.WriteLine(Directory.Exists(o.Music) ? $"Música de fondo: una canción al azar de {o.Music} ({Directory.GetFiles(o.Music).Count(f => Regex.IsMatch(f, @"\.(mp3|m4a|aac|ogg|wav|flac)$", RegexOptions.IgnoreCase))} canciones)" : $"Música de fondo: {o.Music}");
 
-        if (o.Puzzles != null) return await RunPuzzles(o);
-        if (o.Tutorials) return await RunTutorials(o);
-
-        // 1. juegos del sitemap: las direcciones /<id>/es y /<id>/en son las de jugar (las fichas son /juego/<id>)
-        Console.WriteLine($"Sitemap: {o.Sitemap}");
-        using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(60) };
-        http.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 ArcadeRecorder/1.0");
-        string xml = await http.GetStringAsync(o.Sitemap);
-        var games = new List<(string Base, string Id)>();
-        foreach (Match m in Regex.Matches(xml, @"<loc>\s*(https?://[^<\s]+?)/([a-z0-9][a-z0-9-]*)/(es|en)\s*</loc>"))
+        // sin --online, los juegos se cargan de una copia local (bajada de GitHub la primera vez) con un servidor en 127.0.0.1:
+        // no hace falta conexión ni pasar por el proxy; --web solo dice qué dirección se anuncia en los vídeos
+        LocalServer? srv = null;
+        if (!o.Online)
         {
-            var (b, id) = (m.Groups[1].Value, m.Groups[2].Value);
-            if (!games.Any(g => g.Id == id)) games.Add((b, id));
+            var dir = await LocalCopy.Ensure(o);
+            if (o.OnlyDownload) { Console.WriteLine($"Juegos listos en {dir}"); return 0; }
+            srv = LocalServer.Start(dir); o.LocalDir = dir; o.LocalBase = $"http://127.0.0.1:{srv.Port}";
+            Console.WriteLine($"Juegos en local: {dir} → {o.LocalBase}");
         }
+        try
+        {
+            if (o.Puzzles != null) return await RunPuzzles(o);
+            if (o.Tutorials) return await RunTutorials(o);
+            return await RunDemos(o);
+        }
+        finally { srv?.Stop(); }
+    }
+
+    // juegos de la web: los del sitemap (/<id>/es y /<id>/en son las de jugar); en local, si no se llega al sitemap, todos los de la copia
+    static async Task<List<(string Base, string Id)>> GetGames(Options o)
+    {
+        var games = new List<(string Base, string Id)>();
+        var web = new Uri(o.Sitemap).GetLeftPart(UriPartial.Authority);
+        try
+        {
+            Console.WriteLine($"Sitemap: {o.Sitemap}");
+            using var http = new HttpClient(Net.Handler()) { Timeout = TimeSpan.FromSeconds(o.LocalDir != null ? 15 : 60) };
+            http.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 ArcadeRecorder/1.0");
+            string xml = await http.GetStringAsync(o.Sitemap);
+            foreach (Match m in Regex.Matches(xml, @"<loc>\s*(https?://[^<\s]+?)/([a-z0-9][a-z0-9-]*)/(es|en)\s*</loc>"))
+            {
+                var (b, id) = (m.Groups[1].Value, m.Groups[2].Value);
+                if (!games.Any(g => g.Id == id)) games.Add((b, id));
+            }
+        }
+        catch (Exception e)
+        {
+            if (o.LocalDir == null) throw;
+            Console.WriteLine($"  (no se llega al sitemap: {e.Message.Split('\n')[0]} · se usan todos los juegos de la copia local; filtra con --solo)");
+        }
+        if (o.LocalDir != null)
+        {
+            var pwa = Path.Combine(o.LocalDir, "pwa");
+            if (games.Count == 0)
+                foreach (var f in Directory.GetFiles(pwa, "*.html").OrderBy(f => f))
+                { var id = Path.GetFileNameWithoutExtension(f); if (Regex.IsMatch(id, "^[a-z0-9-]+$") && !id.StartsWith("index")) { var h = File.ReadAllText(f); if (h.Contains("Arcade.game(") || h.Contains("Arcade.paciencia(")) games.Add((web, id)); } }
+            games = games.Where(g => File.Exists(Path.Combine(pwa, g.Id + ".html"))).ToList();   // los que no son del motor (educativos aparte) no se pueden grabar
+        }
+        return games;
+    }
+
+    // dirección de un juego: en la web /<id>/<idioma>; en local, pwa/<id>.html?lang=<idioma>. Acaba en «?» o «&», lista para los parámetros
+    public static string GameUrl(Options o, string web, string id, string lang) => o.LocalBase != null ? $"{o.LocalBase}/pwa/{id}.html?lang={lang}&" : $"{web}/{id}/{lang}?";
+
+    static async Task<int> RunDemos(Options o)
+    {
+        var games = await GetGames(o);
         if (o.Only.Count > 0) games = games.Where(g => o.Only.Contains(g.Id)).ToList();
         if (o.Max > 0) games = games.Take(o.Max).ToList();
         Console.WriteLine($"{games.Count} juegos");
@@ -100,7 +159,7 @@ static class Program
         if (jobs.Count == 0) return 0;
 
         // 2. Chrome sin ventana con el puerto de depuración
-        using var chrome = await Chrome.Start(o.ChromePath);
+        using var chrome = await Chrome.Start(o.ChromePath, o.LocalBase != null);
         return await RunJobs(chrome, o, jobs);
     }
 
@@ -109,7 +168,7 @@ static class Program
     static async Task<int> RunPuzzles(Options o)
     {
         var baseUrl = new Uri(o.Sitemap).GetLeftPart(UriPartial.Authority);
-        using var chrome = await Chrome.Start(o.ChromePath);
+        using var chrome = await Chrome.Start(o.ChromePath, o.LocalBase != null);
         int count;
         await using (var page = await chrome.NewPage())
         {
@@ -139,23 +198,16 @@ static class Program
     /* modo tutoriales (--tutoriales): un vídeo «cómo se juega» por cada solitario del sitemap */
     static async Task<int> RunTutorials(Options o)
     {
-        Console.WriteLine($"Sitemap: {o.Sitemap}");
-        using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(60) };
+        var games = await GetGames(o);
+        using var http = new HttpClient(Net.Handler()) { Timeout = TimeSpan.FromSeconds(60) };
         http.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 ArcadeRecorder/1.0");
-        string xml = await http.GetStringAsync(o.Sitemap);
-        var games = new List<(string Base, string Id)>();
-        foreach (Match m in Regex.Matches(xml, @"<loc>\s*(https?://[^<\s]+?)/([a-z0-9][a-z0-9-]*)/(es|en)\s*</loc>"))
-        {
-            var (b, id) = (m.Groups[1].Value, m.Groups[2].Value);
-            if (!games.Any(g => g.Id == id)) games.Add((b, id));
-        }
         if (o.Only.Count > 0) games = games.Where(g => o.Only.Contains(g.Id)).ToList();
         // solo los solitarios: su página usa el motor de solitarios (Arcade.paciencia, en cartas.js); la escoba, la brisca… no
         var soli = new List<(string Base, string Id)>(); var sem = new SemaphoreSlim(8);
         await Task.WhenAll(games.Select(async g =>
         {
             await sem.WaitAsync();
-            try { var html = await http.GetStringAsync($"{g.Base}/{g.Id}/es"); if (html.Contains("cartas.js") && html.Contains("Arcade.paciencia")) lock (soli) soli.Add(g); }
+            try { var html = o.LocalDir != null ? await File.ReadAllTextAsync(Path.Combine(o.LocalDir, "pwa", g.Id + ".html")) : await http.GetStringAsync($"{g.Base}/{g.Id}/es"); if (html.Contains("cartas.js") && html.Contains("Arcade.paciencia")) lock (soli) soli.Add(g); }
             catch { }
             finally { sem.Release(); }
         }));
@@ -172,7 +224,7 @@ static class Program
         }
         Console.WriteLine($"{jobs.Count} vídeos por grabar");
         if (jobs.Count == 0) return 0;
-        using var chrome = await Chrome.Start(o.ChromePath);
+        using var chrome = await Chrome.Start(o.ChromePath, o.LocalBase != null);
         return await RunJobs(chrome, o, jobs);
     }
 
@@ -183,8 +235,10 @@ static class Program
     static string PuzzleUrl(Options o, string baseUrl, string lang, int q, string? extra = null)
     {
         var page = o.Page ?? (Pages.TryGetValue(o.Puzzles!, out var pg) ? pg : null);
-        var u = page != null ? baseUrl.TrimEnd('/') + "/" + page.TrimStart('/').Replace("{lang}", lang).Replace("{id}", o.Puzzles) : $"{baseUrl}/{o.Puzzles}/{lang}";
-        u += (u.Contains('?') ? "&" : "?") + $"rec=1&quiz={q}";
+        var root = o.LocalBase ?? baseUrl.TrimEnd('/');
+        var u = page != null ? root + "/" + page.TrimStart('/').Replace("{lang}", lang).Replace("{id}", o.Puzzles) : GameUrl(o, baseUrl, o.Puzzles!, lang);
+        if (!u.EndsWith("?") && !u.EndsWith("&")) u += u.Contains('?') ? "&" : "?";
+        u += $"rec=1&quiz={q}";
         if (o.Set > 1) u += "&set=" + o.Set;
         return u + (extra ?? "");
     }
@@ -231,7 +285,7 @@ static class Program
         string url;
         if (j.Tut)
         {
-            url = $"{j.Base}/{j.Id}/{j.Lang}?rec=1&fps={o.Fps}&tut=1&moves={o.Moves}&read={o.Read.ToString(inv)}&site={E(host)}&url={E(TutorialUrl(o, j))}";
+            url = GameUrl(o, j.Base, j.Id, j.Lang) + $"rec=1&fps={o.Fps}&tut=1&moves={o.Moves}&read={o.Read.ToString(inv)}&site={E(host)}&url={E(TutorialUrl(o, j))}";
             if (o.TutOutro > 0) url += "&outro=" + o.TutOutro.ToString(inv);
             foreach (var (k, v) in new[] { ("hook", o.Hook), ("cta", o.Cta), ("extra", o.Extra) })
                 if (v != null) url += $"&{k}=" + E(v == "-" ? "" : Lang(v, j.Lang));
@@ -245,7 +299,7 @@ static class Program
                 if (v != null) extra += $"&{k}=" + E(v == "-" ? "" : Lang(v, j.Lang));
             url = PuzzleUrl(o, j.Base, j.Lang, j.Quiz, extra);
         }
-        else url = $"{j.Base}/{j.Id}/{j.Lang}?rec=1&fps={o.Fps}&dur={o.Duration}&intro={o.Intro}&outro={o.Outro}&site={E(host)}";
+        else url = GameUrl(o, j.Base, j.Id, j.Lang) + $"rec=1&fps={o.Fps}&dur={o.Duration}&intro={o.Intro}&outro={o.Outro}&site={E(host)}";
         await using var page = await chrome.NewPage();
         await page.Send("Page.enable");
         await page.Send("Emulation.setDeviceMetricsOverride", new { width = w, height = h, deviceScaleFactor = 2, mobile = vertical });
@@ -343,6 +397,75 @@ static class Program
 /* ───────────── modo preguntas (al abrirlo sin argumentos, p. ej. con doble clic o F5) ───────────── */
 static class Ask
 {
+    /* --preguntar <archivo> [clave,clave=defecto,…]: pregunta por consola solo esas opciones (con su valor por defecto, o el que
+       se contestó la vez anterior) y las guarda en el archivo, un argumento por línea. Luego, en el bucle del .bat, cada
+       llamada usa «@archivo» y ya no pregunta. Enter = deja el valor · * = vuelve al de serie · - = vacío (en los textos). */
+    static readonly (string Key, string Opt, string Text, string Def)[] Questions =
+    {
+        ("web", "--web", "Web que se anuncia en los vídeos (y de la que se graba con --online)", "https://educativos.juegosboom.com"),
+        ("idioma", "--idioma", "Idioma: es / en / ambos", "ambos"),
+        ("formato", "--formato", "Formato: vertical / horizontal / ambos", "vertical"),
+        ("desde", "--desde", "Desde el reto número", "1"),
+        ("hasta", "--hasta", "Hasta el reto número", "20"),
+        ("serie", "--serie", "Preguntas por vídeo en los educativos: 1 o 5", "1"),
+        ("espera", "--espera", "Segundos para pensar (vacío = los de cada juego)", ""),
+        ("gancho", "--gancho", "Texto de la entrada, p. ej. «EL 90 % NO LO SABE 🤯 | 90% DON'T KNOW THIS 🤯» (vacío = el de cada juego)", ""),
+        ("pregunta", "--pregunta", "Texto de la pregunta (vacío = el de cada juego)", ""),
+        ("final", "--final", "Titular del cierre, p. ej. «¿LO HAS ACERTADO? | DID YOU GET IT?» (vacío = el de serie)", ""),
+        ("cta", "--cta", "Frase del cierre (vacío = la de serie)", ""),
+        ("extra", "--extra", "Línea final (vacío = la de serie; - = ninguna)", ""),
+        ("siguenos", "--siguenos", "«Síguenos…» de Cerillas y retos del motor (vacío = el de serie; - = ninguno)", ""),
+        ("url", "--url-juego", "Dirección que se anuncia, con {host} {id} (vacío = la de cada juego)", ""),
+        ("solo", "--solo", "Juegos concretos, separados por comas (vacío = todos)", ""),
+        ("duracion", "--duracion", "Segundos por vídeo (demos)", "75"),
+        ("jugadas", "--jugadas", "Jugadas de ejemplo (tutoriales)", "6"),
+        ("lectura", "--lectura", "Velocidad de lectura (tutoriales: 1 = normal, 1.3 = más despacio)", "1"),
+        ("musica", "--musica", "Música: archivo o carpeta (vacío = la carpeta mimusica si existe; no = sin música)", ""),
+        ("paralelo", "--paralelo", "Vídeos a la vez", "2"),
+        ("salida", "--salida", "Carpeta de salida", "videos"),
+    };
+
+    public static int ToFile(string file, string? spec)
+    {
+        // lo que había en el archivo (respuestas anteriores)
+        var prev = new Dictionary<string, string?>(); var order = new List<string>();
+        if (File.Exists(file))
+        {
+            var ls = File.ReadAllLines(file, Encoding.UTF8).Select(l => l.TrimEnd('\r')).Where(l => l.Trim() != "" && !l.TrimStart().StartsWith("#")).ToList();
+            for (int i = 0; i < ls.Count; i++)
+                if (ls[i].StartsWith("--")) { var k = ls[i]; string? v = i + 1 < ls.Count && !ls[i + 1].StartsWith("--") ? ls[++i] : null; prev[k] = v; if (!order.Contains(k)) order.Add(k); }
+        }
+        var asked = (spec ?? "web,idioma,desde,hasta,gancho,final,cta,extra").Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        bool tty = !Console.IsInputRedirected;
+        Console.WriteLine($"Opciones para {Path.GetFileName(file)} (Enter = lo que sale entre corchetes · * = el de serie · - = vacío)");
+        foreach (var item in asked)
+        {
+            var kv = item.Split('=', 2); var key = kv[0].ToLowerInvariant();
+            var q = Questions.FirstOrDefault(x => x.Key == key);
+            if (q.Key == null) { Console.WriteLine($"  (no conozco «{key}»; puedo preguntar: {string.Join(", ", Questions.Select(x => x.Key))})"); continue; }
+            var def = kv.Length > 1 ? kv[1] : q.Def;
+            bool noMusic = key == "musica" && prev.ContainsKey("--sin-musica");
+            var cur = noMusic ? "no" : prev.TryGetValue(q.Opt, out var pv) && pv != null ? pv : def;
+            string ans = cur;
+            if (tty)
+            {
+                Console.Write($"{q.Text} [{(cur == "" ? "de serie" : cur)}]: ");
+                var r = (Console.ReadLine() ?? "").Trim();
+                if (r == "*") ans = def; else if (r != "") ans = r;
+            }
+            prev.Remove(q.Opt); order.Remove(q.Opt); if (key == "musica") { prev.Remove("--sin-musica"); order.Remove("--sin-musica"); }
+            if (key == "musica" && ans.Equals("no", StringComparison.OrdinalIgnoreCase)) { prev["--sin-musica"] = null; order.Add("--sin-musica"); }
+            else if (ans != "") { prev[q.Opt] = ans; order.Add(q.Opt); }
+        }
+        var sb = new StringBuilder();
+        sb.AppendLine("# Opciones de Game2Video guardadas con --preguntar. Se usan con --opciones " + file + " (una opción y su valor por línea).");
+        sb.AppendLine("# Se puede editar a mano; las líneas que empiezan por # no cuentan.");
+        foreach (var k in order) { sb.AppendLine(k); if (prev[k] != null) sb.AppendLine(prev[k]); }
+        File.WriteAllText(file, sb.ToString(), new UTF8Encoding(false));
+        Console.WriteLine($"Guardado en {file}\n");
+        return 0;
+    }
+
     const string File_ = "ArcadeRecorder.respuestas.json";
     static Dictionary<string, string> last = new();
 
@@ -419,11 +542,27 @@ class Options
     public int Duration = 75, Fps = 30, Intro = 3, Outro = 4, Parallel = 1, Crf = 21, Max = 0, JpegQuality = 90;
     public bool Redo; public string? Music, ChromePath, FfmpegPath = "ffmpeg"; public HashSet<string> Only = new();
     public bool Tutorials; public int Moves = 6; public double Read = 1, TutOutro = 0; public string UrlTemplate = "{host}/{id}"; public bool UrlSet; public string? Page; public int Set = 1; public string? Hook, Cta, Extra, CaptionTemplate, Ask, End, Follow; public bool NoMusic;
+    public bool Online, Update, OnlyDownload; public string? LocalDir, LocalBase, AskFile, AskSpec; public string Repo = "https://codeload.github.com/juliofuente/retrogames/zip/refs/heads/main";
     readonly Random rnd = new();
+
+    // «@archivo»: mete los argumentos guardados en ese archivo (uno por línea; # = comentario), p. ej. los de --preguntar
+    public static string[] Expand(string[] a)
+    {
+        var r = new List<string>();
+        for (int i = 0; i < a.Length; i++)
+        {
+            string? f = a[i] == "--opciones" && i + 1 < a.Length ? a[++i] : a[i].StartsWith("@") && a[i].Length > 1 ? a[i][1..] : null;
+            if (f == null) { r.Add(a[i]); continue; }
+            if (!File.Exists(f)) throw new ArgumentException("no existe el archivo de opciones " + f + " (se crea con --preguntar)");
+            r.AddRange(File.ReadAllLines(f, Encoding.UTF8).Select(l => l.TrimEnd('\r')).Where(l => l.Trim() != "" && !l.TrimStart().StartsWith("#")));
+        }
+        return r.ToArray();
+    }
 
     public static Options? Parse(string[] a)
     {
         var o = new Options();
+        try { a = Expand(a); } catch (Exception e) { Console.WriteLine(e.Message); return null; }
         for (int i = 0; i < a.Length; i++)
         {
             string k = a[i];
@@ -431,7 +570,13 @@ class Options
             switch (k)
             {
                 case "--sitemap": o.Sitemap = v(); break;
-                case "--web": o.Sitemap = v().TrimEnd('/') + "/sitemap.xml"; break;
+                case "--web": { var w = v().Trim().TrimEnd('/'); if (!w.StartsWith("http")) w = "https://" + w; o.Sitemap = w + "/sitemap.xml"; break; }
+                case "--online": o.Online = true; break;
+                case "--local": o.LocalDir = i + 1 < a.Length && !a[i + 1].StartsWith("--") ? a[++i] : null; o.Online = false; break;
+                case "--actualizar": o.Update = true; break;
+                case "--solo-bajar": o.Update = true; o.OnlyDownload = true; o.Online = false; break;
+                case "--repo": o.Repo = v(); break;
+                case "--preguntar": o.AskFile = v(); if (i + 1 < a.Length && !a[i + 1].StartsWith("--")) o.AskSpec = a[++i]; break;
                 case "--salida": o.Out = v(); break;
                 case "--puzles": o.Puzzles = v(); break;
                 case "--tutoriales": o.Tutorials = true; break;
@@ -478,16 +623,20 @@ class Options
         else if (o.Music == null)
             foreach (var d in new[] { Directory.GetCurrentDirectory(), AppContext.BaseDirectory, Path.Combine(AppContext.BaseDirectory, "..", "..", "..") })
                 if (Directory.Exists(Path.Combine(d, "mimusica"))) { o.Music = Path.GetFullPath(Path.Combine(d, "mimusica")); break; }
+        if (o.AskFile != null) return o;
+        if (o.OnlyDownload && o.Sitemap == "") o.Sitemap = "https://juegosboom.com/sitemap.xml";
         if (o.Sitemap == "" || o.Langs.Any(l => l != "es" && l != "en") || o.Formats.Any(f => f != "vertical" && f != "horizontal")) return null;
         return o;
     }
-    public static void Help() => Console.WriteLine("Uso: ArcadeRecorder --sitemap https://tu-web/sitemap.xml [--salida videos] [--idioma es|en|ambos] [--formato vertical|horizontal|ambos]\n" +
+    public static void Help() => Console.WriteLine("Uso: Game2Video --sitemap https://tu-web/sitemap.xml [--salida videos] [--idioma es|en|ambos] [--formato vertical|horizontal|ambos]\n" +
         "       [--duracion 75] [--fps 30] [--intro 3] [--outro 4] [--musica archivo|carpeta] [--solo id1,id2] [--max N] [--rehacer]\n" +
         "       [--paralelo N] [--calidad 21] [--chrome ruta] [--ffmpeg ruta]\n" +
-        "Retos (un vídeo por problema): ArcadeRecorder --web https://mobilehits.juegosboom.com --puzles cerillas|atasco|jarras|ranas|apagon|clavijas [--espera 45] [--desde 1] [--hasta 269]\n" +
-        "Educativos: ArcadeRecorder --web https://educativos.juegosboom.com --puzles secuencias|problemas|emojimates|calculo|balanza|ortografia|spelling|ingles [--serie 5] [--desde 1] [--hasta 30]\n" +
+        "Retos (un vídeo por problema): Game2Video --web https://mobilehits.juegosboom.com --puzles cerillas|atasco|jarras|ranas|apagon|clavijas [--espera 45] [--desde 1] [--hasta 269]\n" +
+        "Educativos: Game2Video --web https://educativos.juegosboom.com --puzles secuencias|problemas|emojimates|calculo|balanza|ortografia|spelling|ingles [--serie 5] [--desde 1] [--hasta 30]\n" +
         "Textos: --gancho --pregunta --final --cta --extra --siguenos (\"español | english\") · Música: carpeta mimusica, --musica, --sin-musica\n" +
-        "Tutoriales de solitarios: ArcadeRecorder --web https://solitarios.juegosboom.com --tutoriales [--idioma ambos] [--jugadas 6] [--lectura 1]\n" +
+        "Sin conexión (por defecto): copia local en «juegos» (de GitHub) · --local carpeta · --actualizar · --solo-bajar · --online = desde la web\n" +
+        "Preguntar una vez: Game2Video --preguntar opciones.txt web,idioma,desde,hasta,gancho,cta  ·  luego: Game2Video --opciones opciones.txt --puzles calculo\n" +
+        "Tutoriales de solitarios: Game2Video --web https://solitarios.juegosboom.com --tutoriales [--idioma ambos] [--jugadas 6] [--lectura 1]\n" +
         "       [--url-juego \"{host}/{id}\"] [--gancho \"es | en\"] [--cta \"es | en\"] [--extra \"es | en\"] [--texto \"plantilla\"] [--outro-tutorial 5.5]");
     public string? PickMusic()
     {
@@ -576,7 +725,7 @@ sealed class Chrome : IDisposable
 {
     Process proc = null!; string dataDir = ""; public int Port; public string UserAgent = ""; Cdp browser = null!;
 
-    public static async Task<Chrome> Start(string? path)
+    public static async Task<Chrome> Start(string? path, bool noProxy = false)
     {
         path ??= Find() ?? throw new Exception("No encuentro Chrome: indícalo con --chrome <ruta al ejecutable>");
         var c = new Chrome { dataDir = Path.Combine(Path.GetTempPath(), "arcrec-" + Guid.NewGuid().ToString("N")[..8]) };
@@ -587,6 +736,7 @@ sealed class Chrome : IDisposable
                  "--disable-backgrounding-occluded-windows", "--autoplay-policy=no-user-gesture-required", "--force-color-profile=srgb", "about:blank" })
             psi.ArgumentList.Add(x);
         if (OperatingSystem.IsLinux() && Environment.UserName == "root") psi.ArgumentList.Insert(0, "--no-sandbox");
+        if (noProxy) psi.ArgumentList.Insert(0, "--no-proxy-server");   // en local no hace falta salir a internet: así no lo frena el proxy de la oficina
         c.proc = Process.Start(psi) ?? throw new Exception("no se pudo arrancar Chrome");
         c.proc.ErrorDataReceived += (_, _) => { }; c.proc.BeginErrorReadLine(); c.proc.OutputDataReceived += (_, _) => { }; c.proc.BeginOutputReadLine();
         var portFile = Path.Combine(c.dataDir, "DevToolsActivePort");
@@ -594,7 +744,7 @@ sealed class Chrome : IDisposable
         if (!File.Exists(portFile)) throw new Exception("Chrome no abrió el puerto de depuración");
         await Task.Delay(100);
         c.Port = int.Parse(File.ReadAllLines(portFile)[0].Trim());
-        using var http = new HttpClient();
+        using var http = new HttpClient(new HttpClientHandler { UseProxy = false });   // 127.0.0.1: nunca por el proxy
         var ver = JsonDocument.Parse(await http.GetStringAsync($"http://127.0.0.1:{c.Port}/json/version")).RootElement;
         c.UserAgent = (ver.GetProperty("User-Agent").GetString() ?? "").Replace("HeadlessChrome", "Chrome");
         c.browser = await Cdp.Connect(ver.GetProperty("webSocketDebuggerUrl").GetString()!);
@@ -635,7 +785,8 @@ sealed class Chrome : IDisposable
 /* cliente mínimo del protocolo DevTools: comandos con id y respuestas; los eventos se ignoran */
 sealed class Cdp : IAsyncDisposable
 {
-    readonly ClientWebSocket ws = new(); int nextId;
+    readonly ClientWebSocket ws = NewWs(); int nextId;
+    static ClientWebSocket NewWs() { var w = new ClientWebSocket(); w.Options.Proxy = null; return w; }   // 127.0.0.1: nunca por el proxy
     readonly Dictionary<int, TaskCompletionSource<JsonElement>> pending = new();
     readonly SemaphoreSlim sendLock = new(1, 1); Task? loop; public Func<Task>? OnDispose;
 
@@ -694,5 +845,116 @@ sealed class Cdp : IAsyncDisposable
         if (OnDispose != null) await OnDispose();
         try { if (ws.State == WebSocketState.Open) await ws.CloseAsync(WebSocketCloseStatus.NormalClosure, "", CancellationToken.None); } catch { }
         ws.Dispose();
+    }
+}
+
+/* ───────────── red: proxy del sistema con el usuario de Windows (proxies de oficina) ───────────── */
+static class Net
+{
+    public static HttpClientHandler Handler() => new() { DefaultProxyCredentials = CredentialCache.DefaultCredentials };
+}
+
+/* ───────────── copia local de los juegos (pwa/ y educativos/ del repositorio de GitHub) ───────────── */
+static class LocalCopy
+{
+    public static async Task<string> Ensure(Options o)
+    {
+        var dir = Path.GetFullPath(o.LocalDir ?? "juegos");
+        bool ok = File.Exists(Path.Combine(dir, "pwa", "common.js")) && Directory.Exists(Path.Combine(dir, "educativos"));
+        if (ok && !o.Update) return dir;
+        if (Directory.Exists(Path.Combine(dir, ".git")))   // una copia hecha con git clone: se actualiza con git pull
+        {
+            Console.WriteLine($"Actualizando {dir} con git pull…");
+            try { using var p = Process.Start(new ProcessStartInfo("git", $"-C \"{dir}\" pull --ff-only") { UseShellExecute = false })!; await p.WaitForExitAsync(); } catch (Exception e) { Console.WriteLine("  git: " + e.Message); }
+            if (File.Exists(Path.Combine(dir, "pwa", "common.js"))) return dir;
+        }
+        Console.WriteLine($"Bajando los juegos de GitHub a {dir} (solo pwa/ y educativos/; la primera vez o con --actualizar)…");
+        var zip = Path.Combine(Path.GetTempPath(), "game2video-" + Guid.NewGuid().ToString("N")[..8] + ".zip");
+        try
+        {
+            using (var http = new HttpClient(Net.Handler()) { Timeout = TimeSpan.FromMinutes(15) })
+            {
+                http.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 Game2Video/1.0");
+                using var resp = await http.GetAsync(o.Repo, HttpCompletionOption.ResponseHeadersRead);
+                resp.EnsureSuccessStatusCode();
+                await using var src = await resp.Content.ReadAsStreamAsync();
+                await using var dst = File.Create(zip);
+                var buf = new byte[1 << 16]; long n = 0, last = 0; int r;
+                while ((r = await src.ReadAsync(buf)) > 0) { await dst.WriteAsync(buf.AsMemory(0, r)); n += r; if (n - last > 5 << 20) { last = n; Console.WriteLine($"   {n >> 20} MB…"); } }
+            }
+            using var za = ZipFile.OpenRead(zip);
+            foreach (var sub in new[] { "pwa", "educativos" }) { var d = Path.Combine(dir, sub); if (Directory.Exists(d)) Directory.Delete(d, true); }
+            int files = 0;
+            foreach (var e in za.Entries)
+            {
+                var slash = e.FullName.IndexOf('/'); if (slash < 0) continue;
+                var rel = e.FullName[(slash + 1)..];
+                if (rel == "" || rel.EndsWith("/") || !(rel.StartsWith("pwa/") || rel.StartsWith("educativos/")) || rel.StartsWith("pwa/capturas/")) continue;
+                var target = Path.GetFullPath(Path.Combine(dir, rel));
+                if (!target.StartsWith(dir)) continue;
+                Directory.CreateDirectory(Path.GetDirectoryName(target)!);
+                e.ExtractToFile(target, true); files++;
+            }
+            File.WriteAllText(Path.Combine(dir, "ACTUALIZADO.txt"), $"Bajado de {o.Repo}\n{DateTime.Now:yyyy-MM-dd HH:mm}\n{files} archivos\n");
+            Console.WriteLine($"  ✓ {files} archivos");
+            return dir;
+        }
+        catch (Exception e)
+        {
+            if (ok) { Console.WriteLine($"  (no se pudo actualizar: {e.Message}; se usa la copia que ya había)"); return dir; }
+            throw new Exception($"no se pudieron bajar los juegos de GitHub ({e.Message}). Alternativas: bájalos tú (git clone https://github.com/juliofuente/retrogames) y usa --local <carpeta>, o graba de la web con --online");
+        }
+        finally { try { File.Delete(zip); } catch { } }
+    }
+}
+
+/* ───────────── servidor web mínimo en 127.0.0.1 para la copia local (como el .htaccess: /ruta → /ruta.html) ───────────── */
+sealed class LocalServer
+{
+    TcpListener l = null!; string root = ""; public int Port; volatile bool stop;
+    static readonly Dictionary<string, string> Types = new(StringComparer.OrdinalIgnoreCase)
+    {
+        [".html"] = "text/html; charset=utf-8", [".js"] = "text/javascript; charset=utf-8", [".css"] = "text/css; charset=utf-8", [".json"] = "application/json",
+        [".webmanifest"] = "application/manifest+json", [".svg"] = "image/svg+xml", [".png"] = "image/png", [".webp"] = "image/webp", [".jpg"] = "image/jpeg",
+        [".ico"] = "image/x-icon", [".woff2"] = "font/woff2", [".woff"] = "font/woff", [".ttf"] = "font/ttf", [".mp3"] = "audio/mpeg", [".ogg"] = "audio/ogg", [".wav"] = "audio/wav", [".txt"] = "text/plain; charset=utf-8",
+    };
+    public static LocalServer Start(string root)
+    {
+        var s = new LocalServer { root = Path.GetFullPath(root) };
+        s.l = new TcpListener(IPAddress.Loopback, 0); s.l.Start(); s.Port = ((IPEndPoint)s.l.LocalEndpoint).Port;
+        _ = Task.Run(s.Loop);
+        return s;
+    }
+    public void Stop() { stop = true; try { l.Stop(); } catch { } }
+    async Task Loop()
+    {
+        while (!stop)
+        {
+            TcpClient c; try { c = await l.AcceptTcpClientAsync(); } catch { return; }
+            _ = Task.Run(() => Handle(c));
+        }
+    }
+    async Task Handle(TcpClient c)
+    {
+        using (c)
+        try
+        {
+            var st = c.GetStream(); var buf = new byte[16384]; int n = 0;
+            while (n < buf.Length) { int r = await st.ReadAsync(buf.AsMemory(n)); if (r <= 0) break; n += r; if (Encoding.ASCII.GetString(buf, 0, n).Contains("\r\n\r\n")) break; }
+            var head = Encoding.ASCII.GetString(buf, 0, n); var first = head.Split("\r\n")[0].Split(' ');
+            if (first.Length < 2) return;
+            var path = Uri.UnescapeDataString(first[1].Split('?', '#')[0]);
+            var file = Path.GetFullPath(Path.Combine(root, path.TrimStart('/').Replace('/', Path.DirectorySeparatorChar)));
+            if (!file.StartsWith(root)) file = "";
+            if (file != "" && Directory.Exists(file)) file = Path.Combine(file, "index.html");
+            if (file != "" && !File.Exists(file) && File.Exists(file + ".html")) file += ".html";
+            byte[] body; string status, type;
+            if (file != "" && File.Exists(file)) { body = await File.ReadAllBytesAsync(file); status = "200 OK"; type = Types.TryGetValue(Path.GetExtension(file), out var tt) ? tt : "application/octet-stream"; }
+            else { body = Encoding.UTF8.GetBytes("404"); status = "404 Not Found"; type = "text/plain"; }
+            var hdr = Encoding.ASCII.GetBytes($"HTTP/1.1 {status}\r\nContent-Type: {type}\r\nContent-Length: {body.Length}\r\nCache-Control: no-store\r\nConnection: close\r\n\r\n");
+            await st.WriteAsync(hdr);
+            if (first[0] != "HEAD") await st.WriteAsync(body);
+        }
+        catch { }
     }
 }

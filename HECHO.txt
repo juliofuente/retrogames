@@ -1,6 +1,10 @@
 ARCADE PERDIDO + ARCADE PRO — LO QUE ESTÁ HECHO
 ================================================
 Fecha: 20-10-2026 · Versión de la PWA (games.js → ARCADE_VERSION): 2.36.0
+· Grabador → Game2Video: funciona sin conexión (copia local de pwa/ y educativos/ bajada de GitHub a «juegos» y servida en
+  127.0.0.1, sin proxy; --online para la web, --local, --actualizar, --solo-bajar), --preguntar archivo claves (pregunta una
+  vez y guarda) y --opciones archivo (lo usa en los bucles), 14 .bat de ejemplo y compilar.bat. Fredoka en local
+  (educativos/fonts) para que los vídeos educativos se vean igual sin Google Fonts.
 · Vídeos de retos educativos (educativos/video-retos.html, grabador --puzles <pack>): secuencias, problemas de Primaria
   (banco del juego, solo es), mates con emojis, cálculo mental, balanzas, ortografía (es), spelling (en) e inglés «¿qué
   palabra falta?» (frases de la Fábrica de Frases, solo es); una pregunta o cinco de fácil a genio, con la explicación.
