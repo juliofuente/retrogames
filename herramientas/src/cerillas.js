@@ -241,7 +241,23 @@
       const headOf = (i, lift = 0) => { const [x1, y1, x2, y2] = segEnds(s, i); return [x2 - (x2 - x1) * 0.08, y2 - (y2 - y1) * 0.08 - lift]; };
       return {
         dur: DUR, cues,
-        info: { puzzle: n, total: PUZ.length, equation: pretty(P[0]), action: verb.toLowerCase(), count: P[2], solution: pretty(sol), url: /^https?:/.test(URLQ) ? URLQ : 'https://' + URLQ },
+        info: (() => {
+          const url = /^https?:/.test(URLQ) ? URLQ : 'https://' + URLQ, eq = pretty(P[0]), so = pretty(sol), k = P[2];
+          // textos para publicar: .title (variado, con emojis) y .descrip (pregunta, respuesta más abajo y tags)
+          const nm = T(k === 1 ? 'una cerilla' : k + ' cerillas', k === 1 ? 'one match' : k + ' matches');
+          const act = T({ m: 'Mueve', r: 'Quita', a: 'Añade' }[P[1]], { m: 'Move', r: 'Remove', a: 'Add' }[P[1]]);
+          const titles = T(['🔥 ' + act + ' ' + nm + ' y arregla: ' + eq + ' 🤔', 'Solo el 1 % lo resuelve 🤯 ' + eq + ' (' + act.toLowerCase() + ' ' + nm + ')', '🧠 ¿Lo arreglas? ' + eq + ' · ' + act + ' ' + nm,
+            eq + ' está mal ❌ ' + act + ' ' + nm + ' para arreglarlo 🔥', 'Reto de cerillas #' + n + ' 🔥 ' + eq + ' ¿Lo ves?', '🤯 ' + eq + ' → ' + act.toLowerCase() + ' ' + nm + ' #shorts'],
+            ['🔥 ' + act + ' ' + nm + ' to fix it: ' + eq + ' 🤔', 'Only 1% can solve this 🤯 ' + eq + ' (' + act.toLowerCase() + ' ' + nm + ')', '🧠 Can you fix it? ' + eq + ' · ' + act + ' ' + nm,
+            eq + ' is wrong ❌ ' + act + ' ' + nm + ' to fix it 🔥', 'Matchstick puzzle #' + n + ' 🔥 ' + eq + ' Can you see it?', '🤯 ' + eq + ' → ' + act.toLowerCase() + ' ' + nm + ' #shorts']);
+          let h = 0; for (const ch of 'cerillas' + n) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+          const desc = T('🔥 Reto de cerillas #' + n + '\n' + eq + ' está mal. ' + act + ' ' + nm + ' para que la cuenta sea correcta.\nLos signos no cambian: solo las cerillas de los números.\n\n👇 Comenta tu respuesta antes de mirar 👇\n',
+            '🔥 Matchstick puzzle #' + n + '\n' + eq + ' is wrong. ' + act + ' ' + nm + ' to make it true.\nThe signs stay the same: only the matches in the digits can change.\n\n👇 Comment your answer before you look 👇\n') +
+            '.\n'.repeat(8) + T('RESPUESTA:\n✅ ', 'ANSWER:\n✅ ') + so + (P[3].length > 1 ? T(' (también vale: ', ' (also valid: ') + P[3].slice(1, 3).map(pretty).join(', ') + ')' : '') +
+            '\n\n' + T('Juega gratis a ' + PUZ.length + ' retos como este: ', 'Play ' + PUZ.length + ' puzzles like this for free: ') + url + '\n\n' +
+            T('#cerillas #acertijo #retomental #matematicas #puzzle #fyp #shorts', '#matchstickpuzzle #puzzle #brainteaser #riddle #math #iqtest #fyp #shorts') + '\n';
+          return { puzzle: n, total: PUZ.length, equation: eq, action: verb.toLowerCase(), count: k, solution: so, url, postTitle: titles[h % titles.length], postDesc: desc };
+        })(),
         frame(t, dt, ctx) {
           const W = g.W, H = g.H; g.rt = t; geo(g);
           // cámara: pequeños golpes de zoom y temblor en los momentos fuertes

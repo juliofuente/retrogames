@@ -141,6 +141,13 @@ sello «SOLVED ✅», confeti y cierre con cerillas cayendo y el enlace.
 Sonido: la página da las marcas (window.arcadeRec.cues) y el programa sintetiza los efectos (ritmo, ticks, golpes, whoosh,
 redoble, campana) en un WAV que mezcla con la música si se pone --musica (a --volumen-musica 0.35). --sin-efectos los quita.
 
+Títulos y descripciones para publicar (.title y .descrip)
+  En los retos de secuencias (una o cinco preguntas) y de cerillas, junto a cada .mp4 se escriben además:
+  · <vídeo>.title    un título con emojis, variado al azar (fijo para cada reto), p. ej. «Completa la secuencia: 🔻👍🔻👍 ❓»
+  · <vídeo>.descrip  la pregunta, las opciones (A, B, C, D), «comenta tu respuesta», unas líneas en blanco, la respuesta
+                     con su explicación, el enlace y los hashtags
+  El .txt de siempre se sigue escribiendo.
+
 Puzles orientales (orientales.juegosboom.com, motor pwa/rejilla.js): admiten los dos tipos de vídeo.
   · «Cómo se juega» (--tutoriales, igual que los solitarios): reglas paso a paso con las casillas resaltadas, los controles
     y unas jugadas de ejemplo explicadas («Aquí solo cabe el 4…», «Tendemos un puente entre estas dos islas»…).

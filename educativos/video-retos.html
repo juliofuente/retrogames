@@ -556,10 +556,33 @@ html,body{margin:0;height:100%;overflow:hidden;background:#1d1147}canvas{display
   const capText = SET === 5
     ? PACK.icon + ' ' + T('5 retos de ' + PACK.title.toLowerCase() + ', de fácil a genio. ¿Hasta dónde llegas? Comenta tu nota /5 👇', '5 ' + PACK.title.toLowerCase() + ' puzzles, from easy to genius. How far can you go? Comment your score /5 👇')
     : PACK.icon + ' ' + PACK.teaser + ' ' + T('Reto #' + N + '. La respuesta, al final 👀 ¡Comenta la tuya antes!', 'Puzzle #' + N + '. Answer at the end 👀 Comment yours first!');
+  /* ---------- textos para publicar: .title (con emojis) y .descrip (pregunta, opciones, respuesta abajo y tags) ---------- */
+  const SZ = T(['pequeño', 'mediano', 'grande'], ['small', 'medium', 'big']);
+  const tokTxt = (tk) => (!tk ? '' : tk.t === 'e' ? tk.v : tk.t === 'n' || tk.t === 'l' ? String(tk.v) : tk.t === 's' ? tk.e + ' ' + SZ[tk.s] : tk.t === 'g' ? (tk.n <= 6 ? tk.e.repeat(tk.n) : tk.n + '×' + tk.e) : tk.t === 'sep' ? ' | ' : '');
+  const isPic = (tk) => tk.t === 'e' || tk.t === 'sep' || (tk.t === 'g' && tk.n <= 3);
+  const seqLine = (P) => { const toks = P.seq.slice(0, P.b), pic = toks.every(isPic); return toks.map(tokTxt).join(pic ? '' : ', ') + (pic ? '' : ',') + ' ❓'; };
+  const pickT = (arr) => arr[hash(PK + '|title|' + N + '|' + SET) % arr.length];
+  function postTexts() {
+    if (PK !== 'secuencias') return {};
+    const L5 = ['A', 'B', 'C', 'D'];
+    const qBlock = (P, i) => (SET === 5 ? (i + 1) + '. ' : '') + T('¿Qué va después? ', 'What comes next? ') + seqLine(P) + '\n' + P.opts.map((o, k) => L5[k] + ') ' + tokTxt(o)).join('   ');
+    const aBlock = (P, i) => (SET === 5 ? (i + 1) + '. ' : '') + '✅ ' + L5[P.ok] + ') ' + tokTxt(P.ans) + (P.rule && P.rule.text ? ' — ' + P.rule.text.replace(/:$/, '') + (P.rule.toks ? ': ' + P.rule.toks.map(tokTxt).join(P.rule.toks.every(isPic) ? '' : ', ') : P.rule.lines && P.rule.lines[0] ? ' (' + P.rule.lines[0] + ')' : '') : '');
+    const s = seqLine(QS[0]);
+    const title = SET === 5
+      ? pickT(T(['🧠 5 secuencias de fácil a genio: ¿hasta dónde llegas? 🔥', '¿Cuántas aciertas? 5 secuencias lógicas 🤯 #shorts', 'Test de lógica: 5 secuencias, ¿sacas un 5/5? 🧠', 'Del 1 al 5: ¿hasta qué secuencia llegas? 👀'],
+        ['🧠 5 sequences from easy to genius: how far can you go? 🔥', 'How many can you get? 5 logic sequences 🤯 #shorts', 'Logic test: 5 sequences, can you score 5/5? 🧠', '1 to 5: how far do you get? 👀']))
+      : pickT(T(['Completa la secuencia: ' + s + ' 🤔', '¿Qué va después? ' + s, '🧠 Solo el 3 % lo acierta: ' + s, 'Test de lógica 🧩 ' + s + ' ¿Lo sabes?', '¿Lo ves? 👀 ' + s + ' #shorts', '🔥 Reto de lógica: ' + s],
+        ['Complete the sequence: ' + s + ' 🤔', 'What comes next? ' + s, '🧠 Only 3% get this: ' + s, 'Logic test 🧩 ' + s + ' Do you know it?', 'Can you see it? 👀 ' + s + ' #shorts', '🔥 Logic challenge: ' + s]));
+    const desc = (SET === 5 ? T('🧠 5 secuencias lógicas, de fácil a genio. ¿Cuántas aciertas?', '🧠 5 logic sequences, from easy to genius. How many can you get?') : '🧠 ' + T('Completa la secuencia. ¿Qué va después?', 'Complete the sequence. What comes next?')) + '\n\n' +
+      QS.map(qBlock).join('\n\n') + '\n\n' + T('👇 Comenta tu respuesta antes de mirar 👇', '👇 Comment your answer before you look 👇') + '\n' + '.\n'.repeat(8) +
+      T('RESPUESTA', 'ANSWER') + (SET === 5 ? T('S', 'S') : '') + ':\n' + QS.map(aBlock).join('\n') + '\n\n' + CTA + ': ' + URLFULL + '\n\n' + PACK.tags + ' #shorts\n';
+    return { postTitle: title, postDesc: desc };
+  }
+
   window.arcadeRec = {
     ready: false, fps: FPS, frames: total, quizCount: PACK.count || 999, scene: 'quiz', cues, unsupported: !SUPPORTED, langs: PACK.langs,
-    info: { id: PK, title: PACK.title, puzzle: N, set: SET, total: PACK.count || 999, url: URLFULL, lang: LANG, langs: PACK.langs, answers: QS.map((P) => P.answer),
-      caption: capText + '\n' + CTA + ': ' + URLFULL + '\n\n' + PACK.tags + '\n' },
+    info: Object.assign({ id: PK, title: PACK.title, puzzle: N, set: SET, total: PACK.count || 999, url: URLFULL, lang: LANG, langs: PACK.langs, answers: QS.map((P) => P.answer),
+      caption: capText + '\n' + CTA + ': ' + URLFULL + '\n\n' + PACK.tags + '\n' }, postTexts()),
     step(n = 1) { for (let i = 0; i < n && f < total; i++) f++; frame(f / FPS); return { frame: f, done: f >= total, state: 'scene' }; },
   };
   try { await Promise.all([500, 600, 700].map((w) => document.fonts.load(w + ' 40px Fredoka'))); await document.fonts.ready; } catch (_) {}

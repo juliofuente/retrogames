@@ -4,7 +4,9 @@
 // «ArcadeRecorder», y el juego entra en modo grabación: no corre solo, sino que avanza un fotograma cada vez que este programa
 // llama a window.arcadeRec.step(). Tras cada paso se saca una captura y se la pasa a ffmpeg. Así el vídeo sale fluido aunque el
 // ordenador sea lento. Cada vídeo lleva una cartela de entrada (emoji, título, «inspirado en…»), la demo jugando sola y una
-// cartela final con la dirección del juego. Junto a cada vídeo se escribe un .txt con el texto para publicarlo.
+// cartela final con la dirección del juego. Junto a cada vídeo se escribe un .txt con el texto para publicarlo y, en los
+// retos que lo traen (secuencias, cerillas), un .title (título con emojis, variado) y un .descrip (pregunta, opciones,
+// la respuesta más abajo y tags).
 //
 // Necesita: .NET 8, Google Chrome (o Chromium/Edge) y ffmpeg en el PATH. Sin paquetes NuGet: habla con Chrome por su protocolo
 // de depuración (DevTools) con un WebSocket.
@@ -359,6 +361,9 @@ static class Program
         if (sfx != null) try { File.Delete(sfx); } catch { }
         File.Move(tmp, j.Mp4, true);
         File.WriteAllText(Path.ChangeExtension(j.Mp4, ".txt"), j.Tut ? TutorialCaption(info, j.Lang, o) : j.Quiz > 0 ? QuizCaption(info, j.Lang) : Caption(info, j.Lang));
+        // título y descripción para publicar, si la página los trae (secuencias, cerillas…): <vídeo>.title y <vídeo>.descrip
+        if (info.TryGetProperty("postTitle", out var pt) && pt.ValueKind == JsonValueKind.String) File.WriteAllText(Path.ChangeExtension(j.Mp4, ".title"), pt.GetString() ?? "");
+        if (info.TryGetProperty("postDesc", out var pd) && pd.ValueKind == JsonValueKind.String) File.WriteAllText(Path.ChangeExtension(j.Mp4, ".descrip"), pd.GetString() ?? "");
         Console.WriteLine($"  ✓ {j.Mp4} ({new FileInfo(j.Mp4).Length / 1024} KB, {sw.Elapsed.TotalSeconds:0}s)");
         return true;
     }
