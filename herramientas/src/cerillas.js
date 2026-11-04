@@ -195,7 +195,9 @@
       const P = PUZ[n - 1], tk = toks(P[0]), pl = plan(tk, P[3][0]), sol = P[3][0], solSegs = segsOf(toks(sol));
       const verb = { m: 'MOVE', r: 'REMOVE', a: 'ADD' }[P[1]], cnt = P[2] === 1 ? 'ONE' : String(P[2]).replace('2', 'TWO').replace('3', 'THREE').replace('4', 'FOUR');
       // línea de tiempo
-      const T0 = 0, T1 = 2.4, T2 = 4.6, T3 = T2 + wait, T4 = T3 + 1.6, T5 = T4 + 2.6, T6 = T5 + 3, T7 = T6 + 2.4, DUR = T7 + 4.6;
+      const NM = Math.max(1, pl.from.length, pl.to.length), SEL = 1.4, MOVE = 2.0, STEP = SEL + MOVE + 0.4;   // solución: cada cerilla se señala con la mano y luego se mueve despacio
+      const T0 = 0, T1 = 2.4, T2 = 4.6, T3 = T2 + wait, T4 = T3 + 1.6, TS = T4 + 0.6, TD = TS + NM * STEP - 0.4, T5 = TD + 0.4, T6 = T5 + 3, T7 = T6 + 2.4, DUR = T7 + 4.6;
+      const selT = (m) => TS + m * STEP, movT = (m) => TS + m * STEP + SEL;
       g.level = n; this.setup(g); const s = g.s; s.vcy = g.H * 0.46; s.vL = g.H * 0.12; s.vMargin = 6;
       // azar fijo por vídeo (mismo vídeo siempre)
       let seed = n * 9301 + 49297; const rnd = () => ((seed = (seed * 233280 + 49297) % 2147483647) / 2147483647);
@@ -209,7 +211,8 @@
       [T1, T1 + 0.25, T1 + 0.5, T1 + 0.75, T1 + 1].forEach((t) => cues.push({ t, s: 'pop' }));
       for (let t = T2; t < T3 - 0.01; t += 0.5) cues.push({ t, s: Math.round((t - T2) * 2) % 2 ? 'hat' : 'kick' });
       for (let k = 1; k <= 10; k++) cues.push({ t: T3 - k, s: k <= 5 ? 'tock' : 'tick' });
-      cues.push({ t: T3, s: 'boom' }, { t: T4 + 0.1, s: 'drum' }, { t: T4 + 0.9, s: 'whoosh' }, { t: T5 - 0.2, s: 'ding' }, { t: T5, s: 'pop' }, { t: T6, s: 'pop' }, { t: T7, s: 'whoosh' }, { t: T7 + 0.4, s: 'ding' });
+      for (let m = 0; m < NM; m++) cues.push({ t: selT(m) + 0.05, s: 'tick' }, { t: movT(m), s: 'whoosh' }, { t: movT(m) + MOVE, s: 'pop' });
+      cues.push({ t: T3, s: 'boom' }, { t: T4 + 0.1, s: 'drum' }, { t: TD, s: 'ding' }, { t: T5, s: 'pop' }, { t: T6, s: 'pop' }, { t: T7, s: 'whoosh' }, { t: T7 + 0.4, s: 'ding' });
       // utilidades de dibujo
       const ease = (k) => 1 - Math.pow(1 - clamp(k, 0, 1), 3), back = (k) => { k = clamp(k, 0, 1); const c = 1.9; return 1 + (c + 1) * Math.pow(k - 1, 3) + c * Math.pow(k - 1, 2); };
       const FONT = (sz) => '900 ' + sz + 'px ' + (Arcade.TFONT || Arcade.FONT);
@@ -262,7 +265,7 @@
           const W = g.W, H = g.H; g.rt = t; geo(g);
           // cámara: pequeños golpes de zoom y temblor en los momentos fuertes
           const punch = (tp, a, d = 0.35) => (t >= tp && t < tp + d ? a * (1 - (t - tp) / d) : 0);
-          const zoom = 1 + punch(0.25, 0.06) + punch(T3, 0.1) + punch(T5 - 0.2, 0.07) + 0.015 * Math.sin(t * 0.9);
+          const zoom = 1 + punch(0.25, 0.06) + punch(T3, 0.1) + punch(TD, 0.07) + 0.015 * Math.sin(t * 0.9);
           const shake = punch(T3, 14, 0.5) + punch(0.6, 6, 0.3);
           // fondo animado
           const hue = (t * 6) % 360, bg = ctx.createRadialGradient(W / 2, H * 0.45, 20, W / 2, H * 0.5, H * 0.85);
@@ -279,34 +282,62 @@
           if (t < T7) { const k = back((t - 0.1) / 0.4); ctx.save(); ctx.translate(W / 2, H * 0.075); ctx.scale(k, k); pill(ctx, '🔥 PUZZLE #' + n, 0, 0, 20, '#ff922b', '#fff'); ctx.restore(); }
           if (t >= T2 && t < T3) { for (const fl of floaters) { const y = 1.02 - (((t - T2) * fl.v + fl.d / 9) % 0.45); ctx.globalAlpha = clamp((y - 0.57) * 6, 0, 0.75) * clamp((1.02 - y) * 8, 0, 1); Arcade.emoji(ctx, fl.e, fl.x * W + Math.sin(t * 2 + fl.d) * 10, y * H, 34); } ctx.globalAlpha = 1; }
           // ---- la operación ----
-          const solving = t >= T4 + 0.6, mv = clamp((t - (T4 + 0.9)) / 1.4, 0, 1), done = t >= T5 - 0.2;
+          // zoom a la cerilla de la solución mientras se señala y se mueve
+          let FZ = 0, FX = W / 2, FY = s.cy;
+          if (t > TS - 0.7 && t < TD + 1) {
+            const m = clamp(Math.floor((t - TS) / STEP), 0, NM - 1), pts = [pl.from[m], pl.to[m]].filter((v) => v != null).map((r) => { const [a, b, c, d] = segEnds(s, r); return [(a + c) / 2, (b + d) / 2]; });
+            if (pts.length) { FX = pts.reduce((q, p) => q + p[0], 0) / pts.length; FY = pts.reduce((q, p) => q + p[1], 0) / pts.length; }
+            FZ = ease(clamp((t - (TS - 0.7)) / 0.7, 0, 1)) * (1 - ease(clamp((t - TD - 0.3) / 0.7, 0, 1)));
+          }
+          const ZF = 1 + 0.6 * FZ; ctx.save(); ctx.translate(W / 2, s.cy); ctx.scale(ZF, ZF); ctx.translate(-(W / 2 + (FX - W / 2) * FZ), -(s.cy + (FY - s.cy) * FZ));
+          const done = t >= TD, stepOf = (m) => (t < selT(m) ? 'wait' : t < movT(m) ? 'sel' : t < movT(m) + MOVE ? 'move' : 'done'), mvOf = (m) => clamp((t - movT(m)) / MOVE, 0, 1);
           for (const [x, c] of s.opx) { const k = back((t - 0.15) / 0.35); ctx.save(); ctx.translate(x, s.cy); ctx.scale(k, k); Arcade.txt(ctx, OPS[c], 0, 2, s.L * 0.75, '#fff3d6', 'center', 900, 'rgba(0,0,0,.5)'); ctx.restore(); }
           const base = done ? solSegs : s.orig;
           for (let i = 0; i < base.length; i++) {
             const [x1, y1, x2, y2] = segEnds(s, i);
-            const isTo = pl.to.includes(i), isFrom = pl.from.includes(i);
-            if (!base[i]) { stick(ctx, x1, y1, x2, y2, s.th, { ghost: solving && !done && isTo ? 'rgba(105,219,124,' + (0.6 + 0.4 * Math.sin(t * 14)) + ')' : 'rgba(255,240,210,.14)' }); continue; }
-            if (!done && solving && isFrom && mv > 0) continue;   // esta va volando
+            const mt = pl.to.indexOf(i), mf = pl.from.indexOf(i), isTo = mt >= 0, isFrom = mf >= 0;
+            if (!base[i]) {
+              // hueco de destino: parpadea en verde mientras se señala y se mueve su cerilla; cuando llega, ya está puesta
+              if (!done && isTo && stepOf(mt) === 'done') { stick(ctx, x1, y1, x2, y2, s.th, { glow: '#69db7c' }); continue; }
+              stick(ctx, x1, y1, x2, y2, s.th, { ghost: !done && isTo && (stepOf(mt) === 'sel' || stepOf(mt) === 'move') ? 'rgba(105,219,124,' + (0.55 + 0.45 * Math.sin(t * 9)) + ')' : 'rgba(255,240,210,.14)' });
+              continue;
+            }
+            if (!done && isFrom && (stepOf(mf) === 'move' || stepOf(mf) === 'done')) continue;   // esta va volando (o ya llegó)
             // caída inicial: cada cerilla cae desde arriba con un pequeño rebote
             const k0 = clamp((t - 0.3 - lit.indexOf(i) * 0.05) / 0.45, 0, 1), drop = t < 2 ? (1 - back(k0)) * H * 0.5 : 0;
             if (k0 <= 0) continue;
-            const glow = done && isTo ? '#69db7c' : t >= T4 && t < T4 + 0.9 && isFrom ? 'rgba(255,107,0,1)' : t >= T2 && t < T3 && (t * 0.5 % 1) < 0.08 ? 'rgba(255,212,59,.6)' : null;
+            const sel = !done && isFrom && stepOf(mf) === 'sel';
+            const glow = done && isTo ? '#69db7c' : sel ? 'rgba(255,107,0,' + (0.7 + 0.3 * Math.sin(t * 12)) + ')' : t >= T2 && t < T3 && (t * 0.5 % 1) < 0.08 ? 'rgba(255,212,59,.6)' : null;
             stick(ctx, x1, y1 - drop, x2, y2 - drop, s.th, { glow });
-            if (t >= T4 + 0.1 && t < T4 + 0.9 && isFrom) { const [hx, hy] = headOf(i); flame(ctx, hx, hy, s.th * 2.2, t, clamp((t - T4 - 0.1) * 3, 0, 1)); }
+            if (sel) { const [hx, hy] = headOf(i); flame(ctx, hx, hy, s.th * 2.2, t, clamp((t - selT(mf)) * 3, 0, 1)); }
           }
-          // la cerilla de la solución: vuela en llamas (mover), se quema y desaparece (quitar) o aparece con chispas (añadir)
-          if (solving && !done) pl.from.forEach((fi, m) => {
-            const [a1, b1, a2, b2] = segEnds(s, fi), ti = pl.to[m];
-            if (ti != null) { const [c1, d1, c2, d2] = segEnds(s, ti), e = ease(mv), up = Math.sin(mv * Math.PI) * s.L * 0.9, rot = Math.sin(mv * Math.PI) * 0.6;
+          // la mano: señala la cerilla (o el hueco, si hay que añadir) y luego la lleva
+          const hand = (x, y, k, e = '👆') => { ctx.save(); ctx.globalAlpha = k; Arcade.emoji(ctx, e, x, y, s.L * 0.8); ctx.restore(); };
+          for (let m = 0; m < NM && !done; m++) {
+            const st = stepOf(m), fi = pl.from[m], ti = pl.to[m], mv = mvOf(m);
+            if (st === 'sel') {
+              const ref = fi != null ? fi : ti, [a1, b1, a2, b2] = segEnds(s, ref), k = clamp((t - selT(m)) / 0.3, 0, 1), bob = Math.sin((t - selT(m)) * 7) * s.L * 0.08;
+              ctx.save(); ctx.globalAlpha = k * (0.6 + 0.4 * Math.sin(t * 10)); ctx.strokeStyle = fi != null ? '#ffd43b' : '#69db7c'; ctx.lineWidth = s.th * 0.6; ctx.beginPath(); ctx.arc((a1 + a2) / 2, (b1 + b2) / 2, s.L * 0.42, 0, 6.3); ctx.stroke(); ctx.restore();
+              hand((a1 + a2) / 2 + s.L * 0.15, Math.max(b1, b2) + s.L * 0.6 + bob, k);
+            }
+            if (st !== 'move') continue;
+            if (fi != null && ti != null) {   // mover: vuela en llamas, con la mano debajo
+              const [a1, b1, a2, b2] = segEnds(s, fi), [c1, d1, c2, d2] = segEnds(s, ti), e = ease(mv), up = Math.sin(mv * Math.PI) * s.L * 0.9, rot = Math.sin(mv * Math.PI) * 0.6;
               const cx = (a1 + a2) / 2 + ((c1 + c2) / 2 - (a1 + a2) / 2) * e, cy = (b1 + b2) / 2 + ((d1 + d2) / 2 - (b1 + b2) / 2) * e - up;
               for (let k = 1; k <= 6; k++) { const e2 = ease(mv - k * 0.03), up2 = Math.sin((mv - k * 0.03) * Math.PI) * s.L * 0.9; ctx.globalAlpha = 0.5 - k * 0.07; ctx.fillStyle = '#ffb347'; ctx.beginPath(); ctx.arc((a1 + a2) / 2 + ((c1 + c2) / 2 - (a1 + a2) / 2) * e2, (b1 + b2) / 2 + ((d1 + d2) / 2 - (b1 + b2) / 2) * e2 - up2, s.th * (1.2 - k * 0.12), 0, 6.3); ctx.fill(); }
               ctx.globalAlpha = 1; ctx.save(); ctx.translate(cx, cy); ctx.rotate(rot);
               const hx = ((a2 - a1) + ((c2 - c1) - (a2 - a1)) * e) / 2, hy = ((b2 - b1) + ((d2 - d1) - (b2 - b1)) * e) / 2;
-              stick(ctx, -hx, -hy, hx, hy, s.th * 1.15, { glow: '#ffd43b' }); flame(ctx, hx, hy, s.th * 2.4, t, 1 - mv * 0.5); ctx.restore(); }
-            else { const k = mv; ctx.save(); ctx.globalAlpha = 1 - k; stick(ctx, a1, b1 - k * 60, a2, b2 - k * 60, s.th, { burnt: k > 0.3 }); ctx.restore(); flame(ctx, (a1 + a2) / 2, (b1 + b2) / 2 - k * 60, s.th * 3 * (1 - k * 0.5), t, 1 - k);
-              for (let q = 0; q < 6; q++) { ctx.globalAlpha = (1 - k) * 0.4; ctx.fillStyle = '#888'; ctx.beginPath(); ctx.arc((a1 + a2) / 2 + Math.sin(q * 2 + t * 3) * 20, (b1 + b2) / 2 - k * 120 - q * 12, 6 + q * 2, 0, 6.3); ctx.fill(); } ctx.globalAlpha = 1; }
-          });
-          if (solving && !done && P[1] === 'a') pl.to.forEach((ti) => { const [c1, d1, c2, d2] = segEnds(s, ti); stick(ctx, c1, d1, c2, d2, s.th, { alpha: mv, glow: '#69db7c' }); const [hx, hy] = headOf(ti); if (mv < 1) flame(ctx, hx, hy, s.th * 2, t, mv); });
+              stick(ctx, -hx, -hy, hx, hy, s.th * 1.15, { glow: '#ffd43b' }); flame(ctx, hx, hy, s.th * 2.4, t, 1 - mv * 0.5); ctx.restore();
+              hand(cx + s.L * 0.15, cy + s.L * 0.65, 1 - clamp((mv - 0.85) / 0.15, 0, 1));
+            } else if (fi != null) {   // quitar: se quema y se va en humo
+              const [a1, b1, a2, b2] = segEnds(s, fi), k = mv; ctx.save(); ctx.globalAlpha = 1 - k; stick(ctx, a1, b1 - k * 60, a2, b2 - k * 60, s.th, { burnt: k > 0.3 }); ctx.restore(); flame(ctx, (a1 + a2) / 2, (b1 + b2) / 2 - k * 60, s.th * 3 * (1 - k * 0.5), t, 1 - k);
+              for (let q = 0; q < 6; q++) { ctx.globalAlpha = (1 - k) * 0.4; ctx.fillStyle = '#888'; ctx.beginPath(); ctx.arc((a1 + a2) / 2 + Math.sin(q * 2 + t * 3) * 20, (b1 + b2) / 2 - k * 120 - q * 12, 6 + q * 2, 0, 6.3); ctx.fill(); } ctx.globalAlpha = 1;
+            } else if (ti != null) {   // añadir: aparece con chispas
+              const [c1, d1, c2, d2] = segEnds(s, ti); stick(ctx, c1, d1, c2, d2, s.th, { alpha: mv, glow: '#69db7c' }); const [hx, hy] = headOf(ti); if (mv < 1) flame(ctx, hx, hy, s.th * 2, t, mv);
+              hand((c1 + c2) / 2 + s.L * 0.15, Math.max(d1, d2) + s.L * 0.6, 1 - mv);
+            }
+          }
+          ctx.restore();   // fin del zoom a la solución
           // ---- textos y fases ----
           const capY = H * 0.215;
           if (t < T1) caption(ctx, HOOK, W / 2, capY, 46, 0.15, t, { per: 0.2, color: (i) => (/\d/.test(HOOK[i]) ? '#ffd43b' : '#fff') });
@@ -321,8 +352,8 @@
           else if (t < T7) caption(ctx, ['COMMENT', 'YES', 'OR', 'NO', '👇'], W / 2, capY, 46, T6, t, { per: 0.2, color: (i) => (i === 1 ? '#69db7c' : i === 3 ? '#ff6b6b' : '#fff') });
           // lectura de la operación (mal / bien)
           if (t >= 1.3 && t < T7) {
-            const ok = t >= T5 - 0.2, txt = pretty(ok ? sol : P[0]) + (ok ? '  ✓' : '  ✗'), k = back((t - (ok ? T5 - 0.2 : 1.3)) / 0.35), y = s.cy + s.L * 1.95;
-            ctx.save(); ctx.translate(W / 2, y); ctx.scale(k, k); if (!ok) ctx.rotate(Math.sin(t * 3) * 0.02); pill(ctx, txt, 0, 0, 34, ok ? '#2f9e44' : 'rgba(224,49,49,.92)', '#fff'); ctx.restore();
+            const ok = t >= TD, txt = pretty(ok ? sol : P[0]) + (ok ? '  ✓' : '  ✗'), k = back((t - (ok ? TD : 1.3)) / 0.35), y = s.cy + s.L * 1.95;
+            ctx.save(); if (!ok) ctx.globalAlpha = 1 - FZ; ctx.translate(W / 2, y); ctx.scale(k, k); if (!ok) ctx.rotate(Math.sin(t * 3) * 0.02); pill(ctx, txt, 0, 0, 34, ok ? '#2f9e44' : 'rgba(224,49,49,.92)', '#fff'); ctx.restore();
           }
           // sello SOLVED
           if (t >= T5 && t < T7) { const k = clamp((t - T5) / 0.25, 0, 1), sc = 2.4 - 1.4 * ease(k); ctx.save(); ctx.globalAlpha = k; ctx.translate(W * 0.72, s.cy - s.L * 1.55); ctx.rotate(-0.22); ctx.scale(sc, sc); ctx.strokeStyle = '#69db7c'; ctx.lineWidth = 5; ctx.font = FONT(30); const w = ctx.measureText('SOLVED ✅').width + 26; Arcade.rr(ctx, -w / 2, -24, w, 48, 10); ctx.stroke(); ctx.fillStyle = '#69db7c'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('SOLVED ✅', 0, 2); ctx.restore(); }
@@ -344,10 +375,10 @@
             }
           }
           // confeti tras resolver
-          if (t >= T5 - 0.2 && t < T7) { const k = t - (T5 - 0.2); for (const c of confetti) { const x = (c.x + c.vx * k * 0.25) * W, y = H * 0.42 + (c.vy * k + 0.9 * k * k) * H * 0.35; if (y > H + 20) continue; ctx.save(); ctx.translate(x, y); ctx.rotate(c.r + k * 6); ctx.fillStyle = c.c; ctx.fillRect(-c.s / 2, -c.s / 4, c.s, c.s / 2); ctx.restore(); } }
+          if (t >= TD && t < T7) { const k = t - (TD); for (const c of confetti) { const x = (c.x + c.vx * k * 0.25) * W, y = H * 0.42 + (c.vy * k + 0.9 * k * k) * H * 0.35; if (y > H + 20) continue; ctx.save(); ctx.translate(x, y); ctx.rotate(c.r + k * 6); ctx.fillStyle = c.c; ctx.fillRect(-c.s / 2, -c.s / 4, c.s, c.s / 2); ctx.restore(); } }
           ctx.restore();   // fin cámara
           // destellos de pantalla
-          const fl = punch(T3, 0.7, 0.4) + punch(T5 - 0.2, 0.5, 0.35) + punch(0.25, 0.25, 0.25);
+          const fl = punch(T3, 0.7, 0.4) + punch(TD, 0.5, 0.35) + punch(0.25, 0.25, 0.25);
           if (fl > 0) { ctx.fillStyle = 'rgba(255,255,255,' + fl + ')'; ctx.fillRect(0, 0, W, H); }
           if (t >= T3 - 5 && t < T3) { const frac = (T3 - t) % 1; if (frac > 0.85) { ctx.fillStyle = 'rgba(255,60,60,' + (frac - 0.85) * 1.2 + ')'; ctx.fillRect(0, 0, W, H); } }
           // ---- cierre ----
