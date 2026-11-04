@@ -215,7 +215,7 @@
       const NM = Math.max(1, pl.from.length, pl.to.length), SEL = 1.4, MOVE = 2.0, STEP = SEL + MOVE + 0.4;   // solución: cada cerilla se señala con la mano y luego se mueve despacio
       const T0 = 0, T1 = 2.4, T2 = 4.6, T3 = T2 + wait, T4 = T3 + 1.6, TS = T4 + 0.6, TD = TS + NM * STEP - 0.4, T5 = TD + 0.4, T6 = T5 + 3, T7 = T6 + 2.4, DUR = T7 + 4.6;
       const selT = (m) => TS + m * STEP, movT = (m) => TS + m * STEP + SEL;
-      g.level = n; this.setup(g); const s = g.s; s.vcy = g.H * 0.46; s.vL = g.H * 0.12; s.vMargin = 6;
+      g.level = n; this.setup(g); const s = g.s; s.vcy = g.H * 0.46; s.vL = g.H * 0.12; s.vMargin = g.W * 0.14;   // margen a los lados: que no se corten las cifras con el zoom
       // azar fijo por vídeo (mismo vídeo siempre)
       let seed = n * 9301 + 49297; const rnd = () => ((seed = (seed * 233280 + 49297) % 2147483647) / 2147483647);
       const embers = Array.from({ length: 70 }, () => ({ x: rnd(), y: rnd(), v: 0.03 + rnd() * 0.07, r: 1 + rnd() * 3, ph: rnd() * 6.3 }));
@@ -300,13 +300,20 @@
           if (t >= T2 && t < T3) { for (const fl of floaters) { const y = 1.02 - (((t - T2) * fl.v + fl.d / 9) % 0.45); ctx.globalAlpha = clamp((y - 0.57) * 6, 0, 0.75) * clamp((1.02 - y) * 8, 0, 1); Arcade.emoji(ctx, fl.e, fl.x * W + Math.sin(t * 2 + fl.d) * 10, y * H, 34); } ctx.globalAlpha = 1; }
           // ---- la operación ----
           // zoom a la cerilla de la solución mientras se señala y se mueve
-          let FZ = 0, FX = W / 2, FY = s.cy;
+          // el encuadre abarca la cerilla de origen, el hueco de destino, el vuelo (por arriba) y la mano (por abajo), con margen;
+          // si están lejos, apenas se acerca, para que nunca se salga nada de la pantalla
+          let FZ = 0, FP = 0, FX = W / 2, FY = s.cy, ZMAX = 1;
           if (t > TS - 0.7 && t < TD + 1) {
-            const m = clamp(Math.floor((t - TS) / STEP), 0, NM - 1), pts = [pl.from[m], pl.to[m]].filter((v) => v != null).map((r) => { const [a, b, c, d] = segEnds(s, r); return [(a + c) / 2, (b + d) / 2]; });
-            if (pts.length) { FX = pts.reduce((q, p) => q + p[0], 0) / pts.length; FY = pts.reduce((q, p) => q + p[1], 0) / pts.length; }
-            FZ = ease(clamp((t - (TS - 0.7)) / 0.7, 0, 1)) * (1 - ease(clamp((t - TD - 0.3) / 0.7, 0, 1)));
+            const m = clamp(Math.floor((t - TS) / STEP), 0, NM - 1), segs = [pl.from[m], pl.to[m]].filter((v) => v != null).map((r) => segEnds(s, r));
+            if (segs.length) {
+              const xs = segs.flatMap((q) => [q[0], q[2]]), ys = segs.flatMap((q) => [q[1], q[3]]);
+              const x0 = Math.min(...xs) - s.L * 0.6, x1 = Math.max(...xs) + s.L * 0.6, y0 = Math.min(...ys) - s.L * (pl.to[m] != null && pl.from[m] != null ? 1.4 : 0.7), y1 = Math.max(...ys) + s.L * 1.2;
+              FX = (x0 + x1) / 2; FY = (y0 + y1) / 2; ZMAX = clamp(Math.min((W * 0.92) / (x1 - x0), (H * 0.42) / (y1 - y0)), 1, 1.6);
+            }
+            FP = ease(clamp((t - (TS - 0.7)) / 0.7, 0, 1)) * (1 - ease(clamp((t - TD - 0.3) / 0.7, 0, 1)));
+            FZ = ZMAX < 1.08 ? FP * 0.3 : FP;   // no merece la pena acercarse: solo un poco
           }
-          const ZF = 1 + 0.6 * FZ; ctx.save(); ctx.translate(W / 2, s.cy); ctx.scale(ZF, ZF); ctx.translate(-(W / 2 + (FX - W / 2) * FZ), -(s.cy + (FY - s.cy) * FZ));
+          const ZF = 1 + (ZMAX - 1) * FZ; ctx.save(); ctx.translate(W / 2, s.cy); ctx.scale(ZF, ZF); ctx.translate(-(W / 2 + (FX - W / 2) * Math.min(1, FZ * (ZF > 1.02 ? 1 : 0))), -(s.cy + (FY - s.cy) * Math.min(1, FZ * (ZF > 1.02 ? 1 : 0))));
           const done = t >= TD, stepOf = (m) => (t < selT(m) ? 'wait' : t < movT(m) ? 'sel' : t < movT(m) + MOVE ? 'move' : 'done'), mvOf = (m) => clamp((t - movT(m)) / MOVE, 0, 1);
           for (const [x, c] of s.opx) { const k = back((t - 0.15) / 0.35); ctx.save(); ctx.translate(x, s.cy); ctx.scale(k, k); Arcade.txt(ctx, OPS[c], 0, 2, s.L * 0.75, '#fff3d6', 'center', 900, 'rgba(0,0,0,.5)'); ctx.restore(); }
           const base = done ? solSegs : s.orig;
@@ -370,7 +377,7 @@
           // lectura de la operación (mal / bien)
           if (t >= 1.3 && t < T7) {
             const ok = t >= TD, txt = pretty(ok ? sol : P[0]) + (ok ? '  ✓' : '  ✗'), k = back((t - (ok ? TD : 1.3)) / 0.35), y = s.cy + s.L * 1.95;
-            ctx.save(); if (!ok) ctx.globalAlpha = 1 - FZ; ctx.translate(W / 2, y); ctx.scale(k, k); if (!ok) ctx.rotate(Math.sin(t * 3) * 0.02); pill(ctx, txt, 0, 0, 34, ok ? '#2f9e44' : 'rgba(224,49,49,.92)', '#fff'); ctx.restore();
+            ctx.save(); if (!ok) ctx.globalAlpha = 1 - FP; ctx.translate(W / 2, y); ctx.scale(k, k); if (!ok) ctx.rotate(Math.sin(t * 3) * 0.02); pill(ctx, txt, 0, 0, 34, ok ? '#2f9e44' : 'rgba(224,49,49,.92)', '#fff'); ctx.restore();
           }
           // sello SOLVED
           if (t >= T5 && t < T7) { const k = clamp((t - T5) / 0.25, 0, 1), sc = 2.4 - 1.4 * ease(k); ctx.save(); ctx.globalAlpha = k; ctx.translate(W * 0.72, s.cy - s.L * 1.55); ctx.rotate(-0.22); ctx.scale(sc, sc); ctx.strokeStyle = '#69db7c'; ctx.lineWidth = 5; ctx.font = FONT(30); const w = ctx.measureText('SOLVED ✅').width + 26; Arcade.rr(ctx, -w / 2, -24, w, 48, 10); ctx.stroke(); ctx.fillStyle = '#69db7c'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('SOLVED ✅', 0, 2); ctx.restore(); }
