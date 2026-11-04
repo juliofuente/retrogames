@@ -30,6 +30,8 @@ Game2Video (antes ArcadeRecorder) · LO NUEVO
    12_un_pack_a_elegir.bat            eliges pack o juego y luego sus opciones
    13_probar_un_video.bat             un vídeo de prueba, sin preguntar
    14_desde_la_web_online.bat         como 01 pero cargando de la web (--online)
+   15_tutoriales_orientales.bat       «cómo se juega» de los puzles orientales (sudoku, nonograma, hashi…)
+   16_partidas_orientales.bat         partidas de ejemplo de los puzles orientales (pensar y solución paso a paso)
    actualizar_juegos.bat · compilar.bat
 5. Música de fondo: pon canciones en la carpeta «mimusica» (una al azar por vídeo).
 
@@ -138,6 +140,18 @@ números gigantes con destello rojo), «TIME'S UP!», la cerilla de la solución
 sello «SOLVED ✅», confeti y cierre con cerillas cayendo y el enlace.
 Sonido: la página da las marcas (window.arcadeRec.cues) y el programa sintetiza los efectos (ritmo, ticks, golpes, whoosh,
 redoble, campana) en un WAV que mezcla con la música si se pone --musica (a --volumen-musica 0.35). --sin-efectos los quita.
+
+Puzles orientales (orientales.juegosboom.com, motor pwa/rejilla.js): admiten los dos tipos de vídeo.
+  · «Cómo se juega» (--tutoriales, igual que los solitarios): reglas paso a paso con las casillas resaltadas, los controles
+    y unas jugadas de ejemplo explicadas («Aquí solo cabe el 4…», «Tendemos un puente entre estas dos islas»…).
+      Game2Video --web https://orientales.juegosboom.com --tutoriales --idioma ambos
+      Game2Video --web https://orientales.juegosboom.com --tutoriales --solo sudoku,nonograma,hashi --jugadas 8
+  · Partidas de ejemplo (--puzles <id>, como los retos): el tablero, la cuenta atrás para pensarlo y la solución entera.
+      Game2Video --web https://orientales.juegosboom.com --puzles kakuro --desde 1 --hasta 10
+  Los 38: sudoku nonograma numberlink hashi kakuro futoshiki takuzu kenken rascacielos suguru kojun hidoku kropki renzoku
+  kakurasu shikaku cuadrados (Square Jam) fillomino nurikabe hitori akari estrellas (Star Battle) tiendas (Tents) barcos
+  (Battleships) acuario (Aquarium) slitherlink masyu yajilin dominosa satogaeri (en lugar de Bonsan) tapa lits norinori
+  heyawake kurodoko riachuelo (Creek) hakyuu (Ripple Effect) gokigen (Slant).
 
 Vídeos «cómo se juega» de los solitarios: --tutoriales  (o modo 3 en las preguntas)
   Un vídeo por solitario (todos los que usan pwa/cartas.js: ~100), en español, inglés o los dos:

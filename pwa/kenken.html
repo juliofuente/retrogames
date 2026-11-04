@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>KenKen · Arcade Perdido</title>
+<meta name="theme-color" content="#0f2a1c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css?v=6d7635e467">
+</head>
+<body class="game">
+<script src="config.js?v=84fed7f189"></script>
+<script src="common.js?v=fb0b61af23"></script>
+<script src="rejilla.js?v=30e0994cee"></script>
+<script>
+// @rejilla
+(function () {
+  const RJ = Arcade.rejilla, U = RJ.U, C = RJ.C, A = Arcade, T = Arcade.T;
+  const V = {
+    kind: 'num', kanji: '賢',
+    size: (lv) => ({ n: lv <= 3 ? 3 : lv <= 8 ? 4 : lv <= 14 ? 5 : 6, mx: lv <= 3 ? 2 : lv <= 8 ? 3 : 4 }),
+    N: (P) => P.n,
+    calc(op, a) { if (op === '+') return a.reduce((s, x) => s + x, 0); if (op === '×') return a.reduce((s, x) => s * x, 1); if (op === '−') return Math.abs(a[0] - a[1]); if (op === '÷') return Math.max(a[0], a[1]) / Math.min(a[0], a[1]); return a[0]; },
+    cand(P, v, i) {
+      const n = P.n, y = (i / n) | 0, x = i % n; let m = 0;
+      for (let k = 0; k < n; k++) { m |= 1 << v[y * n + k]; m |= 1 << v[k * n + x]; }
+      const a = U.full(n) & ~m; if (!a) return 0;
+      const cg = P.cages[P.reg[i]]; let out = 0;
+      for (let val = 1; val <= n; val++) {
+        if (!(a & (1 << val))) continue; v[i] = val;
+        const vals = cg.cells.map((j) => v[j]), known = vals.filter((q) => q), full = known.length === vals.length; let ok = true;
+        if (full) ok = V.calc(cg.op, vals) === cg.t;
+        else if (cg.op === '+') ok = known.reduce((s, q) => s + q, 0) + (vals.length - known.length) <= cg.t;
+        else if (cg.op === '×') ok = cg.t % known.reduce((s, q) => s * q, 1) === 0;
+        v[i] = 0; if (ok) out |= 1 << val;
+      }
+      return out;
+    },
+    groups(P) { const n = P.n, g = []; for (let k = 0; k < n; k++) { g.push(Array.from({ length: n }, (_, j) => k * n + j)); g.push(Array.from({ length: n }, (_, j) => j * n + k)); } return g; },
+    gen(r, c) {
+      const n = c.n;
+      for (let tries = 0; tries < 30; tries++) {
+        const sol = U.latin(r, n), reg = U.regions(r, n, n, 1, c.mx), P = { w: n, h: n, n, reg, cages: [] };
+        for (const cells of U.regCells(reg)) {
+          const vals = cells.map((i) => sol[i]); let op;
+          if (cells.length === 1) op = '';
+          else if (cells.length === 2) { const hi = Math.max(...vals), lo = Math.min(...vals); op = U.pick(r, hi % lo === 0 && r() < 0.6 ? ['÷', '−', '×'] : ['−', '+', '×', '−']); }
+          else op = r() < 0.55 ? '+' : '×';
+          const anchor = cells.slice().sort((a, b) => a - b)[0];
+          P.cages.push({ cells, op, t: V.calc(op, vals), anchor });
+        }
+        const unique = (f) => U.solve(n * n, f, (vv, i) => V.cand(P, vv, i), { budget: 8000 }).n === 1;
+        const fix = U.reduce(r, sol, unique);
+        if (fix.filter((x) => x).length > n) continue;   // demasiados números dados: otra distribución de jaulas
+        P.fix = fix; P.sol = { c: sol }; return P;
+      }
+      throw new Error('kenken');
+    },
+    check(P, st) {
+      const v = st.c, n = P.n; if (v.some((x) => !x)) return false;
+      if (!V.groups(P).every((g) => new Set(g.map((i) => v[i])).size === n)) return false;
+      return P.cages.every((cg) => V.calc(cg.op, cg.cells.map((j) => v[j])) === cg.t);
+    },
+    drawClue(ctx, P, i, x, y, cs) { const cg = P.cages.find((q) => q.anchor === i); if (cg) A.txt(ctx, cg.t + cg.op, x + cs * 0.07, y + cs * 0.15, cs * 0.24, C.seal, 'left', 900, null, RJ.NUMF); },
+    numY: 0.58,
+    regColors: true,
+    rules: (P) => {
+      const big = P.cages.find((q) => q.cells.length > 1) || P.cages[0];
+      const opTxt = { '+': ['sumar', 'add up to'], '×': ['multiplicar', 'multiply to'], '−': ['restar (el mayor menos el menor)', 'subtract to (bigger minus smaller)'], '÷': ['dividir (el mayor entre el menor)', 'divide to (bigger by smaller)'], '': ['ser', 'be'] }[big.op];
+      return [
+        { t: { es: 'Rellena con los números del 1 al ' + P.n + ', sin repetir en ninguna fila ni columna.', en: 'Fill in the numbers 1 to ' + P.n + ', without repeating in any row or column.' }, rows: [0], cols: [0] },
+        { t: { es: 'Cada jaula (las de borde grueso) lleva un resultado y una operación: sus números tienen que ' + opTxt[0] + ' ' + big.t + '.', en: 'Each cage (thick border) has a result and an operation: its numbers must ' + opTxt[1] + ' ' + big.t + '.' }, cells: big.cells },
+        { t: { es: 'Dentro de una jaula sí se puede repetir un número, siempre que no quede en la misma fila ni columna.', en: 'A number can repeat inside a cage, as long as it is not in the same row or column.' }, all: true },
+      ];
+    },
+    goal: { es: 'Cumple las cuentas de cada jaula', en: 'Make every cage add up' },
+  };
+  Arcade.game({
+    ...RJ(V),
+    /*THEME*/ tag: "Sudoku con cuentas", deco: ["🏯", "🌸", "🎋", "🖌️", "🍵", "⛩️"], font: 'serif', bg: ["#24543a", "#0f2a1c"],
+    music: { mode: "insen", bpm: 70, wave: 'triangle', style: 'chill', root: 57 }, voice: { wave: 'sine', mul: 1.1, echo: 0.4 },
+    /*EN*/ en: { title: "KenKen", tag: "Sudoku with sums", help: "Fill in the numbers 1 to N without repeating in any <b>row</b> or <b>column</b>. Each <b>cage</b> has a result and an operation (+, −, ×, ÷) that its numbers must make. <b>Tap a cell</b> and then a <b>number</b>." },
+    /*TV*/ tvHelp: "Cruceta hasta una casilla · OK para jugar en ella.",
+    id: "kenken", title: "KenKen", emoji: "➗", color: "#69db7c", origin: "KenKen / Calcudoku (Tetsuya Miyamoto, Japón)",
+    help: "Rellena con los números del 1 al N sin repetir en ninguna <b>fila</b> ni <b>columna</b>. Cada <b>jaula</b> lleva un resultado y una operación (+, −, ×, ÷) que deben cumplir sus números. <b>Toca una casilla</b> y luego un <b>número</b>.",
+    lives: 0, levels: 0, cap: 20,
+  });
+})();
+</script>
+</body>
+</html>

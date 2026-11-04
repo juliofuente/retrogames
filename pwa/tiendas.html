@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Tiendas · Arcade Perdido</title>
+<meta name="theme-color" content="#0f2a1c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css?v=6d7635e467">
+</head>
+<body class="game">
+<script src="config.js?v=84fed7f189"></script>
+<script src="common.js?v=fb0b61af23"></script>
+<script src="rejilla.js?v=30e0994cee"></script>
+<script>
+// @rejilla
+(function () {
+  const RJ = Arcade.rejilla, U = RJ.U, C = RJ.C, A = Arcade, T = Arcade.T;
+  const V = {
+    kind: 'cell', kanji: '林', marks: [2],
+    states: [{ v: 1, name: { es: 'tienda', en: 'tent' }, k: 'emoji', e: '⛺', why: { es: 'Aquí va una tienda, pegada a su árbol.', en: 'A tent goes here, next to its tree.' } }, { v: 2, name: { es: 'hierba', en: 'grass' }, k: 'custom', draw: (ctx, x, y, cs) => { ctx.fillStyle = 'rgba(64,192,87,.35)'; ctx.fillRect(x + 1, y + 1, cs - 2, cs - 2); } }],
+    size: (lv) => ({ n: lv <= 3 ? 5 : lv <= 8 ? 6 : lv <= 13 ? 7 : lv <= 17 ? 8 : 9 }),
+    margin: () => ({ l: 1, t: 1 }),
+    blocked: (P, i) => P.tree[i],
+    cellBg: (P, i) => (P.tree[i] ? '#d3f9d8' : null),
+    gen(r, c) {
+      const n = c.n, N = n * n;
+      for (let t = 0; t < 100; t++) {
+        const tent = new Array(N).fill(0), tree = new Array(N).fill(false);
+        for (const i of U.shuffle(r, Array.from({ length: N }, (_, i) => i))) {
+          if (tent.filter((x) => x).length >= N / 5.5) break;
+          if (tent[i] || tree[i] || U.n8(n, n, i).some((j) => tent[j])) continue;
+          const spots = U.n4(n, n, i).filter((j) => !tent[j] && !tree[j]); if (!spots.length) continue;
+          tent[i] = 1; tree[U.pick(r, spots)] = true;
+        }
+        const P = { w: n, h: n, tree, rows: [], cols: [] };
+        for (let k = 0; k < n; k++) { let a = 0, b = 0; for (let j = 0; j < n; j++) { a += tent[k * n + j]; b += tent[j * n + k]; } P.rows.push(a); P.cols.push(b); }
+        P.sol = { c: tent }; return P;
+      }
+      throw new Error('tents');
+    },
+    check(P, st) {
+      const n = P.w, T = (i) => st.c[i] === 1, tents = [], trees = [];
+      for (let k = 0; k < n; k++) { let a = 0, b = 0; for (let j = 0; j < n; j++) { if (T(k * n + j)) a++; if (T(j * n + k)) b++; } if (a !== P.rows[k] || b !== P.cols[k]) return false; }
+      for (let i = 0; i < n * n; i++) { if (T(i)) { if (U.n8(n, n, i).some(T)) return false; tents.push(i); } if (P.tree[i]) trees.push(i); }
+      if (tents.length !== trees.length) return false;
+      const match = {}; const aug = (t, seen) => { for (const tr of U.n4(n, n, t)) { if (!P.tree[tr] || seen.has(tr)) continue; seen.add(tr); if (match[tr] == null || aug(match[tr], seen)) { match[tr] = t; return true; } } return false; };
+      return tents.every((t) => aug(t, new Set()));
+    },
+    drawClue(ctx, P, i, x, y, cs) { if (P.tree[i]) A.emoji(ctx, '🌲', x + cs / 2, y + cs / 2, cs * 0.74); },
+    drawOver(ctx, P, st, L) {
+      const n = P.w;
+      for (let k = 0; k < n; k++) {
+        let a = 0, b = 0; for (let j = 0; j < n; j++) { if (st.c[k * n + j] === 1) a++; if (st.c[j * n + k] === 1) b++; }
+        A.txt(ctx, String(P.rows[k]), L.ox - L.cs / 2, L.oy + (k + 0.5) * L.cs, L.cs * 0.48, a === P.rows[k] ? '#2b8a3e' : a > P.rows[k] ? C.err : C.ink, 'center', 900, null, RJ.NUMF);
+        A.txt(ctx, String(P.cols[k]), L.ox + (k + 0.5) * L.cs, L.oy - L.cs / 2, L.cs * 0.48, b === P.cols[k] ? '#2b8a3e' : b > P.cols[k] ? C.err : C.ink, 'center', 900, null, RJ.NUMF);
+      }
+    },
+    rules: (P) => {
+      const tr = P.tree.indexOf(true);
+      return [
+        { t: { es: 'Pon una tienda pegada a cada árbol (por un lado, no en diagonal): una tienda para cada árbol.', en: 'Put a tent next to every tree (by a side, not diagonally): one tent for each tree.' }, cells: [tr].concat(U.n4(P.w, P.h, tr)) },
+        { t: { es: 'Las tiendas no pueden tocarse, ni siquiera en diagonal.', en: 'Tents cannot touch, not even diagonally.' }, all: true },
+        { t: { es: 'Los números de fuera dicen cuántas tiendas hay en cada fila y columna. Marca la hierba donde seguro que no hay.', en: 'The numbers outside say how many tents are in each row and column. Mark grass where there surely is none.' }, rows: [0], cols: [0] },
+      ];
+    },
+    goal: { es: 'Una tienda junto a cada árbol', en: 'A tent next to every tree' },
+  };
+  Arcade.game({
+    ...RJ(V),
+    /*THEME*/ tag: "Una tienda junto a cada árbol", deco: ["🏯", "🌸", "🎋", "🖌️", "🍵", "⛩️"], font: 'serif', bg: ["#24543a", "#0f2a1c"],
+    music: { mode: "insen", bpm: 70, wave: 'triangle', style: 'chill', root: 57 }, voice: { wave: 'sine', mul: 1.1, echo: 0.4 },
+    /*EN*/ en: { title: "Tents", tag: "A tent next to every tree", help: "Put a <b>tent</b> next to every <b>tree</b> (by a side), one each. Tents cannot <b>touch</b>, not even diagonally. The <b>numbers outside</b> say how many tents are in each row and column. Tap a cell (tent → grass → empty)." },
+    /*TV*/ tvHelp: "Cruceta hasta una casilla · OK para jugar en ella.",
+    id: "tiendas", title: "Tiendas", emoji: "⛺", color: "#69db7c", origin: "Tents and Trees (Países Bajos)",
+    help: "Pon una <b>tienda</b> pegada a cada <b>árbol</b> (por un lado), una para cada uno. Las tiendas no pueden <b>tocarse</b>, ni en diagonal. Los <b>números de fuera</b> dicen cuántas tiendas hay en cada fila y columna. Toca una casilla (tienda → hierba → vacía).",
+    lives: 0, levels: 0, cap: 20,
+  });
+})();
+</script>
+</body>
+</html>

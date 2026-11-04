@@ -1,0 +1,62 @@
+// Dominosa|#111317
+// @rejilla
+(function () {
+  const RJ = Arcade.rejilla, U = RJ.U, C = RJ.C, A = Arcade, T = Arcade.T;
+  const V = {
+    kind: 'link', kanji: '牌',
+    explain: (P, a) => { if (a.wrong) return null; const [p, q] = a.l.split('_').map(Number); return { es: 'Aquí va la ficha ' + P.num[p] + '-' + P.num[q] + ': es el único sitio donde encaja.', en: 'Domino ' + P.num[p] + '-' + P.num[q] + ' goes here: it is the only place it fits.' }; },
+    size: (lv) => ({ n: lv <= 3 ? 3 : lv <= 8 ? 4 : lv <= 14 ? 5 : 6 }),
+    gen(r, c) {
+      const n = c.n, w = n + 2, h = n + 1, N = w * h, mate = new Int32Array(N).fill(-1);
+      const rec = (i) => {
+        while (i < N && mate[i] >= 0) i++; if (i === N) return true;
+        for (const d of U.shuffle(r, [1, w])) { const j = i + d; if (d === 1 && (i % w) === w - 1) continue; if (j >= N || mate[j] >= 0) continue; mate[i] = j; mate[j] = i; if (rec(i + 1)) return true; mate[i] = mate[j] = -1; }
+        return false;
+      };
+      rec(0);
+      const pairs = []; for (let a = 0; a <= n; a++) for (let b = a; b <= n; b++) pairs.push([a, b]);
+      const pr = U.shuffle(r, pairs), num = new Array(N).fill(0), L = {}; let k = 0;
+      for (let i = 0; i < N; i++) { const j = mate[i]; if (j < i) continue; const [a, b] = r() < 0.5 ? pr[k] : [pr[k][1], pr[k][0]]; k++; num[i] = a; num[j] = b; L[U.key(i, j)] = 1; }
+      return { w, h, n, num, sol: { L } };
+    },
+    canLink: (P, st, a, b) => U.deg(st.L, a) === 0 && U.deg(st.L, b) === 0,
+    check(P, st) {
+      const N = P.w * P.h; for (let i = 0; i < N; i++) if (U.deg(st.L, i) !== 1) return false;
+      const seen = new Set(); for (const k in st.L) { if (!st.L[k]) continue; const [a, b] = k.split('_').map(Number), x = Math.min(P.num[a], P.num[b]), y = Math.max(P.num[a], P.num[b]); if (seen.has(x * 10 + y)) return false; seen.add(x * 10 + y); }
+      return true;
+    },
+    dups(P, st) { const cnt = {}; for (const k in st.L) { if (!st.L[k]) continue; const [a, b] = k.split('_').map(Number), q = Math.min(P.num[a], P.num[b]) * 10 + Math.max(P.num[a], P.num[b]); cnt[q] = (cnt[q] || 0) + 1; } return cnt; },
+    drawLink(ctx, P, st, a, b, n, x1, y1, x2, y2, cs) {
+      const q = Math.min(P.num[a], P.num[b]) * 10 + Math.max(P.num[a], P.num[b]), dup = (V.dups(P, st)[q] || 0) > 1, ins = cs * 0.1;
+      const x = Math.min(x1, x2) - cs / 2 + ins, y = Math.min(y1, y2) - cs / 2 + ins, w = Math.abs(x2 - x1) + cs - ins * 2, h = Math.abs(y2 - y1) + cs - ins * 2;
+      ctx.save(); ctx.fillStyle = dup ? 'rgba(224,49,49,.16)' : 'rgba(255,255,255,.55)'; A.rr(ctx, x, y, w, h, cs * 0.2); ctx.fill();
+      ctx.strokeStyle = dup ? C.err : C.ink; ctx.lineWidth = Math.max(2.5, cs * 0.07); ctx.stroke();
+      ctx.strokeStyle = dup ? C.err : 'rgba(58,47,42,.5)'; ctx.lineWidth = 2; ctx.beginPath();
+      if (Math.abs(x2 - x1) > 1) { const mx = (x1 + x2) / 2; ctx.moveTo(mx, y + h * 0.22); ctx.lineTo(mx, y + h * 0.78); } else { const my = (y1 + y2) / 2; ctx.moveTo(x + w * 0.22, my); ctx.lineTo(x + w * 0.78, my); }
+      ctx.stroke(); ctx.restore();
+      for (const i of [a, b]) { const cx = (i === a ? x1 : x2), cy = (i === a ? y1 : y2); V.pips(ctx, P.num[i], cx, cy, cs, dup ? C.err : C.ink); }
+    },
+    pips(ctx, v, cx, cy, cs, col) {
+      const P6 = { 0: [], 1: [[0, 0]], 2: [[-1, -1], [1, 1]], 3: [[-1, -1], [0, 0], [1, 1]], 4: [[-1, -1], [1, -1], [-1, 1], [1, 1]], 5: [[-1, -1], [1, -1], [0, 0], [-1, 1], [1, 1]], 6: [[-1, -1], [1, -1], [-1, 0], [1, 0], [-1, 1], [1, 1]] }[v] || [];
+      const d = cs * 0.2; ctx.fillStyle = col; for (const [dx, dy] of P6) { ctx.beginPath(); ctx.arc(cx + dx * d, cy + dy * d, cs * 0.075, 0, Math.PI * 2); ctx.fill(); }
+    },
+    drawClue(ctx, P, i, x, y, cs, st) { if (U.deg(st.L, i)) return; A.txt(ctx, String(P.num[i]), x + cs / 2, y + cs / 2 + 1, cs * 0.5, C.ink, 'center', 800, null, RJ.NUMF); },
+    rules: (P) => [
+      { t: { es: 'Divide el tablero en fichas de dominó: cada ficha son dos casillas vecinas.', en: 'Split the board into dominoes: each domino is two neighbouring cells.' }, cells: [0, 1] },
+      { t: { es: 'Están todas las fichas del dominó del 0-0 al ' + P.n + '-' + P.n + ', y cada una aparece exactamente una vez.', en: 'Every domino from 0-0 to ' + P.n + '-' + P.n + ' is there, and each appears exactly once.' }, all: true },
+      { t: { es: 'Si una pareja ya está usada, búscale otra compañera a esas casillas. Las repetidas salen en rojo.', en: 'If a pair is already used, find another partner for those cells. Repeated ones turn red.' }, all: true },
+    ],
+    ctrl: { es: 'Arrastra de una casilla a su vecina (o tócalas una tras otra) para formar una ficha; repite para quitarla. ↩️ deshace y 💡 te da una pista.', en: 'Drag from a cell to its neighbour (or tap them one after the other) to make a domino; repeat to remove it. ↩️ undoes and 💡 gives you a hint.' },
+    goal: { es: 'Encuentra las fichas', en: 'Find the dominoes' },
+  };
+  Arcade.game({
+    ...RJ(V),
+    /*THEME*/ tag: "Encuentra todas las fichas", deco: ["🏯", "🌸", "🎋", "🖌️", "🍵", "⛩️"], font: 'serif', bg: ["#2b2f36", "#111317"],
+    music: { mode: "insen", bpm: 70, wave: 'triangle', style: 'chill', root: 57 }, voice: { wave: 'sine', mul: 1.1, echo: 0.4 },
+    /*EN*/ en: { title: "Dominosa", tag: "Find every domino", help: "The board is full of numbers. Split it into <b>dominoes</b> (two neighbouring cells) so that every domino in the set, from 0-0 to the highest double, appears <b>exactly once</b>. Drag between two cells to make a domino; repeat to remove it. Repeated ones turn red." },
+    /*TV*/ tvHelp: "Cruceta hasta una casilla · OK para jugar en ella.",
+    id: "dominosa", title: "Dominosa", emoji: "🁫", color: "#ced4da", origin: "Dominosa (clásico del siglo XIX, Francia)",
+    help: "El tablero está lleno de números. Divídelo en <b>fichas de dominó</b> (dos casillas vecinas) de forma que cada ficha del juego, del 0-0 al último doble, salga <b>exactamente una vez</b>. Arrastra entre dos casillas para formar una ficha; repite para quitarla. Las repetidas salen en rojo.",
+    lives: 0, levels: 0, cap: 20,
+  });
+})();

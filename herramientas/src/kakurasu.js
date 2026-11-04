@@ -1,0 +1,47 @@
+// Kakurasu|#0c1229
+// @rejilla
+(function () {
+  const RJ = Arcade.rejilla, U = RJ.U, C = RJ.C, A = Arcade, T = Arcade.T;
+  const V = {
+    kind: 'cell', kanji: '加', marks: [2],
+    states: [{ v: 1, name: { es: 'pintada', en: 'painted' }, k: 'shade', c: '#2f5aa8', c2: '#1b3a73', why: { es: 'Pintamos esta: con su valor se completan las sumas de su fila y su columna.', en: 'We paint this one: its value completes the sums of its row and column.' } }, { v: 2, name: { es: '✕', en: '✕' }, k: 'x' }],
+    size: (lv) => ({ n: lv <= 3 ? 4 : lv <= 8 ? 5 : lv <= 13 ? 6 : lv <= 17 ? 7 : 8 }),
+    margin: () => ({ l: 1, t: 1, r: 1, b: 1 }),
+    sums(P, c) { const n = P.w, rs = [], cs = []; for (let k = 0; k < n; k++) { let a = 0, b = 0; for (let j = 0; j < n; j++) { if (c[k * n + j] === 1) a += j + 1; if (c[j * n + k] === 1) b += j + 1; } rs.push(a); cs.push(b); } return [rs, cs]; },
+    gen(r, c) {
+      const n = c.n;
+      for (let t = 0; t < 100; t++) {
+        const sh = Array.from({ length: n * n }, () => (r() < 0.45 ? 1 : 0)), P = { w: n, h: n };
+        const [rs, cs] = V.sums(P, sh); if (rs.some((x) => !x) || cs.some((x) => !x)) continue;
+        P.rs = rs; P.cs = cs; P.sol = { c: sh }; return P;
+      }
+      throw new Error('kakurasu');
+    },
+    check(P, st) { const [rs, cs] = V.sums(P, st.c); return rs.join() === P.rs.join() && cs.join() === P.cs.join(); },
+    drawOver(ctx, P, st, L) {
+      const n = P.w, [rs, cs] = V.sums(P, st.c), f = L.cs * 0.42;
+      for (let k = 0; k < n; k++) {
+        A.txt(ctx, String(k + 1), L.ox + (k + 0.5) * L.cs, L.oy - L.cs / 2, f * 0.85, '#868e96', 'center', 800, null, RJ.NUMF);
+        A.txt(ctx, String(k + 1), L.ox - L.cs / 2, L.oy + (k + 0.5) * L.cs, f * 0.85, '#868e96', 'center', 800, null, RJ.NUMF);
+        A.txt(ctx, String(P.rs[k]), L.ox + (n + 0.5) * L.cs, L.oy + (k + 0.5) * L.cs, f, rs[k] === P.rs[k] ? '#2b8a3e' : rs[k] > P.rs[k] ? C.err : C.seal, 'center', 900, null, RJ.NUMF);
+        A.txt(ctx, String(P.cs[k]), L.ox + (k + 0.5) * L.cs, L.oy + (n + 0.5) * L.cs, f, cs[k] === P.cs[k] ? '#2b8a3e' : cs[k] > P.cs[k] ? C.err : C.seal, 'center', 900, null, RJ.NUMF);
+      }
+    },
+    rules: (P) => [
+      { t: { es: 'Pinta casillas. Cada casilla pintada vale el número gris de su columna para la suma de su fila…', en: 'Paint cells. Each painted cell is worth its column\'s grey number towards its row sum…' }, rows: [0] },
+      { t: { es: '…y el número gris de su fila para la suma de su columna.', en: '…and its row\'s grey number towards its column sum.' }, cols: [0] },
+      { t: { es: 'Los números rojos de la derecha y de abajo son las sumas que hay que conseguir. Por ejemplo, ' + P.rs[0] + ' en la primera fila.', en: 'The red numbers on the right and at the bottom are the sums to reach. For example, ' + P.rs[0] + ' in the first row.' }, rows: [0] },
+    ],
+    goal: { es: 'Consigue las sumas', en: 'Hit the sums' },
+  };
+  Arcade.game({
+    ...RJ(V),
+    /*THEME*/ tag: "Pinta casillas que suman", deco: ["🏯", "🌸", "🎋", "🖌️", "🍵", "⛩️"], font: 'serif', bg: ["#1f2b5c", "#0c1229"],
+    music: { mode: "insen", bpm: 70, wave: 'triangle', style: 'chill', root: 57 }, voice: { wave: 'sine', mul: 1.1, echo: 0.4 },
+    /*EN*/ en: { title: "Kakurasu", tag: "Paint cells that add up", help: "Paint cells. Each painted cell is worth its <b>column number</b> towards its row sum and its <b>row number</b> towards its column sum. Reach the <b>sums</b> on the right and at the bottom. Tap or drag to paint (painted → ✕ → empty)." },
+    /*TV*/ tvHelp: "Cruceta hasta una casilla · OK para jugar en ella.",
+    id: "kakurasu", title: "Kakurasu", emoji: "🔷", color: "#5c7cfa", origin: "Kakurasu (Japón)",
+    help: "Pinta casillas. Cada casilla pintada vale el <b>número de su columna</b> para la suma de su fila y el <b>número de su fila</b> para la suma de su columna. Consigue las <b>sumas</b> de la derecha y de abajo. Toca o arrastra para pintar (pintada → ✕ → vacía).",
+    lives: 0, levels: 0, cap: 20,
+  });
+})();

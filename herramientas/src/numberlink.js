@@ -1,0 +1,94 @@
+// Numberlink|#08131f
+// @rejilla
+(function () {
+  const RJ = Arcade.rejilla, U = RJ.U, C = RJ.C, A = Arcade, T = Arcade.T;
+  const V = {
+    kind: 'link', kanji: '線', linkW: 0.34,
+    explain: (P, a) => a.wrong ? null : { es: 'Seguimos el camino de esta pareja sin cruzarnos con los demás.', en: 'We continue this pair\'s path without crossing the others.' },
+    cols: ['#e03131', '#1971c2', '#2f9e44', '#f08c00', '#9c36b5', '#0c8599', '#e64980', '#5f3dc4', '#a0522d', '#66a80f', '#495057', '#d9480f'],
+    size: (lv) => ({ n: lv <= 3 ? 5 : lv <= 8 ? 6 : lv <= 13 ? 7 : lv <= 17 ? 8 : 9 }),
+    gen(r, c) {
+      const n = c.n, N = n * n;
+      for (let t = 0; t < 400; t++) {
+        const id = new Int32Array(N).fill(-1), paths = [];
+        for (const s of U.shuffle(r, Array.from({ length: N }, (_, i) => i))) {
+          if (id[s] >= 0) continue; const p = [s]; id[s] = paths.length; const max = U.ri(r, 3, n + 2);
+          while (p.length < max) {
+            const e = p[p.length - 1], nb = U.shuffle(r, U.n4(n, n, e).filter((j) => id[j] < 0 && U.n4(n, n, j).filter((q) => id[q] === paths.length).length === 1));
+            if (!nb.length) break; id[nb[0]] = paths.length; p.push(nb[0]);
+          }
+          paths.push(p);
+        }
+        // las cortas (1–2 casillas) se pegan al extremo de otra
+        let ok = true;
+        for (let k = 0; k < paths.length; k++) {
+          const p = paths[k]; if (!p || p.length >= 3) continue; let done = false;
+          for (const [end, from] of [[p[p.length - 1], 0], [p[0], 1]]) {
+            for (const j of U.shuffle(r, U.n4(n, n, end))) {
+              const q = paths[id[j]]; if (!q || q === p) continue;
+              if (q[q.length - 1] === j) { const add = from ? p.slice() : p.slice().reverse(); add.forEach((i) => { id[i] = id[j]; }); q.push(...add); done = true; }
+              else if (q[0] === j) { const add = from ? p.slice().reverse() : p.slice(); add.forEach((i) => { id[i] = id[j]; }); q.unshift(...add); done = true; }
+              if (done) break;
+            }
+            if (done) break;
+          }
+          if (done) paths[k] = null; else { ok = false; break; }
+        }
+        const ps = paths.filter(Boolean);
+        if (!ok || ps.length > V.cols.length || ps.length < Math.max(3, n - 2)) continue;
+        const P = { w: n, h: n, end: new Array(N).fill(0), sol: { L: {} } };
+        ps.forEach((p, k) => { P.end[p[0]] = P.end[p[p.length - 1]] = k + 1; for (let q = 1; q < p.length; q++) P.sol.L[U.key(p[q - 1], p[q])] = 1; });
+        P.pairs = ps.length; return P;
+      }
+      throw new Error('numberlink');
+    },
+    // color de la casilla: el del extremo al que está unida
+    colorOf(P, L, i) {
+      const seen = new Set([i]), q = [i];
+      while (q.length) { const a = q.pop(); if (P.end[a]) return P.end[a]; for (const j of U.n4(P.w, P.h, a)) if (!seen.has(j) && L[U.key(a, j)]) { seen.add(j); q.push(j); } }
+      return 0;
+    },
+    canLink(P, st, a, b) {
+      const lim = (i) => (P.end[i] ? 1 : 2); if (U.deg(st.L, a) >= lim(a) || U.deg(st.L, b) >= lim(b)) return false;
+      const ca = V.colorOf(P, st.L, a), cb = V.colorOf(P, st.L, b); return !(ca && cb && ca !== cb);
+    },
+    linkColor: (P, st, a) => { const k = V.colorOf(P, st.L, a); return k ? V.cols[(k - 1) % V.cols.length] : '#868e96'; },
+    check(P, st) {
+      const N = P.w * P.h;
+      for (let i = 0; i < N; i++) if (U.deg(st.L, i) !== (P.end[i] ? 1 : 2)) return false;
+      // cada camino une dos extremos del mismo número
+      for (let i = 0; i < N; i++) {
+        if (!P.end[i]) continue; let prev = -1, cur = i;
+        for (;;) { const nx = U.n4(P.w, P.h, cur).find((j) => j !== prev && st.L[U.key(cur, j)]); if (nx == null) break; prev = cur; cur = nx; if (P.end[cur]) break; }
+        if (P.end[cur] !== P.end[i] || cur === i) return false;
+      }
+      return true;
+    },
+    drawClue(ctx, P, i, x, y, cs, st) {
+      const k = P.end[i]; if (!k) return; const col = V.cols[(k - 1) % V.cols.length];
+      ctx.fillStyle = col; ctx.beginPath(); ctx.arc(x + cs / 2, y + cs / 2, cs * 0.36, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = 'rgba(255,255,255,.8)'; ctx.lineWidth = 2; ctx.stroke();
+      A.txt(ctx, String(k), x + cs / 2, y + cs / 2 + 1, cs * 0.42, '#fff', 'center', 900, null, RJ.NUMF);
+    },
+    cellBg(P, i, st) { const k = V.colorOf(P, st.L, i); return k && U.deg(st.L, i) ? V.cols[(k - 1) % V.cols.length] + '2a' : null; },
+    rules: (P) => {
+      const a = P.end.indexOf(1), b = P.end.lastIndexOf(1);
+      return [
+        { t: { es: 'Une cada pareja de números iguales con un camino que vaya de casilla en casilla (sin diagonales).', en: 'Join each pair of equal numbers with a path that goes from cell to cell (no diagonals).' }, cells: [a, b] },
+        { t: { es: 'Los caminos no se pueden cruzar ni compartir casillas.', en: 'Paths cannot cross or share cells.' }, all: true },
+        { t: { es: 'Al final tiene que quedar todo el tablero lleno de caminos.', en: 'In the end the whole board must be filled with paths.' }, all: true },
+      ];
+    },
+    goal: { es: 'Une las parejas', en: 'Connect the pairs' },
+  };
+  Arcade.game({
+    ...RJ(V),
+    /*THEME*/ tag: "Une las parejas sin cruzarte", deco: ["🏯", "🌸", "🎋", "🖌️", "🍵", "⛩️"], font: 'serif', bg: ["#16324f", "#08131f"],
+    music: { mode: "insen", bpm: 70, wave: 'triangle', style: 'chill', root: 57 }, voice: { wave: 'sine', mul: 1.1, echo: 0.4 },
+    /*EN*/ en: { title: "Numberlink", tag: "Join the pairs without crossing", help: "Join each <b>pair of equal numbers</b> with a path from cell to cell. Paths <b>never cross</b> or share cells and in the end the board is <b>full</b>. Drag your finger to draw; go over it again to erase." },
+    /*TV*/ tvHelp: "Cruceta hasta una casilla · OK para jugar en ella.",
+    id: "numberlink", title: "Numberlink", emoji: "〰️", color: "#4dabf7", origin: "Numberlink / Arukone / Flow (Nikoli, Japón)",
+    help: "Une cada <b>pareja de números iguales</b> con un camino de casilla en casilla. Los caminos <b>no se cruzan</b> ni comparten casillas y al final el tablero queda <b>lleno</b>. Arrastra el dedo para dibujar; pasa otra vez por encima para borrar.",
+    lives: 0, levels: 0, cap: 20,
+  });
+})();

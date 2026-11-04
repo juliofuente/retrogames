@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Norinori · Arcade Perdido</title>
+<meta name="theme-color" content="#141a1d">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css?v=6d7635e467">
+</head>
+<body class="game">
+<script src="config.js?v=84fed7f189"></script>
+<script src="common.js?v=fb0b61af23"></script>
+<script src="rejilla.js?v=30e0994cee"></script>
+<script>
+// @rejilla
+(function () {
+  const RJ = Arcade.rejilla, U = RJ.U, C = RJ.C, A = Arcade, T = Arcade.T;
+  const V = {
+    kind: 'cell', kanji: '海', marks: [2], regColors: true,
+    states: [{ v: 1, name: { es: 'pintada', en: 'painted' }, k: 'shade', c: '#495057', c2: '#212529', why: { es: 'Esta casilla se pinta: forma un dominó con su vecina.', en: 'This cell is painted: it makes a domino with its neighbour.' } }, { v: 2, name: { es: 'punto', en: 'dot' }, k: 'dot' }],
+    size: (lv) => ({ n: lv <= 3 ? 6 : lv <= 9 ? 7 : lv <= 15 ? 8 : 9 }),
+    gen(r, c) {
+      const n = c.n, N = n * n;
+      for (let t = 0; t < 100; t++) {
+        const sh = new Int8Array(N), reg = new Int32Array(N).fill(-1); let k = 0;
+        for (const i of U.shuffle(r, Array.from({ length: N }, (_, i) => i))) {
+          const opts = U.shuffle(r, U.n4(n, n, i)); for (const j of opts) {
+            if (sh[i] || sh[j]) continue; if ([i, j].some((q) => U.n4(n, n, q).some((z) => z !== i && z !== j && sh[z]))) continue;
+            sh[i] = sh[j] = 1; reg[i] = reg[j] = k++; break;
+          }
+        }
+        const fr = []; for (let i = 0; i < N; i++) if (reg[i] >= 0) fr.push(i);
+        while (fr.length) { const q = U.ri(r, 0, fr.length - 1), i = fr[q]; const nb = U.n4(n, n, i).filter((j) => reg[j] < 0); if (!nb.length) { fr.splice(q, 1); continue; } const j = U.pick(r, nb); reg[j] = reg[i]; fr.push(j); }
+        if (Array.from(reg).some((q) => q < 0) || k < N / 6) continue;
+        return { w: n, h: n, reg: Array.from(reg), rc: U.regCells(Array.from(reg)), sol: { c: Array.from(sh) } };
+      }
+      throw new Error('norinori');
+    },
+    check(P, st) {
+      const n = P.w, sh = (i) => st.c[i] === 1;
+      for (const cells of P.rc) if (cells.filter(sh).length !== 2) return false;
+      for (let i = 0; i < n * n; i++) if (sh(i) && U.n4(n, n, i).filter(sh).length !== 1) return false;
+      return true;
+    },
+    errors(P, st) { const bad = new Set(), sh = (i) => st.c[i] === 1; for (let i = 0; i < P.w * P.h; i++) if (sh(i) && U.n4(P.w, P.h, i).filter(sh).length > 1) bad.add(i); return bad; },
+    rules: (P) => [
+      { t: { es: 'Pinta exactamente 2 casillas en cada zona de color.', en: 'Paint exactly 2 cells in each coloured area.' }, cells: P.rc[0] },
+      { t: { es: 'Cada casilla pintada toca por un lado a exactamente otra pintada: todo lo pintado forma fichas de dominó sueltas.', en: 'Each painted cell touches exactly one other painted cell by a side: everything painted forms separate dominoes.' }, all: true },
+      { t: { es: 'Un dominó puede quedar entre dos zonas: cuenta una casilla para cada una.', en: 'A domino can sit across two areas: one cell counts for each.' }, all: true },
+    ],
+    goal: { es: 'Dos casillas por zona, en dominós', en: 'Two cells per area, as dominoes' },
+  };
+  Arcade.game({
+    ...RJ(V),
+    /*THEME*/ tag: "Dominós, dos casillas por zona", deco: ["🏯", "🌸", "🎋", "🖌️", "🍵", "⛩️"], font: 'serif', bg: ["#2f3a40", "#141a1d"],
+    music: { mode: "insen", bpm: 70, wave: 'triangle', style: 'chill', root: 57 }, voice: { wave: 'sine', mul: 1.1, echo: 0.4 },
+    /*EN*/ en: { title: "Norinori", tag: "Dominoes, two cells per area", help: "Paint exactly <b>2 cells</b> in each <b>area</b>. Each painted cell touches <b>exactly one other</b> by a side: what you paint forms separate <b>dominoes</b>. Tap or drag to paint (painted → dot → empty)." },
+    /*TV*/ tvHelp: "Cruceta hasta una casilla · OK para jugar en ella.",
+    id: "norinori", title: "Norinori", emoji: "🁢", color: "#adb5bd", origin: "Norinori / Dominion (Nikoli, Japón)",
+    help: "Pinta exactamente <b>2 casillas</b> en cada <b>zona</b>. Cada casilla pintada toca por un lado a <b>exactamente otra</b>: lo pintado forma <b>dominós</b> sueltos. Toca o arrastra para pintar (pintada → punto → vacía).",
+    lives: 0, levels: 0, cap: 20,
+  });
+})();
+</script>
+</body>
+</html>

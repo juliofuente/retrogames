@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Hashi · Arcade Perdido</title>
+<meta name="theme-color" content="#06182a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css?v=6d7635e467">
+</head>
+<body class="game">
+<script src="config.js?v=84fed7f189"></script>
+<script src="common.js?v=fb0b61af23"></script>
+<script src="rejilla.js?v=30e0994cee"></script>
+<script>
+// @rejilla
+(function () {
+  const RJ = Arcade.rejilla, U = RJ.U, C = RJ.C, A = Arcade, T = Arcade.T;
+  const V = {
+    kind: 'bridge', kanji: '橋', noGrid: true,
+    explain: (P, a) => a.wrong ? null : { es: a.v === 2 ? 'Aquí van dos puentes: las islas los necesitan para llegar a su número.' : 'Tendemos un puente entre estas dos islas.', en: a.v === 2 ? 'Two bridges go here: the islands need them to reach their numbers.' : 'We build a bridge between these two islands.' },
+    size: (lv) => ({ n: lv <= 3 ? 6 : lv <= 9 ? 7 : lv <= 15 ? 8 : 9, k: lv <= 3 ? 7 : lv <= 9 ? 10 : lv <= 15 ? 13 : 17 }),
+    sum(P, L, i) { let s = 0; for (const k in L) { const [a, b] = k.split('_').map(Number); if (a === i || b === i) s += L[k]; } return s; },
+    gen(r, c) {
+      const n = c.n, N = n * n;
+      for (let t = 0; t < 200; t++) {
+        const isl = new Array(N).fill(0), occ = new Int8Array(N), L = {}, list = [U.ri(r, 0, N - 1)]; occ[list[0]] = 1;
+        for (let it = 0; it < 400 && list.length < c.k; it++) {
+          const a = U.pick(r, list), [dx, dy] = U.pick(r, [[1, 0], [-1, 0], [0, 1], [0, -1]]), d = U.ri(r, 2, Math.max(2, n - 3));
+          const ax = a % n, ay = (a / n) | 0, bx = ax + dx * d, by = ay + dy * d; if (bx < 0 || by < 0 || bx >= n || by >= n) continue;
+          const b = by * n + bx; if (occ[b]) continue; let ok = true; const mid = [];
+          for (let q = 1; q < d; q++) { const m = (ay + dy * q) * n + ax + dx * q; if (occ[m]) { ok = false; break; } mid.push(m); }
+          if (!ok || U.n4(n, n, b).some((j) => occ[j] === 1)) continue;
+          occ[b] = 1; mid.forEach((m) => { occ[m] = 2; }); list.push(b); L[U.key(a, b)] = r() < 0.4 ? 2 : 1;
+        }
+        if (list.length < c.k) continue;
+        const P = { w: n, h: n, isl, sol: { L } }; for (const i of list) isl[i] = V.sum(P, L, i);
+        return P;
+      }
+      throw new Error('hashi');
+    },
+    check(P, st) {
+      const N = P.w * P.h, isl = []; for (let i = 0; i < N; i++) if (P.isl[i]) { if (V.sum(P, st.L, i) !== P.isl[i]) return false; isl.push(i); }
+      const adj = {}; for (const k in st.L) { if (!st.L[k]) continue; const [a, b] = k.split('_').map(Number); (adj[a] = adj[a] || []).push(b); (adj[b] = adj[b] || []).push(a); }
+      const seen = new Set([isl[0]]), q = [isl[0]]; while (q.length) { const i = q.pop(); for (const j of adj[i] || []) if (!seen.has(j)) { seen.add(j); q.push(j); } }
+      return seen.size === isl.length;
+    },
+    drawOver(ctx, P, st, L, g) {
+      const cs = L.cs, cx = (i) => L.ox + (i % P.w + 0.5) * cs, cy = (i) => L.oy + (((i / P.w) | 0) + 0.5) * cs, done = g && g.s && g.s.done;
+      ctx.save(); ctx.lineCap = 'round';
+      for (const k in st.L) {
+        const v = st.L[k]; if (!v) continue; const [a, b] = k.split('_').map(Number), hz = Math.abs(b - a) < P.w;
+        ctx.strokeStyle = done ? '#2b8a3e' : '#8a5a2b'; ctx.lineWidth = Math.max(3, cs * 0.1);
+        const off = v === 2 ? cs * 0.12 : 0;
+        for (const s of v === 2 ? [-1, 1] : [0]) { ctx.beginPath(); if (hz) { ctx.moveTo(cx(a), cy(a) + s * off); ctx.lineTo(cx(b), cy(b) + s * off); } else { ctx.moveTo(cx(a) + s * off, cy(a)); ctx.lineTo(cx(b) + s * off, cy(b)); } ctx.stroke(); }
+      }
+      for (let i = 0; i < P.w * P.h; i++) {
+        const v = P.isl[i]; if (!v) continue; const s = V.sum(P, st.L, i), x = cx(i), y = cy(i), R = cs * 0.4;
+        const gr = ctx.createRadialGradient(x - R * 0.3, y - R * 0.3, 1, x, y, R); gr.addColorStop(0, s === v ? '#d3f9d8' : s > v ? '#ffe3e3' : '#fffaf0'); gr.addColorStop(1, s === v ? '#8ce99a' : s > v ? '#ffa8a8' : '#e9dfc9');
+        ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(x, y, R, 0, Math.PI * 2); ctx.fill(); ctx.strokeStyle = C.ink; ctx.lineWidth = Math.max(2, cs * 0.05); ctx.stroke();
+        if (g && g.s && g.s.sel === i && !done) { ctx.strokeStyle = '#e8590c'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(x, y, R + 4, 0, Math.PI * 2); ctx.stroke(); }
+        A.txt(ctx, String(v), x, y + 1, cs * 0.46, C.ink, 'center', 900, null, RJ.NUMF);
+      }
+      ctx.restore();
+    },
+    cellBg: (P, i) => null,
+    rules: (P) => {
+      const i = P.isl.findIndex((v) => v >= 3) >= 0 ? P.isl.findIndex((v) => v >= 3) : P.isl.findIndex((v) => v);
+      return [
+        { t: { es: 'Une las islas con puentes rectos, en horizontal o en vertical. Los puentes no se pueden cruzar.', en: 'Join the islands with straight bridges, horizontal or vertical. Bridges cannot cross.' }, all: true },
+        { t: { es: 'El número de cada isla dice cuántos puentes salen de ella: esta necesita ' + P.isl[i] + '.', en: 'Each island\'s number says how many bridges leave it: this one needs ' + P.isl[i] + '.' }, cells: [i] },
+        { t: { es: 'Entre dos islas puede haber uno o dos puentes. Al final, todas las islas tienen que quedar unidas.', en: 'Two islands can have one or two bridges between them. In the end, every island must be connected.' }, all: true },
+      ];
+    },
+    goal: { es: 'Une todas las islas', en: 'Connect all the islands' },
+  };
+  Arcade.game({
+    ...RJ(V),
+    /*THEME*/ tag: "Tiende puentes entre las islas", deco: ["🏯", "🌸", "🎋", "🖌️", "🍵", "⛩️"], font: 'serif', bg: ["#123a4f", "#06182a"],
+    music: { mode: "insen", bpm: 70, wave: 'triangle', style: 'chill', root: 57 }, voice: { wave: 'sine', mul: 1.1, echo: 0.4 },
+    /*EN*/ en: { title: "Hashi", tag: "Build bridges between the islands", help: "Join the <b>islands</b> with straight <b>bridges</b> that never cross. Each island's number is its total of bridges; two islands can have <b>one or two</b> between them. In the end every island is <b>connected</b>. Drag from island to island (repeat for double, again to remove)." },
+    /*TV*/ tvHelp: "Cruceta hasta una casilla · OK para jugar en ella.",
+    id: "hashi", title: "Hashi", emoji: "🌉", color: "#e8b06a", origin: "Hashiwokakero / Hashi / Bridges (Nikoli, Japón)",
+    help: "Une las <b>islas</b> con <b>puentes</b> rectos que no se crucen. El número de cada isla es su total de puentes; entre dos islas puede haber <b>uno o dos</b>. Al final todas las islas quedan <b>unidas</b>. Arrastra de una isla a otra (repite para doble y otra vez para quitar).",
+    lives: 0, levels: 0, cap: 20,
+  });
+})();
+</script>
+</body>
+</html>

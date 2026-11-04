@@ -1,0 +1,44 @@
+// Kurodoko|#16161c
+// @rejilla
+(function () {
+  const RJ = Arcade.rejilla, U = RJ.U, C = RJ.C, A = Arcade, T = Arcade.T;
+  const V = {
+    kind: 'cell', kanji: '黒', marks: [2],
+    states: [{ v: 1, name: { es: 'negra', en: 'black' }, k: 'shade', why: { es: 'Esta casilla va negra: corta la vista justo donde hace falta.', en: 'This cell goes black: it blocks the view exactly where needed.' } }, { v: 2, name: { es: 'punto (blanca)', en: 'dot (white)' }, k: 'dot' }],
+    size: (lv) => ({ n: lv <= 3 ? 5 : lv <= 8 ? 6 : lv <= 13 ? 7 : lv <= 17 ? 8 : 9, giv: 0.42 - Math.min(0.15, lv * 0.008) }),
+    blocked: (P, i) => P.num[i] > 0,
+    vis(n, sh, i) { const x = i % n, y = (i / n) | 0; let c = 1; for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { let X = x + dx, Y = y + dy; while (X >= 0 && Y >= 0 && X < n && Y < n && !sh(Y * n + X)) { c++; X += dx; Y += dy; } } return c; },
+    gen(r, c) {
+      const n = c.n, N = n * n, sh = new Array(N).fill(0);
+      for (const i of U.shuffle(r, Array.from({ length: N }, (_, i) => i))) { if (sh.filter((x) => x).length >= N * 0.22) break; if (U.n4(n, n, i).some((j) => sh[j])) continue; sh[i] = 1; if (!U.connected(n, n, (j) => !sh[j])) sh[i] = 0; }
+      const num = new Array(N).fill(0);
+      U.shuffle(r, Array.from({ length: N }, (_, i) => i).filter((i) => !sh[i])).slice(0, Math.round(N * c.giv)).forEach((i) => { num[i] = V.vis(n, (j) => sh[j], i); });
+      return { w: n, h: n, num, sol: { c: sh } };
+    },
+    check(P, st) {
+      const n = P.w, sh = (i) => st.c[i] === 1;
+      for (let i = 0; i < n * n; i++) { if (sh(i) && (P.num[i] || U.n4(n, n, i).some(sh))) return false; if (P.num[i] && V.vis(n, sh, i) !== P.num[i]) return false; }
+      return U.connected(n, n, (i) => !sh(i));
+    },
+    drawClue(ctx, P, i, x, y, cs, st) { if (!P.num[i]) return; const ok = V.vis(P.w, (j) => st.c[j] === 1, i) === P.num[i]; ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(x + cs / 2, y + cs / 2, cs * 0.36, 0, Math.PI * 2); ctx.fill(); ctx.strokeStyle = C.ink; ctx.lineWidth = 1.5; ctx.stroke(); A.txt(ctx, String(P.num[i]), x + cs / 2, y + cs / 2 + 1, cs * 0.46, ok ? '#2b8a3e' : C.ink, 'center', 900, null, RJ.NUMF); },
+    rules: (P) => {
+      const k = P.num.findIndex((v) => v > 1), x = k % P.w, y = (k / P.w) | 0;
+      return [
+        { t: { es: 'Pinta casillas de negro (nunca las que tienen número).', en: 'Paint some cells black (never the numbered ones).' }, all: true },
+        { t: { es: 'Cada número dice cuántas casillas blancas se ven desde él en las cuatro direcciones, contándose a sí mismo, hasta topar con una negra o con el borde.', en: 'Each number says how many white cells it can see in the four directions, counting itself, until it hits a black cell or the edge.' }, rows: [y], cols: [x] },
+        { t: { es: 'Las negras no se tocan por un lado, y las blancas tienen que quedar todas unidas.', en: 'Black cells never share a side, and all the white cells must stay connected.' }, all: true },
+      ];
+    },
+    goal: { es: 'Pinta de negro según la vista', en: 'Paint black by what each number sees' },
+  };
+  Arcade.game({
+    ...RJ(V),
+    /*THEME*/ tag: "Cada número ve sus casillas", deco: ["🏯", "🌸", "🎋", "🖌️", "🍵", "⛩️"], font: 'serif', bg: ["#34343e", "#16161c"],
+    music: { mode: "insen", bpm: 70, wave: 'triangle', style: 'chill', root: 57 }, voice: { wave: 'sine', mul: 1.1, echo: 0.4 },
+    /*EN*/ en: { title: "Kurodoko", tag: "Each number sees its cells", help: "Paint cells <b>black</b> (never the numbered ones). Each <b>number</b> says how many white cells it can <b>see</b> in the 4 directions, counting itself, up to a black cell or the edge. Black cells never share a side and white cells stay <b>connected</b>. Tap to paint (black → dot → empty)." },
+    /*TV*/ tvHelp: "Cruceta hasta una casilla · OK para jugar en ella.",
+    id: "kurodoko", title: "Kurodoko", emoji: "👁️", color: "#ced4da", origin: "Kurodoko / Kuromasu (Nikoli, Japón)",
+    help: "Pinta casillas de <b>negro</b> (nunca las que tienen número). Cada <b>número</b> dice cuántas casillas blancas se <b>ven</b> desde él en las 4 direcciones, contándose a sí mismo, hasta una negra o el borde. Las negras no se tocan por un lado y las blancas quedan <b>unidas</b>. Toca para pintar (negra → punto → vacía).",
+    lives: 0, levels: 0, cap: 20,
+  });
+})();

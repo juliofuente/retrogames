@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Takuzu · Arcade Perdido</title>
+<meta name="theme-color" content="#200c15">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css?v=6d7635e467">
+</head>
+<body class="game">
+<script src="config.js?v=84fed7f189"></script>
+<script src="common.js?v=fb0b61af23"></script>
+<script src="rejilla.js?v=30e0994cee"></script>
+<script>
+// @rejilla
+(function () {
+  const RJ = Arcade.rejilla, U = RJ.U, C = RJ.C, A = Arcade, T = Arcade.T;
+  const V = {
+    kind: 'cell', kanji: '二',
+    size: (lv) => ({ n: lv <= 3 ? 4 : lv <= 9 ? 6 : lv <= 15 ? 8 : 10 }),
+    states: [
+      { v: 1, name: { es: '0', en: '0' }, k: 'custom', draw: (ctx, x, y, cs, i, s) => V.tile(ctx, x, y, cs, '0', s && s.P.fix && s.P.fix[i], '#e03131') },
+      { v: 2, name: { es: '1', en: '1' }, k: 'custom', draw: (ctx, x, y, cs, i, s) => V.tile(ctx, x, y, cs, '1', s && s.P.fix && s.P.fix[i], '#2f5aa8') },
+    ],
+    tile(ctx, x, y, cs, t, given, col) {
+      const m = cs * 0.1; ctx.fillStyle = given ? col : col + '22'; A.rr(ctx, x + m, y + m, cs - 2 * m, cs - 2 * m, cs * 0.3); ctx.fill();
+      if (!given) { ctx.strokeStyle = col; ctx.lineWidth = Math.max(1.5, cs * 0.05); ctx.stroke(); }
+      A.txt(ctx, t, x + cs / 2, y + cs / 2 + 1, cs * 0.5, given ? '#fff' : col, 'center', 900, null, RJ.NUMF);
+    },
+    ok(P, v, i) {
+      const n = P.n, x = i % n, y = (i / n) | 0, val = v[i];
+      const row = (k) => v[y * n + k], col = (k) => v[k * n + x];
+      for (const get of [row, col]) {
+        const p = get === row ? x : y; let cnt = 0, full = true;
+        for (let k = 0; k < n; k++) { const q = get(k); if (q === val) cnt++; if (!q) full = false; }
+        if (cnt > n / 2) return false;
+        for (let k = Math.max(0, p - 2); k <= Math.min(n - 3, p); k++) if (get(k) === val && get(k + 1) === val && get(k + 2) === val) return false;
+        if (full) { for (let o = 0; o < n; o++) { if (o === (get === row ? y : x)) continue; let same = true; for (let k = 0; k < n; k++) { const a = get === row ? v[o * n + k] : v[k * n + o], b = get(k); if (!a || a !== b) { same = false; break; } } if (same) return false; } }
+      }
+      return true;
+    },
+    cand(P, v, i) { let m = 0; for (const val of [1, 2]) { v[i] = val; if (V.ok(P, v, i)) m |= 1 << val; } v[i] = 0; return m; },
+    gen(r, c) {
+      const n = c.n, P = { w: n, h: n, n };
+      const sol = U.fill(r, n * n, new Array(n * n).fill(0), (vv, i) => V.cand(P, vv, i), { budget: 60000 });
+      if (!sol) throw new Error('takuzu');
+      const unique = (f) => U.solve(n * n, f, (vv, i) => V.cand(P, vv, i), { budget: 6000 }).n === 1;
+      P.fix = U.reduce(r, sol, unique); P.sol = { c: sol }; return P;
+    },
+    check(P, st) { const v = st.c; if (v.some((x) => !x)) return false; for (let i = 0; i < P.n * P.n; i++) if (!V.ok(P, v, i)) return false; return true; },
+    errors(P, st) { const bad = new Set(), v = st.c; for (let i = 0; i < P.n * P.n; i++) if (v[i] && !V.ok(P, v, i)) bad.add(i); return bad; },
+    cellBg(P, i, st) { return st && st.c[i] && !V.ok(P, st.c, i) ? 'rgba(224,49,49,.18)' : null; },
+    rules: (P) => [
+      { t: { es: 'Rellena todas las casillas con 0 o 1.', en: 'Fill every cell with 0 or 1.' }, all: true },
+      { t: { es: 'Nunca puede haber tres iguales seguidos en una fila o columna (000 o 111).', en: 'There can never be three equal ones in a row or column (000 or 111).' }, rows: [0] },
+      { t: { es: 'Cada fila y columna tiene tantos 0 como 1: ' + P.n / 2 + ' y ' + P.n / 2 + '.', en: 'Every row and column has as many 0s as 1s: ' + P.n / 2 + ' and ' + P.n / 2 + '.' }, cols: [0] },
+      { t: { es: 'Y no puede haber dos filas iguales ni dos columnas iguales.', en: 'And no two rows or two columns can be identical.' }, rows: [0, 1] },
+    ],
+    explain(P, a) { return a.v === 1 ? { es: 'Aquí va un 0: un 1 dejaría tres iguales seguidos o demasiados unos.', en: 'A 0 goes here: a 1 would make three in a row or too many ones.' } : { es: 'Aquí va un 1: un 0 dejaría tres iguales seguidos o demasiados ceros.', en: 'A 1 goes here: a 0 would make three in a row or too many zeros.' }; },
+    goal: { es: 'Rellena con ceros y unos', en: 'Fill it with zeros and ones' },
+  };
+  Arcade.game({
+    ...RJ(V),
+    /*THEME*/ tag: "Ceros y unos sin tres seguidos", deco: ["🏯", "🌸", "🎋", "🖌️", "🍵", "⛩️"], font: 'serif', bg: ["#4a1f2e", "#200c15"],
+    music: { mode: "insen", bpm: 70, wave: 'triangle', style: 'chill', root: 57 }, voice: { wave: 'sine', mul: 1.1, echo: 0.4 },
+    /*EN*/ en: { title: "Takuzu", tag: "Zeros and ones, never three in a row", help: "Fill with <b>0</b> and <b>1</b> (tap a cell to change it). Never <b>three equal in a row</b> in a row or column; each row and column has <b>as many 0s as 1s</b>, and no two rows or columns can be <b>identical</b>." },
+    /*TV*/ tvHelp: "Cruceta hasta una casilla · OK para jugar en ella.",
+    id: "takuzu", title: "Takuzu", emoji: "0️⃣", color: "#ff6b6b", origin: "Takuzu / Binairo / Binary Puzzle (Bélgica / Italia)",
+    help: "Rellena con <b>0</b> y <b>1</b> (toca una casilla para cambiarla). Nunca <b>tres iguales seguidos</b> en una fila o columna; cada fila y columna tiene <b>tantos 0 como 1</b>, y no puede haber dos filas ni dos columnas <b>iguales</b>.",
+    lives: 0, levels: 0, cap: 20,
+  });
+})();
+</script>
+</body>
+</html>

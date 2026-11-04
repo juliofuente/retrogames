@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Kojun · Arcade Perdido</title>
+<meta name="theme-color" content="#0b2423">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css?v=6d7635e467">
+</head>
+<body class="game">
+<script src="config.js?v=84fed7f189"></script>
+<script src="common.js?v=fb0b61af23"></script>
+<script src="rejilla.js?v=30e0994cee"></script>
+<script>
+// @rejilla
+(function () {
+  const RJ = Arcade.rejilla, U = RJ.U, C = RJ.C, A = Arcade, T = Arcade.T;
+  const V = {
+    kind: 'num', kanji: '順',
+    size: (lv) => ({ w: lv <= 4 ? 5 : lv <= 10 ? 6 : lv <= 16 ? 7 : 8, mx: lv <= 4 ? 4 : 5 }),
+    N: (P) => P.mx,
+    regColors: true,
+    cand(P, v, i) {
+      const w = P.w, k = P.reg[i]; let m = 0;
+      for (const j of P.rc[k]) m |= 1 << v[j];
+      for (const j of U.n4(w, P.h, i)) m |= 1 << v[j];
+      let a = U.full(P.rc[k].length) & ~m;
+      const up = i - w, dn = i + w;
+      if (up >= 0 && P.reg[up] === k && v[up]) a &= (1 << v[up]) - 2;
+      if (dn < w * P.h && P.reg[dn] === k && v[dn]) a &= ~((1 << (v[dn] + 1)) - 1);
+      return a;
+    },
+    groups(P) { return P.rc; },
+    gen(r, c) {
+      const w = c.w, h = c.w;
+      for (let t = 0; t < 80; t++) {
+        const reg = U.regions(r, w, h, 2, c.mx, { loose: true }), rc = U.regCells(reg), P = { w, h, reg, rc, mx: Math.max(...rc.map((q) => q.length)) };
+        const sol = U.fill(r, w * h, new Array(w * h).fill(0), (vv, i) => V.cand(P, vv, i), { budget: 4000 });
+        if (!sol) continue;
+        const unique = (f) => U.solve(w * h, f, (vv, i) => V.cand(P, vv, i), { budget: 6000 }).n === 1;
+        P.fix = U.reduce(r, sol, unique); P.sol = { c: sol }; return P;
+      }
+      throw new Error('kojun');
+    },
+    check(P, st) {
+      const v = st.c, w = P.w; if (v.some((x) => !x)) return false;
+      for (const cells of P.rc) { const s = new Set(cells.map((i) => v[i])); if (s.size !== cells.length || Math.max(...s) > cells.length) return false; }
+      for (let i = 0; i < w * P.h; i++) { for (const j of U.n4(w, P.h, i)) if (v[i] === v[j]) return false; const dn = i + w; if (dn < w * P.h && P.reg[dn] === P.reg[i] && v[i] <= v[dn]) return false; }
+      return true;
+    },
+    errors(P, st) { const bad = new Set(), v = st.c, w = P.w; for (let i = 0; i < w * P.h; i++) { if (!v[i]) continue; for (const j of U.n4(w, P.h, i)) if (v[j] === v[i]) { bad.add(i); bad.add(j); } const dn = i + w; if (dn < w * P.h && P.reg[dn] === P.reg[i] && v[dn] && v[i] <= v[dn]) { bad.add(i); bad.add(dn); } } return bad; },
+    rules: (P) => {
+      const k = P.rc.findIndex((q) => q.length >= 3); let pair = [];
+      for (let i = 0; i < P.w * (P.h - 1) && !pair.length; i++) if (P.reg[i] === P.reg[i + P.w]) pair = [i, i + P.w];
+      return [
+        { t: { es: 'Cada zona de N casillas lleva los números del 1 al N, sin repetir.', en: 'Each area of N cells holds the numbers 1 to N, no repeats.' }, cells: P.rc[k] },
+        { t: { es: 'Dos casillas que se tocan por un lado nunca tienen el mismo número (aunque sean de zonas distintas).', en: 'Two cells that share a side never have the same number (even in different areas).' }, cells: (P) => [P.w + 1].concat(U.n4(P.w, P.h, P.w + 1)) },
+        { t: { es: 'Y dentro de una zona, si una casilla está encima de otra, la de arriba tiene el número mayor.', en: 'And inside an area, when one cell sits on top of another, the top one has the bigger number.' }, cells: pair },
+      ];
+    },
+    goal: { es: 'Rellena las zonas: arriba, el mayor', en: 'Fill the areas: bigger on top' },
+  };
+  Arcade.game({
+    ...RJ(V),
+    /*THEME*/ tag: "Zonas numeradas: arriba, el mayor", deco: ["🏯", "🌸", "🎋", "🖌️", "🍵", "⛩️"], font: 'serif', bg: ["#1d4a48", "#0b2423"],
+    music: { mode: "insen", bpm: 70, wave: 'triangle', style: 'chill', root: 57 }, voice: { wave: 'sine', mul: 1.1, echo: 0.4 },
+    /*EN*/ en: { title: "Kojun", tag: "Numbered areas: bigger on top", help: "Each <b>area</b> of N cells holds the numbers 1 to N. Two cells that share a <b>side</b> never have the same number. Inside an area, when one cell is <b>above</b> another, the top one has the <b>bigger</b> number. <b>Tap a cell</b> and then a <b>number</b>." },
+    /*TV*/ tvHelp: "Cruceta hasta una casilla · OK para jugar en ella.",
+    id: "kojun", title: "Kojun", emoji: "🗾", color: "#63e6be", origin: "Kojun / Cojun (Nikoli, Japón)",
+    help: "Cada <b>zona</b> de N casillas lleva los números del 1 al N. Dos casillas que se tocan <b>por un lado</b> nunca tienen el mismo número. Dentro de una zona, si una casilla está <b>encima</b> de otra, la de arriba tiene el número <b>mayor</b>. <b>Toca una casilla</b> y luego un <b>número</b>.",
+    lives: 0, levels: 0, cap: 20,
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Kropki · Arcade Perdido</title>
+<meta name="theme-color" content="#1c1c2c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css?v=6d7635e467">
+</head>
+<body class="game">
+<script src="config.js?v=84fed7f189"></script>
+<script src="common.js?v=fb0b61af23"></script>
+<script src="rejilla.js?v=30e0994cee"></script>
+<script>
+// @rejilla
+(function () {
+  const RJ = Arcade.rejilla, U = RJ.U, C = RJ.C, A = Arcade, T = Arcade.T;
+  const V = {
+    kind: 'num', kanji: '点',
+    size: (lv) => ({ n: lv <= 4 ? 4 : lv <= 10 ? 5 : lv <= 16 ? 6 : 7 }),
+    N: (P) => P.n,
+    cand(P, v, i) {
+      const n = P.n, y = (i / n) | 0, x = i % n; let m = 0;
+      for (let k = 0; k < n; k++) { m |= 1 << v[y * n + k]; m |= 1 << v[k * n + x]; }
+      let a = U.full(n) & ~m;
+      for (const j of U.n4(n, n, i)) {
+        const q = v[j]; if (!q) continue; const d = P.dot[U.key(i, j)];
+        const cons = ((1 << (q - 1)) | (1 << (q + 1))) & U.full(n), dbl = ((q * 2 <= n ? 1 << (q * 2) : 0) | (q % 2 === 0 ? 1 << (q / 2) : 0)) & U.full(n);
+        a &= d === 'w' ? cons : d === 'b' ? dbl : ~(cons | dbl);
+      }
+      return a;
+    },
+    groups(P) { const n = P.n, g = []; for (let k = 0; k < n; k++) { g.push(Array.from({ length: n }, (_, j) => k * n + j)); g.push(Array.from({ length: n }, (_, j) => j * n + k)); } return g; },
+    rel(a, b) { const c = Math.abs(a - b) === 1, d = a === 2 * b || b === 2 * a; return [c, d]; },
+    gen(r, c) {
+      const n = c.n, sol = U.latin(r, n), P = { w: n, h: n, n, dot: {} };
+      for (let i = 0; i < n * n; i++) for (const j of U.n4(n, n, i)) if (j > i) { const [cc, dd] = V.rel(sol[i], sol[j]); if (cc && dd) P.dot[U.key(i, j)] = r() < 0.5 ? 'w' : 'b'; else if (cc) P.dot[U.key(i, j)] = 'w'; else if (dd) P.dot[U.key(i, j)] = 'b'; }
+      const unique = (f) => U.solve(n * n, f, (vv, i) => V.cand(P, vv, i), { budget: 6000 }).n === 1;
+      P.fix = U.reduce(r, sol, unique); P.sol = { c: sol }; return P;
+    },
+    check(P, st) {
+      const v = st.c, n = P.n; if (v.some((x) => !x)) return false;
+      if (!V.groups(P).every((g) => new Set(g.map((i) => v[i])).size === n)) return false;
+      for (let i = 0; i < n * n; i++) for (const j of U.n4(n, n, i)) {
+        if (j < i) continue; const [cc, dd] = V.rel(v[i], v[j]), d = P.dot[U.key(i, j)];
+        if (d === 'w' && !cc) return false; if (d === 'b' && !dd) return false; if (!d && (cc || dd)) return false;
+      }
+      return true;
+    },
+    drawOver(ctx, P, st, L) {
+      for (const k in P.dot) { const [a, b] = k.split('_').map(Number), hz = b === a + 1, x = L.ox + (a % P.w + (hz ? 1 : 0.5)) * L.cs, y = L.oy + (((a / P.w) | 0) + (hz ? 0.5 : 1)) * L.cs; ctx.beginPath(); ctx.arc(x, y, L.cs * 0.11, 0, Math.PI * 2); ctx.fillStyle = P.dot[k] === 'b' ? C.ink : '#fff'; ctx.fill(); ctx.lineWidth = Math.max(1.5, L.cs * 0.04); ctx.strokeStyle = C.ink; ctx.stroke(); }
+    },
+    rules: (P) => {
+      const w = Object.keys(P.dot).find((k) => P.dot[k] === 'w'), b = Object.keys(P.dot).find((k) => P.dot[k] === 'b');
+      return [
+        { t: { es: 'Rellena con los números del 1 al ' + P.n + ', sin repetir en ninguna fila ni columna.', en: 'Fill in the numbers 1 to ' + P.n + ', without repeating in any row or column.' }, rows: [0], cols: [0] },
+        { t: { es: 'Un punto blanco entre dos casillas: sus números son consecutivos (como 4 y 5).', en: 'A white dot between two cells: their numbers are consecutive (like 4 and 5).' }, cells: w ? w.split('_').map(Number) : [] },
+        { t: { es: 'Un punto negro: uno es el doble del otro (como 3 y 6). Entre 1 y 2 puede ir cualquiera de los dos.', en: 'A black dot: one is double the other (like 3 and 6). Between 1 and 2 it can be either.' }, cells: b ? b.split('_').map(Number) : [] },
+        { t: { es: 'Sin punto, no se cumple ninguna de las dos cosas. ¡Úsalo para descartar!', en: 'With no dot, neither holds. Use it to rule numbers out!' }, all: true },
+      ];
+    },
+    goal: { es: 'Rellena según los puntos', en: 'Fill it in following the dots' },
+  };
+  Arcade.game({
+    ...RJ(V),
+    /*THEME*/ tag: "Puntos blancos y negros entre números", deco: ["🏯", "🌸", "🎋", "🖌️", "🍵", "⛩️"], font: 'serif', bg: ["#3d3d55", "#1c1c2c"],
+    music: { mode: "insen", bpm: 70, wave: 'triangle', style: 'chill', root: 57 }, voice: { wave: 'sine', mul: 1.1, echo: 0.4 },
+    /*EN*/ en: { title: "Kropki", tag: "White and black dots between numbers", help: "Fill in the numbers 1 to N without repeating in any <b>row</b> or <b>column</b>. A <b>white dot</b> between two cells: <b>consecutive</b> numbers. A <b>black dot</b>: one is <b>double</b> the other. No dot: neither. <b>Tap a cell</b> and then a <b>number</b>." },
+    /*TV*/ tvHelp: "Cruceta hasta una casilla · OK para jugar en ella.",
+    id: "kropki", title: "Kropki", emoji: "⚪", color: "#e9ecef", origin: "Kropki / Dots (Polonia)",
+    help: "Rellena con los números del 1 al N sin repetir en ninguna <b>fila</b> ni <b>columna</b>. Un <b>punto blanco</b> entre dos casillas: números <b>consecutivos</b>. Un <b>punto negro</b>: uno es el <b>doble</b> del otro. Sin punto, ninguna de las dos cosas. <b>Toca una casilla</b> y luego un <b>número</b>.",
+    lives: 0, levels: 0, cap: 20,
+  });
+})();
+</script>
+</body>
+</html>

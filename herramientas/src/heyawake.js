@@ -1,0 +1,68 @@
+// Heyawake|#1d0f24
+// @rejilla
+(function () {
+  const RJ = Arcade.rejilla, U = RJ.U, C = RJ.C, A = Arcade, T = Arcade.T;
+  const V = {
+    kind: 'cell', kanji: '部', marks: [2],
+    states: [{ v: 1, name: { es: 'negra', en: 'black' }, k: 'shade', why: { es: 'Esta casilla va negra: corta una fila blanca que cruzaba demasiadas habitaciones, o completa el número de su habitación.', en: 'This cell goes black: it breaks a white line crossing too many rooms, or completes its room number.' } }, { v: 2, name: { es: 'punto (blanca)', en: 'dot (white)' }, k: 'dot' }],
+    size: (lv) => ({ n: lv <= 3 ? 5 : lv <= 8 ? 6 : lv <= 13 ? 7 : lv <= 17 ? 8 : 9, giv: lv <= 8 ? 0.85 : 0.65 }),
+    runsOk(P, sh) {   // ninguna línea recta de blancas cruza más de un borde de habitación
+      const n = P.w;
+      for (const [d, len] of [[1, n], [n, n]]) for (let k = 0; k < n; k++) {
+        let rooms = [];
+        for (let j = 0; j < n; j++) { const i = d === 1 ? k * n + j : j * n + k; if (sh(i)) { rooms = []; continue; } if (rooms[rooms.length - 1] !== P.reg[i]) rooms.push(P.reg[i]); if (rooms.length > 2) return false; }
+      }
+      return true;
+    },
+    gen(r, c) {
+      const n = c.n, N = n * n;
+      for (let t = 0; t < 200; t++) {
+        const rs = U.rects(r, n, n, 9, 2, 4), reg = new Array(N).fill(0); rs.forEach((q, k) => { for (let y = q.y; y < q.y + q.h; y++) for (let x = q.x; x < q.x + q.w; x++) reg[y * n + x] = k; });
+        const P = { w: n, h: n, reg }, sh = new Array(N).fill(0), S = (i) => sh[i] === 1;
+        const can = (i) => !sh[i] && !U.n4(n, n, i).some(S);
+        const tryShade = (i) => { if (!can(i)) return false; sh[i] = 1; if (!U.connected(n, n, (j) => !sh[j])) { sh[i] = 0; return false; } return true; };
+        // primero se cortan las líneas blancas largas, luego un poco más de negro al azar
+        for (let it = 0; it < 200; it++) {
+          let bad = null;
+          for (const d of [1, n]) { if (bad) break; for (let k = 0; k < n && !bad; k++) { let rooms = [], cells = []; for (let j = 0; j < n; j++) { const i = d === 1 ? k * n + j : j * n + k; if (sh[i]) { rooms = []; cells = []; continue; } cells.push(i); if (rooms[rooms.length - 1] !== reg[i]) rooms.push(reg[i]); if (rooms.length > 2) { bad = cells; break; } } } }
+          if (!bad) break;
+          if (!U.shuffle(r, bad).some(tryShade)) break;
+        }
+        if (!V.runsOk(P, S)) continue;
+        for (const i of U.shuffle(r, Array.from({ length: N }, (_, i) => i))) { if (sh.filter((x) => x).length >= N * 0.24) break; tryShade(i); }
+        P.num = new Array(N).fill(-1);
+        rs.forEach((q, k) => { if (r() > c.giv) return; const cnt = sh.filter((v, i) => v && reg[i] === k).length; P.num[q.y * n + q.x] = cnt; });
+        P.sol = { c: sh }; return P;
+      }
+      throw new Error('heyawake');
+    },
+    check(P, st) {
+      const n = P.w, sh = (i) => st.c[i] === 1;
+      for (let i = 0; i < n * n; i++) if (sh(i) && U.n4(n, n, i).some(sh)) return false;
+      if (!U.connected(n, n, (i) => !sh(i)) || !V.runsOk(P, sh)) return false;
+      for (let i = 0; i < n * n; i++) if (P.num[i] >= 0) { const k = P.reg[i]; let c = 0; for (let j = 0; j < n * n; j++) if (P.reg[j] === k && sh(j)) c++; if (c !== P.num[i]) return false; }
+      return true;
+    },
+    drawClue(ctx, P, i, x, y, cs, st) { if (P.num[i] >= 0) A.txt(ctx, String(P.num[i]), x + cs * 0.2, y + cs * 0.22, cs * 0.3, st.c[i] === 1 ? '#ffe066' : C.seal, 'center', 900, null, RJ.NUMF); },
+    rules: (P) => {
+      const k = P.num.findIndex((v) => v > 0), room = P.reg.map((q, i) => (q === P.reg[k] ? i : -1)).filter((i) => i >= 0);
+      return [
+        { t: { es: 'El tablero está dividido en habitaciones. Pinta algunas casillas de negro.', en: 'The board is split into rooms. Paint some cells black.' }, all: true },
+        { t: { es: 'El número de una habitación dice cuántas negras tiene: esta lleva ' + P.num[k] + '.', en: 'A room number says how many black cells it has: this one has ' + P.num[k] + '.' }, cells: room },
+        { t: { es: 'Las negras no se tocan por un lado y las blancas quedan todas unidas.', en: 'Black cells never share a side and all white cells stay connected.' }, all: true },
+        { t: { es: 'Y una línea recta de casillas blancas no puede atravesar más de un borde de habitación: pasa como mucho por dos habitaciones seguidas.', en: 'And a straight line of white cells cannot cross more than one room border: it goes through two rooms at most.' }, rows: [0] },
+      ];
+    },
+    goal: { es: 'Pinta las habitaciones', en: 'Paint the rooms' },
+  };
+  Arcade.game({
+    ...RJ(V),
+    /*THEME*/ tag: "Habitaciones con casillas negras", deco: ["🏯", "🌸", "🎋", "🖌️", "🍵", "⛩️"], font: 'serif', bg: ["#41244f", "#1d0f24"],
+    music: { mode: "insen", bpm: 70, wave: 'triangle', style: 'chill', root: 57 }, voice: { wave: 'sine', mul: 1.1, echo: 0.4 },
+    /*EN*/ en: { title: "Heyawake", tag: "Rooms with black cells", help: "Paint cells <b>black</b>. A <b>room</b> number says how many black cells it has. Black cells never share a side and white cells stay <b>connected</b>. A <b>straight line</b> of white cells cannot cross more than <b>one</b> room border. Tap to paint (black → dot → empty)." },
+    /*TV*/ tvHelp: "Cruceta hasta una casilla · OK para jugar en ella.",
+    id: "heyawake", title: "Heyawake", emoji: "🚪", color: "#da77f2", origin: "Heyawake (Nikoli, Japón)",
+    help: "Pinta casillas de <b>negro</b>. El número de una <b>habitación</b> dice cuántas negras tiene. Las negras no se tocan por un lado y las blancas quedan <b>unidas</b>. Una <b>línea recta</b> de blancas no puede cruzar más de <b>un borde</b> de habitación. Toca para pintar (negra → punto → vacía).",
+    lives: 0, levels: 0, cap: 20,
+  });
+})();

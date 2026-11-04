@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Nurikabe · Arcade Perdido</title>
+<meta name="theme-color" content="#0a1b2e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css?v=6d7635e467">
+</head>
+<body class="game">
+<script src="config.js?v=84fed7f189"></script>
+<script src="common.js?v=fb0b61af23"></script>
+<script src="rejilla.js?v=30e0994cee"></script>
+<script>
+// @rejilla
+(function () {
+  const RJ = Arcade.rejilla, U = RJ.U, C = RJ.C, A = Arcade, T = Arcade.T;
+  const V = {
+    kind: 'cell', kanji: '島', marks: [2],
+    states: [
+      { v: 1, name: { es: 'mar', en: 'sea' }, k: 'shade', c: '#2f6aa3', c2: '#163a5f', why: { es: 'Esta casilla es mar: no puede ser parte de ninguna isla.', en: 'This cell is sea: it cannot belong to any island.' } },
+      { v: 2, name: { es: 'punto (isla)', en: 'dot (island)' }, k: 'dot' },
+    ],
+    size: (lv) => ({ n: lv <= 3 ? 5 : lv <= 8 ? 6 : lv <= 13 ? 7 : lv <= 17 ? 8 : 9, mx: lv <= 5 ? 4 : lv <= 12 ? 5 : 7 }),
+    blocked: (P, i) => P.num[i] > 0,
+    gen(r, c) {
+      const n = c.n, N = n * n;
+      for (let t = 0; t < 400; t++) {
+        const isl = new Int32Array(N).fill(-1); let k = 0;
+        const free = (i, id) => isl[i] < 0 && U.n4(n, n, i).every((j) => isl[j] < 0 || isl[j] === id);
+        const target = Math.round(N * (0.42 + r() * 0.1)); let land = 0;
+        for (let it = 0; it < 300 && land < target; it++) {
+          const s = U.ri(r, 0, N - 1); if (!free(s, k)) continue;
+          const want = U.ri(r, 1, c.mx), cells = [s]; isl[s] = k;
+          while (cells.length < want) { const fr = []; for (const q of cells) for (const j of U.n4(n, n, q)) if (free(j, k)) fr.push(j); if (!fr.length) break; const j = U.pick(r, fr); isl[j] = k; cells.push(j); }
+          land += cells.length; k++;
+        }
+        const sea = (i) => isl[i] < 0;
+        // arreglo de los bloques de mar de 2×2: una de sus casillas pasa a ser isla (nueva o pegada a una vecina)
+        for (let it = 0; it < 120; it++) {
+          let blk = -1; for (let y = 0; y < n - 1 && blk < 0; y++) for (let x = 0; x < n - 1; x++) { const i = y * n + x; if (sea(i) && sea(i + 1) && sea(i + n) && sea(i + n + 1)) { blk = i; break; } }
+          if (blk < 0) break;
+          let done = false;
+          for (const i of U.shuffle(r, [blk, blk + 1, blk + n, blk + n + 1])) {
+            const ids = [...new Set(U.n4(n, n, i).map((j) => isl[j]).filter((q) => q >= 0))];
+            if (ids.length === 0) { isl[i] = k++; done = true; break; }
+            if (ids.length === 1 && isl.filter((q) => q === ids[0]).length < c.mx + 2) { isl[i] = ids[0]; done = true; break; }
+          }
+          if (!done) break;
+        }
+        if (U.has2x2(n, n, sea) || !U.connected(n, n, sea)) continue;
+        const num = new Array(N).fill(0), cells = U.regCells(Array.from(isl).map((q) => (q < 0 ? k : q)));
+        for (let q = 0; q < k; q++) { const cs = cells[q]; if (!cs || !cs.length) continue; num[U.pick(r, cs)] = cs.length; }
+        return { w: n, h: n, num, sol: { c: Array.from(isl).map((q) => (q < 0 ? 1 : 0)) } };
+      }
+      throw new Error('nurikabe');
+    },
+    check(P, st) {
+      const n = P.w, sh = (i) => st.c[i] === 1;
+      if (P.num.some((v, i) => v && sh(i))) return false;
+      if (U.has2x2(n, n, sh) || !U.connected(n, n, sh)) return false;
+      for (const g of U.comps(n, n, (i) => !sh(i))) { const clues = g.filter((i) => P.num[i]); if (clues.length !== 1 || P.num[clues[0]] !== g.length) return false; }
+      return true;
+    },
+    drawClue(ctx, P, i, x, y, cs) { if (P.num[i]) { ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(x + cs / 2, y + cs / 2, cs * 0.36, 0, Math.PI * 2); ctx.fill(); ctx.strokeStyle = C.ink; ctx.lineWidth = 1.5; ctx.stroke(); A.txt(ctx, String(P.num[i]), x + cs / 2, y + cs / 2 + 1, cs * 0.46, C.ink, 'center', 900, null, RJ.NUMF); } },
+    rules: (P) => {
+      const k = P.num.findIndex((v) => v >= 2), isl = U.comps(P.w, P.h, (i) => P.sol.c[i] === 0).find((g) => g.indexOf(k) >= 0) || [];
+      return [
+        { t: { es: 'Pinta de azul el mar para que queden islas blancas.', en: 'Paint the sea blue so that white islands are left.' }, all: true },
+        { t: { es: 'Cada isla tiene un solo número, que es su tamaño: esta isla del ' + P.num[k] + ' ocupa ' + P.num[k] + ' casillas.', en: 'Each island has exactly one number, which is its size: this ' + P.num[k] + ' island covers ' + P.num[k] + ' cells.' }, cells: isl },
+        { t: { es: 'Todo el mar tiene que estar unido, y nunca puede haber un bloque de mar de 2 × 2.', en: 'All the sea must be connected, and there can never be a 2 × 2 block of sea.' }, all: true },
+      ];
+    },
+    goal: { es: 'Separa las islas con el mar', en: 'Separate the islands with sea' },
+  };
+  Arcade.game({
+    ...RJ(V),
+    /*THEME*/ tag: "Islas y un solo mar", deco: ["🏯", "🌸", "🎋", "🖌️", "🍵", "⛩️"], font: 'serif', bg: ["#173a5e", "#0a1b2e"],
+    music: { mode: "insen", bpm: 70, wave: 'triangle', style: 'chill', root: 57 }, voice: { wave: 'sine', mul: 1.1, echo: 0.4 },
+    /*EN*/ en: { title: "Nurikabe", tag: "Islands in a single sea", help: "Paint the <b>sea</b> to leave white <b>islands</b>. Each island has <b>exactly one number</b>, which is its <b>size</b>. All the sea is <b>connected</b> and there can be no <b>2×2</b> blocks of sea. Tap a cell to paint it (sea → island dot → empty) or drag to paint several." },
+    /*TV*/ tvHelp: "Cruceta hasta una casilla · OK para jugar en ella.",
+    id: "nurikabe", title: "Nurikabe", emoji: "🏝️", color: "#4dabf7", origin: "Nurikabe / Islas en la corriente (Nikoli, Japón)",
+    help: "Pinta el <b>mar</b> para dejar <b>islas</b> blancas. Cada isla tiene <b>un solo número</b>, que es su <b>tamaño</b>. Todo el mar está <b>unido</b> y no puede haber bloques de mar de <b>2×2</b>. Toca una casilla para pintarla (mar → punto de isla → vacía) o arrastra para pintar varias.",
+    lives: 0, levels: 0, cap: 20,
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Nonograma · Arcade Perdido</title>
+<meta name="theme-color" content="#220c17">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css?v=6d7635e467">
+</head>
+<body class="game">
+<script src="config.js?v=84fed7f189"></script>
+<script src="common.js?v=fb0b61af23"></script>
+<script src="rejilla.js?v=30e0994cee"></script>
+<script>
+// @rejilla
+(function () {
+  const RJ = Arcade.rejilla, U = RJ.U, C = RJ.C, A = Arcade, T = Arcade.T;
+  const V = {
+    kind: 'cell', kanji: '絵', marks: [2],
+    states: [{ v: 1, name: { es: 'pintada', en: 'filled' }, k: 'shade', why: { es: 'Esta casilla se rellena: los bloques de su fila y su columna no caben de otra forma.', en: 'This cell is filled: the blocks of its row and column do not fit any other way.' } }, { v: 2, name: { es: '✕', en: '✕' }, k: 'x' }],
+    pics: [
+      ['heart', 8, '.##..##.#########################.######...####.....##...'],
+      ['star', 7, '...#.....###..#######.#####...###...##.##.#.....#'],
+      ['house', 8, '...##.....####...######.##########..#.#..#..#.#..#..####..######'],
+      ['tree', 8, '...##.....####...######..######.########.......##......##.....####.'],
+      ['cat', 8, '#......###....####.##.###.######.##..##.########.######...####..'],
+      ['fish', 8, '........##.####.#######..######.#######.##.####.........'],
+      ['cup', 7, '#####..#####.#######..####.##..#####..###...#####'],
+      ['boat', 8, '....#.......##......###.....####...#.#.....#..##########.######.'],
+      ['mushroom', 8, '..####...######.##.##.#######..####.....##......##.....####.'],
+      ['note', 7, '..#####..#...#..#...#..#...#.##..###.##.##.......'],
+    ],
+    size: (lv) => ({ n: lv <= 4 ? 7 : lv <= 10 ? 8 : lv <= 16 ? 10 : 12, pic: lv <= 10 }),
+    runs(a) { const o = []; let k = 0; for (const x of a) { if (x) k++; else if (k) { o.push(k); k = 0; } } if (k) o.push(k); return o.length ? o : [0]; },
+    clues(P, c) { const n = P.w, R = [], Co = []; for (let k = 0; k < n; k++) { R.push(V.runs(Array.from({ length: n }, (_, j) => c[k * n + j] === 1))); Co.push(V.runs(Array.from({ length: P.h }, (_, j) => c[j * n + k] === 1))); } return [R, Co]; },
+    margin: (P) => { const [R, Co] = [P.rc, P.cc]; return { l: Math.max(1, Math.ceil(Math.max(...R.map((q) => q.length)) * 0.62)), t: Math.max(1, Math.ceil(Math.max(...Co.map((q) => q.length)) * 0.62)) }; },
+    gen(r, c) {
+      let n = c.n, g;
+      const usable = V.pics.filter((p) => p[1] <= n);
+      if (c.pic && usable.length && r() < 0.7) {
+        const p = U.pick(r, usable), pw = p[1], ph = Math.ceil(p[2].length / pw); n = Math.max(pw, ph);
+        g = new Array(n * n).fill(0); for (let k = 0; k < p[2].length; k++) if (p[2][k] === '#') { const x = k % pw, y = (k / pw) | 0; if (y < n) g[y * n + x] = 1; }
+        if (r() < 0.5) g = g.map((_, i) => g[((i / n) | 0) * n + (n - 1 - (i % n))]);
+      } else {
+        g = Array.from({ length: n * n }, () => (r() < 0.55 ? 1 : 0));
+        for (let it = 0; it < 2; it++) g = g.map((v, i) => { const nb = U.n8(n, n, i), k = nb.filter((j) => g[j]).length; return k >= 5 ? 1 : k <= 2 ? 0 : v; });
+      }
+      const P = { w: n, h: n }; const [R, Co] = V.clues(P, g); P.rc = R; P.cc = Co; P.sol = { c: g }; return P;
+    },
+    // resolución por líneas (para que la demo vaya en un orden que se pueda razonar)
+    line(clue, k) {
+      const n = k.length, acc = new Array(n).fill(-2), cl = clue[0] === 0 ? [] : clue, cur = new Array(n).fill(0);
+      const rec = (b, pos) => {
+        if (b === cl.length) { for (let i = pos; i < n; i++) if (k[i] === 1) return; for (let i = 0; i < n; i++) { const v = i < pos ? cur[i] : 0; acc[i] = acc[i] === -2 ? v : acc[i] === v ? v : -1; } return; }
+        for (let s = pos; s + cl[b] <= n; s++) {
+          let ok = true; for (let i = pos; i < s; i++) if (k[i] === 1) { ok = false; break; } if (!ok) break;
+          for (let i = s; i < s + cl[b]; i++) if (k[i] === 0) { ok = false; break; }
+          if (ok && s + cl[b] < n && k[s + cl[b]] === 1) ok = false;
+          if (!ok) continue;
+          for (let i = pos; i < s; i++) cur[i] = 0; for (let i = s; i < s + cl[b]; i++) cur[i] = 1; if (s + cl[b] < n) cur[s + cl[b]] = 0;
+          rec(b + 1, Math.min(n, s + cl[b] + 1));
+        }
+      };
+      rec(0, 0); return acc;
+    },
+    order(P, acts, st) {
+      const n = P.w, k = st.c.map((v) => (v === 1 ? 1 : v === 2 ? 0 : -1)), when = new Array(n * n).fill(1e9); let step = 0, ch = true;
+      while (ch) {
+        ch = false;
+        for (let q = 0; q < 2 * n; q++) {
+          const idx = Array.from({ length: n }, (_, j) => (q < n ? q * n + j : j * n + (q - n))), r = V.line(q < n ? P.rc[q] : P.cc[q - n], idx.map((i) => k[i]));
+          idx.forEach((i, j) => { if (k[i] < 0 && r[j] >= 0) { k[i] = r[j]; when[i] = step++; ch = true; } });
+        }
+      }
+      return acts.slice().sort((a, b) => when[a.c] - when[b.c]);
+    },
+    check(P, st) { const [R, Co] = V.clues(P, st.c); return JSON.stringify(R) === JSON.stringify(P.rc) && JSON.stringify(Co) === JSON.stringify(P.cc); },
+    drawOver(ctx, P, st, L) {
+      const n = P.w, [R, Co] = V.clues(P, st.c), f = L.cs * 0.42, step = L.cs * 0.62;
+      ctx.strokeStyle = 'rgba(58,47,42,.55)'; ctx.lineWidth = 1.5; ctx.beginPath(); for (let k = 5; k < n; k += 5) { ctx.moveTo(L.ox + k * L.cs, L.oy); ctx.lineTo(L.ox + k * L.cs, L.oy + n * L.cs); ctx.moveTo(L.ox, L.oy + k * L.cs); ctx.lineTo(L.ox + n * L.cs, L.oy + k * L.cs); } ctx.stroke();
+      for (let k = 0; k < n; k++) {
+        const okR = JSON.stringify(R[k]) === JSON.stringify(P.rc[k]), okC = JSON.stringify(Co[k]) === JSON.stringify(P.cc[k]);
+        P.rc[k].forEach((v, q) => A.txt(ctx, String(v), L.ox - (P.rc[k].length - q - 0.5) * step - 4, L.oy + (k + 0.5) * L.cs, f, okR ? '#adb5bd' : C.ink, 'center', 900, null, RJ.NUMF));
+        P.cc[k].forEach((v, q) => A.txt(ctx, String(v), L.ox + (k + 0.5) * L.cs, L.oy - (P.cc[k].length - q - 0.5) * step - 4, f, okC ? '#adb5bd' : C.ink, 'center', 900, null, RJ.NUMF));
+      }
+    },
+    rules: (P) => [
+      { t: { es: 'Rellena casillas para descubrir un dibujo escondido.', en: 'Fill in cells to reveal a hidden picture.' }, all: true },
+      { t: { es: 'Los números de la izquierda dicen, en orden, cuántas casillas seguidas van rellenas en esa fila: ' + P.rc[0].join(' ') + '.', en: 'The numbers on the left say, in order, how many cells in a row are filled in that row: ' + P.rc[0].join(' ') + '.' }, rows: [0] },
+      { t: { es: 'Entre un bloque y el siguiente hay al menos una casilla vacía. Los de arriba funcionan igual para las columnas.', en: 'There is at least one empty cell between one block and the next. The numbers on top work the same way for columns.' }, cols: [0] },
+    ],
+    goal: { es: 'Descubre el dibujo', en: 'Reveal the picture' },
+  };
+  Arcade.game({
+    ...RJ(V),
+    /*THEME*/ tag: "Dibujos escondidos con números", deco: ["🏯", "🌸", "🎋", "🖌️", "🍵", "⛩️"], font: 'serif', bg: ["#4d1f35", "#220c17"],
+    music: { mode: "insen", bpm: 70, wave: 'triangle', style: 'chill', root: 57 }, voice: { wave: 'sine', mul: 1.1, echo: 0.4 },
+    /*EN*/ en: { title: "Nonogram", tag: "Pictures hidden behind numbers", help: "Fill in cells to reveal a <b>picture</b>. The numbers for each <b>row</b> (left) and <b>column</b> (top) say, in order, how many cells <b>in a row</b> are filled; there is at least one empty cell between blocks. Tap or drag to paint (filled → ✕ → empty)." },
+    /*TV*/ tvHelp: "Cruceta hasta una casilla · OK para jugar en ella.",
+    id: "nonograma", title: "Nonograma", emoji: "🖼️", color: "#f783ac", origin: "Nonograma / Picross / Hanjie / Griddlers (Japón y Países Bajos)",
+    help: "Rellena casillas para descubrir un <b>dibujo</b>. Los números de cada <b>fila</b> (izquierda) y <b>columna</b> (arriba) dicen, en orden, cuántas casillas <b>seguidas</b> van rellenas; entre bloque y bloque hay al menos una vacía. Toca o arrastra para pintar (rellena → ✕ → vacía).",
+    lives: 0, levels: 0, cap: 20,
+  });
+})();
+</script>
+</body>
+</html>

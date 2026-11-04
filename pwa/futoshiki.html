@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Futoshiki · Arcade Perdido</title>
+<meta name="theme-color" content="#2a1220">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css?v=6d7635e467">
+</head>
+<body class="game">
+<script src="config.js?v=84fed7f189"></script>
+<script src="common.js?v=fb0b61af23"></script>
+<script src="rejilla.js?v=30e0994cee"></script>
+<script>
+// @rejilla
+(function () {
+  const RJ = Arcade.rejilla, U = RJ.U, C = RJ.C, A = Arcade, T = Arcade.T;
+  const V = {
+    kind: 'num', kanji: '不',
+    size: (lv) => ({ n: lv <= 4 ? 4 : lv <= 10 ? 5 : lv <= 16 ? 6 : 7 }),
+    N: (P) => P.n,
+    cand(P, v, i) {
+      const n = P.n, y = (i / n) | 0, x = i % n; let m = 0;
+      for (let k = 0; k < n; k++) { m |= 1 << v[y * n + k]; m |= 1 << v[k * n + x]; }
+      let a = U.full(n) & ~m;
+      for (const [j, lt] of P.rel[i]) { if (v[j]) a &= lt ? (1 << v[j]) - 2 : U.full(n) & ~((1 << (v[j] + 1)) - 1); else a &= lt ? U.full(n - 1) : U.full(n) & ~2; }
+      return a;
+    },
+    groups(P) { const n = P.n, g = []; for (let k = 0; k < n; k++) { g.push(Array.from({ length: n }, (_, j) => k * n + j)); g.push(Array.from({ length: n }, (_, j) => j * n + k)); } return g; },
+    rel(P) { P.rel = Array.from({ length: P.n * P.n }, () => []); for (const k in P.ineq) { const [a, b] = k.split('_').map(Number), lt = P.ineq[k] === '<'; P.rel[a].push([b, lt]); P.rel[b].push([a, !lt]); } },
+    gen(r, c) {
+      const n = c.n, sol = U.latin(r, n), P = { w: n, h: n, n, ineq: {} };
+      const pairs = []; for (let i = 0; i < n * n; i++) { if (i % n < n - 1) pairs.push([i, i + 1]); if (i + n < n * n) pairs.push([i, i + n]); }
+      const sh = U.shuffle(r, pairs); let k = 0;
+      const add = () => { const [a, b] = sh[k++]; P.ineq[a + '_' + b] = sol[a] < sol[b] ? '<' : '>'; };
+      while (k < Math.round(pairs.length * 0.3)) add();
+      const unique = (f) => { V.rel(P); return U.solve(n * n, f, (vv, i) => V.cand(P, vv, i), { budget: 6000 }).n === 1; };
+      let fix = new Array(n * n).fill(0);
+      while (!unique(fix) && k < sh.length) add();
+      if (!unique(fix)) fix = U.reduce(r, sol, unique);
+      for (const key of U.shuffle(r, Object.keys(P.ineq))) { const sv = P.ineq[key]; delete P.ineq[key]; if (!unique(fix)) P.ineq[key] = sv; }
+      V.rel(P); P.fix = fix; P.sol = { c: sol }; return P;
+    },
+    check(P, st) {
+      const v = st.c, n = P.n; if (v.some((x) => !x)) return false;
+      if (!V.groups(P).every((g) => new Set(g.map((i) => v[i])).size === n)) return false;
+      for (const k in P.ineq) { const [a, b] = k.split('_').map(Number); if ((v[a] < v[b]) !== (P.ineq[k] === '<')) return false; }
+      return true;
+    },
+    errors(P, st) { const bad = new Set(), v = st.c; for (const k in P.ineq) { const [a, b] = k.split('_').map(Number); if (v[a] && v[b] && (v[a] < v[b]) !== (P.ineq[k] === '<')) { bad.add(a); bad.add(b); } } return bad; },
+    drawOver(ctx, P, st, L) {
+      for (const k in P.ineq) {
+        const [a, b] = k.split('_').map(Number), hz = b === a + 1, x = L.ox + (a % P.w + (hz ? 1 : 0.5)) * L.cs, y = L.oy + (((a / P.w) | 0) + (hz ? 0.5 : 1)) * L.cs, lt = P.ineq[k] === '<';
+        ctx.fillStyle = '#fbf6ea'; ctx.beginPath(); ctx.arc(x, y, L.cs * 0.17, 0, Math.PI * 2); ctx.fill();
+        ctx.save(); ctx.translate(x, y); if (!hz) ctx.rotate(Math.PI / 2); ctx.strokeStyle = C.seal; ctx.lineWidth = Math.max(2, L.cs * 0.06); ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+        const q = L.cs * 0.09, d = lt ? 1 : -1; ctx.beginPath(); ctx.moveTo(q * d, -q * 1.2); ctx.lineTo(-q * d, 0); ctx.lineTo(q * d, q * 1.2); ctx.stroke(); ctx.restore();
+      }
+    },
+    rules: (P) => {
+      const k = Object.keys(P.ineq)[0], cells = k ? k.split('_').map(Number) : [];
+      return [
+        { t: { es: 'Rellena la cuadrícula con los números del 1 al ' + P.n + ', sin repetir ninguno en una fila ni en una columna.', en: 'Fill the grid with the numbers 1 to ' + P.n + ', without repeating any in a row or a column.' }, rows: [0], cols: [0] },
+        { t: { es: 'Los signos < y > entre dos casillas dicen cuál es mayor: la punta señala al número más pequeño.', en: 'The < and > signs between two cells tell you which is bigger: the point aims at the smaller number.' }, cells },
+        { t: { es: 'Los números negros vienen dados. Hay una sola solución.', en: 'The black numbers are given. There is only one solution.' }, cells: (P) => P.fix.map((v, i) => (v ? i : -1)).filter((i) => i >= 0) },
+      ];
+    },
+    goal: { es: 'Rellena respetando los signos', en: 'Fill it in following the signs' },
+  };
+  Arcade.game({
+    ...RJ(V),
+    /*THEME*/ tag: "Números con signos mayor y menor", deco: ["🏯", "🌸", "🎋", "🖌️", "🍵", "⛩️"], font: 'serif', bg: ["#5c2a3a", "#2a1220"],
+    music: { mode: "insen", bpm: 70, wave: 'triangle', style: 'chill', root: 57 }, voice: { wave: 'sine', mul: 1.1, echo: 0.4 },
+    /*EN*/ en: { title: "Futoshiki", tag: "Numbers with greater and less than signs", help: "Fill the grid with the numbers 1 to N without repeating in any <b>row</b> or <b>column</b>. The <b>&lt;</b> and <b>&gt;</b> signs between cells must hold: the point aims at the smaller number. <b>Tap a cell</b> and then a <b>number</b>." },
+    /*TV*/ tvHelp: "Cruceta hasta una casilla · OK para jugar en ella.",
+    id: "futoshiki", title: "Futoshiki", emoji: "⚖️", color: "#ff8787", origin: "Futoshiki / Unequal (Japón)",
+    help: "Rellena la cuadrícula con los números del 1 al N sin repetir en ninguna <b>fila</b> ni <b>columna</b>. Los signos <b>&lt;</b> y <b>&gt;</b> entre casillas tienen que cumplirse: la punta señala al número más pequeño. <b>Toca una casilla</b> y luego un <b>número</b>.",
+    lives: 0, levels: 0, cap: 20,
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Hidoku · Arcade Perdido</title>
+<meta name="theme-color" content="#22121a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css?v=6d7635e467">
+</head>
+<body class="game">
+<script src="config.js?v=84fed7f189"></script>
+<script src="common.js?v=fb0b61af23"></script>
+<script src="rejilla.js?v=30e0994cee"></script>
+<script>
+// @rejilla
+(function () {
+  const RJ = Arcade.rejilla, U = RJ.U, C = RJ.C, A = Arcade, T = Arcade.T;
+  const V = {
+    kind: 'num', kanji: '路',
+    size: (lv) => ({ n: lv <= 3 ? 4 : lv <= 8 ? 5 : lv <= 13 ? 6 : lv <= 17 ? 7 : 8, f: Math.min(1, lv / 18) }),
+    N: (P) => P.M,
+    dynPad: true,
+    pad(P, st) { const used = new Set(st ? st.c : P.fix), o = []; for (let k = 1; k <= P.M && o.length < 9; k++) if (!used.has(k)) o.push(k); return o; },
+    numSize: 0.46,
+    order: (P, acts) => acts.sort((a, b) => a.v - b.v),
+    path(r, n) {
+      const N = n * n, nb = (i) => U.n8(n, n, i);
+      for (let t = 0; t < 50; t++) {
+        const seen = new Uint8Array(N), path = []; let nodes = 0;
+        const rec = (i) => {
+          seen[i] = 1; path.push(i); if (path.length === N) return true; if (++nodes > 20000) return false;
+          const nx = U.shuffle(r, nb(i).filter((j) => !seen[j])).map((j) => [nb(j).filter((q) => !seen[q]).length, j]).sort((a, b) => a[0] - b[0]);
+          for (const [, j] of nx) if (rec(j)) return true;
+          seen[i] = 0; path.pop(); return false;
+        };
+        if (rec(U.ri(r, 0, N - 1))) return path;
+      }
+      return null;
+    },
+    count(P, fix, budget) {
+      const n = P.w, M = P.M, pos = new Int32Array(M + 1).fill(-1), at = new Int32Array(n * n).fill(0);
+      fix.forEach((v, i) => { if (v) { pos[v] = i; at[i] = v; } });
+      const givens = []; for (let k = 1; k <= M; k++) if (pos[k] >= 0) givens.push(k);
+      const cheb = (a, b) => Math.max(Math.abs(a % n - b % n), Math.abs(((a / n) | 0) - ((b / n) | 0)));
+      let cnt = 0, nodes = 0; const used = new Uint8Array(n * n); fix.forEach((v, i) => { if (v) used[i] = 1; });
+      const rec = (k, cell) => {
+        if (cnt >= 2 || ++nodes > budget) { if (nodes > budget) cnt = 2; return; }
+        if (k === M) { cnt++; return; }
+        const nk = k + 1;
+        let gi = givens.find((q) => q > k); // siguiente número dado
+        if (pos[nk] >= 0) { if (cheb(cell, pos[nk]) === 1) rec(nk, pos[nk]); return; }
+        for (const j of U.n8(n, n, cell)) {
+          if (used[j]) continue;
+          if (gi != null && cheb(j, pos[gi]) > gi - nk) continue;
+          used[j] = 1; rec(nk, j); used[j] = 0; if (cnt >= 2) return;
+        }
+      };
+      rec(1, pos[1]); return cnt;
+    },
+    gen(r, c) {
+      const n = c.n, M = n * n, path = V.path(r, n); if (!path) throw new Error('hidoku');
+      const sol = new Array(M).fill(0); path.forEach((i, k) => { sol[i] = k + 1; });
+      const P = { w: n, h: n, M };
+      const fix = sol.slice();
+      for (const i of U.shuffle(r, path.slice(1, -1))) { const v = fix[i]; fix[i] = 0; if (V.count(P, fix, 4000) !== 1) fix[i] = v; }
+      const extra = Math.round((1 - c.f) * M * 0.25);
+      U.shuffle(r, Array.from({ length: M }, (_, i) => i).filter((i) => !fix[i])).slice(0, extra).forEach((i) => { fix[i] = sol[i]; });
+      P.fix = fix; P.sol = { c: sol }; return P;
+    },
+    groups: (P) => [Array.from({ length: P.M }, (_, i) => i)],
+    check(P, st) {
+      const v = st.c, n = P.w, pos = []; for (let i = 0; i < n * n; i++) { if (!v[i] || pos[v[i]] != null) return false; pos[v[i]] = i; }
+      for (let k = 1; k < P.M; k++) { const a = pos[k], b = pos[k + 1]; if (Math.max(Math.abs(a % n - b % n), Math.abs(((a / n) | 0) - ((b / n) | 0))) !== 1) return false; }
+      return true;
+    },
+    drawOver(ctx, P, st, L) {
+      const n = P.w, pos = {}; st.c.forEach((v, i) => { if (v) pos[v] = i; });
+      ctx.save(); ctx.strokeStyle = 'rgba(201,42,42,.28)'; ctx.lineWidth = Math.max(2, L.cs * 0.08); ctx.lineCap = 'round';
+      for (let k = 1; k < P.M; k++) { const a = pos[k], b = pos[k + 1]; if (a == null || b == null) continue; if (Math.max(Math.abs(a % n - b % n), Math.abs(((a / n) | 0) - ((b / n) | 0))) !== 1) continue; ctx.beginPath(); ctx.moveTo(L.ox + (a % n + 0.5) * L.cs, L.oy + (((a / n) | 0) + 0.5) * L.cs); ctx.lineTo(L.ox + (b % n + 0.5) * L.cs, L.oy + (((b / n) | 0) + 0.5) * L.cs); ctx.stroke(); }
+      ctx.restore();
+    },
+    rules: (P) => {
+      const one = P.fix.indexOf(1), last = P.fix.indexOf(P.M);
+      return [
+        { t: { es: 'Hay que formar un camino con todos los números del 1 al ' + P.M + ', uno por casilla.', en: 'Make a path with every number from 1 to ' + P.M + ', one per cell.' }, cells: [one, last] },
+        { t: { es: 'Cada número toca al siguiente: de lado o en diagonal. El 1 empieza y el ' + P.M + ' acaba.', en: 'Each number touches the next one: side by side or diagonally. 1 starts and ' + P.M + ' ends.' }, cells: [one].concat(U.n8(P.w, P.h, one)) },
+        { t: { es: 'Abajo salen los números que faltan, de menor a mayor: ve siguiendo el camino.', en: 'Below you get the missing numbers, smallest first: follow the path.' }, all: true },
+      ];
+    },
+    explain(P, a, st) { return { es: 'El ' + a.v + ' tiene que tocar al ' + (a.v - 1) + ' y al ' + (a.v + 1) + ': solo cabe aquí.', en: a.v + ' has to touch ' + (a.v - 1) + ' and ' + (a.v + 1) + ': it only fits here.' }; },
+    goal: { es: 'Une del 1 al final', en: 'Link 1 to the end' },
+  };
+  Arcade.game({
+    ...RJ(V),
+    /*THEME*/ tag: "Un camino de números seguidos", deco: ["🏯", "🌸", "🎋", "🖌️", "🍵", "⛩️"], font: 'serif', bg: ["#4a2a36", "#22121a"],
+    music: { mode: "insen", bpm: 70, wave: 'triangle', style: 'chill', root: 57 }, voice: { wave: 'sine', mul: 1.1, echo: 0.4 },
+    /*EN*/ en: { title: "Hidato", tag: "A path of consecutive numbers", help: "Fill the grid to make a <b>path</b> from 1 to the last number: each number <b>touches the next</b> one side by side or <b>diagonally</b>. <b>Tap a cell</b> and then a number below (the missing ones, smallest first)." },
+    /*TV*/ tvHelp: "Cruceta hasta una casilla · OK para jugar en ella.",
+    id: "hidoku", title: "Hidoku", emoji: "🐾", color: "#ffa8a8", origin: "Hidoku / Hidato (Gyora Benedek, Israel)",
+    help: "Rellena la cuadrícula para formar un <b>camino</b> del 1 al último número: cada número <b>toca al siguiente</b> de lado o en <b>diagonal</b>. <b>Toca una casilla</b> y luego un número de abajo (salen los que faltan, de menor a mayor).",
+    lives: 0, levels: 0, cap: 20,
+  });
+})();
+</script>
+</body>
+</html>

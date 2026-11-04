@@ -1,0 +1,39 @@
+// Shikaku|#28130a
+// @rejilla
+(function () {
+  const RJ = Arcade.rejilla, U = RJ.U, C = RJ.C, A = Arcade, T = Arcade.T;
+  const V = {
+    kind: 'rect', kanji: '四',
+    size: (lv) => ({ n: lv <= 3 ? 5 : lv <= 8 ? 6 : lv <= 13 ? 7 : lv <= 17 ? 8 : 9, mx: lv <= 3 ? 6 : lv <= 10 ? 8 : 12 }),
+    gen(r, c) {
+      const n = c.n, rs = U.rects(r, n, n, c.mx, 2, 6), num = new Array(n * n).fill(0);
+      for (const q of rs) { const x = q.x + U.ri(r, 0, q.w - 1), y = q.y + U.ri(r, 0, q.h - 1); num[y * n + x] = q.w * q.h; }
+      return { w: n, h: n, num, sol: { R: rs } };
+    },
+    check(P, st) {
+      const cov = new Array(P.w * P.h).fill(0);
+      for (const q of st.R) { let clues = 0, val = 0; for (let y = q.y; y < q.y + q.h; y++) for (let x = q.x; x < q.x + q.w; x++) { const i = y * P.w + x; cov[i]++; if (P.num[i]) { clues++; val = P.num[i]; } } if (clues !== 1 || val !== q.w * q.h) return false; }
+      return cov.every((k) => k === 1);
+    },
+    drawClue(ctx, P, i, x, y, cs) { if (!P.num[i]) return; ctx.fillStyle = '#fffaf0'; ctx.beginPath(); ctx.arc(x + cs / 2, y + cs / 2, cs * 0.33, 0, Math.PI * 2); ctx.fill(); ctx.strokeStyle = C.ink; ctx.lineWidth = 1.5; ctx.stroke(); A.txt(ctx, String(P.num[i]), x + cs / 2, y + cs / 2 + 1, cs * 0.42, C.ink, 'center', 900, null, RJ.NUMF); },
+    rules: (P) => {
+      const q = P.sol.R.find((o) => o.w * o.h >= 3) || P.sol.R[0], cells = []; for (let y = q.y; y < q.y + q.h; y++) for (let x = q.x; x < q.x + q.w; x++) cells.push(y * P.w + x);
+      return [
+        { t: { es: 'Divide todo el tablero en rectángulos (o cuadrados), sin huecos.', en: 'Split the whole board into rectangles (or squares), with no gaps.' }, all: true },
+        { t: { es: 'Cada rectángulo tiene dentro un solo número: su número de casillas. Este ' + q.w * q.h + ' ocupa ' + q.w + ' × ' + q.h + '.', en: 'Each rectangle contains exactly one number: how many cells it has. This ' + q.w * q.h + ' covers ' + q.w + ' × ' + q.h + '.' }, cells },
+      ];
+    },
+    explain(P, a) { return { es: 'Este ' + a.r.w * a.r.h + ' cabe justo en un rectángulo de ' + a.r.w + ' × ' + a.r.h + '.', en: 'This ' + a.r.w * a.r.h + ' fits exactly in a ' + a.r.w + ' × ' + a.r.h + ' rectangle.' }; },
+    goal: { es: 'Divide en rectángulos', en: 'Split it into rectangles' },
+  };
+  Arcade.game({
+    ...RJ(V),
+    /*THEME*/ tag: "Rectángulos que miden su número", deco: ["🏯", "🌸", "🎋", "🖌️", "🍵", "⛩️"], font: 'serif', bg: ["#5a2d14", "#28130a"],
+    music: { mode: "insen", bpm: 70, wave: 'triangle', style: 'chill', root: 57 }, voice: { wave: 'sine', mul: 1.1, echo: 0.4 },
+    /*EN*/ en: { title: "Shikaku", tag: "Rectangles that match their number", help: "Split the board into <b>rectangles</b>. Each rectangle contains <b>exactly one number</b>, which is its <b>number of cells</b>. <b>Drag</b> from one corner to the other to draw it (or tap both corners); tap it to remove it." },
+    /*TV*/ tvHelp: "Cruceta hasta una casilla · OK para jugar en ella.",
+    id: "shikaku", title: "Shikaku", emoji: "🟥", color: "#ff922b", origin: "Shikaku / Divide by Squares (Nikoli, Japón)",
+    help: "Divide el tablero en <b>rectángulos</b>. Cada rectángulo contiene <b>un solo número</b>, que es su <b>número de casillas</b>. <b>Arrastra</b> de una esquina a la otra para dibujarlo (o toca las dos esquinas); tócalo para quitarlo.",
+    lives: 0, levels: 0, cap: 20,
+  });
+})();

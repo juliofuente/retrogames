@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Tapa · Arcade Perdido</title>
+<meta name="theme-color" content="#220c0c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css?v=6d7635e467">
+</head>
+<body class="game">
+<script src="config.js?v=84fed7f189"></script>
+<script src="common.js?v=fb0b61af23"></script>
+<script src="rejilla.js?v=30e0994cee"></script>
+<script>
+// @rejilla
+(function () {
+  const RJ = Arcade.rejilla, U = RJ.U, C = RJ.C, A = Arcade, T = Arcade.T;
+  const V = {
+    kind: 'cell', kanji: '壁', marks: [2],
+    states: [{ v: 1, name: { es: 'muro', en: 'wall' }, k: 'shade', why: { es: 'Esta casilla es muro: lo piden los números de alrededor.', en: 'This cell is wall: the numbers around it ask for it.' } }, { v: 2, name: { es: 'punto', en: 'dot' }, k: 'dot' }],
+    size: (lv) => ({ n: lv <= 3 ? 5 : lv <= 9 ? 6 : lv <= 15 ? 7 : 8, giv: 0.5 }),
+    blocked: (P, i) => !!P.cl[i],
+    ring(P, c, i) {
+      const n = P.w, x = i % n, y = (i / n) | 0, d = [[-1, -1], [0, -1], [1, -1], [1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0]];
+      const a = d.map(([dx, dy]) => { const X = x + dx, Y = y + dy; return X >= 0 && Y >= 0 && X < n && Y < P.h && c[Y * n + X] === 1; });
+      if (a.every((q) => q)) return [8]; if (!a.some((q) => q)) return [0];
+      const s = a.indexOf(false), o = []; let k = 0; for (let q = 1; q <= 8; q++) { const v = a[(s + q) % 8]; if (v) k++; else if (k) { o.push(k); k = 0; } } if (k) o.push(k);
+      return o.sort((p, q) => p - q);
+    },
+    gen(r, c) {
+      const n = c.n, N = n * n;
+      for (let t = 0; t < 100; t++) {
+        const sh = new Int8Array(N), s0 = U.ri(r, 0, N - 1); sh[s0] = 1; let cnt = 1;
+        for (let it = 0; it < N * 6 && cnt < N * 0.52; it++) {
+          const fr = []; for (let i = 0; i < N; i++) if (!sh[i] && U.n4(n, n, i).some((j) => sh[j])) fr.push(i);
+          if (!fr.length) break; const i = U.pick(r, fr); sh[i] = 1; if (U.has2x2(n, n, (q) => sh[q] === 1)) sh[i] = 0; else cnt++;
+        }
+        const whites = U.shuffle(r, Array.from({ length: N }, (_, i) => i).filter((i) => !sh[i]));
+        const P = { w: n, h: n, cl: {} };
+        whites.slice(0, Math.max(3, Math.round(whites.length * c.giv))).forEach((i) => { P.cl[i] = V.ring(P, sh, i); });
+        P.sol = { c: Array.from(sh) }; return P;
+      }
+      throw new Error('tapa');
+    },
+    check(P, st) {
+      const n = P.w, sh = (i) => st.c[i] === 1;
+      for (const k in P.cl) { if (sh(+k)) return false; if (V.ring(P, st.c, +k).join() !== P.cl[k].join()) return false; }
+      return !U.has2x2(n, n, sh) && U.connected(n, n, sh);
+    },
+    drawClue(ctx, P, i, x, y, cs, st) {
+      const cl = P.cl[i]; if (!cl) return; const ok = V.ring(P, st.c, i).join() === cl.join(), col = ok ? '#2b8a3e' : C.ink;
+      const pos = cl.length === 1 ? [[0.5, 0.5]] : cl.length === 2 ? [[0.32, 0.36], [0.68, 0.66]] : cl.length === 3 ? [[0.5, 0.28], [0.28, 0.7], [0.72, 0.7]] : [[0.3, 0.3], [0.7, 0.3], [0.3, 0.7], [0.7, 0.7]];
+      cl.forEach((v, k) => A.txt(ctx, String(v), x + cs * pos[k][0], y + cs * pos[k][1] + 1, cs * (cl.length === 1 ? 0.5 : 0.32), col, 'center', 900, null, RJ.NUMF));
+    },
+    rules: (P) => {
+      const k = +Object.keys(P.cl).find((q) => P.cl[q].length >= 2 || P.cl[q][0] > 0);
+      return [
+        { t: { es: 'Pinta casillas para construir un muro que esté todo unido, sin ningún bloque de 2 × 2.', en: 'Paint cells to build a wall that is all connected, with no 2 × 2 block.' }, all: true },
+        { t: { es: 'Las casillas con números no se pintan. Sus números dicen cuántas casillas de muro seguidas hay en sus 8 vecinas: aquí, ' + P.cl[k].join(' y ') + '.', en: 'Numbered cells are never painted. Their numbers say how many wall cells in a row are among their 8 neighbours: here, ' + P.cl[k].join(' and ') + '.' }, cells: [k].concat(U.n8(P.w, P.h, k)) },
+        { t: { es: 'Si hay varios números en una casilla, son bloques de muro separados entre sí.', en: 'If a cell has several numbers, they are separate blocks of wall.' }, cells: [k] },
+      ];
+    },
+    goal: { es: 'Levanta el muro', en: 'Build the wall' },
+  };
+  Arcade.game({
+    ...RJ(V),
+    /*THEME*/ tag: "Un muro que rodea los números", deco: ["🏯", "🌸", "🎋", "🖌️", "🍵", "⛩️"], font: 'serif', bg: ["#4d1f1f", "#220c0c"],
+    music: { mode: "insen", bpm: 70, wave: 'triangle', style: 'chill', root: 57 }, voice: { wave: 'sine', mul: 1.1, echo: 0.4 },
+    /*EN*/ en: { title: "Tapa", tag: "A wall winding around the numbers", help: "Paint cells to make a <b>wall</b> that is all <b>connected</b> with no <b>2×2</b> blocks. Numbered cells are never painted: their numbers say how many wall cells <b>in a row</b> are among their <b>8 neighbours</b> (several numbers = separate blocks). Tap or drag to paint." },
+    /*TV*/ tvHelp: "Cruceta hasta una casilla · OK para jugar en ella.",
+    id: "tapa", title: "Tapa", emoji: "🧱", color: "#ff8787", origin: "Tapa (Serkan Yürekli, Turquía)",
+    help: "Pinta casillas para hacer un <b>muro</b> todo <b>unido</b> y sin bloques de <b>2×2</b>. Las casillas con números no se pintan: sus números dicen cuántas casillas de muro <b>seguidas</b> hay entre sus <b>8 vecinas</b> (varios números = bloques separados). Toca o arrastra para pintar.",
+    lives: 0, levels: 0, cap: 20,
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Rascacielos · Arcade Perdido</title>
+<meta name="theme-color" content="#0c1a2e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css?v=6d7635e467">
+</head>
+<body class="game">
+<script src="config.js?v=84fed7f189"></script>
+<script src="common.js?v=fb0b61af23"></script>
+<script src="rejilla.js?v=30e0994cee"></script>
+<script>
+// @rejilla
+(function () {
+  const RJ = Arcade.rejilla, U = RJ.U, C = RJ.C, A = Arcade, T = Arcade.T;
+  const V = {
+    kind: 'num', kanji: '塔',
+    size: (lv) => ({ n: lv <= 5 ? 4 : lv <= 13 ? 5 : 6 }),
+    N: (P) => P.n,
+    margin: () => ({ l: 1, t: 1, r: 1, b: 1 }),
+    vis(a) { let m = 0, c = 0; for (const x of a) if (x > m) { m = x; c++; } return c; },
+    lines(P) {   // [casillas de la fila/columna en orden, pista, lado]
+      const n = P.n, o = [];
+      for (let k = 0; k < n; k++) {
+        const row = Array.from({ length: n }, (_, j) => k * n + j), col = Array.from({ length: n }, (_, j) => j * n + k);
+        o.push([row, P.cl.l[k], 'l', k], [row.slice().reverse(), P.cl.r[k], 'r', k], [col, P.cl.t[k], 't', k], [col.slice().reverse(), P.cl.b[k], 'b', k]);
+      }
+      return o;
+    },
+    cand(P, v, i) {
+      const n = P.n, y = (i / n) | 0, x = i % n; let m = 0;
+      for (let k = 0; k < n; k++) { m |= 1 << v[y * n + k]; m |= 1 << v[k * n + x]; }
+      let a = U.full(n) & ~m; if (!a) return 0;
+      const L = P._L || (P._L = V.lines(P)).filter(() => true), mine = (P._M || (P._M = {}))[i] || (P._M[i] = P._L.filter((l) => l[1] && l[0].indexOf(i) >= 0));
+      let out = 0;
+      for (let val = 1; val <= n; val++) {
+        if (!(a & (1 << val))) continue; v[i] = val; let ok = true;
+        for (const [cells, clue] of mine) {
+          let full = true, mx = 0, c = 0; for (const j of cells) { if (!v[j]) { full = false; break; } if (v[j] > mx) { mx = v[j]; c++; } }
+          if (full ? c !== clue : c > clue) { ok = false; break; }   // aunque falten casillas, lo que ya se ve desde el borde no puede pasar de la pista
+        }
+        v[i] = 0; if (ok) out |= 1 << val;
+      }
+      return out;
+    },
+    groups(P) { const n = P.n, g = []; for (let k = 0; k < n; k++) { g.push(Array.from({ length: n }, (_, j) => k * n + j)); g.push(Array.from({ length: n }, (_, j) => j * n + k)); } return g; },
+    gen(r, c) {
+      const n = c.n, sol = U.latin(r, n), P = { w: n, h: n, n, cl: { l: [], r: [], t: [], b: [] } };
+      for (let k = 0; k < n; k++) { const row = sol.slice(k * n, k * n + n), col = Array.from({ length: n }, (_, j) => sol[j * n + k]); P.cl.l[k] = V.vis(row); P.cl.r[k] = V.vis(row.slice().reverse()); P.cl.t[k] = V.vis(col); P.cl.b[k] = V.vis(col.slice().reverse()); }
+      const reset = () => { P._L = null; P._M = null; };
+      const unique = (f) => { reset(); return U.solve(n * n, f, (vv, i) => V.cand(P, vv, i), { budget: 5000 }).n === 1; };
+      let fix = new Array(n * n).fill(0);
+      if (!unique(fix)) fix = U.reduce(r, sol, unique);
+      const slots = []; for (const s of ['l', 'r', 't', 'b']) for (let k = 0; k < n; k++) slots.push([s, k]);
+      for (const [s, k] of U.shuffle(r, slots)) { const sv = P.cl[s][k]; P.cl[s][k] = 0; if (!unique(fix)) P.cl[s][k] = sv; }
+      reset(); P.fix = fix; P.sol = { c: sol }; return P;
+    },
+    check(P, st) {
+      const v = st.c, n = P.n; if (v.some((x) => !x)) return false;
+      if (!V.groups(P).every((g) => new Set(g.map((i) => v[i])).size === n)) return false;
+      return V.lines(P).every(([cells, clue]) => !clue || V.vis(cells.map((i) => v[i])) === clue);
+    },
+    drawOver(ctx, P, st, L) {
+      const n = P.n, f = L.cs * 0.5, pos = { l: (k) => [L.ox - L.cs / 2, L.oy + (k + 0.5) * L.cs], r: (k) => [L.ox + (n + 0.5) * L.cs, L.oy + (k + 0.5) * L.cs], t: (k) => [L.ox + (k + 0.5) * L.cs, L.oy - L.cs / 2], b: (k) => [L.ox + (k + 0.5) * L.cs, L.oy + (n + 0.5) * L.cs] };
+      for (const [cells, clue, side, k] of V.lines(P)) {
+        if (!clue) continue; const [x, y] = pos[side](k), full = cells.every((i) => st.c[i]), ok = full && V.vis(cells.map((i) => st.c[i])) === clue;
+        ctx.fillStyle = ok ? '#d3f9d8' : full ? '#ffe3e3' : 'rgba(201,42,42,.08)'; ctx.beginPath(); ctx.arc(x, y, L.cs * 0.32, 0, Math.PI * 2); ctx.fill();
+        A.txt(ctx, String(clue), x, y + 1, f, C.seal, 'center', 900, null, RJ.NUMF);
+      }
+      // edificios: cada número de la rejilla lleva una torre pequeña de esa altura
+      for (let i = 0; i < n * n; i++) { const h = st.c[i]; if (!h) continue; const x = L.ox + (i % n) * L.cs, y = L.oy + ((i / n) | 0) * L.cs, bw = L.cs * 0.1, bh = L.cs * 0.62 * h / n; ctx.fillStyle = 'rgba(47,90,168,.16)'; ctx.fillRect(x + L.cs * 0.84 - bw, y + L.cs * 0.9 - bh, bw, bh); }
+    },
+    rules: (P) => {
+      const k = P.cl.l.findIndex((x) => x), row = k >= 0 ? k : 0;
+      return [
+        { t: { es: 'Cada casilla es un edificio de 1 a ' + P.n + ' pisos. En cada fila y columna hay uno de cada altura, sin repetir.', en: 'Each cell is a building 1 to ' + P.n + ' storeys tall. Every row and column has one of each height, no repeats.' }, rows: [0], cols: [0] },
+        { t: { es: 'Los números de fuera dicen cuántos edificios se ven desde ese lado: los altos tapan a los bajos que tienen detrás.', en: 'The numbers outside say how many buildings you can see from that side: tall ones hide the shorter ones behind them.' }, rows: [row] },
+        { t: { es: 'Truco: un ' + P.n + ' fuera significa que se ven todos, así que la fila sube 1, 2, 3… Y un 1 quiere decir que el más alto está pegado al borde.', en: 'Tip: a ' + P.n + ' outside means you see them all, so the row goes 1, 2, 3… And a 1 means the tallest one is right at the edge.' }, all: true },
+      ];
+    },
+    goal: { es: 'Coloca los rascacielos', en: 'Place the skyscrapers' },
+  };
+  Arcade.game({
+    ...RJ(V),
+    /*THEME*/ tag: "¿Cuántos edificios se ven desde fuera?", deco: ["🏯", "🌸", "🎋", "🖌️", "🍵", "⛩️"], font: 'serif', bg: ["#1e3a5f", "#0c1a2e"],
+    music: { mode: "insen", bpm: 70, wave: 'triangle', style: 'chill', root: 57 }, voice: { wave: 'sine', mul: 1.1, echo: 0.4 },
+    /*EN*/ en: { title: "Skyscrapers", tag: "How many buildings can you see from outside?", help: "Each cell is a building 1 to N storeys tall: every <b>row</b> and <b>column</b> has one of each height. The <b>numbers outside</b> say how many buildings you can see from that side (tall ones hide shorter ones). <b>Tap a cell</b> and then a <b>number</b>." },
+    /*TV*/ tvHelp: "Cruceta hasta una casilla · OK para jugar en ella.",
+    id: "rascacielos", title: "Rascacielos", emoji: "🏙️", color: "#74c0fc", origin: "Skyscrapers / Building puzzle",
+    help: "Cada casilla es un edificio de 1 a N pisos: en cada <b>fila</b> y <b>columna</b> hay uno de cada altura. Los <b>números de fuera</b> dicen cuántos edificios se ven desde ese lado (los altos tapan a los bajos). <b>Toca una casilla</b> y luego un <b>número</b>.",
+    lives: 0, levels: 0, cap: 20,
+  });
+})();
+</script>
+</body>
+</html>

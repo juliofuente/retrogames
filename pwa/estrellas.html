@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Star Battle · Arcade Perdido</title>
+<meta name="theme-color" content="#0c1027">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css?v=6d7635e467">
+</head>
+<body class="game">
+<script src="config.js?v=84fed7f189"></script>
+<script src="common.js?v=fb0b61af23"></script>
+<script src="rejilla.js?v=30e0994cee"></script>
+<script>
+// @rejilla
+(function () {
+  const RJ = Arcade.rejilla, U = RJ.U, C = RJ.C, A = Arcade, T = Arcade.T;
+  const V = {
+    kind: 'cell', kanji: '星', marks: [2], regColors: true,
+    states: [{ v: 1, name: { es: 'estrella', en: 'star' }, k: 'emoji', e: '⭐', why: { es: 'Aquí va la estrella: es el único sitio de su zona que no choca con las demás.', en: 'The star goes here: the only spot in its area that does not clash with the others.' } }, { v: 2, name: { es: 'punto', en: 'dot' }, k: 'dot' }],
+    size: (lv) => ({ n: lv <= 3 ? 5 : lv <= 8 ? 6 : lv <= 13 ? 7 : lv <= 17 ? 8 : 9 }),
+    gen(r, c) {
+      const n = c.n, N = n * n, p = [];
+      const rec = (y) => { if (y === n) return true; for (const x of U.shuffle(r, Array.from({ length: n }, (_, i) => i))) { if (p.includes(x) || (y && Math.abs(p[y - 1] - x) < 2)) continue; p.push(x); if (rec(y + 1)) return true; p.pop(); } return false; };
+      if (!rec(0)) throw new Error('stars');
+      const reg = new Int32Array(N).fill(-1), fr = [];
+      p.forEach((x, y) => { reg[y * n + x] = y; fr.push(y * n + x); });
+      while (fr.length) { const q = U.ri(r, 0, fr.length - 1), i = fr[q]; const nb = U.n4(n, n, i).filter((j) => reg[j] < 0); if (!nb.length) { fr.splice(q, 1); continue; } const j = U.pick(r, nb); reg[j] = reg[i]; fr.push(j); }
+      const sol = new Array(N).fill(0); p.forEach((x, y) => { sol[y * n + x] = 1; });
+      return { w: n, h: n, reg: Array.from(reg), rc: U.regCells(Array.from(reg)), sol: { c: sol } };
+    },
+    check(P, st) {
+      const n = P.w, s = (i) => st.c[i] === 1;
+      for (let k = 0; k < n; k++) { let a = 0, b = 0; for (let j = 0; j < n; j++) { if (s(k * n + j)) a++; if (s(j * n + k)) b++; } if (a !== 1 || b !== 1) return false; }
+      for (const cells of P.rc) if (cells.filter(s).length !== 1) return false;
+      for (let i = 0; i < n * n; i++) if (s(i) && U.n8(n, n, i).some(s)) return false;
+      return true;
+    },
+    errors(P, st) { const bad = new Set(), s = (i) => st.c[i] === 1; for (let i = 0; i < P.w * P.h; i++) if (s(i) && U.n8(P.w, P.h, i).some(s)) bad.add(i); return bad; },
+    cellBg(P, i, st) { return st && st.c[i] === 1 && U.n8(P.w, P.h, i).some((j) => st.c[j] === 1) ? '#ffc9c9' : null; },
+    rules: (P) => [
+      { t: { es: 'Coloca una estrella en cada fila y en cada columna.', en: 'Place one star in every row and every column.' }, rows: [0], cols: [0] },
+      { t: { es: 'Y también una en cada zona de color.', en: 'And also one in each coloured area.' }, cells: P.rc[0] },
+      { t: { es: 'Las estrellas no pueden tocarse, ni siquiera en diagonal. Marca con un punto donde seguro que no va ninguna.', en: 'Stars cannot touch, not even diagonally. Mark with a dot where one surely cannot go.' }, all: true },
+    ],
+    goal: { es: 'Una estrella por fila, columna y zona', en: 'One star per row, column and area' },
+  };
+  Arcade.game({
+    ...RJ(V),
+    /*THEME*/ tag: "Estrellas que no se tocan", deco: ["🏯", "🌸", "🎋", "🖌️", "🍵", "⛩️"], font: 'serif', bg: ["#1f2654", "#0c1027"],
+    music: { mode: "insen", bpm: 70, wave: 'triangle', style: 'chill', root: 57 }, voice: { wave: 'sine', mul: 1.1, echo: 0.4 },
+    /*EN*/ en: { title: "Star Battle", tag: "Stars that never touch", help: "Place one <b>star</b> in every <b>row</b>, every <b>column</b> and every coloured <b>area</b>. Stars cannot <b>touch</b>, not even diagonally. Tap a cell (star → dot → empty)." },
+    /*TV*/ tvHelp: "Cruceta hasta una casilla · OK para jugar en ella.",
+    id: "estrellas", title: "Star Battle", emoji: "⭐", color: "#ffd43b", origin: "Star Battle / Two Not Touch (popularizado en el campeonato mundial de puzles)",
+    help: "Coloca una <b>estrella</b> en cada <b>fila</b>, cada <b>columna</b> y cada <b>zona</b> de color. Las estrellas no pueden <b>tocarse</b>, ni siquiera en diagonal. Toca una casilla (estrella → punto → vacía).",
+    lives: 0, levels: 0, cap: 20,
+  });
+})();
+</script>
+</body>
+</html>

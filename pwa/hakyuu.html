@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Hakyuu · Arcade Perdido</title>
+<meta name="theme-color" content="#0a1b2e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css?v=6d7635e467">
+</head>
+<body class="game">
+<script src="config.js?v=84fed7f189"></script>
+<script src="common.js?v=fb0b61af23"></script>
+<script src="rejilla.js?v=30e0994cee"></script>
+<script>
+// @rejilla
+(function () {
+  const RJ = Arcade.rejilla, U = RJ.U, C = RJ.C, A = Arcade, T = Arcade.T;
+  const V = {
+    kind: 'num', kanji: '波',
+    size: (lv) => ({ w: lv <= 4 ? 5 : lv <= 10 ? 6 : lv <= 16 ? 7 : 8, mx: lv <= 4 ? 4 : 5 }),
+    N: (P) => P.mx,
+    regColors: true,
+    cand(P, v, i) {
+      const w = P.w, h = P.h, k = P.reg[i], x = i % w, y = (i / w) | 0; let m = 0;
+      for (const j of P.rc[k]) m |= 1 << v[j];
+      let a = U.full(P.rc[k].length) & ~m, out = 0;
+      for (let val = 1; val < 32; val++) {
+        if (!(a & (1 << val))) continue; let ok = true;
+        for (let d = 1; d <= val && ok; d++) { if (x - d >= 0 && v[i - d] === val) ok = false; if (x + d < w && v[i + d] === val) ok = false; if (y - d >= 0 && v[i - d * w] === val) ok = false; if (y + d < h && v[i + d * w] === val) ok = false; }
+        if (ok) out |= 1 << val;
+      }
+      return out;
+    },
+    groups(P) { return P.rc; },
+    gen(r, c) {
+      const w = c.w, h = c.w;
+      for (let t = 0; t < 80; t++) {
+        const reg = U.regions(r, w, h, 1, c.mx, { loose: true }), rc = U.regCells(reg), P = { w, h, reg, rc, mx: Math.max(...rc.map((q) => q.length)) };
+        const sol = U.fill(r, w * h, new Array(w * h).fill(0), (vv, i) => V.cand(P, vv, i), { budget: 4000 });
+        if (!sol) continue;
+        const unique = (f) => U.solve(w * h, f, (vv, i) => V.cand(P, vv, i), { budget: 6000 }).n === 1;
+        P.fix = U.reduce(r, sol, unique); P.sol = { c: sol }; return P;
+      }
+      throw new Error('hakyuu');
+    },
+    check(P, st) {
+      const v = st.c; if (v.some((x) => !x)) return false;
+      for (const cells of P.rc) { const s = new Set(cells.map((i) => v[i])); if (s.size !== cells.length || Math.max(...s) > cells.length) return false; }
+      // comprobación directa de la distancia
+      const w = P.w, h = P.h;
+      for (let i = 0; i < w * h; i++) { const val = v[i], x = i % w, y = (i / w) | 0; for (let d = 1; d <= val; d++) { if (x + d < w && v[i + d] === val) return false; if (y + d < h && v[i + d * w] === val) return false; } }
+      return true;
+    },
+    rules: (P) => {
+      const k = P.rc.findIndex((q) => q.length >= 3);
+      return [
+        { t: { es: 'Cada zona de N casillas lleva los números del 1 al N, sin repetir.', en: 'Each area of N cells holds the numbers 1 to N, no repeats.' }, cells: P.rc[k] },
+        { t: { es: 'Como las ondas en el agua: si dos números iguales (N) están en la misma fila o columna, entre ellos tiene que haber al menos N casillas.', en: 'Like ripples in water: if two equal numbers (N) share a row or column, there must be at least N cells between them.' }, rows: [0] },
+        { t: { es: 'Así, dos 1 pueden ir con una casilla en medio, pero dos 3 necesitan tres casillas de separación.', en: 'So two 1s can go with one cell between them, but two 3s need three cells between them.' }, all: true },
+      ];
+    },
+    goal: { es: 'Rellena las zonas como ondas', en: 'Fill the areas like ripples' },
+  };
+  Arcade.game({
+    ...RJ(V),
+    /*THEME*/ tag: "Números que se separan como ondas", deco: ["🏯", "🌸", "🎋", "🖌️", "🍵", "⛩️"], font: 'serif', bg: ["#173a5e", "#0a1b2e"],
+    music: { mode: "insen", bpm: 70, wave: 'triangle', style: 'chill', root: 57 }, voice: { wave: 'sine', mul: 1.1, echo: 0.4 },
+    /*EN*/ en: { title: "Ripple Effect", tag: "Numbers that spread out like ripples", help: "Each <b>area</b> of N cells holds the numbers 1 to N. If two <b>equal</b> numbers (N) are in the same <b>row</b> or <b>column</b>, there must be <b>at least N cells</b> between them. <b>Tap a cell</b> and then a <b>number</b>." },
+    /*TV*/ tvHelp: "Cruceta hasta una casilla · OK para jugar en ella.",
+    id: "hakyuu", title: "Hakyuu", emoji: "🌊", color: "#4dabf7", origin: "Hakyuu / Ripple Effect (Nikoli, Japón)",
+    help: "Cada <b>zona</b> de N casillas lleva los números del 1 al N. Si dos números <b>iguales</b> (N) están en la misma <b>fila</b> o <b>columna</b>, entre ellos tiene que haber <b>al menos N casillas</b>. <b>Toca una casilla</b> y luego un <b>número</b>.",
+    lives: 0, levels: 0, cap: 20,
+  });
+})();
+</script>
+</body>
+</html>

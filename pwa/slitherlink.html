@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Slitherlink · Arcade Perdido</title>
+<meta name="theme-color" content="#0b1a10">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css?v=6d7635e467">
+</head>
+<body class="game">
+<script src="config.js?v=84fed7f189"></script>
+<script src="common.js?v=fb0b61af23"></script>
+<script src="rejilla.js?v=30e0994cee"></script>
+<script>
+// @rejilla
+(function () {
+  const RJ = Arcade.rejilla, U = RJ.U, C = RJ.C, A = Arcade, T = Arcade.T;
+  const V = {
+    kind: 'edge', kanji: '環', noGrid: true, noFrame: true,
+    explain: (P, a) => a.wrong ? null : { es: 'La línea pasa por este borde: lo piden los números de al lado.', en: 'The line runs along this edge: the numbers next to it ask for it.' },
+    size: (lv) => ({ n: lv <= 3 ? 5 : lv <= 9 ? 6 : lv <= 15 ? 7 : 8, keep: lv <= 4 ? 0.8 : lv <= 12 ? 0.65 : 0.55 }),
+    sides(P, E, i) { const w = P.w, x = i % w, y = (i / w) | 0; return [E['h' + (y * w + x)], E['h' + ((y + 1) * w + x)], E['v' + (y * (w + 1) + x)], E['v' + (y * (w + 1) + x + 1)]].filter((v) => v === 1).length; },
+    gen(r, c) {
+      const n = c.n, lp = U.loop(r, n, n, 0.5), P = { w: n, h: n, cl: new Array(n * n).fill(-1), sol: { E: lp.E } };
+      const all = Array.from({ length: n * n }, (_, i) => i);
+      U.shuffle(r, all).slice(0, Math.round(n * n * c.keep)).forEach((i) => { P.cl[i] = V.sides(P, lp.E, i); });
+      return P;
+    },
+    check(P, st) {
+      const E = st.E, w = P.w, deg = {}, adj = {}; let m = 0;
+      for (const k in E) { if (E[k] !== 1) continue; m++; const n = +k.slice(1); let a, b; if (k[0] === 'h') { const x = n % w, y = (n / w) | 0; a = y * (w + 1) + x; b = a + 1; } else { a = n; b = n + w + 1; } (adj[a] = adj[a] || []).push(b); (adj[b] = adj[b] || []).push(a); }
+      const ks = Object.keys(adj); if (!ks.length) return false; for (const k of ks) if (adj[k].length !== 2) return false;
+      const seen = new Set([+ks[0]]), q = [+ks[0]]; while (q.length) { const i = q.pop(); for (const j of adj[i]) if (!seen.has(j)) { seen.add(j); q.push(j); } } if (seen.size !== ks.length) return false;
+      for (let i = 0; i < w * P.h; i++) if (P.cl[i] >= 0 && V.sides(P, E, i) !== P.cl[i]) return false;
+      return true;
+    },
+    drawClue(ctx, P, i, x, y, cs, st) { const v = P.cl[i]; if (v < 0) return; const k = V.sides(P, st.E, i); A.txt(ctx, String(v), x + cs / 2, y + cs / 2 + 1, cs * 0.5, k === v ? '#adb5bd' : k > v ? C.err : C.ink, 'center', 800, null, RJ.NUMF); },
+    rules: (P) => {
+      const i = P.cl.findIndex((v) => v === 3) >= 0 ? P.cl.findIndex((v) => v === 3) : P.cl.findIndex((v) => v > 0), w = P.w, x = i % w, y = (i / w) | 0;
+      return [
+        { t: { es: 'Une los puntos con líneas para hacer un único bucle cerrado, sin cruces ni ramas.', en: 'Join the dots with lines to make a single closed loop, with no crossings or branches.' }, all: true },
+        { t: { es: 'Cada número dice cuántos de sus 4 lados forman parte del bucle: este ' + P.cl[i] + ' tiene ' + P.cl[i] + ' lados con línea.', en: 'Each number says how many of its 4 sides are part of the loop: this ' + P.cl[i] + ' has ' + P.cl[i] + ' sides with a line.' }, edges: ['h' + (y * w + x), 'h' + ((y + 1) * w + x), 'v' + (y * (w + 1) + x), 'v' + (y * (w + 1) + x + 1)] },
+        { t: { es: 'Las casillas sin número pueden tener cualquier cantidad de líneas. Marca con ✕ donde seguro que no va.', en: 'Cells without a number can have any number of lines. Mark with ✕ where there is surely no line.' }, all: true },
+      ];
+    },
+    goal: { es: 'Cierra el bucle', en: 'Close the loop' },
+  };
+  Arcade.game({
+    ...RJ(V),
+    /*THEME*/ tag: "Un bucle que abraza los números", deco: ["🏯", "🌸", "🎋", "🖌️", "🍵", "⛩️"], font: 'serif', bg: ["#1d3b26", "#0b1a10"],
+    music: { mode: "insen", bpm: 70, wave: 'triangle', style: 'chill', root: 57 }, voice: { wave: 'sine', mul: 1.1, echo: 0.4 },
+    /*EN*/ en: { title: "Slitherlink", tag: "A loop hugging the numbers", help: "Join the <b>dots</b> to make a single <b>closed loop</b>, with no crossings or branches. Each <b>number</b> says how many of its <b>4 sides</b> are part of the loop. Tap between two dots for a line; again for an ✕; again to clear. You can also drag." },
+    /*TV*/ tvHelp: "Cruceta hasta una casilla · OK para jugar en ella.",
+    id: "slitherlink", title: "Slitherlink", emoji: "➰", color: "#69db7c", origin: "Slitherlink / Fences (Nikoli, Japón)",
+    help: "Une los <b>puntos</b> para hacer un único <b>bucle cerrado</b>, sin cruces ni ramas. Cada <b>número</b> dice cuántos de sus <b>4 lados</b> son parte del bucle. Toca entre dos puntos para poner línea; otra vez para una ✕; otra vez para borrar. También puedes arrastrar.",
+    lives: 0, levels: 0, cap: 20,
+  });
+})();
+</script>
+</body>
+</html>

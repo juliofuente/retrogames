@@ -1,0 +1,65 @@
+// Gokigen|#120c22
+// @rejilla
+(function () {
+  const RJ = Arcade.rejilla, U = RJ.U, C = RJ.C, A = Arcade, T = Arcade.T;
+  const V = {
+    kind: 'cell', kanji: '斜', margin: () => ({ l: 0.3, t: 0.3, r: 0.3, b: 0.3 }),
+    states: [
+      { v: 1, name: { es: '╱', en: '╱' }, k: 'custom', draw: (ctx, x, y, cs) => V.line(ctx, x, y + cs, x + cs, y, cs), why: { es: 'Aquí va esta diagonal: la otra cerraría un bucle o no cuadraría con los números.', en: 'This diagonal goes here: the other one would close a loop or break a number.' } },
+      { v: 2, name: { es: '╲', en: '╲' }, k: 'custom', draw: (ctx, x, y, cs) => V.line(ctx, x, y, x + cs, y + cs, cs), why: { es: 'Aquí va esta diagonal: la otra cerraría un bucle o no cuadraría con los números.', en: 'This diagonal goes here: the other one would close a loop or break a number.' } },
+    ],
+    line(ctx, x1, y1, x2, y2, cs) { ctx.save(); ctx.strokeStyle = C.ink; ctx.lineCap = 'round'; ctx.lineWidth = Math.max(3, cs * 0.1); ctx.beginPath(); ctx.moveTo(x1 + (x2 > x1 ? 3 : -3), y1 + (y2 > y1 ? 3 : -3)); ctx.lineTo(x2 - (x2 > x1 ? 3 : -3), y2 - (y2 > y1 ? 3 : -3)); ctx.stroke(); ctx.restore(); },
+    size: (lv) => ({ n: lv <= 3 ? 4 : lv <= 9 ? 5 : lv <= 15 ? 6 : 7, keep: lv <= 4 ? 0.7 : lv <= 12 ? 0.55 : 0.45 }),
+    ends(P, i, v) { const w = P.w, x = i % w, y = (i / w) | 0, W = w + 1; return v === 1 ? [(y + 1) * W + x, y * W + x + 1] : [y * W + x, (y + 1) * W + x + 1]; },
+    uf(n) { const p = Array.from({ length: n }, (_, i) => i), f = (a) => (p[a] === a ? a : (p[a] = f(p[a]))); return { f, u: (a, b) => { a = f(a); b = f(b); if (a === b) return false; p[a] = b; return true; } }; },
+    touch(P, c) { const t = new Array((P.w + 1) * (P.h + 1)).fill(0); for (let i = 0; i < P.w * P.h; i++) if (c[i] === 1 || c[i] === 2) for (const q of V.ends(P, i, c[i])) t[q]++; return t; },
+    gen(r, c) {
+      const n = c.n, P = { w: n, h: n };
+      for (let t = 0; t < 200; t++) {
+        const uf = V.uf((n + 1) * (n + 1)), g = new Array(n * n).fill(0); let ok = true;
+        for (const i of U.shuffle(r, Array.from({ length: n * n }, (_, i) => i))) {
+          const o = U.shuffle(r, [1, 2]); const v = o.find((q) => { const [a, b] = V.ends(P, i, q); return uf.f(a) !== uf.f(b); });
+          if (!v) { ok = false; break; } const [a, b] = V.ends(P, i, v); uf.u(a, b); g[i] = v;
+        }
+        if (!ok) continue;
+        const tc = V.touch(P, g), cl = new Array(tc.length).fill(-1);
+        U.shuffle(r, tc.map((_, k) => k)).slice(0, Math.round(tc.length * c.keep)).forEach((k) => { cl[k] = tc[k]; });
+        return { w: n, h: n, cl, sol: { c: g } };
+      }
+      throw new Error('gokigen');
+    },
+    check(P, st) {
+      if (st.c.some((v) => v !== 1 && v !== 2)) return false;
+      const uf = V.uf((P.w + 1) * (P.h + 1)); for (let i = 0; i < P.w * P.h; i++) { const [a, b] = V.ends(P, i, st.c[i]); if (!uf.u(a, b)) return false; }
+      const tc = V.touch(P, st.c); return P.cl.every((v, k) => v < 0 || tc[k] === v);
+    },
+    drawOver(ctx, P, st, L) {
+      const tc = V.touch(P, st.c), W = P.w + 1, R = Math.max(8, L.cs * 0.2);
+      for (let k = 0; k < P.cl.length; k++) {
+        const v = P.cl[k]; if (v < 0) continue; const x = L.ox + (k % W) * L.cs, y = L.oy + ((k / W) | 0) * L.cs;
+        ctx.fillStyle = tc[k] === v ? '#ebfbee' : tc[k] > v ? '#ffe3e3' : '#fffaf0'; ctx.beginPath(); ctx.arc(x, y, R, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = C.ink; ctx.lineWidth = 1.5; ctx.stroke(); A.txt(ctx, String(v), x, y + 1, R * 1.25, tc[k] > v ? C.err : C.ink, 'center', 900, null, RJ.NUMF);
+      }
+    },
+    rules: (P) => {
+      const k = P.cl.findIndex((v) => v >= 2), W = P.w + 1, x = k % W, y = (k / W) | 0, cells = [];
+      for (const [dx, dy] of [[-1, -1], [0, -1], [-1, 0], [0, 0]]) { const X = x + dx, Y = y + dy; if (X >= 0 && Y >= 0 && X < P.w && Y < P.h) cells.push(Y * P.w + X); }
+      return [
+        { t: { es: 'Pon una diagonal en cada casilla: ╱ o ╲.', en: 'Put a diagonal in every cell: ╱ or ╲.' }, all: true },
+        { t: { es: 'Cada número de una esquina dice cuántas diagonales tocan ese punto: este ' + P.cl[k] + ' necesita ' + P.cl[k] + '.', en: 'Each number on a corner says how many diagonals touch that point: this ' + P.cl[k] + ' needs ' + P.cl[k] + '.' }, cells },
+        { t: { es: 'Las diagonales nunca pueden cerrar un bucle.', en: 'The diagonals must never close a loop.' }, all: true },
+      ];
+    },
+    goal: { es: 'Sin cerrar ningún bucle', en: 'Without closing a loop' },
+  };
+  Arcade.game({
+    ...RJ(V),
+    /*THEME*/ tag: "Diagonales sin cerrar bucles", deco: ["🏯", "🌸", "🎋", "🖌️", "🍵", "⛩️"], font: 'serif', bg: ["#2c2050", "#120c22"],
+    music: { mode: "insen", bpm: 70, wave: 'triangle', style: 'chill', root: 57 }, voice: { wave: 'sine', mul: 1.1, echo: 0.4 },
+    /*EN*/ en: { title: "Gokigen", tag: "Diagonals that never close a loop", help: "Put a <b>diagonal</b> (╱ or ╲) in every cell. The numbers on the <b>corners</b> say how many diagonals touch that point, and the diagonals must <b>never</b> close a <b>loop</b>. Tap a cell to change the diagonal (╱ → ╲ → empty)." },
+    /*TV*/ tvHelp: "Cruceta hasta una casilla · OK para jugar en ella.",
+    id: "gokigen", title: "Gokigen", emoji: "⧄", color: "#b197fc", origin: "Gokigen Naname / Slant (Nikoli, Japón)",
+    help: "Pon una <b>diagonal</b> (╱ o ╲) en cada casilla. Los números de las <b>esquinas</b> dicen cuántas diagonales tocan ese punto, y las diagonales <b>nunca</b> pueden cerrar un <b>bucle</b>. Toca una casilla para cambiar la diagonal (╱ → ╲ → vacía).",
+    lives: 0, levels: 0, cap: 20,
+  });
+})();

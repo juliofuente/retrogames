@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Kakuro · Arcade Perdido</title>
+<meta name="theme-color" content="#1c170c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css?v=6d7635e467">
+</head>
+<body class="game">
+<script src="config.js?v=84fed7f189"></script>
+<script src="common.js?v=fb0b61af23"></script>
+<script src="rejilla.js?v=30e0994cee"></script>
+<script>
+// @rejilla
+(function () {
+  const RJ = Arcade.rejilla, U = RJ.U, C = RJ.C, A = Arcade, T = Arcade.T;
+  const V = {
+    kind: 'num', kanji: '和',
+    size: (lv) => ({ n: lv <= 3 ? 5 : lv <= 8 ? 6 : lv <= 13 ? 7 : lv <= 17 ? 8 : 9, p: 0.16 + Math.min(0.08, lv * 0.004) }),
+    N: () => 9,
+    blocked: (P, i) => P.blk[i],
+    cellBg: (P, i) => (P.blk[i] ? '#2b2233' : null),
+    runsOf(P) {
+      const n = P.w, runs = [], cr = Array.from({ length: n * n }, () => []);
+      for (const dir of [1, n]) for (let i = 0; i < n * n; i++) {
+        if (P.blk[i]) continue; const prev = i - dir; if (dir === 1 ? i % n > 0 && !P.blk[prev] : prev >= 0 && !P.blk[prev]) continue;
+        const cells = []; for (let j = i; j < n * n && !P.blk[j] && (dir === 1 ? Math.floor(j / n) === Math.floor(i / n) : true); j += dir) cells.push(j);
+        const head = i - dir; runs.push({ cells, dir, head, sum: 0 }); for (const c of cells) cr[c].push(runs.length - 1);
+      }
+      P.runs = runs; P.cr = cr;
+    },
+    cand(P, v, i) {
+      let used = 0; for (const k of P.cr[i]) for (const j of P.runs[k].cells) if (j !== i && v[j] && v[j] < 10) used |= 1 << v[j];
+      let a = U.full(9) & ~used, out = 0; if (!P.runs[0].sum) return a;
+      for (let val = 1; val <= 9; val++) {
+        if (!(a & (1 << val))) continue; let ok = true;
+        for (const k of P.cr[i]) {
+          const R = P.runs[k]; let s = val, left = 0; for (const j of R.cells) { if (j === i) continue; if (v[j] && v[j] < 10) s += v[j]; else left++; }
+          if (left === 0 ? s !== R.sum : s + (left * (left + 1)) / 2 > R.sum || s + left * 9 - (left * (left - 1)) / 2 < R.sum) { ok = false; break; }
+        }
+        if (ok) out |= 1 << val;
+      }
+      return out;
+    },
+    gen(r, c) {
+      const n = c.n;
+      for (let tries = 0; tries < 60; tries++) {
+        const blk = new Array(n * n).fill(false);
+        for (let i = 0; i < n * n; i++) { const x = i % n, y = (i / n) | 0; if (x === 0 || y === 0) blk[i] = true; }
+        for (let y = 1; y < n; y++) for (let x = 1; x < n; x++) if (r() < c.p) { blk[y * n + x] = true; }
+        // sin tramos de una sola casilla
+        for (let it = 0; it < 30; it++) {
+          let ch = false;
+          for (let i = 0; i < n * n; i++) {
+            if (blk[i]) continue; const x = i % n, y = (i / n) | 0;
+            const hl = (!blk[i - 1] ? 1 : 0) + (x < n - 1 && !blk[i + 1] ? 1 : 0), vl = (!blk[i - n] ? 1 : 0) + (y < n - 1 && !blk[i + n] ? 1 : 0);
+            if (hl === 0 || vl === 0) { blk[i] = true; ch = true; }
+          }
+          if (!ch) break;
+        }
+        const whites = blk.filter((b) => !b).length; if (whites < (n - 1) * (n - 1) * 0.5) continue;
+        if (!U.connected(n, n, (i) => !blk[i])) continue;
+        const P = { w: n, h: n, blk }; V.runsOf(P);
+        if (P.runs.some((R) => R.cells.length > 9)) continue;
+        const base = blk.map((b) => (b ? 15 : 0));
+        const sol = U.fill(r, n * n, base, (vv, i) => V.cand(P, vv, i), { budget: 20000 });
+        if (!sol) continue;
+        for (const R of P.runs) R.sum = R.cells.reduce((s, j) => s + sol[j], 0);
+        const unique = (f) => U.solve(n * n, f, (vv, i) => V.cand(P, vv, i), { budget: 8000 }).n === 1;
+        const fix = sol.slice();
+        for (const i of U.shuffle(r, Array.from({ length: n * n }, (_, i) => i).filter((i) => !blk[i]))) { const v = fix[i]; fix[i] = 0; if (!unique(fix)) fix[i] = v; }
+        P.cl = {}; for (const R of P.runs) { const o = P.cl[R.head] || (P.cl[R.head] = {}); o[R.dir === 1 ? 'r' : 'd'] = R.sum; }
+        P.fix = fix.map((v, i) => (blk[i] ? 0 : v)); P.sol = { c: sol.map((v, i) => (blk[i] ? 0 : v)) }; return P;
+      }
+      throw new Error('kakuro');
+    },
+    check(P, st) {
+      const v = st.c; for (let i = 0; i < P.w * P.h; i++) if (!P.blk[i] && !v[i]) return false;
+      return P.runs.every((R) => new Set(R.cells.map((j) => v[j])).size === R.cells.length && R.cells.reduce((s, j) => s + v[j], 0) === R.sum);
+    },
+    groups(P) { return P.runs.map((R) => R.cells); },
+    drawClue(ctx, P, i, x, y, cs) {
+      const o = P.cl[i]; if (!o) return;
+      ctx.strokeStyle = 'rgba(255,255,255,.45)'; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(x + 2, y + 2); ctx.lineTo(x + cs - 2, y + cs - 2); ctx.stroke();
+      if (o.r) A.txt(ctx, String(o.r), x + cs * 0.7, y + cs * 0.3, cs * 0.3, '#ffe066', 'center', 900, null, RJ.NUMF);
+      if (o.d) A.txt(ctx, String(o.d), x + cs * 0.3, y + cs * 0.72, cs * 0.3, '#a5d8ff', 'center', 900, null, RJ.NUMF);
+    },
+    rules: (P) => {
+      const R = P.runs.find((q) => q.dir === 1) || P.runs[0], D = P.runs.find((q) => q.dir !== 1) || P.runs[0];
+      return [
+        { t: { es: 'Rellena las casillas blancas con cifras del 1 al 9.', en: 'Fill the white cells with digits 1 to 9.' }, all: true },
+        { t: { es: 'El número amarillo de una casilla negra es la suma de las blancas que tiene a su derecha: aquí, ' + R.sum + '.', en: 'The yellow number in a black cell is the sum of the white cells to its right: here, ' + R.sum + '.' }, cells: [R.head].concat(R.cells) },
+        { t: { es: 'El azul es la suma de las de debajo: aquí, ' + D.sum + '.', en: 'The blue one is the sum of the cells below it: here, ' + D.sum + '.' }, cells: [D.head].concat(D.cells) },
+        { t: { es: 'Dentro de un mismo tramo no se repite ninguna cifra. Truco: 3 en dos casillas solo puede ser 1 + 2.', en: 'No digit repeats inside a run. Tip: 3 in two cells can only be 1 + 2.' }, all: true },
+      ];
+    },
+    goal: { es: 'Que cada tramo sume su pista', en: 'Make every run add up to its clue' },
+  };
+  Arcade.game({
+    ...RJ(V),
+    /*THEME*/ tag: "Crucigrama de sumas", deco: ["🏯", "🌸", "🎋", "🖌️", "🍵", "⛩️"], font: 'serif', bg: ["#3d3420", "#1c170c"],
+    music: { mode: "insen", bpm: 70, wave: 'triangle', style: 'chill', root: 57 }, voice: { wave: 'sine', mul: 1.1, echo: 0.4 },
+    /*EN*/ en: { title: "Kakuro", tag: "A crossword made of sums", help: "Fill the white cells with digits 1 to 9. Each horizontal run adds up to the <b>yellow</b> number on its left and each vertical run to the <b>blue</b> one above it. No digit repeats inside a run. <b>Tap a cell</b> and then a <b>number</b>." },
+    /*TV*/ tvHelp: "Cruceta hasta una casilla · OK para jugar en ella.",
+    id: "kakuro", title: "Kakuro", emoji: "➕", color: "#ffd43b", origin: "Kakuro / Cross Sums (popularizado en Japón)",
+    help: "Rellena las casillas blancas con cifras del 1 al 9. Cada tramo horizontal suma el número <b>amarillo</b> de su izquierda y cada tramo vertical, el <b>azul</b> de encima. Dentro de un tramo no se repite ninguna cifra. <b>Toca una casilla</b> y luego un <b>número</b>.",
+    lives: 0, levels: 0, cap: 20,
+  });
+})();
+</script>
+</body>
+</html>

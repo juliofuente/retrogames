@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Hitori · Arcade Perdido</title>
+<meta name="theme-color" content="#200b18">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css?v=6d7635e467">
+</head>
+<body class="game">
+<script src="config.js?v=84fed7f189"></script>
+<script src="common.js?v=fb0b61af23"></script>
+<script src="rejilla.js?v=30e0994cee"></script>
+<script>
+// @rejilla
+(function () {
+  const RJ = Arcade.rejilla, U = RJ.U, C = RJ.C, A = Arcade, T = Arcade.T;
+  const V = {
+    kind: 'cell', kanji: '一', marks: [2],
+    states: [
+      { v: 1, name: { es: 'tachada', en: 'shaded' }, k: 'shade', why: { es: 'Este número está repetido en su fila o columna: lo tachamos.', en: 'This number repeats in its row or column: we shade it.' } },
+      { v: 2, name: { es: 'círculo (se queda)', en: 'circle (keeps)' }, k: 'custom', draw: (ctx, x, y, cs) => { ctx.strokeStyle = '#2f9e44'; ctx.lineWidth = Math.max(2, cs * 0.06); ctx.beginPath(); ctx.arc(x + cs / 2, y + cs / 2, cs * 0.36, 0, Math.PI * 2); ctx.stroke(); } },
+    ],
+    size: (lv) => ({ n: lv <= 3 ? 5 : lv <= 8 ? 6 : lv <= 13 ? 7 : lv <= 17 ? 8 : 9 }),
+    gen(r, c) {
+      const n = c.n, N = n * n, lat = U.latin(r, n), sh = new Array(N).fill(0);
+      for (const i of U.shuffle(r, Array.from({ length: N }, (_, i) => i))) {
+        if (sh.filter((x) => x).length >= N * 0.3) break;
+        if (U.n4(n, n, i).some((j) => sh[j])) continue;
+        sh[i] = 1; if (!U.connected(n, n, (j) => !sh[j])) sh[i] = 0;
+      }
+      const num = lat.slice();
+      for (let i = 0; i < N; i++) {
+        if (!sh[i]) continue; const x = i % n, y = (i / n) | 0, opts = [];
+        for (let k = 0; k < n; k++) { if (!sh[y * n + k]) opts.push(lat[y * n + k]); if (!sh[k * n + x]) opts.push(lat[k * n + x]); }
+        num[i] = U.pick(r, opts);
+      }
+      return { w: n, h: n, num, sol: { c: sh } };
+    },
+    check(P, st) {
+      const n = P.w, sh = (i) => st.c[i] === 1;
+      for (let i = 0; i < n * n; i++) if (sh(i) && U.n4(n, n, i).some(sh)) return false;
+      if (!U.connected(n, n, (i) => !sh(i))) return false;
+      for (let k = 0; k < n; k++) { const a = new Set(), b = new Set(); for (let j = 0; j < n; j++) { const i1 = k * n + j, i2 = j * n + k; if (!sh(i1)) { if (a.has(P.num[i1])) return false; a.add(P.num[i1]); } if (!sh(i2)) { if (b.has(P.num[i2])) return false; b.add(P.num[i2]); } } }
+      return true;
+    },
+    drawClue(ctx, P, i, x, y, cs, st) { A.txt(ctx, String(P.num[i]), x + cs / 2, y + cs / 2 + 1, cs * 0.5, st.c[i] === 1 ? 'rgba(255,255,255,.55)' : C.ink, 'center', 800, null, RJ.NUMF); },
+    rules: (P) => [
+      { t: { es: 'Tacha casillas para que ningún número se repita en una fila ni en una columna.', en: 'Shade cells so that no number repeats in a row or a column.' }, rows: [0] },
+      { t: { es: 'Dos casillas tachadas nunca se tocan por un lado.', en: 'Two shaded cells never share a side.' }, all: true },
+      { t: { es: 'Y todas las casillas sin tachar tienen que quedar unidas entre sí. El círculo verde marca las que seguro se quedan.', en: 'And all the unshaded cells must stay connected. The green circle marks the ones that surely stay.' }, all: true },
+    ],
+    goal: { es: 'Tacha los repetidos', en: 'Shade the repeats' },
+  };
+  Arcade.game({
+    ...RJ(V),
+    /*THEME*/ tag: "Tacha los números repetidos", deco: ["🏯", "🌸", "🎋", "🖌️", "🍵", "⛩️"], font: 'serif', bg: ["#4a1d36", "#200b18"],
+    music: { mode: "insen", bpm: 70, wave: 'triangle', style: 'chill', root: 57 }, voice: { wave: 'sine', mul: 1.1, echo: 0.4 },
+    /*EN*/ en: { title: "Hitori", tag: "Shade out the repeated numbers", help: "<b>Shade</b> cells so that no number repeats in a <b>row</b> or a <b>column</b>. Shaded cells cannot <b>touch</b> by a side and the rest must stay <b>connected</b>. Tap a cell to shade it (shaded → circle → empty)." },
+    /*TV*/ tvHelp: "Cruceta hasta una casilla · OK para jugar en ella.",
+    id: "hitori", title: "Hitori", emoji: "🚫", color: "#e64980", origin: "Hitori (Nikoli, Japón)",
+    help: "<b>Tacha</b> casillas para que ningún número se repita en una <b>fila</b> ni en una <b>columna</b>. Las tachadas no pueden <b>tocarse</b> por un lado y las demás tienen que quedar <b>unidas</b>. Toca una casilla para tacharla (tachada → círculo → vacía).",
+    lives: 0, levels: 0, cap: 20,
+  });
+})();
+</script>
+</body>
+</html>

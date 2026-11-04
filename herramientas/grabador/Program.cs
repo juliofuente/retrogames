@@ -23,7 +23,8 @@
 //   --paralelo N          juegos a la vez (1)         --calidad 21  (CRF de x264: menos = mejor y más pesado)
 //   --chrome ruta         ejecutable de Chrome si no lo encuentra solo    --ffmpeg ruta
 //
-// Tutoriales de los solitarios (--tutoriales): un vídeo «cómo se juega» por solitario de la web (los 100 de Arcade.paciencia):
+// Tutoriales (--tutoriales): un vídeo «cómo se juega» por juego de la web que lo admite (los solitarios de Arcade.paciencia
+// y los puzles orientales de Arcade.rejilla: sudoku, nonograma, hashi…):
 // cartela de entrada, los pasos del tutorial con los montones resaltados, unas jugadas de ejemplo explicadas y hechas
 // despacio, y cartela final con la dirección del juego. Opciones (los textos admiten «español | english»):
 //   --jugadas 6           jugadas de ejemplo tras el tutorial       --lectura 1   (1,3 = cada texto un 30 % más de tiempo)
@@ -205,18 +206,18 @@ static class Program
         using var http = new HttpClient(Net.Handler()) { Timeout = TimeSpan.FromSeconds(60) };
         http.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 ArcadeRecorder/1.0");
         if (o.Only.Count > 0) games = games.Where(g => o.Only.Contains(g.Id)).ToList();
-        // solo los solitarios: su página usa el motor de solitarios (Arcade.paciencia, en cartas.js); la escoba, la brisca… no
+        // solo los juegos con tutorial grabable: los solitarios (Arcade.paciencia, en cartas.js) y los puzles orientales (Arcade.rejilla, en rejilla.js)
         var soli = new List<(string Base, string Id)>(); var sem = new SemaphoreSlim(8);
         await Task.WhenAll(games.Select(async g =>
         {
             await sem.WaitAsync();
-            try { var html = o.LocalDir != null ? await File.ReadAllTextAsync(Path.Combine(o.LocalDir, "pwa", g.Id + ".html")) : await http.GetStringAsync($"{g.Base}/{g.Id}/es"); if (html.Contains("cartas.js") && html.Contains("Arcade.paciencia")) lock (soli) soli.Add(g); }
+            try { var html = o.LocalDir != null ? await File.ReadAllTextAsync(Path.Combine(o.LocalDir, "pwa", g.Id + ".html")) : await http.GetStringAsync($"{g.Base}/{g.Id}/es"); if ((html.Contains("cartas.js") && html.Contains("Arcade.paciencia")) || (html.Contains("rejilla.js") && html.Contains("Arcade.rejilla"))) lock (soli) soli.Add(g); }
             catch { }
             finally { sem.Release(); }
         }));
         soli = soli.OrderBy(g => games.FindIndex(x => x.Id == g.Id)).ToList();
         if (o.Max > 0) soli = soli.Take(o.Max).ToList();
-        Console.WriteLine($"{soli.Count} solitarios (de {games.Count} juegos)");
+        Console.WriteLine($"{soli.Count} juegos con tutorial (de {games.Count} juegos)");
         if (soli.Count == 0) return 1;
         var jobs = new Queue<Job>();
         foreach (var g in soli) foreach (var lang in o.Langs) foreach (var fmt in o.Formats)
@@ -322,7 +323,7 @@ static class Program
         if (j.Tut)
         {
             string scene = ""; try { scene = (await page.Eval("String(window.arcadeRec.scene || '')")).GetString() ?? ""; } catch { }
-            if (scene != "tutorial") { Console.WriteLine($"  – {j.Id}: no tiene vídeo de tutorial (¿falta subir pwa/cartas.js nuevo a la web?), se salta"); return false; }
+            if (scene != "tutorial") { Console.WriteLine($"  – {j.Id}: no tiene vídeo de tutorial (¿falta subir pwa/cartas.js o pwa/rejilla.js nuevos a la web?), se salta"); return false; }
         }
         var info = JsonDocument.Parse((await page.Eval("JSON.stringify(window.arcadeRec.info)")).GetString()!).RootElement;
         int frames = (await page.Eval("window.arcadeRec.frames")).GetInt32();
@@ -477,15 +478,15 @@ static class Ask
         try { if (File.Exists(File_)) last = JsonSerializer.Deserialize<Dictionary<string, string>>(File.ReadAllText(File_)) ?? new(); } catch { }
         Console.WriteLine("ArcadeRecorder · vídeos de los juegos (Enter = la respuesta entre corchetes)\n");
         var a = new List<string>();
-        string web = Q("web", "Web de la que grabar (subdominio o dominio; para los tutoriales, la de solitarios)", "https://mobilehits.juegosboom.com").TrimEnd('/');
+        string web = Q("web", "Web de la que grabar (subdominio o dominio; para los tutoriales, la de solitarios u orientales.juegosboom.com)", "https://mobilehits.juegosboom.com").TrimEnd('/');
         if (!web.StartsWith("http")) web = "https://" + web;
         a.AddRange(new[] { "--web", web });
-        string modo = Q("modo", "¿Qué quieres grabar?  1 = demos de los juegos · 2 = retos (un vídeo por problema) · 3 = tutoriales de los solitarios", "1").Trim();
+        string modo = Q("modo", "¿Qué quieres grabar?  1 = demos de los juegos · 2 = retos (un vídeo por problema) · 3 = tutoriales (solitarios y puzles orientales)", "1").Trim();
         bool retos = modo == "2", tuts = modo == "3";
         if (tuts)
         {
             a.Add("--tutoriales");
-            var solo = Q("soloT", "Solitarios concretos, separados por comas (Enter = todos los de la web)", "todos"); if (solo != "todos" && solo != "") a.AddRange(new[] { "--solo", solo });
+            var solo = Q("soloT", "Juegos concretos, separados por comas (Enter = todos los de la web)", "todos"); if (solo != "todos" && solo != "") a.AddRange(new[] { "--solo", solo });
             a.AddRange(new[] { "--jugadas", Q("jugadas", "Jugadas de ejemplo después del tutorial", "6") });
             a.AddRange(new[] { "--lectura", Q("lectura", "Velocidad de lectura (1 = normal, 1.3 = más despacio)", "1") });
             a.AddRange(new[] { "--url-juego", Q("urlJuego", "Dirección que se anuncia ({host} {id} {lang} {web})", "{host}/{id}") });
@@ -496,6 +497,10 @@ static class Ask
         {
             Console.WriteLine("  Educativos: secuencias · problemas (es) · emojimates · calculo · balanza · ortografia (es) · spelling (en) · ingles (es)");
             Console.WriteLine("  Juegos: cerillas · atasco · jarras · ranas · apagon · clavijas");
+            Console.WriteLine("  Puzles orientales (web orientales.juegosboom.com): sudoku · nonograma · numberlink · hashi · kakuro · futoshiki · takuzu · kenken");
+            Console.WriteLine("    rascacielos · suguru · kojun · hidoku · kropki · renzoku · kakurasu · shikaku · cuadrados · fillomino · nurikabe · hitori · akari");
+            Console.WriteLine("    estrellas · tiendas · barcos · acuario · slitherlink · masyu · yajilin · dominosa · satogaeri · tapa · lits · norinori · heyawake");
+            Console.WriteLine("    kurodoko · riachuelo · hakyuu · gokigen");
             var pz = Q("puzles", "Juego de retos", "secuencias").Trim().ToLowerInvariant();
             a.AddRange(new[] { "--puzles", pz });
             if (Program.EduPacks.Contains(pz)) a.AddRange(new[] { "--serie", Q("serie", "Preguntas por vídeo: 1 o 5 (de fácil a genio)", "1") });
@@ -640,6 +645,8 @@ class Options
         "Sin conexión (por defecto): copia local en «juegos» (de GitHub) · --local carpeta · --actualizar · --solo-bajar · --online = desde la web\n" +
         "Preguntar una vez: Game2Video --preguntar opciones.txt web,idioma,desde,hasta,gancho,cta  ·  luego: Game2Video --opciones opciones.txt --puzles calculo\n" +
         "Tutoriales de solitarios: Game2Video --web https://solitarios.juegosboom.com --tutoriales [--idioma ambos] [--jugadas 6] [--lectura 1]\n" +
+        "Tutoriales de puzles orientales: Game2Video --web https://orientales.juegosboom.com --tutoriales [--solo sudoku,hashi]\n" +
+        "Partidas de ejemplo de un puzle oriental: Game2Video --web https://orientales.juegosboom.com --puzles nonograma --desde 1 --hasta 10\n" +
         "       [--url-juego \"{host}/{id}\"] [--gancho \"es | en\"] [--cta \"es | en\"] [--extra \"es | en\"] [--texto \"plantilla\"] [--outro-tutorial 5.5]");
     public string? PickMusic()
     {

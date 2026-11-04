@@ -1,0 +1,56 @@
+// Akari|#200f07
+// @rejilla
+(function () {
+  const RJ = Arcade.rejilla, U = RJ.U, C = RJ.C, A = Arcade, T = Arcade.T;
+  const V = {
+    kind: 'cell', kanji: '灯', marks: [2],
+    states: [{ v: 1, name: { es: 'farolillo', en: 'lantern' }, k: 'custom', draw: (ctx, x, y, cs) => A.emoji(ctx, '🏮', x + cs / 2, y + cs / 2, cs * 0.72), why: { es: 'Aquí va un farolillo: es la única forma de iluminar esta zona sin que vea a otro.', en: 'A lantern goes here: the only way to light this area without seeing another one.' } }, { v: 2, name: { es: 'punto (sin luz)', en: 'dot (no light)' }, k: 'dot' }],
+    size: (lv) => ({ n: lv <= 3 ? 5 : lv <= 8 ? 6 : lv <= 13 ? 7 : lv <= 17 ? 8 : 9, giv: lv <= 6 ? 0.9 : 0.7 }),
+    blocked: (P, i) => P.wall[i],
+    sight(P, i, f) { const n = P.w, x = i % n, y = (i / n) | 0; for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { let X = x + dx, Y = y + dy; while (X >= 0 && Y >= 0 && X < n && Y < P.h && !P.wall[Y * n + X]) { f(Y * n + X); X += dx; Y += dy; } } },
+    lit(P, c) { const L = new Uint8Array(P.w * P.h); for (let i = 0; i < P.w * P.h; i++) if (c[i] === 1) { L[i] = 1; V.sight(P, i, (j) => { L[j] = 1; }); } return L; },
+    gen(r, c) {
+      const n = c.n, N = n * n, wall = new Array(N).fill(false);
+      for (let i = 0; i < N; i++) if (r() < 0.2) { wall[i] = true; wall[N - 1 - i] = true; }
+      const P = { w: n, h: n, wall }, bulb = new Array(N).fill(0);
+      for (const i of U.shuffle(r, Array.from({ length: N }, (_, i) => i))) { if (wall[i]) continue; if (V.lit(P, bulb)[i]) continue; bulb[i] = 1; }
+      P.num = new Array(N).fill(-1);
+      for (let i = 0; i < N; i++) if (wall[i] && r() < c.giv) P.num[i] = U.n4(n, n, i).filter((j) => bulb[j]).length;
+      P.sol = { c: bulb }; return P;
+    },
+    check(P, st) {
+      const L = V.lit(P, st.c);
+      for (let i = 0; i < P.w * P.h; i++) {
+        if (P.wall[i]) { if (P.num[i] >= 0 && U.n4(P.w, P.h, i).filter((j) => st.c[j] === 1).length !== P.num[i]) return false; continue; }
+        if (!L[i]) return false;
+        if (st.c[i] === 1) { let bad = false; V.sight(P, i, (j) => { if (st.c[j] === 1) bad = true; }); if (bad) return false; }
+      }
+      return true;
+    },
+    cellBg(P, i, st) { if (P.wall[i]) return '#2b2233'; if (!st) return null; const L = (st._lit && st._litK === st.c.join('')) ? st._lit : (st._lit = V.lit(P, st.c), st._litK = st.c.join(''), st._lit); return L[i] ? '#ffe9a8' : null; },
+    errors(P, st) { const bad = new Set(); for (let i = 0; i < P.w * P.h; i++) if (st.c[i] === 1) V.sight(P, i, (j) => { if (st.c[j] === 1) { bad.add(i); } }); return bad; },
+    drawClue(ctx, P, i, x, y, cs, st) {
+      if (st.c[i] === 1) { let bad = false; V.sight(P, i, (j) => { if (st.c[j] === 1) bad = true; }); if (bad) { ctx.strokeStyle = C.err; ctx.lineWidth = 3; ctx.strokeRect(x + 3, y + 3, cs - 6, cs - 6); } }
+      if (P.num[i] >= 0) { const k = U.n4(P.w, P.h, i).filter((j) => st.c[j] === 1).length; A.txt(ctx, String(P.num[i]), x + cs / 2, y + cs / 2 + 1, cs * 0.5, k === P.num[i] ? '#8ce99a' : k > P.num[i] ? '#ff8787' : '#fff', 'center', 900, null, RJ.NUMF); }
+    },
+    rules: (P) => {
+      const k = P.num.findIndex((v) => v > 0);
+      return [
+        { t: { es: 'Coloca farolillos en las casillas blancas. Cada farolillo ilumina su fila y su columna hasta chocar con una casilla negra.', en: 'Place lanterns on white cells. Each lantern lights its row and column until it hits a black cell.' }, all: true },
+        { t: { es: 'Todas las casillas blancas tienen que quedar iluminadas, y ningún farolillo puede iluminar a otro.', en: 'Every white cell must be lit, and no lantern may light another one.' }, all: true },
+        { t: { es: 'Un número en una casilla negra dice cuántos farolillos tiene pegados por los lados: este, ' + P.num[k] + '.', en: 'A number on a black cell says how many lanterns touch its sides: this one, ' + P.num[k] + '.' }, cells: [k].concat(U.n4(P.w, P.h, k)) },
+      ];
+    },
+    goal: { es: 'Ilumina todo el tablero', en: 'Light up the whole board' },
+  };
+  Arcade.game({
+    ...RJ(V),
+    /*THEME*/ tag: "Ilumina con farolillos", deco: ["🏯", "🌸", "🎋", "🖌️", "🍵", "⛩️"], font: 'serif', bg: ["#4a2412", "#200f07"],
+    music: { mode: "insen", bpm: 70, wave: 'triangle', style: 'chill', root: 57 }, voice: { wave: 'sine', mul: 1.1, echo: 0.4 },
+    /*EN*/ en: { title: "Akari", tag: "Light it up with lanterns", help: "Place <b>lanterns</b> on white cells: each one lights its <b>row</b> and <b>column</b> up to a black cell. Everything must be <b>lit</b> and no lantern may light <b>another</b>. A number on a black cell says how many lanterns touch its sides. Tap to place (lantern → dot → empty)." },
+    /*TV*/ tvHelp: "Cruceta hasta una casilla · OK para jugar en ella.",
+    id: "akari", title: "Akari", emoji: "🏮", color: "#ff922b", origin: "Akari / Light Up (Nikoli, Japón)",
+    help: "Coloca <b>farolillos</b> en las casillas blancas: cada uno ilumina su <b>fila</b> y su <b>columna</b> hasta una casilla negra. Todo tiene que quedar <b>iluminado</b> y ningún farolillo puede iluminar a <b>otro</b>. Un número en una casilla negra dice cuántos farolillos tiene pegados por los lados. Toca para poner (farolillo → punto → vacía).",
+    lives: 0, levels: 0, cap: 20,
+  });
+})();

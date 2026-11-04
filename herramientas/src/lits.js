@@ -1,0 +1,65 @@
+// LITS|#140f27
+// @rejilla
+(function () {
+  const RJ = Arcade.rejilla, U = RJ.U, C = RJ.C, A = Arcade, T = Arcade.T;
+  const V = {
+    kind: 'cell', kanji: '形', marks: [2],
+    regColors: true,
+    states: [{ v: 1, name: { es: 'pieza', en: 'piece' }, k: 'shade', why: { es: 'Esta casilla forma parte de la pieza de su zona.', en: 'This cell is part of its area\'s piece.' } }, { v: 2, name: { es: 'punto', en: 'dot' }, k: 'dot' }],
+    size: (lv) => ({ n: lv <= 4 ? 6 : lv <= 10 ? 7 : 8 }),
+    shapes() {
+      if (V._sh) return V._sh;
+      const base = { L: [[0, 0], [0, 1], [0, 2], [1, 2]], I: [[0, 0], [1, 0], [2, 0], [3, 0]], T: [[0, 0], [1, 0], [2, 0], [1, 1]], S: [[1, 0], [2, 0], [0, 1], [1, 1]] }, out = [];
+      for (const k in base) { const seen = new Set(); for (let t = 0; t < 8; t++) { let p = base[k].map(([x, y]) => (t & 1 ? [y, x] : [x, y])).map(([x, y]) => [t & 2 ? -x : x, t & 4 ? -y : y]); const mx = Math.min(...p.map((q) => q[0])), my = Math.min(...p.map((q) => q[1])); p = p.map(([x, y]) => [x - mx, y - my]).sort((a, b) => a[1] - b[1] || a[0] - b[0]); const key = JSON.stringify(p); if (!seen.has(key)) { seen.add(key); out.push({ k, p }); } } }
+      return (V._sh = out);
+    },
+    kindOf(P, cells) { const xs = cells.map((i) => i % P.w), ys = cells.map((i) => (i / P.w) | 0), mx = Math.min(...xs), my = Math.min(...ys); const key = JSON.stringify(cells.map((i) => [i % P.w - mx, ((i / P.w) | 0) - my]).sort((a, b) => a[1] - b[1] || a[0] - b[0])); const s = V.shapes().find((q) => JSON.stringify(q.p) === key); return s ? s.k : null; },
+    gen(r, c) {
+      const n = c.n, N = n * n;
+      for (let t = 0; t < 200; t++) {
+        // piezas unidas una a una (cada nueva toca a las anteriores), y luego cada pieza crece hasta ser su zona
+        const sh = new Int8Array(N), kind = new Array(N).fill(null), pid = new Int32Array(N).fill(-1); let np = 0;
+        const fits = (s, x0, y0) => { const pc = []; for (const [dx, dy] of s.p) { const x = x0 + dx, y = y0 + dy; if (x >= n || y >= n) return null; const i = y * n + x; if (sh[i]) return null; pc.push(i); } return pc; };
+        const okPiece = (pc, k) => { if (np && !pc.some((i) => U.n4(n, n, i).some((j) => sh[j]))) return false; for (const i of pc) for (const j of U.n4(n, n, i)) if (sh[j] && kind[j] === k) return false; for (const i of pc) sh[i] = 1; const bad = U.has2x2(n, n, (q) => sh[q] === 1); for (const i of pc) sh[i] = 0; return !bad; };
+        for (let it = 0; it < 400 && np < Math.round(N / 8.5); it++) {
+          const s = U.pick(r, V.shapes()), i0 = np ? U.ri(r, 0, N - 1) : U.ri(r, 0, N - 1), pc = fits(s, i0 % n, (i0 / n) | 0);
+          if (!pc || !okPiece(pc, s.k)) continue;
+          for (const i of pc) { sh[i] = 1; kind[i] = s.k; pid[i] = np; } np++;
+        }
+        if (np < Math.round(N / 9)) continue;
+        const reg = Array.from(pid), fr = []; for (let i = 0; i < N; i++) if (reg[i] >= 0) fr.push(i);
+        while (fr.length) { const k = U.ri(r, 0, fr.length - 1), i = fr[k]; const nb = U.n4(n, n, i).filter((j) => reg[j] < 0); if (!nb.length) { fr.splice(k, 1); continue; } const j = U.pick(r, nb); reg[j] = reg[i]; fr.push(j); }
+        if (reg.some((q) => q < 0)) continue;
+        const rc = U.regCells(reg);
+        return { w: n, h: n, reg, rc, sol: { c: Array.from(sh) } };
+      }
+      throw new Error('lits');
+    },
+    check(P, st) {
+      const n = P.w, sh = (i) => st.c[i] === 1, kinds = new Array(n * n).fill(null);
+      for (const cells of P.rc) { const s = cells.filter(sh); if (s.length !== 4) return false; const k = V.kindOf(P, s); if (!k) return false; s.forEach((i) => { kinds[i] = k; }); }
+      if (U.has2x2(n, n, sh) || !U.connected(n, n, sh)) return false;
+      for (let i = 0; i < n * n; i++) if (sh(i)) for (const j of U.n4(n, n, i)) if (sh(j) && P.reg[i] !== P.reg[j] && kinds[i] === kinds[j]) return false;
+      return true;
+    },
+    drawOver(ctx, P, st, L) {   // letra de la pieza ya colocada en cada zona
+      for (const cells of P.rc) { const s = cells.filter((i) => st.c[i] === 1); if (s.length !== 4) continue; const k = V.kindOf(P, s); if (!k) continue; for (const i of s) A.txt(ctx, k, L.ox + (i % P.w + 0.5) * L.cs, L.oy + (((i / P.w) | 0) + 0.52) * L.cs, L.cs * 0.38, 'rgba(255,255,255,.55)', 'center', 900, null, RJ.NUMF); }
+    },
+    rules: (P) => [
+      { t: { es: 'En cada zona de color pinta una pieza de 4 casillas con forma de L, I, T o S (vale girarlas y darles la vuelta).', en: 'In each coloured area paint a 4-cell piece shaped like an L, I, T or S (they can be rotated and flipped).' }, cells: P.rc[0] },
+      { t: { es: 'Todas las piezas juntas forman un único grupo unido, sin ningún bloque de 2 × 2 pintado.', en: 'All the pieces together form a single connected group, with no 2 × 2 painted block.' }, all: true },
+      { t: { es: 'Dos piezas iguales (por ejemplo, dos L) no pueden tocarse por un lado.', en: 'Two identical pieces (say, two Ls) cannot share a side.' }, all: true },
+    ],
+    goal: { es: 'Una pieza L, I, T o S por zona', en: 'One L, I, T or S piece per area' },
+  };
+  Arcade.game({
+    ...RJ(V),
+    /*THEME*/ tag: "Una pieza L, I, T o S en cada zona", deco: ["🏯", "🌸", "🎋", "🖌️", "🍵", "⛩️"], font: 'serif', bg: ["#2f2457", "#140f27"],
+    music: { mode: "insen", bpm: 70, wave: 'triangle', style: 'chill', root: 57 }, voice: { wave: 'sine', mul: 1.1, echo: 0.4 },
+    /*EN*/ en: { title: "LITS", tag: "An L, I, T or S piece in every area", help: "In each <b>area</b> paint a 4-cell piece shaped like an <b>L, I, T or S</b>. All together they form one <b>connected</b> group, with no painted <b>2×2</b> blocks, and two <b>identical</b> pieces cannot share a side. Tap or drag to paint." },
+    /*TV*/ tvHelp: "Cruceta hasta una casilla · OK para jugar en ella.",
+    id: "lits", title: "LITS", emoji: "🟪", color: "#9775fa", origin: "LITS (Nikoli, Japón)",
+    help: "En cada <b>zona</b> pinta una pieza de 4 casillas con forma de <b>L, I, T o S</b>. Todas juntas forman un grupo <b>unido</b>, sin bloques pintados de <b>2×2</b>, y dos piezas <b>iguales</b> no pueden tocarse por un lado. Toca o arrastra para pintar.",
+    lives: 0, levels: 0, cap: 20,
+  });
+})();

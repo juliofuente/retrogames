@@ -1,6 +1,17 @@
 ARCADE PERDIDO + ARCADE PRO — LO QUE ESTÁ HECHO
 ================================================
-Fecha: 20-10-2026 · Versión de la PWA (games.js → ARCADE_VERSION): 2.36.0
+Fecha: 04-11-2026 · Versión de la PWA (games.js → ARCADE_VERSION): 2.37.0
+· Juegos orientales (colección «orientales», web orientales.juegosboom.com, /coleccion/juegos-orientales): 38 puzles de
+  lógica con motor común pwa/rejilla.js (Arcade.rejilla: números, casillas, caminos, bordes, rectángulos, puentes y fichas
+  que se mueven), estética japonesa (papel washi, olas seigaiha, pétalos, sello rojo con kanji, música pentatónica in-sen),
+  tutorial al empezar (📖), deshacer (↩️), pista explicada (💡), niveles generados sin fin y comprobación por reglas (vale
+  cualquier solución correcta). También en «Puzles y lógica» y en Educativos → Lógica. Sudoku, Kakuro, Futoshiki, Renzoku,
+  Kropki, Kojun, Hidoku, Takuzu, Fillomino, Square Jam (cuadrados), Nurikabe, Creek (riachuelo), Aquarium (acuario),
+  Battleships (barcos), Dominosa, Numberlink, Satogaeri (en lugar de Bonsan, cuyas reglas no están claras), Slitherlink,
+  Masyu, Yajilin, Hashi, Hitori, Heyawake, Kurodoko, Akari, Shikaku, LITS, Norinori, Star Battle (estrellas), Tents
+  (tiendas), Skyscrapers (rascacielos), KenKen, Suguru, Tapa, Kakurasu, Nonograma y, de propina, Hakyuu (Ripple Effect) y
+  Gokigen (Slant). Vídeos: «cómo se juega» (?rec=1&tut=1, Game2Video --tutoriales) y partidas de ejemplo (?rec=1&quiz=N,
+  --puzles <id>); .bat 15 y 16 en el grabador.
 · Grabador → Game2Video: funciona sin conexión (copia local de pwa/ y educativos/ bajada de GitHub a «juegos» y servida en
   127.0.0.1, sin proxy; --online para la web, --local, --actualizar, --solo-bajar), --preguntar archivo claves (pregunta una
   vez y guarda) y --opciones archivo (lo usa en los bucles), 14 .bat de ejemplo y compilar.bat. Fredoka en local

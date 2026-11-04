@@ -1,0 +1,56 @@
+// Acuario|#071f24
+// @rejilla
+(function () {
+  const RJ = Arcade.rejilla, U = RJ.U, C = RJ.C, A = Arcade, T = Arcade.T;
+  const V = {
+    kind: 'cell', kanji: '水', marks: [2],
+    states: [{ v: 1, name: { es: 'agua', en: 'water' }, k: 'water', why: { es: 'Aquí hay agua: el nivel de este acuario llega hasta esta fila.', en: 'There is water here: this tank fills up to this row.' } }, { v: 2, name: { es: 'aire (✕)', en: 'air (✕)' }, k: 'x' }],
+    size: (lv) => ({ n: lv <= 3 ? 5 : lv <= 8 ? 6 : lv <= 13 ? 7 : lv <= 17 ? 8 : 9 }),
+    margin: () => ({ l: 1, t: 1 }),
+    gen(r, c) {
+      const n = c.n, N = n * n;
+      for (let t = 0; t < 50; t++) {
+        const reg = U.regions(r, n, n, 2, 6, { loose: true }), rc = U.regCells(reg), sol = new Array(N).fill(0);
+        for (const cells of rc) { const ys = cells.map((i) => (i / n) | 0), lo = Math.min(...ys), hi = Math.max(...ys), lvl = U.ri(r, lo, hi + 1); for (const i of cells) if (((i / n) | 0) >= lvl) sol[i] = 1; }
+        const f = sol.filter((x) => x).length; if (f < N * 0.3 || f > N * 0.7) continue;
+        const P = { w: n, h: n, reg, rc, rows: [], cols: [] };
+        for (let k = 0; k < n; k++) { let a = 0, b = 0; for (let j = 0; j < n; j++) { a += sol[k * n + j]; b += sol[j * n + k]; } P.rows.push(a); P.cols.push(b); }
+        P.sol = { c: sol }; return P;
+      }
+      throw new Error('acuario');
+    },
+    check(P, st) {
+      const n = P.w, W = (i) => st.c[i] === 1;
+      for (let k = 0; k < n; k++) { let a = 0, b = 0; for (let j = 0; j < n; j++) { if (W(k * n + j)) a++; if (W(j * n + k)) b++; } if (a !== P.rows[k] || b !== P.cols[k]) return false; }
+      for (const cells of P.rc) { const wy = cells.filter(W).map((i) => (i / n) | 0); if (!wy.length) continue; const lvl = Math.min(...wy); if (cells.some((i) => ((i / n) | 0) >= lvl && !W(i))) return false; }
+      return true;
+    },
+    drawOver(ctx, P, st, L) {
+      const n = P.w;
+      for (let k = 0; k < n; k++) {
+        let a = 0, b = 0; for (let j = 0; j < n; j++) { if (st.c[k * n + j] === 1) a++; if (st.c[j * n + k] === 1) b++; }
+        A.txt(ctx, String(P.rows[k]), L.ox - L.cs / 2, L.oy + (k + 0.5) * L.cs, L.cs * 0.48, a === P.rows[k] ? '#2b8a3e' : a > P.rows[k] ? C.err : C.ink, 'center', 900, null, RJ.NUMF);
+        A.txt(ctx, String(P.cols[k]), L.ox + (k + 0.5) * L.cs, L.oy - L.cs / 2, L.cs * 0.48, b === P.cols[k] ? '#2b8a3e' : b > P.cols[k] ? C.err : C.ink, 'center', 900, null, RJ.NUMF);
+      }
+    },
+    rules: (P) => {
+      const k = P.rc.findIndex((q) => new Set(q.map((i) => (i / P.w) | 0)).size >= 2);
+      return [
+        { t: { es: 'El tablero está dividido en acuarios. Llénalos de agua.', en: 'The board is split into tanks. Fill them with water.' }, all: true },
+        { t: { es: 'El agua cae al fondo: dentro de un acuario, el nivel es plano. Si una casilla tiene agua, todas las del acuario que estén a su altura o más abajo también.', en: 'Water sinks to the bottom: inside a tank the level is flat. If a cell has water, every cell of that tank at its height or lower does too.' }, cells: P.rc[Math.max(0, k)] },
+        { t: { es: 'Los números de fuera dicen cuántas casillas con agua hay en cada fila y columna.', en: 'The numbers outside say how many water cells are in each row and column.' }, rows: [0], cols: [0] },
+      ];
+    },
+    goal: { es: 'Llena los acuarios', en: 'Fill the tanks' },
+  };
+  Arcade.game({
+    ...RJ(V),
+    /*THEME*/ tag: "Agua que se asienta en el fondo", deco: ["🏯", "🌸", "🎋", "🖌️", "🍵", "⛩️"], font: 'serif', bg: ["#124a55", "#071f24"],
+    music: { mode: "insen", bpm: 70, wave: 'triangle', style: 'chill', root: 57 }, voice: { wave: 'sine', mul: 1.1, echo: 0.4 },
+    /*EN*/ en: { title: "Aquarium", tag: "Water that settles at the bottom", help: "Fill the tanks with <b>water</b>. Water settles at the bottom: inside a tank the <b>level is flat</b>. The <b>numbers outside</b> say how many water cells are in each row and column. Tap a cell (water → ✕ → empty) or drag to fill several." },
+    /*TV*/ tvHelp: "Cruceta hasta una casilla · OK para jugar en ella.",
+    id: "acuario", title: "Acuario", emoji: "🐠", color: "#3bc9db", origin: "Aquarium",
+    help: "Llena de <b>agua</b> los acuarios. El agua se asienta en el fondo: dentro de un acuario el <b>nivel es plano</b>. Los <b>números de fuera</b> dicen cuántas casillas con agua hay en cada fila y columna. Toca una casilla (agua → ✕ → vacía) o arrastra para llenar varias.",
+    lives: 0, levels: 0, cap: 20,
+  });
+})();

@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Fillomino · Arcade Perdido</title>
+<meta name="theme-color" content="#22160a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css?v=6d7635e467">
+</head>
+<body class="game">
+<script src="config.js?v=84fed7f189"></script>
+<script src="common.js?v=fb0b61af23"></script>
+<script src="rejilla.js?v=30e0994cee"></script>
+<script>
+// @rejilla
+(function () {
+  const RJ = Arcade.rejilla, U = RJ.U, C = RJ.C, A = Arcade, T = Arcade.T;
+  const V = {
+    kind: 'num', kanji: '域',
+    size: (lv) => ({ n: lv <= 3 ? 5 : lv <= 8 ? 6 : lv <= 13 ? 7 : lv <= 17 ? 8 : 9, mx: lv <= 5 ? 4 : lv <= 12 ? 5 : 6, giv: 0.62 - Math.min(0.24, lv * 0.013) }),
+    N: (P) => P.mx,
+    gen(r, c) {
+      const n = c.n;
+      for (let t = 0; t < 300; t++) {
+        const reg = U.regions(r, n, n, 1, c.mx, { loose: true });
+        // dos piezas iguales que se tocan se juntan en una (hasta 9)
+        let ok = false;
+        for (let it = 0; it < 200; it++) {
+          const sz = {}; reg.forEach((k) => { sz[k] = (sz[k] || 0) + 1; });
+          let pair = null;
+          for (let i = 0; i < n * n && !pair; i++) for (const j of U.n4(n, n, i)) if (reg[i] !== reg[j] && sz[reg[i]] === sz[reg[j]]) { pair = [reg[i], reg[j]]; break; }
+          if (!pair) { ok = true; break; }
+          if (sz[pair[0]] * 2 > 9) break;
+          for (let i = 0; i < n * n; i++) if (reg[i] === pair[1]) reg[i] = pair[0];
+        }
+        if (!ok) continue;
+        const map = new Map(); for (let i = 0; i < n * n; i++) { if (!map.has(reg[i])) map.set(reg[i], map.size); reg[i] = map.get(reg[i]); }
+        const rc = U.regCells(reg), size = rc.map((q) => q.length);
+        const sol = reg.map((k) => size[k]), fix = new Array(n * n).fill(0);
+        for (const cells of rc) { const i = U.pick(r, cells); fix[i] = sol[i]; }
+        U.shuffle(r, Array.from({ length: n * n }, (_, i) => i).filter((i) => !fix[i])).slice(0, Math.round(n * n * c.giv) - rc.length).forEach((i) => { fix[i] = sol[i]; });
+        return { w: n, h: n, mx: Math.max(...size), fix, sol: { c: sol } };
+      }
+      throw new Error('fillomino');
+    },
+    comps(P, v) { return U.comps(P.w, P.h, (i) => v[i] > 0).flatMap((cc) => { const out = []; const seen = new Set(); for (const s of cc) { if (seen.has(s)) continue; const val = v[s], grp = [], st2 = [s]; seen.add(s); while (st2.length) { const i = st2.pop(); grp.push(i); for (const j of U.n4(P.w, P.h, i)) if (!seen.has(j) && v[j] === val) { seen.add(j); st2.push(j); } } out.push(grp); } return out; }); },
+    check(P, st) { const v = st.c; if (v.some((x) => !x)) return false; return V.comps(P, v).every((g) => g.length === v[g[0]]); },
+    errors(P, st) {
+      const v = st.c, bad = new Set();
+      for (const g of V.comps(P, v)) { const val = v[g[0]], closed = !g.some((i) => U.n4(P.w, P.h, i).some((j) => !v[j])); if (g.length > val || (closed && g.length !== val)) g.forEach((i) => bad.add(i)); }
+      return bad;
+    },
+    cellBg(P, i, st) { const v = st && st.c[i]; return v ? RJ.PASTEL[(v * 3) % RJ.PASTEL.length] : null; },
+    drawOver(ctx, P, st, L) {   // borde grueso entre números distintos
+      const v = st.c, w = P.w; ctx.strokeStyle = C.thick; ctx.lineWidth = Math.max(2, L.cs * 0.07); ctx.lineCap = 'round'; ctx.beginPath();
+      for (let i = 0; i < w * P.h; i++) { const x = i % w, y = (i / w) | 0; if (x < w - 1 && v[i] && v[i + 1] && v[i] !== v[i + 1]) { ctx.moveTo(L.ox + (x + 1) * L.cs, L.oy + y * L.cs); ctx.lineTo(L.ox + (x + 1) * L.cs, L.oy + (y + 1) * L.cs); } if (y < P.h - 1 && v[i] && v[i + w] && v[i] !== v[i + w]) { ctx.moveTo(L.ox + x * L.cs, L.oy + (y + 1) * L.cs); ctx.lineTo(L.ox + (x + 1) * L.cs, L.oy + (y + 1) * L.cs); } }
+      ctx.stroke();
+    },
+    rules: (P) => {
+      const v = P.sol.c, k = v.findIndex((q) => q >= 3), grp = k >= 0 ? V.comps(P, v).find((g) => g.indexOf(k) >= 0) : [];
+      return [
+        { t: { es: 'Divide el tablero en piezas y escribe en cada casilla el tamaño de su pieza.', en: 'Split the board into pieces and write the size of its piece in every cell.' }, all: true },
+        { t: { es: 'Por ejemplo, una pieza de ' + (v[k] || 3) + ' casillas lleva un ' + (v[k] || 3) + ' en cada una de ellas.', en: 'For example, a piece of ' + (v[k] || 3) + ' cells has a ' + (v[k] || 3) + ' in each of them.' }, cells: grp },
+        { t: { es: 'Dos piezas del mismo tamaño no pueden tocarse por un lado (se juntarían en una más grande).', en: 'Two pieces of the same size cannot share a side (they would merge into a bigger one).' }, all: true },
+      ];
+    },
+    explain(P, a) { return { es: 'Esta casilla es parte de una pieza de ' + a.v + '.', en: 'This cell belongs to a piece of ' + a.v + '.' }; },
+    goal: { es: 'Divide en piezas numeradas', en: 'Split it into numbered pieces' },
+  };
+  Arcade.game({
+    ...RJ(V),
+    /*THEME*/ tag: "Piezas que llevan su tamaño", deco: ["🏯", "🌸", "🎋", "🖌️", "🍵", "⛩️"], font: 'serif', bg: ["#4d3319", "#22160a"],
+    music: { mode: "insen", bpm: 70, wave: 'triangle', style: 'chill', root: 57 }, voice: { wave: 'sine', mul: 1.1, echo: 0.4 },
+    /*EN*/ en: { title: "Fillomino", tag: "Pieces that show their own size", help: "Split the board into <b>pieces</b> and write the <b>size of its piece</b> in every cell (a 3-cell piece has a 3 in each cell). Two pieces of the <b>same size</b> cannot share a side. <b>Tap a cell</b> and then a <b>number</b>." },
+    /*TV*/ tvHelp: "Cruceta hasta una casilla · OK para jugar en ella.",
+    id: "fillomino", title: "Fillomino", emoji: "🧩", color: "#ffc078", origin: "Fillomino (Nikoli, Japón)",
+    help: "Divide el tablero en <b>piezas</b> y escribe en cada casilla el <b>tamaño de su pieza</b> (una pieza de 3 casillas lleva un 3 en cada una). Dos piezas del <b>mismo tamaño</b> no pueden tocarse por un lado. <b>Toca una casilla</b> y luego un <b>número</b>.",
+    lives: 0, levels: 0, cap: 20,
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Suguru · Arcade Perdido</title>
+<meta name="theme-color" content="#1a1230">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css?v=6d7635e467">
+</head>
+<body class="game">
+<script src="config.js?v=84fed7f189"></script>
+<script src="common.js?v=fb0b61af23"></script>
+<script src="rejilla.js?v=30e0994cee"></script>
+<script>
+// @rejilla
+(function () {
+  const RJ = Arcade.rejilla, U = RJ.U, C = RJ.C, A = Arcade, T = Arcade.T;
+  const V = {
+    kind: 'num', kanji: '群',
+    size: (lv) => ({ w: lv <= 4 ? 5 : lv <= 10 ? 6 : lv <= 16 ? 7 : 8, mx: 5 }),
+    N: (P) => P.mx,
+    regColors: true,
+    cand(P, v, i) {
+      const k = P.reg[i]; let m = 0;
+      for (const j of P.rc[k]) m |= 1 << v[j];
+      for (const j of U.n8(P.w, P.h, i)) m |= 1 << v[j];
+      return U.full(P.rc[k].length) & ~m;
+    },
+    groups(P) { return P.rc; },
+    gen(r, c) {
+      const w = c.w, h = c.w;
+      for (let t = 0; t < 60; t++) {
+        const reg = U.regions(r, w, h, 2, c.mx, { loose: true }), rc = U.regCells(reg), P = { w, h, reg, rc, mx: Math.max(...rc.map((q) => q.length)) };
+        const sol = U.fill(r, w * h, new Array(w * h).fill(0), (vv, i) => V.cand(P, vv, i), { budget: 25000 });
+        if (!sol) continue;
+        const unique = (f) => U.solve(w * h, f, (vv, i) => V.cand(P, vv, i), { budget: 6000 }).n === 1;
+        P.fix = U.reduce(r, sol, unique); P.sol = { c: sol }; return P;
+      }
+      throw new Error('suguru');
+    },
+    check(P, st) {
+      const v = st.c; if (v.some((x) => !x)) return false;
+      for (const cells of P.rc) { const s = new Set(cells.map((i) => v[i])); if (s.size !== cells.length || Math.max(...s) > cells.length) return false; }
+      for (let i = 0; i < P.w * P.h; i++) for (const j of U.n8(P.w, P.h, i)) if (v[i] === v[j]) return false;
+      return true;
+    },
+    errors(P, st) { const bad = new Set(), v = st.c; for (let i = 0; i < P.w * P.h; i++) { if (!v[i]) continue; if (v[i] > P.rc[P.reg[i]].length) bad.add(i); for (const j of U.n8(P.w, P.h, i)) if (v[j] === v[i]) { bad.add(i); bad.add(j); } } return bad; },
+    rules: (P) => {
+      const k = P.rc.findIndex((q) => q.length >= 3);
+      return [
+        { t: { es: 'El tablero está dividido en zonas de colores. Una zona de ' + P.rc[k].length + ' casillas lleva los números del 1 al ' + P.rc[k].length + ', una vez cada uno.', en: 'The board is split into coloured areas. An area of ' + P.rc[k].length + ' cells holds the numbers 1 to ' + P.rc[k].length + ', once each.' }, cells: P.rc[k] },
+        { t: { es: 'Dos números iguales nunca se tocan, ni de lado ni en diagonal.', en: 'Two equal numbers never touch, not even diagonally.' }, cells: (P) => [P.w + 1].concat(U.n8(P.w, P.h, P.w + 1)) },
+        { t: { es: 'Los números negros vienen dados: empieza por las zonas pequeñas.', en: 'The black numbers are given: start with the small areas.' }, cells: (P) => P.fix.map((v, i) => (v ? i : -1)).filter((i) => i >= 0) },
+      ];
+    },
+    goal: { es: 'Rellena cada zona sin que se toquen iguales', en: 'Fill every area with no equal numbers touching' },
+  };
+  Arcade.game({
+    ...RJ(V),
+    /*THEME*/ tag: "Zonas del 1 al N que no se tocan", deco: ["🏯", "🌸", "🎋", "🖌️", "🍵", "⛩️"], font: 'serif', bg: ["#3b2a5c", "#1a1230"],
+    music: { mode: "insen", bpm: 70, wave: 'triangle', style: 'chill', root: 57 }, voice: { wave: 'sine', mul: 1.1, echo: 0.4 },
+    /*EN*/ en: { title: "Suguru", tag: "Areas of 1 to N that never touch", help: "Each <b>area</b> of N cells holds the numbers 1 to N. Two <b>equal</b> numbers never touch, <b>not even diagonally</b>. <b>Tap a cell</b> and then a <b>number</b>." },
+    /*TV*/ tvHelp: "Cruceta hasta una casilla · OK para jugar en ella.",
+    id: "suguru", title: "Suguru", emoji: "🧱", color: "#b197fc", origin: "Suguru / Tectonic / Number Blocks",
+    help: "Cada <b>zona</b> de N casillas lleva los números del 1 al N. Dos números <b>iguales</b> nunca se tocan, <b>ni en diagonal</b>. <b>Toca una casilla</b> y luego un <b>número</b>.",
+    lives: 0, levels: 0, cap: 20,
+  });
+})();
+</script>
+</body>
+</html>

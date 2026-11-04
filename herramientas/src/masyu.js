@@ -1,0 +1,60 @@
+// Masyu|#110f1c
+// @rejilla
+(function () {
+  const RJ = Arcade.rejilla, U = RJ.U, C = RJ.C, A = Arcade, T = Arcade.T;
+  const V = {
+    kind: 'link', kanji: '珠', linkW: 0.16,
+    explain: (P, a) => a.wrong ? null : { es: 'El bucle sigue por aquí, cumpliendo lo que piden las perlas.', en: 'The loop continues here, doing what the pearls ask.' },
+    size: (lv) => ({ n: lv <= 3 ? 6 : lv <= 9 ? 7 : lv <= 15 ? 8 : 10, keep: lv <= 5 ? 0.75 : lv <= 12 ? 0.6 : 0.5 }),
+    // ¿gira el bucle en el punto i? (L con claves 'a_b')
+    turn(P, L, i) { const n = U.n4(P.w, P.h, i).filter((j) => L[U.key(i, j)]); if (n.length !== 2) return null; return Math.abs(n[0] - n[1]) !== 2 && Math.abs(n[0] - n[1]) !== 2 * P.w; },
+    nbrs: (P, L, i) => U.n4(P.w, P.h, i).filter((j) => L[U.key(i, j)]),
+    pearlOk(P, L, i) {
+      const p = P.pearl[i]; if (!p) return true; const t = V.turn(P, L, i); if (t == null) return false; const nb = V.nbrs(P, L, i);
+      if (p === 1) return !t && nb.some((j) => V.turn(P, L, j) === true);
+      return t && nb.every((j) => { const k = 2 * j - i; return V.turn(P, L, j) === false && L[U.key(j, k)]; });
+    },
+    gen(r, c) {
+      const n = c.n;
+      for (let t = 0; t < 60; t++) {
+        const lp = U.loop(r, n - 1, n - 1, 0.5), L = {}; for (let q = 0; q < lp.pts.length; q++) L[U.key(lp.pts[q], lp.pts[(q + 1) % lp.pts.length])] = 1;
+        const P = { w: n, h: n, pearl: new Array(n * n).fill(0) }, cand = [];
+        for (const i of lp.pts) { for (const k of [1, 2]) { P.pearl[i] = k; if (V.pearlOk(P, L, i)) cand.push([i, k]); } P.pearl[i] = 0; }
+        const pick = U.shuffle(r, cand).slice(0, Math.max(4, Math.round(cand.length * c.keep)));
+        if (pick.length < 4 || !pick.some((q) => q[1] === 2) || !pick.some((q) => q[1] === 1)) continue;
+        pick.forEach(([i, k]) => { P.pearl[i] = k; }); P.sol = { L }; return P;
+      }
+      throw new Error('masyu');
+    },
+    canLink: (P, st, a, b) => U.deg(st.L, a) < 2 && U.deg(st.L, b) < 2,
+    check(P, st) { if (!U.oneLoop(st.L)) return false; for (let i = 0; i < P.w * P.h; i++) if (P.pearl[i] && !V.pearlOk(P, st.L, i)) return false; return true; },
+    drawClue(ctx, P, i, x, y, cs, st) {
+      const p = P.pearl[i]; if (!p) return; const ok = U.deg(st.L, i) === 2 && V.pearlOk(P, st.L, i);
+      ctx.save(); ctx.beginPath(); ctx.arc(x + cs / 2, y + cs / 2, cs * 0.3, 0, Math.PI * 2);
+      if (p === 2) { const gr = ctx.createRadialGradient(x + cs * 0.4, y + cs * 0.4, 1, x + cs / 2, y + cs / 2, cs * 0.3); gr.addColorStop(0, '#6c6c7a'); gr.addColorStop(1, '#16161d'); ctx.fillStyle = gr; ctx.fill(); }
+      else { const gr = ctx.createRadialGradient(x + cs * 0.4, y + cs * 0.4, 1, x + cs / 2, y + cs / 2, cs * 0.3); gr.addColorStop(0, '#ffffff'); gr.addColorStop(1, '#e3ddd2'); ctx.fillStyle = gr; ctx.fill(); ctx.strokeStyle = C.ink; ctx.lineWidth = Math.max(2, cs * 0.05); ctx.stroke(); }
+      if (ok) { ctx.strokeStyle = '#2b8a3e'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(x + cs / 2, y + cs / 2, cs * 0.38, 0, Math.PI * 2); ctx.stroke(); }
+      ctx.restore();
+    },
+    rules: (P) => {
+      const w = P.pearl.indexOf(1), b = P.pearl.indexOf(2);
+      return [
+        { t: { es: 'Dibuja un único bucle cerrado que vaya por el centro de las casillas, sin cruzarse ni ramificarse.', en: 'Draw a single closed loop through the centres of the cells, never crossing or branching.' }, all: true },
+        { t: { es: 'Tiene que pasar por todas las perlas. En una perla blanca el bucle va recto y gira justo antes o justo después.', en: 'It must pass through every pearl. On a white pearl the loop goes straight and turns just before or just after it.' }, cells: [w] },
+        { t: { es: 'En una perla negra el bucle gira, y sigue recto en las dos casillas que vienen después por cada lado.', en: 'On a black pearl the loop turns, and goes straight for the next two cells on each side.' }, cells: [b] },
+        { t: { es: 'No hace falta pasar por todas las casillas.', en: 'You do not have to visit every cell.' }, all: true },
+      ];
+    },
+    goal: { es: 'Cierra el collar', en: 'Close the necklace' },
+  };
+  Arcade.game({
+    ...RJ(V),
+    /*THEME*/ tag: "Un collar de perlas blancas y negras", deco: ["🏯", "🌸", "🎋", "🖌️", "🍵", "⛩️"], font: 'serif', bg: ["#2a2540", "#110f1c"],
+    music: { mode: "insen", bpm: 70, wave: 'triangle', style: 'chill', root: 57 }, voice: { wave: 'sine', mul: 1.1, echo: 0.4 },
+    /*EN*/ en: { title: "Masyu", tag: "A necklace of white and black pearls", help: "Draw a <b>closed loop</b> through the centres of the cells that passes through <b>every pearl</b>. On a <b>white</b> one it goes straight and turns just before or after; on a <b>black</b> one it turns and goes straight for two cells on each side. Drag to draw; go over it again to erase." },
+    /*TV*/ tvHelp: "Cruceta hasta una casilla · OK para jugar en ella.",
+    id: "masyu", title: "Masyu", emoji: "⚪", color: "#e9ecef", origin: "Masyu / Pearl (Nikoli, Japón)",
+    help: "Dibuja un <b>bucle cerrado</b> por el centro de las casillas que pase por <b>todas las perlas</b>. En una <b>blanca</b> va recto y gira justo antes o después; en una <b>negra</b> gira y sigue recto dos casillas a cada lado. Arrastra el dedo para dibujar; pasa otra vez por encima para borrar.",
+    lives: 0, levels: 0, cap: 20,
+  });
+})();

@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Satogaeri · Arcade Perdido</title>
+<meta name="theme-color" content="#1a110b">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css?v=6d7635e467">
+</head>
+<body class="game">
+<script src="config.js?v=84fed7f189"></script>
+<script src="common.js?v=fb0b61af23"></script>
+<script src="rejilla.js?v=30e0994cee"></script>
+<script>
+// @rejilla
+(function () {
+  const RJ = Arcade.rejilla, U = RJ.U, C = RJ.C, A = Arcade, T = Arcade.T;
+  const V = {
+    kind: 'move', kanji: '帰', regColors: true,
+    explain: (P, a) => a.wrong ? null : { es: 'Este círculo se mueve ' + P.pieces[a.m] + (P.pieces[a.m] === 1 ? ' casilla' : ' casillas') + ' en línea recta hasta una región que aún no tiene círculo.', en: 'This circle moves ' + P.pieces[a.m] + (P.pieces[a.m] === 1 ? ' cell' : ' cells') + ' in a straight line into a region with no circle yet.' },
+    size: (lv) => ({ n: lv <= 3 ? 5 : lv <= 9 ? 6 : lv <= 15 ? 7 : 8, a: lv <= 3 ? 3 : 3, b: lv <= 9 ? 5 : 6 }),
+    path(P, a, b) { const w = P.w, ax = a % w, ay = (a / w) | 0, bx = b % w, by = (b / w) | 0; if (ax !== bx && ay !== by) return null; const st = ax === bx ? (by > ay ? w : -w) : (bx > ax ? 1 : -1), o = [a]; for (let i = a; i !== b;) { i += st; o.push(i); } return o; },
+    pos: (P, st, id) => (st.M[id] != null ? st.M[id] : +id),
+    gen(r, c) {
+      const n = c.n, N = n * n;
+      for (let t = 0; t < 300; t++) {
+        const reg = U.regions(r, n, n, c.a, c.b), cells = U.regCells(reg), used = new Uint8Array(N), pieces = {}, M = {}; let ok = true;
+        for (const rc of U.shuffle(r, cells.map((q, k) => k))) {
+          let placed = false;
+          for (const f of U.shuffle(r, cells[rc])) {
+            if (used[f]) continue;
+            const opts = U.shuffle(r, [0, 1, 1, 2, 2, 3]).map((d) => [d, U.pick(r, [1, -1, n, -n])]);
+            for (const [d, s] of opts) {
+              const st = f - s * d, sx = st % n, fx = f % n; if (st < 0 || st >= N) continue; if (Math.abs(s) === 1 && Math.abs(sx - fx) !== d) continue;
+              const p = d ? V.path({ w: n }, st, f) : [f]; if (p.some((i) => used[i])) continue;
+              if (d && reg[st] === rc) continue;           // que salga de otra región: tiene más gracia
+              p.forEach((i) => { used[i] = 1; }); pieces[st] = d; if (d) M[st] = f; placed = true; break;
+            }
+            if (placed) break;
+          }
+          if (!placed) { ok = false; break; }
+        }
+        if (!ok) continue;
+        const moving = Object.values(pieces).filter((d) => d).length; if (moving < Object.keys(pieces).length * 0.6) continue;
+        return { w: n, h: n, reg, pieces, sol: { M } };
+      }
+      throw new Error('satogaeri');
+    },
+    occupied(P, st, skip) { const o = new Set(); for (const id in P.pieces) { if (id === String(skip)) continue; (V.path(P, +id, V.pos(P, st, id)) || [+id]).forEach((i) => o.add(i)); } return o; },
+    canMove(P, st, a, i) { const d = P.pieces[a]; if (!d) return false; const p = V.path(P, a, i); if (!p || p.length - 1 !== d) return false; const o = V.occupied(P, st, a); return !p.some((q) => o.has(q)); },
+    check(P, st) {
+      const cnt = {}, used = new Set();
+      for (const id in P.pieces) { const f = V.pos(P, st, id), p = V.path(P, +id, f); if (!p || p.length - 1 !== P.pieces[id]) return false; for (const q of p) { if (used.has(q)) return false; used.add(q); } cnt[P.reg[f]] = (cnt[P.reg[f]] || 0) + 1; }
+      const nr = Math.max(...P.reg) + 1; for (let k = 0; k < nr; k++) if (cnt[k] !== 1) return false; return true;
+    },
+    drawOver(ctx, P, st, L, g) {
+      const cs = L.cs, cx = (i) => L.ox + (i % P.w + 0.5) * cs, cy = (i) => L.oy + (((i / P.w) | 0) + 0.5) * cs, cnt = {};
+      for (const id in P.pieces) { const f = V.pos(P, st, id); cnt[P.reg[f]] = (cnt[P.reg[f]] || 0) + 1; }
+      ctx.save(); ctx.lineCap = 'round';
+      for (const id in P.pieces) {
+        const f = V.pos(P, st, id); if (f === +id) continue;
+        ctx.strokeStyle = 'rgba(201,42,42,.55)'; ctx.lineWidth = cs * 0.14; ctx.beginPath(); ctx.moveTo(cx(+id), cy(+id)); ctx.lineTo(cx(f), cy(f)); ctx.stroke();
+        ctx.strokeStyle = 'rgba(58,47,42,.4)'; ctx.lineWidth = 2; ctx.setLineDash([4, 4]); ctx.beginPath(); ctx.arc(cx(+id), cy(+id), cs * 0.3, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]);
+      }
+      for (const id in P.pieces) {
+        const d = P.pieces[id], f = V.pos(P, st, id), x = cx(f), y = cy(f), R = cs * 0.34, bad = cnt[P.reg[f]] > 1, home = d === 0 || f !== +id;
+        const gr = ctx.createRadialGradient(x - R * 0.3, y - R * 0.3, 1, x, y, R); gr.addColorStop(0, bad ? '#ffc9c9' : home ? '#fff' : '#fff4e6'); gr.addColorStop(1, bad ? '#fa5252' : home ? '#ced4da' : '#ffc078');
+        ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(x, y, R, 0, Math.PI * 2); ctx.fill(); ctx.strokeStyle = C.ink; ctx.lineWidth = Math.max(2, cs * 0.05); ctx.stroke();
+        A.txt(ctx, String(d), x, y + 1, cs * 0.42, C.ink, 'center', 900, null, RJ.NUMF);
+      }
+      ctx.restore();
+    },
+    rules: (P) => {
+      const id = Object.keys(P.pieces).find((q) => P.pieces[q] > 0), f = P.sol.M[id];
+      return [
+        { t: { es: 'Cada círculo se mueve en línea recta exactamente el número de casillas que lleva escrito (el 0 no se mueve).', en: 'Each circle moves in a straight line exactly the number of cells written on it (0 does not move).' }, cells: V.path(P, +id, f) },
+        { t: { es: 'Al final, cada región de color tiene que tener exactamente un círculo.', en: 'In the end, each coloured region must have exactly one circle.' }, all: true },
+        { t: { es: 'Los caminos no se pueden cruzar ni pasar por encima de otro círculo o de su camino.', en: 'Paths cannot cross or pass over another circle or its path.' }, all: true },
+      ];
+    },
+    goal: { es: 'Lleva cada círculo a su región', en: 'Take each circle home' },
+  };
+  Arcade.game({
+    ...RJ(V),
+    /*THEME*/ tag: "Cada círculo vuelve a casa", deco: ["🏯", "🌸", "🎋", "🖌️", "🍵", "⛩️"], font: 'serif', bg: ["#3d2b1f", "#1a110b"],
+    music: { mode: "insen", bpm: 70, wave: 'triangle', style: 'chill', root: 57 }, voice: { wave: 'sine', mul: 1.1, echo: 0.4 },
+    /*EN*/ en: { title: "Satogaeri", tag: "Every circle goes home", help: "Move each <b>circle</b> in a straight line exactly as many cells as its <b>number</b> says (0 stays). In the end every <b>region</b> has <b>a single circle</b>, and paths never cross or pass over other circles. Drag a circle to its spot; tap it to send it back." },
+    /*TV*/ tvHelp: "Cruceta hasta una casilla · OK para jugar en ella.",
+    id: "satogaeri", title: "Satogaeri", emoji: "🏡", color: "#ffa8a8", origin: "Satogaeri / Bonsan (Nikoli, Japón)",
+    help: "Mueve cada <b>círculo</b> en línea recta exactamente las casillas que indica su <b>número</b> (el 0 se queda). Al final cada <b>región</b> tiene <b>un solo círculo</b>, y los caminos no se cruzan ni pasan sobre otros círculos. Arrastra un círculo hasta su sitio; tócalo para devolverlo.",
+    lives: 0, levels: 0, cap: 20,
+  });
+})();
+</script>
+</body>
+</html>

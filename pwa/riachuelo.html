@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Creek · Arcade Perdido</title>
+<meta name="theme-color" content="#161e0b">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css?v=6d7635e467">
+</head>
+<body class="game">
+<script src="config.js?v=84fed7f189"></script>
+<script src="common.js?v=fb0b61af23"></script>
+<script src="rejilla.js?v=30e0994cee"></script>
+<script>
+// @rejilla
+(function () {
+  const RJ = Arcade.rejilla, U = RJ.U, C = RJ.C, A = Arcade, T = Arcade.T;
+  const V = {
+    kind: 'cell', kanji: '川', marks: [2],
+    states: [{ v: 1, name: { es: 'pintada', en: 'painted' }, k: 'shade', c: '#5c4a3a', c2: '#3a2c20', why: { es: 'Esta casilla se pinta: lo piden los números de sus esquinas.', en: 'This cell is painted: its corner numbers ask for it.' } }, { v: 2, name: { es: 'punto (agua)', en: 'dot (water)' }, k: 'dot', c: 'rgba(25,113,194,.6)' }],
+    size: (lv) => ({ n: lv <= 3 ? 5 : lv <= 8 ? 6 : lv <= 13 ? 7 : lv <= 17 ? 8 : 9, giv: 0.75 - Math.min(0.3, lv * 0.015) }),
+    corner(P, c, x, y) { let k = 0; for (const [dx, dy] of [[-1, -1], [0, -1], [-1, 0], [0, 0]]) { const X = x + dx, Y = y + dy; if (X >= 0 && Y >= 0 && X < P.w && Y < P.h && c[Y * P.w + X] === 1) k++; } return k; },
+    gen(r, c) {
+      const n = c.n, N = n * n, sh = new Array(N).fill(0);
+      for (const i of U.shuffle(r, Array.from({ length: N }, (_, i) => i))) { if (sh.filter((x) => x).length >= N * 0.4) break; sh[i] = 1; if (!U.connected(n, n, (j) => !sh[j])) sh[i] = 0; }
+      const P = { w: n, h: n, cl: {} };
+      for (let y = 0; y <= n; y++) for (let x = 0; x <= n; x++) if (r() < c.giv) P.cl[y * (n + 1) + x] = V.corner(P, sh, x, y);
+      P.sol = { c: sh }; return P;
+    },
+    check(P, st) {
+      for (const k in P.cl) { const x = k % (P.w + 1), y = (k / (P.w + 1)) | 0; if (V.corner(P, st.c, x, y) !== P.cl[k]) return false; }
+      return U.connected(P.w, P.h, (i) => st.c[i] !== 1);
+    },
+    drawOver(ctx, P, st, L) {
+      for (const k in P.cl) {
+        const x = k % (P.w + 1), y = (k / (P.w + 1)) | 0, X = L.ox + x * L.cs, Y = L.oy + y * L.cs, got = V.corner(P, st.c, x, y), v = P.cl[k];
+        ctx.fillStyle = got === v ? '#ebfbee' : '#fff'; ctx.beginPath(); ctx.arc(X, Y, L.cs * 0.22, 0, Math.PI * 2); ctx.fill(); ctx.strokeStyle = got > v ? C.err : C.ink; ctx.lineWidth = 1.5; ctx.stroke();
+        A.txt(ctx, String(v), X, Y + 1, L.cs * 0.3, got > v ? C.err : C.ink, 'center', 900, null, RJ.NUMF);
+      }
+    },
+    rules: (P) => {
+      const k = Object.keys(P.cl).find((q) => P.cl[q] >= 1 && P.cl[q] <= 3), x = k % (P.w + 1), y = (k / (P.w + 1)) | 0, cells = [];
+      for (const [dx, dy] of [[-1, -1], [0, -1], [-1, 0], [0, 0]]) { const X = x + dx, Y = y + dy; if (X >= 0 && Y >= 0 && X < P.w && Y < P.h) cells.push(Y * P.w + X); }
+      return [
+        { t: { es: 'Pinta algunas casillas. Cada número está en una esquina y dice cuántas de sus 4 casillas vecinas van pintadas: aquí, ' + P.cl[k] + '.', en: 'Paint some cells. Each number sits on a corner and says how many of its 4 surrounding cells are painted: here, ' + P.cl[k] + '.' }, cells },
+        { t: { es: 'Las casillas sin pintar son el riachuelo: tienen que quedar todas unidas por los lados.', en: 'The unpainted cells are the creek: they must all stay connected by their sides.' }, all: true },
+      ];
+    },
+    goal: { es: 'Pinta según las esquinas', en: 'Paint by the corners' },
+  };
+  Arcade.game({
+    ...RJ(V),
+    /*THEME*/ tag: "Números en las esquinas y un riachuelo", deco: ["🏯", "🌸", "🎋", "🖌️", "🍵", "⛩️"], font: 'serif', bg: ["#33441c", "#161e0b"],
+    music: { mode: "insen", bpm: 70, wave: 'triangle', style: 'chill', root: 57 }, voice: { wave: 'sine', mul: 1.1, echo: 0.4 },
+    /*EN*/ en: { title: "Creek", tag: "Corner numbers and a winding creek", help: "Paint cells. Each <b>number</b> sits on a <b>corner</b> and says how many of its <b>4 cells</b> around are painted. The unpainted cells (the creek) all stay <b>connected</b> by their sides. Tap or drag to paint (painted → dot → empty)." },
+    /*TV*/ tvHelp: "Cruceta hasta una casilla · OK para jugar en ella.",
+    id: "riachuelo", title: "Creek", emoji: "🏞️", color: "#a9e34b", origin: "Creek",
+    help: "Pinta casillas. Cada <b>número</b> está en una <b>esquina</b> y dice cuántas de sus <b>4 casillas</b> vecinas van pintadas. Las casillas sin pintar (el riachuelo) quedan todas <b>unidas</b> por los lados. Toca o arrastra para pintar (pintada → punto → vacía).",
+    lives: 0, levels: 0, cap: 20,
+  });
+})();
+</script>
+</body>
+</html>

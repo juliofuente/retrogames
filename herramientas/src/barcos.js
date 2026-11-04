@@ -1,0 +1,87 @@
+// Hundir la flota|#0a1b2e
+// @rejilla
+(function () {
+  const RJ = Arcade.rejilla, U = RJ.U, C = RJ.C, A = Arcade, T = Arcade.T;
+  const V = {
+    kind: 'cell', kanji: '艦', marks: [2],
+    states: [
+      { v: 1, name: { es: 'barco', en: 'ship' }, k: 'custom', draw: (ctx, x, y, cs, i, s) => V.ship(ctx, x, y, cs, i, s), why: { es: 'Aquí hay un trozo de barco: lo dicen los números de su fila y su columna.', en: 'There is a piece of ship here: its row and column numbers say so.' } },
+      { v: 2, name: { es: 'agua', en: 'water' }, k: 'custom', draw: (ctx, x, y, cs, i, s) => { const given = s && s.P.fix && s.P.fix[i]; ctx.fillStyle = given ? '#a5d8ff' : 'rgba(116,192,252,.35)'; ctx.fillRect(x + 1, y + 1, cs - 2, cs - 2); ctx.strokeStyle = given ? '#1971c2' : 'rgba(25,113,194,.55)'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(x + cs * 0.2, y + cs * 0.55); ctx.quadraticCurveTo(x + cs * 0.35, y + cs * 0.4, x + cs * 0.5, y + cs * 0.55); ctx.quadraticCurveTo(x + cs * 0.65, y + cs * 0.7, x + cs * 0.8, y + cs * 0.55); ctx.stroke(); } },
+    ],
+    ship(ctx, x, y, cs, i, s) {
+      const P = s.P, c = s.st.c, n = P.w, X = i % n, Y = (i / n) | 0, on = (dx, dy) => { const xx = X + dx, yy = Y + dy; return xx >= 0 && yy >= 0 && xx < n && yy < n && c[yy * n + xx] === 1; };
+      const l = on(-1, 0), rr = on(1, 0), u = on(0, -1), d = on(0, 1), m = cs * 0.12, given = P.fix && P.fix[i];
+      ctx.fillStyle = given ? '#212529' : '#495057';
+      const x0 = x + (l ? 0 : m), x1 = x + cs - (rr ? 0 : m), y0 = y + (u ? 0 : m), y1 = y + cs - (d ? 0 : m);
+      if (!l && !rr && !u && !d) { ctx.beginPath(); ctx.arc(x + cs / 2, y + cs / 2, cs * 0.36, 0, Math.PI * 2); ctx.fill(); return; }
+      const rad = cs * 0.38; ctx.beginPath();
+      ctx.moveTo(x0 + (l || u ? 0 : rad), y0); ctx.lineTo(x1 - (rr || u ? 0 : rad), y0); if (!rr && !u) ctx.quadraticCurveTo(x1, y0, x1, y0 + rad);
+      ctx.lineTo(x1, y1 - (rr || d ? 0 : rad)); if (!rr && !d) ctx.quadraticCurveTo(x1, y1, x1 - rad, y1);
+      ctx.lineTo(x0 + (l || d ? 0 : rad), y1); if (!l && !d) ctx.quadraticCurveTo(x0, y1, x0, y1 - rad);
+      ctx.lineTo(x0, y0 + (l || u ? 0 : rad)); if (!l && !u) ctx.quadraticCurveTo(x0, y0, x0 + rad, y0);
+      ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,.18)'; ctx.fillRect(x0 + 2, y0 + 2, Math.max(0, x1 - x0 - 4), (y1 - y0) * 0.25);
+    },
+    size: (lv) => { const n = lv <= 3 ? 6 : lv <= 9 ? 7 : lv <= 15 ? 8 : 10; return { n, fleet: n === 6 ? [3, 2, 2, 1, 1] : n === 7 ? [3, 2, 2, 1, 1, 1] : n === 8 ? [4, 3, 2, 2, 1, 1, 1] : [4, 3, 3, 2, 2, 2, 1, 1, 1, 1], giv: lv <= 6 ? 3 : 2 }; },
+    margin: () => ({ l: 1, t: 1, b: 1 }),
+    gen(r, c) {
+      const n = c.n, N = n * n;
+      for (let t = 0; t < 200; t++) {
+        const g = new Array(N).fill(0); let ok = true;
+        for (const L of c.fleet) {
+          let placed = false;
+          for (let k = 0; k < 200 && !placed; k++) {
+            const hz = r() < 0.5, x = U.ri(r, 0, hz ? n - L : n - 1), y = U.ri(r, 0, hz ? n - 1 : n - L), cells = [];
+            for (let q = 0; q < L; q++) cells.push((y + (hz ? 0 : q)) * n + x + (hz ? q : 0));
+            if (cells.some((i) => g[i] || U.n8(n, n, i).some((j) => g[j]))) continue;
+            cells.forEach((i) => { g[i] = 1; }); placed = true;
+          }
+          if (!placed) { ok = false; break; }
+        }
+        if (!ok) continue;
+        const P = { w: n, h: n, fleet: c.fleet.slice(), rows: [], cols: [], fix: new Array(N).fill(0) };
+        for (let k = 0; k < n; k++) { let a = 0, b = 0; for (let j = 0; j < n; j++) { a += g[k * n + j]; b += g[j * n + k]; } P.rows.push(a); P.cols.push(b); }
+        const ships = U.shuffle(r, Array.from({ length: N }, (_, i) => i).filter((i) => g[i])), water = U.shuffle(r, Array.from({ length: N }, (_, i) => i).filter((i) => !g[i]));
+        ships.slice(0, c.giv).forEach((i) => { P.fix[i] = 1; }); water.slice(0, 1).forEach((i) => { P.fix[i] = 2; });
+        P.sol = { c: g.map((v, i) => (v ? 1 : P.fix[i] === 2 ? 2 : 0)) }; return P;
+      }
+      throw new Error('barcos');
+    },
+    check(P, st) {
+      const n = P.w, S = (i) => st.c[i] === 1;
+      for (let k = 0; k < n; k++) { let a = 0, b = 0; for (let j = 0; j < n; j++) { if (S(k * n + j)) a++; if (S(j * n + k)) b++; } if (a !== P.rows[k] || b !== P.cols[k]) return false; }
+      const lens = [];
+      for (const g of U.comps(n, n, S)) { const xs = new Set(g.map((i) => i % n)), ys = new Set(g.map((i) => (i / n) | 0)); if (xs.size > 1 && ys.size > 1) return false; lens.push(g.length); for (const i of g) if (U.n8(n, n, i).some((j) => S(j) && g.indexOf(j) < 0)) return false; }
+      return lens.sort().join() === P.fleet.slice().sort().join();
+    },
+    drawOver(ctx, P, st, L) {
+      const n = P.w;
+      for (let k = 0; k < n; k++) {
+        let a = 0, b = 0; for (let j = 0; j < n; j++) { if (st.c[k * n + j] === 1) a++; if (st.c[j * n + k] === 1) b++; }
+        A.txt(ctx, String(P.rows[k]), L.ox - L.cs / 2, L.oy + (k + 0.5) * L.cs, L.cs * 0.48, a === P.rows[k] ? '#2b8a3e' : a > P.rows[k] ? C.err : C.ink, 'center', 900, null, RJ.NUMF);
+        A.txt(ctx, String(P.cols[k]), L.ox + (k + 0.5) * L.cs, L.oy - L.cs / 2, L.cs * 0.48, b === P.cols[k] ? '#2b8a3e' : b > P.cols[k] ? C.err : C.ink, 'center', 900, null, RJ.NUMF);
+      }
+      // la flota, debajo
+      const sz = L.cs * 0.32, y = L.oy + n * L.cs + L.cs * 0.55; let x = L.ox;
+      const lens = P.fleet.slice().sort((p, q) => q - p);
+      const total = lens.reduce((s, q) => s + q * sz + sz * 0.8, 0), sc = Math.min(1, (n * L.cs) / total); x = L.ox + (n * L.cs - total * sc) / 2;
+      for (const q of lens) { ctx.fillStyle = '#495057'; A.rr(ctx, x, y - sz * sc / 2, q * sz * sc, sz * sc, sz * sc / 2); ctx.fill(); x += (q * sz + sz * 0.8) * sc; }
+    },
+    rules: (P) => [
+      { t: { es: 'Esconde la flota de abajo en el tablero: barcos rectos de ' + P.fleet.slice().sort((a, b) => b - a).join(', ') + ' casillas.', en: 'Hide the fleet shown below on the board: straight ships of ' + P.fleet.slice().sort((a, b) => b - a).join(', ') + ' cells.' }, all: true },
+      { t: { es: 'Los números de fuera dicen cuántas casillas de barco hay en cada fila y columna.', en: 'The numbers outside say how many ship cells are in each row and column.' }, rows: [0], cols: [0] },
+      { t: { es: 'Los barcos no se tocan, ni siquiera en diagonal. Algunas casillas ya vienen descubiertas.', en: 'Ships never touch, not even diagonally. Some cells come already revealed.' }, cells: (P) => P.fix.map((v, i) => (v ? i : -1)).filter((i) => i >= 0) },
+    ],
+    goal: { es: 'Encuentra la flota escondida', en: 'Find the hidden fleet' },
+  };
+  Arcade.game({
+    ...RJ(V),
+    /*THEME*/ tag: "Encuentra los barcos escondidos", deco: ["🏯", "🌸", "🎋", "🖌️", "🍵", "⛩️"], font: 'serif', bg: ["#173a5e", "#0a1b2e"],
+    music: { mode: "insen", bpm: 70, wave: 'triangle', style: 'chill', root: 57 }, voice: { wave: 'sine', mul: 1.1, echo: 0.4 },
+    /*EN*/ en: { title: "Battleships", tag: "Find the hidden ships", help: "Hide the <b>fleet</b> shown below on the board. The <b>numbers outside</b> say how many ship cells are in each row and column. Ships never <b>touch</b>, not even diagonally. Tap a cell (ship → water → empty)." },
+    /*TV*/ tvHelp: "Cruceta hasta una casilla · OK para jugar en ella.",
+    id: "barcos", title: "Hundir la flota", emoji: "🚢", color: "#74c0fc", origin: "Battleships / Bimaru / Solitaire Battleship",
+    help: "Esconde la <b>flota</b> de abajo en el tablero. Los <b>números de fuera</b> dicen cuántas casillas de barco hay en cada fila y columna. Los barcos no se <b>tocan</b>, ni en diagonal. Toca una casilla (barco → agua → vacía).",
+    lives: 0, levels: 0, cap: 20,
+  });
+})();

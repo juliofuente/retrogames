@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Square Jam · Arcade Perdido</title>
+<meta name="theme-color" content="#221c08">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="common.css?v=6d7635e467">
+</head>
+<body class="game">
+<script src="config.js?v=84fed7f189"></script>
+<script src="common.js?v=fb0b61af23"></script>
+<script src="rejilla.js?v=30e0994cee"></script>
+<script>
+// @rejilla
+(function () {
+  const RJ = Arcade.rejilla, U = RJ.U, C = RJ.C, A = Arcade, T = Arcade.T;
+  const V = {
+    kind: 'rect', kanji: '方', square: true,
+    size: (lv) => ({ n: lv <= 3 ? 5 : lv <= 8 ? 6 : lv <= 13 ? 7 : lv <= 17 ? 8 : 9, mx: lv <= 3 ? 2 : lv <= 10 ? 3 : 4, giv: lv <= 6 ? 1 : 0.85 }),
+    gen(r, c) {
+      const n = c.n;
+      for (let t = 0; t < 400; t++) {
+        const id = new Int32Array(n * n).fill(-1), sq = [];
+        for (let i = 0; i < n * n; i++) {
+          if (id[i] >= 0) continue; const x = i % n, y = (i / n) | 0;
+          const fits = (k) => { if (x + k > n || y + k > n) return false; for (let yy = y; yy < y + k; yy++) for (let xx = x; xx < x + k; xx++) if (id[yy * n + xx] >= 0) return false; return true; };
+          const ks = []; for (let k = 1; k <= c.mx; k++) if (fits(k)) ks.push(k);
+          const k = r() < 0.3 ? ks[0] : U.pick(r, ks.slice(Math.min(1, ks.length - 1)));
+          for (let yy = y; yy < y + k; yy++) for (let xx = x; xx < x + k; xx++) id[yy * n + xx] = sq.length;
+          sq.push({ x, y, w: k, h: k });
+        }
+        let ok = true;
+        for (let y = 1; y < n && ok; y++) for (let x = 1; x < n; x++) { const a = id[(y - 1) * n + x - 1], b = id[(y - 1) * n + x], c2 = id[y * n + x - 1], d = id[y * n + x]; if (a !== b && a !== c2 && a !== d && b !== d && c2 !== d && b !== c2) { ok = false; break; } }
+        if (!ok) continue;
+        const num = new Array(n * n).fill(0);
+        for (const q of sq) { if (q.w === 1 && r() > c.giv) continue; const x = q.x + U.ri(r, 0, q.w - 1), y = q.y + U.ri(r, 0, q.h - 1); num[y * n + x] = q.w; }
+        return { w: n, h: n, num, sol: { R: sq } };
+      }
+      throw new Error('cuadrados');
+    },
+    check(P, st) {
+      const n = P.w, id = new Int32Array(n * n).fill(-1);
+      for (let k = 0; k < st.R.length; k++) { const q = st.R[k]; if (q.w !== q.h) return false; for (let y = q.y; y < q.y + q.h; y++) for (let x = q.x; x < q.x + q.w; x++) { const i = y * n + x; if (id[i] >= 0) return false; id[i] = k; if (P.num[i] && P.num[i] !== q.w) return false; } }
+      if (id.some((k) => k < 0)) return false;
+      for (let y = 1; y < n; y++) for (let x = 1; x < n; x++) { const a = id[(y - 1) * n + x - 1], b = id[(y - 1) * n + x], c2 = id[y * n + x - 1], d = id[y * n + x]; if (a !== b && a !== c2 && a !== d && b !== d && c2 !== d && b !== c2) return false; }
+      return true;
+    },
+    drawClue(ctx, P, i, x, y, cs) { if (!P.num[i]) return; ctx.fillStyle = '#fffaf0'; ctx.beginPath(); ctx.arc(x + cs / 2, y + cs / 2, cs * 0.33, 0, Math.PI * 2); ctx.fill(); ctx.strokeStyle = C.ink; ctx.lineWidth = 1.5; ctx.stroke(); A.txt(ctx, String(P.num[i]), x + cs / 2, y + cs / 2 + 1, cs * 0.42, C.ink, 'center', 900, null, RJ.NUMF); },
+    rules: (P) => {
+      const q = P.sol.R.find((o) => o.w >= 2) || P.sol.R[0], cells = []; for (let y = q.y; y < q.y + q.h; y++) for (let x = q.x; x < q.x + q.w; x++) cells.push(y * P.w + x);
+      return [
+        { t: { es: 'Divide todo el tablero en cuadrados, sin huecos.', en: 'Split the whole board into squares, with no gaps.' }, all: true },
+        { t: { es: 'Un número dice el lado del cuadrado que lo contiene: un ' + q.w + ' está en un cuadrado de ' + q.w + ' × ' + q.w + '.', en: 'A number tells you the side of the square it is in: a ' + q.w + ' sits in a ' + q.w + ' × ' + q.w + ' square.' }, cells },
+        { t: { es: 'Nunca pueden juntarse cuatro esquinas de cuadrados en el mismo punto. Los cuadrados sin número también cuentan.', en: 'Four square corners can never meet at the same point. Squares without a number count too.' }, all: true },
+      ];
+    },
+    explain(P, a) { return { es: 'Aquí va un cuadrado de ' + a.r.w + ' × ' + a.r.w + '.', en: 'A ' + a.r.w + ' × ' + a.r.w + ' square goes here.' }; },
+    goal: { es: 'Divide en cuadrados', en: 'Split it into squares' },
+  };
+  Arcade.game({
+    ...RJ(V),
+    /*THEME*/ tag: "Todo en cuadrados, sin cruces de cuatro", deco: ["🏯", "🌸", "🎋", "🖌️", "🍵", "⛩️"], font: 'serif', bg: ["#4d4016", "#221c08"],
+    music: { mode: "insen", bpm: 70, wave: 'triangle', style: 'chill', root: 57 }, voice: { wave: 'sine', mul: 1.1, echo: 0.4 },
+    /*EN*/ en: { title: "Square Jam", tag: "All squares, no four-way corners", help: "Split the board into <b>squares</b>. A number tells you the <b>side</b> of the square it is in. <b>Four corners</b> of squares can never meet at the same point. <b>Drag</b> from one corner to the other to draw a square; tap it to remove it." },
+    /*TV*/ tvHelp: "Cruceta hasta una casilla · OK para jugar en ella.",
+    id: "cuadrados", title: "Square Jam", emoji: "🟨", color: "#fcc419", origin: "Square Jam (Japón)",
+    help: "Divide el tablero en <b>cuadrados</b>. Un número dice el <b>lado</b> del cuadrado que lo contiene. Nunca pueden coincidir <b>cuatro esquinas</b> de cuadrados en el mismo punto. <b>Arrastra</b> de una esquina a la otra para dibujar un cuadrado; tócalo para quitarlo.",
+    lives: 0, levels: 0, cap: 20,
+  });
+})();
+</script>
+</body>
+</html>

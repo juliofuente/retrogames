@@ -296,13 +296,14 @@
 
   /* ---------- música procedural ---------- */
   const SCALES = { major: [0, 2, 4, 5, 7, 9, 11], minor: [0, 2, 3, 5, 7, 8, 10], dorian: [0, 2, 3, 5, 7, 9, 10], lydian: [0, 2, 4, 6, 7, 9, 11],
-    mixo: [0, 2, 4, 5, 7, 9, 10], harm: [0, 2, 3, 5, 7, 8, 11], phryg: [0, 1, 3, 5, 7, 8, 10] };
+    mixo: [0, 2, 4, 5, 7, 9, 10], harm: [0, 2, 3, 5, 7, 8, 11], phryg: [0, 1, 3, 5, 7, 8, 10],
+    insen: [0, 1, 5, 7, 10], yo: [0, 2, 5, 7, 9], hira: [0, 2, 3, 7, 8] };   // pentatónicas japonesas (Juegos orientales)
   const PROG = { major: [[0, 4, 5, 3], [0, 5, 3, 4], [0, 3, 4, 4], [5, 3, 0, 4], [0, 3, 0, 4]], minor: [[0, 5, 6, 4], [0, 3, 4, 4], [0, 6, 5, 6], [0, 5, 3, 4]] };
   const M = A.music = { song: null, playing: false, step: 0, nextT: 0, timer: null, rate: 1 };
   function buildSong(cfg, id) {
     const r = rng(hash(id + '|' + (cfg.seed || 0)));
     const mode = cfg.mode || 'major', sc = SCALES[mode] || SCALES.major;
-    const minorish = /minor|dorian|harm|phryg/.test(mode);
+    const minorish = /minor|dorian|harm|phryg|insen|hira/.test(mode);
     const prog = (minorish ? PROG.minor : PROG.major)[Math.floor(r() * 4)];
     const root = cfg.root || 57, style = cfg.style || 'arcade';
     const deg = (d) => root + 12 * Math.floor(d / sc.length) + sc[((d % sc.length) + sc.length) % sc.length];
@@ -1434,7 +1435,7 @@
       const FPS = num('fps', 30), DUR = num('dur', 75), IN = num('intro', 3), OUT = num('outro', 4), HOST = Q.get('site') || location.host;
       const EN = A.lang === 'en', title = EN && def.en && def.en.title ? def.en.title : def.title, tag = EN && def.en && def.en.tag ? def.en.tag : def.tag || '';
       const bg = def.bg || ['#2b1a5c', '#1a1033'];
-      const CUST = def.recScene ? def.recScene(g, Q) : def.quiz && Q.has('quiz') ? quizScene(Q) : null;   // escena propia (retos de Cerillas…) o la de reto común
+      const CUST = (def.recScene && def.recScene(g, Q)) || (def.quiz && Q.has('quiz') ? quizScene(Q) : null);   // escena propia (retos de Cerillas…) o la de reto común
       let f = 0, idle = 0; const total = Math.round((CUST ? CUST.dur : DUR) * FPS);
       const card = (k, outro) => {   // cartela de entrada y de salida, pintada encima del juego
         ctx.setTransform(A.dpr, 0, 0, A.dpr, 0, 0); ctx.globalAlpha = k;
