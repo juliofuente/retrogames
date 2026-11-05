@@ -237,7 +237,7 @@ static class Program
 
     /* dirección de un reto: el juego en /<id>/<idioma>, o una página propia (--pagina; la de las secuencias de Brain Academy
        viene de serie) con {lang} {id} en la ruta */
-    public static readonly string[] EduPacks = { "secuencias", "policubos", "problemas", "emojimates", "calculo", "balanza", "ortografia", "spelling", "ingles" };
+    public static readonly string[] EduPacks = { "secuencias", "policubos", "quienfue", "escondido", "alien", "intrusa", "relampago", "problemas", "emojimates", "calculo", "balanza", "ortografia", "spelling", "ingles" };
     public static readonly Dictionary<string, string> Pages = EduPacks.ToDictionary(p => p, p => "educativos/video-retos?pack={id}&lang={lang}");
     static string PuzzleUrl(Options o, string baseUrl, string lang, int q, string? extra = null)
     {
@@ -282,7 +282,7 @@ static class Program
 
     record Job(string Base, string Id, string Lang, string Format, string Mp4, int Quiz = 0, bool Tut = false, bool TextOnly = false);
     // retos cuya página escribe .title y .descrip (los vídeos ya grabados sin ellos se completan sin volver a grabar)
-    static readonly HashSet<string> PostTextPacks = new() { "secuencias", "policubos", "cerillas" };
+    static readonly HashSet<string> PostTextPacks = new() { "secuencias", "policubos", "quienfue", "escondido", "alien", "intrusa", "relampago", "cerillas" };
 
     static async Task<bool> Record(Chrome chrome, Options o, Job j)
     {
@@ -511,7 +511,7 @@ static class Ask
         }
         else if (retos)
         {
-            Console.WriteLine("  Educativos: secuencias · policubos · problemas (es) · emojimates · calculo · balanza · ortografia (es) · spelling (en) · ingles (es)");
+            Console.WriteLine("  Educativos: secuencias · policubos · quienfue · escondido · alien · intrusa · relampago · problemas (es) · emojimates · calculo · balanza · ortografia (es) · spelling (en) · ingles (es)");
             Console.WriteLine("  Juegos: cerillas · atasco · jarras · ranas · apagon · clavijas");
             Console.WriteLine("  Puzles orientales (web orientales.juegosboom.com): sudoku · nonograma · numberlink · hashi · kakuro · futoshiki · takuzu · kenken");
             Console.WriteLine("    rascacielos · suguru · kojun · hidoku · kropki · renzoku · kakurasu · shikaku · cuadrados · fillomino · nurikabe · hitori · akari");

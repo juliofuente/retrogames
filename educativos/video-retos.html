@@ -16,7 +16,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:#1d1147}canvas{display
    respuesta y explicación, en vertical u horizontal. Todo se pinta en función del tiempo t (determinista: el reto N
    de un pack siempre sale igual) y window.arcadeRec.step(n) avanza n fotogramas.
    URL: video-retos.html?pack=<pack>&rec=1&quiz=N&lang=es|en&fps=30
-     pack: secuencias · policubos · problemas (solo es) · emojimates · calculo · balanza · ortografia (es) · spelling (en) · ingles (es)
+     pack: secuencias · policubos · quienfue · escondido · alien · intrusa · relampago · problemas (solo es) · emojimates · calculo · balanza · ortografia (es) · spelling (en) · ingles (es)
      set=1 (una pregunta) · set=5 (cinco, de fácil a genio) · wait (segundos para pensar; cada pack trae los suyos)
      site / url (dirección que se anuncia) · textos: hook (entrada), ask (la pregunta), end (titular del cierre),
      cta (frase del cierre), extra (línea final; vacía = ninguna)
@@ -133,6 +133,148 @@ html,body{margin:0;height:100%;overflow:hidden;background:#1d1147}canvas{display
       const lines = [h.flat().join(' + ') + ' = ' + ans];
       return { kind: 'card', cubes: { h, rows, cols, color: pick(r, CUBECOL) }, opts: o.opts, ok: o.ok, answer: String(ans),
         rule: { text: rows > 1 ? T('Los cubos no flotan: hay cubos escondidos debajo. Suma cada columna:', "Cubes don't float: there are hidden ones underneath. Add up each column:") : T('Suma cada columna:', 'Add up each column:'), lines } };
+    },
+  };
+
+  // Datos de palabras de Brain Academy (palabra intrusa, lectura relámpago)
+  let WORDS = null; const loadWords = async () => { if (!WORDS) WORDS = await (await fetch('brain-academy/data/words.json', { cache: 'no-store' })).json(); return WORDS[LANG] || WORDS.es; };
+
+  // ¿Quién fue?: solo uno miente (o solo uno dice la verdad); el mismo generador que games/quienfue.html
+  const SUS = [['🦊', 'el zorro', 'the fox'], ['🐱', 'el gato', 'the cat'], ['🐻', 'el oso', 'the bear'], ['🐰', 'el conejo', 'the rabbit'], ['🐵', 'el mono', 'the monkey'], ['🐷', 'el cerdo', 'the pig']].map(([e, es, en]) => ({ e, n: T(es, en) }));
+  const MYS = [['🎂', '¡Alguien se comió la tarta!', 'Someone ate the cake!'], ['🏺', '¡Alguien rompió el jarrón!', 'Someone broke the vase!'], ['🍪', '¡Alguien cogió las galletas!', 'Someone took the cookies!'], ['🎈', '¡Alguien explotó el globo!', 'Someone popped the balloon!'], ['🎨', '¡Alguien pintó la pared!', 'Someone painted the wall!']].map(([e, es, en]) => ({ e, t: T(es, en) }));
+  const cap = (x) => x.charAt(0).toUpperCase() + x.slice(1);
+  const SAYQ = { me: () => T('Fui yo.', 'It was me.'), notme: () => T('Yo no fui.', "It wasn't me."), acc: (x) => T('Fue ' + x + '.', 'It was ' + x + '.'), clr: (x) => T('No fue ' + x + '.', "It wasn't " + x + '.') };
+  const isTrueQ = (st, i, c) => (st.t === 'me' ? c === i : st.t === 'notme' ? c !== i : st.t === 'acc' ? c === st.x : c !== st.x);
+  PACKS.quienfue = {
+    langs: ['es', 'en'], url: 'quien-fue', icon: '🕵️', title: T('¿Quién fue?', 'Who did it?'), wait: [15, 12], count: 999,
+    hook: [T('SOLO EL 2 % PILLA AL CULPABLE 🕵️', 'ONLY 2% CATCH THE CULPRIT 🕵️'), T('5 MISTERIOS · ¿HASTA DÓNDE LLEGAS?', '5 MYSTERIES · HOW FAR CAN YOU GO?')],
+    ask: T('¿QUIÉN FUE? 🕵️', 'WHO DID IT? 🕵️'), extra: T('Juegos de lógica para todas las edades', 'Logic games for all ages'),
+    tags: T('#acertijo #logica #misterio #quienfue #retomental #detective #fyp', '#riddle #logic #mystery #whodunit #brainteaser #detective #fyp'),
+    teaser: T('Solo uno miente. ¿Quién fue?', 'Only one is lying. Who did it?'), question: T('¿Quién fue?', 'Who did it?'),
+    titles: [T('🕵️ Solo uno miente… ¿quién fue?', '🕵️ Only one is lying… who did it?'), T('¿Quién se comió la tarta? 🎂 Solo uno miente', 'Who ate the cake? 🎂 Only one is lying'), T('Acertijo de lógica 🕵️ ¿Pillas al culpable?', 'Logic riddle 🕵️ Can you catch the culprit?'),
+      T('El 98 % se equivoca de culpable 🤯', '98% pick the wrong culprit 🤯'), T('¿Quién fue? 🤔 Comenta tu sospechoso 👇', 'Who did it? 🤔 Comment your suspect 👇'), T('Misterio rápido 🔎 ¿Quién miente?', 'Quick mystery 🔎 Who is lying?')],
+    levels: () => (SET === 5 ? [2, 4, 6, 7, 9].map((D, i) => ({ p: D, label: LV5[i][0], color: LV5[i][1] })) : [{ p: 2 + ((N - 1) * 0.37) % 6 }]),
+    gen(r, D) {
+      const n = D < 6 ? 3 : 4, mode = D < 4 ? 'oneLie' : pick(r, ['oneLie', 'oneTruth']);
+      for (let k = 0; k < 800; k++) {
+        const sus = shuffle(r, SUS).slice(0, n);
+        const st = sus.map((_, i) => { const t = pick(r, ['me', 'notme', 'acc', 'clr', 'acc', 'clr']); let x = i; if (t === 'acc' || t === 'clr') { do { x = ri(r, 0, n - 1); } while (x === i); } return { t, x }; });
+        const valid = []; for (let c = 0; c < n; c++) { const tr = st.filter((q, i) => isTrueQ(q, i, c)).length; if (mode === 'oneLie' ? n - tr === 1 : tr === 1) valid.push(c); }
+        if (valid.length !== 1) continue;
+        const c = valid[0], mys = pick(r, MYS), say = (i) => SAYQ[st[i].t](sus[st[i].x] ? sus[st[i].x].n : '');
+        const opts = sus.map((q) => q.e + ' ' + cap(q.n)), lines = st.map((q, i) => (isTrueQ(q, i, c) ? '✅ ' : '❌ ') + sus[i].e + ' ' + say(i));
+        return { kind: 'card', text: mys.e + ' ' + mys.t, note: mode === 'oneLie' ? T('🤥 Solo UNO miente', '🤥 Only ONE is lying') : T('😇 Solo UNO dice la verdad', '😇 Only ONE tells the truth'),
+          says: sus.map((q, i) => [q.e, say(i)]), opts, ok: c, answer: opts[c],
+          rule: { text: T('Fue ' + sus[c].n + ' ' + sus[c].e, 'It was ' + sus[c].n + ' ' + sus[c].e), lines } };
+      }
+      return null;
+    },
+  };
+
+  // El número escondido: «8 × ? − 5 = 27» (de sumas sencillas a dos pasos)
+  PACKS.escondido = {
+    langs: ['es', 'en'], url: 'el-numero-escondido', icon: '🙈', title: T('El número escondido', 'The hidden number'), wait: [10, 7], count: 999,
+    hook: [T('EL 90 % NO DA CON EL NÚMERO 🙈', '90% CAN\'T FIND THE NUMBER 🙈'), T('5 NÚMEROS ESCONDIDOS · ¿HASTA DÓNDE LLEGAS?', '5 HIDDEN NUMBERS · HOW FAR CAN YOU GO?')],
+    ask: T('¿QUÉ NÚMERO FALTA? 🤔', 'WHAT\'S THE MISSING NUMBER? 🤔'), extra: T('Cálculo mental para todas las edades', 'Mental maths for all ages'),
+    tags: T('#matematicas #calculomental #acertijo #retomental #numeros #fyp', '#math #mentalmath #puzzle #brainteaser #numbers #fyp'),
+    teaser: T('¿Qué número se ha escondido?', 'Which number is hiding?'), question: T('¿Qué número falta?', 'What is the missing number?'),
+    titles: (P) => [T('🙈 ¿Qué número falta? ', '🙈 What is the missing number? ') + P.expr, T('Cálculo mental 🧠 ', 'Mental maths 🧠 ') + P.expr, T('El 90 % falla este número escondido 🤯 ', '90% get this hidden number wrong 🤯 ') + P.expr,
+      T('¿Lo sacas de cabeza? 🙈 ', 'Can you do it in your head? 🙈 ') + P.expr, T('Reto de mates 🔢 ', 'Maths challenge 🔢 ') + P.expr + T(' ¿Qué número es?', ' Which number is it?'), T('Sin calculadora 😏 ', 'No calculator 😏 ') + P.expr],
+    levels: () => (SET === 5 ? [1, 3, 5, 7, 9].map((D, i) => ({ p: D, label: LV5[i][0], color: LV5[i][1] })) : [{ p: 3 + ((N - 1) * 0.37) % 6 }]),
+    gen(r, D) {
+      let expr, ans, steps, dis;
+      if (D < 3) { const a = ri(r, 3, 40), b = ri(r, 3, 40), c = a + b, k = ri(r, 0, 2);
+        if (k === 0) { expr = a + ' + ? = ' + c; ans = b; steps = [c + ' − ' + a + ' = ' + b]; dis = [c, b + 1, b - 1, a, b + 10]; }
+        else if (k === 1) { expr = '? + ' + b + ' = ' + c; ans = a; steps = [c + ' − ' + b + ' = ' + a]; dis = [c, a + 1, a - 1, b, a + 10]; }
+        else { expr = c + ' − ? = ' + a; ans = b; steps = [c + ' − ' + a + ' = ' + b]; dis = [c + a, b + 1, b - 1, a, b + 10]; } }
+      else if (D < 6) { const a = ri(r, 3, 9), b = ri(r, 3, 12), c = a * b, k = ri(r, 0, 1);
+        if (k === 0) { expr = a + ' × ? = ' + c; ans = b; steps = [c + ' ÷ ' + a + ' = ' + b]; dis = [c - a, b + 1, b - 1, a, b * 2]; }
+        else { expr = '? ÷ ' + a + ' = ' + b; ans = c; steps = [b + ' × ' + a + ' = ' + c]; dis = [a + b, c + a, c - a, b, c + 10]; } }
+      else { const a = ri(r, 3, 9), b = ri(r, 2, 12), d = ri(r, 2, 20), plus = r() < 0.5, c = plus ? a * b + d : a * b - d; if (c <= 0) return null;
+        expr = a + ' × ? ' + (plus ? '+ ' : '− ') + d + ' = ' + c; ans = b; steps = [c + (plus ? ' − ' : ' + ') + d + ' = ' + a * b, a * b + ' ÷ ' + a + ' = ' + b];
+        dis = [Math.round((c + (plus ? d : -d)) / a), b + 1, b - 1, c - a, (c - d) / a].filter((x) => Number.isInteger(x) && x > 0); }
+      const o = options(r, ans, dis.concat(nearby(r, ans)));
+      return { kind: 'card', expr, opts: o.opts, ok: o.ok, answer: String(ans), rule: { text: T('Haz las operaciones al revés:', 'Work backwards:'), lines: steps } };
+    },
+  };
+
+  // Idioma alienígena: aprende las palabras con los ejemplos (número + dibujo, en un orden escondido)
+  const ANOUNS = ['🐟', '🐸', '🍎', '⭐', '🚗', '🌸', '🐱', '🍩', '🎈', '🦋', '🐢', '🍄'], ACONS = 'bdfgklmnprstvz', AVOW = 'aeiou';
+  PACKS.alien = {
+    langs: ['es', 'en'], url: 'idioma-alienigena', icon: '👽', title: T('Idioma alienígena', 'Alien language'), wait: [15, 12], count: 999,
+    hook: [T('¿HABLAS ALIENÍGENA? 👽 EL 95 % NO', 'CAN YOU SPEAK ALIEN? 👽 95% CAN\'T'), T('5 MENSAJES ALIENÍGENAS · ¿HASTA DÓNDE LLEGAS?', '5 ALIEN MESSAGES · HOW FAR CAN YOU GO?')],
+    ask: T('¿QUÉ SIGNIFICA? 👽', 'WHAT DOES IT MEAN? 👽'), extra: T('Juegos de lógica para todas las edades', 'Logic games for all ages'),
+    tags: T('#acertijo #logica #alien #idiomas #retomental #testdeinteligencia #fyp', '#puzzle #logic #alien #language #brainteaser #iqtest #fyp'),
+    teaser: T('Aprende las palabras alienígenas con los ejemplos. ¿Qué significa la última?', 'Learn the alien words from the examples. What does the last one mean?'), question: T('¿Qué significa la última frase?', 'What does the last phrase mean?'),
+    titles: [T('👽 ¿Hablas alienígena? Descifra el mensaje', '👽 Can you speak alien? Crack the message'), T('Solo el 5 % descifra este idioma alienígena 🛸', 'Only 5% can crack this alien language 🛸'),
+      T('🛸 Aprende alienígena en 15 segundos', '🛸 Learn alien in 15 seconds'), T('¿Qué significa? 👽 Test de lógica', 'What does it mean? 👽 Logic test'), T('Mensaje del espacio 👽 ¿Lo traduces?', 'Message from space 👽 Can you translate it?'), T('Descifra el idioma 🧠👽 #shorts', 'Crack the language 🧠👽 #shorts')],
+    levels: () => (SET === 5 ? [1, 2, 3, 4, 5].map((D, i) => ({ p: D, label: LV5[i][0], color: LV5[i][1] })) : [{ p: 1 + ((N - 1) * 0.37) % 4.5 }]),
+    gen(r, D) {
+      const word = () => { let w = ''; const sy = ri(r, 1, 2); for (let i = 0; i < sy; i++) w += ACONS[ri(r, 0, 13)] + AVOW[ri(r, 0, 4)]; if (r() < 0.4) w += ACONS[ri(r, 0, 13)]; return w; };
+      const types = ['num', 'noun'];
+      for (let tries = 0; tries < 500; tries++) {
+        const nN = D < 3 ? 2 : 3, nums = shuffle(r, [1, 2, 3]).slice(0, D < 3 ? 2 : 3).sort(), nouns = shuffle(r, ANOUNS).slice(0, nN), vals = { num: nums, noun: nouns };
+        const used = new Set(), lex = {}; for (const t of types) { lex[t] = {}; for (const v of vals[t]) { let w; do { w = word(); } while (used.has(w)); used.add(w); lex[t][v] = w; } }
+        const order = D < 4 ? types.slice() : shuffle(r, types), phrase = (m) => order.map((t) => lex[t][m[t]]);
+        const all = []; nums.forEach((a) => nouns.forEach((b) => all.push({ num: a, noun: b }))); const mk = (m) => m.num + '|' + m.noun;
+        const pool = shuffle(r, all), nEx = D < 3 ? 3 : 4, ex = pool.slice(0, nEx), q = pool[nEx]; if (!q) continue;
+        const exP = ex.map(phrase), qP = phrase(q), results = new Set(); let bad = false;
+        for (const pp of [[0, 1], [1, 0]]) {
+          const pt = pp.map((i) => order[i]), dict = {}, rev = {}; let ok = true;
+          ex.forEach((m, ei) => exP[ei].forEach((w, pos) => { const t = pt[pos], k2 = t + ':' + m[t]; if (dict[w] !== undefined && dict[w] !== k2) ok = false; if (rev[k2] !== undefined && rev[k2] !== w) ok = false; dict[w] = k2; rev[k2] = w; }));
+          if (!ok) continue; const parts = qP.map((w) => dict[w]); if (parts.some((x) => x === undefined)) { bad = true; break; }
+          const mm = { num: 1, noun: '' }; parts.forEach((k2) => { const [t, v] = k2.split(':'); mm[t] = t === 'noun' ? v : +v; }); results.add(mk(mm));
+        }
+        if (bad || results.size !== 1 || !results.has(mk(q))) continue;
+        const pic = (m) => m.noun.repeat(m.num), qa = pic(q);
+        const dis = shuffle(r, all.filter((m) => mk(m) !== mk(q))).sort((a, b) => (a.num !== q.num) + (a.noun !== q.noun) - ((b.num !== q.num) + (b.noun !== q.noun))).map(pic);
+        const o = options(r, qa, dis);
+        return { kind: 'card', alien: ex.map((m, i) => [exP[i].join(' '), pic(m)]).concat([[qP.join(' '), null]]), opts: o.opts, ok: o.ok, answer: qa,
+          rule: { text: T('Cada palabra alienígena es un número o un dibujo:', 'Each alien word is a number or a picture:'), lines: qP.map((w) => { const t = Object.keys(lex).find((k) => Object.values(lex[k]).includes(w)), v = Object.keys(lex[t]).find((k) => lex[t][k] === w); return '👽 ' + w + ' = ' + v; }) } };
+      }
+      return null;
+    },
+  };
+
+  // La palabra intrusa: a la frase le sobra una palabra
+  PACKS.intrusa = {
+    langs: ['es', 'en'], url: 'la-palabra-intrusa', icon: '🙊', title: T('La palabra intrusa', 'Odd word out'), wait: [8, 6], count: 999,
+    hook: [T('¿QUÉ PALABRA SOBRA? 🙊 LA MAYORÍA NO LA VE', 'WHICH WORD DOESN\'T BELONG? 🙊 MOST MISS IT'), T('5 FRASES TRAMPA · ¿HASTA DÓNDE LLEGAS?', '5 TRICKY SENTENCES · HOW FAR CAN YOU GO?')],
+    ask: T('¿QUÉ PALABRA SOBRA? 🤔', 'WHICH WORD DOESN\'T BELONG? 🤔'), extra: T('Juegos de lectura para todas las edades', 'Reading games for all ages'),
+    tags: T('#lectura #acertijo #lengua #retomental #atencion #fyp', '#reading #puzzle #english #brainteaser #attention #fyp'),
+    teaser: T('A esta frase le sobra una palabra. ¿Cuál?', 'This sentence has one word too many. Which one?'), question: T('¿Qué palabra sobra?', 'Which word doesn\'t belong?'),
+    titles: [T('🙊 ¿Qué palabra sobra en esta frase?', '🙊 Which word doesn\'t belong here?'), T('El 80 % no ve la palabra intrusa 👀', '80% miss the odd word out 👀'), T('Test de atención 👀 ¿Qué sobra?', 'Attention test 👀 What doesn\'t belong?'),
+      T('Lee rápido… ¿qué palabra sobra? ⚡', 'Read fast… which word doesn\'t belong? ⚡'), T('¿La ves? 🙊 Comenta la palabra intrusa 👇', 'Can you spot it? 🙊 Comment the odd word 👇'), T('Reto de lectura 📖 ¿Qué sobra?', 'Reading challenge 📖 What doesn\'t belong?')],
+    async init() { this.W = await loadWords(); },
+    levels: () => (SET === 5 ? [1, 3, 5, 7, 9].map((D, i) => ({ p: D, label: LV5[i][0], color: LV5[i][1] })) : [{ p: 2 + ((N - 1) * 0.37) % 7 }]),
+    gen(r, D) {
+      const data = this.W, maxW = D < 4 ? 5 : D < 6 ? 7 : 99; let pool = data.sentences.filter((x) => x.split(' ').length <= maxW); if (!pool.length) pool = data.sentences;
+      const sen = pick(r, pool), words = sen.split(' '), intr = pick(r, data.intruders.filter((x) => !sen.toLowerCase().split(' ').includes(x)));
+      const arr = words.slice(), pos = ri(r, 1, arr.length); arr.splice(pos, 0, intr);
+      const others = shuffle(r, words.filter((w, i) => i > 0 && w.length > 2 && w.toLowerCase() !== intr)).map((w) => w.replace(/[.,]/g, ''));
+      if (others.length < 3) return null;
+      const o = options(r, intr, others);
+      return { kind: 'card', text: arr.join(' ') + '.', opts: o.opts, ok: o.ok, answer: intr, rule: { text: T('Sobra «' + intr + '». La frase es:', '«' + intr + '» doesn\'t belong. The sentence is:'), lines: [sen + '.'] } };
+    },
+  };
+
+  // Lectura relámpago: una palabra aparece un instante; ¿qué dibujo era?
+  PACKS.relampago = {
+    langs: ['es', 'en'], url: 'lectura-relampago', icon: '⚡', title: T('Lectura relámpago', 'Flash reading'), wait: [6, 5], count: 999,
+    hook: [T('¿LA LEES A TIEMPO? ⚡ NO PARPADEES', 'CAN YOU READ IT IN TIME? ⚡ DON\'T BLINK'), T('5 PALABRAS RELÁMPAGO · CADA VEZ MÁS RÁPIDO', '5 FLASH WORDS · FASTER EACH TIME')],
+    ask: T('¿QUÉ PALABRA ERA? ⚡', 'WHICH WORD WAS IT? ⚡'), extra: T('Juegos de lectura para todas las edades', 'Reading games for all ages'),
+    tags: T('#lectura #atencion #reflejos #reto #retomental #fyp', '#reading #attention #reflexes #challenge #brainteaser #fyp'),
+    teaser: T('Una palabra aparece un instante. ¿Qué dibujo era?', 'A word flashes for an instant. Which picture was it?'), question: T('¿Qué palabra apareció?', 'Which word flashed?'),
+    titles: [T('⚡ No parpadees: ¿qué palabra era?', '⚡ Don\'t blink: which word was it?'), T('Solo los más rápidos la leen ⚡👀', 'Only the fastest can read it ⚡👀'), T('Test de reflejos ⚡ ¿La has leído?', 'Reflex test ⚡ Did you read it?'),
+      T('¿Lees tan rápido? 👀 Comenta qué viste 👇', 'Can you read this fast? 👀 Comment what you saw 👇'), T('⚡ Aparece medio segundo… ¿cuál era?', '⚡ Half a second… which one was it?'), T('Reto de lectura relámpago ⚡ #shorts', 'Flash reading challenge ⚡ #shorts')],
+    async init() { this.W = await loadWords(); },
+    levels: () => (SET === 5 ? [1, 3, 5, 7, 9].map((D, i) => ({ p: D, label: LV5[i][0], color: LV5[i][1] })) : [{ p: 3 + ((N - 1) * 0.37) % 6 }]),
+    gen(r, D) {
+      const data = this.W, w = pick(r, data.words.filter((x) => x.w.length >= (D < 5 ? 3 : 5)));
+      const sim = shuffle(r, data.words.filter((x) => x !== w && x.e !== w.e && (x.w[0] === w.w[0] || x.w.length === w.w.length))), rest = shuffle(r, data.words.filter((x) => x !== w && x.e !== w.e && !sim.includes(x)));
+      const o = options(r, w.e, sim.concat(rest).map((x) => x.e));
+      return { kind: 'card', flash: { word: w.w, dur: Math.max(0.35, 0.9 - D * 0.06) }, extraT: 1.8, opts: o.opts, ok: o.ok, answer: w.e + ' (' + w.w + ')',
+        rule: { text: T('La palabra era «' + w.w + '» ' + w.e, 'The word was «' + w.w + '» ' + w.e) } };
     },
   };
 
@@ -307,7 +449,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:#1d1147}canvas{display
   const ITEM = 0.11, REVEAL = SET === 5 ? 3.8 : 5.6, TU = 1.2;
   const segs = []; let t = SET === 5 ? 2.6 : 2.4;
   QS.forEach((P, i) => {
-    const s = { P, i, t0: t }; s.tOpt = t + 0.5 + (P.kind === 'seq' ? P.seq.length * ITEM : 0.8) + 0.2; s.tQ = s.tOpt + 0.6; s.tUp = s.tQ + WAIT; s.tR = s.tUp + TU; s.t1 = s.tR + REVEAL + (P.rule.lines ? Math.min(2, P.rule.lines.length * 0.35) : 0);
+    const s = { P, i, t0: t }; s.tOpt = t + 0.5 + (P.kind === 'seq' ? P.seq.length * ITEM : 0.8) + 0.2 + (P.extraT || 0) + (P.says ? P.says.length * 0.25 : 0) + (P.alien ? P.alien.length * 0.25 : 0); s.tQ = s.tOpt + 0.6; s.tUp = s.tQ + WAIT; s.tR = s.tUp + TU; s.t1 = s.tR + REVEAL + (P.rule.lines ? Math.min(2, P.rule.lines.length * 0.35) : 0);
     segs.push(s); t = s.t1 + (SET === 5 ? 0.3 : 0);
   });
   const TO = t, OUT = 5, DUR = TO + OUT;
@@ -474,9 +616,13 @@ html,body{margin:0;height:100%;overflow:hidden;background:#1d1147}canvas{display
     if (P.rows) { const rh = m * 0.14 * k * (P.rows.length > 4 ? 0.85 : 1); parts.push({ t: 'rows', h: rh * P.rows.length, rh }); h += rh * P.rows.length; }
     if (P.scales) { const n = P.scales.clues.length + 1, sh = Math.min(m * 0.18 * k, (land ? H * 0.5 : H * 0.42) / n); parts.push({ t: 'scales', h: sh * n, sh }); h += sh * n; }
     if (P.cubes) { const C = P.cubes, mh = Math.max(...C.h.flat()), u = Math.min((bw - 60) / (C.cols + C.rows * 0.5), (land ? H * 0.4 : H * 0.29) / (mh + C.rows * 0.5)); parts.push({ t: 'cubes', h: u * (mh + C.rows * 0.5) + 30, u }); h += u * (mh + C.rows * 0.5) + 30; }
+    if (P.flash) { const fh = m * 0.32 * k; parts.push({ t: 'flash', h: fh + 10, fh }); h += fh + 10; }
+    if (P.alien) { const rh = Math.min(m * 0.12 * k, (land ? H * 0.5 : H * 0.4) / P.alien.length); parts.push({ t: 'alien', h: rh * P.alien.length, rh }); h += rh * P.alien.length; }
     if (P.big) { const s = m * 0.2 * k; parts.push({ t: 'big', h: s * 1.1, s }); h += s * 1.1; }
     if (P.emoji && !P.rows) { const s = m * 0.13 * k; parts.push({ t: 'emoji', h: s * 1.15, s }); h += s * 1.15; }
     if (P.text) { let fz = m * 0.062, L = wrap(P.text, bw - 48, fz, 700); if (L.length > (land ? 4 : 5)) { fz = m * 0.052; L = wrap(P.text, bw - 48, fz, 700); } parts.push({ t: 'text', h: L.length * fz * 1.32, fz, L }); h += L.length * fz * 1.32 + 6; }
+    if (P.note) { const fz = m * 0.045 * k; parts.push({ t: 'note', h: fz * 1.9, fz }); h += fz * 1.9 + 4; }
+    if (P.says) { const rh = Math.min(m * 0.095 * k, (land ? H * 0.4 : H * 0.26) / P.says.length); parts.push({ t: 'says', h: rh * P.says.length, rh }); h += rh * P.says.length; }
     if (P.sub) { const fz = m * 0.05 * k, L = wrap('«' + P.sub + '»', bw - 48, fz, 600); parts.push({ t: 'sub', h: L.length * fz * 1.3, fz, L }); h += L.length * fz * 1.3 + 4; }
     if (P.expr) { ctx.font = '700 100px ' + FF; const fz = Math.min(m * 0.15 * k, (bw - 60) / (Math.max(ctx.measureText(P.expr).width, ctx.measureText(P.expr.replace('?', P.answer)).width) / 100)); parts.push({ t: 'expr', h: fz * 1.5, fz }); h += fz * 1.5; }
     return { parts, h: h + 18 };
@@ -487,6 +633,24 @@ html,body{margin:0;height:100%;overflow:hidden;background:#1d1147}canvas{display
       if (p.t === 'emoji') emo(P.emoji, cx, y + p.h / 2, p.s);
       if (p.t === 'big') emo(P.big, cx, y + p.h / 2, p.s);
       if (p.t === 'cubes') drawCubes(P.cubes, cx, y + p.h - 14, p.u, tt, S, solved);
+      if (p.t === 'note') { ctx.font = '800 ' + Math.round(p.fz) + 'px ' + FF; const nw = Math.min(bw - 40, ctx.measureText(P.note).width + p.fz * 1.4); ctx.fillStyle = '#fff3bf'; rr(cx - nw / 2, y + 2, nw, p.fz * 1.6, p.fz * 0.5); ctx.fill(); ctx.strokeStyle = '#ffd43b'; ctx.lineWidth = 2; ctx.stroke(); txt(P.note, cx, y + 2 + p.fz * 0.82, p.fz, '#8a6200', { w: 800, mw: nw - p.fz, f: FF + ',' + EF }); }
+      if (p.t === 'says') P.says.forEach(([e, sx], i) => {
+        const a = clamp((tt - S.t0 - 0.55 - i * 0.25) / 0.25, 0, 1); if (a <= 0) return; const ry = y + i * p.rh + p.rh / 2, bx = x0 + p.rh * 1.25, bwid = bw - p.rh * 1.25 - 20;
+        ctx.save(); ctx.globalAlpha = a; emo(e, x0 + p.rh * 0.65, ry, p.rh * 0.68); ctx.fillStyle = '#f3efff'; rr(bx, ry - p.rh * 0.36, bwid, p.rh * 0.72, p.rh * 0.25); ctx.fill();
+        txt('«' + sx + '»', bx + 14, ry + 2, p.rh * 0.42, '#3b2a7a', { a: 'left', w: 700, mw: bwid - 28 }); ctx.restore(); });
+      if (p.t === 'alien') P.alien.forEach(([ph, pic], i) => {
+        const a = clamp((tt - S.t0 - 0.55 - i * 0.25) / 0.25, 0, 1); if (a <= 0) return; const ry = y + i * p.rh + p.rh / 2, isQ = pic == null, half = (bw - 30) * 0.58;
+        ctx.save(); ctx.globalAlpha = a; if (isQ) { ctx.fillStyle = 'rgba(177,151,252,.25)'; rr(x0 + 8, ry - p.rh * 0.46, bw - 16, p.rh * 0.92, 14); ctx.fill(); }
+        ctx.fillStyle = '#e9fff2'; rr(x0 + 16, ry - p.rh * 0.33, half, p.rh * 0.66, p.rh * 0.3); ctx.fill(); txt('👽 ' + ph, x0 + 16 + half / 2, ry + 2, p.rh * 0.34, '#2aa36b', { w: 700, mw: half - 16, f: FF + ',' + EF });
+        const pv = isQ ? (solved ? P.answer : '❓') : pic, px = x0 + 16 + half + (bw - 32 - half) / 2, n = [...pv].length, es = Math.min(p.rh * 0.55, (bw - 40 - half) / Math.max(1, n) * 1.05);
+        [...pv].forEach((ch, j) => emo(ch, px + (j - (n - 1) / 2) * es, ry, es)); ctx.restore(); });
+      if (p.t === 'flash') { const fh = p.fh, fx = x0 + 18, fw = bw - 36, fy = y + 4, c = tt - S.t0 - 0.5, F2 = P.flash; ctx.fillStyle = '#2d2a4a'; rr(fx, fy, fw, fh, 22); ctx.fill(); ctx.strokeStyle = '#4a4570'; ctx.lineWidth = 4; ctx.stroke();
+        const mid = fy + fh / 2;
+        if (solved) txt(F2.word, cx, mid + 2, fh * 0.34, '#69db7c', { mw: fw - 30 });
+        else if (c < 0) {}
+        else if (c < 0.9) txt(String(3 - Math.floor(c / 0.3)), cx, mid + 2, fh * 0.4, '#ffd43b');
+        else if (c < 0.9 + F2.dur) txt(F2.word, cx, mid + 2, fh * 0.34, '#ffffff', { mw: fw - 30 });
+        else txt('#####', cx, mid + 2, fh * 0.28, '#6f6a99'); }
       if (p.t === 'text') p.L.forEach((ln, i) => {
         const ly = y + p.fz * 0.66 + i * p.fz * 1.32;
         if (!P.blank) { txt(ln, cx, ly, p.fz, '#212529', { w: 700 }); return; }
@@ -497,8 +661,10 @@ html,body{margin:0;height:100%;overflow:hidden;background:#1d1147}canvas{display
           txt(s2, xx + wd / 2, ly, p.fz, w.includes('_') ? (solved ? '#2f9e44' : '#e8590c') : '#212529', { w: 700 }); xx += wd + sp; });
       });
       if (p.t === 'sub') p.L.forEach((ln, i) => txt(ln, cx, y + p.fz * 0.66 + i * p.fz * 1.3, p.fz, '#6741d9', { w: 600 }));
-      if (p.t === 'expr') { const s2 = solved ? P.expr.replace('?', P.answer) : P.expr; ctx.font = '700 ' + Math.round(p.fz) + 'px ' + FF; const wq = ctx.measureText(s2).width, base = s2.slice(0, s2.lastIndexOf(solved ? P.answer : '?')), wb = ctx.measureText(base).width;
-        txt(base, cx - wq / 2, y + p.h / 2, p.fz, '#3b2a7a', { a: 'left' }); txt(solved ? P.answer : '?', cx - wq / 2 + wb, y + p.h / 2, p.fz, solved ? '#2f9e44' : '#e8590c', { a: 'left' }); }
+      if (p.t === 'expr') {   // el «?» puede ir en medio (8 × ? = 40): antes, hueco y después
+        const qi = P.expr.lastIndexOf('?'), pre = P.expr.slice(0, qi), post = P.expr.slice(qi + 1), mid = solved ? P.answer : '?'; ctx.font = '700 ' + Math.round(p.fz) + 'px ' + FF;
+        const wp = ctx.measureText(pre).width, wm = ctx.measureText(mid).width, wq = wp + wm + ctx.measureText(post).width, xs = cx - wq / 2;
+        txt(pre, xs, y + p.h / 2, p.fz, '#3b2a7a', { a: 'left' }); txt(mid, xs + wp, y + p.h / 2, p.fz, solved ? '#2f9e44' : '#e8590c', { a: 'left' }); txt(post, xs + wp + wm, y + p.h / 2, p.fz, '#3b2a7a', { a: 'left' }); }
       if (p.t === 'rows') P.rows.forEach((row, ri2) => {
         const a = clamp((tt - S.t0 - 0.45 - ri2 * 0.25) / 0.25, 0, 1); if (a <= 0) return; const ry = y + ri2 * p.rh + p.rh / 2, es = p.rh * 0.62, isQ = ri2 === P.rows.length - 1;
         const items = row.map((it, j) => (isQ && j === row.length - 1 && solved ? P.answer : it)), wsz = items.map((it) => (typeof it === 'string' && /\p{Extended_Pictographic}/u.test(it) ? es * 1.12 : (ctx.font = '700 ' + Math.round(es * 0.8) + 'px ' + FF, ctx.measureText(String(it)).width + es * 0.3)));
@@ -583,7 +749,8 @@ html,body{margin:0;height:100%;overflow:hidden;background:#1d1147}canvas{display
       if (rev && !ok) { ctx.strokeStyle = '#ff6b6b'; ctx.lineWidth = oh * 0.07; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(ow * 0.2, oh / 2); ctx.lineTo(ow * 0.92, oh / 2); ctx.stroke(); }
       ctx.restore();
     });
-    if (tt >= S.tQ && tt < S.tUp) { const left = S.tUp - tt; timer(land ? W * 0.9 : W / 2, land ? H * 0.16 : Math.min(cardB + TR * 1.3 + 12, oy0 - TR * 1.3), TR, left, left / WAIT); }
+    if (tt >= S.tQ && tt < S.tUp) { const left = S.tUp - tt, tight = !land && oy0 - cardB < TR * 2.4;   // si no cabe entre la tarjeta y las opciones, en la esquina de la tarjeta
+      timer(land ? W * 0.9 : tight ? x0 + bw - TR * 0.7 : W / 2, land ? H * 0.16 : tight ? y0 + TR * 0.25 : Math.min(cardB + TR * 1.3 + 12, oy0 - TR * 1.3), tight ? TR * 0.85 : TR, left, left / WAIT); }
     commentsLine(S, tt, land);
     ruleBox(P.rule, cardB + (land ? 14 : 26), tt, S.tR + 1.4, land);
   }
@@ -629,9 +796,11 @@ html,body{margin:0;height:100%;overflow:hidden;background:#1d1147}canvas{display
   const pickT = (arr) => arr[hash(PK + '|title|' + N + '|' + SET) % arr.length];
   function cardTexts() {
     const L5 = ['A', 'B', 'C', 'D'], strip = (x) => String(x).replace(/\s*[👇🤔]+\s*$/u, '');
-    const qBlock = (P, i) => (SET === 5 ? (i + 1) + '. ' : '') + (PACK.question || strip(ASK)) + '\n' + P.opts.map((o, k) => L5[k] + ') ' + o).join('   ');
+    // el enunciado en texto: lo que sale en la tarjeta (frase, operación, declaraciones, ejemplos…)
+    const body = (P) => [P.text, P.note, ...(P.says || []).map(([e, x]) => e + ' «' + x + '»'), ...(P.alien || []).map(([ph, pic]) => '👽 ' + ph + ' = ' + (pic || '❓')), P.expr].filter(Boolean).join('\n');
+    const qBlock = (P, i) => (SET === 5 ? (i + 1) + '. ' : '') + (body(P) ? body(P) + '\n' : '') + (PACK.question || strip(ASK)) + '\n' + P.opts.map((o, k) => L5[k] + ') ' + o).join('   ');
     const aBlock = (P, i) => (SET === 5 ? (i + 1) + '. ' : '') + '✅ ' + L5[P.ok] + ') ' + P.answer + (P.rule && P.rule.text ? ' — ' + P.rule.text + (P.rule.lines && P.rule.lines.length ? '\n' + P.rule.lines.join('\n') : '') : '');
-    const title = SET === 5 ? pickT([PACK.icon + ' ' + strip(PACK.hook[1]) + ' 🔥', T('¿Cuántas aciertas? 5 retos de fácil a genio 🤯', 'How many can you get? 5 puzzles from easy to genius 🤯')]) : pickT(PACK.titles);
+    const title = SET === 5 ? pickT([PACK.icon + ' ' + strip(PACK.hook[1]) + ' 🔥', T('¿Cuántas aciertas? 5 retos de fácil a genio 🤯', 'How many can you get? 5 puzzles from easy to genius 🤯')]) : pickT(typeof PACK.titles === 'function' ? PACK.titles(QS[0]) : PACK.titles);
     const desc = PACK.icon + ' ' + (SET === 5 ? T('5 retos, de fácil a genio. ¿Cuántos aciertas?', '5 puzzles, from easy to genius. How many can you get?') : PACK.teaser) + '\n\n' + QS.map(qBlock).join('\n\n') + '\n\n' +
       T('👇 Comenta tu respuesta antes de mirar 👇', '👇 Comment your answer before you look 👇') + '\n' + '.\n'.repeat(8) + T('RESPUESTA', 'ANSWER') + (SET === 5 ? 'S' : '') + ':\n' + QS.map(aBlock).join('\n\n') +
       '\n\n' + CTA + ': ' + URLFULL + '\n\n' + PACK.tags + ' #shorts\n';

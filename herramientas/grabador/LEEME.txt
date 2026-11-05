@@ -33,6 +33,11 @@ Game2Video (antes ArcadeRecorder) · LO NUEVO
    15_tutoriales_orientales.bat       «cómo se juega» de los puzles orientales (sudoku, nonograma, hashi…)
    16_partidas_orientales.bat         partidas de ejemplo de los puzles orientales (pensar y solución paso a paso)
    17_policubos.bat                  «¿cuántos cubos hay?» (una y cinco preguntas, con .title y .descrip)
+   18_quien_fue.bat                  ¿Quién fue? (solo uno miente o solo uno dice la verdad)
+   19_numero_escondido.bat           El número escondido (8 × ? − 5 = 27)
+   20_idioma_alienigena.bat          Idioma alienígena (aprende las palabras con los ejemplos)
+   21_palabra_intrusa.bat            La palabra intrusa (a la frase le sobra una)
+   22_lectura_relampago.bat          Lectura relámpago (la palabra sale un instante)
    actualizar_juegos.bat · compilar.bat
 5. Música de fondo: pon canciones en la carpeta «mimusica» (una al azar por vídeo).
 
@@ -143,7 +148,7 @@ Sonido: la página da las marcas (window.arcadeRec.cues) y el programa sintetiza
 redoble, campana) en un WAV que mezcla con la música si se pone --musica (a --volumen-musica 0.35). --sin-efectos los quita.
 
 Títulos y descripciones para publicar (.title y .descrip)
-  En los retos de secuencias y policubos (una o cinco preguntas) y de cerillas, junto a cada .mp4 se escriben además:
+  En los retos de secuencias, policubos, quienfue, escondido, alien, intrusa y relampago (una o cinco preguntas) y de cerillas, junto a cada .mp4 se escriben además:
   · <vídeo>.title    un título con emojis, variado al azar (fijo para cada reto), p. ej. «Completa la secuencia: 🔻👍🔻👍 ❓»
   · <vídeo>.descrip  la pregunta, las opciones (A, B, C, D), «comenta tu respuesta», unas líneas en blanco, la respuesta
                      con su explicación, el enlace y los hashtags
@@ -151,7 +156,8 @@ Títulos y descripciones para publicar (.title y .descrip)
   Si un vídeo ya estaba grabado de antes sin .title/.descrip, al volver a lanzar el .bat se escriben sin regrabarlo.
   Si salen sin .title/.descrip: 1) ejecuta compilar.bat (el Game2Video.exe viejo no los escribe) y 2) actualizar_juegos.bat
   (la copia de los juegos tiene que ser la nueva: es la página la que escribe los textos). El programa avisa si la copia es vieja.
-  .bat: 05_secuencias_1_y_5.bat (secuencias), 17_policubos.bat (policubos) y 07_cerillas.bat (cerillas).
+  .bat: 05_secuencias_1_y_5.bat, 17_policubos.bat, del 18 al 22 (quién fue, número escondido, idioma alienígena,
+  palabra intrusa, lectura relámpago) y 07_cerillas.bat.
   Arriba, en todos los vídeos de retos, sale la dirección del juego (con latido y brillo).
 
 Puzles orientales (orientales.juegosboom.com, motor pwa/rejilla.js): admiten los dos tipos de vídeo.
