@@ -1386,14 +1386,14 @@
       return {
         kind: 'quiz', dur: DUR, cues,
         info: { puzzle: n, level, title, goal, par, url: URLFULL, total: def.quiz.count || 500,
-          caption: T('🧩 ' + title + ' · reto #' + n + ': ' + goal + '. ¿Lo consigues? 🤔\nLa solución, al final 👀 ¡Comenta la tuya antes!\nJuega gratis a cientos de retos como este: ' + URLFULL + '\n\n#acertijo #retomental #puzzle #logica #' + def.id + ' #fyp\n',
-            '🧩 ' + title + ' · puzzle #' + n + ': ' + goal + '. Can you do it? 🤔\nSolution at the end 👀 Comment yours first!\nPlay hundreds of puzzles like this for free: ' + URLFULL + '\n\n#puzzle #brainteaser #logic #riddle #' + def.id + ' #fyp\n') },
+          caption: T('🧩 ' + title + ': ' + goal + '. ¿Lo consigues? 🤔\nLa solución, al final 👀 ¡Comenta la tuya antes!\nJuega gratis a cientos de retos como este: ' + URLFULL + '\n\n#acertijo #retomental #puzzle #logica #' + def.id + ' #fyp\n',
+            '🧩 ' + title + ': ' + goal + '. Can you do it? 🤔\nSolution at the end 👀 Comment yours first!\nPlay hundreds of puzzles like this for free: ' + URLFULL + '\n\n#puzzle #brainteaser #logic #riddle #' + def.id + ' #fyp\n') },
         frame(t, dt, c) {
           if (t < TO + 0.6) advance(t, dt);
           const W = g.W, H = g.H, m = m0();
           // franja de arriba para los rótulos
           const gr = ctx.createLinearGradient(0, 0, 0, g.top + 10); gr.addColorStop(0, 'rgba(0,0,0,.72)'); gr.addColorStop(1, 'rgba(0,0,0,0)'); ctx.fillStyle = gr; ctx.fillRect(0, 0, W, g.top + 10);
-          if (t < TO) { const k = back((t - 0.1) / 0.4); ctx.save(); ctx.translate(W / 2, H * 0.035 + 8); ctx.scale(k, k); pillQ('🧩 ' + T('RETO', 'PUZZLE') + ' #' + n, 0, 0, m * 0.035, def.color || '#ff922b', '#fff'); ctx.restore(); }
+          if (t < TO) { const k = back((t - 0.1) / 0.4); ctx.save(); ctx.translate(W / 2, H * 0.035 + 8); ctx.scale(k, k); pillQ('🧩 ' + String(title).toUpperCase(), 0, 0, m * 0.035, def.color || '#ff922b', '#fff'); ctx.restore(); }
           const capY = H * (W > H ? 0.12 : 0.105), cs = m * (W > H ? 0.06 : 0.068);
           if (t < T1) caption(words(HOOK), W / 2, capY, cs, 0.15, t, { per: 0.2, color: (i, w) => (/\d/.test(w) ? '#ffd43b' : '#fff') });
           else if (t < T3) {

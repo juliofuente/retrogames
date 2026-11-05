@@ -449,11 +449,11 @@ $TXT = [
     'en' => ['puzzle' => 'PUZZLE', 'rules' => 'HOW TO PLAY', 'think' => 'THINK!', 'solution' => 'SOLUTION', 'play' => 'PLAY FREE', 'follow' => 'Follow for a new puzzle every day',
         'n_sol' => "Here's the solution.", 'seconds' => 'seconds', 'hooks' => ['ONLY 1% CAN SOLVE THIS', '99% GET THIS WRONG', 'GENIUS-LEVEL PUZZLE', 'CAN YOU BEAT THE CLOCK?', 'TEST YOUR BRAIN', 'NO GUESSING ALLOWED'],
         'challenge' => 'Can you solve it in %d seconds?', 'outro' => ['Did you get it?', 'How fast were you?', 'Did you solve it in time?'],
-        'title' => '%s puzzle #%d: can you solve it in %d seconds? 🧩 #shorts #puzzle', 'desc' => "Only real logic fans get this %s right. %s\nPlay free, no download: %s\n#puzzle #logic #brainteaser #%s #shorts"],
+        'title' => '%s puzzle: can you solve it in %3$d seconds? 🧩 #shorts #puzzle', 'desc' => "Only real logic fans get this %s right. %s\nPlay free, no download: %s\n#puzzle #logic #brainteaser #%s #shorts"],
     'es' => ['puzzle' => 'PUZLE', 'rules' => 'CÓMO SE JUEGA', 'think' => '¡PIENSA!', 'solution' => 'SOLUCIÓN', 'play' => 'JUEGA GRATIS', 'follow' => 'Síguenos: un puzle nuevo cada día',
         'n_sol' => 'Aquí está la solución.', 'seconds' => 'segundos', 'hooks' => ['SOLO EL 1 % LO RESUELVE', 'EL 99 % FALLA ESTE', 'PUZLE NIVEL GENIO', '¿PUEDES CON EL RELOJ?', 'PON A PRUEBA TU CEREBRO', 'SIN ADIVINAR: SOLO LÓGICA'],
         'challenge' => '¿Lo resuelves en %d segundos?', 'outro' => ['¿Lo has conseguido?', '¿Cuánto has tardado?', '¿Te ha dado tiempo?'],
-        'title' => 'Puzle de %s #%d: ¿lo resuelves en %d segundos? 🧩 #shorts #puzle', 'desc' => "Solo los amantes de la lógica aciertan este %s. %s\nJuega gratis, sin descargas: %s\n#puzle #logica #acertijo #%s #shorts"],
+        'title' => 'Puzle de %s: ¿lo resuelves en %3$d segundos? 🧩 #shorts #puzle', 'desc' => "Solo los amantes de la lógica aciertan este %s. %s\nJuega gratis, sin descargas: %s\n#puzle #logica #acertijo #%s #shorts"],
 ];
 
 // ===========================================================================
@@ -1057,7 +1057,7 @@ function renderFrame(string $path, $bg, array $J, array $o): void
     $cv = new Cv((float)$CFG['ss']); $cv->copyFrom($bg); $F = $J['F']; $T = $J['T']; $game = $J['game']; $kind = $o['kind'];
     $white = $cv->c('#ffffff'); $dark = $cv->c('#1a1222', 0.85);
     // arriba: etiqueta del puzle
-    pill($cv, $T['puzzle'] . ' #' . $J['num'] . '  ·  ' . mb_strtoupper($game['name'][$J['lang']]) . '  ·  ' . $J['P']['size'], W / 2, 120, 30, '#fff3bf', '#5c3b00', $F['txt']);
+    pill($cv, mb_strtoupper($game['name'][$J['lang']]) . '  ·  ' . $J['P']['size'], W / 2, 120, 30, '#fff3bf', '#5c3b00', $F['txt']);
     // titular
     $head = match ($kind) {
         'hook', 'count' => $J['texts']['hook'],
@@ -1126,13 +1126,13 @@ function makeTexts(array $CFG, array $game, string $lang, array $T, int $num, in
     if ($CFG['deepseek_key'] === '') return $def;
     $L = $lang === 'es' ? 'Spanish (Spain)' : 'English';
     $prompt = "You write copy for a viral YouTube Short / TikTok showing a logic puzzle: the viewer gets $wait seconds to solve it, then the solution is revealed.\n" .
-        "Puzzle: $name ($size), number #$num. Rules: " . str_replace('%n', '', $game['rules']['en']) . "\nPlay link: $playUrl\n" .
+        "Puzzle: $name ($size). Rules: " . str_replace('%n', '', $game['rules']['en']) . "\nPlay link: $playUrl\n" .
         "Write everything in $L. Return ONLY a JSON object with these keys:\n" .
         "hook: on-screen hook, max 5 words, punchy, curiosity or challenge (e.g. 'ONLY 1% CAN SOLVE THIS'), no emojis;\n" .
         "challenge: one short line daring the viewer to solve it in $wait seconds, max 9 words, no emojis;\n" .
         "outro: question shown when the solution appears, max 5 words, no emojis;\n" .
         "comment: call to comment their time or result, max 7 words, no emojis;\n" .
-        "title: video title, max 90 characters, must include the puzzle name and #shorts, may have one emoji;\n" .
+        "title: video title, max 90 characters, must include the puzzle name and #shorts, may have one emoji, never a puzzle number;\n" .
         "description: 2-3 short sentences hooking the viewer and inviting them to play free at the link (include the link), then 5-7 relevant hashtags on a new line.";
     $r = httpPostJson($CFG['deepseek_url'], ['model' => $CFG['deepseek_model'], 'temperature' => 1.1, 'response_format' => ['type' => 'json_object'],
         'messages' => [['role' => 'system', 'content' => 'You are a senior short-form video copywriter. Reply with valid JSON only.'], ['role' => 'user', 'content' => $prompt]]],

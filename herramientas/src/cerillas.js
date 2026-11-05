@@ -250,12 +250,12 @@
           const nm = T(k === 1 ? 'una cerilla' : k + ' cerillas', k === 1 ? 'one match' : k + ' matches');
           const act = T({ m: 'Mueve', r: 'Quita', a: 'Añade' }[P[1]], { m: 'Move', r: 'Remove', a: 'Add' }[P[1]]);
           const titles = T(['🔥 ' + act + ' ' + nm + ' y arregla: ' + eq + ' 🤔', 'Solo el 1 % lo resuelve 🤯 ' + eq + ' (' + act.toLowerCase() + ' ' + nm + ')', '🧠 ¿Lo arreglas? ' + eq + ' · ' + act + ' ' + nm,
-            eq + ' está mal ❌ ' + act + ' ' + nm + ' para arreglarlo 🔥', 'Reto de cerillas #' + n + ' 🔥 ' + eq + ' ¿Lo ves?', '🤯 ' + eq + ' → ' + act.toLowerCase() + ' ' + nm + ' #shorts'],
+            eq + ' está mal ❌ ' + act + ' ' + nm + ' para arreglarlo 🔥', 'Reto de cerillas 🔥 ' + eq + ' ¿Lo ves?', '🤯 ' + eq + ' → ' + act.toLowerCase() + ' ' + nm + ' #shorts'],
             ['🔥 ' + act + ' ' + nm + ' to fix it: ' + eq + ' 🤔', 'Only 1% can solve this 🤯 ' + eq + ' (' + act.toLowerCase() + ' ' + nm + ')', '🧠 Can you fix it? ' + eq + ' · ' + act + ' ' + nm,
-            eq + ' is wrong ❌ ' + act + ' ' + nm + ' to fix it 🔥', 'Matchstick puzzle #' + n + ' 🔥 ' + eq + ' Can you see it?', '🤯 ' + eq + ' → ' + act.toLowerCase() + ' ' + nm + ' #shorts']);
+            eq + ' is wrong ❌ ' + act + ' ' + nm + ' to fix it 🔥', 'Matchstick puzzle 🔥 ' + eq + ' Can you see it?', '🤯 ' + eq + ' → ' + act.toLowerCase() + ' ' + nm + ' #shorts']);
           let h = 0; for (const ch of 'cerillas' + n) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
-          const desc = T('🔥 Reto de cerillas #' + n + '\n' + eq + ' está mal. ' + act + ' ' + nm + ' para que la cuenta sea correcta.\nLos signos no cambian: solo las cerillas de los números.\n\n👇 Comenta tu respuesta antes de mirar 👇\n',
-            '🔥 Matchstick puzzle #' + n + '\n' + eq + ' is wrong. ' + act + ' ' + nm + ' to make it true.\nThe signs stay the same: only the matches in the digits can change.\n\n👇 Comment your answer before you look 👇\n') +
+          const desc = T('🔥 Reto de cerillas\n' + eq + ' está mal. ' + act + ' ' + nm + ' para que la cuenta sea correcta.\nLos signos no cambian: solo las cerillas de los números.\n\n👇 Comenta tu respuesta antes de mirar 👇\n',
+            '🔥 Matchstick puzzle\n' + eq + ' is wrong. ' + act + ' ' + nm + ' to make it true.\nThe signs stay the same: only the matches in the digits can change.\n\n👇 Comment your answer before you look 👇\n') +
             '.\n'.repeat(8) + T('RESPUESTA:\n✅ ', 'ANSWER:\n✅ ') + so + (P[3].length > 1 ? T(' (también vale: ', ' (also valid: ') + P[3].slice(1, 3).map(pretty).join(', ') + ')' : '') +
             '\n\n' + T('Juega gratis a ' + PUZ.length + ' retos como este: ', 'Play ' + PUZ.length + ' puzzles like this for free: ') + url + '\n\n' +
             T('#cerillas #acertijo #retomental #matematicas #puzzle #fyp #shorts', '#matchstickpuzzle #puzzle #brainteaser #riddle #math #iqtest #fyp #shorts') + '\n';
@@ -279,7 +279,7 @@
           // barra de progreso arriba (estilo historia)
           if (t >= T2 && t < T3) { const f = (t - T2) / wait; ctx.fillStyle = 'rgba(255,255,255,.18)'; Arcade.rr(ctx, 20, 18, W - 40, 8, 4); ctx.fill(); ctx.fillStyle = T3 - t < 10 ? '#ff6b6b' : '#ffd43b'; Arcade.rr(ctx, 20, 18, (W - 40) * (1 - f), 8, 4); ctx.fill(); }
           // etiqueta del reto
-          if (t < T7) { const k = back((t - 0.1) / 0.4); ctx.save(); ctx.translate(W / 2, H * 0.075); ctx.scale(k, k); pill(ctx, '🔥 PUZZLE #' + n, 0, 0, 20, '#ff922b', '#fff'); ctx.restore(); }
+          if (t < T7) { const k = back((t - 0.1) / 0.4); ctx.save(); ctx.translate(W / 2, H * 0.075); ctx.scale(k, k); pill(ctx, '🔥 ' + T('RETO DE CERILLAS', 'MATCHSTICK PUZZLE'), 0, 0, 20, '#ff922b', '#fff'); ctx.restore(); }
           if (t >= T2 && t < T3) { for (const fl of floaters) { const y = 1.02 - (((t - T2) * fl.v + fl.d / 9) % 0.45); ctx.globalAlpha = clamp((y - 0.57) * 6, 0, 0.75) * clamp((1.02 - y) * 8, 0, 1); Arcade.emoji(ctx, fl.e, fl.x * W + Math.sin(t * 2 + fl.d) * 10, y * H, 34); } ctx.globalAlpha = 1; }
           // ---- la operación ----
           // zoom a la cerilla de la solución mientras se señala y se mueve

@@ -386,8 +386,8 @@ static class Program
         if (S("caption") != "") return S("caption");   // la página trae su propio texto (retos del motor, secuencias…)
         string n = S("count"), act = S("action"), what = n == "1" ? "ONE match" : n + " matches";
         return lang == "en"
-            ? $"🔥 Matchstick puzzle #{S("puzzle")}: {S("equation")} is wrong. Can you {act} {what} to make it true? 🤔\nAnswer at the end 👀 Comment yours before it shows!\nPlay {S("total")} puzzles like this for free: {S("url")}\n\n#matchstickpuzzle #puzzle #brainteaser #riddle #math #iqtest #fyp\n"
-            : $"🔥 Reto de cerillas #{S("puzzle")}: {S("equation")} está mal. ¿Sabrías arreglarlo? 🤔\nLa solución, al final 👀 ¡Comenta la tuya antes!\nJuega gratis a {S("total")} retos como este: {S("url")}\n\n#cerillas #acertijo #retomental #matematicas #puzzle #fyp\n";
+            ? $"🔥 Matchstick puzzle: {S("equation")} is wrong. Can you {act} {what} to make it true? 🤔\nAnswer at the end 👀 Comment yours before it shows!\nPlay {S("total")} puzzles like this for free: {S("url")}\n\n#matchstickpuzzle #puzzle #brainteaser #riddle #math #iqtest #fyp\n"
+            : $"🔥 Reto de cerillas: {S("equation")} está mal. ¿Sabrías arreglarlo? 🤔\nLa solución, al final 👀 ¡Comenta la tuya antes!\nJuega gratis a {S("total")} retos como este: {S("url")}\n\n#cerillas #acertijo #retomental #matematicas #puzzle #fyp\n";
     }
 
     // texto de un vídeo de tutorial («cómo se juega»); con --texto se cambia por una plantilla propia

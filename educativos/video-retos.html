@@ -555,7 +555,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:#1d1147}canvas{display
   const URLFULL = /^https?:/.test(URLT) ? URLT : 'https://' + URLT;
   const capText = SET === 5
     ? PACK.icon + ' ' + T('5 retos de ' + PACK.title.toLowerCase() + ', de fácil a genio. ¿Hasta dónde llegas? Comenta tu nota /5 👇', '5 ' + PACK.title.toLowerCase() + ' puzzles, from easy to genius. How far can you go? Comment your score /5 👇')
-    : PACK.icon + ' ' + PACK.teaser + ' ' + T('Reto #' + N + '. La respuesta, al final 👀 ¡Comenta la tuya antes!', 'Puzzle #' + N + '. Answer at the end 👀 Comment yours first!');
+    : PACK.icon + ' ' + PACK.teaser + ' ' + T('La respuesta, al final 👀 ¡Comenta la tuya antes!', 'Answer at the end 👀 Comment yours first!');
   /* ---------- textos para publicar: .title (con emojis) y .descrip (pregunta, opciones, respuesta abajo y tags) ---------- */
   const SZ = T(['pequeño', 'mediano', 'grande'], ['small', 'medium', 'big']);
   const tokTxt = (tk) => (!tk ? '' : tk.t === 'e' ? tk.v : tk.t === 'n' || tk.t === 'l' ? String(tk.v) : tk.t === 's' ? tk.e + ' ' + SZ[tk.s] : tk.t === 'g' ? (tk.n <= 6 ? tk.e.repeat(tk.n) : tk.n + '×' + tk.e) : tk.t === 'sep' ? ' | ' : '');
