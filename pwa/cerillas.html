@@ -14,7 +14,7 @@
 </head>
 <body class="game">
 <script src="config.js?v=84fed7f189"></script>
-<script src="common.js?v=9df630d2e8"></script>
+<script src="common.js?v=c8d3c92d9a"></script>
 <script>
 (function () {
   const { clamp } = Arcade;
@@ -296,7 +296,7 @@
           // barra de progreso arriba (estilo historia)
           if (t >= T2 && t < T3) { const f = (t - T2) / wait; ctx.fillStyle = 'rgba(255,255,255,.18)'; Arcade.rr(ctx, 20, 18, W - 40, 8, 4); ctx.fill(); ctx.fillStyle = T3 - t < 10 ? '#ff6b6b' : '#ffd43b'; Arcade.rr(ctx, 20, 18, (W - 40) * (1 - f), 8, 4); ctx.fill(); }
           // etiqueta del reto
-          if (t < T7) { const k = back((t - 0.1) / 0.4); ctx.save(); ctx.translate(W / 2, H * 0.075); ctx.scale(k, k); pill(ctx, '🔥 ' + T('RETO DE CERILLAS', 'MATCHSTICK PUZZLE'), 0, 0, 20, '#ff922b', '#fff'); ctx.restore(); }
+          if (t < T7) { const k = back((t - 0.1) / 0.4); ctx.save(); ctx.translate(W / 2, H * 0.075); ctx.scale(k, k); Arcade.urlPill(ctx, URLQ, 0, 0, 20, t, Arcade.TFONT || Arcade.FONT, W * 0.9); ctx.restore(); }
           if (t >= T2 && t < T3) { for (const fl of floaters) { const y = 1.02 - (((t - T2) * fl.v + fl.d / 9) % 0.45); ctx.globalAlpha = clamp((y - 0.57) * 6, 0, 0.75) * clamp((1.02 - y) * 8, 0, 1); Arcade.emoji(ctx, fl.e, fl.x * W + Math.sin(t * 2 + fl.d) * 10, y * H, 34); } ctx.globalAlpha = 1; }
           // ---- la operación ----
           // zoom a la cerilla de la solución mientras se señala y se mueve

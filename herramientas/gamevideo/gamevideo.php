@@ -1057,7 +1057,7 @@ function renderFrame(string $path, $bg, array $J, array $o): void
     $cv = new Cv((float)$CFG['ss']); $cv->copyFrom($bg); $F = $J['F']; $T = $J['T']; $game = $J['game']; $kind = $o['kind'];
     $white = $cv->c('#ffffff'); $dark = $cv->c('#1a1222', 0.85);
     // arriba: etiqueta del puzle
-    pill($cv, mb_strtoupper($game['name'][$J['lang']]) . '  ·  ' . $J['P']['size'], W / 2, 120, 30, '#fff3bf', '#5c3b00', $F['txt']);
+    pill($cv, preg_replace('#^https?://#', '', $J['playUrl']), W / 2, 120, 34, '#ffd43b', '#1b1033', $F['txt']);   // la dirección del juego, siempre arriba
     // titular
     $head = match ($kind) {
         'hook', 'count' => $J['texts']['hook'],

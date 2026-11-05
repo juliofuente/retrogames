@@ -53,6 +53,21 @@
     ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
     ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
   };
+  // dirección del juego en los vídeos (arriba, siempre a la vista): pastilla amarilla con latido y un brillo que la cruza
+  A.urlPill = (ctx, url, cx, cy, size, t, font, maxW) => {
+    const label = '🎮 ' + String(url).replace(/^https?:\/\//, '').replace(/\/$/, '');
+    ctx.save(); ctx.font = '900 ' + Math.round(size) + 'px ' + (font || 'system-ui, sans-serif');
+    const w = Math.min(maxW || 9999, ctx.measureText(label).width + size * 1.6), h = size * 1.75;
+    const ph = (t % 1.6) / 1.6, beat = ph < 0.1 ? Math.sin(ph / 0.1 * Math.PI) : ph > 0.16 && ph < 0.26 ? 0.6 * Math.sin((ph - 0.16) / 0.1 * Math.PI) : 0, sc = 1 + 0.06 * beat;
+    ctx.translate(cx, cy); ctx.scale(sc, sc);
+    ctx.shadowColor = 'rgba(255,212,59,' + (0.35 + 0.4 * beat) + ')'; ctx.shadowBlur = size * (0.6 + beat);
+    const g = ctx.createLinearGradient(0, -h / 2, 0, h / 2); g.addColorStop(0, '#ffe066'); g.addColorStop(1, '#fab005'); ctx.fillStyle = g; A.rr(ctx, -w / 2, -h / 2, w, h, h / 2); ctx.fill(); ctx.shadowBlur = 0;
+    const sp = ((t % 2.4) / 2.4) * 2.2 - 0.6;
+    if (sp > -0.4 && sp < 1.4) { ctx.save(); A.rr(ctx, -w / 2, -h / 2, w, h, h / 2); ctx.clip(); const sx = -w / 2 + sp * w, sg = ctx.createLinearGradient(sx - h, 0, sx + h, 0);
+      sg.addColorStop(0, 'rgba(255,255,255,0)'); sg.addColorStop(0.5, 'rgba(255,255,255,.75)'); sg.addColorStop(1, 'rgba(255,255,255,0)'); ctx.fillStyle = sg; ctx.transform(1, 0, -0.4, 1, 0, 0); ctx.fillRect(sx - h, -h, h * 2, h * 2); ctx.restore(); }
+    ctx.fillStyle = '#1b1033'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; const tw = ctx.measureText(label).width, k = Math.min(1, (w - size) / tw); ctx.scale(k, k); ctx.fillText(label, 0, size * 0.05);
+    ctx.restore();
+  };
   A.txt = (ctx, s, x, y, size, color, align, weight, stroke, font) => {
     s = A.L(String(s));
     ctx.font = (weight || 800) + ' ' + Math.round(size) + 'px ' + (font || A.FONT);
@@ -1393,7 +1408,7 @@
           const W = g.W, H = g.H, m = m0();
           // franja de arriba para los rótulos
           const gr = ctx.createLinearGradient(0, 0, 0, g.top + 10); gr.addColorStop(0, 'rgba(0,0,0,.72)'); gr.addColorStop(1, 'rgba(0,0,0,0)'); ctx.fillStyle = gr; ctx.fillRect(0, 0, W, g.top + 10);
-          if (t < TO) { const k = back((t - 0.1) / 0.4); ctx.save(); ctx.translate(W / 2, H * 0.035 + 8); ctx.scale(k, k); pillQ('🧩 ' + String(title).toUpperCase(), 0, 0, m * 0.035, def.color || '#ff922b', '#fff'); ctx.restore(); }
+          if (t < TO) { const k = back((t - 0.1) / 0.4); ctx.save(); ctx.translate(W / 2, H * 0.035 + 8); ctx.scale(k, k); A.urlPill(ctx, URLFULL, 0, 0, m * 0.034, t, A.TFONT || A.FONT, W * 0.9); ctx.restore(); }
           const capY = H * (W > H ? 0.12 : 0.105), cs = m * (W > H ? 0.06 : 0.068);
           if (t < T1) caption(words(HOOK), W / 2, capY, cs, 0.15, t, { per: 0.2, color: (i, w) => (/\d/.test(w) ? '#ffd43b' : '#fff') });
           else if (t < T3) {

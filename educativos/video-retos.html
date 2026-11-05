@@ -16,7 +16,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:#1d1147}canvas{display
    respuesta y explicación, en vertical u horizontal. Todo se pinta en función del tiempo t (determinista: el reto N
    de un pack siempre sale igual) y window.arcadeRec.step(n) avanza n fotogramas.
    URL: video-retos.html?pack=<pack>&rec=1&quiz=N&lang=es|en&fps=30
-     pack: secuencias · problemas (solo es) · emojimates · calculo · balanza · ortografia (es) · spelling (en) · ingles (es)
+     pack: secuencias · policubos · problemas (solo es) · emojimates · calculo · balanza · ortografia (es) · spelling (en) · ingles (es)
      set=1 (una pregunta) · set=5 (cinco, de fácil a genio) · wait (segundos para pensar; cada pack trae los suyos)
      site / url (dirección que se anuncia) · textos: hook (entrada), ask (la pregunta), end (titular del cierre),
      cta (frase del cierre), extra (línea final; vacía = ninguna)
@@ -108,6 +108,33 @@ html,body{margin:0;height:100%;overflow:hidden;background:#1d1147}canvas{display
     }
     return { text: '' };
   }
+
+  // Policubos: «¿cuántos cubos hay?», también los escondidos (mismo generador que games/policubos.html)
+  const CUBECOL = ['#ff6b9d', '#4fb8ff', '#3cc36e', '#ffd93d', '#9b5cff', '#ff9f43'];
+  PACKS.policubos = {
+    langs: ['es', 'en'], url: 'policubos', icon: '🧊', title: T('Policubos', 'Cube count'), wait: [10, 7], count: 999,
+    hook: [T('SOLO EL 5 % CUENTA BIEN LOS CUBOS 🧊', 'ONLY 5% COUNT THE CUBES RIGHT 🧊'), T('5 TORRES DE CUBOS · ¿HASTA DÓNDE LLEGAS?', '5 CUBE TOWERS · HOW FAR CAN YOU GO?')],
+    ask: T('¿CUÁNTOS CUBOS HAY? 🤔', 'HOW MANY CUBES? 🤔'), extra: T('Juegos de lógica y mates para todas las edades', 'Logic and maths games for all ages'),
+    tags: T('#acertijo #retomental #cubos #visual #logica #testdeinteligencia #fyp', '#puzzle #brainteaser #cubes #iqtest #riddle #visualpuzzle #fyp'),
+    teaser: T('¿Cuántos cubos hay? Cuenta también los que no se ven.', 'How many cubes? Count the hidden ones too.'),
+    question: T('¿Cuántos cubos hay?', 'How many cubes are there?'),
+    titles: [T('¿Cuántos cubos hay? 🧊🤔', 'How many cubes are there? 🧊🤔'), T('Solo el 5 % cuenta bien los cubos 🧊', 'Only 5% count these cubes right 🧊'),
+      T('🧊 Cuenta los cubos… ¡también los escondidos! 👀', '🧊 Count the cubes… hidden ones too! 👀'), T('¿Cuántos cubos ves? 🤯 La mayoría falla', 'How many cubes do you see? 🤯 Most people fail'),
+      T('Test visual 🧠 ¿Cuántos cubos hay? #shorts', 'Visual test 🧠 How many cubes? #shorts'), T('🧊 ¿Cuántos cubos? Comenta tu número 👇', '🧊 How many cubes? Comment your number 👇')],
+    levels: () => (SET === 5 ? [1.5, 3, 5, 7, 9].map((D, i) => ({ p: D, label: LV5[i][0], color: LV5[i][1] })) : [{ p: 2.5 + ((N - 1) * 0.37) % 3 }]),
+    gen(r, D) {
+      const rows = D < 3 ? 1 : D < 6 ? 2 : 3, cols = D < 1.5 ? 3 : D < 4 ? ri(r, 3, 4) : ri(r, 3, 5), maxF = D < 2 ? 3 : 4;
+      const h = []; for (let y = 0; y < rows; y++) { h.push([]); for (let x = 0; x < cols; x++) { const below = y ? h[y - 1][x] : 0; h[y].push(below + ri(r, 1, y ? 2 : maxF)); } }
+      const ans = h.flat().reduce((a, b) => a + b, 0), front = h[0].reduce((a, b) => a + b, 0);
+      // los que se ven (alguna cara a la vista): el fallo típico es contar solo esos
+      let vis = 0; for (let y = 0; y < rows; y++) for (let x = 0; x < cols; x++) for (let z = 0; z < h[y][x]; z++) { const top = z === h[y][x] - 1, fr = y === 0 || h[y - 1][x] <= z, rt = x === cols - 1 || h[y][x + 1] <= z; if (top || fr || rt) vis++; }
+      if (rows > 1 && vis === ans && D > 4) return null;   // queremos alguno escondido
+      const o = options(r, ans, [vis, front, ans + 1, ans - 1, ans + 2, ans - 2, h.flat().length]);
+      const lines = [h.flat().join(' + ') + ' = ' + ans];
+      return { kind: 'card', cubes: { h, rows, cols, color: pick(r, CUBECOL) }, opts: o.opts, ok: o.ok, answer: String(ans),
+        rule: { text: rows > 1 ? T('Los cubos no flotan: hay cubos escondidos debajo. Suma cada columna:', "Cubes don't float: there are hidden ones underneath. Add up each column:") : T('Suma cada columna:', 'Add up each column:'), lines } };
+    },
+  };
 
   // Problemas de Primaria: el banco del juego (problemas-primaria/banco.js), de 1.º a 6.º
   PACKS.problemas = {
@@ -446,6 +473,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:#1d1147}canvas{display
     const m = Math.min(W, H), land = W > H, k = land ? 0.85 : 1, parts = []; let h = 24;
     if (P.rows) { const rh = m * 0.14 * k * (P.rows.length > 4 ? 0.85 : 1); parts.push({ t: 'rows', h: rh * P.rows.length, rh }); h += rh * P.rows.length; }
     if (P.scales) { const n = P.scales.clues.length + 1, sh = Math.min(m * 0.18 * k, (land ? H * 0.5 : H * 0.42) / n); parts.push({ t: 'scales', h: sh * n, sh }); h += sh * n; }
+    if (P.cubes) { const C = P.cubes, mh = Math.max(...C.h.flat()), u = Math.min((bw - 60) / (C.cols + C.rows * 0.5), (land ? H * 0.4 : H * 0.29) / (mh + C.rows * 0.5)); parts.push({ t: 'cubes', h: u * (mh + C.rows * 0.5) + 30, u }); h += u * (mh + C.rows * 0.5) + 30; }
     if (P.big) { const s = m * 0.2 * k; parts.push({ t: 'big', h: s * 1.1, s }); h += s * 1.1; }
     if (P.emoji && !P.rows) { const s = m * 0.13 * k; parts.push({ t: 'emoji', h: s * 1.15, s }); h += s * 1.15; }
     if (P.text) { let fz = m * 0.062, L = wrap(P.text, bw - 48, fz, 700); if (L.length > (land ? 4 : 5)) { fz = m * 0.052; L = wrap(P.text, bw - 48, fz, 700); } parts.push({ t: 'text', h: L.length * fz * 1.32, fz, L }); h += L.length * fz * 1.32 + 6; }
@@ -458,6 +486,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:#1d1147}canvas{display
     for (const p of M.parts) {
       if (p.t === 'emoji') emo(P.emoji, cx, y + p.h / 2, p.s);
       if (p.t === 'big') emo(P.big, cx, y + p.h / 2, p.s);
+      if (p.t === 'cubes') drawCubes(P.cubes, cx, y + p.h - 14, p.u, tt, S, solved);
       if (p.t === 'text') p.L.forEach((ln, i) => {
         const ly = y + p.fz * 0.66 + i * p.fz * 1.32;
         if (!P.blank) { txt(ln, cx, ly, p.fz, '#212529', { w: 700 }); return; }
@@ -492,6 +521,41 @@ html,body{margin:0;height:100%;overflow:hidden;background:#1d1147}canvas{display
           txt('=', bx, by - p.sh * 0.3, p.sh * 0.3, '#a77c52'); ctx.restore(); }); }
       y += p.h + (p.t === 'text' ? 6 : p.t === 'sub' ? 4 : 0);
     }
+  }
+  // torre de cubos en perspectiva caballera (como el juego); al resolver, el número de cubos de cada columna encima
+  function drawCubes(C, cx, by, u, tt, S, solved) {
+    const dx = u * 0.5, dy = u * 0.5, Wd = C.cols * u + C.rows * dx, x0 = cx - Wd / 2;
+    const rgb = (hex) => { const n = parseInt(hex.slice(1), 16); return [n >> 16, (n >> 8) & 255, n & 255]; }, c0 = rgb(C.color);
+    const light = 'rgb(' + c0.map((v) => Math.round(v + (255 - v) * 0.45)) + ')', dark = 'rgb(' + c0.map((v) => Math.round(v * 0.72)) + ')';
+    let k = 0;
+    for (let y = C.rows - 1; y >= 0; y--) for (let x = 0; x < C.cols; x++) for (let z = 0; z < C.h[y][x]; z++) {
+      const a = clamp((tt - S.t0 - 0.4 - k++ * 0.035) / 0.18, 0, 1); if (a <= 0) continue;
+      const X = x0 + x * u + y * dx, Y = by - (z + 1) * u - y * dy - (1 - back(a)) * u * 0.8;
+      ctx.save(); ctx.globalAlpha = a; ctx.lineJoin = 'round'; ctx.lineWidth = Math.max(1.5, u * 0.045); ctx.strokeStyle = '#2d2a4a';
+      const poly = (pts, fill) => { ctx.beginPath(); pts.forEach(([px, py], i) => (i ? ctx.lineTo(px, py) : ctx.moveTo(px, py))); ctx.closePath(); ctx.fillStyle = fill; ctx.fill(); ctx.stroke(); };
+      poly([[X, Y], [X + u, Y], [X + u, Y + u], [X, Y + u]], C.color);
+      poly([[X, Y], [X + dx, Y - dy], [X + u + dx, Y - dy], [X + u, Y]], light);
+      poly([[X + u, Y], [X + u + dx, Y - dy], [X + u + dx, Y + u - dy], [X + u, Y + u]], dark);
+      ctx.restore();
+    }
+    if (solved) { const a = clamp((tt - S.tR - 0.6) / 0.3, 0, 1); ctx.save(); ctx.globalAlpha = a;
+      for (let y = C.rows - 1; y >= 0; y--) for (let x = 0; x < C.cols; x++) { const hh = C.h[y][x], X = x0 + x * u + y * dx + u / 2 + dx / 2, Y = by - hh * u - y * dy - dy / 2;
+        ctx.fillStyle = '#1b1033'; ctx.beginPath(); ctx.arc(X, Y, u * 0.24, 0, 6.3); ctx.fill(); txt(String(hh), X, Y + 1, u * 0.3, '#ffd43b'); }
+      ctx.restore(); }
+  }
+  // dirección del juego arriba, siempre a la vista, con latido y brillo
+  function urlPill(tt) {
+    const m = Math.min(W, H), fz = m * 0.034, label = '🎮 ' + URLT.replace(/^https?:\/\//, '');
+    ctx.save(); ctx.font = '700 ' + Math.round(fz) + 'px ' + FF + ',' + EF; const w = Math.min(W * 0.9, ctx.measureText(label).width + fz * 1.6), h = fz * 1.75, y = H * 0.036 + h / 2;
+    const ph = (tt % 1.6) / 1.6, beat = ph < 0.1 ? Math.sin(ph / 0.1 * Math.PI) : ph > 0.16 && ph < 0.26 ? 0.6 * Math.sin((ph - 0.16) / 0.1 * Math.PI) : 0;
+    ctx.translate(W / 2, y); ctx.scale(1 + 0.06 * beat, 1 + 0.06 * beat);
+    ctx.shadowColor = 'rgba(255,212,59,' + (0.35 + 0.4 * beat) + ')'; ctx.shadowBlur = fz * (0.6 + beat);
+    const g = ctx.createLinearGradient(0, -h / 2, 0, h / 2); g.addColorStop(0, '#ffe066'); g.addColorStop(1, '#fab005'); ctx.fillStyle = g; rr(-w / 2, -h / 2, w, h, h / 2); ctx.fill(); ctx.shadowBlur = 0;
+    // brillo que cruza la pastilla cada 2,4 s
+    const sp = ((tt % 2.4) / 2.4) * 2.2 - 0.6; if (sp > -0.4 && sp < 1.4) { ctx.save(); rr(-w / 2, -h / 2, w, h, h / 2); ctx.clip(); const sx = -w / 2 + sp * w, sg = ctx.createLinearGradient(sx - h, 0, sx + h, 0);
+      sg.addColorStop(0, 'rgba(255,255,255,0)'); sg.addColorStop(0.5, 'rgba(255,255,255,.75)'); sg.addColorStop(1, 'rgba(255,255,255,0)'); ctx.fillStyle = sg; ctx.transform(1, 0, -0.4, 1, 0, 0); ctx.fillRect(sx - h, -h, h * 2, h * 2); ctx.restore(); }
+    ctx.restore();
+    ctx.save(); ctx.translate(W / 2, y); ctx.scale(1 + 0.06 * beat, 1 + 0.06 * beat); txt(label, 0, 1, fz, '#1b1033', { mw: w - fz, f: FF + ',' + EF }); ctx.restore();
   }
   function drawCard(S, tt) {
     const P = S.P, land = W > H, m = Math.min(W, H), qy = SET === 5 ? H * 0.19 : H * 0.165;
@@ -545,6 +609,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:#1d1147}canvas{display
       ctx.save(); ctx.globalAlpha = k; emo(PACK.icon, W / 2, H * 0.27, Math.min(W, H) * 0.18 * back((tt - 0.05) / 0.4)); caption(hw, W / 2, H * 0.43, Math.min(W, H) * 0.08, 0.15, tt, { per: 0.14, color: (i) => (/\d/.test(hw[i]) ? '#ffd43b' : '#fff') }); ctx.restore();
     }
     if (S && tt < TO) (S.P.kind === 'seq' ? drawSeq : drawCard)(S, tt);
+    if (tt < TO) urlPill(tt);
     if (SET === 5) for (const s2 of segs) { const d = tt - s2.t0; if (s2.i > 0 && d >= -0.3 && d < 0.3) { ctx.fillStyle = 'rgba(255,255,255,' + (0.5 - Math.abs(d) * 1.6) + ')'; ctx.fillRect(0, 0, W, H); } }
     if (S && tt >= S.tUp && tt < S.tUp + 0.35) { ctx.fillStyle = 'rgba(255,80,80,' + (0.5 - (tt - S.tUp) * 1.4) + ')'; ctx.fillRect(0, 0, W, H); }
     if (tt >= TO) outro(tt - TO);
@@ -562,8 +627,18 @@ html,body{margin:0;height:100%;overflow:hidden;background:#1d1147}canvas{display
   const isPic = (tk) => tk.t === 'e' || tk.t === 'sep' || (tk.t === 'g' && tk.n <= 3);
   const seqLine = (P) => { const toks = P.seq.slice(0, P.b), pic = toks.every(isPic); return toks.map(tokTxt).join(pic ? '' : ', ') + (pic ? '' : ',') + ' ❓'; };
   const pickT = (arr) => arr[hash(PK + '|title|' + N + '|' + SET) % arr.length];
+  function cardTexts() {
+    const L5 = ['A', 'B', 'C', 'D'], strip = (x) => String(x).replace(/\s*[👇🤔]+\s*$/u, '');
+    const qBlock = (P, i) => (SET === 5 ? (i + 1) + '. ' : '') + (PACK.question || strip(ASK)) + '\n' + P.opts.map((o, k) => L5[k] + ') ' + o).join('   ');
+    const aBlock = (P, i) => (SET === 5 ? (i + 1) + '. ' : '') + '✅ ' + L5[P.ok] + ') ' + P.answer + (P.rule && P.rule.text ? ' — ' + P.rule.text + (P.rule.lines && P.rule.lines.length ? '\n' + P.rule.lines.join('\n') : '') : '');
+    const title = SET === 5 ? pickT([PACK.icon + ' ' + strip(PACK.hook[1]) + ' 🔥', T('¿Cuántas aciertas? 5 retos de fácil a genio 🤯', 'How many can you get? 5 puzzles from easy to genius 🤯')]) : pickT(PACK.titles);
+    const desc = PACK.icon + ' ' + (SET === 5 ? T('5 retos, de fácil a genio. ¿Cuántos aciertas?', '5 puzzles, from easy to genius. How many can you get?') : PACK.teaser) + '\n\n' + QS.map(qBlock).join('\n\n') + '\n\n' +
+      T('👇 Comenta tu respuesta antes de mirar 👇', '👇 Comment your answer before you look 👇') + '\n' + '.\n'.repeat(8) + T('RESPUESTA', 'ANSWER') + (SET === 5 ? 'S' : '') + ':\n' + QS.map(aBlock).join('\n\n') +
+      '\n\n' + CTA + ': ' + URLFULL + '\n\n' + PACK.tags + ' #shorts\n';
+    return { postTitle: title, postDesc: desc };
+  }
   function postTexts() {
-    if (PK !== 'secuencias') return {};
+    if (PK !== 'secuencias') return PACK.titles ? cardTexts() : {};
     const L5 = ['A', 'B', 'C', 'D'];
     const qBlock = (P, i) => (SET === 5 ? (i + 1) + '. ' : '') + T('¿Qué va después? ', 'What comes next? ') + seqLine(P) + '\n' + P.opts.map((o, k) => L5[k] + ') ' + tokTxt(o)).join('   ');
     const aBlock = (P, i) => (SET === 5 ? (i + 1) + '. ' : '') + '✅ ' + L5[P.ok] + ') ' + tokTxt(P.ans) + (P.rule && P.rule.text ? ' — ' + P.rule.text.replace(/:$/, '') + (P.rule.toks ? ': ' + P.rule.toks.map(tokTxt).join(P.rule.toks.every(isPic) ? '' : ', ') : P.rule.lines && P.rule.lines[0] ? ' (' + P.rule.lines[0] + ')' : '') : '');
