@@ -147,6 +147,10 @@ Títulos y descripciones para publicar (.title y .descrip)
   · <vídeo>.descrip  la pregunta, las opciones (A, B, C, D), «comenta tu respuesta», unas líneas en blanco, la respuesta
                      con su explicación, el enlace y los hashtags
   El .txt de siempre se sigue escribiendo.
+  Si un vídeo ya estaba grabado de antes sin .title/.descrip, al volver a lanzar el .bat se escriben sin regrabarlo.
+  Si salen sin .title/.descrip: 1) ejecuta compilar.bat (el Game2Video.exe viejo no los escribe) y 2) actualizar_juegos.bat
+  (la copia de los juegos tiene que ser la nueva: es la página la que escribe los textos). El programa avisa si la copia es vieja.
+  .bat: 05_secuencias_1_y_5.bat (secuencias) y 07_cerillas.bat (cerillas).
 
 Puzles orientales (orientales.juegosboom.com, motor pwa/rejilla.js): admiten los dos tipos de vídeo.
   · «Cómo se juega» (--tutoriales, igual que los solitarios): reglas paso a paso con las casillas resaltadas, los controles

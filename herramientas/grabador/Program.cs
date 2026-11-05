@@ -194,10 +194,11 @@ static class Program
         for (int q = from; q <= to; q++) foreach (var lang in o.Langs) foreach (var fmt in o.Formats)
         {
             var mp4 = Path.Combine(o.Out, o.Puzzles, lang, fmt, o.Set > 1 ? $"{o.Puzzles}-{o.Set}x-{q:000}.mp4" : $"{o.Puzzles}-{q:000}.mp4");
-            if (!o.Redo && File.Exists(mp4)) continue;
+            if (!o.Redo && File.Exists(mp4)) { if (PostTextPacks.Contains(o.Puzzles!) && !File.Exists(Path.ChangeExtension(mp4, ".title"))) jobs.Enqueue(new Job(baseUrl, o.Puzzles!, lang, fmt, mp4, q, TextOnly: true)); continue; }
             jobs.Enqueue(new Job(baseUrl, o.Puzzles, lang, fmt, mp4, q));
         }
-        Console.WriteLine($"{jobs.Count} vídeos por grabar");
+        int nText = jobs.Count(x => x.TextOnly);
+        Console.WriteLine($"{jobs.Count - nText} vídeos por grabar" + (nText > 0 ? $" · {nText} ya grabados a los que les faltan el .title y el .descrip (se escriben sin volver a grabar)" : ""));
         return jobs.Count == 0 ? 0 : await RunJobs(chrome, o, jobs);
     }
 
@@ -279,7 +280,9 @@ static class Program
         return fail > 0 ? 2 : 0;
     }
 
-    record Job(string Base, string Id, string Lang, string Format, string Mp4, int Quiz = 0, bool Tut = false);
+    record Job(string Base, string Id, string Lang, string Format, string Mp4, int Quiz = 0, bool Tut = false, bool TextOnly = false);
+    // retos cuya página escribe .title y .descrip (los vídeos ya grabados sin ellos se completan sin volver a grabar)
+    static readonly HashSet<string> PostTextPacks = new() { "secuencias", "cerillas" };
 
     static async Task<bool> Record(Chrome chrome, Options o, Job j)
     {
@@ -328,6 +331,9 @@ static class Program
             if (scene != "tutorial") { Console.WriteLine($"  – {j.Id}: no tiene vídeo de tutorial (¿falta subir pwa/cartas.js o pwa/rejilla.js nuevos a la web?), se salta"); return false; }
         }
         var info = JsonDocument.Parse((await page.Eval("JSON.stringify(window.arcadeRec.info)")).GetString()!).RootElement;
+        if (PostTextPacks.Contains(j.Id) && !info.TryGetProperty("postTitle", out _))
+            Console.WriteLine($"  ! {j.Id}: la página no trae el .title ni el .descrip: tu copia de los juegos es antigua (ejecuta actualizar_juegos.bat) o la web no tiene aún los ficheros nuevos");
+        if (j.TextOnly) { WritePostTexts(j, info, o); Console.WriteLine($"  ✓ textos de {Path.GetFileName(j.Mp4)}"); return true; }
         int frames = (await page.Eval("window.arcadeRec.frames")).GetInt32();
         string title = info.GetProperty("title").GetString() ?? j.Id;
         Console.WriteLine($"▶ {j.Id} ({title}) · {j.Lang} · {j.Format} · {frames} fotogramas");
@@ -360,15 +366,20 @@ static class Program
         if (ff.ExitCode != 0 || !File.Exists(tmp)) { Console.WriteLine($"  ✗ {j.Id}: ffmpeg terminó con error {ff.ExitCode}"); return false; }
         if (sfx != null) try { File.Delete(sfx); } catch { }
         File.Move(tmp, j.Mp4, true);
-        File.WriteAllText(Path.ChangeExtension(j.Mp4, ".txt"), j.Tut ? TutorialCaption(info, j.Lang, o) : j.Quiz > 0 ? QuizCaption(info, j.Lang) : Caption(info, j.Lang));
-        // título y descripción para publicar, si la página los trae (secuencias, cerillas…): <vídeo>.title y <vídeo>.descrip
-        if (info.TryGetProperty("postTitle", out var pt) && pt.ValueKind == JsonValueKind.String) File.WriteAllText(Path.ChangeExtension(j.Mp4, ".title"), pt.GetString() ?? "");
-        if (info.TryGetProperty("postDesc", out var pd) && pd.ValueKind == JsonValueKind.String) File.WriteAllText(Path.ChangeExtension(j.Mp4, ".descrip"), pd.GetString() ?? "");
+        WritePostTexts(j, info, o);
         Console.WriteLine($"  ✓ {j.Mp4} ({new FileInfo(j.Mp4).Length / 1024} KB, {sw.Elapsed.TotalSeconds:0}s)");
         return true;
     }
 
     // texto de un vídeo de reto: «¿lo resolverías?» sin destripar la solución
+    // .txt para publicar y, si la página los trae (secuencias, cerillas…), <vídeo>.title y <vídeo>.descrip
+    static void WritePostTexts(Job j, JsonElement info, Options o)
+    {
+        File.WriteAllText(Path.ChangeExtension(j.Mp4, ".txt"), j.Tut ? TutorialCaption(info, j.Lang, o) : j.Quiz > 0 ? QuizCaption(info, j.Lang) : Caption(info, j.Lang));
+        if (info.TryGetProperty("postTitle", out var pt) && pt.ValueKind == JsonValueKind.String) File.WriteAllText(Path.ChangeExtension(j.Mp4, ".title"), pt.GetString() ?? "");
+        if (info.TryGetProperty("postDesc", out var pd) && pd.ValueKind == JsonValueKind.String) File.WriteAllText(Path.ChangeExtension(j.Mp4, ".descrip"), pd.GetString() ?? "");
+    }
+
     static string QuizCaption(JsonElement i, string lang)
     {
         string S(string k) => i.TryGetProperty(k, out var v) ? (v.ValueKind == JsonValueKind.Number ? v.GetRawText() : v.GetString() ?? "") : "";
