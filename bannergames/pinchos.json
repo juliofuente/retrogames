@@ -1,0 +1,72 @@
+{
+    "type": "playable",
+    "game": "pinchos",
+    "emoji": "🐦",
+    "levels": 80,
+    "level": 1,
+    "url": {
+        "es": "https://juegosboom.com/pinchos",
+        "en": "https://juegosboom.com/pinchos/en"
+    },
+    "play": {
+        "es": "https://juegosboom.com/pinchos?playable=1",
+        "en": "https://juegosboom.com/pinchos/en?playable=1"
+    },
+    "delay": 3,
+    "every_hours": 12,
+    "closed_hours": 24,
+    "hint_seconds": 7,
+    "colors": {
+        "bg1": "#e7f5ff",
+        "bg2": "#a5d8ff",
+        "accent": "#ff6b6b",
+        "cta": "#ffd43b",
+        "ctaText": "#2b1a0e"
+    },
+    "texts": {
+        "es": {
+            "brand": "🐦 Pinchos",
+            "loading": "Cargando el juego…",
+            "hint": "👉 El héroe vuela solo de pared a pared.",
+            "cta": "Juega los 80 niveles gratis ▶",
+            "later": "Seguir leyendo",
+            "winTitle": "¡Nivel superado!",
+            "winSub": "¿Te ha gustado? Te quedan {n} niveles más esperándote.",
+            "winSubEnd": "¿Te ha gustado? Hay muchos más juegos gratis.",
+            "overTitle": "¡Casi!",
+            "recordTitle": "¡Buena partida!",
+            "overSub": "¿Lo intentas otra vez o juegas al juego entero?",
+            "overSubScore": "Has hecho {n} puntos. ¿Superas tu récord en el juego completo?",
+            "again": "🔄 Otra vez",
+            "mini": "Pinchos",
+            "miniPaused": "⏸ En pausa · ¡sigue jugando!",
+            "miniEnd": "¡Juega al juego entero!",
+            "bar": "🐦 ¿Superas un nivel de Pinchos?",
+            "barCta": "Jugar",
+            "close": "Cerrar",
+            "expand": "Ampliar"
+        },
+        "en": {
+            "brand": "🐦 Spikes",
+            "loading": "Loading the game…",
+            "hint": "👉 The hero flies from wall to wall on its own.",
+            "cta": "Play all 80 levels free ▶",
+            "later": "Keep reading",
+            "winTitle": "Level cleared!",
+            "winSub": "Did you like it? {n} more levels are waiting for you.",
+            "winSubEnd": "Did you like it? There are plenty more free games.",
+            "overTitle": "So close!",
+            "recordTitle": "Nice game!",
+            "overSub": "Try again, or play the full game?",
+            "overSubScore": "You scored {n} points. Can you beat it in the full game?",
+            "again": "🔄 Again",
+            "mini": "Spikes",
+            "miniPaused": "⏸ Paused · keep playing!",
+            "miniEnd": "Play the full game!",
+            "bar": "🐦 Can you clear a level of Spikes?",
+            "barCta": "Play",
+            "close": "Close",
+            "expand": "Expand"
+        }
+    }
+}

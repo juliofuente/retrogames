@@ -1,0 +1,72 @@
+{
+    "type": "playable",
+    "game": "desplazado",
+    "emoji": "🧱",
+    "levels": 60,
+    "level": 1,
+    "url": {
+        "es": "https://juegosboom.com/desplazado",
+        "en": "https://juegosboom.com/desplazado/en"
+    },
+    "play": {
+        "es": "https://juegosboom.com/desplazado?playable=1",
+        "en": "https://juegosboom.com/desplazado/en?playable=1"
+    },
+    "delay": 3,
+    "every_hours": 12,
+    "closed_hours": 24,
+    "hint_seconds": 7,
+    "colors": {
+        "bg1": "#1f3f1f",
+        "bg2": "#132613",
+        "accent": "#94d82d",
+        "cta": "#ffd43b",
+        "ctaText": "#2b1a0e"
+    },
+    "texts": {
+        "es": {
+            "brand": "🧱 Desplazado",
+            "loading": "Cargando el juego…",
+            "hint": "👉 El laberinto es más grande que la pantalla y la cámara se mueve sola hacia donde quiere.",
+            "cta": "Juega los 60 niveles gratis ▶",
+            "later": "Seguir leyendo",
+            "winTitle": "¡Nivel superado!",
+            "winSub": "¿Te ha gustado? Te quedan {n} niveles más esperándote.",
+            "winSubEnd": "¿Te ha gustado? Hay muchos más juegos gratis.",
+            "overTitle": "¡Casi!",
+            "recordTitle": "¡Buena partida!",
+            "overSub": "¿Lo intentas otra vez o juegas al juego entero?",
+            "overSubScore": "Has hecho {n} puntos. ¿Superas tu récord en el juego completo?",
+            "again": "🔄 Otra vez",
+            "mini": "Desplazado",
+            "miniPaused": "⏸ En pausa · ¡sigue jugando!",
+            "miniEnd": "¡Juega al juego entero!",
+            "bar": "🧱 ¿Superas un nivel de Desplazado?",
+            "barCta": "Jugar",
+            "close": "Cerrar",
+            "expand": "Ampliar"
+        },
+        "en": {
+            "brand": "🧱 Scroller",
+            "loading": "Loading the game…",
+            "hint": "👉 The maze is bigger than the screen and the camera moves on its own wherever it likes.",
+            "cta": "Play all 60 levels free ▶",
+            "later": "Keep reading",
+            "winTitle": "Level cleared!",
+            "winSub": "Did you like it? {n} more levels are waiting for you.",
+            "winSubEnd": "Did you like it? There are plenty more free games.",
+            "overTitle": "So close!",
+            "recordTitle": "Nice game!",
+            "overSub": "Try again, or play the full game?",
+            "overSubScore": "You scored {n} points. Can you beat it in the full game?",
+            "again": "🔄 Again",
+            "mini": "Scroller",
+            "miniPaused": "⏸ Paused · keep playing!",
+            "miniEnd": "Play the full game!",
+            "bar": "🧱 Can you clear a level of Scroller?",
+            "barCta": "Play",
+            "close": "Close",
+            "expand": "Expand"
+        }
+    }
+}

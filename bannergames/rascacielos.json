@@ -1,0 +1,72 @@
+{
+    "type": "playable",
+    "game": "rascacielos",
+    "emoji": "🏙️",
+    "levels": 80,
+    "level": 1,
+    "url": {
+        "es": "https://juegosboom.com/rascacielos",
+        "en": "https://juegosboom.com/rascacielos/en"
+    },
+    "play": {
+        "es": "https://juegosboom.com/rascacielos?playable=1",
+        "en": "https://juegosboom.com/rascacielos/en?playable=1"
+    },
+    "delay": 3,
+    "every_hours": 12,
+    "closed_hours": 24,
+    "hint_seconds": 7,
+    "colors": {
+        "bg1": "#1e3a5f",
+        "bg2": "#0c1a2e",
+        "accent": "#74c0fc",
+        "cta": "#ffd43b",
+        "ctaText": "#2b1a0e"
+    },
+    "texts": {
+        "es": {
+            "brand": "🏙️ Rascacielos",
+            "loading": "Cargando el juego…",
+            "hint": "👉 Cada casilla es un edificio de 1 a N pisos: en cada fila y columna hay uno de cada altura.",
+            "cta": "Juega los 80 niveles gratis ▶",
+            "later": "Seguir leyendo",
+            "winTitle": "¡Nivel superado!",
+            "winSub": "¿Te ha gustado? Te quedan {n} niveles más esperándote.",
+            "winSubEnd": "¿Te ha gustado? Hay muchos más juegos gratis.",
+            "overTitle": "¡Casi!",
+            "recordTitle": "¡Buena partida!",
+            "overSub": "¿Lo intentas otra vez o juegas al juego entero?",
+            "overSubScore": "Has hecho {n} puntos. ¿Superas tu récord en el juego completo?",
+            "again": "🔄 Otra vez",
+            "mini": "Rascacielos",
+            "miniPaused": "⏸ En pausa · ¡sigue jugando!",
+            "miniEnd": "¡Juega al juego entero!",
+            "bar": "🏙️ ¿Superas un nivel de Rascacielos?",
+            "barCta": "Jugar",
+            "close": "Cerrar",
+            "expand": "Ampliar"
+        },
+        "en": {
+            "brand": "🏙️ Skyscrapers",
+            "loading": "Loading the game…",
+            "hint": "👉 Each cell is a building 1 to N storeys tall: every row and column has one of each height.",
+            "cta": "Play all 80 levels free ▶",
+            "later": "Keep reading",
+            "winTitle": "Level cleared!",
+            "winSub": "Did you like it? {n} more levels are waiting for you.",
+            "winSubEnd": "Did you like it? There are plenty more free games.",
+            "overTitle": "So close!",
+            "recordTitle": "Nice game!",
+            "overSub": "Try again, or play the full game?",
+            "overSubScore": "You scored {n} points. Can you beat it in the full game?",
+            "again": "🔄 Again",
+            "mini": "Skyscrapers",
+            "miniPaused": "⏸ Paused · keep playing!",
+            "miniEnd": "Play the full game!",
+            "bar": "🏙️ Can you clear a level of Skyscrapers?",
+            "barCta": "Play",
+            "close": "Close",
+            "expand": "Expand"
+        }
+    }
+}

@@ -62,7 +62,7 @@ define('ADSENSE_CLIENT', 'ca-pub-2798436891455671');
 function ads_html(string $html): string {
   foreach (headers_list() as $hd) if (stripos($hd, 'content-type:') === 0 && stripos($hd, 'text/html') === false) return $html;
   if (stripos($html, '<html') === false && stripos($html, '<!doctype') === false) return $html;
-  if (preg_match('/(^|&)(rec|shot)=1/', (string)($_SERVER['QUERY_STRING'] ?? '')) || stripos((string)($_SERVER['HTTP_USER_AGENT'] ?? ''), 'ArcadeRecorder') !== false) return $html;   // grabador de vídeos y capturas: sin anuncios encima
+  if (preg_match('/(^|&)(rec|shot|playable)=1/', (string)($_SERVER['QUERY_STRING'] ?? '')) || stripos((string)($_SERVER['HTTP_USER_AGENT'] ?? ''), 'ArcadeRecorder') !== false) return $html;   // grabador de vídeos, capturas y juego dentro del intersticial de bannergames (en webs de otros): sin anuncios encima
   if (stripos($html, 'adsbygoogle.js') === false) {
     $ad = '<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=' . ADSENSE_CLIENT . '" crossorigin="anonymous"></script>';
     $p = stripos($html, '</head>'); if ($p === false) $p = stripos($html, '<body'); if ($p !== false) $html = substr_replace($html, $ad . "\n", $p, 0);
@@ -1054,6 +1054,7 @@ function serve_game(array $g, ?string $force): void {
   if ($force) $html = preg_replace('/<html lang="[a-z]+"/i', '<html lang="' . $force . '"', $html, 1);
   header('Content-Type: text/html; charset=utf-8');
   header('Cache-Control: no-cache');
+  if (($_GET['playable'] ?? '') === '1') header('Content-Security-Policy: frame-ancestors *');   // bannergames: se puede meter en un iframe en cualquier web
   echo $html;
   exit;
 }

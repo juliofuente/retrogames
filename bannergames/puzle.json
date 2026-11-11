@@ -1,0 +1,72 @@
+{
+    "type": "playable",
+    "game": "puzle",
+    "emoji": "🧩",
+    "levels": 120,
+    "level": 1,
+    "url": {
+        "es": "https://juegosboom.com/puzle",
+        "en": "https://juegosboom.com/puzle/en"
+    },
+    "play": {
+        "es": "https://juegosboom.com/puzle?playable=1",
+        "en": "https://juegosboom.com/puzle/en?playable=1"
+    },
+    "delay": 3,
+    "every_hours": 12,
+    "closed_hours": 24,
+    "hint_seconds": 7,
+    "colors": {
+        "bg1": "#5a4848",
+        "bg2": "#3b2f2f",
+        "accent": "#ffa94d",
+        "cta": "#ffd43b",
+        "ctaText": "#2b1a0e"
+    },
+    "texts": {
+        "es": {
+            "brand": "🧩 Puzle",
+            "loading": "Cargando el juego…",
+            "hint": "👉 Arrastra cada pieza de la bandeja a su sitio en el dibujo.",
+            "cta": "Juega los 120 niveles gratis ▶",
+            "later": "Seguir leyendo",
+            "winTitle": "¡Nivel superado!",
+            "winSub": "¿Te ha gustado? Te quedan {n} niveles más esperándote.",
+            "winSubEnd": "¿Te ha gustado? Hay muchos más juegos gratis.",
+            "overTitle": "¡Casi!",
+            "recordTitle": "¡Buena partida!",
+            "overSub": "¿Lo intentas otra vez o juegas al juego entero?",
+            "overSubScore": "Has hecho {n} puntos. ¿Superas tu récord en el juego completo?",
+            "again": "🔄 Otra vez",
+            "mini": "Puzle",
+            "miniPaused": "⏸ En pausa · ¡sigue jugando!",
+            "miniEnd": "¡Juega al juego entero!",
+            "bar": "🧩 ¿Superas un nivel de Puzle?",
+            "barCta": "Jugar",
+            "close": "Cerrar",
+            "expand": "Ampliar"
+        },
+        "en": {
+            "brand": "🧩 Jigsaw",
+            "loading": "Loading the game…",
+            "hint": "👉 Drag each piece from the tray to its place in the picture.",
+            "cta": "Play all 120 levels free ▶",
+            "later": "Keep reading",
+            "winTitle": "Level cleared!",
+            "winSub": "Did you like it? {n} more levels are waiting for you.",
+            "winSubEnd": "Did you like it? There are plenty more free games.",
+            "overTitle": "So close!",
+            "recordTitle": "Nice game!",
+            "overSub": "Try again, or play the full game?",
+            "overSubScore": "You scored {n} points. Can you beat it in the full game?",
+            "again": "🔄 Again",
+            "mini": "Jigsaw",
+            "miniPaused": "⏸ Paused · keep playing!",
+            "miniEnd": "Play the full game!",
+            "bar": "🧩 Can you clear a level of Jigsaw?",
+            "barCta": "Play",
+            "close": "Close",
+            "expand": "Expand"
+        }
+    }
+}

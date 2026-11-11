@@ -1,0 +1,72 @@
+{
+    "type": "playable",
+    "game": "orbita",
+    "emoji": "🪐",
+    "levels": 80,
+    "level": 1,
+    "url": {
+        "es": "https://juegosboom.com/orbita",
+        "en": "https://juegosboom.com/orbita/en"
+    },
+    "play": {
+        "es": "https://juegosboom.com/orbita?playable=1",
+        "en": "https://juegosboom.com/orbita/en?playable=1"
+    },
+    "delay": 3,
+    "every_hours": 12,
+    "closed_hours": 24,
+    "hint_seconds": 7,
+    "colors": {
+        "bg1": "#141c44",
+        "bg2": "#0a0f24",
+        "accent": "#5c7cfa",
+        "cta": "#ffd43b",
+        "ctaText": "#2b1a0e"
+    },
+    "texts": {
+        "es": {
+            "brand": "🪐 Órbita",
+            "loading": "Cargando el juego…",
+            "hint": "👉 Una bola está quieta y la otra gira a su alrededor.",
+            "cta": "Juega los 80 niveles gratis ▶",
+            "later": "Seguir leyendo",
+            "winTitle": "¡Nivel superado!",
+            "winSub": "¿Te ha gustado? Te quedan {n} niveles más esperándote.",
+            "winSubEnd": "¿Te ha gustado? Hay muchos más juegos gratis.",
+            "overTitle": "¡Casi!",
+            "recordTitle": "¡Buena partida!",
+            "overSub": "¿Lo intentas otra vez o juegas al juego entero?",
+            "overSubScore": "Has hecho {n} puntos. ¿Superas tu récord en el juego completo?",
+            "again": "🔄 Otra vez",
+            "mini": "Órbita",
+            "miniPaused": "⏸ En pausa · ¡sigue jugando!",
+            "miniEnd": "¡Juega al juego entero!",
+            "bar": "🪐 ¿Superas un nivel de Órbita?",
+            "barCta": "Jugar",
+            "close": "Cerrar",
+            "expand": "Ampliar"
+        },
+        "en": {
+            "brand": "🪐 Orbit",
+            "loading": "Loading the game…",
+            "hint": "👉 One ball stays still while the other orbits around it.",
+            "cta": "Play all 80 levels free ▶",
+            "later": "Keep reading",
+            "winTitle": "Level cleared!",
+            "winSub": "Did you like it? {n} more levels are waiting for you.",
+            "winSubEnd": "Did you like it? There are plenty more free games.",
+            "overTitle": "So close!",
+            "recordTitle": "Nice game!",
+            "overSub": "Try again, or play the full game?",
+            "overSubScore": "You scored {n} points. Can you beat it in the full game?",
+            "again": "🔄 Again",
+            "mini": "Orbit",
+            "miniPaused": "⏸ Paused · keep playing!",
+            "miniEnd": "Play the full game!",
+            "bar": "🪐 Can you clear a level of Orbit?",
+            "barCta": "Play",
+            "close": "Close",
+            "expand": "Expand"
+        }
+    }
+}

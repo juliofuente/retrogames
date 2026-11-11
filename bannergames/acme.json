@@ -1,0 +1,72 @@
+{
+    "type": "playable",
+    "game": "acme",
+    "emoji": "🏭",
+    "levels": 80,
+    "level": 1,
+    "url": {
+        "es": "https://juegosboom.com/acme",
+        "en": "https://juegosboom.com/acme/en"
+    },
+    "play": {
+        "es": "https://juegosboom.com/acme?playable=1",
+        "en": "https://juegosboom.com/acme/en?playable=1"
+    },
+    "delay": 3,
+    "every_hours": 12,
+    "closed_hours": 24,
+    "hint_seconds": 7,
+    "colors": {
+        "bg1": "#862e9c",
+        "bg2": "#3a0f47",
+        "accent": "#b197fc",
+        "cta": "#ffd43b",
+        "ctaText": "#2b1a0e"
+    },
+    "texts": {
+        "es": {
+            "brand": "🏭 Acme",
+            "loading": "Cargando el juego…",
+            "hint": "👉 Un Canfield difícil: bases desde el A, se baja del mismo palo, de una en una, y el mazo se pasa dos veces.",
+            "cta": "Juega los 80 niveles gratis ▶",
+            "later": "Seguir leyendo",
+            "winTitle": "¡Nivel superado!",
+            "winSub": "¿Te ha gustado? Te quedan {n} niveles más esperándote.",
+            "winSubEnd": "¿Te ha gustado? Hay muchos más juegos gratis.",
+            "overTitle": "¡Casi!",
+            "recordTitle": "¡Buena partida!",
+            "overSub": "¿Lo intentas otra vez o juegas al juego entero?",
+            "overSubScore": "Has hecho {n} puntos. ¿Superas tu récord en el juego completo?",
+            "again": "🔄 Otra vez",
+            "mini": "Acme",
+            "miniPaused": "⏸ En pausa · ¡sigue jugando!",
+            "miniEnd": "¡Juega al juego entero!",
+            "bar": "🏭 ¿Superas un nivel de Acme?",
+            "barCta": "Jugar",
+            "close": "Cerrar",
+            "expand": "Ampliar"
+        },
+        "en": {
+            "brand": "🏭 Acme",
+            "loading": "Loading the game…",
+            "hint": "👉 A hard Canfield: foundations from A, build down in the same suit, one card at a time, and the stock goes…",
+            "cta": "Play all 80 levels free ▶",
+            "later": "Keep reading",
+            "winTitle": "Level cleared!",
+            "winSub": "Did you like it? {n} more levels are waiting for you.",
+            "winSubEnd": "Did you like it? There are plenty more free games.",
+            "overTitle": "So close!",
+            "recordTitle": "Nice game!",
+            "overSub": "Try again, or play the full game?",
+            "overSubScore": "You scored {n} points. Can you beat it in the full game?",
+            "again": "🔄 Again",
+            "mini": "Acme",
+            "miniPaused": "⏸ Paused · keep playing!",
+            "miniEnd": "Play the full game!",
+            "bar": "🏭 Can you clear a level of Acme?",
+            "barCta": "Play",
+            "close": "Close",
+            "expand": "Expand"
+        }
+    }
+}

@@ -23,7 +23,10 @@
     <a href="?bgreset=1&profile=intrusa">intrusa</a> <a href="?bgreset=1&profile=relampago">relampago</a> <a href="?bgreset=1&profile=problemas">problemas</a>
     <a href="?bgreset=1&profile=emojimates">emojimates</a> <a href="?bgreset=1&profile=calculo">calculo</a> <a href="?bgreset=1&profile=balanza">balanza</a>
     <a href="?bgreset=1&profile=ortografia">ortografia</a> <a href="?bgreset=1&profile=spelling&lang=en">spelling</a> <a href="?bgreset=1&profile=ingles">ingles</a>
-    · <a href="javascript:location.search=location.search.replace(/lang=\w+&?/,'')+(location.search?'&':'?')+'lang=en'">en inglés</a></p>
+    <br>Jugables (un nivel y luego el botón): <a href="?bgreset=1&profile=atasco">atasco</a> <a href="?bgreset=1&profile=jarras">jarras</a> <a href="?bgreset=1&profile=sudoku">sudoku</a>
+    <a href="?bgreset=1&profile=camarero">camarero</a> <a href="?bgreset=1&profile=cerillas-jugable">cerillas-jugable</a>
+    <select onchange="location.search='bgreset=1&profile='+this.value"><option value="">todos los jugables…</option></select>
+        · <a href="javascript:location.search=location.search.replace(/lang=\w+&?/,'')+(location.search?'&':'?')+'lang=en'">en inglés</a></p>
   <h1>Una web cualquiera con el banner de juegos</h1>
   <p>Este texto hace de artículo. El script se añade con una sola línea al final de la página:</p>
   <pre style="white-space:pre-wrap;word-break:break-all;background:#fff;border:1px solid #ddd;padding:10px;border-radius:8px;font-size:13px">&lt;script src="https://juegosboom.com/bannergames/bannergames.js?profile=cerillas&amp;lang=es" async&gt;&lt;/script&gt;</pre>
@@ -37,6 +40,7 @@
 <script>
   // en la demo: ?profile=<perfil> y ?lang=en
   (function () { var q = new URLSearchParams(location.search), pf = q.get('profile') || 'cerillas', s = document.createElement('script'); document.getElementById('pf').textContent = pf;
+    fetch('playable.txt').then(function (r) { return r.text(); }).then(function (t) { var sel = document.querySelector('select'); t.trim().split('\n').forEach(function (n) { var o = document.createElement('option'); o.value = o.textContent = n; if (n === pf) o.selected = true; sel.appendChild(o); }); }).catch(function () {});
     s.async = true; s.src = 'bannergames.js?profile=' + encodeURIComponent(pf) + '&lang=' + (q.get('lang') || 'es'); document.body.appendChild(s); })();
 </script>
 </body>

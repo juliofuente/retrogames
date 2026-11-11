@@ -406,6 +406,15 @@
   /* Por defecto cada juego es parte de la web: 🏠 a la portada, favoritos y tiempo de juego. window.isSingleGame = true
      → el juego va solo (para meterlo en una app Android o como PWA): sin portada, favoritos ni estadísticas. */
   A.single = window.isSingleGame === true;
+  /* ?playable=1: el juego dentro del intersticial jugable de bannergames.js (en webs de otros). Empieza directamente
+     en el nivel ?lv= (o el 1), sin menú ni enlaces a la portada, sin música, y al ganar o perder se lo dice a la web
+     que lo contiene con postMessage({bannergames:'win'|'over'}) para que enseñe su botón de jugar; ella puede
+     pedirle 'retry' (volver a jugar el nivel) o 'pause'. Abierto suelto (sin web alrededor) se juega normal. */
+  A.playable = /[?&]playable=1/.test(location.search);
+  A.embedded = A.playable && window.parent !== window;
+  A.playLevel = Math.max(1, +(/[?&]lv=(\d+)/.exec(location.search) || [0, 1])[1]);
+  A.bgPost = (m) => { if (A.embedded) try { window.parent.postMessage(Object.assign({ bannergames: '' }, m), '*'); } catch (e) { /* nada */ } };
+  if (A.playable) A.musicOn = false;
 
   function el(tag, cls, html) { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; }
 
@@ -423,7 +432,7 @@
     let tvdef = TV ? rdef : null;   // en táctil se activa con el pad virtual
     const HOME = TV ? (def.home ? 'indextv?sec=pro' : 'indextv') : (def.home || 'index.html').replace(/index\.html$/, './').replace(/\.html$/, '');
     const SITE = A.single ? null : window.ARCADE_SITE || null;   // lo inyecta index.php cuando el juego se sirve en /<id>
-    const homeLink = (cls, label) => A.single ? '' : `<a class="${cls}" href="${HOMEQ()}">🏠 ${label}</a>`;
+    const homeLink = (cls, label) => A.single || A.playable ? '' : `<a class="${cls}" href="${HOMEQ()}">🏠 ${label}</a>`;
     const STAT = { s: 0, p: 0 };               // segundos jugados y partidas empezadas (se envían a SITE.api)
     // 🏠: vuelve a la página de listado de la que se vino (la guardan las portadas en sessionStorage 'arc_back');
     // si no hay, a la portada de la web (index.php) o de la PWA
@@ -441,7 +450,7 @@
     const hasLevels = def.levels != null;
     const MODES = { easy: ['😊', 'Fácil', 'Easy'], normal: ['🙂', 'Normal', 'Normal'], hard: ['😈', 'Difícil', 'Hard'] };
     let MODE = A.get('mode_' + def.id, A.get('mode', 'normal')); if (!MODES[MODE]) MODE = 'normal';
-    let infinite = CANINF && A.get('inf_' + def.id, A.get('inf', false)) === true;
+    let infinite = !A.playable && CANINF && A.get('inf_' + def.id, A.get('inf', false)) === true;
     const KEY = (k) => k + '_' + def.id + (MODE === 'normal' ? '' : '_' + MODE) + (infinite ? '_inf' : '');
     const unlockedOf = () => infinite ? Math.max(1, A.get(KEY('lv'), 1)) : Math.min(A.get(KEY('lv'), 1), def.levels || 1);
     // dificultad interna del nivel n: fácil 1→60 % del tope · normal 1→tope · difícil 30 %→tope (ya al 75 % de los niveles)
@@ -612,6 +621,7 @@
       if (g.mp) return mpOver();
       if (g.demoOn) { setTimeout(() => endDemo(), 1600); return; }
       const rec = saveBest();
+      if (A.embedded) return A.bgPost({ bannergames: 'over', score: g.score, level: g.level, record: rec });
       show(`<div class="big">💥</div><h2>${T('Fin de la partida', 'Game over')}</h2>
         <div class="score">${g.score}</div>${rec ? `<div class="rec">🏆 ${T('¡Nuevo récord!', 'New record!')}</div>` : `<p class="sub">${T('Récord', 'Best')}: <b>${g.best}</b></p>`}
         ${hasLevels ? `<p class="sub">${T('Llegaste al', 'You reached')} ${lvl} <b>${g.level}</b></p>` : ''}
@@ -626,6 +636,7 @@
       if (g.level + 1 > g.unlocked && g.level < total) { g.unlocked = g.level + 1; A.set(KEY('lv'), g.unlocked); }
       saveBest();
       g.confetti(70); g.flash('#ffffff', 0.25);
+      if (A.embedded) return A.bgPost({ bannergames: 'win', stars, score: g.score, level: g.level });
       if (g.mp) return mpWin(stars);
       const st = starsHtml(stars);
       if (g.level >= total) {
@@ -711,6 +722,7 @@
     const tvForced = () => TV && !(window.arcadeTVDetectado && window.arcadeTVDetectado());
     const modeBtn = () => A.config.modo === 'seleccionable' || (tvForced() && A.config.modo !== 'modotv') ? `<button class="b sm ghost" data-act="tvmode">${TV ? T('📱 Modo móvil', '📱 Mobile mode') : T('📺 Modo TV', '📺 TV mode')}</button>` : '';
     function menu() {
+      if (A.playable) { start(A.playLevel); return; }   // jugable: nunca el menú, siempre el nivel
       g.state = 'menu'; M.stop(); g.mp = null; g.demoOn = false; g.hud();
       if (TV && !tvdef) {
         show(`<div class="mcol ml"><div class="logo"><div class="halo"></div><span class="mascot">${def.emoji}</span></div><h1 class="ttl">${def.title}</h1></div>
@@ -753,8 +765,8 @@
       show(`<div class="big">⏸️</div><h2>${T('Pausa', 'Paused')}</h2>
         <button class="b pri wide" data-act="resume">▶ ${T('Continuar', 'Resume')}</button>
         ${acts ? `<div class="row">${acts}</div>` : ''}
-        ${A.single ? '' : `<div class="row"><button class="b sm fav${isFav() ? ' on' : ''}" data-act="fav">${isFav() ? '❤️ ' + T('En favoritos', 'In favourites') : '🤍 ' + T('Añadir a favoritos', 'Add to favourites')}</button></div>`}
-        <div class="row">${g.mp ? '' : `<button class="b" data-act="restart">🔄 ${T('Reiniciar', 'Restart')}</button>`}<button class="b" data-act="menu">☰ ${g.mp ? T('Abandonar partida', 'Quit match') : T('Menú', 'Menu')}</button></div>
+        ${A.single || A.playable ? '' : `<div class="row"><button class="b sm fav${isFav() ? ' on' : ''}" data-act="fav">${isFav() ? '❤️ ' + T('En favoritos', 'In favourites') : '🤍 ' + T('Añadir a favoritos', 'Add to favourites')}</button></div>`}
+        <div class="row">${g.mp ? '' : `<button class="b" data-act="restart">🔄 ${T('Reiniciar', 'Restart')}</button>`}${A.playable ? '' : `<button class="b" data-act="menu">☰ ${g.mp ? T('Abandonar partida', 'Quit match') : T('Menú', 'Menu')}</button>`}</div>
         <div class="row">${toggles()}</div>
         ${TV ? `<div class="tvhelp">🎮 ${def.tvHelp || ''}</div>` : `<details class="howto"><summary>📖 ${T('Cómo se juega', 'How to play')}</summary><div class="help">${def.help}</div></details>`}`);
     }
@@ -1186,7 +1198,7 @@
     /* --- pad virtual (táctil): cruceta + OK en pantalla, opcional ---
        En juegos con cursor (tv.targets) mueve el cursor como el mando de la tele; si no, envía flechas y espacio a key(). */
     const padOK = !TV && !!rdef && (!!rdef.targets || !!def.key) && def.pad !== false;
-    let padOn = padOK && A.get('pad', true);   // por defecto visible si el juego puede usarla
+    let padOn = padOK && A.get('pad', !A.playable);   // por defecto visible si el juego puede usarla (en el intersticial jugable, oculta: quita sitio)
     const pad = el('div', 'vpad', '<div class="dpad">' + ['up', 'left', 'right', 'down'].map((d) => `<button data-k="Arrow${d[0].toUpperCase() + d.slice(1)}" class="${d}" aria-label="${d}">${{ up: '▲', down: '▼', left: '◀', right: '▶' }[d]}</button>`).join('') + '</div><button class="ok" data-k="OK" aria-label="OK">●</button>');
     document.body.appendChild(pad);
     function padKey(k, down) {
@@ -1311,6 +1323,14 @@
     if (padOn) setPad(true);
     g.s = {}; def.setup(g); def.layout && def.layout(g);
     g.hud(); menu();
+    if (A.embedded) {
+      addEventListener('message', (e) => {
+        const m = e.data; if (e.source !== window.parent || !m || typeof m.bannergames !== 'string') return;
+        if (m.bannergames === 'retry') { hide(); start(A.playLevel); }
+        else if (m.bannergames === 'pause') pause();
+      });
+      A.bgPost({ bannergames: 'ready', id: def.id, levels: hasLevels && !infinite ? def.levels : 0 });
+    }
     if (SHOT) {   // captura: demo sin rótulos ni mandos, avanzando el tiempo a mano (en headless no corre requestAnimationFrame)
       A.muted = true; A.musicOn = false; if (padOn) setPad(false); hud.style.display = "none"; ov.style.display = "none";
       setTimeout(() => { hide(); startDemo(); let n = 0; const ff = () => { for (let i = 0; i < 12; i++) step(1 / 60); if (++n < (+(/[?&]t=(\d+)/.exec(location.search) || [0, 6])[1]) * 5) setTimeout(ff, 0); else document.title = "SHOT_READY"; }; ff(); }, 30);

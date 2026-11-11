@@ -1,0 +1,72 @@
+{
+    "type": "playable",
+    "game": "teeter",
+    "emoji": "⚖️",
+    "levels": 80,
+    "level": 1,
+    "url": {
+        "es": "https://juegosboom.com/teeter",
+        "en": "https://juegosboom.com/teeter/en"
+    },
+    "play": {
+        "es": "https://juegosboom.com/teeter?playable=1",
+        "en": "https://juegosboom.com/teeter/en?playable=1"
+    },
+    "delay": 3,
+    "every_hours": 12,
+    "closed_hours": 24,
+    "hint_seconds": 7,
+    "colors": {
+        "bg1": "#45304a",
+        "bg2": "#2d1e2f",
+        "accent": "#da77f2",
+        "cta": "#ffd43b",
+        "ctaText": "#2b1a0e"
+    },
+    "texts": {
+        "es": {
+            "brand": "⚖️ Teeter",
+            "loading": "Cargando el juego…",
+            "hint": "👉 Mantén la mitad izquierda de la pantalla para subir el extremo izquierdo de la barra y la mitad derecha…",
+            "cta": "Juega los 80 niveles gratis ▶",
+            "later": "Seguir leyendo",
+            "winTitle": "¡Nivel superado!",
+            "winSub": "¿Te ha gustado? Te quedan {n} niveles más esperándote.",
+            "winSubEnd": "¿Te ha gustado? Hay muchos más juegos gratis.",
+            "overTitle": "¡Casi!",
+            "recordTitle": "¡Buena partida!",
+            "overSub": "¿Lo intentas otra vez o juegas al juego entero?",
+            "overSubScore": "Has hecho {n} puntos. ¿Superas tu récord en el juego completo?",
+            "again": "🔄 Otra vez",
+            "mini": "Teeter",
+            "miniPaused": "⏸ En pausa · ¡sigue jugando!",
+            "miniEnd": "¡Juega al juego entero!",
+            "bar": "⚖️ ¿Superas un nivel de Teeter?",
+            "barCta": "Jugar",
+            "close": "Cerrar",
+            "expand": "Ampliar"
+        },
+        "en": {
+            "brand": "⚖️ Teeter",
+            "loading": "Loading the game…",
+            "hint": "👉 Hold the left half of the screen to lift the left end of the bar and the right half to lift the right end.",
+            "cta": "Play all 80 levels free ▶",
+            "later": "Keep reading",
+            "winTitle": "Level cleared!",
+            "winSub": "Did you like it? {n} more levels are waiting for you.",
+            "winSubEnd": "Did you like it? There are plenty more free games.",
+            "overTitle": "So close!",
+            "recordTitle": "Nice game!",
+            "overSub": "Try again, or play the full game?",
+            "overSubScore": "You scored {n} points. Can you beat it in the full game?",
+            "again": "🔄 Again",
+            "mini": "Teeter",
+            "miniPaused": "⏸ Paused · keep playing!",
+            "miniEnd": "Play the full game!",
+            "bar": "⚖️ Can you clear a level of Teeter?",
+            "barCta": "Play",
+            "close": "Close",
+            "expand": "Expand"
+        }
+    }
+}

@@ -1,0 +1,72 @@
+{
+    "type": "playable",
+    "game": "resorte",
+    "emoji": "😀",
+    "levels": 80,
+    "level": 1,
+    "url": {
+        "es": "https://juegosboom.com/resorte",
+        "en": "https://juegosboom.com/resorte/en"
+    },
+    "play": {
+        "es": "https://juegosboom.com/resorte?playable=1",
+        "en": "https://juegosboom.com/resorte/en?playable=1"
+    },
+    "delay": 3,
+    "every_hours": 12,
+    "closed_hours": 24,
+    "hint_seconds": 7,
+    "colors": {
+        "bg1": "#ffe8cc",
+        "bg2": "#ffd8a8",
+        "accent": "#ff922b",
+        "cta": "#ffd43b",
+        "ctaText": "#2b1a0e"
+    },
+    "texts": {
+        "es": {
+            "brand": "😀 Resorte",
+            "loading": "Cargando el juego…",
+            "hint": "👉 Mantén el dedo para comprimir el muelle: cuanto más tiempo, más lejos saltas.",
+            "cta": "Juega los 80 niveles gratis ▶",
+            "later": "Seguir leyendo",
+            "winTitle": "¡Nivel superado!",
+            "winSub": "¿Te ha gustado? Te quedan {n} niveles más esperándote.",
+            "winSubEnd": "¿Te ha gustado? Hay muchos más juegos gratis.",
+            "overTitle": "¡Casi!",
+            "recordTitle": "¡Buena partida!",
+            "overSub": "¿Lo intentas otra vez o juegas al juego entero?",
+            "overSubScore": "Has hecho {n} puntos. ¿Superas tu récord en el juego completo?",
+            "again": "🔄 Otra vez",
+            "mini": "Resorte",
+            "miniPaused": "⏸ En pausa · ¡sigue jugando!",
+            "miniEnd": "¡Juega al juego entero!",
+            "bar": "😀 ¿Superas un nivel de Resorte?",
+            "barCta": "Jugar",
+            "close": "Cerrar",
+            "expand": "Ampliar"
+        },
+        "en": {
+            "brand": "😀 Spring",
+            "loading": "Loading the game…",
+            "hint": "👉 Hold your finger to compress the spring: the longer you hold, the further you jump.",
+            "cta": "Play all 80 levels free ▶",
+            "later": "Keep reading",
+            "winTitle": "Level cleared!",
+            "winSub": "Did you like it? {n} more levels are waiting for you.",
+            "winSubEnd": "Did you like it? There are plenty more free games.",
+            "overTitle": "So close!",
+            "recordTitle": "Nice game!",
+            "overSub": "Try again, or play the full game?",
+            "overSubScore": "You scored {n} points. Can you beat it in the full game?",
+            "again": "🔄 Again",
+            "mini": "Spring",
+            "miniPaused": "⏸ Paused · keep playing!",
+            "miniEnd": "Play the full game!",
+            "bar": "😀 Can you clear a level of Spring?",
+            "barCta": "Play",
+            "close": "Close",
+            "expand": "Expand"
+        }
+    }
+}

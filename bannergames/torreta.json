@@ -1,0 +1,72 @@
+{
+    "type": "playable",
+    "game": "torreta",
+    "emoji": "🎯",
+    "levels": 100,
+    "level": 1,
+    "url": {
+        "es": "https://juegosboom.com/torreta",
+        "en": "https://juegosboom.com/torreta/en"
+    },
+    "play": {
+        "es": "https://juegosboom.com/torreta?playable=1",
+        "en": "https://juegosboom.com/torreta/en?playable=1"
+    },
+    "delay": 3,
+    "every_hours": 12,
+    "closed_hours": 24,
+    "hint_seconds": 7,
+    "colors": {
+        "bg1": "#2b2b2b",
+        "bg2": "#1b1b1b",
+        "accent": "#fa5252",
+        "cta": "#ffd43b",
+        "ctaText": "#2b1a0e"
+    },
+    "texts": {
+        "es": {
+            "brand": "🎯 Torreta",
+            "loading": "Cargando el juego…",
+            "hint": "👉 Tu cañón del centro gira sin parar.",
+            "cta": "Juega los 100 niveles gratis ▶",
+            "later": "Seguir leyendo",
+            "winTitle": "¡Nivel superado!",
+            "winSub": "¿Te ha gustado? Te quedan {n} niveles más esperándote.",
+            "winSubEnd": "¿Te ha gustado? Hay muchos más juegos gratis.",
+            "overTitle": "¡Casi!",
+            "recordTitle": "¡Buena partida!",
+            "overSub": "¿Lo intentas otra vez o juegas al juego entero?",
+            "overSubScore": "Has hecho {n} puntos. ¿Superas tu récord en el juego completo?",
+            "again": "🔄 Otra vez",
+            "mini": "Torreta",
+            "miniPaused": "⏸ En pausa · ¡sigue jugando!",
+            "miniEnd": "¡Juega al juego entero!",
+            "bar": "🎯 ¿Superas un nivel de Torreta?",
+            "barCta": "Jugar",
+            "close": "Cerrar",
+            "expand": "Ampliar"
+        },
+        "en": {
+            "brand": "🎯 Turret",
+            "loading": "Loading the game…",
+            "hint": "👉 Your cannon in the middle spins non-stop.",
+            "cta": "Play all 100 levels free ▶",
+            "later": "Keep reading",
+            "winTitle": "Level cleared!",
+            "winSub": "Did you like it? {n} more levels are waiting for you.",
+            "winSubEnd": "Did you like it? There are plenty more free games.",
+            "overTitle": "So close!",
+            "recordTitle": "Nice game!",
+            "overSub": "Try again, or play the full game?",
+            "overSubScore": "You scored {n} points. Can you beat it in the full game?",
+            "again": "🔄 Again",
+            "mini": "Turret",
+            "miniPaused": "⏸ Paused · keep playing!",
+            "miniEnd": "Play the full game!",
+            "bar": "🎯 Can you clear a level of Turret?",
+            "barCta": "Play",
+            "close": "Close",
+            "expand": "Expand"
+        }
+    }
+}

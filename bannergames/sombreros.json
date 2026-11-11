@@ -1,0 +1,72 @@
+{
+    "type": "playable",
+    "game": "sombreros",
+    "emoji": "🎩",
+    "levels": 0,
+    "level": 1,
+    "url": {
+        "es": "https://juegosboom.com/sombreros",
+        "en": "https://juegosboom.com/sombreros/en"
+    },
+    "play": {
+        "es": "https://juegosboom.com/sombreros?playable=1",
+        "en": "https://juegosboom.com/sombreros/en?playable=1"
+    },
+    "delay": 3,
+    "every_hours": 12,
+    "closed_hours": 24,
+    "hint_seconds": 7,
+    "colors": {
+        "bg1": "#4a2f1d",
+        "bg2": "#1d120b",
+        "accent": "#e8a87c",
+        "cta": "#ffd43b",
+        "ctaText": "#2b1a0e"
+    },
+    "texts": {
+        "es": {
+            "brand": "🎩 Sombreros",
+            "loading": "Cargando el juego…",
+            "hint": "👉 Caen sombreros de dos en dos sobre seis cabezas.",
+            "cta": "Juega gratis ▶",
+            "later": "Seguir leyendo",
+            "winTitle": "¡Nivel superado!",
+            "winSub": "¿Te ha gustado? Te quedan {n} niveles más esperándote.",
+            "winSubEnd": "¿Te ha gustado? Hay muchos más juegos gratis.",
+            "overTitle": "¡Casi!",
+            "recordTitle": "¡Buena partida!",
+            "overSub": "¿Lo intentas otra vez o juegas al juego entero?",
+            "overSubScore": "Has hecho {n} puntos. ¿Superas tu récord en el juego completo?",
+            "again": "🔄 Otra vez",
+            "mini": "Sombreros",
+            "miniPaused": "⏸ En pausa · ¡sigue jugando!",
+            "miniEnd": "¡Juega al juego entero!",
+            "bar": "🎩 ¿Cuántos puntos haces en Sombreros?",
+            "barCta": "Jugar",
+            "close": "Cerrar",
+            "expand": "Ampliar"
+        },
+        "en": {
+            "brand": "🎩 Hats",
+            "loading": "Loading the game…",
+            "hint": "👉 Hats fall two by two onto six heads.",
+            "cta": "Play free ▶",
+            "later": "Keep reading",
+            "winTitle": "Level cleared!",
+            "winSub": "Did you like it? {n} more levels are waiting for you.",
+            "winSubEnd": "Did you like it? There are plenty more free games.",
+            "overTitle": "So close!",
+            "recordTitle": "Nice game!",
+            "overSub": "Try again, or play the full game?",
+            "overSubScore": "You scored {n} points. Can you beat it in the full game?",
+            "again": "🔄 Again",
+            "mini": "Hats",
+            "miniPaused": "⏸ Paused · keep playing!",
+            "miniEnd": "Play the full game!",
+            "bar": "🎩 How many points can you score in Hats?",
+            "barCta": "Play",
+            "close": "Close",
+            "expand": "Expand"
+        }
+    }
+}

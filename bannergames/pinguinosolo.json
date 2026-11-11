@@ -1,0 +1,72 @@
+{
+    "type": "playable",
+    "game": "pinguinosolo",
+    "emoji": "🐧",
+    "levels": 80,
+    "level": 1,
+    "url": {
+        "es": "https://juegosboom.com/pinguinosolo",
+        "en": "https://juegosboom.com/pinguinosolo/en"
+    },
+    "play": {
+        "es": "https://juegosboom.com/pinguinosolo?playable=1",
+        "en": "https://juegosboom.com/pinguinosolo/en?playable=1"
+    },
+    "delay": 3,
+    "every_hours": 12,
+    "closed_hours": 24,
+    "hint_seconds": 7,
+    "colors": {
+        "bg1": "#1971c2",
+        "bg2": "#062a52",
+        "accent": "#d0ebff",
+        "cta": "#ffd43b",
+        "ctaText": "#2b1a0e"
+    },
+    "texts": {
+        "es": {
+            "brand": "🐧 Pingüino de cartas",
+            "loading": "Cargando el juego…",
+            "hint": "👉 La primera carta, el pico, decide la partida: las bases empiezan en su número y suben por palo, dando la…",
+            "cta": "Juega los 80 niveles gratis ▶",
+            "later": "Seguir leyendo",
+            "winTitle": "¡Nivel superado!",
+            "winSub": "¿Te ha gustado? Te quedan {n} niveles más esperándote.",
+            "winSubEnd": "¿Te ha gustado? Hay muchos más juegos gratis.",
+            "overTitle": "¡Casi!",
+            "recordTitle": "¡Buena partida!",
+            "overSub": "¿Lo intentas otra vez o juegas al juego entero?",
+            "overSubScore": "Has hecho {n} puntos. ¿Superas tu récord en el juego completo?",
+            "again": "🔄 Otra vez",
+            "mini": "Pingüino de cartas",
+            "miniPaused": "⏸ En pausa · ¡sigue jugando!",
+            "miniEnd": "¡Juega al juego entero!",
+            "bar": "🐧 ¿Superas un nivel de Pingüino de cartas?",
+            "barCta": "Jugar",
+            "close": "Cerrar",
+            "expand": "Ampliar"
+        },
+        "en": {
+            "brand": "🐧 Penguin Solitaire",
+            "loading": "Loading the game…",
+            "hint": "👉 The first card, the beak, decides the game: the foundations start at its rank and go up by suit, wrapping…",
+            "cta": "Play all 80 levels free ▶",
+            "later": "Keep reading",
+            "winTitle": "Level cleared!",
+            "winSub": "Did you like it? {n} more levels are waiting for you.",
+            "winSubEnd": "Did you like it? There are plenty more free games.",
+            "overTitle": "So close!",
+            "recordTitle": "Nice game!",
+            "overSub": "Try again, or play the full game?",
+            "overSubScore": "You scored {n} points. Can you beat it in the full game?",
+            "again": "🔄 Again",
+            "mini": "Penguin Solitaire",
+            "miniPaused": "⏸ Paused · keep playing!",
+            "miniEnd": "Play the full game!",
+            "bar": "🐧 Can you clear a level of Penguin Solitaire?",
+            "barCta": "Play",
+            "close": "Close",
+            "expand": "Expand"
+        }
+    }
+}

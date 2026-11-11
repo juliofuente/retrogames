@@ -14,6 +14,10 @@
  * Con la ✕ de la ventanita o de la barra se quita del todo durante unas horas. Para probar: añade ?bgreset=1 a la
  * dirección de la página y se olvida lo que recuerda (frecuencia y cierres).
  * Va dentro de un Shadow DOM: no le afectan los estilos de la web ni los cambia.
+ *
+ * Perfiles «playable» (los juegos que no caben en un reto animado): el intersticial lleva el juego de verdad en un
+ * iframe (<juego>?playable=1), empieza directamente en un nivel y, al superarlo o perder, sale el botón para jugar al
+ * juego entero. Minimizado no se juega: en ordenador queda una ventanita con el juego en pausa y su botón; en móvil, la barra.
  */
 (function () {
   'use strict';
@@ -46,8 +50,10 @@
     const L_ = D.texts[LANG] && (!D.items || D.items[LANG]) ? LANG : D.items ? Object.keys(D.items)[0] : D.texts.es ? 'es' : Object.keys(D.texts)[0];
     const T = D.texts[L_]; D.lang = L_;
     const C = Object.assign({ bg1: '#4a2c17', bg2: '#1f130a', accent: '#ff922b', cta: '#ffd43b', ctaText: '#2b1a0e' }, D.colors || {});
+    const pick = (v) => (v && typeof v === 'object' ? v[L_] || v[Object.keys(v)[0]] : v);   // url y play pueden ir por idioma
+    D.url = pick(D.url); D.play = pick(D.play);
     const URL_ = (() => { try { const u = new URL(D.url, location.href); if (!u.searchParams.has('utm_source')) { u.searchParams.set('utm_source', location.hostname || 'web'); u.searchParams.set('utm_medium', 'bannergames'); u.searchParams.set('utm_campaign', profile); } return u.href; } catch (e) { return D.url; } })();
-    const scene = SCENES[D.type] ? SCENES[D.type](D, T, C) : null;
+    const scene = SCENES[D.type] ? SCENES[D.type](D, T, C, URL_) : null;
     if (!scene) return console.warn('bannergames: tipo desconocido ' + D.type);
     const ui = buildUI(T, C, URL_, scene);
     const recently = now - get('seen') < (D.every_hours || 12) * H;
@@ -94,6 +100,21 @@
       .bar .cta{height:42px;padding:0 18px;font-size:16px;border-radius:12px;flex:none}
       .bar .x{width:30px;height:30px;line-height:30px;font-size:14px;flex:none}
       @keyframes pop{from{transform:scale(.8);opacity:0}}@keyframes up{from{transform:translateY(120%)}}
+      .card.play{width:min(460px,100%);height:min(860px,calc(100vh - 32px));height:min(860px,calc(100dvh - 32px))}
+      .card.play .top{padding:8px 8px 8px 16px}.card.play .cv{cursor:default;background:#000}
+      .card.play .foot{padding:10px 14px 12px;gap:4px}.card.play .foot .cta{height:50px;font-size:18px}
+      @media (max-width:767px){.ov.play{padding:0}.card.play{width:100%;height:100%;border-radius:0}}
+      .pw{position:absolute;inset:0}.pw iframe{position:absolute;inset:0;width:100%;height:100%;border:0;display:block;background:#000}
+      .ld{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:#fff3d6;font-weight:800;font-size:16px;background:linear-gradient(${C.bg1},${C.bg2});transition:opacity .4s}
+      .ld b{font-size:64px;animation:bob 1s ease-in-out infinite alternate}.ld.gone{opacity:0;pointer-events:none}
+      .hint{position:absolute;left:10px;right:10px;top:10px;padding:9px 12px;border-radius:12px;background:rgba(0,0,0,.72);color:#fff;font-size:14px;font-weight:700;line-height:1.3;text-align:center;pointer-events:none;transition:opacity .6s,transform .6s}
+      .hint.gone{opacity:0;transform:translateY(-10px)}
+      .pc{position:absolute;inset:0;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(0,0,0,.55);backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px)}
+      .pc.on{display:flex;animation:fade .3s}
+      .pcc{width:100%;max-width:340px;padding:22px 18px 16px;border-radius:20px;text-align:center;background:linear-gradient(${C.bg1},${C.bg2});box-shadow:0 16px 50px rgba(0,0,0,.5),0 0 0 1px rgba(255,255,255,.12);animation:pop .35s cubic-bezier(.2,1.4,.4,1)}
+      .pcc .em{font-size:58px;line-height:1}.pcc h3{margin:8px 0 4px;color:#fff;font-size:24px;font-weight:900}.pcc p{margin:0 0 14px;color:#f0e2c8;font-size:15px;line-height:1.35}
+      .pcc .cta{height:54px;font-size:19px}.pcc .later{margin-top:6px}
+      @keyframes bob{to{transform:translateY(-10px)}}@keyframes fade{from{opacity:0}}
       @media (prefers-reduced-motion:reduce){.cta{animation:none}}
     </style>
     <div class="ov" role="dialog" aria-modal="true" aria-label="${esc(T.brand)}">
@@ -107,22 +128,25 @@
     (document.body || document.documentElement).appendChild(host);
     const $ = (s) => root.querySelector(s), ov = $('.ov'), mini = $('.mini'), bar = $('.bar');
     const canvas = document.createElement('canvas'); canvas.setAttribute('aria-hidden', 'true');
+    const live = scene.el || null;   // perfiles jugables: el juego (iframe) vive siempre en el intersticial; el canvas solo en la ventanita
+    if (live) { $('.card').classList.add('play'); ov.classList.add('play'); $('[data-slot="full"]').appendChild(live); }
     let mode = 'off', prevOverflow = null;
     const desktop = () => matchMedia('(min-width: 768px) and (hover: hover)').matches || innerWidth >= 1024;
     const place = (slot) => { const el = root.querySelector('[data-slot="' + slot + '"]'); if (el && canvas.parentNode !== el) el.appendChild(canvas); };
     const lock = (on) => { const s = document.documentElement.style; if (on) { if (prevOverflow === null) prevOverflow = s.overflow; s.overflow = 'hidden'; } else if (prevOverflow !== null) { s.overflow = prevOverflow; prevOverflow = null; } };
     function set(m) {
       mode = m; ov.classList.toggle('on', m === 'full'); mini.classList.toggle('on', m === 'mini'); bar.classList.toggle('on', m === 'bar');
-      if (m === 'full') { place('full'); requestAnimationFrame(() => ov.classList.add('vis')); lock(true); setTimeout(() => { const b = $('.ov .cta'); if (b) b.focus({ preventScroll: true }); }, 50); } else { ov.classList.remove('vis'); lock(false); }
+      if (m === 'full') { if (!live) place('full'); requestAnimationFrame(() => ov.classList.add('vis')); lock(true); setTimeout(() => { const b = $('.ov .cta'); if (b) b.focus({ preventScroll: true }); }, 50); } else { ov.classList.remove('vis'); lock(false); }
       if (m === 'mini') place('mini');
-      scene.run(m === 'full' || m === 'mini', canvas);
+      if (live) { scene.active(m === 'full'); scene.run(m === 'mini', canvas); } else scene.run(m === 'full' || m === 'mini', canvas);
     }
     const minimize = () => set(desktop() ? 'mini' : 'bar');
     root.addEventListener('click', (e) => {
       const a = e.target.closest('[data-a]'); if (e.target.closest('a')) return;   // los botones de jugar abren la web
       if (e.target === ov) return minimize();                                       // clic fuera de la tarjeta
-      if (e.target.closest('.cv')) return void window.open(URL_, '_blank', 'noopener');   // tocar el reto también lleva a jugar
+      if (!a && e.target.closest('.cv') && !(live && mode === 'full')) return void window.open(URL_, '_blank', 'noopener');   // tocar el reto también lleva a jugar
       if (!a) return;
+      if (a.dataset.a === 'retry') return scene.retry && scene.retry();
       if (a.dataset.a === 'min') minimize();
       else if (a.dataset.a === 'full') set('full');
       else if (a.dataset.a === 'close') { put('closed', Date.now()); set('off'); host.remove(); }
@@ -426,5 +450,68 @@
       ctx.restore();
     }
     return loop(draw);
+  };
+
+  // ----------------------------------------------------------------------
+  // PLAYABLE: el juego de verdad en un iframe; al superar el nivel (o perder), tarjeta con el botón de jugar.
+  // El juego (pwa/common.js con ?playable=1) avisa con postMessage {bannergames:'ready'|'win'|'over'}.
+  // ----------------------------------------------------------------------
+  SCENES.playable = function (D, T, C, URL_) {
+    const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    const el = document.createElement('div'); el.className = 'pw';
+    el.innerHTML = `<div class="ld"><b>${esc(D.emoji || '🎮')}</b><span>${esc(T.loading || '…')}</span></div>`
+      + (T.hint ? `<div class="hint gone">${esc(T.hint)}</div>` : '')
+      + `<div class="pc"><div class="pcc"><div class="em"></div><h3></h3><p></p><a class="cta" href="${esc(URL_)}" target="_blank" rel="noopener">${esc(T.cta)}</a><button class="later" data-a="retry">${esc(T.again)}</button></div></div>`;
+    const ld = el.querySelector('.ld'), hint = el.querySelector('.hint'), pc = el.querySelector('.pc');
+    let ifr = null, ready = false, ended = false, hintT = 0;
+    const src = (() => { try { const u = new URL(D.play, BASE);
+      if (/^(localhost|127\.0\.0\.1)$/.test(new URL(BASE).hostname)) { const b = new URL(BASE); u.protocol = b.protocol; u.host = b.host; }   /* pruebas en local */
+      u.searchParams.set('playable', '1'); if (D.level > 1) u.searchParams.set('lv', D.level); return u.href; } catch (e) { return D.play; } })();
+    const post = (m) => { try { ifr && ifr.contentWindow.postMessage({ bannergames: m }, '*'); } catch (e) { /* nada */ } };
+    const fill = (k, n) => String(T[k] || '').replace('{n}', n);
+    const noHint = () => { if (hint) hint.classList.add('gone'); clearTimeout(hintT); };
+    addEventListener('blur', () => setTimeout(() => { if (ifr && document.activeElement === host()) noHint(); }, 0));   // al tocar el juego (el foco pasa al iframe) se quita el aviso
+    const host = () => el.getRootNode().host || null;
+    function card(kind, m) {
+      ended = true; noHint();
+      const left = D.levels > 1 ? D.levels - (m.level || 1) : 0;
+      pc.querySelector('.em').textContent = kind === 'win' ? '🎉' : m.record ? '🏆' : '😅';
+      pc.querySelector('h3').textContent = kind === 'win' ? T.winTitle : m.record ? T.recordTitle : T.overTitle;
+      pc.querySelector('p').textContent = kind === 'win' ? (left > 0 ? fill('winSub', left) : T.winSubEnd) : D.levels > 1 ? T.overSub : fill('overSubScore', m.score || 0);
+      pc.classList.add('on');
+      setTimeout(() => { const b = pc.querySelector('.cta'); if (b) b.focus({ preventScroll: true }); }, 60);
+    }
+    addEventListener('message', (e) => {
+      const m = e.data; if (!ifr || e.source !== ifr.contentWindow || !m || typeof m.bannergames !== 'string') return;
+      if (m.bannergames === 'ready') {
+        ready = true; ld.classList.add('gone');
+        if (hint) { hint.classList.remove('gone'); clearTimeout(hintT); hintT = setTimeout(() => hint.classList.add('gone'), (D.hint_seconds || 7) * 1000); }
+      } else if (m.bannergames === 'win') setTimeout(() => card('win', m), 1300);   // primero el confeti del juego
+      else if (m.bannergames === 'over') setTimeout(() => card('over', m), 900);
+    });
+    // ventanita (ordenador): el juego en pausa, con su emoji botando
+    const poster = loop((ctx, W, H, dt) => {
+      poster.t = (poster.t || 0) + dt; const t = poster.t;
+      const g = ctx.createLinearGradient(0, 0, 0, H); g.addColorStop(0, C.bg1); g.addColorStop(1, C.bg2); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+      const sz = Math.min(W, H) * 0.42, y = H * 0.42 - Math.abs(Math.sin(t * 2.6)) * H * 0.08;
+      ctx.save(); ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.beginPath(); ctx.ellipse(W / 2, H * 0.42 + sz * 0.45, sz * 0.32 * (1 - Math.abs(Math.sin(t * 2.6)) * 0.3), sz * 0.07, 0, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+      text(ctx, D.emoji || '🎮', W / 2, y, sz, '#fff', { w: 400 });
+      text(ctx, ended ? T.miniEnd || T.mini : ready ? T.miniPaused || T.mini : T.mini, W / 2, H * 0.84, Math.min(20, W * 0.065), '#fff3d6', { mw: W * 0.9 });
+    });
+    return {
+      el,
+      run: poster.run,
+      active(on) {
+        if (on && !ifr) {
+          ifr = document.createElement('iframe'); ifr.src = src; ifr.title = T.brand || 'game';
+          ifr.setAttribute('allow', 'autoplay; fullscreen; gamepad'); ifr.setAttribute('loading', 'eager');
+          ifr.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
+          el.insertBefore(ifr, el.firstChild);
+          setTimeout(() => ld.classList.add('gone'), 12000);   // por si el juego no avisa
+        } else if (!on && ifr && ready && !ended) post('pause');
+        if (on && ifr) setTimeout(() => { try { ifr.focus(); } catch (e) { /* nada */ } }, 80);
+      },
+      retry() { pc.classList.remove('on'); ended = false; post('retry'); try { ifr.focus(); } catch (e) { /* nada */ } },
+    };
   };
 })();

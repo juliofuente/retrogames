@@ -1,0 +1,72 @@
+{
+    "type": "playable",
+    "game": "relojes",
+    "emoji": "⏰",
+    "levels": 100,
+    "level": 1,
+    "url": {
+        "es": "https://juegosboom.com/relojes",
+        "en": "https://juegosboom.com/relojes/en"
+    },
+    "play": {
+        "es": "https://juegosboom.com/relojes?playable=1",
+        "en": "https://juegosboom.com/relojes/en?playable=1"
+    },
+    "delay": 3,
+    "every_hours": 12,
+    "closed_hours": 24,
+    "hint_seconds": 7,
+    "colors": {
+        "bg1": "#4a3a2a",
+        "bg2": "#2b2118",
+        "accent": "#ffd43b",
+        "cta": "#ffd43b",
+        "ctaText": "#2b1a0e"
+    },
+    "texts": {
+        "es": {
+            "brand": "⏰ Relojes",
+            "loading": "Cargando el juego…",
+            "hint": "👉 Las agujas de cada reloj giran sin parar.",
+            "cta": "Juega los 100 niveles gratis ▶",
+            "later": "Seguir leyendo",
+            "winTitle": "¡Nivel superado!",
+            "winSub": "¿Te ha gustado? Te quedan {n} niveles más esperándote.",
+            "winSubEnd": "¿Te ha gustado? Hay muchos más juegos gratis.",
+            "overTitle": "¡Casi!",
+            "recordTitle": "¡Buena partida!",
+            "overSub": "¿Lo intentas otra vez o juegas al juego entero?",
+            "overSubScore": "Has hecho {n} puntos. ¿Superas tu récord en el juego completo?",
+            "again": "🔄 Otra vez",
+            "mini": "Relojes",
+            "miniPaused": "⏸ En pausa · ¡sigue jugando!",
+            "miniEnd": "¡Juega al juego entero!",
+            "bar": "⏰ ¿Superas un nivel de Relojes?",
+            "barCta": "Jugar",
+            "close": "Cerrar",
+            "expand": "Ampliar"
+        },
+        "en": {
+            "brand": "⏰ Clocks",
+            "loading": "Loading the game…",
+            "hint": "👉 The hands of every clock spin non-stop.",
+            "cta": "Play all 100 levels free ▶",
+            "later": "Keep reading",
+            "winTitle": "Level cleared!",
+            "winSub": "Did you like it? {n} more levels are waiting for you.",
+            "winSubEnd": "Did you like it? There are plenty more free games.",
+            "overTitle": "So close!",
+            "recordTitle": "Nice game!",
+            "overSub": "Try again, or play the full game?",
+            "overSubScore": "You scored {n} points. Can you beat it in the full game?",
+            "again": "🔄 Again",
+            "mini": "Clocks",
+            "miniPaused": "⏸ Paused · keep playing!",
+            "miniEnd": "Play the full game!",
+            "bar": "⏰ Can you clear a level of Clocks?",
+            "barCta": "Play",
+            "close": "Close",
+            "expand": "Expand"
+        }
+    }
+}

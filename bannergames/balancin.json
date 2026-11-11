@@ -1,0 +1,72 @@
+{
+    "type": "playable",
+    "game": "balancin",
+    "emoji": "🤡",
+    "levels": 0,
+    "level": 1,
+    "url": {
+        "es": "https://juegosboom.com/balancin",
+        "en": "https://juegosboom.com/balancin/en"
+    },
+    "play": {
+        "es": "https://juegosboom.com/balancin?playable=1",
+        "en": "https://juegosboom.com/balancin/en?playable=1"
+    },
+    "delay": 3,
+    "every_hours": 12,
+    "closed_hours": 24,
+    "hint_seconds": 7,
+    "colors": {
+        "bg1": "#7a1a47",
+        "bg2": "#3d0c2b",
+        "accent": "#ff8fab",
+        "cta": "#ffd43b",
+        "ctaText": "#2b1a0e"
+    },
+    "texts": {
+        "es": {
+            "brand": "🤡 Balancín",
+            "loading": "Cargando el juego…",
+            "hint": "👉 Arrastra el dedo para mover el balancín.",
+            "cta": "Juega gratis ▶",
+            "later": "Seguir leyendo",
+            "winTitle": "¡Nivel superado!",
+            "winSub": "¿Te ha gustado? Te quedan {n} niveles más esperándote.",
+            "winSubEnd": "¿Te ha gustado? Hay muchos más juegos gratis.",
+            "overTitle": "¡Casi!",
+            "recordTitle": "¡Buena partida!",
+            "overSub": "¿Lo intentas otra vez o juegas al juego entero?",
+            "overSubScore": "Has hecho {n} puntos. ¿Superas tu récord en el juego completo?",
+            "again": "🔄 Otra vez",
+            "mini": "Balancín",
+            "miniPaused": "⏸ En pausa · ¡sigue jugando!",
+            "miniEnd": "¡Juega al juego entero!",
+            "bar": "🤡 ¿Cuántos puntos haces en Balancín?",
+            "barCta": "Jugar",
+            "close": "Cerrar",
+            "expand": "Ampliar"
+        },
+        "en": {
+            "brand": "🤡 Seesaw",
+            "loading": "Loading the game…",
+            "hint": "👉 Drag your finger to move the seesaw.",
+            "cta": "Play free ▶",
+            "later": "Keep reading",
+            "winTitle": "Level cleared!",
+            "winSub": "Did you like it? {n} more levels are waiting for you.",
+            "winSubEnd": "Did you like it? There are plenty more free games.",
+            "overTitle": "So close!",
+            "recordTitle": "Nice game!",
+            "overSub": "Try again, or play the full game?",
+            "overSubScore": "You scored {n} points. Can you beat it in the full game?",
+            "again": "🔄 Again",
+            "mini": "Seesaw",
+            "miniPaused": "⏸ Paused · keep playing!",
+            "miniEnd": "Play the full game!",
+            "bar": "🤡 How many points can you score in Seesaw?",
+            "barCta": "Play",
+            "close": "Close",
+            "expand": "Expand"
+        }
+    }
+}

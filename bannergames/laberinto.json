@@ -1,0 +1,72 @@
+{
+    "type": "playable",
+    "game": "laberinto",
+    "emoji": "🐭",
+    "levels": 120,
+    "level": 1,
+    "url": {
+        "es": "https://juegosboom.com/laberinto",
+        "en": "https://juegosboom.com/laberinto/en"
+    },
+    "play": {
+        "es": "https://juegosboom.com/laberinto?playable=1",
+        "en": "https://juegosboom.com/laberinto/en?playable=1"
+    },
+    "delay": 3,
+    "every_hours": 12,
+    "closed_hours": 24,
+    "hint_seconds": 7,
+    "colors": {
+        "bg1": "#45306b",
+        "bg2": "#2b1d3f",
+        "accent": "#da77f2",
+        "cta": "#ffd43b",
+        "ctaText": "#2b1a0e"
+    },
+    "texts": {
+        "es": {
+            "brand": "🐭 Laberinto",
+            "loading": "Cargando el juego…",
+            "hint": "👉 Arrastra el dedo en cualquier sitio: el animalito anda en esa dirección y se desliza por las paredes.",
+            "cta": "Juega los 120 niveles gratis ▶",
+            "later": "Seguir leyendo",
+            "winTitle": "¡Nivel superado!",
+            "winSub": "¿Te ha gustado? Te quedan {n} niveles más esperándote.",
+            "winSubEnd": "¿Te ha gustado? Hay muchos más juegos gratis.",
+            "overTitle": "¡Casi!",
+            "recordTitle": "¡Buena partida!",
+            "overSub": "¿Lo intentas otra vez o juegas al juego entero?",
+            "overSubScore": "Has hecho {n} puntos. ¿Superas tu récord en el juego completo?",
+            "again": "🔄 Otra vez",
+            "mini": "Laberinto",
+            "miniPaused": "⏸ En pausa · ¡sigue jugando!",
+            "miniEnd": "¡Juega al juego entero!",
+            "bar": "🐭 ¿Superas un nivel de Laberinto?",
+            "barCta": "Jugar",
+            "close": "Cerrar",
+            "expand": "Ampliar"
+        },
+        "en": {
+            "brand": "🐭 Maze",
+            "loading": "Loading the game…",
+            "hint": "👉 Drag your finger anywhere: the little animal walks in that direction and slides along the walls.",
+            "cta": "Play all 120 levels free ▶",
+            "later": "Keep reading",
+            "winTitle": "Level cleared!",
+            "winSub": "Did you like it? {n} more levels are waiting for you.",
+            "winSubEnd": "Did you like it? There are plenty more free games.",
+            "overTitle": "So close!",
+            "recordTitle": "Nice game!",
+            "overSub": "Try again, or play the full game?",
+            "overSubScore": "You scored {n} points. Can you beat it in the full game?",
+            "again": "🔄 Again",
+            "mini": "Maze",
+            "miniPaused": "⏸ Paused · keep playing!",
+            "miniEnd": "Play the full game!",
+            "bar": "🐭 Can you clear a level of Maze?",
+            "barCta": "Play",
+            "close": "Close",
+            "expand": "Expand"
+        }
+    }
+}

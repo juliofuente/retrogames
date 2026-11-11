@@ -50,5 +50,21 @@ Perfiles de preguntas (type: quiz): los retos de los vídeos educativos, cada un
   necesita Node y Playwright). Conserva lo que hayas cambiado a mano y solo reemplaza las preguntas.
   En la demo: demo.html?profile=policubos (o cualquier otro) &lang=en.
 
+Perfiles jugables (type: playable): los 340 juegos del catálogo (menos los educativos), uno por juego: <id>.json
+  <script src="https://juegosboom.com/bannergames/bannergames.js?profile=atasco&lang=es" async></script>
+  El intersticial lleva el juego de verdad (https://juegosboom.com/<id>?playable=1 en un iframe): empieza directamente
+  en el nivel 1, sin menú ni anuncios, con un aviso corto de cómo se juega. Al superar el nivel (o al perder) sale una
+  tarjeta «¡Nivel superado! Te quedan N niveles» con el botón al juego entero y «Otra vez». En los juegos por récord
+  (sin niveles) la tarjeta sale al perder, con los puntos. Minimizado: en ordenador, ventanita con el juego en pausa y
+  el botón; en móvil, la barra de abajo. El juego solo se carga cuando se abre el intersticial.
+  Se llaman como el juego salvo cerillas, balanza y calculo, que ya tienen su perfil animado: cerillas-jugable,
+  balanza-jugable, calculo-jugable. La lista completa está en playable.txt.
+  En el .json: game, emoji, levels, level (el nivel que se juega), url (botón, por idioma), play (lo que va en el
+  iframe, por idioma), delay, every_hours, closed_hours, hint_seconds, colors (del juego) y texts.
+  Se generan desde el catálogo: php herramientas/bannergames_playable.php (conserva lo que hayas cambiado a mano;
+  para regenerar un texto, bórralo del .json).
+  Para que funcione hay que subir también index.php, .htaccess (deja meter en un iframe solo las páginas con
+  ?playable=1) y pwa/ (common.js y las páginas de los juegos).
+
 Subir a la web: la carpeta bannergames/ entera (con su .htaccess, que permite cargar el .js y el .json desde otras webs).
 Otros juegos: se añade una escena en bannergames.js (SCENES.<tipo>) y su .json.

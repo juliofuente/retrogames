@@ -1,0 +1,72 @@
+{
+    "type": "playable",
+    "game": "emojidoku",
+    "emoji": "🧩",
+    "levels": 120,
+    "level": 1,
+    "url": {
+        "es": "https://juegosboom.com/emojidoku",
+        "en": "https://juegosboom.com/emojidoku/en"
+    },
+    "play": {
+        "es": "https://juegosboom.com/emojidoku?playable=1",
+        "en": "https://juegosboom.com/emojidoku/en?playable=1"
+    },
+    "delay": 3,
+    "every_hours": 12,
+    "closed_hours": 24,
+    "hint_seconds": 7,
+    "colors": {
+        "bg1": "#3a3266",
+        "bg2": "#1f1a36",
+        "accent": "#9775fa",
+        "cta": "#ffd43b",
+        "ctaText": "#2b1a0e"
+    },
+    "texts": {
+        "es": {
+            "brand": "🧩 Emojidoku",
+            "loading": "Cargando el juego…",
+            "hint": "👉 Rellena la cuadrícula para que cada fila, columna y caja tenga todos los emojis una sola vez.",
+            "cta": "Juega los 120 niveles gratis ▶",
+            "later": "Seguir leyendo",
+            "winTitle": "¡Nivel superado!",
+            "winSub": "¿Te ha gustado? Te quedan {n} niveles más esperándote.",
+            "winSubEnd": "¿Te ha gustado? Hay muchos más juegos gratis.",
+            "overTitle": "¡Casi!",
+            "recordTitle": "¡Buena partida!",
+            "overSub": "¿Lo intentas otra vez o juegas al juego entero?",
+            "overSubScore": "Has hecho {n} puntos. ¿Superas tu récord en el juego completo?",
+            "again": "🔄 Otra vez",
+            "mini": "Emojidoku",
+            "miniPaused": "⏸ En pausa · ¡sigue jugando!",
+            "miniEnd": "¡Juega al juego entero!",
+            "bar": "🧩 ¿Superas un nivel de Emojidoku?",
+            "barCta": "Jugar",
+            "close": "Cerrar",
+            "expand": "Ampliar"
+        },
+        "en": {
+            "brand": "🧩 Emojidoku",
+            "loading": "Loading the game…",
+            "hint": "👉 Fill the grid so that each row, column and box has every emoji exactly once.",
+            "cta": "Play all 120 levels free ▶",
+            "later": "Keep reading",
+            "winTitle": "Level cleared!",
+            "winSub": "Did you like it? {n} more levels are waiting for you.",
+            "winSubEnd": "Did you like it? There are plenty more free games.",
+            "overTitle": "So close!",
+            "recordTitle": "Nice game!",
+            "overSub": "Try again, or play the full game?",
+            "overSubScore": "You scored {n} points. Can you beat it in the full game?",
+            "again": "🔄 Again",
+            "mini": "Emojidoku",
+            "miniPaused": "⏸ Paused · keep playing!",
+            "miniEnd": "Play the full game!",
+            "bar": "🧩 Can you clear a level of Emojidoku?",
+            "barCta": "Play",
+            "close": "Close",
+            "expand": "Expand"
+        }
+    }
+}

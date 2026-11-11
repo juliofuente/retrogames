@@ -1,0 +1,72 @@
+{
+    "type": "playable",
+    "game": "kropki",
+    "emoji": "⚪",
+    "levels": 80,
+    "level": 1,
+    "url": {
+        "es": "https://juegosboom.com/kropki",
+        "en": "https://juegosboom.com/kropki/en"
+    },
+    "play": {
+        "es": "https://juegosboom.com/kropki?playable=1",
+        "en": "https://juegosboom.com/kropki/en?playable=1"
+    },
+    "delay": 3,
+    "every_hours": 12,
+    "closed_hours": 24,
+    "hint_seconds": 7,
+    "colors": {
+        "bg1": "#3d3d55",
+        "bg2": "#1c1c2c",
+        "accent": "#e9ecef",
+        "cta": "#ffd43b",
+        "ctaText": "#2b1a0e"
+    },
+    "texts": {
+        "es": {
+            "brand": "⚪ Kropki",
+            "loading": "Cargando el juego…",
+            "hint": "👉 Rellena con los números del 1 al N sin repetir en ninguna fila ni columna.",
+            "cta": "Juega los 80 niveles gratis ▶",
+            "later": "Seguir leyendo",
+            "winTitle": "¡Nivel superado!",
+            "winSub": "¿Te ha gustado? Te quedan {n} niveles más esperándote.",
+            "winSubEnd": "¿Te ha gustado? Hay muchos más juegos gratis.",
+            "overTitle": "¡Casi!",
+            "recordTitle": "¡Buena partida!",
+            "overSub": "¿Lo intentas otra vez o juegas al juego entero?",
+            "overSubScore": "Has hecho {n} puntos. ¿Superas tu récord en el juego completo?",
+            "again": "🔄 Otra vez",
+            "mini": "Kropki",
+            "miniPaused": "⏸ En pausa · ¡sigue jugando!",
+            "miniEnd": "¡Juega al juego entero!",
+            "bar": "⚪ ¿Superas un nivel de Kropki?",
+            "barCta": "Jugar",
+            "close": "Cerrar",
+            "expand": "Ampliar"
+        },
+        "en": {
+            "brand": "⚪ Kropki",
+            "loading": "Loading the game…",
+            "hint": "👉 Fill in the numbers 1 to N without repeating in any row or column.",
+            "cta": "Play all 80 levels free ▶",
+            "later": "Keep reading",
+            "winTitle": "Level cleared!",
+            "winSub": "Did you like it? {n} more levels are waiting for you.",
+            "winSubEnd": "Did you like it? There are plenty more free games.",
+            "overTitle": "So close!",
+            "recordTitle": "Nice game!",
+            "overSub": "Try again, or play the full game?",
+            "overSubScore": "You scored {n} points. Can you beat it in the full game?",
+            "again": "🔄 Again",
+            "mini": "Kropki",
+            "miniPaused": "⏸ Paused · keep playing!",
+            "miniEnd": "Play the full game!",
+            "bar": "⚪ Can you clear a level of Kropki?",
+            "barCta": "Play",
+            "close": "Close",
+            "expand": "Expand"
+        }
+    }
+}

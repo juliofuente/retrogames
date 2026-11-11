@@ -1,0 +1,72 @@
+{
+    "type": "playable",
+    "game": "gemas",
+    "emoji": "💎",
+    "levels": 120,
+    "level": 1,
+    "url": {
+        "es": "https://juegosboom.com/gemas",
+        "en": "https://juegosboom.com/gemas/en"
+    },
+    "play": {
+        "es": "https://juegosboom.com/gemas?playable=1",
+        "en": "https://juegosboom.com/gemas/en?playable=1"
+    },
+    "delay": 3,
+    "every_hours": 12,
+    "closed_hours": 24,
+    "hint_seconds": 7,
+    "colors": {
+        "bg1": "#4a2a80",
+        "bg2": "#2a1650",
+        "accent": "#b197fc",
+        "cta": "#ffd43b",
+        "ctaText": "#2b1a0e"
+    },
+    "texts": {
+        "es": {
+            "brand": "💎 Gemas",
+            "loading": "Cargando el juego…",
+            "hint": "👉 Desliza una gema hacia una vecina para intercambiarlas.",
+            "cta": "Juega los 120 niveles gratis ▶",
+            "later": "Seguir leyendo",
+            "winTitle": "¡Nivel superado!",
+            "winSub": "¿Te ha gustado? Te quedan {n} niveles más esperándote.",
+            "winSubEnd": "¿Te ha gustado? Hay muchos más juegos gratis.",
+            "overTitle": "¡Casi!",
+            "recordTitle": "¡Buena partida!",
+            "overSub": "¿Lo intentas otra vez o juegas al juego entero?",
+            "overSubScore": "Has hecho {n} puntos. ¿Superas tu récord en el juego completo?",
+            "again": "🔄 Otra vez",
+            "mini": "Gemas",
+            "miniPaused": "⏸ En pausa · ¡sigue jugando!",
+            "miniEnd": "¡Juega al juego entero!",
+            "bar": "💎 ¿Superas un nivel de Gemas?",
+            "barCta": "Jugar",
+            "close": "Cerrar",
+            "expand": "Ampliar"
+        },
+        "en": {
+            "brand": "💎 Gems",
+            "loading": "Loading the game…",
+            "hint": "👉 Swipe a gem towards a neighbour to swap them.",
+            "cta": "Play all 120 levels free ▶",
+            "later": "Keep reading",
+            "winTitle": "Level cleared!",
+            "winSub": "Did you like it? {n} more levels are waiting for you.",
+            "winSubEnd": "Did you like it? There are plenty more free games.",
+            "overTitle": "So close!",
+            "recordTitle": "Nice game!",
+            "overSub": "Try again, or play the full game?",
+            "overSubScore": "You scored {n} points. Can you beat it in the full game?",
+            "again": "🔄 Again",
+            "mini": "Gems",
+            "miniPaused": "⏸ Paused · keep playing!",
+            "miniEnd": "Play the full game!",
+            "bar": "💎 Can you clear a level of Gems?",
+            "barCta": "Play",
+            "close": "Close",
+            "expand": "Expand"
+        }
+    }
+}

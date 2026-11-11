@@ -1,0 +1,72 @@
+{
+    "type": "playable",
+    "game": "bucle",
+    "emoji": "➰",
+    "levels": 80,
+    "level": 1,
+    "url": {
+        "es": "https://juegosboom.com/bucle",
+        "en": "https://juegosboom.com/bucle/en"
+    },
+    "play": {
+        "es": "https://juegosboom.com/bucle?playable=1",
+        "en": "https://juegosboom.com/bucle/en?playable=1"
+    },
+    "delay": 3,
+    "every_hours": 12,
+    "closed_hours": 24,
+    "hint_seconds": 7,
+    "colors": {
+        "bg1": "#52796f",
+        "bg2": "#2f3e46",
+        "accent": "#84a98c",
+        "cta": "#ffd43b",
+        "ctaText": "#2b1a0e"
+    },
+    "texts": {
+        "es": {
+            "brand": "➰ Bucle infinito",
+            "loading": "Cargando el juego…",
+            "hint": "👉 Cada toque gira una pieza un cuarto de vuelta.",
+            "cta": "Juega los 80 niveles gratis ▶",
+            "later": "Seguir leyendo",
+            "winTitle": "¡Nivel superado!",
+            "winSub": "¿Te ha gustado? Te quedan {n} niveles más esperándote.",
+            "winSubEnd": "¿Te ha gustado? Hay muchos más juegos gratis.",
+            "overTitle": "¡Casi!",
+            "recordTitle": "¡Buena partida!",
+            "overSub": "¿Lo intentas otra vez o juegas al juego entero?",
+            "overSubScore": "Has hecho {n} puntos. ¿Superas tu récord en el juego completo?",
+            "again": "🔄 Otra vez",
+            "mini": "Bucle infinito",
+            "miniPaused": "⏸ En pausa · ¡sigue jugando!",
+            "miniEnd": "¡Juega al juego entero!",
+            "bar": "➰ ¿Superas un nivel de Bucle infinito?",
+            "barCta": "Jugar",
+            "close": "Cerrar",
+            "expand": "Ampliar"
+        },
+        "en": {
+            "brand": "➰ Infinite Loop",
+            "loading": "Loading the game…",
+            "hint": "👉 Each tap turns a piece a quarter turn.",
+            "cta": "Play all 80 levels free ▶",
+            "later": "Keep reading",
+            "winTitle": "Level cleared!",
+            "winSub": "Did you like it? {n} more levels are waiting for you.",
+            "winSubEnd": "Did you like it? There are plenty more free games.",
+            "overTitle": "So close!",
+            "recordTitle": "Nice game!",
+            "overSub": "Try again, or play the full game?",
+            "overSubScore": "You scored {n} points. Can you beat it in the full game?",
+            "again": "🔄 Again",
+            "mini": "Infinite Loop",
+            "miniPaused": "⏸ Paused · keep playing!",
+            "miniEnd": "Play the full game!",
+            "bar": "➰ Can you clear a level of Infinite Loop?",
+            "barCta": "Play",
+            "close": "Close",
+            "expand": "Expand"
+        }
+    }
+}

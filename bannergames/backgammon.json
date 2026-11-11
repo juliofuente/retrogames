@@ -1,0 +1,72 @@
+{
+    "type": "playable",
+    "game": "backgammon",
+    "emoji": "🎲",
+    "levels": 80,
+    "level": 1,
+    "url": {
+        "es": "https://juegosboom.com/backgammon",
+        "en": "https://juegosboom.com/backgammon/en"
+    },
+    "play": {
+        "es": "https://juegosboom.com/backgammon?playable=1",
+        "en": "https://juegosboom.com/backgammon/en?playable=1"
+    },
+    "delay": 3,
+    "every_hours": 12,
+    "closed_hours": 24,
+    "hint_seconds": 7,
+    "colors": {
+        "bg1": "#4a2a12",
+        "bg2": "#2a1608",
+        "accent": "#e8b16a",
+        "cta": "#ffd43b",
+        "ctaText": "#2b1a0e"
+    },
+    "texts": {
+        "es": {
+            "brand": "🎲 Backgammon",
+            "loading": "Cargando el juego…",
+            "hint": "👉 Eres las blancas: tus fichas dan la vuelta al tablero hasta tu casa y luego las sacas.",
+            "cta": "Juega los 80 niveles gratis ▶",
+            "later": "Seguir leyendo",
+            "winTitle": "¡Nivel superado!",
+            "winSub": "¿Te ha gustado? Te quedan {n} niveles más esperándote.",
+            "winSubEnd": "¿Te ha gustado? Hay muchos más juegos gratis.",
+            "overTitle": "¡Casi!",
+            "recordTitle": "¡Buena partida!",
+            "overSub": "¿Lo intentas otra vez o juegas al juego entero?",
+            "overSubScore": "Has hecho {n} puntos. ¿Superas tu récord en el juego completo?",
+            "again": "🔄 Otra vez",
+            "mini": "Backgammon",
+            "miniPaused": "⏸ En pausa · ¡sigue jugando!",
+            "miniEnd": "¡Juega al juego entero!",
+            "bar": "🎲 ¿Superas un nivel de Backgammon?",
+            "barCta": "Jugar",
+            "close": "Cerrar",
+            "expand": "Ampliar"
+        },
+        "en": {
+            "brand": "🎲 Backgammon",
+            "loading": "Loading the game…",
+            "hint": "👉 You are white and your checkers travel around the board towards your home, and then you bear them off.",
+            "cta": "Play all 80 levels free ▶",
+            "later": "Keep reading",
+            "winTitle": "Level cleared!",
+            "winSub": "Did you like it? {n} more levels are waiting for you.",
+            "winSubEnd": "Did you like it? There are plenty more free games.",
+            "overTitle": "So close!",
+            "recordTitle": "Nice game!",
+            "overSub": "Try again, or play the full game?",
+            "overSubScore": "You scored {n} points. Can you beat it in the full game?",
+            "again": "🔄 Again",
+            "mini": "Backgammon",
+            "miniPaused": "⏸ Paused · keep playing!",
+            "miniEnd": "Play the full game!",
+            "bar": "🎲 Can you clear a level of Backgammon?",
+            "barCta": "Play",
+            "close": "Close",
+            "expand": "Expand"
+        }
+    }
+}

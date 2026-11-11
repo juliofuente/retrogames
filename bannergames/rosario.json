@@ -1,0 +1,72 @@
+{
+    "type": "playable",
+    "game": "rosario",
+    "emoji": "🐸",
+    "levels": 100,
+    "level": 1,
+    "url": {
+        "es": "https://juegosboom.com/rosario",
+        "en": "https://juegosboom.com/rosario/en"
+    },
+    "play": {
+        "es": "https://juegosboom.com/rosario?playable=1",
+        "en": "https://juegosboom.com/rosario/en?playable=1"
+    },
+    "delay": 3,
+    "every_hours": 12,
+    "closed_hours": 24,
+    "hint_seconds": 7,
+    "colors": {
+        "bg1": "#4a6b2a",
+        "bg2": "#2b3a1a",
+        "accent": "#94d82d",
+        "cta": "#ffd43b",
+        "ctaText": "#2b1a0e"
+    },
+    "texts": {
+        "es": {
+            "brand": "🐸 Rosario",
+            "loading": "Cargando el juego…",
+            "hint": "👉 Una cadena de bolas avanza por la espiral hacia la 💀.",
+            "cta": "Juega los 100 niveles gratis ▶",
+            "later": "Seguir leyendo",
+            "winTitle": "¡Nivel superado!",
+            "winSub": "¿Te ha gustado? Te quedan {n} niveles más esperándote.",
+            "winSubEnd": "¿Te ha gustado? Hay muchos más juegos gratis.",
+            "overTitle": "¡Casi!",
+            "recordTitle": "¡Buena partida!",
+            "overSub": "¿Lo intentas otra vez o juegas al juego entero?",
+            "overSubScore": "Has hecho {n} puntos. ¿Superas tu récord en el juego completo?",
+            "again": "🔄 Otra vez",
+            "mini": "Rosario",
+            "miniPaused": "⏸ En pausa · ¡sigue jugando!",
+            "miniEnd": "¡Juega al juego entero!",
+            "bar": "🐸 ¿Superas un nivel de Rosario?",
+            "barCta": "Jugar",
+            "close": "Cerrar",
+            "expand": "Ampliar"
+        },
+        "en": {
+            "brand": "🐸 Rosary",
+            "loading": "Loading the game…",
+            "hint": "👉 A chain of balls crawls along the spiral towards the 💀.",
+            "cta": "Play all 100 levels free ▶",
+            "later": "Keep reading",
+            "winTitle": "Level cleared!",
+            "winSub": "Did you like it? {n} more levels are waiting for you.",
+            "winSubEnd": "Did you like it? There are plenty more free games.",
+            "overTitle": "So close!",
+            "recordTitle": "Nice game!",
+            "overSub": "Try again, or play the full game?",
+            "overSubScore": "You scored {n} points. Can you beat it in the full game?",
+            "again": "🔄 Again",
+            "mini": "Rosary",
+            "miniPaused": "⏸ Paused · keep playing!",
+            "miniEnd": "Play the full game!",
+            "bar": "🐸 Can you clear a level of Rosary?",
+            "barCta": "Play",
+            "close": "Close",
+            "expand": "Expand"
+        }
+    }
+}

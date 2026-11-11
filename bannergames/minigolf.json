@@ -1,0 +1,72 @@
+{
+    "type": "playable",
+    "game": "minigolf",
+    "emoji": "⛳",
+    "levels": 120,
+    "level": 1,
+    "url": {
+        "es": "https://juegosboom.com/minigolf",
+        "en": "https://juegosboom.com/minigolf/en"
+    },
+    "play": {
+        "es": "https://juegosboom.com/minigolf?playable=1",
+        "en": "https://juegosboom.com/minigolf/en?playable=1"
+    },
+    "delay": 3,
+    "every_hours": 12,
+    "closed_hours": 24,
+    "hint_seconds": 7,
+    "colors": {
+        "bg1": "#2f6b2f",
+        "bg2": "#1c3d1c",
+        "accent": "#69db7c",
+        "cta": "#ffd43b",
+        "ctaText": "#2b1a0e"
+    },
+    "texts": {
+        "es": {
+            "brand": "⛳ Minigolf",
+            "loading": "Cargando el juego…",
+            "hint": "👉 Arrastra hacia atrás desde cualquier sitio como un tirachinas y suelta para golpear la bola: cuanto más…",
+            "cta": "Juega los 120 niveles gratis ▶",
+            "later": "Seguir leyendo",
+            "winTitle": "¡Nivel superado!",
+            "winSub": "¿Te ha gustado? Te quedan {n} niveles más esperándote.",
+            "winSubEnd": "¿Te ha gustado? Hay muchos más juegos gratis.",
+            "overTitle": "¡Casi!",
+            "recordTitle": "¡Buena partida!",
+            "overSub": "¿Lo intentas otra vez o juegas al juego entero?",
+            "overSubScore": "Has hecho {n} puntos. ¿Superas tu récord en el juego completo?",
+            "again": "🔄 Otra vez",
+            "mini": "Minigolf",
+            "miniPaused": "⏸ En pausa · ¡sigue jugando!",
+            "miniEnd": "¡Juega al juego entero!",
+            "bar": "⛳ ¿Superas un nivel de Minigolf?",
+            "barCta": "Jugar",
+            "close": "Cerrar",
+            "expand": "Ampliar"
+        },
+        "en": {
+            "brand": "⛳ Mini Golf",
+            "loading": "Loading the game…",
+            "hint": "👉 Drag backwards from anywhere like a slingshot and release to hit the ball: the longer the pull, the harder…",
+            "cta": "Play all 120 levels free ▶",
+            "later": "Keep reading",
+            "winTitle": "Level cleared!",
+            "winSub": "Did you like it? {n} more levels are waiting for you.",
+            "winSubEnd": "Did you like it? There are plenty more free games.",
+            "overTitle": "So close!",
+            "recordTitle": "Nice game!",
+            "overSub": "Try again, or play the full game?",
+            "overSubScore": "You scored {n} points. Can you beat it in the full game?",
+            "again": "🔄 Again",
+            "mini": "Mini Golf",
+            "miniPaused": "⏸ Paused · keep playing!",
+            "miniEnd": "Play the full game!",
+            "bar": "⛳ Can you clear a level of Mini Golf?",
+            "barCta": "Play",
+            "close": "Close",
+            "expand": "Expand"
+        }
+    }
+}

@@ -1,0 +1,72 @@
+{
+    "type": "playable",
+    "game": "cinta",
+    "emoji": "🎛️",
+    "levels": 80,
+    "level": 1,
+    "url": {
+        "es": "https://juegosboom.com/cinta",
+        "en": "https://juegosboom.com/cinta/en"
+    },
+    "play": {
+        "es": "https://juegosboom.com/cinta?playable=1",
+        "en": "https://juegosboom.com/cinta/en?playable=1"
+    },
+    "delay": 3,
+    "every_hours": 12,
+    "closed_hours": 24,
+    "hint_seconds": 7,
+    "colors": {
+        "bg1": "#232b4a",
+        "bg2": "#151a2e",
+        "accent": "#ffd43b",
+        "cta": "#ffd43b",
+        "ctaText": "#2b1a0e"
+    },
+    "texts": {
+        "es": {
+            "brand": "🎛️ Cinta",
+            "loading": "Cargando el juego…",
+            "hint": "👉 Las fichas bajan dando vueltas por una cinta de cinco carriles.",
+            "cta": "Juega los 80 niveles gratis ▶",
+            "later": "Seguir leyendo",
+            "winTitle": "¡Nivel superado!",
+            "winSub": "¿Te ha gustado? Te quedan {n} niveles más esperándote.",
+            "winSubEnd": "¿Te ha gustado? Hay muchos más juegos gratis.",
+            "overTitle": "¡Casi!",
+            "recordTitle": "¡Buena partida!",
+            "overSub": "¿Lo intentas otra vez o juegas al juego entero?",
+            "overSubScore": "Has hecho {n} puntos. ¿Superas tu récord en el juego completo?",
+            "again": "🔄 Otra vez",
+            "mini": "Cinta",
+            "miniPaused": "⏸ En pausa · ¡sigue jugando!",
+            "miniEnd": "¡Juega al juego entero!",
+            "bar": "🎛️ ¿Superas un nivel de Cinta?",
+            "barCta": "Jugar",
+            "close": "Cerrar",
+            "expand": "Ampliar"
+        },
+        "en": {
+            "brand": "🎛️ Conveyor",
+            "loading": "Loading the game…",
+            "hint": "👉 Tiles tumble down a conveyor belt with five lanes.",
+            "cta": "Play all 80 levels free ▶",
+            "later": "Keep reading",
+            "winTitle": "Level cleared!",
+            "winSub": "Did you like it? {n} more levels are waiting for you.",
+            "winSubEnd": "Did you like it? There are plenty more free games.",
+            "overTitle": "So close!",
+            "recordTitle": "Nice game!",
+            "overSub": "Try again, or play the full game?",
+            "overSubScore": "You scored {n} points. Can you beat it in the full game?",
+            "again": "🔄 Again",
+            "mini": "Conveyor",
+            "miniPaused": "⏸ Paused · keep playing!",
+            "miniEnd": "Play the full game!",
+            "bar": "🎛️ Can you clear a level of Conveyor?",
+            "barCta": "Play",
+            "close": "Close",
+            "expand": "Expand"
+        }
+    }
+}

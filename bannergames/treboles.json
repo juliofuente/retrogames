@@ -1,0 +1,72 @@
+{
+    "type": "playable",
+    "game": "treboles",
+    "emoji": "☘️",
+    "levels": 80,
+    "level": 1,
+    "url": {
+        "es": "https://juegosboom.com/treboles",
+        "en": "https://juegosboom.com/treboles/en"
+    },
+    "play": {
+        "es": "https://juegosboom.com/treboles?playable=1",
+        "en": "https://juegosboom.com/treboles/en?playable=1"
+    },
+    "delay": 3,
+    "every_hours": 12,
+    "closed_hours": 24,
+    "hint_seconds": 7,
+    "colors": {
+        "bg1": "#1864ab",
+        "bg2": "#08254a",
+        "accent": "#4dabf7",
+        "cta": "#ffd43b",
+        "ctaText": "#2b1a0e"
+    },
+    "texts": {
+        "es": {
+            "brand": "☘️ Tréboles",
+            "loading": "Cargando el juego…",
+            "hint": "👉 Dieciocho abanicos donde se sube o se baja de cualquier palo, pero cada abanico tiene como mucho tres cartas.",
+            "cta": "Juega los 80 niveles gratis ▶",
+            "later": "Seguir leyendo",
+            "winTitle": "¡Nivel superado!",
+            "winSub": "¿Te ha gustado? Te quedan {n} niveles más esperándote.",
+            "winSubEnd": "¿Te ha gustado? Hay muchos más juegos gratis.",
+            "overTitle": "¡Casi!",
+            "recordTitle": "¡Buena partida!",
+            "overSub": "¿Lo intentas otra vez o juegas al juego entero?",
+            "overSubScore": "Has hecho {n} puntos. ¿Superas tu récord en el juego completo?",
+            "again": "🔄 Otra vez",
+            "mini": "Tréboles",
+            "miniPaused": "⏸ En pausa · ¡sigue jugando!",
+            "miniEnd": "¡Juega al juego entero!",
+            "bar": "☘️ ¿Superas un nivel de Tréboles?",
+            "barCta": "Jugar",
+            "close": "Cerrar",
+            "expand": "Ampliar"
+        },
+        "en": {
+            "brand": "☘️ Shamrocks",
+            "loading": "Loading the game…",
+            "hint": "👉 Eighteen fans where you build up or down in any suit, but each fan holds three cards at most.",
+            "cta": "Play all 80 levels free ▶",
+            "later": "Keep reading",
+            "winTitle": "Level cleared!",
+            "winSub": "Did you like it? {n} more levels are waiting for you.",
+            "winSubEnd": "Did you like it? There are plenty more free games.",
+            "overTitle": "So close!",
+            "recordTitle": "Nice game!",
+            "overSub": "Try again, or play the full game?",
+            "overSubScore": "You scored {n} points. Can you beat it in the full game?",
+            "again": "🔄 Again",
+            "mini": "Shamrocks",
+            "miniPaused": "⏸ Paused · keep playing!",
+            "miniEnd": "Play the full game!",
+            "bar": "☘️ Can you clear a level of Shamrocks?",
+            "barCta": "Play",
+            "close": "Close",
+            "expand": "Expand"
+        }
+    }
+}

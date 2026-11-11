@@ -1,0 +1,72 @@
+{
+    "type": "playable",
+    "game": "halma",
+    "emoji": "🐸",
+    "levels": 80,
+    "level": 1,
+    "url": {
+        "es": "https://juegosboom.com/halma",
+        "en": "https://juegosboom.com/halma/en"
+    },
+    "play": {
+        "es": "https://juegosboom.com/halma?playable=1",
+        "en": "https://juegosboom.com/halma/en?playable=1"
+    },
+    "delay": 3,
+    "every_hours": 12,
+    "closed_hours": 24,
+    "hint_seconds": 7,
+    "colors": {
+        "bg1": "#2f4a33",
+        "bg2": "#1f2a20",
+        "accent": "#69db7c",
+        "cta": "#ffd43b",
+        "ctaText": "#2b1a0e"
+    },
+    "texts": {
+        "es": {
+            "brand": "🐸 Halma",
+            "loading": "Cargando el juego…",
+            "hint": "👉 Lleva todas tus fichas rojas a la esquina contraria antes de que la máquina lleve las verdes a la tuya.",
+            "cta": "Juega los 80 niveles gratis ▶",
+            "later": "Seguir leyendo",
+            "winTitle": "¡Nivel superado!",
+            "winSub": "¿Te ha gustado? Te quedan {n} niveles más esperándote.",
+            "winSubEnd": "¿Te ha gustado? Hay muchos más juegos gratis.",
+            "overTitle": "¡Casi!",
+            "recordTitle": "¡Buena partida!",
+            "overSub": "¿Lo intentas otra vez o juegas al juego entero?",
+            "overSubScore": "Has hecho {n} puntos. ¿Superas tu récord en el juego completo?",
+            "again": "🔄 Otra vez",
+            "mini": "Halma",
+            "miniPaused": "⏸ En pausa · ¡sigue jugando!",
+            "miniEnd": "¡Juega al juego entero!",
+            "bar": "🐸 ¿Superas un nivel de Halma?",
+            "barCta": "Jugar",
+            "close": "Cerrar",
+            "expand": "Ampliar"
+        },
+        "en": {
+            "brand": "🐸 Halma",
+            "loading": "Loading the game…",
+            "hint": "👉 Take all your red pieces to the opposite corner before the machine takes its green ones to yours.",
+            "cta": "Play all 80 levels free ▶",
+            "later": "Keep reading",
+            "winTitle": "Level cleared!",
+            "winSub": "Did you like it? {n} more levels are waiting for you.",
+            "winSubEnd": "Did you like it? There are plenty more free games.",
+            "overTitle": "So close!",
+            "recordTitle": "Nice game!",
+            "overSub": "Try again, or play the full game?",
+            "overSubScore": "You scored {n} points. Can you beat it in the full game?",
+            "again": "🔄 Again",
+            "mini": "Halma",
+            "miniPaused": "⏸ Paused · keep playing!",
+            "miniEnd": "Play the full game!",
+            "bar": "🐸 Can you clear a level of Halma?",
+            "barCta": "Play",
+            "close": "Close",
+            "expand": "Expand"
+        }
+    }
+}

@@ -1,0 +1,72 @@
+{
+    "type": "playable",
+    "game": "cortacuerda",
+    "emoji": "🍬",
+    "levels": 80,
+    "level": 1,
+    "url": {
+        "es": "https://juegosboom.com/cortacuerda",
+        "en": "https://juegosboom.com/cortacuerda/en"
+    },
+    "play": {
+        "es": "https://juegosboom.com/cortacuerda?playable=1",
+        "en": "https://juegosboom.com/cortacuerda/en?playable=1"
+    },
+    "delay": 3,
+    "every_hours": 12,
+    "closed_hours": 24,
+    "hint_seconds": 7,
+    "colors": {
+        "bg1": "#2c5d75",
+        "bg2": "#1b3a4b",
+        "accent": "#69db7c",
+        "cta": "#ffd43b",
+        "ctaText": "#2b1a0e"
+    },
+    "texts": {
+        "es": {
+            "brand": "🍬 Corta la cuerda",
+            "loading": "Cargando el juego…",
+            "hint": "👉 Dale el caramelo 🍬 a la rana glotona 🐸.",
+            "cta": "Juega los 80 niveles gratis ▶",
+            "later": "Seguir leyendo",
+            "winTitle": "¡Nivel superado!",
+            "winSub": "¿Te ha gustado? Te quedan {n} niveles más esperándote.",
+            "winSubEnd": "¿Te ha gustado? Hay muchos más juegos gratis.",
+            "overTitle": "¡Casi!",
+            "recordTitle": "¡Buena partida!",
+            "overSub": "¿Lo intentas otra vez o juegas al juego entero?",
+            "overSubScore": "Has hecho {n} puntos. ¿Superas tu récord en el juego completo?",
+            "again": "🔄 Otra vez",
+            "mini": "Corta la cuerda",
+            "miniPaused": "⏸ En pausa · ¡sigue jugando!",
+            "miniEnd": "¡Juega al juego entero!",
+            "bar": "🍬 ¿Superas un nivel de Corta la cuerda?",
+            "barCta": "Jugar",
+            "close": "Cerrar",
+            "expand": "Ampliar"
+        },
+        "en": {
+            "brand": "🍬 Cut the Rope",
+            "loading": "Loading the game…",
+            "hint": "👉 Feed the candy 🍬 to the hungry frog 🐸.",
+            "cta": "Play all 80 levels free ▶",
+            "later": "Keep reading",
+            "winTitle": "Level cleared!",
+            "winSub": "Did you like it? {n} more levels are waiting for you.",
+            "winSubEnd": "Did you like it? There are plenty more free games.",
+            "overTitle": "So close!",
+            "recordTitle": "Nice game!",
+            "overSub": "Try again, or play the full game?",
+            "overSubScore": "You scored {n} points. Can you beat it in the full game?",
+            "again": "🔄 Again",
+            "mini": "Cut the Rope",
+            "miniPaused": "⏸ Paused · keep playing!",
+            "miniEnd": "Play the full game!",
+            "bar": "🍬 Can you clear a level of Cut the Rope?",
+            "barCta": "Play",
+            "close": "Close",
+            "expand": "Expand"
+        }
+    }
+}

@@ -1,0 +1,72 @@
+{
+    "type": "playable",
+    "game": "fillomino",
+    "emoji": "🧩",
+    "levels": 80,
+    "level": 1,
+    "url": {
+        "es": "https://juegosboom.com/fillomino",
+        "en": "https://juegosboom.com/fillomino/en"
+    },
+    "play": {
+        "es": "https://juegosboom.com/fillomino?playable=1",
+        "en": "https://juegosboom.com/fillomino/en?playable=1"
+    },
+    "delay": 3,
+    "every_hours": 12,
+    "closed_hours": 24,
+    "hint_seconds": 7,
+    "colors": {
+        "bg1": "#4d3319",
+        "bg2": "#22160a",
+        "accent": "#ffc078",
+        "cta": "#ffd43b",
+        "ctaText": "#2b1a0e"
+    },
+    "texts": {
+        "es": {
+            "brand": "🧩 Fillomino",
+            "loading": "Cargando el juego…",
+            "hint": "👉 Divide el tablero en piezas y escribe en cada casilla el tamaño de su pieza.",
+            "cta": "Juega los 80 niveles gratis ▶",
+            "later": "Seguir leyendo",
+            "winTitle": "¡Nivel superado!",
+            "winSub": "¿Te ha gustado? Te quedan {n} niveles más esperándote.",
+            "winSubEnd": "¿Te ha gustado? Hay muchos más juegos gratis.",
+            "overTitle": "¡Casi!",
+            "recordTitle": "¡Buena partida!",
+            "overSub": "¿Lo intentas otra vez o juegas al juego entero?",
+            "overSubScore": "Has hecho {n} puntos. ¿Superas tu récord en el juego completo?",
+            "again": "🔄 Otra vez",
+            "mini": "Fillomino",
+            "miniPaused": "⏸ En pausa · ¡sigue jugando!",
+            "miniEnd": "¡Juega al juego entero!",
+            "bar": "🧩 ¿Superas un nivel de Fillomino?",
+            "barCta": "Jugar",
+            "close": "Cerrar",
+            "expand": "Ampliar"
+        },
+        "en": {
+            "brand": "🧩 Fillomino",
+            "loading": "Loading the game…",
+            "hint": "👉 Split the board into pieces and write the size of its piece in every cell.",
+            "cta": "Play all 80 levels free ▶",
+            "later": "Keep reading",
+            "winTitle": "Level cleared!",
+            "winSub": "Did you like it? {n} more levels are waiting for you.",
+            "winSubEnd": "Did you like it? There are plenty more free games.",
+            "overTitle": "So close!",
+            "recordTitle": "Nice game!",
+            "overSub": "Try again, or play the full game?",
+            "overSubScore": "You scored {n} points. Can you beat it in the full game?",
+            "again": "🔄 Again",
+            "mini": "Fillomino",
+            "miniPaused": "⏸ Paused · keep playing!",
+            "miniEnd": "Play the full game!",
+            "bar": "🧩 Can you clear a level of Fillomino?",
+            "barCta": "Play",
+            "close": "Close",
+            "expand": "Expand"
+        }
+    }
+}
