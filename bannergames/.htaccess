@@ -1,0 +1,9 @@
+# bannergames: el .js y los .json se cargan desde otras webs → permitir CORS y caché corta
+<IfModule mod_headers.c>
+  <FilesMatch "\.(js|json)$">
+    Header set Access-Control-Allow-Origin "*"
+    Header set Cache-Control "public, max-age=3600"
+  </FilesMatch>
+</IfModule>
+AddType application/json .json
+AddType application/javascript .js

@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Demo bannergames</title>
+<meta name="robots" content="noindex">
+<style>
+  body{margin:0;font:17px/1.6 Georgia,serif;color:#222;background:#faf7f2}
+  header{background:#24324a;color:#fff;padding:14px 20px;font:700 20px system-ui,sans-serif}
+  main{max-width:720px;margin:0 auto;padding:20px}
+  h1{font:800 32px/1.2 system-ui,sans-serif}
+  .tools{font:14px system-ui,sans-serif;background:#fff3bf;border:1px solid #ffd43b;border-radius:10px;padding:10px 14px}
+  .tools a{margin-right:12px}
+</style>
+</head>
+<body>
+<header>Mi blog de ejemplo</header>
+<main>
+  <p class="tools">Página de prueba del banner. <a href="?bgreset=1">Ver de nuevo el intersticial</a> <a href="?bgreset=1&lang=en">En inglés</a></p>
+  <h1>Una web cualquiera con el banner de juegos</h1>
+  <p>Este texto hace de artículo. El script se añade con una sola línea al final de la página:</p>
+  <pre style="white-space:pre-wrap;word-break:break-all;background:#fff;border:1px solid #ddd;padding:10px;border-radius:8px;font-size:13px">&lt;script src="https://juegosboom.com/bannergames/bannergames.js?profile=cerillas&amp;lang=es" async&gt;&lt;/script&gt;</pre>
+  <p>A los pocos segundos aparece el intersticial con un reto de cerillas que se resuelve solo. Al cerrarlo se queda pequeño: arriba a la derecha en ordenador (jugando en bucle) o como barra abajo en el móvil.</p>
+  <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer posuere erat a ante venenatis dapibus posuere velit aliquet. Cras mattis consectetur purus sit amet fermentum. Donec ullamcorper nulla non metus auctor fringilla.</p>
+  <p>Vestibulum id ligula porta felis euismod semper. Maecenas sed diam eget risus varius blandit sit amet non magna. Nullam quis risus eget urna mollis ornare vel eu leo. Curabitur blandit tempus porttitor.</p>
+  <p>Aenean lacinia bibendum nulla sed consectetur. Sed posuere consectetur est at lobortis. Etiam porta sem malesuada magna mollis euismod. Morbi leo risus, porta ac consectetur ac, vestibulum at eros.</p>
+  <p>Fusce dapibus, tellus ac cursus commodo, tortor mauris condimentum nibh, ut fermentum massa justo sit amet risus. Duis mollis, est non commodo luctus, nisi erat porttitor ligula, eget lacinia odio sem nec elit.</p>
+  <p>Praesent commodo cursus magna, vel scelerisque nisl consectetur et. Donec sed odio dui. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus.</p>
+</main>
+<script>
+  // en la demo, el idioma se puede cambiar con ?lang=en
+  (function () { var l = /[?&]lang=(\w+)/.exec(location.search); var s = document.createElement('script'); s.async = true; s.src = 'bannergames.js?profile=cerillas&lang=' + (l ? l[1] : 'es'); document.body.appendChild(s); })();
+</script>
+</body>
+</html>

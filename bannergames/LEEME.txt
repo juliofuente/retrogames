@@ -1,0 +1,43 @@
+bannergames: un intersticial con un reto animado para poner en cualquier web
+=============================================================================
+
+Se pone con una línea, al final de la página (o donde quieras):
+
+  <script src="https://juegosboom.com/bannergames/bannergames.js?profile=cerillas&lang=es" async></script>
+
+  profile  el perfil (obligatorio): carga <carpeta del script>/<profile>.json → bannergames/cerillas.json
+  lang     es | en (si no se pone, el idioma de la página)
+
+Qué hace
+  · A los pocos segundos (delay del .json) sale un intersticial con un reto de cerillas que se resuelve solo:
+    la cuenta mal hecha, cuenta atrás, la solución cerilla a cerilla (aro, mano y la cerilla volando) y la cuenta
+    buena. Luego otro reto al azar, en bucle. Botón «Juega gratis» y tocar el reto llevan a la web del juego.
+  · Al cerrarlo (✕, «Seguir leyendo», Esc o clic fuera) se minimiza:
+      - en ordenador: ventanita fija arriba a la derecha, jugando en bucle (⤢ la vuelve a abrir);
+      - en móvil: barra fija abajo con el botón, sin animación (tocarla vuelve a abrir el intersticial).
+  · La ✕ de la ventanita o de la barra lo quita del todo durante closed_hours.
+  · Si ya salió a pantalla completa hace menos de every_hours, en las siguientes páginas sale ya minimizado.
+  · Va en un Shadow DOM (no le afectan los estilos de la web), solo anima mientras se ve y con la pestaña visible.
+  · A la dirección del juego le añade utm_source=<web>, utm_medium=bannergames y utm_campaign=<perfil>.
+
+Probar
+  · demo.html en esta carpeta (https://juegosboom.com/bannergames/demo). Con ?bgreset=1 en la dirección de cualquier
+    página se olvida lo recordado (frecuencia y cierres) y vuelve a salir el intersticial.
+
+El .json del perfil (cerillas.json)
+  type          cerillas (el tipo de reto que dibuja el script)
+  url           a dónde lleva el botón
+  delay         segundos hasta que sale
+  every_hours   cada cuántas horas puede salir a pantalla completa
+  closed_hours  horas sin salir si lo cierran del todo
+  wait          segundos para pensar cada reto
+  max_count     solo retos de hasta tantas cerillas
+  colors        bg1, bg2 (fondo), accent (etiqueta «Solución»), cta y ctaText (botón)
+  texts         textos por idioma (es, en…)
+  puzzles       los retos: [cuenta, acción m/r/a, cuántas cerillas, soluciones]
+
+  Los retos salen del juego: php herramientas/bannergames_json.php los vuelve a copiar de herramientas/src/cerillas.js
+  (conserva los textos y ajustes que hayas cambiado en el .json).
+
+Subir a la web: la carpeta bannergames/ entera (con su .htaccess, que permite cargar el .js y el .json desde otras webs).
+Otros juegos: se añade una escena en bannergames.js (SCENES.<tipo>) y su .json.
