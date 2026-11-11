@@ -9,7 +9,7 @@
         "en": "https://juegosboom.com/parejas/en"
     },
     "play": {
-        "es": "https://juegosboom.com/parejas?playable=1",
+        "es": "https://juegosboom.com/parejas/es?playable=1",
         "en": "https://juegosboom.com/parejas/en?playable=1"
     },
     "delay": 3,

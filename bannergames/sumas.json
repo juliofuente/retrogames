@@ -9,7 +9,7 @@
         "en": "https://juegosboom.com/sumas/en"
     },
     "play": {
-        "es": "https://juegosboom.com/sumas?playable=1",
+        "es": "https://juegosboom.com/sumas/es?playable=1",
         "en": "https://juegosboom.com/sumas/en?playable=1"
     },
     "delay": 3,

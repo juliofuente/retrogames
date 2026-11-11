@@ -9,7 +9,7 @@
         "en": "https://juegosboom.com/almacencartas/en"
     },
     "play": {
-        "es": "https://juegosboom.com/almacencartas?playable=1",
+        "es": "https://juegosboom.com/almacencartas/es?playable=1",
         "en": "https://juegosboom.com/almacencartas/en?playable=1"
     },
     "delay": 3,

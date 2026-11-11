@@ -9,7 +9,7 @@
         "en": "https://juegosboom.com/encaje/en"
     },
     "play": {
-        "es": "https://juegosboom.com/encaje?playable=1",
+        "es": "https://juegosboom.com/encaje/es?playable=1",
         "en": "https://juegosboom.com/encaje/en?playable=1"
     },
     "delay": 3,

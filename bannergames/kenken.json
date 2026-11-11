@@ -9,7 +9,7 @@
         "en": "https://juegosboom.com/kenken/en"
     },
     "play": {
-        "es": "https://juegosboom.com/kenken?playable=1",
+        "es": "https://juegosboom.com/kenken/es?playable=1",
         "en": "https://juegosboom.com/kenken/en?playable=1"
     },
     "delay": 3,

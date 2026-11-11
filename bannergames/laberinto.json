@@ -9,7 +9,7 @@
         "en": "https://juegosboom.com/laberinto/en"
     },
     "play": {
-        "es": "https://juegosboom.com/laberinto?playable=1",
+        "es": "https://juegosboom.com/laberinto/es?playable=1",
         "en": "https://juegosboom.com/laberinto/en?playable=1"
     },
     "delay": 3,

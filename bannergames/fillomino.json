@@ -9,7 +9,7 @@
         "en": "https://juegosboom.com/fillomino/en"
     },
     "play": {
-        "es": "https://juegosboom.com/fillomino?playable=1",
+        "es": "https://juegosboom.com/fillomino/es?playable=1",
         "en": "https://juegosboom.com/fillomino/en?playable=1"
     },
     "delay": 3,

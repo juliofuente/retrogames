@@ -9,7 +9,7 @@
         "en": "https://juegosboom.com/lumina/en"
     },
     "play": {
-        "es": "https://juegosboom.com/lumina?playable=1",
+        "es": "https://juegosboom.com/lumina/es?playable=1",
         "en": "https://juegosboom.com/lumina/en?playable=1"
     },
     "delay": 3,

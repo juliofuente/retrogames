@@ -9,7 +9,7 @@
         "en": "https://juegosboom.com/tres/en"
     },
     "play": {
-        "es": "https://juegosboom.com/tres?playable=1",
+        "es": "https://juegosboom.com/tres/es?playable=1",
         "en": "https://juegosboom.com/tres/en?playable=1"
     },
     "delay": 3,

@@ -9,7 +9,7 @@
         "en": "https://juegosboom.com/tiendas/en"
     },
     "play": {
-        "es": "https://juegosboom.com/tiendas?playable=1",
+        "es": "https://juegosboom.com/tiendas/es?playable=1",
         "en": "https://juegosboom.com/tiendas/en?playable=1"
     },
     "delay": 3,

@@ -9,7 +9,7 @@
         "en": "https://juegosboom.com/limitado/en"
     },
     "play": {
-        "es": "https://juegosboom.com/limitado?playable=1",
+        "es": "https://juegosboom.com/limitado/es?playable=1",
         "en": "https://juegosboom.com/limitado/en?playable=1"
     },
     "delay": 3,

@@ -9,7 +9,7 @@
         "en": "https://juegosboom.com/luz/en"
     },
     "play": {
-        "es": "https://juegosboom.com/luz?playable=1",
+        "es": "https://juegosboom.com/luz/es?playable=1",
         "en": "https://juegosboom.com/luz/en?playable=1"
     },
     "delay": 3,

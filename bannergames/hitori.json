@@ -9,7 +9,7 @@
         "en": "https://juegosboom.com/hitori/en"
     },
     "play": {
-        "es": "https://juegosboom.com/hitori?playable=1",
+        "es": "https://juegosboom.com/hitori/es?playable=1",
         "en": "https://juegosboom.com/hitori/en?playable=1"
     },
     "delay": 3,

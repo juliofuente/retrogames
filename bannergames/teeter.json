@@ -9,7 +9,7 @@
         "en": "https://juegosboom.com/teeter/en"
     },
     "play": {
-        "es": "https://juegosboom.com/teeter?playable=1",
+        "es": "https://juegosboom.com/teeter/es?playable=1",
         "en": "https://juegosboom.com/teeter/en?playable=1"
     },
     "delay": 3,

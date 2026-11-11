@@ -9,7 +9,7 @@
         "en": "https://juegosboom.com/escalador/en"
     },
     "play": {
-        "es": "https://juegosboom.com/escalador?playable=1",
+        "es": "https://juegosboom.com/escalador/es?playable=1",
         "en": "https://juegosboom.com/escalador/en?playable=1"
     },
     "delay": 3,

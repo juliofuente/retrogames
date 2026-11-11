@@ -9,7 +9,7 @@
         "en": "https://juegosboom.com/duelocartas/en"
     },
     "play": {
-        "es": "https://juegosboom.com/duelocartas?playable=1",
+        "es": "https://juegosboom.com/duelocartas/es?playable=1",
         "en": "https://juegosboom.com/duelocartas/en?playable=1"
     },
     "delay": 3,

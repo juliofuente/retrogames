@@ -9,7 +9,7 @@
         "en": "https://juegosboom.com/circuito/en"
     },
     "play": {
-        "es": "https://juegosboom.com/circuito?playable=1",
+        "es": "https://juegosboom.com/circuito/es?playable=1",
         "en": "https://juegosboom.com/circuito/en?playable=1"
     },
     "delay": 3,

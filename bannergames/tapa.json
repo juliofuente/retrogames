@@ -9,7 +9,7 @@
         "en": "https://juegosboom.com/tapa/en"
     },
     "play": {
-        "es": "https://juegosboom.com/tapa?playable=1",
+        "es": "https://juegosboom.com/tapa/es?playable=1",
         "en": "https://juegosboom.com/tapa/en?playable=1"
     },
     "delay": 3,

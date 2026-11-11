@@ -9,7 +9,7 @@
         "en": "https://juegosboom.com/elastico/en"
     },
     "play": {
-        "es": "https://juegosboom.com/elastico?playable=1",
+        "es": "https://juegosboom.com/elastico/es?playable=1",
         "en": "https://juegosboom.com/elastico/en?playable=1"
     },
     "delay": 3,

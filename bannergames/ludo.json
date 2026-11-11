@@ -9,7 +9,7 @@
         "en": "https://juegosboom.com/ludo/en"
     },
     "play": {
-        "es": "https://juegosboom.com/ludo?playable=1",
+        "es": "https://juegosboom.com/ludo/es?playable=1",
         "en": "https://juegosboom.com/ludo/en?playable=1"
     },
     "delay": 3,

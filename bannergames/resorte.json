@@ -9,7 +9,7 @@
         "en": "https://juegosboom.com/resorte/en"
     },
     "play": {
-        "es": "https://juegosboom.com/resorte?playable=1",
+        "es": "https://juegosboom.com/resorte/es?playable=1",
         "en": "https://juegosboom.com/resorte/en?playable=1"
     },
     "delay": 3,

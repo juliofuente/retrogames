@@ -9,7 +9,7 @@
         "en": "https://juegosboom.com/jardin/en"
     },
     "play": {
-        "es": "https://juegosboom.com/jardin?playable=1",
+        "es": "https://juegosboom.com/jardin/es?playable=1",
         "en": "https://juegosboom.com/jardin/en?playable=1"
     },
     "delay": 3,

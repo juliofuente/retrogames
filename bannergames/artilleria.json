@@ -9,7 +9,7 @@
         "en": "https://juegosboom.com/artilleria/en"
     },
     "play": {
-        "es": "https://juegosboom.com/artilleria?playable=1",
+        "es": "https://juegosboom.com/artilleria/es?playable=1",
         "en": "https://juegosboom.com/artilleria/en?playable=1"
     },
     "delay": 3,

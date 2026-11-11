@@ -25,7 +25,9 @@
     <a href="?bgreset=1&profile=ortografia">ortografia</a> <a href="?bgreset=1&profile=spelling&lang=en">spelling</a> <a href="?bgreset=1&profile=ingles">ingles</a>
     <br>Jugables (un nivel y luego el botón): <a href="?bgreset=1&profile=atasco">atasco</a> <a href="?bgreset=1&profile=jarras">jarras</a> <a href="?bgreset=1&profile=sudoku">sudoku</a>
     <a href="?bgreset=1&profile=camarero">camarero</a> <a href="?bgreset=1&profile=cerillas-jugable">cerillas-jugable</a>
-    <select onchange="location.search='bgreset=1&profile='+this.value"><option value="">todos los jugables…</option></select>
+    <br>Juego al azar (tres niveles y luego barra con todos): <a href="?bgreset=1&aleatorio=1">juegoaleatorio.js</a>
+    <a href="?bgreset=1&aleatorio=1&coleccion=orientales">solo orientales</a>
+        <select onchange="location.search='bgreset=1&profile='+this.value"><option value="">todos los jugables…</option></select>
         · <a href="javascript:location.search=location.search.replace(/lang=\w+&?/,'')+(location.search?'&':'?')+'lang=en'">en inglés</a></p>
   <h1>Una web cualquiera con el banner de juegos</h1>
   <p>Este texto hace de artículo. El script se añade con una sola línea al final de la página:</p>
@@ -41,6 +43,7 @@
   // en la demo: ?profile=<perfil> y ?lang=en
   (function () { var q = new URLSearchParams(location.search), pf = q.get('profile') || 'cerillas', s = document.createElement('script'); document.getElementById('pf').textContent = pf;
     fetch('playable.txt').then(function (r) { return r.text(); }).then(function (t) { var sel = document.querySelector('select'); t.trim().split('\n').forEach(function (n) { var o = document.createElement('option'); o.value = o.textContent = n; if (n === pf) o.selected = true; sel.appendChild(o); }); }).catch(function () {});
+    if (q.get('aleatorio')) { document.getElementById('pf').textContent = 'juegoaleatorio.js'; s.async = true; s.src = 'juegoaleatorio.js?lang=' + (q.get('lang') || 'es') + (q.get('coleccion') ? '&coleccion=' + q.get('coleccion') : ''); document.body.appendChild(s); return; }
     s.async = true; s.src = 'bannergames.js?profile=' + encodeURIComponent(pf) + '&lang=' + (q.get('lang') || 'es'); document.body.appendChild(s); })();
 </script>
 </body>

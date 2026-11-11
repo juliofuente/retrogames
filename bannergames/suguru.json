@@ -9,7 +9,7 @@
         "en": "https://juegosboom.com/suguru/en"
     },
     "play": {
-        "es": "https://juegosboom.com/suguru?playable=1",
+        "es": "https://juegosboom.com/suguru/es?playable=1",
         "en": "https://juegosboom.com/suguru/en?playable=1"
     },
     "delay": 3,

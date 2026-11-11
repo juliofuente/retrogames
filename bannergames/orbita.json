@@ -9,7 +9,7 @@
         "en": "https://juegosboom.com/orbita/en"
     },
     "play": {
-        "es": "https://juegosboom.com/orbita?playable=1",
+        "es": "https://juegosboom.com/orbita/es?playable=1",
         "en": "https://juegosboom.com/orbita/en?playable=1"
     },
     "delay": 3,

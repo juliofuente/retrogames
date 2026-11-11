@@ -9,7 +9,7 @@
         "en": "https://juegosboom.com/cubos/en"
     },
     "play": {
-        "es": "https://juegosboom.com/cubos?playable=1",
+        "es": "https://juegosboom.com/cubos/es?playable=1",
         "en": "https://juegosboom.com/cubos/en?playable=1"
     },
     "delay": 3,

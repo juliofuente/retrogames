@@ -9,7 +9,7 @@
         "en": "https://juegosboom.com/vias/en"
     },
     "play": {
-        "es": "https://juegosboom.com/vias?playable=1",
+        "es": "https://juegosboom.com/vias/es?playable=1",
         "en": "https://juegosboom.com/vias/en?playable=1"
     },
     "delay": 3,

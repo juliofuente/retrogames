@@ -9,7 +9,7 @@
         "en": "https://juegosboom.com/kono/en"
     },
     "play": {
-        "es": "https://juegosboom.com/kono?playable=1",
+        "es": "https://juegosboom.com/kono/es?playable=1",
         "en": "https://juegosboom.com/kono/en?playable=1"
     },
     "delay": 3,

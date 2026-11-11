@@ -9,7 +9,7 @@
         "en": "https://juegosboom.com/bloques/en"
     },
     "play": {
-        "es": "https://juegosboom.com/bloques?playable=1",
+        "es": "https://juegosboom.com/bloques/es?playable=1",
         "en": "https://juegosboom.com/bloques/en?playable=1"
     },
     "delay": 3,

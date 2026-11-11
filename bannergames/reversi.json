@@ -9,7 +9,7 @@
         "en": "https://juegosboom.com/reversi/en"
     },
     "play": {
-        "es": "https://juegosboom.com/reversi?playable=1",
+        "es": "https://juegosboom.com/reversi/es?playable=1",
         "en": "https://juegosboom.com/reversi/en?playable=1"
     },
     "delay": 3,

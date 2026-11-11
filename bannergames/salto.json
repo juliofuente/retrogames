@@ -9,7 +9,7 @@
         "en": "https://juegosboom.com/salto/en"
     },
     "play": {
-        "es": "https://juegosboom.com/salto?playable=1",
+        "es": "https://juegosboom.com/salto/es?playable=1",
         "en": "https://juegosboom.com/salto/en?playable=1"
     },
     "delay": 3,

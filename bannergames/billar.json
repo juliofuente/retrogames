@@ -9,7 +9,7 @@
         "en": "https://juegosboom.com/billar/en"
     },
     "play": {
-        "es": "https://juegosboom.com/billar?playable=1",
+        "es": "https://juegosboom.com/billar/es?playable=1",
         "en": "https://juegosboom.com/billar/en?playable=1"
     },
     "delay": 3,

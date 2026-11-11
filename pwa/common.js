@@ -409,7 +409,7 @@
   /* ?playable=1: el juego dentro del intersticial jugable de bannergames.js (en webs de otros). Empieza directamente
      en el nivel ?lv= (o el 1), sin menú ni enlaces a la portada, sin música, y al ganar o perder se lo dice a la web
      que lo contiene con postMessage({bannergames:'win'|'over'}) para que enseñe su botón de jugar; ella puede
-     pedirle 'retry' (volver a jugar el nivel) o 'pause'. Abierto suelto (sin web alrededor) se juega normal. */
+     pedirle 'retry' (volver a jugar el nivel), 'next' (pasar al siguiente) o 'pause'. Abierto suelto (sin web alrededor) se juega normal. */
   A.playable = /[?&]playable=1/.test(location.search);
   A.embedded = A.playable && window.parent !== window;
   A.playLevel = Math.max(1, +(/[?&]lv=(\d+)/.exec(location.search) || [0, 1])[1]);
@@ -1326,7 +1326,8 @@
     if (A.embedded) {
       addEventListener('message', (e) => {
         const m = e.data; if (e.source !== window.parent || !m || typeof m.bannergames !== 'string') return;
-        if (m.bannergames === 'retry') { hide(); start(A.playLevel); }
+        if (m.bannergames === 'retry') { hide(); start(g.state === 'win' || !hasLevels ? A.playLevel : g.level); }   // tras perder: el mismo nivel
+        else if (m.bannergames === 'next' && g.state === 'win') { hide(); next(); }   // juegoaleatorio.js: varios niveles seguidos
         else if (m.bannergames === 'pause') pause();
       });
       A.bgPost({ bannergames: 'ready', id: def.id, levels: hasLevels && !infinite ? def.levels : 0 });

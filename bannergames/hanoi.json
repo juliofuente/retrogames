@@ -9,7 +9,7 @@
         "en": "https://juegosboom.com/hanoi/en"
     },
     "play": {
-        "es": "https://juegosboom.com/hanoi?playable=1",
+        "es": "https://juegosboom.com/hanoi/es?playable=1",
         "en": "https://juegosboom.com/hanoi/en?playable=1"
     },
     "delay": 3,

@@ -9,7 +9,7 @@
         "en": "https://juegosboom.com/flujos/en"
     },
     "play": {
-        "es": "https://juegosboom.com/flujos?playable=1",
+        "es": "https://juegosboom.com/flujos/es?playable=1",
         "en": "https://juegosboom.com/flujos/en?playable=1"
     },
     "delay": 3,

@@ -9,7 +9,7 @@
         "en": "https://juegosboom.com/puente/en"
     },
     "play": {
-        "es": "https://juegosboom.com/puente?playable=1",
+        "es": "https://juegosboom.com/puente/es?playable=1",
         "en": "https://juegosboom.com/puente/en?playable=1"
     },
     "delay": 3,

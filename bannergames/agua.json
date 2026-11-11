@@ -9,7 +9,7 @@
         "en": "https://juegosboom.com/agua/en"
     },
     "play": {
-        "es": "https://juegosboom.com/agua?playable=1",
+        "es": "https://juegosboom.com/agua/es?playable=1",
         "en": "https://juegosboom.com/agua/en?playable=1"
     },
     "delay": 3,

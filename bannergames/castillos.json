@@ -9,7 +9,7 @@
         "en": "https://juegosboom.com/castillos/en"
     },
     "play": {
-        "es": "https://juegosboom.com/castillos?playable=1",
+        "es": "https://juegosboom.com/castillos/es?playable=1",
         "en": "https://juegosboom.com/castillos/en?playable=1"
     },
     "delay": 3,

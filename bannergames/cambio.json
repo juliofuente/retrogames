@@ -9,7 +9,7 @@
         "en": "https://juegosboom.com/cambio/en"
     },
     "play": {
-        "es": "https://juegosboom.com/cambio?playable=1",
+        "es": "https://juegosboom.com/cambio/es?playable=1",
         "en": "https://juegosboom.com/cambio/en?playable=1"
     },
     "delay": 3,

@@ -9,7 +9,7 @@
         "en": "https://juegosboom.com/reaccion/en"
     },
     "play": {
-        "es": "https://juegosboom.com/reaccion?playable=1",
+        "es": "https://juegosboom.com/reaccion/es?playable=1",
         "en": "https://juegosboom.com/reaccion/en?playable=1"
     },
     "delay": 3,

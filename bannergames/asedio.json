@@ -9,7 +9,7 @@
         "en": "https://juegosboom.com/asedio/en"
     },
     "play": {
-        "es": "https://juegosboom.com/asedio?playable=1",
+        "es": "https://juegosboom.com/asedio/es?playable=1",
         "en": "https://juegosboom.com/asedio/en?playable=1"
     },
     "delay": 3,

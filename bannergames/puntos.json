@@ -9,7 +9,7 @@
         "en": "https://juegosboom.com/puntos/en"
     },
     "play": {
-        "es": "https://juegosboom.com/puntos?playable=1",
+        "es": "https://juegosboom.com/puntos/es?playable=1",
         "en": "https://juegosboom.com/puntos/en?playable=1"
     },
     "delay": 3,

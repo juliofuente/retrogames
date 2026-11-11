@@ -9,7 +9,7 @@
         "en": "https://juegosboom.com/backgammon/en"
     },
     "play": {
-        "es": "https://juegosboom.com/backgammon?playable=1",
+        "es": "https://juegosboom.com/backgammon/es?playable=1",
         "en": "https://juegosboom.com/backgammon/en?playable=1"
     },
     "delay": 3,

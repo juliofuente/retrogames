@@ -9,7 +9,7 @@
         "en": "https://juegosboom.com/abalone/en"
     },
     "play": {
-        "es": "https://juegosboom.com/abalone?playable=1",
+        "es": "https://juegosboom.com/abalone/es?playable=1",
         "en": "https://juegosboom.com/abalone/en?playable=1"
     },
     "delay": 3,

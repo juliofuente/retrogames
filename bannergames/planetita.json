@@ -9,7 +9,7 @@
         "en": "https://juegosboom.com/planetita/en"
     },
     "play": {
-        "es": "https://juegosboom.com/planetita?playable=1",
+        "es": "https://juegosboom.com/planetita/es?playable=1",
         "en": "https://juegosboom.com/planetita/en?playable=1"
     },
     "delay": 3,

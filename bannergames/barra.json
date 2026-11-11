@@ -9,7 +9,7 @@
         "en": "https://juegosboom.com/barra/en"
     },
     "play": {
-        "es": "https://juegosboom.com/barra?playable=1",
+        "es": "https://juegosboom.com/barra/es?playable=1",
         "en": "https://juegosboom.com/barra/en?playable=1"
     },
     "delay": 3,

@@ -9,7 +9,7 @@
         "en": "https://juegosboom.com/corona/en"
     },
     "play": {
-        "es": "https://juegosboom.com/corona?playable=1",
+        "es": "https://juegosboom.com/corona/es?playable=1",
         "en": "https://juegosboom.com/corona/en?playable=1"
     },
     "delay": 3,

@@ -9,7 +9,7 @@
         "en": "https://juegosboom.com/celulas/en"
     },
     "play": {
-        "es": "https://juegosboom.com/celulas?playable=1",
+        "es": "https://juegosboom.com/celulas/es?playable=1",
         "en": "https://juegosboom.com/celulas/en?playable=1"
     },
     "delay": 3,

@@ -9,7 +9,7 @@
         "en": "https://juegosboom.com/gancho/en"
     },
     "play": {
-        "es": "https://juegosboom.com/gancho?playable=1",
+        "es": "https://juegosboom.com/gancho/es?playable=1",
         "en": "https://juegosboom.com/gancho/en?playable=1"
     },
     "delay": 3,

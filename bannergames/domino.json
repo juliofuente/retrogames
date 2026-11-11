@@ -9,7 +9,7 @@
         "en": "https://juegosboom.com/domino/en"
     },
     "play": {
-        "es": "https://juegosboom.com/domino?playable=1",
+        "es": "https://juegosboom.com/domino/es?playable=1",
         "en": "https://juegosboom.com/domino/en?playable=1"
     },
     "delay": 3,

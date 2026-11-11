@@ -9,7 +9,7 @@
         "en": "https://juegosboom.com/asalto/en"
     },
     "play": {
-        "es": "https://juegosboom.com/asalto?playable=1",
+        "es": "https://juegosboom.com/asalto/es?playable=1",
         "en": "https://juegosboom.com/asalto/en?playable=1"
     },
     "delay": 3,

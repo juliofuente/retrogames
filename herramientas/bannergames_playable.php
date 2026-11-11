@@ -4,6 +4,7 @@
 // Los textos, colores y ajustes que ya haya en cada .json se conservan (solo se rellenan los que falten), así que
 // puedes retocarlos a mano y volver a generar sin perderlos.
 // Si un juego se llama igual que un perfil de otro tipo (cerillas, balanza, calculo…), su perfil jugable es <juego>-jugable.
+// También genera bannergames/juegos.json: la lista de juegos con niveles que usa bannergames/juegoaleatorio.js.
 // Uso (desde la raíz del repositorio): php herramientas/bannergames_playable.php
 $R = dirname(__DIR__);
 $db = new PDO("sqlite:$R/data/arcade.sqlite", null, null, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC]);
@@ -30,7 +31,7 @@ function merge_keep(array $def, array $cur): array {   // lo que ya hay manda; s
 }
 
 $games = $db->query("SELECT * FROM games WHERE deleted_at IS NULL AND collection_id <> 'edu' AND file <> '' ORDER BY sort, id")->fetchAll();
-$n = 0; $names = [];
+$n = 0; $names = []; $list = [];
 foreach ($games as $g) {
   $id = $g['id'];
   $prof = $id;
@@ -46,7 +47,7 @@ foreach ($games as $g) {
     'levels' => $lv,                                   // 0: juego por récord (sin niveles)
     'level' => 1,                                      // nivel que se juega en el intersticial
     'url' => ['es' => "$SITE/$id", 'en' => "$SITE/$id/en"],                     // el botón: el juego entero
-    'play' => ['es' => "$SITE/$id?playable=1", 'en' => "$SITE/$id/en?playable=1"],   // lo que va dentro del intersticial
+    'play' => ['es' => "$SITE/$id/es?playable=1", 'en' => "$SITE/$id/en?playable=1"],   // lo que va dentro del intersticial
     'delay' => 3, 'every_hours' => 12, 'closed_hours' => 24, 'hint_seconds' => 7,
     'colors' => ['bg1' => hexc($g['bg1'], '#2b2f36'), 'bg2' => hexc($g['bg2'], '#14161a'), 'accent' => hexc($g['color'], '#ffd43b'), 'cta' => '#ffd43b', 'ctaText' => '#2b1a0e'],
     'texts' => [
@@ -73,9 +74,14 @@ foreach ($games as $g) {
   $cur = is_file($f) ? (json_decode(file_get_contents($f), true) ?: []) : [];
   $j = merge_keep($def, $cur);
   $j['levels'] = $lv; $j['game'] = $id;   // del catálogo, siempre al día
+  if (($j['play']['es'] ?? '') === "$SITE/$id?playable=1") $j['play']['es'] = $def['play']['es'];   // antes iba sin /es (salía en el idioma del navegador)
   file_put_contents($f, json_encode($j, $F) . "\n");
   $names[] = $prof; $n++;
+  if ($lv > 1) $list[] = ['id' => $id, 'c' => $g['collection_id'], 'e' => $e, 'lv' => $lv, 't' => ['es' => $tes, 'en' => $ten],
+    'h' => ['es' => hint($g['help_es']), 'en' => hint($g['help_en'])], 'bg' => [$def['colors']['bg1'], $def['colors']['bg2']]];
 }
+// lista de juegos con niveles para juegoaleatorio.js (un juego al azar, tres niveles)
+file_put_contents("$OUT/juegos.json", json_encode(['site' => $SITE, 'games' => $list], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . "\n");
 // lista para la página de prueba (bannergames/demo.html)
 file_put_contents("$OUT/playable.txt", implode("\n", $names) . "\n");
 echo "bannergames: $n perfiles jugables\n";

@@ -9,7 +9,7 @@
         "en": "https://juegosboom.com/hashi/en"
     },
     "play": {
-        "es": "https://juegosboom.com/hashi?playable=1",
+        "es": "https://juegosboom.com/hashi/es?playable=1",
         "en": "https://juegosboom.com/hashi/en?playable=1"
     },
     "delay": 3,

@@ -9,7 +9,7 @@
         "en": "https://juegosboom.com/buscaminas/en"
     },
     "play": {
-        "es": "https://juegosboom.com/buscaminas?playable=1",
+        "es": "https://juegosboom.com/buscaminas/es?playable=1",
         "en": "https://juegosboom.com/buscaminas/en?playable=1"
     },
     "delay": 3,

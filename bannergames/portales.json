@@ -9,7 +9,7 @@
         "en": "https://juegosboom.com/portales/en"
     },
     "play": {
-        "es": "https://juegosboom.com/portales?playable=1",
+        "es": "https://juegosboom.com/portales/es?playable=1",
         "en": "https://juegosboom.com/portales/en?playable=1"
     },
     "delay": 3,

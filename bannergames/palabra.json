@@ -9,7 +9,7 @@
         "en": "https://juegosboom.com/palabra/en"
     },
     "play": {
-        "es": "https://juegosboom.com/palabra?playable=1",
+        "es": "https://juegosboom.com/palabra/es?playable=1",
         "en": "https://juegosboom.com/palabra/en?playable=1"
     },
     "delay": 3,

@@ -9,7 +9,7 @@
         "en": "https://juegosboom.com/campanas/en"
     },
     "play": {
-        "es": "https://juegosboom.com/campanas?playable=1",
+        "es": "https://juegosboom.com/campanas/es?playable=1",
         "en": "https://juegosboom.com/campanas/en?playable=1"
     },
     "delay": 3,

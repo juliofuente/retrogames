@@ -66,5 +66,19 @@ Perfiles jugables (type: playable): los 340 juegos del catálogo (menos los educ
   Para que funcione hay que subir también index.php, .htaccess (deja meter en un iframe solo las páginas con
   ?playable=1) y pwa/ (common.js y las páginas de los juegos).
 
+juegoaleatorio.js (aparte de bannergames.js): un juego al azar, tres niveles y luego a seguir en juegosboom.com
+  <script src="https://juegosboom.com/bannergames/juegoaleatorio.js?lang=es" async></script>
+  Coge al azar uno de los juegos con niveles (322; nunca el mismo dos veces seguidas) y lo abre en el intersticial,
+  empezando en el nivel 1. Entre nivel y nivel avisa «¡Nivel 1 superado! Ahora el 2 de 3» y pasa al siguiente solo.
+  Al superar el tercero: «¡Has superado 3 niveles! ¿Quieres seguir jugando?» con el botón al juego en juegosboom.com y
+  «Probar otro juego». Si pierde: «¡Casi!», reintentar ese nivel o ir al juego. Arriba hay «🎲 Otro» para cambiar.
+  Al cerrarlo (✕, «Seguir leyendo», Escape o clic fuera) queda una barra abajo, en móvil y en ordenador, que va
+  pasando los nombres de todos los juegos cada 3 segundos, cada uno con su enlace y el botón «Jugar». Con la ✕ de la
+  barra no vuelve a salir en 24 horas. Si ya salió en las últimas 12 horas, sale directamente la barra.
+  Parámetros opcionales del script: niveles (3), coleccion (main,pro,mesa,soli,orientales), juegos (ids), delay (3),
+  horas (12), cerrado (24). Por ejemplo: juegoaleatorio.js?lang=es&coleccion=orientales&niveles=2
+  Usa bannergames/juegos.json, que genera php herramientas/bannergames_playable.php.
+  En la demo: demo.html?aleatorio=1
+
 Subir a la web: la carpeta bannergames/ entera (con su .htaccess, que permite cargar el .js y el .json desde otras webs).
 Otros juegos: se añade una escena en bannergames.js (SCENES.<tipo>) y su .json.

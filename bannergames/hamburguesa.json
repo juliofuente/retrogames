@@ -9,7 +9,7 @@
         "en": "https://juegosboom.com/hamburguesa/en"
     },
     "play": {
-        "es": "https://juegosboom.com/hamburguesa?playable=1",
+        "es": "https://juegosboom.com/hamburguesa/es?playable=1",
         "en": "https://juegosboom.com/hamburguesa/en?playable=1"
     },
     "delay": 3,

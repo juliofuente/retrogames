@@ -9,7 +9,7 @@
         "en": "https://juegosboom.com/kojun/en"
     },
     "play": {
-        "es": "https://juegosboom.com/kojun?playable=1",
+        "es": "https://juegosboom.com/kojun/es?playable=1",
         "en": "https://juegosboom.com/kojun/en?playable=1"
     },
     "delay": 3,

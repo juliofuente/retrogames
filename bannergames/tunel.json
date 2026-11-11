@@ -9,7 +9,7 @@
         "en": "https://juegosboom.com/tunel/en"
     },
     "play": {
-        "es": "https://juegosboom.com/tunel?playable=1",
+        "es": "https://juegosboom.com/tunel/es?playable=1",
         "en": "https://juegosboom.com/tunel/en?playable=1"
     },
     "delay": 3,

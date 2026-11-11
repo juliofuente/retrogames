@@ -9,7 +9,7 @@
         "en": "https://juegosboom.com/relojes/en"
     },
     "play": {
-        "es": "https://juegosboom.com/relojes?playable=1",
+        "es": "https://juegosboom.com/relojes/es?playable=1",
         "en": "https://juegosboom.com/relojes/en?playable=1"
     },
     "delay": 3,

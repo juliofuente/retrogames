@@ -9,7 +9,7 @@
         "en": "https://juegosboom.com/teclas/en"
     },
     "play": {
-        "es": "https://juegosboom.com/teclas?playable=1",
+        "es": "https://juegosboom.com/teclas/es?playable=1",
         "en": "https://juegosboom.com/teclas/en?playable=1"
     },
     "delay": 3,

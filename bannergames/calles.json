@@ -9,7 +9,7 @@
         "en": "https://juegosboom.com/calles/en"
     },
     "play": {
-        "es": "https://juegosboom.com/calles?playable=1",
+        "es": "https://juegosboom.com/calles/es?playable=1",
         "en": "https://juegosboom.com/calles/en?playable=1"
     },
     "delay": 3,
