@@ -1,0 +1,5578 @@
+{
+ "type": "quiz",
+ "url": "https://educativos.juegosboom.com/policubos",
+ "delay": 3,
+ "every_hours": 12,
+ "closed_hours": 24,
+ "wait": 10,
+ "reveal": 4,
+ "colors": {
+  "bg1": "#3b2a7a",
+  "bg2": "#140c33",
+  "accent": "#7048e8",
+  "cta": "#ffd43b",
+  "ctaText": "#2b1a0e"
+ },
+ "texts": {
+  "es": {
+   "think": "¡Piensa!",
+   "solved": "¿Lo has acertado?",
+   "answer": "Respuesta",
+   "cta": "Juega gratis ▶",
+   "later": "Seguir leyendo",
+   "barCta": "Jugar",
+   "close": "Cerrar",
+   "expand": "Ampliar",
+   "brand": "🧊 Policubos",
+   "mini": "Policubos",
+   "question": "¿Cuántos cubos hay?",
+   "bar": "🧊 ¿Cuántos cubos hay? Cuenta también los que no se ven."
+  },
+  "en": {
+   "think": "Think!",
+   "solved": "Did you get it?",
+   "answer": "Answer",
+   "cta": "Play free ▶",
+   "later": "Keep reading",
+   "barCta": "Play",
+   "close": "Close",
+   "expand": "Expand",
+   "brand": "🧊 Cube count",
+   "mini": "Cube count",
+   "question": "How many cubes are there?",
+   "bar": "🧊 How many cubes? Count the hidden ones too."
+  }
+ },
+ "items": {
+  "es": [
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       1,
+       3,
+       4
+      ]
+     ],
+     "rows": 1,
+     "cols": 3,
+     "color": "#3cc36e"
+    },
+    "opts": [
+     "10",
+     "8",
+     "9",
+     "7"
+    ],
+    "ok": 1,
+    "answer": "8",
+    "rule": {
+     "text": "Suma cada columna:",
+     "lines": [
+      "1 + 3 + 4 = 8"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       4,
+       2,
+       1,
+       1
+      ]
+     ],
+     "rows": 1,
+     "cols": 4,
+     "color": "#3cc36e"
+    },
+    "opts": [
+     "9",
+     "8",
+     "7",
+     "10"
+    ],
+    "ok": 1,
+    "answer": "8",
+    "rule": {
+     "text": "Suma cada columna:",
+     "lines": [
+      "4 + 2 + 1 + 1 = 8"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       1,
+       3,
+       3
+      ],
+      [
+       2,
+       4,
+       5
+      ]
+     ],
+     "rows": 2,
+     "cols": 3,
+     "color": "#ff9f43"
+    },
+    "opts": [
+     "18",
+     "14",
+     "7",
+     "19"
+    ],
+    "ok": 0,
+    "answer": "18",
+    "rule": {
+     "text": "Los cubos no flotan: hay cubos escondidos debajo. Suma cada columna:",
+     "lines": [
+      "1 + 3 + 3 + 2 + 4 + 5 = 18"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       2,
+       2,
+       2,
+       1
+      ],
+      [
+       4,
+       4,
+       3,
+       3
+      ]
+     ],
+     "rows": 2,
+     "cols": 4,
+     "color": "#ffd93d"
+    },
+    "opts": [
+     "22",
+     "21",
+     "7",
+     "15"
+    ],
+    "ok": 1,
+    "answer": "21",
+    "rule": {
+     "text": "Los cubos no flotan: hay cubos escondidos debajo. Suma cada columna:",
+     "lines": [
+      "2 + 2 + 2 + 1 + 4 + 4 + 3 + 3 = 21"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       3,
+       1,
+       4,
+       4
+      ],
+      [
+       4,
+       3,
+       6,
+       6
+      ]
+     ],
+     "rows": 2,
+     "cols": 4,
+     "color": "#ff6b9d"
+    },
+    "opts": [
+     "32",
+     "12",
+     "31",
+     "23"
+    ],
+    "ok": 2,
+    "answer": "31",
+    "rule": {
+     "text": "Los cubos no flotan: hay cubos escondidos debajo. Suma cada columna:",
+     "lines": [
+      "3 + 1 + 4 + 4 + 4 + 3 + 6 + 6 = 31"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       1,
+       3,
+       2
+      ],
+      [
+       2,
+       4,
+       4
+      ]
+     ],
+     "rows": 2,
+     "cols": 3,
+     "color": "#ffd93d"
+    },
+    "opts": [
+     "16",
+     "12",
+     "6",
+     "17"
+    ],
+    "ok": 0,
+    "answer": "16",
+    "rule": {
+     "text": "Los cubos no flotan: hay cubos escondidos debajo. Suma cada columna:",
+     "lines": [
+      "1 + 3 + 2 + 2 + 4 + 4 = 16"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       2,
+       1,
+       4,
+       1
+      ],
+      [
+       3,
+       2,
+       5,
+       3
+      ]
+     ],
+     "rows": 2,
+     "cols": 4,
+     "color": "#ffd93d"
+    },
+    "opts": [
+     "21",
+     "8",
+     "22",
+     "15"
+    ],
+    "ok": 0,
+    "answer": "21",
+    "rule": {
+     "text": "Los cubos no flotan: hay cubos escondidos debajo. Suma cada columna:",
+     "lines": [
+      "2 + 1 + 4 + 1 + 3 + 2 + 5 + 3 = 21"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       2,
+       1,
+       4
+      ],
+      [
+       3,
+       3,
+       5
+      ]
+     ],
+     "rows": 2,
+     "cols": 3,
+     "color": "#ff9f43"
+    },
+    "opts": [
+     "15",
+     "18",
+     "7",
+     "19"
+    ],
+    "ok": 1,
+    "answer": "18",
+    "rule": {
+     "text": "Los cubos no flotan: hay cubos escondidos debajo. Suma cada columna:",
+     "lines": [
+      "2 + 1 + 4 + 3 + 3 + 5 = 18"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       2,
+       1,
+       2,
+       2
+      ],
+      [
+       3,
+       2,
+       4,
+       4
+      ]
+     ],
+     "rows": 2,
+     "cols": 4,
+     "color": "#ffd93d"
+    },
+    "opts": [
+     "15",
+     "20",
+     "21",
+     "7"
+    ],
+    "ok": 1,
+    "answer": "20",
+    "rule": {
+     "text": "Los cubos no flotan: hay cubos escondidos debajo. Suma cada columna:",
+     "lines": [
+      "2 + 1 + 2 + 2 + 3 + 2 + 4 + 4 = 20"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       3,
+       4,
+       3
+      ]
+     ],
+     "rows": 1,
+     "cols": 3,
+     "color": "#ff6b9d"
+    },
+    "opts": [
+     "10",
+     "9",
+     "12",
+     "11"
+    ],
+    "ok": 0,
+    "answer": "10",
+    "rule": {
+     "text": "Suma cada columna:",
+     "lines": [
+      "3 + 4 + 3 = 10"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       4,
+       1,
+       2,
+       3
+      ],
+      [
+       5,
+       3,
+       3,
+       5
+      ]
+     ],
+     "rows": 2,
+     "cols": 4,
+     "color": "#3cc36e"
+    },
+    "opts": [
+     "10",
+     "27",
+     "20",
+     "26"
+    ],
+    "ok": 3,
+    "answer": "26",
+    "rule": {
+     "text": "Los cubos no flotan: hay cubos escondidos debajo. Suma cada columna:",
+     "lines": [
+      "4 + 1 + 2 + 3 + 5 + 3 + 3 + 5 = 26"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       2,
+       3,
+       3
+      ],
+      [
+       3,
+       5,
+       4
+      ]
+     ],
+     "rows": 2,
+     "cols": 3,
+     "color": "#ff6b9d"
+    },
+    "opts": [
+     "8",
+     "21",
+     "15",
+     "20"
+    ],
+    "ok": 3,
+    "answer": "20",
+    "rule": {
+     "text": "Los cubos no flotan: hay cubos escondidos debajo. Suma cada columna:",
+     "lines": [
+      "2 + 3 + 3 + 3 + 5 + 4 = 20"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       2,
+       3,
+       3
+      ],
+      [
+       4,
+       4,
+       5
+      ]
+     ],
+     "rows": 2,
+     "cols": 3,
+     "color": "#4fb8ff"
+    },
+    "opts": [
+     "21",
+     "16",
+     "22",
+     "8"
+    ],
+    "ok": 0,
+    "answer": "21",
+    "rule": {
+     "text": "Los cubos no flotan: hay cubos escondidos debajo. Suma cada columna:",
+     "lines": [
+      "2 + 3 + 3 + 4 + 4 + 5 = 21"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       2,
+       4,
+       3,
+       2,
+       1
+      ],
+      [
+       3,
+       6,
+       5,
+       3,
+       3
+      ]
+     ],
+     "rows": 2,
+     "cols": 5,
+     "color": "#9b5cff"
+    },
+    "opts": [
+     "12",
+     "33",
+     "21",
+     "32"
+    ],
+    "ok": 3,
+    "answer": "32",
+    "rule": {
+     "text": "Los cubos no flotan: hay cubos escondidos debajo. Suma cada columna:",
+     "lines": [
+      "2 + 4 + 3 + 2 + 1 + 3 + 6 + 5 + 3 + 3 = 32"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       1,
+       3,
+       3,
+       4,
+       1
+      ],
+      [
+       2,
+       4,
+       5,
+       6,
+       2
+      ]
+     ],
+     "rows": 2,
+     "cols": 5,
+     "color": "#9b5cff"
+    },
+    "opts": [
+     "22",
+     "12",
+     "32",
+     "31"
+    ],
+    "ok": 3,
+    "answer": "31",
+    "rule": {
+     "text": "Los cubos no flotan: hay cubos escondidos debajo. Suma cada columna:",
+     "lines": [
+      "1 + 3 + 3 + 4 + 1 + 2 + 4 + 5 + 6 + 2 = 31"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       2,
+       2,
+       1,
+       1
+      ],
+      [
+       4,
+       3,
+       3,
+       2
+      ]
+     ],
+     "rows": 2,
+     "cols": 4,
+     "color": "#ff9f43"
+    },
+    "opts": [
+     "18",
+     "13",
+     "6",
+     "19"
+    ],
+    "ok": 0,
+    "answer": "18",
+    "rule": {
+     "text": "Los cubos no flotan: hay cubos escondidos debajo. Suma cada columna:",
+     "lines": [
+      "2 + 2 + 1 + 1 + 4 + 3 + 3 + 2 = 18"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       1,
+       1,
+       4,
+       3,
+       2
+      ],
+      [
+       3,
+       2,
+       6,
+       5,
+       3
+      ]
+     ],
+     "rows": 2,
+     "cols": 5,
+     "color": "#3cc36e"
+    },
+    "opts": [
+     "30",
+     "21",
+     "11",
+     "31"
+    ],
+    "ok": 0,
+    "answer": "30",
+    "rule": {
+     "text": "Los cubos no flotan: hay cubos escondidos debajo. Suma cada columna:",
+     "lines": [
+      "1 + 1 + 4 + 3 + 2 + 3 + 2 + 6 + 5 + 3 = 30"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       2,
+       3,
+       1
+      ]
+     ],
+     "rows": 1,
+     "cols": 3,
+     "color": "#ffd93d"
+    },
+    "opts": [
+     "6",
+     "5",
+     "7",
+     "8"
+    ],
+    "ok": 0,
+    "answer": "6",
+    "rule": {
+     "text": "Suma cada columna:",
+     "lines": [
+      "2 + 3 + 1 = 6"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       3,
+       1,
+       3
+      ],
+      [
+       4,
+       3,
+       4
+      ]
+     ],
+     "rows": 2,
+     "cols": 3,
+     "color": "#ffd93d"
+    },
+    "opts": [
+     "14",
+     "18",
+     "7",
+     "19"
+    ],
+    "ok": 1,
+    "answer": "18",
+    "rule": {
+     "text": "Los cubos no flotan: hay cubos escondidos debajo. Suma cada columna:",
+     "lines": [
+      "3 + 1 + 3 + 4 + 3 + 4 = 18"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       3,
+       1,
+       4,
+       1
+      ],
+      [
+       5,
+       2,
+       5,
+       3
+      ]
+     ],
+     "rows": 2,
+     "cols": 4,
+     "color": "#ffd93d"
+    },
+    "opts": [
+     "25",
+     "24",
+     "9",
+     "18"
+    ],
+    "ok": 1,
+    "answer": "24",
+    "rule": {
+     "text": "Los cubos no flotan: hay cubos escondidos debajo. Suma cada columna:",
+     "lines": [
+      "3 + 1 + 4 + 1 + 5 + 2 + 5 + 3 = 24"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       1,
+       2,
+       2
+      ],
+      [
+       3,
+       3,
+       4
+      ]
+     ],
+     "rows": 2,
+     "cols": 3,
+     "color": "#ff6b9d"
+    },
+    "opts": [
+     "12",
+     "16",
+     "5",
+     "15"
+    ],
+    "ok": 3,
+    "answer": "15",
+    "rule": {
+     "text": "Los cubos no flotan: hay cubos escondidos debajo. Suma cada columna:",
+     "lines": [
+      "1 + 2 + 2 + 3 + 3 + 4 = 15"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       3,
+       2,
+       4,
+       4
+      ],
+      [
+       4,
+       4,
+       5,
+       6
+      ]
+     ],
+     "rows": 2,
+     "cols": 4,
+     "color": "#ff9f43"
+    },
+    "opts": [
+     "33",
+     "13",
+     "32",
+     "23"
+    ],
+    "ok": 2,
+    "answer": "32",
+    "rule": {
+     "text": "Los cubos no flotan: hay cubos escondidos debajo. Suma cada columna:",
+     "lines": [
+      "3 + 2 + 4 + 4 + 4 + 4 + 5 + 6 = 32"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       2,
+       2,
+       3,
+       2,
+       2
+      ],
+      [
+       3,
+       3,
+       4,
+       3,
+       3
+      ]
+     ],
+     "rows": 2,
+     "cols": 5,
+     "color": "#ff6b9d"
+    },
+    "opts": [
+     "11",
+     "18",
+     "27",
+     "28"
+    ],
+    "ok": 2,
+    "answer": "27",
+    "rule": {
+     "text": "Los cubos no flotan: hay cubos escondidos debajo. Suma cada columna:",
+     "lines": [
+      "2 + 2 + 3 + 2 + 2 + 3 + 3 + 4 + 3 + 3 = 27"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       3,
+       4,
+       2,
+       1,
+       2
+      ],
+      [
+       4,
+       6,
+       3,
+       3,
+       4
+      ]
+     ],
+     "rows": 2,
+     "cols": 5,
+     "color": "#ff6b9d"
+    },
+    "opts": [
+     "23",
+     "32",
+     "33",
+     "12"
+    ],
+    "ok": 1,
+    "answer": "32",
+    "rule": {
+     "text": "Los cubos no flotan: hay cubos escondidos debajo. Suma cada columna:",
+     "lines": [
+      "3 + 4 + 2 + 1 + 2 + 4 + 6 + 3 + 3 + 4 = 32"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       3,
+       2,
+       1,
+       2
+      ],
+      [
+       4,
+       3,
+       3,
+       3
+      ]
+     ],
+     "rows": 2,
+     "cols": 4,
+     "color": "#ff9f43"
+    },
+    "opts": [
+     "21",
+     "8",
+     "15",
+     "22"
+    ],
+    "ok": 0,
+    "answer": "21",
+    "rule": {
+     "text": "Los cubos no flotan: hay cubos escondidos debajo. Suma cada columna:",
+     "lines": [
+      "3 + 2 + 1 + 2 + 4 + 3 + 3 + 3 = 21"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       3,
+       1,
+       2
+      ]
+     ],
+     "rows": 1,
+     "cols": 3,
+     "color": "#3cc36e"
+    },
+    "opts": [
+     "6",
+     "5",
+     "7",
+     "8"
+    ],
+    "ok": 0,
+    "answer": "6",
+    "rule": {
+     "text": "Suma cada columna:",
+     "lines": [
+      "3 + 1 + 2 = 6"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       4,
+       3,
+       3,
+       3
+      ],
+      [
+       5,
+       5,
+       5,
+       4
+      ]
+     ],
+     "rows": 2,
+     "cols": 4,
+     "color": "#4fb8ff"
+    },
+    "opts": [
+     "13",
+     "33",
+     "32",
+     "22"
+    ],
+    "ok": 2,
+    "answer": "32",
+    "rule": {
+     "text": "Los cubos no flotan: hay cubos escondidos debajo. Suma cada columna:",
+     "lines": [
+      "4 + 3 + 3 + 3 + 5 + 5 + 5 + 4 = 32"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       3,
+       2,
+       4,
+       3
+      ],
+      [
+       5,
+       4,
+       6,
+       5
+      ]
+     ],
+     "rows": 2,
+     "cols": 4,
+     "color": "#ffd93d"
+    },
+    "opts": [
+     "33",
+     "32",
+     "12",
+     "23"
+    ],
+    "ok": 1,
+    "answer": "32",
+    "rule": {
+     "text": "Los cubos no flotan: hay cubos escondidos debajo. Suma cada columna:",
+     "lines": [
+      "3 + 2 + 4 + 3 + 5 + 4 + 6 + 5 = 32"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       4,
+       2,
+       1,
+       3
+      ],
+      [
+       6,
+       3,
+       2,
+       5
+      ]
+     ],
+     "rows": 2,
+     "cols": 4,
+     "color": "#4fb8ff"
+    },
+    "opts": [
+     "20",
+     "27",
+     "26",
+     "10"
+    ],
+    "ok": 2,
+    "answer": "26",
+    "rule": {
+     "text": "Los cubos no flotan: hay cubos escondidos debajo. Suma cada columna:",
+     "lines": [
+      "4 + 2 + 1 + 3 + 6 + 3 + 2 + 5 = 26"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       2,
+       3,
+       2,
+       1,
+       4
+      ],
+      [
+       3,
+       4,
+       3,
+       3,
+       5
+      ]
+     ],
+     "rows": 2,
+     "cols": 5,
+     "color": "#3cc36e"
+    },
+    "opts": [
+     "12",
+     "22",
+     "31",
+     "30"
+    ],
+    "ok": 3,
+    "answer": "30",
+    "rule": {
+     "text": "Los cubos no flotan: hay cubos escondidos debajo. Suma cada columna:",
+     "lines": [
+      "2 + 3 + 2 + 1 + 4 + 3 + 4 + 3 + 3 + 5 = 30"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       3,
+       1,
+       3
+      ],
+      [
+       5,
+       3,
+       5
+      ]
+     ],
+     "rows": 2,
+     "cols": 3,
+     "color": "#ffd93d"
+    },
+    "opts": [
+     "7",
+     "21",
+     "16",
+     "20"
+    ],
+    "ok": 3,
+    "answer": "20",
+    "rule": {
+     "text": "Los cubos no flotan: hay cubos escondidos debajo. Suma cada columna:",
+     "lines": [
+      "3 + 1 + 3 + 5 + 3 + 5 = 20"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       1,
+       3,
+       4,
+       3,
+       3
+      ],
+      [
+       3,
+       5,
+       6,
+       4,
+       4
+      ]
+     ],
+     "rows": 2,
+     "cols": 5,
+     "color": "#4fb8ff"
+    },
+    "opts": [
+     "37",
+     "25",
+     "14",
+     "36"
+    ],
+    "ok": 3,
+    "answer": "36",
+    "rule": {
+     "text": "Los cubos no flotan: hay cubos escondidos debajo. Suma cada columna:",
+     "lines": [
+      "1 + 3 + 4 + 3 + 3 + 3 + 5 + 6 + 4 + 4 = 36"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       4,
+       2,
+       1,
+       3
+      ],
+      [
+       6,
+       4,
+       2,
+       4
+      ]
+     ],
+     "rows": 2,
+     "cols": 4,
+     "color": "#ff9f43"
+    },
+    "opts": [
+     "27",
+     "10",
+     "26",
+     "19"
+    ],
+    "ok": 2,
+    "answer": "26",
+    "rule": {
+     "text": "Los cubos no flotan: hay cubos escondidos debajo. Suma cada columna:",
+     "lines": [
+      "4 + 2 + 1 + 3 + 6 + 4 + 2 + 4 = 26"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       4,
+       3,
+       4,
+       4
+      ]
+     ],
+     "rows": 1,
+     "cols": 4,
+     "color": "#4fb8ff"
+    },
+    "opts": [
+     "15",
+     "14",
+     "16",
+     "17"
+    ],
+    "ok": 0,
+    "answer": "15",
+    "rule": {
+     "text": "Suma cada columna:",
+     "lines": [
+      "4 + 3 + 4 + 4 = 15"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       4,
+       3,
+       1
+      ],
+      [
+       6,
+       4,
+       3
+      ]
+     ],
+     "rows": 2,
+     "cols": 3,
+     "color": "#4fb8ff"
+    },
+    "opts": [
+     "21",
+     "14",
+     "8",
+     "22"
+    ],
+    "ok": 0,
+    "answer": "21",
+    "rule": {
+     "text": "Los cubos no flotan: hay cubos escondidos debajo. Suma cada columna:",
+     "lines": [
+      "4 + 3 + 1 + 6 + 4 + 3 = 21"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       3,
+       2,
+       3,
+       1
+      ],
+      [
+       4,
+       3,
+       4,
+       3
+      ]
+     ],
+     "rows": 2,
+     "cols": 4,
+     "color": "#4fb8ff"
+    },
+    "opts": [
+     "24",
+     "23",
+     "9",
+     "15"
+    ],
+    "ok": 1,
+    "answer": "23",
+    "rule": {
+     "text": "Los cubos no flotan: hay cubos escondidos debajo. Suma cada columna:",
+     "lines": [
+      "3 + 2 + 3 + 1 + 4 + 3 + 4 + 3 = 23"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       1,
+       2,
+       4
+      ],
+      [
+       2,
+       4,
+       5
+      ]
+     ],
+     "rows": 2,
+     "cols": 3,
+     "color": "#4fb8ff"
+    },
+    "opts": [
+     "15",
+     "19",
+     "7",
+     "18"
+    ],
+    "ok": 3,
+    "answer": "18",
+    "rule": {
+     "text": "Los cubos no flotan: hay cubos escondidos debajo. Suma cada columna:",
+     "lines": [
+      "1 + 2 + 4 + 2 + 4 + 5 = 18"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       3,
+       2,
+       2
+      ],
+      [
+       4,
+       3,
+       4
+      ]
+     ],
+     "rows": 2,
+     "cols": 3,
+     "color": "#ff6b9d"
+    },
+    "opts": [
+     "7",
+     "13",
+     "18",
+     "19"
+    ],
+    "ok": 2,
+    "answer": "18",
+    "rule": {
+     "text": "Los cubos no flotan: hay cubos escondidos debajo. Suma cada columna:",
+     "lines": [
+      "3 + 2 + 2 + 4 + 3 + 4 = 18"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       1,
+       4,
+       2,
+       4
+      ],
+      [
+       3,
+       5,
+       3,
+       6
+      ]
+     ],
+     "rows": 2,
+     "cols": 4,
+     "color": "#ff9f43"
+    },
+    "opts": [
+     "22",
+     "11",
+     "29",
+     "28"
+    ],
+    "ok": 3,
+    "answer": "28",
+    "rule": {
+     "text": "Los cubos no flotan: hay cubos escondidos debajo. Suma cada columna:",
+     "lines": [
+      "1 + 4 + 2 + 4 + 3 + 5 + 3 + 6 = 28"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       1,
+       1,
+       1,
+       3,
+       4
+      ],
+      [
+       3,
+       2,
+       2,
+       5,
+       5
+      ]
+     ],
+     "rows": 2,
+     "cols": 5,
+     "color": "#3cc36e"
+    },
+    "opts": [
+     "27",
+     "21",
+     "10",
+     "28"
+    ],
+    "ok": 0,
+    "answer": "27",
+    "rule": {
+     "text": "Los cubos no flotan: hay cubos escondidos debajo. Suma cada columna:",
+     "lines": [
+      "1 + 1 + 1 + 3 + 4 + 3 + 2 + 2 + 5 + 5 = 27"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       4,
+       4,
+       2
+      ],
+      [
+       5,
+       6,
+       3
+      ]
+     ],
+     "rows": 2,
+     "cols": 3,
+     "color": "#3cc36e"
+    },
+    "opts": [
+     "24",
+     "17",
+     "25",
+     "10"
+    ],
+    "ok": 0,
+    "answer": "24",
+    "rule": {
+     "text": "Los cubos no flotan: hay cubos escondidos debajo. Suma cada columna:",
+     "lines": [
+      "4 + 4 + 2 + 5 + 6 + 3 = 24"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       2,
+       1,
+       4,
+       4
+      ]
+     ],
+     "rows": 1,
+     "cols": 4,
+     "color": "#4fb8ff"
+    },
+    "opts": [
+     "10",
+     "12",
+     "11",
+     "13"
+    ],
+    "ok": 2,
+    "answer": "11",
+    "rule": {
+     "text": "Suma cada columna:",
+     "lines": [
+      "2 + 1 + 4 + 4 = 11"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       3,
+       2,
+       1
+      ],
+      [
+       4,
+       3,
+       3
+      ]
+     ],
+     "rows": 2,
+     "cols": 3,
+     "color": "#3cc36e"
+    },
+    "opts": [
+     "6",
+     "16",
+     "17",
+     "11"
+    ],
+    "ok": 1,
+    "answer": "16",
+    "rule": {
+     "text": "Los cubos no flotan: hay cubos escondidos debajo. Suma cada columna:",
+     "lines": [
+      "3 + 2 + 1 + 4 + 3 + 3 = 16"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       3,
+       3,
+       3
+      ],
+      [
+       4,
+       4,
+       5
+      ]
+     ],
+     "rows": 2,
+     "cols": 3,
+     "color": "#3cc36e"
+    },
+    "opts": [
+     "9",
+     "23",
+     "22",
+     "16"
+    ],
+    "ok": 2,
+    "answer": "22",
+    "rule": {
+     "text": "Los cubos no flotan: hay cubos escondidos debajo. Suma cada columna:",
+     "lines": [
+      "3 + 3 + 3 + 4 + 4 + 5 = 22"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       2,
+       3,
+       3,
+       2
+      ],
+      [
+       4,
+       4,
+       5,
+       4
+      ]
+     ],
+     "rows": 2,
+     "cols": 4,
+     "color": "#9b5cff"
+    },
+    "opts": [
+     "27",
+     "10",
+     "19",
+     "28"
+    ],
+    "ok": 0,
+    "answer": "27",
+    "rule": {
+     "text": "Los cubos no flotan: hay cubos escondidos debajo. Suma cada columna:",
+     "lines": [
+      "2 + 3 + 3 + 2 + 4 + 4 + 5 + 4 = 27"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       2,
+       1,
+       3,
+       3
+      ],
+      [
+       4,
+       3,
+       4,
+       4
+      ]
+     ],
+     "rows": 2,
+     "cols": 4,
+     "color": "#ff9f43"
+    },
+    "opts": [
+     "18",
+     "9",
+     "25",
+     "24"
+    ],
+    "ok": 3,
+    "answer": "24",
+    "rule": {
+     "text": "Los cubos no flotan: hay cubos escondidos debajo. Suma cada columna:",
+     "lines": [
+      "2 + 1 + 3 + 3 + 4 + 3 + 4 + 4 = 24"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       1,
+       3,
+       4
+      ],
+      [
+       3,
+       4,
+       6
+      ]
+     ],
+     "rows": 2,
+     "cols": 3,
+     "color": "#ff6b9d"
+    },
+    "opts": [
+     "22",
+     "21",
+     "8",
+     "17"
+    ],
+    "ok": 1,
+    "answer": "21",
+    "rule": {
+     "text": "Los cubos no flotan: hay cubos escondidos debajo. Suma cada columna:",
+     "lines": [
+      "1 + 3 + 4 + 3 + 4 + 6 = 21"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       2,
+       3,
+       2
+      ],
+      [
+       3,
+       4,
+       3
+      ]
+     ],
+     "rows": 2,
+     "cols": 3,
+     "color": "#ffd93d"
+    },
+    "opts": [
+     "7",
+     "17",
+     "18",
+     "12"
+    ],
+    "ok": 1,
+    "answer": "17",
+    "rule": {
+     "text": "Los cubos no flotan: hay cubos escondidos debajo. Suma cada columna:",
+     "lines": [
+      "2 + 3 + 2 + 3 + 4 + 3 = 17"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       1,
+       3,
+       3,
+       4,
+       1
+      ],
+      [
+       3,
+       5,
+       5,
+       5,
+       3
+      ]
+     ],
+     "rows": 2,
+     "cols": 5,
+     "color": "#ff9f43"
+    },
+    "opts": [
+     "23",
+     "33",
+     "34",
+     "12"
+    ],
+    "ok": 1,
+    "answer": "33",
+    "rule": {
+     "text": "Los cubos no flotan: hay cubos escondidos debajo. Suma cada columna:",
+     "lines": [
+      "1 + 3 + 3 + 4 + 1 + 3 + 5 + 5 + 5 + 3 = 33"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       1,
+       4,
+       1
+      ]
+     ],
+     "rows": 1,
+     "cols": 3,
+     "color": "#ff6b9d"
+    },
+    "opts": [
+     "8",
+     "7",
+     "5",
+     "6"
+    ],
+    "ok": 3,
+    "answer": "6",
+    "rule": {
+     "text": "Suma cada columna:",
+     "lines": [
+      "1 + 4 + 1 = 6"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       1,
+       2,
+       2
+      ],
+      [
+       3,
+       3,
+       3
+      ]
+     ],
+     "rows": 2,
+     "cols": 3,
+     "color": "#ff9f43"
+    },
+    "opts": [
+     "5",
+     "15",
+     "11",
+     "14"
+    ],
+    "ok": 3,
+    "answer": "14",
+    "rule": {
+     "text": "Los cubos no flotan: hay cubos escondidos debajo. Suma cada columna:",
+     "lines": [
+      "1 + 2 + 2 + 3 + 3 + 3 = 14"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       2,
+       4,
+       1,
+       2
+      ],
+      [
+       3,
+       6,
+       3,
+       4
+      ]
+     ],
+     "rows": 2,
+     "cols": 4,
+     "color": "#ff6b9d"
+    },
+    "opts": [
+     "26",
+     "25",
+     "9",
+     "19"
+    ],
+    "ok": 1,
+    "answer": "25",
+    "rule": {
+     "text": "Los cubos no flotan: hay cubos escondidos debajo. Suma cada columna:",
+     "lines": [
+      "2 + 4 + 1 + 2 + 3 + 6 + 3 + 4 = 25"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       4,
+       2,
+       1
+      ],
+      [
+       5,
+       4,
+       3
+      ]
+     ],
+     "rows": 2,
+     "cols": 3,
+     "color": "#ff9f43"
+    },
+    "opts": [
+     "20",
+     "13",
+     "7",
+     "19"
+    ],
+    "ok": 3,
+    "answer": "19",
+    "rule": {
+     "text": "Los cubos no flotan: hay cubos escondidos debajo. Suma cada columna:",
+     "lines": [
+      "4 + 2 + 1 + 5 + 4 + 3 = 19"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       1,
+       4,
+       1,
+       4,
+       1
+      ],
+      [
+       2,
+       6,
+       3,
+       6,
+       3
+      ]
+     ],
+     "rows": 2,
+     "cols": 5,
+     "color": "#ff9f43"
+    },
+    "opts": [
+     "31",
+     "32",
+     "23",
+     "11"
+    ],
+    "ok": 0,
+    "answer": "31",
+    "rule": {
+     "text": "Los cubos no flotan: hay cubos escondidos debajo. Suma cada columna:",
+     "lines": [
+      "1 + 4 + 1 + 4 + 1 + 2 + 6 + 3 + 6 + 3 = 31"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       2,
+       2,
+       3,
+       4,
+       4
+      ],
+      [
+       3,
+       4,
+       4,
+       6,
+       6
+      ]
+     ],
+     "rows": 2,
+     "cols": 5,
+     "color": "#4fb8ff"
+    },
+    "opts": [
+     "15",
+     "27",
+     "39",
+     "38"
+    ],
+    "ok": 3,
+    "answer": "38",
+    "rule": {
+     "text": "Los cubos no flotan: hay cubos escondidos debajo. Suma cada columna:",
+     "lines": [
+      "2 + 2 + 3 + 4 + 4 + 3 + 4 + 4 + 6 + 6 = 38"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       2,
+       3,
+       4
+      ],
+      [
+       3,
+       5,
+       5
+      ]
+     ],
+     "rows": 2,
+     "cols": 3,
+     "color": "#ff9f43"
+    },
+    "opts": [
+     "17",
+     "23",
+     "9",
+     "22"
+    ],
+    "ok": 3,
+    "answer": "22",
+    "rule": {
+     "text": "Los cubos no flotan: hay cubos escondidos debajo. Suma cada columna:",
+     "lines": [
+      "2 + 3 + 4 + 3 + 5 + 5 = 22"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       4,
+       2,
+       2
+      ],
+      [
+       5,
+       3,
+       4
+      ]
+     ],
+     "rows": 2,
+     "cols": 3,
+     "color": "#3cc36e"
+    },
+    "opts": [
+     "15",
+     "21",
+     "20",
+     "8"
+    ],
+    "ok": 2,
+    "answer": "20",
+    "rule": {
+     "text": "Los cubos no flotan: hay cubos escondidos debajo. Suma cada columna:",
+     "lines": [
+      "4 + 2 + 2 + 5 + 3 + 4 = 20"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       1,
+       4,
+       4
+      ]
+     ],
+     "rows": 1,
+     "cols": 3,
+     "color": "#9b5cff"
+    },
+    "opts": [
+     "11",
+     "8",
+     "9",
+     "10"
+    ],
+    "ok": 2,
+    "answer": "9",
+    "rule": {
+     "text": "Suma cada columna:",
+     "lines": [
+      "1 + 4 + 4 = 9"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       4,
+       4,
+       2
+      ]
+     ],
+     "rows": 1,
+     "cols": 3,
+     "color": "#ff9f43"
+    },
+    "opts": [
+     "11",
+     "12",
+     "10",
+     "9"
+    ],
+    "ok": 2,
+    "answer": "10",
+    "rule": {
+     "text": "Suma cada columna:",
+     "lines": [
+      "4 + 4 + 2 = 10"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       2,
+       1,
+       2,
+       2
+      ],
+      [
+       4,
+       3,
+       4,
+       4
+      ]
+     ],
+     "rows": 2,
+     "cols": 4,
+     "color": "#9b5cff"
+    },
+    "opts": [
+     "23",
+     "22",
+     "17",
+     "7"
+    ],
+    "ok": 1,
+    "answer": "22",
+    "rule": {
+     "text": "Los cubos no flotan: hay cubos escondidos debajo. Suma cada columna:",
+     "lines": [
+      "2 + 1 + 2 + 2 + 4 + 3 + 4 + 4 = 22"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       1,
+       4,
+       2,
+       1
+      ],
+      [
+       3,
+       6,
+       3,
+       3
+      ]
+     ],
+     "rows": 2,
+     "cols": 4,
+     "color": "#ffd93d"
+    },
+    "opts": [
+     "8",
+     "24",
+     "17",
+     "23"
+    ],
+    "ok": 3,
+    "answer": "23",
+    "rule": {
+     "text": "Los cubos no flotan: hay cubos escondidos debajo. Suma cada columna:",
+     "lines": [
+      "1 + 4 + 2 + 1 + 3 + 6 + 3 + 3 = 23"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       4,
+       1,
+       3,
+       1
+      ],
+      [
+       6,
+       2,
+       4,
+       3
+      ]
+     ],
+     "rows": 2,
+     "cols": 4,
+     "color": "#ff6b9d"
+    },
+    "opts": [
+     "18",
+     "24",
+     "25",
+     "9"
+    ],
+    "ok": 1,
+    "answer": "24",
+    "rule": {
+     "text": "Los cubos no flotan: hay cubos escondidos debajo. Suma cada columna:",
+     "lines": [
+      "4 + 1 + 3 + 1 + 6 + 2 + 4 + 3 = 24"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       2,
+       4,
+       2,
+       2
+      ],
+      [
+       4,
+       5,
+       3,
+       4
+      ]
+     ],
+     "rows": 2,
+     "cols": 4,
+     "color": "#ffd93d"
+    },
+    "opts": [
+     "26",
+     "19",
+     "10",
+     "27"
+    ],
+    "ok": 0,
+    "answer": "26",
+    "rule": {
+     "text": "Los cubos no flotan: hay cubos escondidos debajo. Suma cada columna:",
+     "lines": [
+      "2 + 4 + 2 + 2 + 4 + 5 + 3 + 4 = 26"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       1,
+       4,
+       4,
+       3,
+       4
+      ],
+      [
+       2,
+       6,
+       5,
+       4,
+       6
+      ]
+     ],
+     "rows": 2,
+     "cols": 5,
+     "color": "#ffd93d"
+    },
+    "opts": [
+     "39",
+     "16",
+     "40",
+     "27"
+    ],
+    "ok": 0,
+    "answer": "39",
+    "rule": {
+     "text": "Los cubos no flotan: hay cubos escondidos debajo. Suma cada columna:",
+     "lines": [
+      "1 + 4 + 4 + 3 + 4 + 2 + 6 + 5 + 4 + 6 = 39"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       1,
+       3,
+       3
+      ],
+      [
+       2,
+       5,
+       4
+      ]
+     ],
+     "rows": 2,
+     "cols": 3,
+     "color": "#9b5cff"
+    },
+    "opts": [
+     "14",
+     "18",
+     "19",
+     "7"
+    ],
+    "ok": 1,
+    "answer": "18",
+    "rule": {
+     "text": "Los cubos no flotan: hay cubos escondidos debajo. Suma cada columna:",
+     "lines": [
+      "1 + 3 + 3 + 2 + 5 + 4 = 18"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       2,
+       1,
+       1
+      ]
+     ],
+     "rows": 1,
+     "cols": 3,
+     "color": "#ffd93d"
+    },
+    "opts": [
+     "6",
+     "3",
+     "5",
+     "4"
+    ],
+    "ok": 3,
+    "answer": "4",
+    "rule": {
+     "text": "Suma cada columna:",
+     "lines": [
+      "2 + 1 + 1 = 4"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       2,
+       3,
+       3
+      ]
+     ],
+     "rows": 1,
+     "cols": 3,
+     "color": "#ffd93d"
+    },
+    "opts": [
+     "8",
+     "7",
+     "10",
+     "9"
+    ],
+    "ok": 0,
+    "answer": "8",
+    "rule": {
+     "text": "Suma cada columna:",
+     "lines": [
+      "2 + 3 + 3 = 8"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       3,
+       3,
+       3,
+       3
+      ],
+      [
+       4,
+       5,
+       5,
+       5
+      ]
+     ],
+     "rows": 2,
+     "cols": 4,
+     "color": "#ff6b9d"
+    },
+    "opts": [
+     "12",
+     "22",
+     "31",
+     "32"
+    ],
+    "ok": 2,
+    "answer": "31",
+    "rule": {
+     "text": "Los cubos no flotan: hay cubos escondidos debajo. Suma cada columna:",
+     "lines": [
+      "3 + 3 + 3 + 3 + 4 + 5 + 5 + 5 = 31"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       2,
+       3,
+       3
+      ],
+      [
+       4,
+       4,
+       4
+      ]
+     ],
+     "rows": 2,
+     "cols": 3,
+     "color": "#ff6b9d"
+    },
+    "opts": [
+     "15",
+     "20",
+     "8",
+     "21"
+    ],
+    "ok": 1,
+    "answer": "20",
+    "rule": {
+     "text": "Los cubos no flotan: hay cubos escondidos debajo. Suma cada columna:",
+     "lines": [
+      "2 + 3 + 3 + 4 + 4 + 4 = 20"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       3,
+       1,
+       4
+      ],
+      [
+       5,
+       2,
+       6
+      ]
+     ],
+     "rows": 2,
+     "cols": 3,
+     "color": "#9b5cff"
+    },
+    "opts": [
+     "22",
+     "18",
+     "21",
+     "8"
+    ],
+    "ok": 2,
+    "answer": "21",
+    "rule": {
+     "text": "Los cubos no flotan: hay cubos escondidos debajo. Suma cada columna:",
+     "lines": [
+      "3 + 1 + 4 + 5 + 2 + 6 = 21"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       1,
+       4,
+       2,
+       4
+      ],
+      [
+       2,
+       6,
+       4,
+       6
+      ]
+     ],
+     "rows": 2,
+     "cols": 4,
+     "color": "#3cc36e"
+    },
+    "opts": [
+     "29",
+     "22",
+     "11",
+     "30"
+    ],
+    "ok": 0,
+    "answer": "29",
+    "rule": {
+     "text": "Los cubos no flotan: hay cubos escondidos debajo. Suma cada columna:",
+     "lines": [
+      "1 + 4 + 2 + 4 + 2 + 6 + 4 + 6 = 29"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       1,
+       2,
+       2,
+       1,
+       3
+      ],
+      [
+       3,
+       3,
+       3,
+       2,
+       4
+      ]
+     ],
+     "rows": 2,
+     "cols": 5,
+     "color": "#9b5cff"
+    },
+    "opts": [
+     "9",
+     "18",
+     "24",
+     "25"
+    ],
+    "ok": 2,
+    "answer": "24",
+    "rule": {
+     "text": "Los cubos no flotan: hay cubos escondidos debajo. Suma cada columna:",
+     "lines": [
+      "1 + 2 + 2 + 1 + 3 + 3 + 3 + 3 + 2 + 4 = 24"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       1,
+       2,
+       4
+      ],
+      [
+       2,
+       4,
+       6
+      ]
+     ],
+     "rows": 2,
+     "cols": 3,
+     "color": "#ffd93d"
+    },
+    "opts": [
+     "16",
+     "19",
+     "7",
+     "20"
+    ],
+    "ok": 1,
+    "answer": "19",
+    "rule": {
+     "text": "Los cubos no flotan: hay cubos escondidos debajo. Suma cada columna:",
+     "lines": [
+      "1 + 2 + 4 + 2 + 4 + 6 = 19"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       3,
+       2,
+       2,
+       4
+      ]
+     ],
+     "rows": 1,
+     "cols": 4,
+     "color": "#ffd93d"
+    },
+    "opts": [
+     "11",
+     "13",
+     "10",
+     "12"
+    ],
+    "ok": 0,
+    "answer": "11",
+    "rule": {
+     "text": "Suma cada columna:",
+     "lines": [
+      "3 + 2 + 2 + 4 = 11"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       3,
+       1,
+       1,
+       2
+      ]
+     ],
+     "rows": 1,
+     "cols": 4,
+     "color": "#ffd93d"
+    },
+    "opts": [
+     "8",
+     "9",
+     "6",
+     "7"
+    ],
+    "ok": 3,
+    "answer": "7",
+    "rule": {
+     "text": "Suma cada columna:",
+     "lines": [
+      "3 + 1 + 1 + 2 = 7"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       4,
+       4,
+       2
+      ],
+      [
+       5,
+       5,
+       3
+      ]
+     ],
+     "rows": 2,
+     "cols": 3,
+     "color": "#4fb8ff"
+    },
+    "opts": [
+     "23",
+     "24",
+     "10",
+     "16"
+    ],
+    "ok": 0,
+    "answer": "23",
+    "rule": {
+     "text": "Los cubos no flotan: hay cubos escondidos debajo. Suma cada columna:",
+     "lines": [
+      "4 + 4 + 2 + 5 + 5 + 3 = 23"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       3,
+       3,
+       2,
+       1
+      ],
+      [
+       4,
+       5,
+       3,
+       2
+      ]
+     ],
+     "rows": 2,
+     "cols": 4,
+     "color": "#ffd93d"
+    },
+    "opts": [
+     "23",
+     "24",
+     "9",
+     "15"
+    ],
+    "ok": 0,
+    "answer": "23",
+    "rule": {
+     "text": "Los cubos no flotan: hay cubos escondidos debajo. Suma cada columna:",
+     "lines": [
+      "3 + 3 + 2 + 1 + 4 + 5 + 3 + 2 = 23"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       2,
+       1,
+       4
+      ],
+      [
+       4,
+       2,
+       5
+      ]
+     ],
+     "rows": 2,
+     "cols": 3,
+     "color": "#3cc36e"
+    },
+    "opts": [
+     "19",
+     "15",
+     "7",
+     "18"
+    ],
+    "ok": 3,
+    "answer": "18",
+    "rule": {
+     "text": "Los cubos no flotan: hay cubos escondidos debajo. Suma cada columna:",
+     "lines": [
+      "2 + 1 + 4 + 4 + 2 + 5 = 18"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       1,
+       3,
+       4,
+       3
+      ],
+      [
+       2,
+       4,
+       6,
+       4
+      ]
+     ],
+     "rows": 2,
+     "cols": 4,
+     "color": "#3cc36e"
+    },
+    "opts": [
+     "19",
+     "28",
+     "27",
+     "11"
+    ],
+    "ok": 2,
+    "answer": "27",
+    "rule": {
+     "text": "Los cubos no flotan: hay cubos escondidos debajo. Suma cada columna:",
+     "lines": [
+      "1 + 3 + 4 + 3 + 2 + 4 + 6 + 4 = 27"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       2,
+       3,
+       4,
+       2,
+       2
+      ],
+      [
+       3,
+       5,
+       5,
+       4,
+       3
+      ]
+     ],
+     "rows": 2,
+     "cols": 5,
+     "color": "#3cc36e"
+    },
+    "opts": [
+     "22",
+     "33",
+     "34",
+     "13"
+    ],
+    "ok": 1,
+    "answer": "33",
+    "rule": {
+     "text": "Los cubos no flotan: hay cubos escondidos debajo. Suma cada columna:",
+     "lines": [
+      "2 + 3 + 4 + 2 + 2 + 3 + 5 + 5 + 4 + 3 = 33"
+     ]
+    }
+   }
+  ],
+  "en": [
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       1,
+       3,
+       4
+      ]
+     ],
+     "rows": 1,
+     "cols": 3,
+     "color": "#3cc36e"
+    },
+    "opts": [
+     "10",
+     "8",
+     "9",
+     "7"
+    ],
+    "ok": 1,
+    "answer": "8",
+    "rule": {
+     "text": "Add up each column:",
+     "lines": [
+      "1 + 3 + 4 = 8"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       4,
+       2,
+       1,
+       1
+      ]
+     ],
+     "rows": 1,
+     "cols": 4,
+     "color": "#3cc36e"
+    },
+    "opts": [
+     "9",
+     "8",
+     "7",
+     "10"
+    ],
+    "ok": 1,
+    "answer": "8",
+    "rule": {
+     "text": "Add up each column:",
+     "lines": [
+      "4 + 2 + 1 + 1 = 8"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       1,
+       3,
+       3
+      ],
+      [
+       2,
+       4,
+       5
+      ]
+     ],
+     "rows": 2,
+     "cols": 3,
+     "color": "#ff9f43"
+    },
+    "opts": [
+     "18",
+     "14",
+     "7",
+     "19"
+    ],
+    "ok": 0,
+    "answer": "18",
+    "rule": {
+     "text": "Cubes don't float: there are hidden ones underneath. Add up each column:",
+     "lines": [
+      "1 + 3 + 3 + 2 + 4 + 5 = 18"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       2,
+       2,
+       2,
+       1
+      ],
+      [
+       4,
+       4,
+       3,
+       3
+      ]
+     ],
+     "rows": 2,
+     "cols": 4,
+     "color": "#ffd93d"
+    },
+    "opts": [
+     "22",
+     "21",
+     "7",
+     "15"
+    ],
+    "ok": 1,
+    "answer": "21",
+    "rule": {
+     "text": "Cubes don't float: there are hidden ones underneath. Add up each column:",
+     "lines": [
+      "2 + 2 + 2 + 1 + 4 + 4 + 3 + 3 = 21"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       3,
+       1,
+       4,
+       4
+      ],
+      [
+       4,
+       3,
+       6,
+       6
+      ]
+     ],
+     "rows": 2,
+     "cols": 4,
+     "color": "#ff6b9d"
+    },
+    "opts": [
+     "32",
+     "12",
+     "31",
+     "23"
+    ],
+    "ok": 2,
+    "answer": "31",
+    "rule": {
+     "text": "Cubes don't float: there are hidden ones underneath. Add up each column:",
+     "lines": [
+      "3 + 1 + 4 + 4 + 4 + 3 + 6 + 6 = 31"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       1,
+       3,
+       2
+      ],
+      [
+       2,
+       4,
+       4
+      ]
+     ],
+     "rows": 2,
+     "cols": 3,
+     "color": "#ffd93d"
+    },
+    "opts": [
+     "16",
+     "12",
+     "6",
+     "17"
+    ],
+    "ok": 0,
+    "answer": "16",
+    "rule": {
+     "text": "Cubes don't float: there are hidden ones underneath. Add up each column:",
+     "lines": [
+      "1 + 3 + 2 + 2 + 4 + 4 = 16"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       2,
+       1,
+       4,
+       1
+      ],
+      [
+       3,
+       2,
+       5,
+       3
+      ]
+     ],
+     "rows": 2,
+     "cols": 4,
+     "color": "#ffd93d"
+    },
+    "opts": [
+     "21",
+     "8",
+     "22",
+     "15"
+    ],
+    "ok": 0,
+    "answer": "21",
+    "rule": {
+     "text": "Cubes don't float: there are hidden ones underneath. Add up each column:",
+     "lines": [
+      "2 + 1 + 4 + 1 + 3 + 2 + 5 + 3 = 21"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       2,
+       1,
+       4
+      ],
+      [
+       3,
+       3,
+       5
+      ]
+     ],
+     "rows": 2,
+     "cols": 3,
+     "color": "#ff9f43"
+    },
+    "opts": [
+     "15",
+     "18",
+     "7",
+     "19"
+    ],
+    "ok": 1,
+    "answer": "18",
+    "rule": {
+     "text": "Cubes don't float: there are hidden ones underneath. Add up each column:",
+     "lines": [
+      "2 + 1 + 4 + 3 + 3 + 5 = 18"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       2,
+       1,
+       2,
+       2
+      ],
+      [
+       3,
+       2,
+       4,
+       4
+      ]
+     ],
+     "rows": 2,
+     "cols": 4,
+     "color": "#ffd93d"
+    },
+    "opts": [
+     "15",
+     "20",
+     "21",
+     "7"
+    ],
+    "ok": 1,
+    "answer": "20",
+    "rule": {
+     "text": "Cubes don't float: there are hidden ones underneath. Add up each column:",
+     "lines": [
+      "2 + 1 + 2 + 2 + 3 + 2 + 4 + 4 = 20"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       3,
+       4,
+       3
+      ]
+     ],
+     "rows": 1,
+     "cols": 3,
+     "color": "#ff6b9d"
+    },
+    "opts": [
+     "10",
+     "9",
+     "12",
+     "11"
+    ],
+    "ok": 0,
+    "answer": "10",
+    "rule": {
+     "text": "Add up each column:",
+     "lines": [
+      "3 + 4 + 3 = 10"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       4,
+       1,
+       2,
+       3
+      ],
+      [
+       5,
+       3,
+       3,
+       5
+      ]
+     ],
+     "rows": 2,
+     "cols": 4,
+     "color": "#3cc36e"
+    },
+    "opts": [
+     "10",
+     "27",
+     "20",
+     "26"
+    ],
+    "ok": 3,
+    "answer": "26",
+    "rule": {
+     "text": "Cubes don't float: there are hidden ones underneath. Add up each column:",
+     "lines": [
+      "4 + 1 + 2 + 3 + 5 + 3 + 3 + 5 = 26"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       2,
+       3,
+       3
+      ],
+      [
+       3,
+       5,
+       4
+      ]
+     ],
+     "rows": 2,
+     "cols": 3,
+     "color": "#ff6b9d"
+    },
+    "opts": [
+     "8",
+     "21",
+     "15",
+     "20"
+    ],
+    "ok": 3,
+    "answer": "20",
+    "rule": {
+     "text": "Cubes don't float: there are hidden ones underneath. Add up each column:",
+     "lines": [
+      "2 + 3 + 3 + 3 + 5 + 4 = 20"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       2,
+       3,
+       3
+      ],
+      [
+       4,
+       4,
+       5
+      ]
+     ],
+     "rows": 2,
+     "cols": 3,
+     "color": "#4fb8ff"
+    },
+    "opts": [
+     "21",
+     "16",
+     "22",
+     "8"
+    ],
+    "ok": 0,
+    "answer": "21",
+    "rule": {
+     "text": "Cubes don't float: there are hidden ones underneath. Add up each column:",
+     "lines": [
+      "2 + 3 + 3 + 4 + 4 + 5 = 21"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       2,
+       4,
+       3,
+       2,
+       1
+      ],
+      [
+       3,
+       6,
+       5,
+       3,
+       3
+      ]
+     ],
+     "rows": 2,
+     "cols": 5,
+     "color": "#9b5cff"
+    },
+    "opts": [
+     "12",
+     "33",
+     "21",
+     "32"
+    ],
+    "ok": 3,
+    "answer": "32",
+    "rule": {
+     "text": "Cubes don't float: there are hidden ones underneath. Add up each column:",
+     "lines": [
+      "2 + 4 + 3 + 2 + 1 + 3 + 6 + 5 + 3 + 3 = 32"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       1,
+       3,
+       3,
+       4,
+       1
+      ],
+      [
+       2,
+       4,
+       5,
+       6,
+       2
+      ]
+     ],
+     "rows": 2,
+     "cols": 5,
+     "color": "#9b5cff"
+    },
+    "opts": [
+     "22",
+     "12",
+     "32",
+     "31"
+    ],
+    "ok": 3,
+    "answer": "31",
+    "rule": {
+     "text": "Cubes don't float: there are hidden ones underneath. Add up each column:",
+     "lines": [
+      "1 + 3 + 3 + 4 + 1 + 2 + 4 + 5 + 6 + 2 = 31"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       2,
+       2,
+       1,
+       1
+      ],
+      [
+       4,
+       3,
+       3,
+       2
+      ]
+     ],
+     "rows": 2,
+     "cols": 4,
+     "color": "#ff9f43"
+    },
+    "opts": [
+     "18",
+     "13",
+     "6",
+     "19"
+    ],
+    "ok": 0,
+    "answer": "18",
+    "rule": {
+     "text": "Cubes don't float: there are hidden ones underneath. Add up each column:",
+     "lines": [
+      "2 + 2 + 1 + 1 + 4 + 3 + 3 + 2 = 18"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       1,
+       1,
+       4,
+       3,
+       2
+      ],
+      [
+       3,
+       2,
+       6,
+       5,
+       3
+      ]
+     ],
+     "rows": 2,
+     "cols": 5,
+     "color": "#3cc36e"
+    },
+    "opts": [
+     "30",
+     "21",
+     "11",
+     "31"
+    ],
+    "ok": 0,
+    "answer": "30",
+    "rule": {
+     "text": "Cubes don't float: there are hidden ones underneath. Add up each column:",
+     "lines": [
+      "1 + 1 + 4 + 3 + 2 + 3 + 2 + 6 + 5 + 3 = 30"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       2,
+       3,
+       1
+      ]
+     ],
+     "rows": 1,
+     "cols": 3,
+     "color": "#ffd93d"
+    },
+    "opts": [
+     "6",
+     "5",
+     "7",
+     "8"
+    ],
+    "ok": 0,
+    "answer": "6",
+    "rule": {
+     "text": "Add up each column:",
+     "lines": [
+      "2 + 3 + 1 = 6"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       3,
+       1,
+       3
+      ],
+      [
+       4,
+       3,
+       4
+      ]
+     ],
+     "rows": 2,
+     "cols": 3,
+     "color": "#ffd93d"
+    },
+    "opts": [
+     "14",
+     "18",
+     "7",
+     "19"
+    ],
+    "ok": 1,
+    "answer": "18",
+    "rule": {
+     "text": "Cubes don't float: there are hidden ones underneath. Add up each column:",
+     "lines": [
+      "3 + 1 + 3 + 4 + 3 + 4 = 18"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       3,
+       1,
+       4,
+       1
+      ],
+      [
+       5,
+       2,
+       5,
+       3
+      ]
+     ],
+     "rows": 2,
+     "cols": 4,
+     "color": "#ffd93d"
+    },
+    "opts": [
+     "25",
+     "24",
+     "9",
+     "18"
+    ],
+    "ok": 1,
+    "answer": "24",
+    "rule": {
+     "text": "Cubes don't float: there are hidden ones underneath. Add up each column:",
+     "lines": [
+      "3 + 1 + 4 + 1 + 5 + 2 + 5 + 3 = 24"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       1,
+       2,
+       2
+      ],
+      [
+       3,
+       3,
+       4
+      ]
+     ],
+     "rows": 2,
+     "cols": 3,
+     "color": "#ff6b9d"
+    },
+    "opts": [
+     "12",
+     "16",
+     "5",
+     "15"
+    ],
+    "ok": 3,
+    "answer": "15",
+    "rule": {
+     "text": "Cubes don't float: there are hidden ones underneath. Add up each column:",
+     "lines": [
+      "1 + 2 + 2 + 3 + 3 + 4 = 15"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       3,
+       2,
+       4,
+       4
+      ],
+      [
+       4,
+       4,
+       5,
+       6
+      ]
+     ],
+     "rows": 2,
+     "cols": 4,
+     "color": "#ff9f43"
+    },
+    "opts": [
+     "33",
+     "13",
+     "32",
+     "23"
+    ],
+    "ok": 2,
+    "answer": "32",
+    "rule": {
+     "text": "Cubes don't float: there are hidden ones underneath. Add up each column:",
+     "lines": [
+      "3 + 2 + 4 + 4 + 4 + 4 + 5 + 6 = 32"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       2,
+       2,
+       3,
+       2,
+       2
+      ],
+      [
+       3,
+       3,
+       4,
+       3,
+       3
+      ]
+     ],
+     "rows": 2,
+     "cols": 5,
+     "color": "#ff6b9d"
+    },
+    "opts": [
+     "11",
+     "18",
+     "27",
+     "28"
+    ],
+    "ok": 2,
+    "answer": "27",
+    "rule": {
+     "text": "Cubes don't float: there are hidden ones underneath. Add up each column:",
+     "lines": [
+      "2 + 2 + 3 + 2 + 2 + 3 + 3 + 4 + 3 + 3 = 27"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       3,
+       4,
+       2,
+       1,
+       2
+      ],
+      [
+       4,
+       6,
+       3,
+       3,
+       4
+      ]
+     ],
+     "rows": 2,
+     "cols": 5,
+     "color": "#ff6b9d"
+    },
+    "opts": [
+     "23",
+     "32",
+     "33",
+     "12"
+    ],
+    "ok": 1,
+    "answer": "32",
+    "rule": {
+     "text": "Cubes don't float: there are hidden ones underneath. Add up each column:",
+     "lines": [
+      "3 + 4 + 2 + 1 + 2 + 4 + 6 + 3 + 3 + 4 = 32"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       3,
+       2,
+       1,
+       2
+      ],
+      [
+       4,
+       3,
+       3,
+       3
+      ]
+     ],
+     "rows": 2,
+     "cols": 4,
+     "color": "#ff9f43"
+    },
+    "opts": [
+     "21",
+     "8",
+     "15",
+     "22"
+    ],
+    "ok": 0,
+    "answer": "21",
+    "rule": {
+     "text": "Cubes don't float: there are hidden ones underneath. Add up each column:",
+     "lines": [
+      "3 + 2 + 1 + 2 + 4 + 3 + 3 + 3 = 21"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       3,
+       1,
+       2
+      ]
+     ],
+     "rows": 1,
+     "cols": 3,
+     "color": "#3cc36e"
+    },
+    "opts": [
+     "6",
+     "5",
+     "7",
+     "8"
+    ],
+    "ok": 0,
+    "answer": "6",
+    "rule": {
+     "text": "Add up each column:",
+     "lines": [
+      "3 + 1 + 2 = 6"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       4,
+       3,
+       3,
+       3
+      ],
+      [
+       5,
+       5,
+       5,
+       4
+      ]
+     ],
+     "rows": 2,
+     "cols": 4,
+     "color": "#4fb8ff"
+    },
+    "opts": [
+     "13",
+     "33",
+     "32",
+     "22"
+    ],
+    "ok": 2,
+    "answer": "32",
+    "rule": {
+     "text": "Cubes don't float: there are hidden ones underneath. Add up each column:",
+     "lines": [
+      "4 + 3 + 3 + 3 + 5 + 5 + 5 + 4 = 32"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       3,
+       2,
+       4,
+       3
+      ],
+      [
+       5,
+       4,
+       6,
+       5
+      ]
+     ],
+     "rows": 2,
+     "cols": 4,
+     "color": "#ffd93d"
+    },
+    "opts": [
+     "33",
+     "32",
+     "12",
+     "23"
+    ],
+    "ok": 1,
+    "answer": "32",
+    "rule": {
+     "text": "Cubes don't float: there are hidden ones underneath. Add up each column:",
+     "lines": [
+      "3 + 2 + 4 + 3 + 5 + 4 + 6 + 5 = 32"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       4,
+       2,
+       1,
+       3
+      ],
+      [
+       6,
+       3,
+       2,
+       5
+      ]
+     ],
+     "rows": 2,
+     "cols": 4,
+     "color": "#4fb8ff"
+    },
+    "opts": [
+     "20",
+     "27",
+     "26",
+     "10"
+    ],
+    "ok": 2,
+    "answer": "26",
+    "rule": {
+     "text": "Cubes don't float: there are hidden ones underneath. Add up each column:",
+     "lines": [
+      "4 + 2 + 1 + 3 + 6 + 3 + 2 + 5 = 26"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       2,
+       3,
+       2,
+       1,
+       4
+      ],
+      [
+       3,
+       4,
+       3,
+       3,
+       5
+      ]
+     ],
+     "rows": 2,
+     "cols": 5,
+     "color": "#3cc36e"
+    },
+    "opts": [
+     "12",
+     "22",
+     "31",
+     "30"
+    ],
+    "ok": 3,
+    "answer": "30",
+    "rule": {
+     "text": "Cubes don't float: there are hidden ones underneath. Add up each column:",
+     "lines": [
+      "2 + 3 + 2 + 1 + 4 + 3 + 4 + 3 + 3 + 5 = 30"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       3,
+       1,
+       3
+      ],
+      [
+       5,
+       3,
+       5
+      ]
+     ],
+     "rows": 2,
+     "cols": 3,
+     "color": "#ffd93d"
+    },
+    "opts": [
+     "7",
+     "21",
+     "16",
+     "20"
+    ],
+    "ok": 3,
+    "answer": "20",
+    "rule": {
+     "text": "Cubes don't float: there are hidden ones underneath. Add up each column:",
+     "lines": [
+      "3 + 1 + 3 + 5 + 3 + 5 = 20"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       1,
+       3,
+       4,
+       3,
+       3
+      ],
+      [
+       3,
+       5,
+       6,
+       4,
+       4
+      ]
+     ],
+     "rows": 2,
+     "cols": 5,
+     "color": "#4fb8ff"
+    },
+    "opts": [
+     "37",
+     "25",
+     "14",
+     "36"
+    ],
+    "ok": 3,
+    "answer": "36",
+    "rule": {
+     "text": "Cubes don't float: there are hidden ones underneath. Add up each column:",
+     "lines": [
+      "1 + 3 + 4 + 3 + 3 + 3 + 5 + 6 + 4 + 4 = 36"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       4,
+       2,
+       1,
+       3
+      ],
+      [
+       6,
+       4,
+       2,
+       4
+      ]
+     ],
+     "rows": 2,
+     "cols": 4,
+     "color": "#ff9f43"
+    },
+    "opts": [
+     "27",
+     "10",
+     "26",
+     "19"
+    ],
+    "ok": 2,
+    "answer": "26",
+    "rule": {
+     "text": "Cubes don't float: there are hidden ones underneath. Add up each column:",
+     "lines": [
+      "4 + 2 + 1 + 3 + 6 + 4 + 2 + 4 = 26"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       4,
+       3,
+       4,
+       4
+      ]
+     ],
+     "rows": 1,
+     "cols": 4,
+     "color": "#4fb8ff"
+    },
+    "opts": [
+     "15",
+     "14",
+     "16",
+     "17"
+    ],
+    "ok": 0,
+    "answer": "15",
+    "rule": {
+     "text": "Add up each column:",
+     "lines": [
+      "4 + 3 + 4 + 4 = 15"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       4,
+       3,
+       1
+      ],
+      [
+       6,
+       4,
+       3
+      ]
+     ],
+     "rows": 2,
+     "cols": 3,
+     "color": "#4fb8ff"
+    },
+    "opts": [
+     "21",
+     "14",
+     "8",
+     "22"
+    ],
+    "ok": 0,
+    "answer": "21",
+    "rule": {
+     "text": "Cubes don't float: there are hidden ones underneath. Add up each column:",
+     "lines": [
+      "4 + 3 + 1 + 6 + 4 + 3 = 21"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       3,
+       2,
+       3,
+       1
+      ],
+      [
+       4,
+       3,
+       4,
+       3
+      ]
+     ],
+     "rows": 2,
+     "cols": 4,
+     "color": "#4fb8ff"
+    },
+    "opts": [
+     "24",
+     "23",
+     "9",
+     "15"
+    ],
+    "ok": 1,
+    "answer": "23",
+    "rule": {
+     "text": "Cubes don't float: there are hidden ones underneath. Add up each column:",
+     "lines": [
+      "3 + 2 + 3 + 1 + 4 + 3 + 4 + 3 = 23"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       1,
+       2,
+       4
+      ],
+      [
+       2,
+       4,
+       5
+      ]
+     ],
+     "rows": 2,
+     "cols": 3,
+     "color": "#4fb8ff"
+    },
+    "opts": [
+     "15",
+     "19",
+     "7",
+     "18"
+    ],
+    "ok": 3,
+    "answer": "18",
+    "rule": {
+     "text": "Cubes don't float: there are hidden ones underneath. Add up each column:",
+     "lines": [
+      "1 + 2 + 4 + 2 + 4 + 5 = 18"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       3,
+       2,
+       2
+      ],
+      [
+       4,
+       3,
+       4
+      ]
+     ],
+     "rows": 2,
+     "cols": 3,
+     "color": "#ff6b9d"
+    },
+    "opts": [
+     "7",
+     "13",
+     "18",
+     "19"
+    ],
+    "ok": 2,
+    "answer": "18",
+    "rule": {
+     "text": "Cubes don't float: there are hidden ones underneath. Add up each column:",
+     "lines": [
+      "3 + 2 + 2 + 4 + 3 + 4 = 18"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       1,
+       4,
+       2,
+       4
+      ],
+      [
+       3,
+       5,
+       3,
+       6
+      ]
+     ],
+     "rows": 2,
+     "cols": 4,
+     "color": "#ff9f43"
+    },
+    "opts": [
+     "22",
+     "11",
+     "29",
+     "28"
+    ],
+    "ok": 3,
+    "answer": "28",
+    "rule": {
+     "text": "Cubes don't float: there are hidden ones underneath. Add up each column:",
+     "lines": [
+      "1 + 4 + 2 + 4 + 3 + 5 + 3 + 6 = 28"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       1,
+       1,
+       1,
+       3,
+       4
+      ],
+      [
+       3,
+       2,
+       2,
+       5,
+       5
+      ]
+     ],
+     "rows": 2,
+     "cols": 5,
+     "color": "#3cc36e"
+    },
+    "opts": [
+     "27",
+     "21",
+     "10",
+     "28"
+    ],
+    "ok": 0,
+    "answer": "27",
+    "rule": {
+     "text": "Cubes don't float: there are hidden ones underneath. Add up each column:",
+     "lines": [
+      "1 + 1 + 1 + 3 + 4 + 3 + 2 + 2 + 5 + 5 = 27"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       4,
+       4,
+       2
+      ],
+      [
+       5,
+       6,
+       3
+      ]
+     ],
+     "rows": 2,
+     "cols": 3,
+     "color": "#3cc36e"
+    },
+    "opts": [
+     "24",
+     "17",
+     "25",
+     "10"
+    ],
+    "ok": 0,
+    "answer": "24",
+    "rule": {
+     "text": "Cubes don't float: there are hidden ones underneath. Add up each column:",
+     "lines": [
+      "4 + 4 + 2 + 5 + 6 + 3 = 24"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       2,
+       1,
+       4,
+       4
+      ]
+     ],
+     "rows": 1,
+     "cols": 4,
+     "color": "#4fb8ff"
+    },
+    "opts": [
+     "10",
+     "12",
+     "11",
+     "13"
+    ],
+    "ok": 2,
+    "answer": "11",
+    "rule": {
+     "text": "Add up each column:",
+     "lines": [
+      "2 + 1 + 4 + 4 = 11"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       3,
+       2,
+       1
+      ],
+      [
+       4,
+       3,
+       3
+      ]
+     ],
+     "rows": 2,
+     "cols": 3,
+     "color": "#3cc36e"
+    },
+    "opts": [
+     "6",
+     "16",
+     "17",
+     "11"
+    ],
+    "ok": 1,
+    "answer": "16",
+    "rule": {
+     "text": "Cubes don't float: there are hidden ones underneath. Add up each column:",
+     "lines": [
+      "3 + 2 + 1 + 4 + 3 + 3 = 16"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       3,
+       3,
+       3
+      ],
+      [
+       4,
+       4,
+       5
+      ]
+     ],
+     "rows": 2,
+     "cols": 3,
+     "color": "#3cc36e"
+    },
+    "opts": [
+     "9",
+     "23",
+     "22",
+     "16"
+    ],
+    "ok": 2,
+    "answer": "22",
+    "rule": {
+     "text": "Cubes don't float: there are hidden ones underneath. Add up each column:",
+     "lines": [
+      "3 + 3 + 3 + 4 + 4 + 5 = 22"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       2,
+       3,
+       3,
+       2
+      ],
+      [
+       4,
+       4,
+       5,
+       4
+      ]
+     ],
+     "rows": 2,
+     "cols": 4,
+     "color": "#9b5cff"
+    },
+    "opts": [
+     "27",
+     "10",
+     "19",
+     "28"
+    ],
+    "ok": 0,
+    "answer": "27",
+    "rule": {
+     "text": "Cubes don't float: there are hidden ones underneath. Add up each column:",
+     "lines": [
+      "2 + 3 + 3 + 2 + 4 + 4 + 5 + 4 = 27"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       2,
+       1,
+       3,
+       3
+      ],
+      [
+       4,
+       3,
+       4,
+       4
+      ]
+     ],
+     "rows": 2,
+     "cols": 4,
+     "color": "#ff9f43"
+    },
+    "opts": [
+     "18",
+     "9",
+     "25",
+     "24"
+    ],
+    "ok": 3,
+    "answer": "24",
+    "rule": {
+     "text": "Cubes don't float: there are hidden ones underneath. Add up each column:",
+     "lines": [
+      "2 + 1 + 3 + 3 + 4 + 3 + 4 + 4 = 24"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       1,
+       3,
+       4
+      ],
+      [
+       3,
+       4,
+       6
+      ]
+     ],
+     "rows": 2,
+     "cols": 3,
+     "color": "#ff6b9d"
+    },
+    "opts": [
+     "22",
+     "21",
+     "8",
+     "17"
+    ],
+    "ok": 1,
+    "answer": "21",
+    "rule": {
+     "text": "Cubes don't float: there are hidden ones underneath. Add up each column:",
+     "lines": [
+      "1 + 3 + 4 + 3 + 4 + 6 = 21"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       2,
+       3,
+       2
+      ],
+      [
+       3,
+       4,
+       3
+      ]
+     ],
+     "rows": 2,
+     "cols": 3,
+     "color": "#ffd93d"
+    },
+    "opts": [
+     "7",
+     "17",
+     "18",
+     "12"
+    ],
+    "ok": 1,
+    "answer": "17",
+    "rule": {
+     "text": "Cubes don't float: there are hidden ones underneath. Add up each column:",
+     "lines": [
+      "2 + 3 + 2 + 3 + 4 + 3 = 17"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       1,
+       3,
+       3,
+       4,
+       1
+      ],
+      [
+       3,
+       5,
+       5,
+       5,
+       3
+      ]
+     ],
+     "rows": 2,
+     "cols": 5,
+     "color": "#ff9f43"
+    },
+    "opts": [
+     "23",
+     "33",
+     "34",
+     "12"
+    ],
+    "ok": 1,
+    "answer": "33",
+    "rule": {
+     "text": "Cubes don't float: there are hidden ones underneath. Add up each column:",
+     "lines": [
+      "1 + 3 + 3 + 4 + 1 + 3 + 5 + 5 + 5 + 3 = 33"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       1,
+       4,
+       1
+      ]
+     ],
+     "rows": 1,
+     "cols": 3,
+     "color": "#ff6b9d"
+    },
+    "opts": [
+     "8",
+     "7",
+     "5",
+     "6"
+    ],
+    "ok": 3,
+    "answer": "6",
+    "rule": {
+     "text": "Add up each column:",
+     "lines": [
+      "1 + 4 + 1 = 6"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       1,
+       2,
+       2
+      ],
+      [
+       3,
+       3,
+       3
+      ]
+     ],
+     "rows": 2,
+     "cols": 3,
+     "color": "#ff9f43"
+    },
+    "opts": [
+     "5",
+     "15",
+     "11",
+     "14"
+    ],
+    "ok": 3,
+    "answer": "14",
+    "rule": {
+     "text": "Cubes don't float: there are hidden ones underneath. Add up each column:",
+     "lines": [
+      "1 + 2 + 2 + 3 + 3 + 3 = 14"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       2,
+       4,
+       1,
+       2
+      ],
+      [
+       3,
+       6,
+       3,
+       4
+      ]
+     ],
+     "rows": 2,
+     "cols": 4,
+     "color": "#ff6b9d"
+    },
+    "opts": [
+     "26",
+     "25",
+     "9",
+     "19"
+    ],
+    "ok": 1,
+    "answer": "25",
+    "rule": {
+     "text": "Cubes don't float: there are hidden ones underneath. Add up each column:",
+     "lines": [
+      "2 + 4 + 1 + 2 + 3 + 6 + 3 + 4 = 25"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       4,
+       2,
+       1
+      ],
+      [
+       5,
+       4,
+       3
+      ]
+     ],
+     "rows": 2,
+     "cols": 3,
+     "color": "#ff9f43"
+    },
+    "opts": [
+     "20",
+     "13",
+     "7",
+     "19"
+    ],
+    "ok": 3,
+    "answer": "19",
+    "rule": {
+     "text": "Cubes don't float: there are hidden ones underneath. Add up each column:",
+     "lines": [
+      "4 + 2 + 1 + 5 + 4 + 3 = 19"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       1,
+       4,
+       1,
+       4,
+       1
+      ],
+      [
+       2,
+       6,
+       3,
+       6,
+       3
+      ]
+     ],
+     "rows": 2,
+     "cols": 5,
+     "color": "#ff9f43"
+    },
+    "opts": [
+     "31",
+     "32",
+     "23",
+     "11"
+    ],
+    "ok": 0,
+    "answer": "31",
+    "rule": {
+     "text": "Cubes don't float: there are hidden ones underneath. Add up each column:",
+     "lines": [
+      "1 + 4 + 1 + 4 + 1 + 2 + 6 + 3 + 6 + 3 = 31"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       2,
+       2,
+       3,
+       4,
+       4
+      ],
+      [
+       3,
+       4,
+       4,
+       6,
+       6
+      ]
+     ],
+     "rows": 2,
+     "cols": 5,
+     "color": "#4fb8ff"
+    },
+    "opts": [
+     "15",
+     "27",
+     "39",
+     "38"
+    ],
+    "ok": 3,
+    "answer": "38",
+    "rule": {
+     "text": "Cubes don't float: there are hidden ones underneath. Add up each column:",
+     "lines": [
+      "2 + 2 + 3 + 4 + 4 + 3 + 4 + 4 + 6 + 6 = 38"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       2,
+       3,
+       4
+      ],
+      [
+       3,
+       5,
+       5
+      ]
+     ],
+     "rows": 2,
+     "cols": 3,
+     "color": "#ff9f43"
+    },
+    "opts": [
+     "17",
+     "23",
+     "9",
+     "22"
+    ],
+    "ok": 3,
+    "answer": "22",
+    "rule": {
+     "text": "Cubes don't float: there are hidden ones underneath. Add up each column:",
+     "lines": [
+      "2 + 3 + 4 + 3 + 5 + 5 = 22"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       4,
+       2,
+       2
+      ],
+      [
+       5,
+       3,
+       4
+      ]
+     ],
+     "rows": 2,
+     "cols": 3,
+     "color": "#3cc36e"
+    },
+    "opts": [
+     "15",
+     "21",
+     "20",
+     "8"
+    ],
+    "ok": 2,
+    "answer": "20",
+    "rule": {
+     "text": "Cubes don't float: there are hidden ones underneath. Add up each column:",
+     "lines": [
+      "4 + 2 + 2 + 5 + 3 + 4 = 20"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       1,
+       4,
+       4
+      ]
+     ],
+     "rows": 1,
+     "cols": 3,
+     "color": "#9b5cff"
+    },
+    "opts": [
+     "11",
+     "8",
+     "9",
+     "10"
+    ],
+    "ok": 2,
+    "answer": "9",
+    "rule": {
+     "text": "Add up each column:",
+     "lines": [
+      "1 + 4 + 4 = 9"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       4,
+       4,
+       2
+      ]
+     ],
+     "rows": 1,
+     "cols": 3,
+     "color": "#ff9f43"
+    },
+    "opts": [
+     "11",
+     "12",
+     "10",
+     "9"
+    ],
+    "ok": 2,
+    "answer": "10",
+    "rule": {
+     "text": "Add up each column:",
+     "lines": [
+      "4 + 4 + 2 = 10"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       2,
+       1,
+       2,
+       2
+      ],
+      [
+       4,
+       3,
+       4,
+       4
+      ]
+     ],
+     "rows": 2,
+     "cols": 4,
+     "color": "#9b5cff"
+    },
+    "opts": [
+     "23",
+     "22",
+     "17",
+     "7"
+    ],
+    "ok": 1,
+    "answer": "22",
+    "rule": {
+     "text": "Cubes don't float: there are hidden ones underneath. Add up each column:",
+     "lines": [
+      "2 + 1 + 2 + 2 + 4 + 3 + 4 + 4 = 22"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       1,
+       4,
+       2,
+       1
+      ],
+      [
+       3,
+       6,
+       3,
+       3
+      ]
+     ],
+     "rows": 2,
+     "cols": 4,
+     "color": "#ffd93d"
+    },
+    "opts": [
+     "8",
+     "24",
+     "17",
+     "23"
+    ],
+    "ok": 3,
+    "answer": "23",
+    "rule": {
+     "text": "Cubes don't float: there are hidden ones underneath. Add up each column:",
+     "lines": [
+      "1 + 4 + 2 + 1 + 3 + 6 + 3 + 3 = 23"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       4,
+       1,
+       3,
+       1
+      ],
+      [
+       6,
+       2,
+       4,
+       3
+      ]
+     ],
+     "rows": 2,
+     "cols": 4,
+     "color": "#ff6b9d"
+    },
+    "opts": [
+     "18",
+     "24",
+     "25",
+     "9"
+    ],
+    "ok": 1,
+    "answer": "24",
+    "rule": {
+     "text": "Cubes don't float: there are hidden ones underneath. Add up each column:",
+     "lines": [
+      "4 + 1 + 3 + 1 + 6 + 2 + 4 + 3 = 24"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       2,
+       4,
+       2,
+       2
+      ],
+      [
+       4,
+       5,
+       3,
+       4
+      ]
+     ],
+     "rows": 2,
+     "cols": 4,
+     "color": "#ffd93d"
+    },
+    "opts": [
+     "26",
+     "19",
+     "10",
+     "27"
+    ],
+    "ok": 0,
+    "answer": "26",
+    "rule": {
+     "text": "Cubes don't float: there are hidden ones underneath. Add up each column:",
+     "lines": [
+      "2 + 4 + 2 + 2 + 4 + 5 + 3 + 4 = 26"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       1,
+       4,
+       4,
+       3,
+       4
+      ],
+      [
+       2,
+       6,
+       5,
+       4,
+       6
+      ]
+     ],
+     "rows": 2,
+     "cols": 5,
+     "color": "#ffd93d"
+    },
+    "opts": [
+     "39",
+     "16",
+     "40",
+     "27"
+    ],
+    "ok": 0,
+    "answer": "39",
+    "rule": {
+     "text": "Cubes don't float: there are hidden ones underneath. Add up each column:",
+     "lines": [
+      "1 + 4 + 4 + 3 + 4 + 2 + 6 + 5 + 4 + 6 = 39"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       1,
+       3,
+       3
+      ],
+      [
+       2,
+       5,
+       4
+      ]
+     ],
+     "rows": 2,
+     "cols": 3,
+     "color": "#9b5cff"
+    },
+    "opts": [
+     "14",
+     "18",
+     "19",
+     "7"
+    ],
+    "ok": 1,
+    "answer": "18",
+    "rule": {
+     "text": "Cubes don't float: there are hidden ones underneath. Add up each column:",
+     "lines": [
+      "1 + 3 + 3 + 2 + 5 + 4 = 18"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       2,
+       1,
+       1
+      ]
+     ],
+     "rows": 1,
+     "cols": 3,
+     "color": "#ffd93d"
+    },
+    "opts": [
+     "6",
+     "3",
+     "5",
+     "4"
+    ],
+    "ok": 3,
+    "answer": "4",
+    "rule": {
+     "text": "Add up each column:",
+     "lines": [
+      "2 + 1 + 1 = 4"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       2,
+       3,
+       3
+      ]
+     ],
+     "rows": 1,
+     "cols": 3,
+     "color": "#ffd93d"
+    },
+    "opts": [
+     "8",
+     "7",
+     "10",
+     "9"
+    ],
+    "ok": 0,
+    "answer": "8",
+    "rule": {
+     "text": "Add up each column:",
+     "lines": [
+      "2 + 3 + 3 = 8"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       3,
+       3,
+       3,
+       3
+      ],
+      [
+       4,
+       5,
+       5,
+       5
+      ]
+     ],
+     "rows": 2,
+     "cols": 4,
+     "color": "#ff6b9d"
+    },
+    "opts": [
+     "12",
+     "22",
+     "31",
+     "32"
+    ],
+    "ok": 2,
+    "answer": "31",
+    "rule": {
+     "text": "Cubes don't float: there are hidden ones underneath. Add up each column:",
+     "lines": [
+      "3 + 3 + 3 + 3 + 4 + 5 + 5 + 5 = 31"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       2,
+       3,
+       3
+      ],
+      [
+       4,
+       4,
+       4
+      ]
+     ],
+     "rows": 2,
+     "cols": 3,
+     "color": "#ff6b9d"
+    },
+    "opts": [
+     "15",
+     "20",
+     "8",
+     "21"
+    ],
+    "ok": 1,
+    "answer": "20",
+    "rule": {
+     "text": "Cubes don't float: there are hidden ones underneath. Add up each column:",
+     "lines": [
+      "2 + 3 + 3 + 4 + 4 + 4 = 20"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       3,
+       1,
+       4
+      ],
+      [
+       5,
+       2,
+       6
+      ]
+     ],
+     "rows": 2,
+     "cols": 3,
+     "color": "#9b5cff"
+    },
+    "opts": [
+     "22",
+     "18",
+     "21",
+     "8"
+    ],
+    "ok": 2,
+    "answer": "21",
+    "rule": {
+     "text": "Cubes don't float: there are hidden ones underneath. Add up each column:",
+     "lines": [
+      "3 + 1 + 4 + 5 + 2 + 6 = 21"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       1,
+       4,
+       2,
+       4
+      ],
+      [
+       2,
+       6,
+       4,
+       6
+      ]
+     ],
+     "rows": 2,
+     "cols": 4,
+     "color": "#3cc36e"
+    },
+    "opts": [
+     "29",
+     "22",
+     "11",
+     "30"
+    ],
+    "ok": 0,
+    "answer": "29",
+    "rule": {
+     "text": "Cubes don't float: there are hidden ones underneath. Add up each column:",
+     "lines": [
+      "1 + 4 + 2 + 4 + 2 + 6 + 4 + 6 = 29"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       1,
+       2,
+       2,
+       1,
+       3
+      ],
+      [
+       3,
+       3,
+       3,
+       2,
+       4
+      ]
+     ],
+     "rows": 2,
+     "cols": 5,
+     "color": "#9b5cff"
+    },
+    "opts": [
+     "9",
+     "18",
+     "24",
+     "25"
+    ],
+    "ok": 2,
+    "answer": "24",
+    "rule": {
+     "text": "Cubes don't float: there are hidden ones underneath. Add up each column:",
+     "lines": [
+      "1 + 2 + 2 + 1 + 3 + 3 + 3 + 3 + 2 + 4 = 24"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       1,
+       2,
+       4
+      ],
+      [
+       2,
+       4,
+       6
+      ]
+     ],
+     "rows": 2,
+     "cols": 3,
+     "color": "#ffd93d"
+    },
+    "opts": [
+     "16",
+     "19",
+     "7",
+     "20"
+    ],
+    "ok": 1,
+    "answer": "19",
+    "rule": {
+     "text": "Cubes don't float: there are hidden ones underneath. Add up each column:",
+     "lines": [
+      "1 + 2 + 4 + 2 + 4 + 6 = 19"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       3,
+       2,
+       2,
+       4
+      ]
+     ],
+     "rows": 1,
+     "cols": 4,
+     "color": "#ffd93d"
+    },
+    "opts": [
+     "11",
+     "13",
+     "10",
+     "12"
+    ],
+    "ok": 0,
+    "answer": "11",
+    "rule": {
+     "text": "Add up each column:",
+     "lines": [
+      "3 + 2 + 2 + 4 = 11"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       3,
+       1,
+       1,
+       2
+      ]
+     ],
+     "rows": 1,
+     "cols": 4,
+     "color": "#ffd93d"
+    },
+    "opts": [
+     "8",
+     "9",
+     "6",
+     "7"
+    ],
+    "ok": 3,
+    "answer": "7",
+    "rule": {
+     "text": "Add up each column:",
+     "lines": [
+      "3 + 1 + 1 + 2 = 7"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       4,
+       4,
+       2
+      ],
+      [
+       5,
+       5,
+       3
+      ]
+     ],
+     "rows": 2,
+     "cols": 3,
+     "color": "#4fb8ff"
+    },
+    "opts": [
+     "23",
+     "24",
+     "10",
+     "16"
+    ],
+    "ok": 0,
+    "answer": "23",
+    "rule": {
+     "text": "Cubes don't float: there are hidden ones underneath. Add up each column:",
+     "lines": [
+      "4 + 4 + 2 + 5 + 5 + 3 = 23"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       3,
+       3,
+       2,
+       1
+      ],
+      [
+       4,
+       5,
+       3,
+       2
+      ]
+     ],
+     "rows": 2,
+     "cols": 4,
+     "color": "#ffd93d"
+    },
+    "opts": [
+     "23",
+     "24",
+     "9",
+     "15"
+    ],
+    "ok": 0,
+    "answer": "23",
+    "rule": {
+     "text": "Cubes don't float: there are hidden ones underneath. Add up each column:",
+     "lines": [
+      "3 + 3 + 2 + 1 + 4 + 5 + 3 + 2 = 23"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       2,
+       1,
+       4
+      ],
+      [
+       4,
+       2,
+       5
+      ]
+     ],
+     "rows": 2,
+     "cols": 3,
+     "color": "#3cc36e"
+    },
+    "opts": [
+     "19",
+     "15",
+     "7",
+     "18"
+    ],
+    "ok": 3,
+    "answer": "18",
+    "rule": {
+     "text": "Cubes don't float: there are hidden ones underneath. Add up each column:",
+     "lines": [
+      "2 + 1 + 4 + 4 + 2 + 5 = 18"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       1,
+       3,
+       4,
+       3
+      ],
+      [
+       2,
+       4,
+       6,
+       4
+      ]
+     ],
+     "rows": 2,
+     "cols": 4,
+     "color": "#3cc36e"
+    },
+    "opts": [
+     "19",
+     "28",
+     "27",
+     "11"
+    ],
+    "ok": 2,
+    "answer": "27",
+    "rule": {
+     "text": "Cubes don't float: there are hidden ones underneath. Add up each column:",
+     "lines": [
+      "1 + 3 + 4 + 3 + 2 + 4 + 6 + 4 = 27"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "cubes": {
+     "h": [
+      [
+       2,
+       3,
+       4,
+       2,
+       2
+      ],
+      [
+       3,
+       5,
+       5,
+       4,
+       3
+      ]
+     ],
+     "rows": 2,
+     "cols": 5,
+     "color": "#3cc36e"
+    },
+    "opts": [
+     "22",
+     "33",
+     "34",
+     "13"
+    ],
+    "ok": 1,
+    "answer": "33",
+    "rule": {
+     "text": "Cubes don't float: there are hidden ones underneath. Add up each column:",
+     "lines": [
+      "2 + 3 + 4 + 2 + 2 + 3 + 5 + 5 + 4 + 3 = 33"
+     ]
+    }
+   }
+  ]
+ }
+}

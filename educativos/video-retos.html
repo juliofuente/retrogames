@@ -28,7 +28,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:#1d1147}canvas{display
   const num = (k, d) => (Q.has(k) && Q.get(k) !== '' && isFinite(+Q.get(k)) ? +Q.get(k) : d);
   const LANG = (Q.get('lang') || (/\/en(\/|$)/.test(location.pathname) ? 'en' : 'es')) === 'en' ? 'en' : 'es', EN = LANG === 'en';
   const T = (es, en) => (EN ? en : es);
-  const N = Math.max(1, Math.round(num('quiz', 1))), SET = num('set', 1) >= 5 ? 5 : 1, FPS = num('fps', 30);
+  const N = Math.max(1, Math.round(num('quiz', 1))), SET = num('set', 1) >= 5 ? 5 : 1, FPS = num('fps', 30), NQ = N;
   const host = Q.get('site') || location.host;
 
   /* ---------- azar con semilla ---------- */
@@ -70,9 +70,9 @@ html,body{margin:0;height:100%;overflow:hidden;background:#1d1147}canvas{display
       const box = { D: 0 };
       this.G = new Function('H', code + '\nreturn { genQuestion, key, mkRand, hashSeed, shuf };')({ D: () => box.D }); this.box = box;
     },
-    levels: () => (SET === 5 ? [1, 3, 5, 7, 9].map((D, i) => ({ p: D, label: LV5[i][0], color: LV5[i][1] })) : [{ p: 1.6 + ((N - 1) * 0.37) % 7.6 }]),
-    gen(r, D, i, salt) {
-      const { genQuestion, key, mkRand, hashSeed, shuf } = this.G, level = N * 7 + i + salt * 100;
+    levels: (N = NQ) => (SET === 5 ? [1, 3, 5, 7, 9].map((D, i) => ({ p: D, label: LV5[i][0], color: LV5[i][1] })) : [{ p: 1.6 + ((N - 1) * 0.37) % 7.6 }]),
+    gen(r, D, i, salt, n = N) {
+      const { genQuestion, key, mkRand, hashSeed, shuf } = this.G, level = n * 7 + i + salt * 100;
       for (let q = 0; q < 40; q++) {
         this.box.D = D; const G = genQuestion(9, level, q + i * 41);
         const b = G.blanks[0], seq = G.seq.slice(0, b + 1);
@@ -121,7 +121,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:#1d1147}canvas{display
     titles: [T('¿Cuántos cubos hay? 🧊🤔', 'How many cubes are there? 🧊🤔'), T('Solo el 5 % cuenta bien los cubos 🧊', 'Only 5% count these cubes right 🧊'),
       T('🧊 Cuenta los cubos… ¡también los escondidos! 👀', '🧊 Count the cubes… hidden ones too! 👀'), T('¿Cuántos cubos ves? 🤯 La mayoría falla', 'How many cubes do you see? 🤯 Most people fail'),
       T('Test visual 🧠 ¿Cuántos cubos hay? #shorts', 'Visual test 🧠 How many cubes? #shorts'), T('🧊 ¿Cuántos cubos? Comenta tu número 👇', '🧊 How many cubes? Comment your number 👇')],
-    levels: () => (SET === 5 ? [1.5, 3, 5, 7, 9].map((D, i) => ({ p: D, label: LV5[i][0], color: LV5[i][1] })) : [{ p: 2.5 + ((N - 1) * 0.37) % 3 }]),
+    levels: (N = NQ) => (SET === 5 ? [1.5, 3, 5, 7, 9].map((D, i) => ({ p: D, label: LV5[i][0], color: LV5[i][1] })) : [{ p: 2.5 + ((N - 1) * 0.37) % 3 }]),
     gen(r, D) {
       const rows = D < 3 ? 1 : D < 6 ? 2 : 3, cols = D < 1.5 ? 3 : D < 4 ? ri(r, 3, 4) : ri(r, 3, 5), maxF = D < 2 ? 3 : 4;
       const h = []; for (let y = 0; y < rows; y++) { h.push([]); for (let x = 0; x < cols; x++) { const below = y ? h[y - 1][x] : 0; h[y].push(below + ri(r, 1, y ? 2 : maxF)); } }
@@ -153,7 +153,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:#1d1147}canvas{display
     teaser: T('Solo uno miente. ¿Quién fue?', 'Only one is lying. Who did it?'), question: T('¿Quién fue?', 'Who did it?'),
     titles: [T('🕵️ Solo uno miente… ¿quién fue?', '🕵️ Only one is lying… who did it?'), T('¿Quién se comió la tarta? 🎂 Solo uno miente', 'Who ate the cake? 🎂 Only one is lying'), T('Acertijo de lógica 🕵️ ¿Pillas al culpable?', 'Logic riddle 🕵️ Can you catch the culprit?'),
       T('El 98 % se equivoca de culpable 🤯', '98% pick the wrong culprit 🤯'), T('¿Quién fue? 🤔 Comenta tu sospechoso 👇', 'Who did it? 🤔 Comment your suspect 👇'), T('Misterio rápido 🔎 ¿Quién miente?', 'Quick mystery 🔎 Who is lying?')],
-    levels: () => (SET === 5 ? [2, 4, 6, 7, 9].map((D, i) => ({ p: D, label: LV5[i][0], color: LV5[i][1] })) : [{ p: 2 + ((N - 1) * 0.37) % 6 }]),
+    levels: (N = NQ) => (SET === 5 ? [2, 4, 6, 7, 9].map((D, i) => ({ p: D, label: LV5[i][0], color: LV5[i][1] })) : [{ p: 2 + ((N - 1) * 0.37) % 6 }]),
     gen(r, D) {
       const n = D < 6 ? 3 : 4, mode = D < 4 ? 'oneLie' : pick(r, ['oneLie', 'oneTruth']);
       for (let k = 0; k < 800; k++) {
@@ -180,7 +180,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:#1d1147}canvas{display
     teaser: T('¿Qué número se ha escondido?', 'Which number is hiding?'), question: T('¿Qué número falta?', 'What is the missing number?'),
     titles: (P) => [T('🙈 ¿Qué número falta? ', '🙈 What is the missing number? ') + P.expr, T('Cálculo mental 🧠 ', 'Mental maths 🧠 ') + P.expr, T('El 90 % falla este número escondido 🤯 ', '90% get this hidden number wrong 🤯 ') + P.expr,
       T('¿Lo sacas de cabeza? 🙈 ', 'Can you do it in your head? 🙈 ') + P.expr, T('Reto de mates 🔢 ', 'Maths challenge 🔢 ') + P.expr + T(' ¿Qué número es?', ' Which number is it?'), T('Sin calculadora 😏 ', 'No calculator 😏 ') + P.expr],
-    levels: () => (SET === 5 ? [1, 3, 5, 7, 9].map((D, i) => ({ p: D, label: LV5[i][0], color: LV5[i][1] })) : [{ p: 3 + ((N - 1) * 0.37) % 6 }]),
+    levels: (N = NQ) => (SET === 5 ? [1, 3, 5, 7, 9].map((D, i) => ({ p: D, label: LV5[i][0], color: LV5[i][1] })) : [{ p: 3 + ((N - 1) * 0.37) % 6 }]),
     gen(r, D) {
       let expr, ans, steps, dis;
       if (D < 3) { const a = ri(r, 3, 40), b = ri(r, 3, 40), c = a + b, k = ri(r, 0, 2);
@@ -208,7 +208,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:#1d1147}canvas{display
     teaser: T('Aprende las palabras alienígenas con los ejemplos. ¿Qué significa la última?', 'Learn the alien words from the examples. What does the last one mean?'), question: T('¿Qué significa la última frase?', 'What does the last phrase mean?'),
     titles: [T('👽 ¿Hablas alienígena? Descifra el mensaje', '👽 Can you speak alien? Crack the message'), T('Solo el 5 % descifra este idioma alienígena 🛸', 'Only 5% can crack this alien language 🛸'),
       T('🛸 Aprende alienígena en 15 segundos', '🛸 Learn alien in 15 seconds'), T('¿Qué significa? 👽 Test de lógica', 'What does it mean? 👽 Logic test'), T('Mensaje del espacio 👽 ¿Lo traduces?', 'Message from space 👽 Can you translate it?'), T('Descifra el idioma 🧠👽 #shorts', 'Crack the language 🧠👽 #shorts')],
-    levels: () => (SET === 5 ? [1, 2, 3, 4, 5].map((D, i) => ({ p: D, label: LV5[i][0], color: LV5[i][1] })) : [{ p: 1 + ((N - 1) * 0.37) % 4.5 }]),
+    levels: (N = NQ) => (SET === 5 ? [1, 2, 3, 4, 5].map((D, i) => ({ p: D, label: LV5[i][0], color: LV5[i][1] })) : [{ p: 1 + ((N - 1) * 0.37) % 4.5 }]),
     gen(r, D) {
       const word = () => { let w = ''; const sy = ri(r, 1, 2); for (let i = 0; i < sy; i++) w += ACONS[ri(r, 0, 13)] + AVOW[ri(r, 0, 4)]; if (r() < 0.4) w += ACONS[ri(r, 0, 13)]; return w; };
       const types = ['num', 'noun'];
@@ -246,7 +246,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:#1d1147}canvas{display
     titles: [T('🙊 ¿Qué palabra sobra en esta frase?', '🙊 Which word doesn\'t belong here?'), T('El 80 % no ve la palabra intrusa 👀', '80% miss the odd word out 👀'), T('Test de atención 👀 ¿Qué sobra?', 'Attention test 👀 What doesn\'t belong?'),
       T('Lee rápido… ¿qué palabra sobra? ⚡', 'Read fast… which word doesn\'t belong? ⚡'), T('¿La ves? 🙊 Comenta la palabra intrusa 👇', 'Can you spot it? 🙊 Comment the odd word 👇'), T('Reto de lectura 📖 ¿Qué sobra?', 'Reading challenge 📖 What doesn\'t belong?')],
     async init() { this.W = await loadWords(); },
-    levels: () => (SET === 5 ? [1, 3, 5, 7, 9].map((D, i) => ({ p: D, label: LV5[i][0], color: LV5[i][1] })) : [{ p: 2 + ((N - 1) * 0.37) % 7 }]),
+    levels: (N = NQ) => (SET === 5 ? [1, 3, 5, 7, 9].map((D, i) => ({ p: D, label: LV5[i][0], color: LV5[i][1] })) : [{ p: 2 + ((N - 1) * 0.37) % 7 }]),
     gen(r, D) {
       const data = this.W, maxW = D < 4 ? 5 : D < 6 ? 7 : 99; let pool = data.sentences.filter((x) => x.split(' ').length <= maxW); if (!pool.length) pool = data.sentences;
       const sen = pick(r, pool), words = sen.split(' '), intr = pick(r, data.intruders.filter((x) => !sen.toLowerCase().split(' ').includes(x)));
@@ -268,7 +268,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:#1d1147}canvas{display
     titles: [T('⚡ No parpadees: ¿qué palabra era?', '⚡ Don\'t blink: which word was it?'), T('Solo los más rápidos la leen ⚡👀', 'Only the fastest can read it ⚡👀'), T('Test de reflejos ⚡ ¿La has leído?', 'Reflex test ⚡ Did you read it?'),
       T('¿Lees tan rápido? 👀 Comenta qué viste 👇', 'Can you read this fast? 👀 Comment what you saw 👇'), T('⚡ Aparece medio segundo… ¿cuál era?', '⚡ Half a second… which one was it?'), T('Reto de lectura relámpago ⚡ #shorts', 'Flash reading challenge ⚡ #shorts')],
     async init() { this.W = await loadWords(); },
-    levels: () => (SET === 5 ? [1, 3, 5, 7, 9].map((D, i) => ({ p: D, label: LV5[i][0], color: LV5[i][1] })) : [{ p: 3 + ((N - 1) * 0.37) % 6 }]),
+    levels: (N = NQ) => (SET === 5 ? [1, 3, 5, 7, 9].map((D, i) => ({ p: D, label: LV5[i][0], color: LV5[i][1] })) : [{ p: 3 + ((N - 1) * 0.37) % 6 }]),
     gen(r, D) {
       const data = this.W, w = pick(r, data.words.filter((x) => x.w.length >= (D < 5 ? 3 : 5)));
       const sim = shuffle(r, data.words.filter((x) => x !== w && x.e !== w.e && (x.w[0] === w.w[0] || x.w.length === w.w.length))), rest = shuffle(r, data.words.filter((x) => x !== w && x.e !== w.e && !sim.includes(x)));
@@ -284,7 +284,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:#1d1147}canvas{display
     hook: ['¿SABRÍAS RESOLVER ESTE PROBLEMA DE PRIMARIA? 🎒', '¿ERES MÁS LISTO QUE UN NIÑO DE PRIMARIA? 🎒'],
     ask: '¿CUÁL ES LA SOLUCIÓN? 🤔', extra: 'Cientos de problemas de 1.º a 6.º de Primaria',
     tags: '#matematicas #primaria #problemas #retomental #calculomental #fyp', teaser: '¿Sabrías resolverlo?',
-    levels: () => (SET === 5 ? [1, 2, 3, 4, 6].map((g, i) => ({ p: g, label: g + '.º DE PRIMARIA', color: LV5[i][1] })) : [{ p: 1 + ((N - 1) * 5) % 6, label: (1 + ((N - 1) * 5) % 6) + '.º DE PRIMARIA', color: '#ffd43b' }]),
+    levels: (N = NQ) => (SET === 5 ? [1, 2, 3, 4, 6].map((g, i) => ({ p: g, label: g + '.º DE PRIMARIA', color: LV5[i][1] })) : [{ p: 1 + ((N - 1) * 5) % 6, label: (1 + ((N - 1) * 5) % 6) + '.º DE PRIMARIA', color: '#ffd43b' }]),
     gen(r, grade) {
       const PR = window.PROBLEMAS, A = PR.B[grade], Nf = PR.N;
       for (let k = 0; k < 60; k++) {
@@ -307,7 +307,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:#1d1147}canvas{display
     hook: [T('EL 90 % FALLA ESTE RETO 🤯', '90% GET THIS WRONG 🤯'), T('5 RETOS DE EMOJIS · ¿HASTA DÓNDE LLEGAS?', '5 EMOJI PUZZLES · HOW FAR CAN YOU GO?')],
     ask: T('¿CUÁNTO VALE LA ÚLTIMA? 🤔', 'WHAT DOES THE LAST ONE EQUAL? 🤔'), extra: T('Juegos de mates y lógica gratis', 'Free maths and logic games'),
     tags: T('#matematicas #acertijo #retomental #emojis #calculomental #fyp', '#math #puzzle #brainteaser #emoji #mathchallenge #fyp'), teaser: T('¿Cuánto vale cada dibujo?', 'What is each picture worth?'),
-    levels: () => (SET === 5 ? [1, 2, 3, 4, 5].map((l, i) => ({ p: l, label: LV5[i][0], color: LV5[i][1] })) : [{ p: [2, 3, 4, 2, 5, 3][(N - 1) % 6] }]),
+    levels: (N = NQ) => (SET === 5 ? [1, 2, 3, 4, 5].map((l, i) => ({ p: l, label: LV5[i][0], color: LV5[i][1] })) : [{ p: [2, 3, 4, 2, 5, 3][(N - 1) % 6] }]),
     gen(r, L) {
       const [x, y, z] = shuffle(r, pick(r, EPOOLS));
       let a = ri(r, 3, 10), b = ri(r, 2, 9), c = ri(r, 1, Math.max(1, b - 1));
@@ -335,7 +335,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:#1d1147}canvas{display
     hook: [T('CASI NADIE ACIERTA ESTA OPERACIÓN 😱', 'ALMOST NOBODY GETS THIS RIGHT 😱'), T('5 OPERACIONES · ¿HASTA DÓNDE LLEGAS?', '5 SUMS · HOW FAR CAN YOU GO?')],
     ask: T('¿CUÁNTO ES? 🧮', 'WHAT IS IT? 🧮'), extra: T('Juegos de cálculo mental gratis', 'Free mental maths games'),
     tags: T('#matematicas #calculomental #retomental #acertijo #mates #fyp', '#math #mentalmath #brainteaser #mathchallenge #quiz #fyp'), teaser: T('¿Cuánto es?', 'What is it?'),
-    levels: () => (SET === 5 ? [1, 2, 3, 4, 5].map((l, i) => ({ p: l, label: LV5[i][0], color: LV5[i][1] })) : [{ p: [4, 2, 5, 3, 4, 1, 5][(N - 1) % 7] }]),
+    levels: (N = NQ) => (SET === 5 ? [1, 2, 3, 4, 5].map((l, i) => ({ p: l, label: LV5[i][0], color: LV5[i][1] })) : [{ p: [4, 2, 5, 3, 4, 1, 5][(N - 1) % 7] }]),
     gen(r, L) {
       let expr, val, cands = [], text, lines;
       if (L === 1) { const a = ri(r, 6, 9), b = ri(r, 6, 9); if (r() < 0.5) { expr = a + ' × ' + b; val = a * b; cands = [a * b + a, a * b - b, a * (b + 1), (a - 1) * b]; text = T('La tabla del ' + a + '.', 'The ' + a + ' times table.'); lines = [a + ' × ' + b + ' = ' + val]; }
@@ -366,7 +366,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:#1d1147}canvas{display
     hook: [T('¿CUÁNTO PESA? SOLO LOS GENIOS LO SACAN ⚖️', 'ONLY GENIUSES CAN SOLVE THIS ⚖️'), T('5 BALANZAS · ¿HASTA DÓNDE LLEGAS?', '5 SCALES · HOW FAR CAN YOU GO?')],
     ask: T('¿CUÁNTOS EQUILIBRAN LA ÚLTIMA? ⚖️', 'HOW MANY BALANCE THE LAST ONE? ⚖️'), extra: T('Juegos de lógica gratis', 'Free logic games'),
     tags: T('#logica #acertijo #retomental #balanza #matematicas #fyp', '#logic #puzzle #brainteaser #math #riddle #fyp'), teaser: T('¿Cuántos equilibran la balanza?', 'How many balance the scale?'),
-    levels: () => (SET === 5 ? [1, 2, 2, 3, 4].map((l, i) => ({ p: l, label: LV5[i][0], color: LV5[i][1] })) : [{ p: [2, 3, 2, 4, 3][(N - 1) % 5] }]),
+    levels: (N = NQ) => (SET === 5 ? [1, 2, 2, 3, 4].map((l, i) => ({ p: l, label: LV5[i][0], color: LV5[i][1] })) : [{ p: [2, 3, 2, 4, 3][(N - 1) % 5] }]),
     gen(r, tier) {
       const E = pick(r, BPOOLS), val = [1, 0, 0, 0], clues = []; let q;
       if (tier === 1) { const k = ri(r, 2, 5); val[1] = k; clues.push([[[1, 1]], [[0, k]]]); q = [[1, ri(r, 2, 3)]]; }
@@ -386,7 +386,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:#1d1147}canvas{display
     langs: [lang], icon: '✍️', wait: [8, 6], url: '',
     get list() { return (this._l = this._l || window.VR_DATOS[key].trim().split('\n').map((l) => l.split('|'))); },
     get count() { return this.list.length; },
-    levels() { const n = this.list.length; return SET === 5 ? [0, 1, 2, 3, 4].map((i) => ({ p: [Math.floor(i * n / 5), Math.floor((i + 1) * n / 5)], label: LV5[i][0], color: LV5[i][1] })) : [{ p: [(N - 1) % n, (N - 1) % n + 1] }]; },
+    levels(N = NQ) { const n = this.list.length; return SET === 5 ? [0, 1, 2, 3, 4].map((i) => ({ p: [Math.floor(i * n / 5), Math.floor((i + 1) * n / 5)], label: LV5[i][0], color: LV5[i][1] })) : [{ p: [(N - 1) % n, (N - 1) % n + 1] }]; },
     gen(r, [a, b]) {
       const e = SET === 5 ? this.list[ri(r, a, b - 1)] : this.list[a], o = options(r, e[0], e.slice(1, 4));
       return { kind: 'card', text: key === 'spelling' ? 'Only ONE of these 4 words is spelled right 👇' : 'Solo UNA de estas 4 palabras está bien escrita 👇', emoji: '✍️', opts: o.opts, ok: o.ok, answer: e[0], rule: { text: e[4], lines: ['✅ ' + e[0]] } };
@@ -414,10 +414,10 @@ html,body{margin:0;height:100%;overflow:hidden;background:#1d1147}canvas{display
       this._i = []; order.forEach((w, wi) => (W[w].S || []).forEach((s) => { if (s[0].includes('_')) this._i.push({ w, s, k: wi / order.length }); }));
       return this._i;
     },
-    levels() { return SET === 5 ? [0, 1, 2, 3, 4].map((i) => ({ p: i, label: LV5[i][0], color: LV5[i][1] })) : [{ p: -1 }]; },
+    levels(N = NQ) { return SET === 5 ? [0, 1, 2, 3, 4].map((i) => ({ p: i, label: LV5[i][0], color: LV5[i][1] })) : [{ p: -N }]; },
     gen(r, band) {
       const W = window.EQW.W, I = this.items, n = I.length;
-      const it = band < 0 ? I[((N - 1) * 37) % n] : I[Math.min(n - 1, Math.floor((band + r()) * n / 5))];
+      const it = band < 0 ? I[((-band - 1) * 37) % n] : I[Math.min(n - 1, Math.floor((band + r()) * n / 5))];
       const g = W[it.w].g, rel = RELATED.find((x) => x.includes(g)) || [g], no = (it.s[4] || []).map((x) => x.toLowerCase());
       const same = shuffle(r, Object.keys(W).filter((w) => w !== it.w && W[w].g === g)), near = shuffle(r, Object.keys(W).filter((w) => w !== it.w && W[w].g !== g && rel.includes(W[w].g)));
       const cands = same.concat(near).filter((w) => !no.includes(w.toLowerCase()) && w.toLowerCase() !== it.w.toLowerCase());
@@ -823,6 +823,16 @@ html,body{margin:0;height:100%;overflow:hidden;background:#1d1147}canvas{display
     return { postTitle: title, postDesc: desc };
   }
 
+  // exportación para bannergames (herramientas/bannergames_export.js): muchas preguntas sueltas de este pack, en datos
+  window.__bgExport = (count) => {
+    const items = [], seen = new Set(), total = Math.min(count, PACK.count || 999);
+    for (let n = 1; n <= total; n++) PACK.levels(n).forEach((L, i) => {
+      for (let salt = 0; salt < 30; salt++) { const P = PACK.gen(rng(hash(PK + '|' + n + '|' + i + '|' + salt)), L.p, i, salt, n); if (!P) continue;
+        const k = JSON.stringify([P.seq, P.text, P.expr, P.opts, P.rows, P.scales, P.alien, P.cubes, P.flash]); if (!seen.has(k)) { seen.add(k); delete P.label; delete P.color; items.push(P); } break; }
+    });
+    const strip = (x) => String(x).replace(/\s*[\p{Extended_Pictographic}\uFE0F]+\s*$/u, '').trim();
+    return { pack: PK, lang: LANG, title: PACK.title, icon: PACK.icon, url: URLT.replace(/^(?!https?:)/, 'https://'), wait: PACK.wait[0], question: PACK.question || PACK.teaser || strip(ASK), ask: ASK, teaser: PACK.teaser || '', items };
+  };
   window.arcadeRec = {
     ready: false, fps: FPS, frames: total, quizCount: PACK.count || 999, scene: 'quiz', cues, unsupported: !SUPPORTED, langs: PACK.langs,
     info: Object.assign({ id: PK, title: PACK.title, puzzle: N, set: SET, total: PACK.count || 999, url: URLFULL, lang: LANG, langs: PACK.langs, answers: QS.map((P) => P.answer),

@@ -17,7 +17,13 @@
 <body>
 <header>Mi blog de ejemplo</header>
 <main>
-  <p class="tools">Página de prueba del banner. <a href="?bgreset=1">Ver de nuevo el intersticial</a> <a href="?bgreset=1&lang=en">En inglés</a></p>
+  <p class="tools">Página de prueba del banner. Perfil: <span id="pf"></span><br>
+    <a href="?bgreset=1&profile=cerillas">cerillas</a> <a href="?bgreset=1&profile=secuencias">secuencias</a> <a href="?bgreset=1&profile=policubos">policubos</a>
+    <a href="?bgreset=1&profile=quienfue">quienfue</a> <a href="?bgreset=1&profile=escondido">escondido</a> <a href="?bgreset=1&profile=alien">alien</a>
+    <a href="?bgreset=1&profile=intrusa">intrusa</a> <a href="?bgreset=1&profile=relampago">relampago</a> <a href="?bgreset=1&profile=problemas">problemas</a>
+    <a href="?bgreset=1&profile=emojimates">emojimates</a> <a href="?bgreset=1&profile=calculo">calculo</a> <a href="?bgreset=1&profile=balanza">balanza</a>
+    <a href="?bgreset=1&profile=ortografia">ortografia</a> <a href="?bgreset=1&profile=spelling&lang=en">spelling</a> <a href="?bgreset=1&profile=ingles">ingles</a>
+    · <a href="javascript:location.search=location.search.replace(/lang=\w+&?/,'')+(location.search?'&':'?')+'lang=en'">en inglés</a></p>
   <h1>Una web cualquiera con el banner de juegos</h1>
   <p>Este texto hace de artículo. El script se añade con una sola línea al final de la página:</p>
   <pre style="white-space:pre-wrap;word-break:break-all;background:#fff;border:1px solid #ddd;padding:10px;border-radius:8px;font-size:13px">&lt;script src="https://juegosboom.com/bannergames/bannergames.js?profile=cerillas&amp;lang=es" async&gt;&lt;/script&gt;</pre>
@@ -29,8 +35,9 @@
   <p>Praesent commodo cursus magna, vel scelerisque nisl consectetur et. Donec sed odio dui. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus.</p>
 </main>
 <script>
-  // en la demo, el idioma se puede cambiar con ?lang=en
-  (function () { var l = /[?&]lang=(\w+)/.exec(location.search); var s = document.createElement('script'); s.async = true; s.src = 'bannergames.js?profile=cerillas&lang=' + (l ? l[1] : 'es'); document.body.appendChild(s); })();
+  // en la demo: ?profile=<perfil> y ?lang=en
+  (function () { var q = new URLSearchParams(location.search), pf = q.get('profile') || 'cerillas', s = document.createElement('script'); document.getElementById('pf').textContent = pf;
+    s.async = true; s.src = 'bannergames.js?profile=' + encodeURIComponent(pf) + '&lang=' + (q.get('lang') || 'es'); document.body.appendChild(s); })();
 </script>
 </body>
 </html>

@@ -1,0 +1,1005 @@
+{
+ "type": "quiz",
+ "url": "https://educativos.juegosboom.com",
+ "delay": 3,
+ "every_hours": 12,
+ "closed_hours": 24,
+ "wait": 8,
+ "reveal": 4,
+ "colors": {
+  "bg1": "#3b2a7a",
+  "bg2": "#140c33",
+  "accent": "#7048e8",
+  "cta": "#ffd43b",
+  "ctaText": "#2b1a0e"
+ },
+ "texts": {
+  "en": {
+   "think": "Think!",
+   "solved": "Did you get it?",
+   "answer": "Answer",
+   "cta": "Play free ▶",
+   "later": "Keep reading",
+   "barCta": "Play",
+   "close": "Close",
+   "expand": "Expand",
+   "brand": "✍️ Spelling",
+   "mini": "Spelling",
+   "question": "WHICH ONE IS SPELLED RIGHT?",
+   "bar": "✍️ Which one is spelled right?"
+  }
+ },
+ "items": {
+  "en": [
+   {
+    "kind": "card",
+    "text": "Only ONE of these 4 words is spelled right 👇",
+    "emoji": "✍️",
+    "opts": [
+     "friendd",
+     "frend",
+     "freind",
+     "friend"
+    ],
+    "ok": 3,
+    "answer": "friend",
+    "rule": {
+     "text": "\"i before e\": friend has \"ie\" after the r.",
+     "lines": [
+      "✅ friend"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Only ONE of these 4 words is spelled right 👇",
+    "emoji": "✍️",
+    "opts": [
+     "beleave",
+     "believe",
+     "belive",
+     "beleive"
+    ],
+    "ok": 1,
+    "answer": "believe",
+    "rule": {
+     "text": "\"i before e, except after c\": believe.",
+     "lines": [
+      "✅ believe"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Only ONE of these 4 words is spelled right 👇",
+    "emoji": "✍️",
+    "opts": [
+     "until",
+     "untill",
+     "untile",
+     "antil"
+    ],
+    "ok": 0,
+    "answer": "until",
+    "rule": {
+     "text": "Until has only one l at the end (but \"till\" has two).",
+     "lines": [
+      "✅ until"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Only ONE of these 4 words is spelled right 👇",
+    "emoji": "✍️",
+    "opts": [
+     "truily",
+     "truly",
+     "truley",
+     "truely"
+    ],
+    "ok": 1,
+    "answer": "truly",
+    "rule": {
+     "text": "True loses its e: true → truly.",
+     "lines": [
+      "✅ truly"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Only ONE of these 4 words is spelled right 👇",
+    "emoji": "✍️",
+    "opts": [
+     "accros",
+     "accross",
+     "across",
+     "acros"
+    ],
+    "ok": 2,
+    "answer": "across",
+    "rule": {
+     "text": "Across has one c and two s.",
+     "lines": [
+      "✅ across"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Only ONE of these 4 words is spelled right 👇",
+    "emoji": "✍️",
+    "opts": [
+     "addres",
+     "adres",
+     "address",
+     "adress"
+    ],
+    "ok": 2,
+    "answer": "address",
+    "rule": {
+     "text": "Address has double d and double s.",
+     "lines": [
+      "✅ address"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Only ONE of these 4 words is spelled right 👇",
+    "emoji": "✍️",
+    "opts": [
+     "tommorrow",
+     "tomorrow",
+     "tomorow",
+     "tommorow"
+    ],
+    "ok": 1,
+    "answer": "tomorrow",
+    "rule": {
+     "text": "Tomorrow: one m, double r.",
+     "lines": [
+      "✅ tomorrow"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Only ONE of these 4 words is spelled right 👇",
+    "emoji": "✍️",
+    "opts": [
+     "begining",
+     "beggining",
+     "beginning",
+     "beginnig"
+    ],
+    "ok": 2,
+    "answer": "beginning",
+    "rule": {
+     "text": "Begin → beginning: the n doubles before -ing.",
+     "lines": [
+      "✅ beginning"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Only ONE of these 4 words is spelled right 👇",
+    "emoji": "✍️",
+    "opts": [
+     "wierd",
+     "weird",
+     "wierde",
+     "weerd"
+    ],
+    "ok": 1,
+    "answer": "weird",
+    "rule": {
+     "text": "Weird breaks the \"i before e\" rule: it's \"ei\".",
+     "lines": [
+      "✅ weird"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Only ONE of these 4 words is spelled right 👇",
+    "emoji": "✍️",
+    "opts": [
+     "receve",
+     "recieve",
+     "receive",
+     "receeve"
+    ],
+    "ok": 2,
+    "answer": "receive",
+    "rule": {
+     "text": "\"i before e, except after c\": receive.",
+     "lines": [
+      "✅ receive"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Only ONE of these 4 words is spelled right 👇",
+    "emoji": "✍️",
+    "opts": [
+     "piese",
+     "piece",
+     "peece",
+     "peice"
+    ],
+    "ok": 1,
+    "answer": "piece",
+    "rule": {
+     "text": "\"i before e\": a piece of pie.",
+     "lines": [
+      "✅ piece"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Only ONE of these 4 words is spelled right 👇",
+    "emoji": "✍️",
+    "opts": [
+     "calandar",
+     "callendar",
+     "calender",
+     "calendar"
+    ],
+    "ok": 3,
+    "answer": "calendar",
+    "rule": {
+     "text": "Calendar ends in -ar, not -er.",
+     "lines": [
+      "✅ calendar"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Only ONE of these 4 words is spelled right 👇",
+    "emoji": "✍️",
+    "opts": [
+     "librery",
+     "libary",
+     "liberry",
+     "library"
+    ],
+    "ok": 3,
+    "answer": "library",
+    "rule": {
+     "text": "Library has an r after the b: li-BRA-ry.",
+     "lines": [
+      "✅ library"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Only ONE of these 4 words is spelled right 👇",
+    "emoji": "✍️",
+    "opts": [
+     "Febrary",
+     "Feburary",
+     "Febuary",
+     "February"
+    ],
+    "ok": 3,
+    "answer": "February",
+    "rule": {
+     "text": "February has an r after the b: Feb-RU-ary.",
+     "lines": [
+      "✅ February"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Only ONE of these 4 words is spelled right 👇",
+    "emoji": "✍️",
+    "opts": [
+     "Wednesday",
+     "Wedensday",
+     "Wednsday",
+     "Wensday"
+    ],
+    "ok": 0,
+    "answer": "Wednesday",
+    "rule": {
+     "text": "Wednesday keeps the silent d: Wed-nes-day.",
+     "lines": [
+      "✅ Wednesday"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Only ONE of these 4 words is spelled right 👇",
+    "emoji": "✍️",
+    "opts": [
+     "sepparate",
+     "separate",
+     "seperate",
+     "separete"
+    ],
+    "ok": 1,
+    "answer": "separate",
+    "rule": {
+     "text": "There's \"a rat\" in sep-A-RAT-e.",
+     "lines": [
+      "✅ separate"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Only ONE of these 4 words is spelled right 👇",
+    "emoji": "✍️",
+    "opts": [
+     "definitly",
+     "definately",
+     "defenitely",
+     "definitely"
+    ],
+    "ok": 3,
+    "answer": "definitely",
+    "rule": {
+     "text": "Definitely comes from \"finite\": de-FINITE-ly.",
+     "lines": [
+      "✅ definitely"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Only ONE of these 4 words is spelled right 👇",
+    "emoji": "✍️",
+    "opts": [
+     "necessary",
+     "necessery",
+     "neccesary",
+     "neccessary"
+    ],
+    "ok": 0,
+    "answer": "necessary",
+    "rule": {
+     "text": "One collar, two sleeves: one c, two s.",
+     "lines": [
+      "✅ necessary"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Only ONE of these 4 words is spelled right 👇",
+    "emoji": "✍️",
+    "opts": [
+     "surprice",
+     "surprise",
+     "suprise",
+     "surprize"
+    ],
+    "ok": 1,
+    "answer": "surprise",
+    "rule": {
+     "text": "Surprise has an r after the u: SUR-prise.",
+     "lines": [
+      "✅ surprise"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Only ONE of these 4 words is spelled right 👇",
+    "emoji": "✍️",
+    "opts": [
+     "bussiness",
+     "buisness",
+     "business",
+     "busness"
+    ],
+    "ok": 2,
+    "answer": "business",
+    "rule": {
+     "text": "Business comes from busy: bus-I-ness.",
+     "lines": [
+      "✅ business"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Only ONE of these 4 words is spelled right 👇",
+    "emoji": "✍️",
+    "opts": [
+     "argumant",
+     "arguement",
+     "argument",
+     "arguemant"
+    ],
+    "ok": 2,
+    "answer": "argument",
+    "rule": {
+     "text": "Argue loses its e: argue → argument.",
+     "lines": [
+      "✅ argument"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Only ONE of these 4 words is spelled right 👇",
+    "emoji": "✍️",
+    "opts": [
+     "gratefull",
+     "grateful",
+     "graitful",
+     "greatful"
+    ],
+    "ok": 1,
+    "answer": "grateful",
+    "rule": {
+     "text": "Grateful has nothing to do with \"great\": grate-ful.",
+     "lines": [
+      "✅ grateful"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Only ONE of these 4 words is spelled right 👇",
+    "emoji": "✍️",
+    "opts": [
+     "resturant",
+     "restuarant",
+     "restaurant",
+     "restaraunt"
+    ],
+    "ok": 2,
+    "answer": "restaurant",
+    "rule": {
+     "text": "Restaurant: rest-AU-rant.",
+     "lines": [
+      "✅ restaurant"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Only ONE of these 4 words is spelled right 👇",
+    "emoji": "✍️",
+    "opts": [
+     "govermint",
+     "goverment",
+     "government",
+     "governmant"
+    ],
+    "ok": 2,
+    "answer": "government",
+    "rule": {
+     "text": "Govern + ment: don't forget the n.",
+     "lines": [
+      "✅ government"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Only ONE of these 4 words is spelled right 👇",
+    "emoji": "✍️",
+    "opts": [
+     "environment",
+     "environmant",
+     "envirnment",
+     "enviroment"
+    ],
+    "ok": 0,
+    "answer": "environment",
+    "rule": {
+     "text": "Environ + ment: don't forget the n.",
+     "lines": [
+      "✅ environment"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Only ONE of these 4 words is spelled right 👇",
+    "emoji": "✍️",
+    "opts": [
+     "embarras",
+     "embarass",
+     "embarrass",
+     "embaress"
+    ],
+    "ok": 2,
+    "answer": "embarrass",
+    "rule": {
+     "text": "Embarrass has double r and double s.",
+     "lines": [
+      "✅ embarrass"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Only ONE of these 4 words is spelled right 👇",
+    "emoji": "✍️",
+    "opts": [
+     "accommodate",
+     "acommodate",
+     "accomodate",
+     "acomodate"
+    ],
+    "ok": 0,
+    "answer": "accommodate",
+    "rule": {
+     "text": "Accommodate has double c and double m.",
+     "lines": [
+      "✅ accommodate"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Only ONE of these 4 words is spelled right 👇",
+    "emoji": "✍️",
+    "opts": [
+     "ocurrence",
+     "occurence",
+     "occurrance",
+     "occurrence"
+    ],
+    "ok": 3,
+    "answer": "occurrence",
+    "rule": {
+     "text": "Occurrence: double c, double r and -ence.",
+     "lines": [
+      "✅ occurrence"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Only ONE of these 4 words is spelled right 👇",
+    "emoji": "✍️",
+    "opts": [
+     "ocassion",
+     "occasion",
+     "occassion",
+     "ocasion"
+    ],
+    "ok": 1,
+    "answer": "occasion",
+    "rule": {
+     "text": "Occasion: double c, single s.",
+     "lines": [
+      "✅ occasion"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Only ONE of these 4 words is spelled right 👇",
+    "emoji": "✍️",
+    "opts": [
+     "reccommend",
+     "reccomend",
+     "recomend",
+     "recommend"
+    ],
+    "ok": 3,
+    "answer": "recommend",
+    "rule": {
+     "text": "Recommend: one c, double m.",
+     "lines": [
+      "✅ recommend"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Only ONE of these 4 words is spelled right 👇",
+    "emoji": "✍️",
+    "opts": [
+     "successfull",
+     "successful",
+     "succesful",
+     "sucessful"
+    ],
+    "ok": 1,
+    "answer": "successful",
+    "rule": {
+     "text": "Successful: double c, double s, one l.",
+     "lines": [
+      "✅ successful"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Only ONE of these 4 words is spelled right 👇",
+    "emoji": "✍️",
+    "opts": [
+     "immediately",
+     "immediatly",
+     "imediately",
+     "immediatley"
+    ],
+    "ok": 0,
+    "answer": "immediately",
+    "rule": {
+     "text": "Immediate + ly: keep the e.",
+     "lines": [
+      "✅ immediately"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Only ONE of these 4 words is spelled right 👇",
+    "emoji": "✍️",
+    "opts": [
+     "indipendent",
+     "independant",
+     "independint",
+     "independent"
+    ],
+    "ok": 3,
+    "answer": "independent",
+    "rule": {
+     "text": "Independent ends in -ent, not -ant.",
+     "lines": [
+      "✅ independent"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Only ONE of these 4 words is spelled right 👇",
+    "emoji": "✍️",
+    "opts": [
+     "existance",
+     "exsistence",
+     "existence",
+     "existense"
+    ],
+    "ok": 2,
+    "answer": "existence",
+    "rule": {
+     "text": "Existence ends in -ence.",
+     "lines": [
+      "✅ existence"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Only ONE of these 4 words is spelled right 👇",
+    "emoji": "✍️",
+    "opts": [
+     "knoledge",
+     "knowledge",
+     "knowladge",
+     "knowlege"
+    ],
+    "ok": 1,
+    "answer": "knowledge",
+    "rule": {
+     "text": "Know + ledge: knowledge.",
+     "lines": [
+      "✅ knowledge"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Only ONE of these 4 words is spelled right 👇",
+    "emoji": "✍️",
+    "opts": [
+     "shedule",
+     "schedule",
+     "schedual",
+     "scedule"
+    ],
+    "ok": 1,
+    "answer": "schedule",
+    "rule": {
+     "text": "Schedule: sch- and -dule.",
+     "lines": [
+      "✅ schedule"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Only ONE of these 4 words is spelled right 👇",
+    "emoji": "✍️",
+    "opts": [
+     "conscious",
+     "conscius",
+     "consious",
+     "concious"
+    ],
+    "ok": 0,
+    "answer": "conscious",
+    "rule": {
+     "text": "Conscious has \"sc\" in the middle: con-SC-ious.",
+     "lines": [
+      "✅ conscious"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Only ONE of these 4 words is spelled right 👇",
+    "emoji": "✍️",
+    "opts": [
+     "priviledge",
+     "privilege",
+     "privelege",
+     "privilage"
+    ],
+    "ok": 1,
+    "answer": "privilege",
+    "rule": {
+     "text": "Privilege has no d: pri-vi-lege.",
+     "lines": [
+      "✅ privilege"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Only ONE of these 4 words is spelled right 👇",
+    "emoji": "✍️",
+    "opts": [
+     "forein",
+     "foriegn",
+     "foreing",
+     "foreign"
+    ],
+    "ok": 3,
+    "answer": "foreign",
+    "rule": {
+     "text": "Foreign breaks the \"i before e\" rule: for-EIGN.",
+     "lines": [
+      "✅ foreign"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Only ONE of these 4 words is spelled right 👇",
+    "emoji": "✍️",
+    "opts": [
+     "haress",
+     "harras",
+     "harrass",
+     "harass"
+    ],
+    "ok": 3,
+    "answer": "harass",
+    "rule": {
+     "text": "Harass has one r and double s.",
+     "lines": [
+      "✅ harass"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Only ONE of these 4 words is spelled right 👇",
+    "emoji": "✍️",
+    "opts": [
+     "commitee",
+     "committee",
+     "comittee",
+     "committe"
+    ],
+    "ok": 1,
+    "answer": "committee",
+    "rule": {
+     "text": "Committee: double m, double t, double e.",
+     "lines": [
+      "✅ committee"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Only ONE of these 4 words is spelled right 👇",
+    "emoji": "✍️",
+    "opts": [
+     "disapear",
+     "dissapear",
+     "dissappear",
+     "disappear"
+    ],
+    "ok": 3,
+    "answer": "disappear",
+    "rule": {
+     "text": "Dis + appear: one s, double p.",
+     "lines": [
+      "✅ disappear"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Only ONE of these 4 words is spelled right 👇",
+    "emoji": "✍️",
+    "opts": [
+     "noticeable",
+     "notisable",
+     "noticeble",
+     "noticable"
+    ],
+    "ok": 0,
+    "answer": "noticeable",
+    "rule": {
+     "text": "Notice + able: keep the e.",
+     "lines": [
+      "✅ noticeable"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Only ONE of these 4 words is spelled right 👇",
+    "emoji": "✍️",
+    "opts": [
+     "publically",
+     "publicaly",
+     "publicly",
+     "publicley"
+    ],
+    "ok": 2,
+    "answer": "publicly",
+    "rule": {
+     "text": "Publicly is one of the few -ic words that takes just -ly.",
+     "lines": [
+      "✅ publicly"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Only ONE of these 4 words is spelled right 👇",
+    "emoji": "✍️",
+    "opts": [
+     "apparent",
+     "aparent",
+     "apparant",
+     "apparrent"
+    ],
+    "ok": 0,
+    "answer": "apparent",
+    "rule": {
+     "text": "Apparent: double p, one r, -ent.",
+     "lines": [
+      "✅ apparent"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Only ONE of these 4 words is spelled right 👇",
+    "emoji": "✍️",
+    "opts": [
+     "maintenence",
+     "maintenanse",
+     "maintainance",
+     "maintenance"
+    ],
+    "ok": 3,
+    "answer": "maintenance",
+    "rule": {
+     "text": "Maintain → mainTENance.",
+     "lines": [
+      "✅ maintenance"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Only ONE of these 4 words is spelled right 👇",
+    "emoji": "✍️",
+    "opts": [
+     "millenium",
+     "milennium",
+     "millenniun",
+     "millennium"
+    ],
+    "ok": 3,
+    "answer": "millennium",
+    "rule": {
+     "text": "Millennium: double l and double n.",
+     "lines": [
+      "✅ millennium"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Only ONE of these 4 words is spelled right 👇",
+    "emoji": "✍️",
+    "opts": [
+     "posesion",
+     "possession",
+     "possesion",
+     "posession"
+    ],
+    "ok": 1,
+    "answer": "possession",
+    "rule": {
+     "text": "Possession has two pairs of double s.",
+     "lines": [
+      "✅ possession"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Only ONE of these 4 words is spelled right 👇",
+    "emoji": "✍️",
+    "opts": [
+     "rythm",
+     "rhytm",
+     "rhythym",
+     "rhythm"
+    ],
+    "ok": 3,
+    "answer": "rhythm",
+    "rule": {
+     "text": "Rhythm Helps Your Two Hips Move.",
+     "lines": [
+      "✅ rhythm"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Only ONE of these 4 words is spelled right 👇",
+    "emoji": "✍️",
+    "opts": [
+     "tweltfh",
+     "twelvth",
+     "twelth",
+     "twelfth"
+    ],
+    "ok": 3,
+    "answer": "twelfth",
+    "rule": {
+     "text": "Twelfth keeps the f: twel-F-th.",
+     "lines": [
+      "✅ twelfth"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Only ONE of these 4 words is spelled right 👇",
+    "emoji": "✍️",
+    "opts": [
+     "vaccum",
+     "vacuum",
+     "vaccuum",
+     "vacum"
+    ],
+    "ok": 1,
+    "answer": "vacuum",
+    "rule": {
+     "text": "Vacuum has one c and double u.",
+     "lines": [
+      "✅ vacuum"
+     ]
+    }
+   }
+  ]
+ }
+}

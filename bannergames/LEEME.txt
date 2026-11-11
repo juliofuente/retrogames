@@ -39,5 +39,16 @@ El .json del perfil (cerillas.json)
   Los retos salen del juego: php herramientas/bannergames_json.php los vuelve a copiar de herramientas/src/cerillas.js
   (conserva los textos y ajustes que hayas cambiado en el .json).
 
+Perfiles de preguntas (type: quiz): los retos de los vídeos educativos, cada uno con su .json
+  secuencias  policubos  quienfue  escondido  alien  intrusa  relampago  problemas (solo es)  emojimates  calculo
+  balanza  ortografia (solo es)  spelling (solo en)  ingles (solo es)
+  Cada pregunta: tarjeta con el enunciado, 4 opciones, cuenta atrás, la respuesta en verde y la explicación; en bucle.
+  En el .json: items.es / items.en (80 preguntas por idioma), wait (segundos para pensar), reveal (segundos con la
+  respuesta) y los mismos ajustes que cerillas (url, delay, every_hours, closed_hours, colors, texts).
+  Si se pide un idioma que el perfil no tiene, sale en el que tenga.
+  Se regeneran desde los vídeos: node herramientas/bannergames_export.js (con el servidor de pruebas en marcha;
+  necesita Node y Playwright). Conserva lo que hayas cambiado a mano y solo reemplaza las preguntas.
+  En la demo: demo.html?profile=policubos (o cualquier otro) &lang=en.
+
 Subir a la web: la carpeta bannergames/ entera (con su .htaccess, que permite cargar el .js y el .json desde otras webs).
 Otros juegos: se añade una escena en bannergames.js (SCENES.<tipo>) y su .json.

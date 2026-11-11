@@ -1,0 +1,2972 @@
+{
+ "type": "quiz",
+ "url": "https://educativos.juegosboom.com/el-numero-escondido",
+ "delay": 3,
+ "every_hours": 12,
+ "closed_hours": 24,
+ "wait": 10,
+ "reveal": 4,
+ "colors": {
+  "bg1": "#3b2a7a",
+  "bg2": "#140c33",
+  "accent": "#7048e8",
+  "cta": "#ffd43b",
+  "ctaText": "#2b1a0e"
+ },
+ "texts": {
+  "es": {
+   "think": "¡Piensa!",
+   "solved": "¿Lo has acertado?",
+   "answer": "Respuesta",
+   "cta": "Juega gratis ▶",
+   "later": "Seguir leyendo",
+   "barCta": "Jugar",
+   "close": "Cerrar",
+   "expand": "Ampliar",
+   "brand": "🙈 El número escondido",
+   "mini": "El número escondido",
+   "question": "¿Qué número falta?",
+   "bar": "🙈 ¿Qué número se ha escondido?"
+  },
+  "en": {
+   "think": "Think!",
+   "solved": "Did you get it?",
+   "answer": "Answer",
+   "cta": "Play free ▶",
+   "later": "Keep reading",
+   "barCta": "Play",
+   "close": "Close",
+   "expand": "Expand",
+   "brand": "🙈 The hidden number",
+   "mini": "The hidden number",
+   "question": "What is the missing number?",
+   "bar": "🙈 Which number is hiding?"
+  }
+ },
+ "items": {
+  "es": [
+   {
+    "kind": "card",
+    "expr": "? ÷ 5 = 4",
+    "opts": [
+     "25",
+     "9",
+     "20",
+     "15"
+    ],
+    "ok": 2,
+    "answer": "20",
+    "rule": {
+     "text": "Haz las operaciones al revés:",
+     "lines": [
+      "4 × 5 = 20"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "? ÷ 7 = 3",
+    "opts": [
+     "28",
+     "14",
+     "21",
+     "10"
+    ],
+    "ok": 2,
+    "answer": "21",
+    "rule": {
+     "text": "Haz las operaciones al revés:",
+     "lines": [
+      "3 × 7 = 21"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "? ÷ 8 = 12",
+    "opts": [
+     "104",
+     "20",
+     "88",
+     "96"
+    ],
+    "ok": 3,
+    "answer": "96",
+    "rule": {
+     "text": "Haz las operaciones al revés:",
+     "lines": [
+      "12 × 8 = 96"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "? ÷ 4 = 7",
+    "opts": [
+     "24",
+     "32",
+     "11",
+     "28"
+    ],
+    "ok": 3,
+    "answer": "28",
+    "rule": {
+     "text": "Haz las operaciones al revés:",
+     "lines": [
+      "7 × 4 = 28"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "8 × ? = 40",
+    "opts": [
+     "6",
+     "5",
+     "4",
+     "32"
+    ],
+    "ok": 1,
+    "answer": "5",
+    "rule": {
+     "text": "Haz las operaciones al revés:",
+     "lines": [
+      "40 ÷ 8 = 5"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "? ÷ 9 = 11",
+    "opts": [
+     "90",
+     "108",
+     "99",
+     "20"
+    ],
+    "ok": 2,
+    "answer": "99",
+    "rule": {
+     "text": "Haz las operaciones al revés:",
+     "lines": [
+      "11 × 9 = 99"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "? ÷ 3 = 7",
+    "opts": [
+     "18",
+     "10",
+     "24",
+     "21"
+    ],
+    "ok": 3,
+    "answer": "21",
+    "rule": {
+     "text": "Haz las operaciones al revés:",
+     "lines": [
+      "7 × 3 = 21"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "? ÷ 6 = 12",
+    "opts": [
+     "78",
+     "66",
+     "18",
+     "72"
+    ],
+    "ok": 3,
+    "answer": "72",
+    "rule": {
+     "text": "Haz las operaciones al revés:",
+     "lines": [
+      "12 × 6 = 72"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "5 × ? = 60",
+    "opts": [
+     "12",
+     "55",
+     "11",
+     "13"
+    ],
+    "ok": 0,
+    "answer": "12",
+    "rule": {
+     "text": "Haz las operaciones al revés:",
+     "lines": [
+      "60 ÷ 5 = 12"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "7 × ? − 16 = 5",
+    "opts": [
+     "4",
+     "8",
+     "2",
+     "3"
+    ],
+    "ok": 3,
+    "answer": "3",
+    "rule": {
+     "text": "Haz las operaciones al revés:",
+     "lines": [
+      "5 + 16 = 21",
+      "21 ÷ 7 = 3"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "9 × ? + 19 = 100",
+    "opts": [
+     "10",
+     "9",
+     "13",
+     "8"
+    ],
+    "ok": 1,
+    "answer": "9",
+    "rule": {
+     "text": "Haz las operaciones al revés:",
+     "lines": [
+      "100 − 19 = 81",
+      "81 ÷ 9 = 9"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "9 × ? + 5 = 50",
+    "opts": [
+     "41",
+     "5",
+     "4",
+     "6"
+    ],
+    "ok": 1,
+    "answer": "5",
+    "rule": {
+     "text": "Haz las operaciones al revés:",
+     "lines": [
+      "50 − 5 = 45",
+      "45 ÷ 9 = 5"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "8 × ? + 11 = 67",
+    "opts": [
+     "7",
+     "6",
+     "8",
+     "10"
+    ],
+    "ok": 0,
+    "answer": "7",
+    "rule": {
+     "text": "Haz las operaciones al revés:",
+     "lines": [
+      "67 − 11 = 56",
+      "56 ÷ 8 = 7"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "9 × ? − 20 = 34",
+    "opts": [
+     "7",
+     "6",
+     "2",
+     "5"
+    ],
+    "ok": 1,
+    "answer": "6",
+    "rule": {
+     "text": "Haz las operaciones al revés:",
+     "lines": [
+      "34 + 20 = 54",
+      "54 ÷ 9 = 6"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "7 × ? − 10 = 32",
+    "opts": [
+     "6",
+     "5",
+     "3",
+     "7"
+    ],
+    "ok": 0,
+    "answer": "6",
+    "rule": {
+     "text": "Haz las operaciones al revés:",
+     "lines": [
+      "32 + 10 = 42",
+      "42 ÷ 7 = 6"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "8 × ? + 6 = 46",
+    "opts": [
+     "5",
+     "4",
+     "6",
+     "7"
+    ],
+    "ok": 0,
+    "answer": "5",
+    "rule": {
+     "text": "Haz las operaciones al revés:",
+     "lines": [
+      "46 − 6 = 40",
+      "40 ÷ 8 = 5"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "7 × ? + 14 = 91",
+    "opts": [
+     "11",
+     "15",
+     "10",
+     "12"
+    ],
+    "ok": 0,
+    "answer": "11",
+    "rule": {
+     "text": "Haz las operaciones al revés:",
+     "lines": [
+      "91 − 14 = 77",
+      "77 ÷ 7 = 11"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "5 × ? = 60",
+    "opts": [
+     "13",
+     "11",
+     "55",
+     "12"
+    ],
+    "ok": 3,
+    "answer": "12",
+    "rule": {
+     "text": "Haz las operaciones al revés:",
+     "lines": [
+      "60 ÷ 5 = 12"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "5 × ? = 25",
+    "opts": [
+     "4",
+     "6",
+     "20",
+     "5"
+    ],
+    "ok": 3,
+    "answer": "5",
+    "rule": {
+     "text": "Haz las operaciones al revés:",
+     "lines": [
+      "25 ÷ 5 = 5"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "6 × ? = 30",
+    "opts": [
+     "4",
+     "6",
+     "5",
+     "24"
+    ],
+    "ok": 2,
+    "answer": "5",
+    "rule": {
+     "text": "Haz las operaciones al revés:",
+     "lines": [
+      "30 ÷ 6 = 5"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "? ÷ 5 = 3",
+    "opts": [
+     "10",
+     "8",
+     "15",
+     "20"
+    ],
+    "ok": 2,
+    "answer": "15",
+    "rule": {
+     "text": "Haz las operaciones al revés:",
+     "lines": [
+      "3 × 5 = 15"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "? ÷ 8 = 5",
+    "opts": [
+     "13",
+     "48",
+     "32",
+     "40"
+    ],
+    "ok": 3,
+    "answer": "40",
+    "rule": {
+     "text": "Haz las operaciones al revés:",
+     "lines": [
+      "5 × 8 = 40"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "? ÷ 3 = 3",
+    "opts": [
+     "3",
+     "6",
+     "12",
+     "9"
+    ],
+    "ok": 3,
+    "answer": "9",
+    "rule": {
+     "text": "Haz las operaciones al revés:",
+     "lines": [
+      "3 × 3 = 9"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "7 × ? = 63",
+    "opts": [
+     "8",
+     "56",
+     "10",
+     "9"
+    ],
+    "ok": 3,
+    "answer": "9",
+    "rule": {
+     "text": "Haz las operaciones al revés:",
+     "lines": [
+      "63 ÷ 7 = 9"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "? ÷ 5 = 4",
+    "opts": [
+     "20",
+     "15",
+     "9",
+     "25"
+    ],
+    "ok": 0,
+    "answer": "20",
+    "rule": {
+     "text": "Haz las operaciones al revés:",
+     "lines": [
+      "4 × 5 = 20"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "8 × ? + 2 = 66",
+    "opts": [
+     "58",
+     "7",
+     "8",
+     "9"
+    ],
+    "ok": 2,
+    "answer": "8",
+    "rule": {
+     "text": "Haz las operaciones al revés:",
+     "lines": [
+      "66 − 2 = 64",
+      "64 ÷ 8 = 8"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "8 × ? − 11 = 61",
+    "opts": [
+     "8",
+     "9",
+     "10",
+     "6"
+    ],
+    "ok": 1,
+    "answer": "9",
+    "rule": {
+     "text": "Haz las operaciones al revés:",
+     "lines": [
+      "61 + 11 = 72",
+      "72 ÷ 8 = 9"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "3 × ? + 3 = 39",
+    "opts": [
+     "12",
+     "11",
+     "13",
+     "14"
+    ],
+    "ok": 0,
+    "answer": "12",
+    "rule": {
+     "text": "Haz las operaciones al revés:",
+     "lines": [
+      "39 − 3 = 36",
+      "36 ÷ 3 = 12"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "5 × ? + 18 = 38",
+    "opts": [
+     "5",
+     "3",
+     "11",
+     "4"
+    ],
+    "ok": 3,
+    "answer": "4",
+    "rule": {
+     "text": "Haz las operaciones al revés:",
+     "lines": [
+      "38 − 18 = 20",
+      "20 ÷ 5 = 4"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "4 × ? − 10 = 14",
+    "opts": [
+     "7",
+     "6",
+     "5",
+     "1"
+    ],
+    "ok": 1,
+    "answer": "6",
+    "rule": {
+     "text": "Haz las operaciones al revés:",
+     "lines": [
+      "14 + 10 = 24",
+      "24 ÷ 4 = 6"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "8 × ? + 17 = 49",
+    "opts": [
+     "8",
+     "5",
+     "3",
+     "4"
+    ],
+    "ok": 3,
+    "answer": "4",
+    "rule": {
+     "text": "Haz las operaciones al revés:",
+     "lines": [
+      "49 − 17 = 32",
+      "32 ÷ 8 = 4"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "7 × ? + 12 = 75",
+    "opts": [
+     "8",
+     "9",
+     "10",
+     "12"
+    ],
+    "ok": 1,
+    "answer": "9",
+    "rule": {
+     "text": "Haz las operaciones al revés:",
+     "lines": [
+      "75 − 12 = 63",
+      "63 ÷ 7 = 9"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "4 × ? − 12 = 12",
+    "opts": [
+     "5",
+     "6",
+     "8",
+     "7"
+    ],
+    "ok": 1,
+    "answer": "6",
+    "rule": {
+     "text": "Haz las operaciones al revés:",
+     "lines": [
+      "12 + 12 = 24",
+      "24 ÷ 4 = 6"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "5 × ? = 40",
+    "opts": [
+     "7",
+     "8",
+     "35",
+     "9"
+    ],
+    "ok": 1,
+    "answer": "8",
+    "rule": {
+     "text": "Haz las operaciones al revés:",
+     "lines": [
+      "40 ÷ 5 = 8"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "? ÷ 3 = 10",
+    "opts": [
+     "30",
+     "33",
+     "27",
+     "13"
+    ],
+    "ok": 0,
+    "answer": "30",
+    "rule": {
+     "text": "Haz las operaciones al revés:",
+     "lines": [
+      "10 × 3 = 30"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "8 × ? = 32",
+    "opts": [
+     "3",
+     "5",
+     "4",
+     "24"
+    ],
+    "ok": 2,
+    "answer": "4",
+    "rule": {
+     "text": "Haz las operaciones al revés:",
+     "lines": [
+      "32 ÷ 8 = 4"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "? ÷ 6 = 12",
+    "opts": [
+     "78",
+     "72",
+     "66",
+     "18"
+    ],
+    "ok": 1,
+    "answer": "72",
+    "rule": {
+     "text": "Haz las operaciones al revés:",
+     "lines": [
+      "12 × 6 = 72"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "? ÷ 5 = 9",
+    "opts": [
+     "14",
+     "50",
+     "40",
+     "45"
+    ],
+    "ok": 3,
+    "answer": "45",
+    "rule": {
+     "text": "Haz las operaciones al revés:",
+     "lines": [
+      "9 × 5 = 45"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "? ÷ 6 = 3",
+    "opts": [
+     "9",
+     "24",
+     "12",
+     "18"
+    ],
+    "ok": 3,
+    "answer": "18",
+    "rule": {
+     "text": "Haz las operaciones al revés:",
+     "lines": [
+      "3 × 6 = 18"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "? ÷ 7 = 7",
+    "opts": [
+     "49",
+     "56",
+     "14",
+     "42"
+    ],
+    "ok": 0,
+    "answer": "49",
+    "rule": {
+     "text": "Haz las operaciones al revés:",
+     "lines": [
+      "7 × 7 = 49"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "4 × ? = 20",
+    "opts": [
+     "4",
+     "5",
+     "16",
+     "6"
+    ],
+    "ok": 1,
+    "answer": "5",
+    "rule": {
+     "text": "Haz las operaciones al revés:",
+     "lines": [
+      "20 ÷ 4 = 5"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "4 × ? + 6 = 38",
+    "opts": [
+     "8",
+     "7",
+     "11",
+     "9"
+    ],
+    "ok": 0,
+    "answer": "8",
+    "rule": {
+     "text": "Haz las operaciones al revés:",
+     "lines": [
+      "38 − 6 = 32",
+      "32 ÷ 4 = 8"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "8 × ? + 10 = 50",
+    "opts": [
+     "6",
+     "4",
+     "5",
+     "8"
+    ],
+    "ok": 2,
+    "answer": "5",
+    "rule": {
+     "text": "Haz las operaciones al revés:",
+     "lines": [
+      "50 − 10 = 40",
+      "40 ÷ 8 = 5"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "7 × ? − 11 = 17",
+    "opts": [
+     "4",
+     "1",
+     "5",
+     "3"
+    ],
+    "ok": 0,
+    "answer": "4",
+    "rule": {
+     "text": "Haz las operaciones al revés:",
+     "lines": [
+      "17 + 11 = 28",
+      "28 ÷ 7 = 4"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "4 × ? + 18 = 42",
+    "opts": [
+     "15",
+     "6",
+     "5",
+     "7"
+    ],
+    "ok": 1,
+    "answer": "6",
+    "rule": {
+     "text": "Haz las operaciones al revés:",
+     "lines": [
+      "42 − 18 = 24",
+      "24 ÷ 4 = 6"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "7 × ? − 10 = 74",
+    "opts": [
+     "11",
+     "9",
+     "12",
+     "13"
+    ],
+    "ok": 2,
+    "answer": "12",
+    "rule": {
+     "text": "Haz las operaciones al revés:",
+     "lines": [
+      "74 + 10 = 84",
+      "84 ÷ 7 = 12"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "7 × ? + 15 = 85",
+    "opts": [
+     "14",
+     "9",
+     "10",
+     "11"
+    ],
+    "ok": 2,
+    "answer": "10",
+    "rule": {
+     "text": "Haz las operaciones al revés:",
+     "lines": [
+      "85 − 15 = 70",
+      "70 ÷ 7 = 10"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "7 × ? − 9 = 54",
+    "opts": [
+     "6",
+     "9",
+     "8",
+     "10"
+    ],
+    "ok": 1,
+    "answer": "9",
+    "rule": {
+     "text": "Haz las operaciones al revés:",
+     "lines": [
+      "54 + 9 = 63",
+      "63 ÷ 7 = 9"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "8 × ? + 9 = 49",
+    "opts": [
+     "7",
+     "4",
+     "5",
+     "6"
+    ],
+    "ok": 2,
+    "answer": "5",
+    "rule": {
+     "text": "Haz las operaciones al revés:",
+     "lines": [
+      "49 − 9 = 40",
+      "40 ÷ 8 = 5"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "8 × ? = 56",
+    "opts": [
+     "6",
+     "48",
+     "8",
+     "7"
+    ],
+    "ok": 3,
+    "answer": "7",
+    "rule": {
+     "text": "Haz las operaciones al revés:",
+     "lines": [
+      "56 ÷ 8 = 7"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "9 × ? = 90",
+    "opts": [
+     "11",
+     "9",
+     "81",
+     "10"
+    ],
+    "ok": 3,
+    "answer": "10",
+    "rule": {
+     "text": "Haz las operaciones al revés:",
+     "lines": [
+      "90 ÷ 9 = 10"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "? ÷ 3 = 10",
+    "opts": [
+     "13",
+     "27",
+     "33",
+     "30"
+    ],
+    "ok": 3,
+    "answer": "30",
+    "rule": {
+     "text": "Haz las operaciones al revés:",
+     "lines": [
+      "10 × 3 = 30"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "? ÷ 9 = 12",
+    "opts": [
+     "117",
+     "21",
+     "108",
+     "99"
+    ],
+    "ok": 2,
+    "answer": "108",
+    "rule": {
+     "text": "Haz las operaciones al revés:",
+     "lines": [
+      "12 × 9 = 108"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "? ÷ 9 = 4",
+    "opts": [
+     "13",
+     "27",
+     "36",
+     "45"
+    ],
+    "ok": 2,
+    "answer": "36",
+    "rule": {
+     "text": "Haz las operaciones al revés:",
+     "lines": [
+      "4 × 9 = 36"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "6 × ? = 48",
+    "opts": [
+     "8",
+     "42",
+     "7",
+     "9"
+    ],
+    "ok": 0,
+    "answer": "8",
+    "rule": {
+     "text": "Haz las operaciones al revés:",
+     "lines": [
+      "48 ÷ 6 = 8"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "? ÷ 8 = 6",
+    "opts": [
+     "40",
+     "56",
+     "14",
+     "48"
+    ],
+    "ok": 3,
+    "answer": "48",
+    "rule": {
+     "text": "Haz las operaciones al revés:",
+     "lines": [
+      "6 × 8 = 48"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "8 × ? = 64",
+    "opts": [
+     "56",
+     "9",
+     "8",
+     "7"
+    ],
+    "ok": 2,
+    "answer": "8",
+    "rule": {
+     "text": "Haz las operaciones al revés:",
+     "lines": [
+      "64 ÷ 8 = 8"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "7 × ? + 2 = 86",
+    "opts": [
+     "11",
+     "79",
+     "13",
+     "12"
+    ],
+    "ok": 3,
+    "answer": "12",
+    "rule": {
+     "text": "Haz las operaciones al revés:",
+     "lines": [
+      "86 − 2 = 84",
+      "84 ÷ 7 = 12"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "7 × ? + 9 = 23",
+    "opts": [
+     "2",
+     "3",
+     "5",
+     "1"
+    ],
+    "ok": 0,
+    "answer": "2",
+    "rule": {
+     "text": "Haz las operaciones al revés:",
+     "lines": [
+      "23 − 9 = 14",
+      "14 ÷ 7 = 2"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "5 × ? + 6 = 16",
+    "opts": [
+     "1",
+     "4",
+     "2",
+     "3"
+    ],
+    "ok": 2,
+    "answer": "2",
+    "rule": {
+     "text": "Haz las operaciones al revés:",
+     "lines": [
+      "16 − 6 = 10",
+      "10 ÷ 5 = 2"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "5 × ? + 7 = 37",
+    "opts": [
+     "5",
+     "6",
+     "9",
+     "7"
+    ],
+    "ok": 1,
+    "answer": "6",
+    "rule": {
+     "text": "Haz las operaciones al revés:",
+     "lines": [
+      "37 − 7 = 30",
+      "30 ÷ 5 = 6"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "5 × ? − 15 = 20",
+    "opts": [
+     "1",
+     "8",
+     "7",
+     "6"
+    ],
+    "ok": 2,
+    "answer": "7",
+    "rule": {
+     "text": "Haz las operaciones al revés:",
+     "lines": [
+      "20 + 15 = 35",
+      "35 ÷ 5 = 7"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "8 × ? + 13 = 101",
+    "opts": [
+     "12",
+     "10",
+     "14",
+     "11"
+    ],
+    "ok": 3,
+    "answer": "11",
+    "rule": {
+     "text": "Haz las operaciones al revés:",
+     "lines": [
+      "101 − 13 = 88",
+      "88 ÷ 8 = 11"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "4 × ? − 2 = 42",
+    "opts": [
+     "10",
+     "38",
+     "11",
+     "12"
+    ],
+    "ok": 2,
+    "answer": "11",
+    "rule": {
+     "text": "Haz las operaciones al revés:",
+     "lines": [
+      "42 + 2 = 44",
+      "44 ÷ 4 = 11"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "? ÷ 6 = 12",
+    "opts": [
+     "18",
+     "66",
+     "72",
+     "78"
+    ],
+    "ok": 2,
+    "answer": "72",
+    "rule": {
+     "text": "Haz las operaciones al revés:",
+     "lines": [
+      "12 × 6 = 72"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "6 × ? = 24",
+    "opts": [
+     "4",
+     "3",
+     "5",
+     "18"
+    ],
+    "ok": 0,
+    "answer": "4",
+    "rule": {
+     "text": "Haz las operaciones al revés:",
+     "lines": [
+      "24 ÷ 6 = 4"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "? ÷ 9 = 9",
+    "opts": [
+     "72",
+     "81",
+     "90",
+     "18"
+    ],
+    "ok": 1,
+    "answer": "81",
+    "rule": {
+     "text": "Haz las operaciones al revés:",
+     "lines": [
+      "9 × 9 = 81"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "? ÷ 8 = 4",
+    "opts": [
+     "40",
+     "12",
+     "24",
+     "32"
+    ],
+    "ok": 3,
+    "answer": "32",
+    "rule": {
+     "text": "Haz las operaciones al revés:",
+     "lines": [
+      "4 × 8 = 32"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "6 × ? = 72",
+    "opts": [
+     "12",
+     "66",
+     "13",
+     "11"
+    ],
+    "ok": 0,
+    "answer": "12",
+    "rule": {
+     "text": "Haz las operaciones al revés:",
+     "lines": [
+      "72 ÷ 6 = 12"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "? ÷ 5 = 3",
+    "opts": [
+     "20",
+     "10",
+     "8",
+     "15"
+    ],
+    "ok": 3,
+    "answer": "15",
+    "rule": {
+     "text": "Haz las operaciones al revés:",
+     "lines": [
+      "3 × 5 = 15"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "3 × ? = 21",
+    "opts": [
+     "18",
+     "6",
+     "7",
+     "8"
+    ],
+    "ok": 2,
+    "answer": "7",
+    "rule": {
+     "text": "Haz las operaciones al revés:",
+     "lines": [
+      "21 ÷ 3 = 7"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "7 × ? = 35",
+    "opts": [
+     "28",
+     "6",
+     "5",
+     "4"
+    ],
+    "ok": 2,
+    "answer": "5",
+    "rule": {
+     "text": "Haz las operaciones al revés:",
+     "lines": [
+      "35 ÷ 7 = 5"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "4 × ? + 18 = 46",
+    "opts": [
+     "8",
+     "7",
+     "16",
+     "6"
+    ],
+    "ok": 1,
+    "answer": "7",
+    "rule": {
+     "text": "Haz las operaciones al revés:",
+     "lines": [
+      "46 − 18 = 28",
+      "28 ÷ 4 = 7"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "3 × ? − 20 = 4",
+    "opts": [
+     "9",
+     "8",
+     "1",
+     "7"
+    ],
+    "ok": 1,
+    "answer": "8",
+    "rule": {
+     "text": "Haz las operaciones al revés:",
+     "lines": [
+      "4 + 20 = 24",
+      "24 ÷ 3 = 8"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "8 × ? + 10 = 26",
+    "opts": [
+     "1",
+     "5",
+     "3",
+     "2"
+    ],
+    "ok": 3,
+    "answer": "2",
+    "rule": {
+     "text": "Haz las operaciones al revés:",
+     "lines": [
+      "26 − 10 = 16",
+      "16 ÷ 8 = 2"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "8 × ? − 20 = 68",
+    "opts": [
+     "12",
+     "11",
+     "10",
+     "6"
+    ],
+    "ok": 1,
+    "answer": "11",
+    "rule": {
+     "text": "Haz las operaciones al revés:",
+     "lines": [
+      "68 + 20 = 88",
+      "88 ÷ 8 = 11"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "8 × ? − 11 = 77",
+    "opts": [
+     "12",
+     "11",
+     "10",
+     "8"
+    ],
+    "ok": 1,
+    "answer": "11",
+    "rule": {
+     "text": "Haz las operaciones al revés:",
+     "lines": [
+      "77 + 11 = 88",
+      "88 ÷ 8 = 11"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "7 × ? − 13 = 1",
+    "opts": [
+     "3",
+     "2",
+     "1",
+     "4"
+    ],
+    "ok": 1,
+    "answer": "2",
+    "rule": {
+     "text": "Haz las operaciones al revés:",
+     "lines": [
+      "1 + 13 = 14",
+      "14 ÷ 7 = 2"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "9 × ? + 17 = 89",
+    "opts": [
+     "7",
+     "8",
+     "12",
+     "9"
+    ],
+    "ok": 1,
+    "answer": "8",
+    "rule": {
+     "text": "Haz las operaciones al revés:",
+     "lines": [
+      "89 − 17 = 72",
+      "72 ÷ 9 = 8"
+     ]
+    }
+   }
+  ],
+  "en": [
+   {
+    "kind": "card",
+    "expr": "? ÷ 5 = 4",
+    "opts": [
+     "25",
+     "9",
+     "20",
+     "15"
+    ],
+    "ok": 2,
+    "answer": "20",
+    "rule": {
+     "text": "Work backwards:",
+     "lines": [
+      "4 × 5 = 20"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "? ÷ 7 = 3",
+    "opts": [
+     "28",
+     "14",
+     "21",
+     "10"
+    ],
+    "ok": 2,
+    "answer": "21",
+    "rule": {
+     "text": "Work backwards:",
+     "lines": [
+      "3 × 7 = 21"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "? ÷ 8 = 12",
+    "opts": [
+     "104",
+     "20",
+     "88",
+     "96"
+    ],
+    "ok": 3,
+    "answer": "96",
+    "rule": {
+     "text": "Work backwards:",
+     "lines": [
+      "12 × 8 = 96"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "? ÷ 4 = 7",
+    "opts": [
+     "24",
+     "32",
+     "11",
+     "28"
+    ],
+    "ok": 3,
+    "answer": "28",
+    "rule": {
+     "text": "Work backwards:",
+     "lines": [
+      "7 × 4 = 28"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "8 × ? = 40",
+    "opts": [
+     "6",
+     "5",
+     "4",
+     "32"
+    ],
+    "ok": 1,
+    "answer": "5",
+    "rule": {
+     "text": "Work backwards:",
+     "lines": [
+      "40 ÷ 8 = 5"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "? ÷ 9 = 11",
+    "opts": [
+     "90",
+     "108",
+     "99",
+     "20"
+    ],
+    "ok": 2,
+    "answer": "99",
+    "rule": {
+     "text": "Work backwards:",
+     "lines": [
+      "11 × 9 = 99"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "? ÷ 3 = 7",
+    "opts": [
+     "18",
+     "10",
+     "24",
+     "21"
+    ],
+    "ok": 3,
+    "answer": "21",
+    "rule": {
+     "text": "Work backwards:",
+     "lines": [
+      "7 × 3 = 21"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "? ÷ 6 = 12",
+    "opts": [
+     "78",
+     "66",
+     "18",
+     "72"
+    ],
+    "ok": 3,
+    "answer": "72",
+    "rule": {
+     "text": "Work backwards:",
+     "lines": [
+      "12 × 6 = 72"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "5 × ? = 60",
+    "opts": [
+     "12",
+     "55",
+     "11",
+     "13"
+    ],
+    "ok": 0,
+    "answer": "12",
+    "rule": {
+     "text": "Work backwards:",
+     "lines": [
+      "60 ÷ 5 = 12"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "7 × ? − 16 = 5",
+    "opts": [
+     "4",
+     "8",
+     "2",
+     "3"
+    ],
+    "ok": 3,
+    "answer": "3",
+    "rule": {
+     "text": "Work backwards:",
+     "lines": [
+      "5 + 16 = 21",
+      "21 ÷ 7 = 3"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "9 × ? + 19 = 100",
+    "opts": [
+     "10",
+     "9",
+     "13",
+     "8"
+    ],
+    "ok": 1,
+    "answer": "9",
+    "rule": {
+     "text": "Work backwards:",
+     "lines": [
+      "100 − 19 = 81",
+      "81 ÷ 9 = 9"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "9 × ? + 5 = 50",
+    "opts": [
+     "41",
+     "5",
+     "4",
+     "6"
+    ],
+    "ok": 1,
+    "answer": "5",
+    "rule": {
+     "text": "Work backwards:",
+     "lines": [
+      "50 − 5 = 45",
+      "45 ÷ 9 = 5"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "8 × ? + 11 = 67",
+    "opts": [
+     "7",
+     "6",
+     "8",
+     "10"
+    ],
+    "ok": 0,
+    "answer": "7",
+    "rule": {
+     "text": "Work backwards:",
+     "lines": [
+      "67 − 11 = 56",
+      "56 ÷ 8 = 7"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "9 × ? − 20 = 34",
+    "opts": [
+     "7",
+     "6",
+     "2",
+     "5"
+    ],
+    "ok": 1,
+    "answer": "6",
+    "rule": {
+     "text": "Work backwards:",
+     "lines": [
+      "34 + 20 = 54",
+      "54 ÷ 9 = 6"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "7 × ? − 10 = 32",
+    "opts": [
+     "6",
+     "5",
+     "3",
+     "7"
+    ],
+    "ok": 0,
+    "answer": "6",
+    "rule": {
+     "text": "Work backwards:",
+     "lines": [
+      "32 + 10 = 42",
+      "42 ÷ 7 = 6"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "8 × ? + 6 = 46",
+    "opts": [
+     "5",
+     "4",
+     "6",
+     "7"
+    ],
+    "ok": 0,
+    "answer": "5",
+    "rule": {
+     "text": "Work backwards:",
+     "lines": [
+      "46 − 6 = 40",
+      "40 ÷ 8 = 5"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "7 × ? + 14 = 91",
+    "opts": [
+     "11",
+     "15",
+     "10",
+     "12"
+    ],
+    "ok": 0,
+    "answer": "11",
+    "rule": {
+     "text": "Work backwards:",
+     "lines": [
+      "91 − 14 = 77",
+      "77 ÷ 7 = 11"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "5 × ? = 60",
+    "opts": [
+     "13",
+     "11",
+     "55",
+     "12"
+    ],
+    "ok": 3,
+    "answer": "12",
+    "rule": {
+     "text": "Work backwards:",
+     "lines": [
+      "60 ÷ 5 = 12"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "5 × ? = 25",
+    "opts": [
+     "4",
+     "6",
+     "20",
+     "5"
+    ],
+    "ok": 3,
+    "answer": "5",
+    "rule": {
+     "text": "Work backwards:",
+     "lines": [
+      "25 ÷ 5 = 5"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "6 × ? = 30",
+    "opts": [
+     "4",
+     "6",
+     "5",
+     "24"
+    ],
+    "ok": 2,
+    "answer": "5",
+    "rule": {
+     "text": "Work backwards:",
+     "lines": [
+      "30 ÷ 6 = 5"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "? ÷ 5 = 3",
+    "opts": [
+     "10",
+     "8",
+     "15",
+     "20"
+    ],
+    "ok": 2,
+    "answer": "15",
+    "rule": {
+     "text": "Work backwards:",
+     "lines": [
+      "3 × 5 = 15"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "? ÷ 8 = 5",
+    "opts": [
+     "13",
+     "48",
+     "32",
+     "40"
+    ],
+    "ok": 3,
+    "answer": "40",
+    "rule": {
+     "text": "Work backwards:",
+     "lines": [
+      "5 × 8 = 40"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "? ÷ 3 = 3",
+    "opts": [
+     "3",
+     "6",
+     "12",
+     "9"
+    ],
+    "ok": 3,
+    "answer": "9",
+    "rule": {
+     "text": "Work backwards:",
+     "lines": [
+      "3 × 3 = 9"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "7 × ? = 63",
+    "opts": [
+     "8",
+     "56",
+     "10",
+     "9"
+    ],
+    "ok": 3,
+    "answer": "9",
+    "rule": {
+     "text": "Work backwards:",
+     "lines": [
+      "63 ÷ 7 = 9"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "? ÷ 5 = 4",
+    "opts": [
+     "20",
+     "15",
+     "9",
+     "25"
+    ],
+    "ok": 0,
+    "answer": "20",
+    "rule": {
+     "text": "Work backwards:",
+     "lines": [
+      "4 × 5 = 20"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "8 × ? + 2 = 66",
+    "opts": [
+     "58",
+     "7",
+     "8",
+     "9"
+    ],
+    "ok": 2,
+    "answer": "8",
+    "rule": {
+     "text": "Work backwards:",
+     "lines": [
+      "66 − 2 = 64",
+      "64 ÷ 8 = 8"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "8 × ? − 11 = 61",
+    "opts": [
+     "8",
+     "9",
+     "10",
+     "6"
+    ],
+    "ok": 1,
+    "answer": "9",
+    "rule": {
+     "text": "Work backwards:",
+     "lines": [
+      "61 + 11 = 72",
+      "72 ÷ 8 = 9"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "3 × ? + 3 = 39",
+    "opts": [
+     "12",
+     "11",
+     "13",
+     "14"
+    ],
+    "ok": 0,
+    "answer": "12",
+    "rule": {
+     "text": "Work backwards:",
+     "lines": [
+      "39 − 3 = 36",
+      "36 ÷ 3 = 12"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "5 × ? + 18 = 38",
+    "opts": [
+     "5",
+     "3",
+     "11",
+     "4"
+    ],
+    "ok": 3,
+    "answer": "4",
+    "rule": {
+     "text": "Work backwards:",
+     "lines": [
+      "38 − 18 = 20",
+      "20 ÷ 5 = 4"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "4 × ? − 10 = 14",
+    "opts": [
+     "7",
+     "6",
+     "5",
+     "1"
+    ],
+    "ok": 1,
+    "answer": "6",
+    "rule": {
+     "text": "Work backwards:",
+     "lines": [
+      "14 + 10 = 24",
+      "24 ÷ 4 = 6"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "8 × ? + 17 = 49",
+    "opts": [
+     "8",
+     "5",
+     "3",
+     "4"
+    ],
+    "ok": 3,
+    "answer": "4",
+    "rule": {
+     "text": "Work backwards:",
+     "lines": [
+      "49 − 17 = 32",
+      "32 ÷ 8 = 4"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "7 × ? + 12 = 75",
+    "opts": [
+     "8",
+     "9",
+     "10",
+     "12"
+    ],
+    "ok": 1,
+    "answer": "9",
+    "rule": {
+     "text": "Work backwards:",
+     "lines": [
+      "75 − 12 = 63",
+      "63 ÷ 7 = 9"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "4 × ? − 12 = 12",
+    "opts": [
+     "5",
+     "6",
+     "8",
+     "7"
+    ],
+    "ok": 1,
+    "answer": "6",
+    "rule": {
+     "text": "Work backwards:",
+     "lines": [
+      "12 + 12 = 24",
+      "24 ÷ 4 = 6"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "5 × ? = 40",
+    "opts": [
+     "7",
+     "8",
+     "35",
+     "9"
+    ],
+    "ok": 1,
+    "answer": "8",
+    "rule": {
+     "text": "Work backwards:",
+     "lines": [
+      "40 ÷ 5 = 8"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "? ÷ 3 = 10",
+    "opts": [
+     "30",
+     "33",
+     "27",
+     "13"
+    ],
+    "ok": 0,
+    "answer": "30",
+    "rule": {
+     "text": "Work backwards:",
+     "lines": [
+      "10 × 3 = 30"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "8 × ? = 32",
+    "opts": [
+     "3",
+     "5",
+     "4",
+     "24"
+    ],
+    "ok": 2,
+    "answer": "4",
+    "rule": {
+     "text": "Work backwards:",
+     "lines": [
+      "32 ÷ 8 = 4"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "? ÷ 6 = 12",
+    "opts": [
+     "78",
+     "72",
+     "66",
+     "18"
+    ],
+    "ok": 1,
+    "answer": "72",
+    "rule": {
+     "text": "Work backwards:",
+     "lines": [
+      "12 × 6 = 72"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "? ÷ 5 = 9",
+    "opts": [
+     "14",
+     "50",
+     "40",
+     "45"
+    ],
+    "ok": 3,
+    "answer": "45",
+    "rule": {
+     "text": "Work backwards:",
+     "lines": [
+      "9 × 5 = 45"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "? ÷ 6 = 3",
+    "opts": [
+     "9",
+     "24",
+     "12",
+     "18"
+    ],
+    "ok": 3,
+    "answer": "18",
+    "rule": {
+     "text": "Work backwards:",
+     "lines": [
+      "3 × 6 = 18"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "? ÷ 7 = 7",
+    "opts": [
+     "49",
+     "56",
+     "14",
+     "42"
+    ],
+    "ok": 0,
+    "answer": "49",
+    "rule": {
+     "text": "Work backwards:",
+     "lines": [
+      "7 × 7 = 49"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "4 × ? = 20",
+    "opts": [
+     "4",
+     "5",
+     "16",
+     "6"
+    ],
+    "ok": 1,
+    "answer": "5",
+    "rule": {
+     "text": "Work backwards:",
+     "lines": [
+      "20 ÷ 4 = 5"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "4 × ? + 6 = 38",
+    "opts": [
+     "8",
+     "7",
+     "11",
+     "9"
+    ],
+    "ok": 0,
+    "answer": "8",
+    "rule": {
+     "text": "Work backwards:",
+     "lines": [
+      "38 − 6 = 32",
+      "32 ÷ 4 = 8"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "8 × ? + 10 = 50",
+    "opts": [
+     "6",
+     "4",
+     "5",
+     "8"
+    ],
+    "ok": 2,
+    "answer": "5",
+    "rule": {
+     "text": "Work backwards:",
+     "lines": [
+      "50 − 10 = 40",
+      "40 ÷ 8 = 5"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "7 × ? − 11 = 17",
+    "opts": [
+     "4",
+     "1",
+     "5",
+     "3"
+    ],
+    "ok": 0,
+    "answer": "4",
+    "rule": {
+     "text": "Work backwards:",
+     "lines": [
+      "17 + 11 = 28",
+      "28 ÷ 7 = 4"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "4 × ? + 18 = 42",
+    "opts": [
+     "15",
+     "6",
+     "5",
+     "7"
+    ],
+    "ok": 1,
+    "answer": "6",
+    "rule": {
+     "text": "Work backwards:",
+     "lines": [
+      "42 − 18 = 24",
+      "24 ÷ 4 = 6"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "7 × ? − 10 = 74",
+    "opts": [
+     "11",
+     "9",
+     "12",
+     "13"
+    ],
+    "ok": 2,
+    "answer": "12",
+    "rule": {
+     "text": "Work backwards:",
+     "lines": [
+      "74 + 10 = 84",
+      "84 ÷ 7 = 12"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "7 × ? + 15 = 85",
+    "opts": [
+     "14",
+     "9",
+     "10",
+     "11"
+    ],
+    "ok": 2,
+    "answer": "10",
+    "rule": {
+     "text": "Work backwards:",
+     "lines": [
+      "85 − 15 = 70",
+      "70 ÷ 7 = 10"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "7 × ? − 9 = 54",
+    "opts": [
+     "6",
+     "9",
+     "8",
+     "10"
+    ],
+    "ok": 1,
+    "answer": "9",
+    "rule": {
+     "text": "Work backwards:",
+     "lines": [
+      "54 + 9 = 63",
+      "63 ÷ 7 = 9"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "8 × ? + 9 = 49",
+    "opts": [
+     "7",
+     "4",
+     "5",
+     "6"
+    ],
+    "ok": 2,
+    "answer": "5",
+    "rule": {
+     "text": "Work backwards:",
+     "lines": [
+      "49 − 9 = 40",
+      "40 ÷ 8 = 5"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "8 × ? = 56",
+    "opts": [
+     "6",
+     "48",
+     "8",
+     "7"
+    ],
+    "ok": 3,
+    "answer": "7",
+    "rule": {
+     "text": "Work backwards:",
+     "lines": [
+      "56 ÷ 8 = 7"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "9 × ? = 90",
+    "opts": [
+     "11",
+     "9",
+     "81",
+     "10"
+    ],
+    "ok": 3,
+    "answer": "10",
+    "rule": {
+     "text": "Work backwards:",
+     "lines": [
+      "90 ÷ 9 = 10"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "? ÷ 3 = 10",
+    "opts": [
+     "13",
+     "27",
+     "33",
+     "30"
+    ],
+    "ok": 3,
+    "answer": "30",
+    "rule": {
+     "text": "Work backwards:",
+     "lines": [
+      "10 × 3 = 30"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "? ÷ 9 = 12",
+    "opts": [
+     "117",
+     "21",
+     "108",
+     "99"
+    ],
+    "ok": 2,
+    "answer": "108",
+    "rule": {
+     "text": "Work backwards:",
+     "lines": [
+      "12 × 9 = 108"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "? ÷ 9 = 4",
+    "opts": [
+     "13",
+     "27",
+     "36",
+     "45"
+    ],
+    "ok": 2,
+    "answer": "36",
+    "rule": {
+     "text": "Work backwards:",
+     "lines": [
+      "4 × 9 = 36"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "6 × ? = 48",
+    "opts": [
+     "8",
+     "42",
+     "7",
+     "9"
+    ],
+    "ok": 0,
+    "answer": "8",
+    "rule": {
+     "text": "Work backwards:",
+     "lines": [
+      "48 ÷ 6 = 8"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "? ÷ 8 = 6",
+    "opts": [
+     "40",
+     "56",
+     "14",
+     "48"
+    ],
+    "ok": 3,
+    "answer": "48",
+    "rule": {
+     "text": "Work backwards:",
+     "lines": [
+      "6 × 8 = 48"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "8 × ? = 64",
+    "opts": [
+     "56",
+     "9",
+     "8",
+     "7"
+    ],
+    "ok": 2,
+    "answer": "8",
+    "rule": {
+     "text": "Work backwards:",
+     "lines": [
+      "64 ÷ 8 = 8"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "7 × ? + 2 = 86",
+    "opts": [
+     "11",
+     "79",
+     "13",
+     "12"
+    ],
+    "ok": 3,
+    "answer": "12",
+    "rule": {
+     "text": "Work backwards:",
+     "lines": [
+      "86 − 2 = 84",
+      "84 ÷ 7 = 12"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "7 × ? + 9 = 23",
+    "opts": [
+     "2",
+     "3",
+     "5",
+     "1"
+    ],
+    "ok": 0,
+    "answer": "2",
+    "rule": {
+     "text": "Work backwards:",
+     "lines": [
+      "23 − 9 = 14",
+      "14 ÷ 7 = 2"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "5 × ? + 6 = 16",
+    "opts": [
+     "1",
+     "4",
+     "2",
+     "3"
+    ],
+    "ok": 2,
+    "answer": "2",
+    "rule": {
+     "text": "Work backwards:",
+     "lines": [
+      "16 − 6 = 10",
+      "10 ÷ 5 = 2"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "5 × ? + 7 = 37",
+    "opts": [
+     "5",
+     "6",
+     "9",
+     "7"
+    ],
+    "ok": 1,
+    "answer": "6",
+    "rule": {
+     "text": "Work backwards:",
+     "lines": [
+      "37 − 7 = 30",
+      "30 ÷ 5 = 6"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "5 × ? − 15 = 20",
+    "opts": [
+     "1",
+     "8",
+     "7",
+     "6"
+    ],
+    "ok": 2,
+    "answer": "7",
+    "rule": {
+     "text": "Work backwards:",
+     "lines": [
+      "20 + 15 = 35",
+      "35 ÷ 5 = 7"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "8 × ? + 13 = 101",
+    "opts": [
+     "12",
+     "10",
+     "14",
+     "11"
+    ],
+    "ok": 3,
+    "answer": "11",
+    "rule": {
+     "text": "Work backwards:",
+     "lines": [
+      "101 − 13 = 88",
+      "88 ÷ 8 = 11"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "4 × ? − 2 = 42",
+    "opts": [
+     "10",
+     "38",
+     "11",
+     "12"
+    ],
+    "ok": 2,
+    "answer": "11",
+    "rule": {
+     "text": "Work backwards:",
+     "lines": [
+      "42 + 2 = 44",
+      "44 ÷ 4 = 11"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "? ÷ 6 = 12",
+    "opts": [
+     "18",
+     "66",
+     "72",
+     "78"
+    ],
+    "ok": 2,
+    "answer": "72",
+    "rule": {
+     "text": "Work backwards:",
+     "lines": [
+      "12 × 6 = 72"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "6 × ? = 24",
+    "opts": [
+     "4",
+     "3",
+     "5",
+     "18"
+    ],
+    "ok": 0,
+    "answer": "4",
+    "rule": {
+     "text": "Work backwards:",
+     "lines": [
+      "24 ÷ 6 = 4"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "? ÷ 9 = 9",
+    "opts": [
+     "72",
+     "81",
+     "90",
+     "18"
+    ],
+    "ok": 1,
+    "answer": "81",
+    "rule": {
+     "text": "Work backwards:",
+     "lines": [
+      "9 × 9 = 81"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "? ÷ 8 = 4",
+    "opts": [
+     "40",
+     "12",
+     "24",
+     "32"
+    ],
+    "ok": 3,
+    "answer": "32",
+    "rule": {
+     "text": "Work backwards:",
+     "lines": [
+      "4 × 8 = 32"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "6 × ? = 72",
+    "opts": [
+     "12",
+     "66",
+     "13",
+     "11"
+    ],
+    "ok": 0,
+    "answer": "12",
+    "rule": {
+     "text": "Work backwards:",
+     "lines": [
+      "72 ÷ 6 = 12"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "? ÷ 5 = 3",
+    "opts": [
+     "20",
+     "10",
+     "8",
+     "15"
+    ],
+    "ok": 3,
+    "answer": "15",
+    "rule": {
+     "text": "Work backwards:",
+     "lines": [
+      "3 × 5 = 15"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "3 × ? = 21",
+    "opts": [
+     "18",
+     "6",
+     "7",
+     "8"
+    ],
+    "ok": 2,
+    "answer": "7",
+    "rule": {
+     "text": "Work backwards:",
+     "lines": [
+      "21 ÷ 3 = 7"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "7 × ? = 35",
+    "opts": [
+     "28",
+     "6",
+     "5",
+     "4"
+    ],
+    "ok": 2,
+    "answer": "5",
+    "rule": {
+     "text": "Work backwards:",
+     "lines": [
+      "35 ÷ 7 = 5"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "4 × ? + 18 = 46",
+    "opts": [
+     "8",
+     "7",
+     "16",
+     "6"
+    ],
+    "ok": 1,
+    "answer": "7",
+    "rule": {
+     "text": "Work backwards:",
+     "lines": [
+      "46 − 18 = 28",
+      "28 ÷ 4 = 7"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "3 × ? − 20 = 4",
+    "opts": [
+     "9",
+     "8",
+     "1",
+     "7"
+    ],
+    "ok": 1,
+    "answer": "8",
+    "rule": {
+     "text": "Work backwards:",
+     "lines": [
+      "4 + 20 = 24",
+      "24 ÷ 3 = 8"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "8 × ? + 10 = 26",
+    "opts": [
+     "1",
+     "5",
+     "3",
+     "2"
+    ],
+    "ok": 3,
+    "answer": "2",
+    "rule": {
+     "text": "Work backwards:",
+     "lines": [
+      "26 − 10 = 16",
+      "16 ÷ 8 = 2"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "8 × ? − 20 = 68",
+    "opts": [
+     "12",
+     "11",
+     "10",
+     "6"
+    ],
+    "ok": 1,
+    "answer": "11",
+    "rule": {
+     "text": "Work backwards:",
+     "lines": [
+      "68 + 20 = 88",
+      "88 ÷ 8 = 11"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "8 × ? − 11 = 77",
+    "opts": [
+     "12",
+     "11",
+     "10",
+     "8"
+    ],
+    "ok": 1,
+    "answer": "11",
+    "rule": {
+     "text": "Work backwards:",
+     "lines": [
+      "77 + 11 = 88",
+      "88 ÷ 8 = 11"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "7 × ? − 13 = 1",
+    "opts": [
+     "3",
+     "2",
+     "1",
+     "4"
+    ],
+    "ok": 1,
+    "answer": "2",
+    "rule": {
+     "text": "Work backwards:",
+     "lines": [
+      "1 + 13 = 14",
+      "14 ÷ 7 = 2"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "expr": "9 × ? + 17 = 89",
+    "opts": [
+     "7",
+     "8",
+     "12",
+     "9"
+    ],
+    "ok": 1,
+    "answer": "8",
+    "rule": {
+     "text": "Work backwards:",
+     "lines": [
+      "89 − 17 = 72",
+      "72 ÷ 9 = 8"
+     ]
+    }
+   }
+  ]
+ }
+}

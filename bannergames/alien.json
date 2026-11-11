@@ -1,0 +1,6140 @@
+{
+ "type": "quiz",
+ "url": "https://educativos.juegosboom.com/idioma-alienigena",
+ "delay": 3,
+ "every_hours": 12,
+ "closed_hours": 24,
+ "wait": 15,
+ "reveal": 4,
+ "colors": {
+  "bg1": "#3b2a7a",
+  "bg2": "#140c33",
+  "accent": "#7048e8",
+  "cta": "#ffd43b",
+  "ctaText": "#2b1a0e"
+ },
+ "texts": {
+  "es": {
+   "think": "¡Piensa!",
+   "solved": "¿Lo has acertado?",
+   "answer": "Respuesta",
+   "cta": "Juega gratis ▶",
+   "later": "Seguir leyendo",
+   "barCta": "Jugar",
+   "close": "Cerrar",
+   "expand": "Ampliar",
+   "brand": "👽 Idioma alienígena",
+   "mini": "Idioma alienígena",
+   "question": "¿Qué significa la última frase?",
+   "bar": "👽 Aprende las palabras alienígenas con los ejemplos. ¿Qué significa la última?"
+  },
+  "en": {
+   "think": "Think!",
+   "solved": "Did you get it?",
+   "answer": "Answer",
+   "cta": "Play free ▶",
+   "later": "Keep reading",
+   "barCta": "Play",
+   "close": "Close",
+   "expand": "Expand",
+   "brand": "👽 Alien language",
+   "mini": "Alien language",
+   "question": "What does the last phrase mean?",
+   "bar": "👽 Learn the alien words from the examples. What does the last one mean?"
+  }
+ },
+ "items": {
+  "es": [
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "ru tavu",
+      "🦋🦋🦋"
+     ],
+     [
+      "sa bidaz",
+      "🐟🐟"
+     ],
+     [
+      "ru bidaz",
+      "🐟🐟🐟"
+     ],
+     [
+      "sa tavu",
+      null
+     ]
+    ],
+    "opts": [
+     "🦋🦋",
+     "🐟🐟🐟",
+     "🦋🦋🦋",
+     "🐟🐟"
+    ],
+    "ok": 0,
+    "answer": "🦋🦋",
+    "rule": {
+     "text": "Cada palabra alienígena es un número o un dibujo:",
+     "lines": [
+      "👽 sa = 2",
+      "👽 tavu = 🦋"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "fiser me",
+      "🐱🐱"
+     ],
+     [
+      "da kez",
+      "🚗"
+     ],
+     [
+      "fiser kez",
+      "🚗🚗"
+     ],
+     [
+      "da me",
+      null
+     ]
+    ],
+    "opts": [
+     "🚗🚗",
+     "🚗",
+     "🐱",
+     "🐱🐱"
+    ],
+    "ok": 2,
+    "answer": "🐱",
+    "rule": {
+     "text": "Cada palabra alienígena es un número o un dibujo:",
+     "lines": [
+      "👽 da = 1",
+      "👽 me = 🐱"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "zus fime",
+      "🐸"
+     ],
+     [
+      "vanib pezub",
+      "🚗🚗"
+     ],
+     [
+      "zus pezub",
+      "🚗"
+     ],
+     [
+      "vanib fime",
+      null
+     ]
+    ],
+    "opts": [
+     "🐸🐸",
+     "🚗",
+     "🐸",
+     "🚗🚗"
+    ],
+    "ok": 0,
+    "answer": "🐸🐸",
+    "rule": {
+     "text": "Cada palabra alienígena es un número o un dibujo:",
+     "lines": [
+      "👽 vanib = 2",
+      "👽 fime = 🐸"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "kepul vofel",
+      "🌸"
+     ],
+     [
+      "kepul bafud",
+      "🍎"
+     ],
+     [
+      "turog vofel",
+      "🌸🌸"
+     ],
+     [
+      "turog bafud",
+      null
+     ]
+    ],
+    "opts": [
+     "🍎🍎",
+     "🍎",
+     "🌸🌸",
+     "🌸"
+    ],
+    "ok": 0,
+    "answer": "🍎🍎",
+    "rule": {
+     "text": "Cada palabra alienígena es un número o un dibujo:",
+     "lines": [
+      "👽 turog = 2",
+      "👽 bafud = 🍎"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "mit boreg",
+      "🍎🍎"
+     ],
+     [
+      "fip mus",
+      "🍩"
+     ],
+     [
+      "mit mus",
+      "🍩🍩"
+     ],
+     [
+      "fip boreg",
+      null
+     ]
+    ],
+    "opts": [
+     "🍩🍩",
+     "🍩",
+     "🍎🍎",
+     "🍎"
+    ],
+    "ok": 3,
+    "answer": "🍎",
+    "rule": {
+     "text": "Cada palabra alienígena es un número o un dibujo:",
+     "lines": [
+      "👽 fip = 1",
+      "👽 boreg = 🍎"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "di kizo",
+      "🍄"
+     ],
+     [
+      "pugad tebi",
+      "🍎🍎🍎"
+     ],
+     [
+      "pugad kizo",
+      "🍄🍄🍄"
+     ],
+     [
+      "di tebi",
+      null
+     ]
+    ],
+    "opts": [
+     "🍎",
+     "🍄",
+     "🍎🍎🍎",
+     "🍄🍄🍄"
+    ],
+    "ok": 0,
+    "answer": "🍎",
+    "rule": {
+     "text": "Cada palabra alienígena es un número o un dibujo:",
+     "lines": [
+      "👽 di = 1",
+      "👽 tebi = 🍎"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "bo kutu",
+      "🐟🐟"
+     ],
+     [
+      "fo kutu",
+      "🐟🐟🐟"
+     ],
+     [
+      "fo va",
+      "🐸🐸🐸"
+     ],
+     [
+      "gi va",
+      "🐸"
+     ],
+     [
+      "bo va",
+      null
+     ]
+    ],
+    "opts": [
+     "🐸🐸",
+     "🍄🍄",
+     "🐸",
+     "🐟🐟"
+    ],
+    "ok": 0,
+    "answer": "🐸🐸",
+    "rule": {
+     "text": "Cada palabra alienígena es un número o un dibujo:",
+     "lines": [
+      "👽 bo = 2",
+      "👽 va = 🐸"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "bab fev",
+      "🌸"
+     ],
+     [
+      "za kas",
+      "🐸🐸🐸"
+     ],
+     [
+      "za sof",
+      "🐢🐢🐢"
+     ],
+     [
+      "mo sof",
+      "🐢🐢"
+     ],
+     [
+      "bab sof",
+      null
+     ]
+    ],
+    "opts": [
+     "🐢",
+     "🌸",
+     "🐢🐢",
+     "🐢🐢🐢"
+    ],
+    "ok": 0,
+    "answer": "🐢",
+    "rule": {
+     "text": "Cada palabra alienígena es un número o un dibujo:",
+     "lines": [
+      "👽 bab = 1",
+      "👽 sof = 🐢"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "vosan bu",
+      "🐱"
+     ],
+     [
+      "ro da",
+      "🐸🐸"
+     ],
+     [
+      "tezip biz",
+      "🍎🍎🍎"
+     ],
+     [
+      "tezip bu",
+      "🐱🐱🐱"
+     ],
+     [
+      "vosan biz",
+      null
+     ]
+    ],
+    "opts": [
+     "🐱",
+     "🍎🍎",
+     "🐸",
+     "🍎"
+    ],
+    "ok": 3,
+    "answer": "🍎",
+    "rule": {
+     "text": "Cada palabra alienígena es un número o un dibujo:",
+     "lines": [
+      "👽 vosan = 1",
+      "👽 biz = 🍎"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "ru tozu",
+      "🍄"
+     ],
+     [
+      "pitez tozu",
+      "🍄🍄"
+     ],
+     [
+      "ru teto",
+      "🐸"
+     ],
+     [
+      "ru ke",
+      "🦋"
+     ],
+     [
+      "pitez ke",
+      null
+     ]
+    ],
+    "opts": [
+     "🐸🐸",
+     "🦋🦋🦋",
+     "🦋",
+     "🦋🦋"
+    ],
+    "ok": 3,
+    "answer": "🦋🦋",
+    "rule": {
+     "text": "Cada palabra alienígena es un número o un dibujo:",
+     "lines": [
+      "👽 pitez = 2",
+      "👽 ke = 🦋"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "go magom",
+      "🌸🌸"
+     ],
+     [
+      "ma gog",
+      "🎈"
+     ],
+     [
+      "go gog",
+      "🌸"
+     ],
+     [
+      "mana novo",
+      "🐱🐱🐱"
+     ],
+     [
+      "ma novo",
+      null
+     ]
+    ],
+    "opts": [
+     "🎈🎈",
+     "🎈🎈🎈",
+     "🌸🌸🌸",
+     "🐱🐱🐱"
+    ],
+    "ok": 1,
+    "answer": "🎈🎈🎈",
+    "rule": {
+     "text": "Cada palabra alienígena es un número o un dibujo:",
+     "lines": [
+      "👽 ma = 🎈",
+      "👽 novo = 3"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "ne pos",
+      "🐢🐢🐢"
+     ],
+     [
+      "gatin pat",
+      "🦋🦋"
+     ],
+     [
+      "ziput vas",
+      "🐸"
+     ],
+     [
+      "gatin vas",
+      "🦋"
+     ],
+     [
+      "ne pat",
+      null
+     ]
+    ],
+    "opts": [
+     "🐸🐸",
+     "🐢🐢",
+     "🐢",
+     "🦋🦋"
+    ],
+    "ok": 1,
+    "answer": "🐢🐢",
+    "rule": {
+     "text": "Cada palabra alienígena es un número o un dibujo:",
+     "lines": [
+      "👽 ne = 🐢",
+      "👽 pat = 2"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "do fav",
+      "🐱🐱"
+     ],
+     [
+      "fer fav",
+      "🐱🐱🐱"
+     ],
+     [
+      "zobag teki",
+      "🚗"
+     ],
+     [
+      "fer no",
+      "🌸🌸🌸"
+     ],
+     [
+      "fer teki",
+      null
+     ]
+    ],
+    "opts": [
+     "🌸🌸🌸",
+     "🚗🚗🚗",
+     "🚗",
+     "🚗🚗"
+    ],
+    "ok": 1,
+    "answer": "🚗🚗🚗",
+    "rule": {
+     "text": "Cada palabra alienígena es un número o un dibujo:",
+     "lines": [
+      "👽 fer = 3",
+      "👽 teki = 🚗"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "bi lu",
+      "🐟🐟🐟"
+     ],
+     [
+      "zedu lu",
+      "🐟🐟"
+     ],
+     [
+      "zedu za",
+      "⭐⭐"
+     ],
+     [
+      "bi za",
+      null
+     ]
+    ],
+    "opts": [
+     "⭐⭐⭐",
+     "🐟🐟",
+     "🐟🐟🐟",
+     "⭐⭐"
+    ],
+    "ok": 0,
+    "answer": "⭐⭐⭐",
+    "rule": {
+     "text": "Cada palabra alienígena es un número o un dibujo:",
+     "lines": [
+      "👽 bi = 3",
+      "👽 za = ⭐"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "dogu la",
+      "🌸"
+     ],
+     [
+      "dogu selo",
+      "🐱"
+     ],
+     [
+      "suga selo",
+      "🐱🐱🐱"
+     ],
+     [
+      "suga la",
+      null
+     ]
+    ],
+    "opts": [
+     "🐱🐱🐱",
+     "🌸",
+     "🐱",
+     "🌸🌸🌸"
+    ],
+    "ok": 3,
+    "answer": "🌸🌸🌸",
+    "rule": {
+     "text": "Cada palabra alienígena es un número o un dibujo:",
+     "lines": [
+      "👽 suga = 3",
+      "👽 la = 🌸"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "de ruto",
+      "🐢🐢"
+     ],
+     [
+      "bi la",
+      "⭐⭐⭐"
+     ],
+     [
+      "de la",
+      "⭐⭐"
+     ],
+     [
+      "bi ruto",
+      null
+     ]
+    ],
+    "opts": [
+     "🐢🐢🐢",
+     "⭐⭐",
+     "⭐⭐⭐",
+     "🐢🐢"
+    ],
+    "ok": 0,
+    "answer": "🐢🐢🐢",
+    "rule": {
+     "text": "Cada palabra alienígena es un número o un dibujo:",
+     "lines": [
+      "👽 bi = 3",
+      "👽 ruto = 🐢"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "di ret",
+      "🌸🌸🌸"
+     ],
+     [
+      "di vudit",
+      "🐸🐸🐸"
+     ],
+     [
+      "dufa ret",
+      "🌸🌸"
+     ],
+     [
+      "dufa vudit",
+      null
+     ]
+    ],
+    "opts": [
+     "🐸🐸🐸",
+     "🐸🐸",
+     "🌸🌸🌸",
+     "🌸🌸"
+    ],
+    "ok": 1,
+    "answer": "🐸🐸",
+    "rule": {
+     "text": "Cada palabra alienígena es un número o un dibujo:",
+     "lines": [
+      "👽 dufa = 2",
+      "👽 vudit = 🐸"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "kike gakeb",
+      "⭐⭐"
+     ],
+     [
+      "kike nomo",
+      "🍎🍎"
+     ],
+     [
+      "gokim gakeb",
+      "⭐"
+     ],
+     [
+      "gokim nomo",
+      null
+     ]
+    ],
+    "opts": [
+     "⭐",
+     "🍎🍎",
+     "⭐⭐",
+     "🍎"
+    ],
+    "ok": 3,
+    "answer": "🍎",
+    "rule": {
+     "text": "Cada palabra alienígena es un número o un dibujo:",
+     "lines": [
+      "👽 gokim = 1",
+      "👽 nomo = 🍎"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "bom gif",
+      "🦋"
+     ],
+     [
+      "tose zote",
+      "🍄🍄"
+     ],
+     [
+      "tose gif",
+      "🦋🦋"
+     ],
+     [
+      "tose nof",
+      "🎈🎈"
+     ],
+     [
+      "bom zote",
+      null
+     ]
+    ],
+    "opts": [
+     "🎈",
+     "🍄",
+     "🦋",
+     "🍄🍄"
+    ],
+    "ok": 1,
+    "answer": "🍄",
+    "rule": {
+     "text": "Cada palabra alienígena es un número o un dibujo:",
+     "lines": [
+      "👽 bom = 1",
+      "👽 zote = 🍄"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "go rafa",
+      "🍎🍎"
+     ],
+     [
+      "subo rafa",
+      "🍎🍎🍎"
+     ],
+     [
+      "subo nivob",
+      "🎈🎈🎈"
+     ],
+     [
+      "modib rafa",
+      "🍎"
+     ],
+     [
+      "go nivob",
+      null
+     ]
+    ],
+    "opts": [
+     "🎈🎈🎈",
+     "🎈",
+     "🎈🎈",
+     "🚗🚗"
+    ],
+    "ok": 2,
+    "answer": "🎈🎈",
+    "rule": {
+     "text": "Cada palabra alienígena es un número o un dibujo:",
+     "lines": [
+      "👽 go = 2",
+      "👽 nivob = 🎈"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "kalu gu",
+      "🚗🚗"
+     ],
+     [
+      "kalu vezit",
+      "🍎🍎"
+     ],
+     [
+      "la gu",
+      "🚗🚗🚗"
+     ],
+     [
+      "pa vezit",
+      "🍎"
+     ],
+     [
+      "pa gu",
+      null
+     ]
+    ],
+    "opts": [
+     "🚗🚗🚗",
+     "🚗",
+     "🐢",
+     "🚗🚗"
+    ],
+    "ok": 1,
+    "answer": "🚗",
+    "rule": {
+     "text": "Cada palabra alienígena es un número o un dibujo:",
+     "lines": [
+      "👽 pa = 1",
+      "👽 gu = 🚗"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "kod bepo",
+      "🌸"
+     ],
+     [
+      "tono bepo",
+      "🍎"
+     ],
+     [
+      "kod gusif",
+      "🌸🌸🌸"
+     ],
+     [
+      "ruz zulo",
+      "🍩🍩"
+     ],
+     [
+      "kod zulo",
+      null
+     ]
+    ],
+    "opts": [
+     "🌸🌸🌸",
+     "🌸🌸",
+     "🍎🍎",
+     "🌸"
+    ],
+    "ok": 1,
+    "answer": "🌸🌸",
+    "rule": {
+     "text": "Cada palabra alienígena es un número o un dibujo:",
+     "lines": [
+      "👽 kod = 🌸",
+      "👽 zulo = 2"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "lofe gu",
+      "🐢"
+     ],
+     [
+      "lofe bo",
+      "🐢🐢"
+     ],
+     [
+      "bavar mo",
+      "🌸🌸🌸"
+     ],
+     [
+      "zefi bo",
+      "🐟🐟"
+     ],
+     [
+      "zefi mo",
+      null
+     ]
+    ],
+    "opts": [
+     "🐟",
+     "🐟🐟🐟",
+     "🌸🌸🌸",
+     "🐢🐢🐢"
+    ],
+    "ok": 1,
+    "answer": "🐟🐟🐟",
+    "rule": {
+     "text": "Cada palabra alienígena es un número o un dibujo:",
+     "lines": [
+      "👽 zefi = 🐟",
+      "👽 mo = 3"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "zuva mo",
+      "🐢🐢"
+     ],
+     [
+      "ma visa",
+      "⭐"
+     ],
+     [
+      "ma buka",
+      "⭐⭐⭐"
+     ],
+     [
+      "pa mo",
+      "🐱🐱"
+     ],
+     [
+      "ma mo",
+      null
+     ]
+    ],
+    "opts": [
+     "⭐⭐",
+     "⭐",
+     "🐱🐱",
+     "🐢🐢"
+    ],
+    "ok": 0,
+    "answer": "⭐⭐",
+    "rule": {
+     "text": "Cada palabra alienígena es un número o un dibujo:",
+     "lines": [
+      "👽 ma = ⭐",
+      "👽 mo = 2"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "lemuv mi",
+      "🍩"
+     ],
+     [
+      "zugi mi",
+      "🐱"
+     ],
+     [
+      "kizon pu",
+      "🐢🐢🐢"
+     ],
+     [
+      "zugi fa",
+      "🐱🐱"
+     ],
+     [
+      "lemuv fa",
+      null
+     ]
+    ],
+    "opts": [
+     "🐱🐱",
+     "🐢🐢",
+     "🍩🍩",
+     "🍩🍩🍩"
+    ],
+    "ok": 2,
+    "answer": "🍩🍩",
+    "rule": {
+     "text": "Cada palabra alienígena es un número o un dibujo:",
+     "lines": [
+      "👽 lemuv = 🍩",
+      "👽 fa = 2"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "tami sedar",
+      "🐱"
+     ],
+     [
+      "leg sedar",
+      "🐱🐱"
+     ],
+     [
+      "leg mo",
+      "🍄🍄"
+     ],
+     [
+      "tami mo",
+      null
+     ]
+    ],
+    "opts": [
+     "🍄🍄",
+     "🍄",
+     "🐱🐱",
+     "🐱"
+    ],
+    "ok": 1,
+    "answer": "🍄",
+    "rule": {
+     "text": "Cada palabra alienígena es un número o un dibujo:",
+     "lines": [
+      "👽 tami = 1",
+      "👽 mo = 🍄"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "vab sip",
+      "🍄"
+     ],
+     [
+      "vab tisob",
+      "🐱"
+     ],
+     [
+      "seri sip",
+      "🍄🍄"
+     ],
+     [
+      "seri tisob",
+      null
+     ]
+    ],
+    "opts": [
+     "🍄🍄",
+     "🍄",
+     "🐱🐱",
+     "🐱"
+    ],
+    "ok": 2,
+    "answer": "🐱🐱",
+    "rule": {
+     "text": "Cada palabra alienígena es un número o un dibujo:",
+     "lines": [
+      "👽 seri = 2",
+      "👽 tisob = 🐱"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "mi sigis",
+      "🍎"
+     ],
+     [
+      "peva pen",
+      "🐸🐸🐸"
+     ],
+     [
+      "mi pen",
+      "🐸"
+     ],
+     [
+      "peva sigis",
+      null
+     ]
+    ],
+    "opts": [
+     "🐸",
+     "🍎🍎🍎",
+     "🍎",
+     "🐸🐸🐸"
+    ],
+    "ok": 1,
+    "answer": "🍎🍎🍎",
+    "rule": {
+     "text": "Cada palabra alienígena es un número o un dibujo:",
+     "lines": [
+      "👽 peva = 3",
+      "👽 sigis = 🍎"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "fera vesip",
+      "🍎🍎🍎"
+     ],
+     [
+      "lo puluk",
+      "🌸🌸"
+     ],
+     [
+      "fera puluk",
+      "🌸🌸🌸"
+     ],
+     [
+      "lo vesip",
+      null
+     ]
+    ],
+    "opts": [
+     "🌸🌸",
+     "🍎🍎",
+     "🌸🌸🌸",
+     "🍎🍎🍎"
+    ],
+    "ok": 1,
+    "answer": "🍎🍎",
+    "rule": {
+     "text": "Cada palabra alienígena es un número o un dibujo:",
+     "lines": [
+      "👽 lo = 2",
+      "👽 vesip = 🍎"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "zel dage",
+      "🐸🐸🐸"
+     ],
+     [
+      "lo mata",
+      "🍩🍩"
+     ],
+     [
+      "lo dage",
+      "🐸🐸"
+     ],
+     [
+      "zel mata",
+      null
+     ]
+    ],
+    "opts": [
+     "🐸🐸",
+     "🍩🍩",
+     "🍩🍩🍩",
+     "🐸🐸🐸"
+    ],
+    "ok": 2,
+    "answer": "🍩🍩🍩",
+    "rule": {
+     "text": "Cada palabra alienígena es un número o un dibujo:",
+     "lines": [
+      "👽 zel = 3",
+      "👽 mata = 🍩"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "lipel dute",
+      "🐟🐟"
+     ],
+     [
+      "lipel ze",
+      "🍎🍎"
+     ],
+     [
+      "de ze",
+      "🍎"
+     ],
+     [
+      "fepur dute",
+      "🐟🐟🐟"
+     ],
+     [
+      "fepur ze",
+      null
+     ]
+    ],
+    "opts": [
+     "🍎",
+     "🍎🍎🍎",
+     "🐟🐟🐟",
+     "🍎🍎"
+    ],
+    "ok": 1,
+    "answer": "🍎🍎🍎",
+    "rule": {
+     "text": "Cada palabra alienígena es un número o un dibujo:",
+     "lines": [
+      "👽 fepur = 3",
+      "👽 ze = 🍎"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "mama tog",
+      "🚗🚗🚗"
+     ],
+     [
+      "dat tog",
+      "🚗🚗"
+     ],
+     [
+      "se to",
+      "🍎"
+     ],
+     [
+      "se tog",
+      "🚗"
+     ],
+     [
+      "dat to",
+      null
+     ]
+    ],
+    "opts": [
+     "🍎🍎",
+     "⭐⭐",
+     "🍎🍎🍎",
+     "🍎"
+    ],
+    "ok": 0,
+    "answer": "🍎🍎",
+    "rule": {
+     "text": "Cada palabra alienígena es un número o un dibujo:",
+     "lines": [
+      "👽 dat = 2",
+      "👽 to = 🍎"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "molik rub",
+      "⭐⭐⭐"
+     ],
+     [
+      "giz ne",
+      "🍩🍩"
+     ],
+     [
+      "giz mukit",
+      "🚗🚗"
+     ],
+     [
+      "vunuz rub",
+      "⭐"
+     ],
+     [
+      "vunuz mukit",
+      null
+     ]
+    ],
+    "opts": [
+     "🚗",
+     "🚗🚗",
+     "🍩",
+     "⭐"
+    ],
+    "ok": 0,
+    "answer": "🚗",
+    "rule": {
+     "text": "Cada palabra alienígena es un número o un dibujo:",
+     "lines": [
+      "👽 vunuz = 1",
+      "👽 mukit = 🚗"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "sis sopo",
+      "🚗🚗🚗"
+     ],
+     [
+      "rig na",
+      "🐢🐢"
+     ],
+     [
+      "ra vu",
+      "🐸"
+     ],
+     [
+      "rig sopo",
+      "🐢🐢🐢"
+     ],
+     [
+      "ra na",
+      null
+     ]
+    ],
+    "opts": [
+     "🐸🐸🐸",
+     "🚗🚗",
+     "🐢🐢",
+     "🐸🐸"
+    ],
+    "ok": 3,
+    "answer": "🐸🐸",
+    "rule": {
+     "text": "Cada palabra alienígena es un número o un dibujo:",
+     "lines": [
+      "👽 ra = 🐸",
+      "👽 na = 2"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "fidiv di",
+      "🌸🌸"
+     ],
+     [
+      "do di",
+      "🎈🎈"
+     ],
+     [
+      "fidiv ta",
+      "🌸🌸🌸"
+     ],
+     [
+      "kep zafat",
+      "🐸"
+     ],
+     [
+      "kep ta",
+      null
+     ]
+    ],
+    "opts": [
+     "🎈🎈🎈",
+     "🐸🐸🐸",
+     "🐸",
+     "🐸🐸"
+    ],
+    "ok": 1,
+    "answer": "🐸🐸🐸",
+    "rule": {
+     "text": "Cada palabra alienígena es un número o un dibujo:",
+     "lines": [
+      "👽 kep = 🐸",
+      "👽 ta = 3"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "moduv papu",
+      "🐢"
+     ],
+     [
+      "zi suzo",
+      "🚗🚗"
+     ],
+     [
+      "ladi keda",
+      "🐱🐱🐱"
+     ],
+     [
+      "zi keda",
+      "🚗🚗🚗"
+     ],
+     [
+      "moduv suzo",
+      null
+     ]
+    ],
+    "opts": [
+     "🚗🚗",
+     "🐢",
+     "🐢🐢",
+     "🐢🐢🐢"
+    ],
+    "ok": 2,
+    "answer": "🐢🐢",
+    "rule": {
+     "text": "Cada palabra alienígena es un número o un dibujo:",
+     "lines": [
+      "👽 moduv = 🐢",
+      "👽 suzo = 2"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "bide nemat",
+      "🦋"
+     ],
+     [
+      "bide suza",
+      "🦋🦋"
+     ],
+     [
+      "pove nemat",
+      "🌸"
+     ],
+     [
+      "nos suza",
+      "🍩🍩"
+     ],
+     [
+      "nos nemat",
+      null
+     ]
+    ],
+    "opts": [
+     "🍩🍩",
+     "🦋",
+     "🌸",
+     "🍩"
+    ],
+    "ok": 3,
+    "answer": "🍩",
+    "rule": {
+     "text": "Cada palabra alienígena es un número o un dibujo:",
+     "lines": [
+      "👽 nos = 🍩",
+      "👽 nemat = 1"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "zen sodug",
+      "🐟🐟🐟"
+     ],
+     [
+      "zen liz",
+      "🐸🐸🐸"
+     ],
+     [
+      "miru liz",
+      "🐸🐸"
+     ],
+     [
+      "miru sodug",
+      null
+     ]
+    ],
+    "opts": [
+     "🐸🐸",
+     "🐟🐟🐟",
+     "🐟🐟",
+     "🐸🐸🐸"
+    ],
+    "ok": 2,
+    "answer": "🐟🐟",
+    "rule": {
+     "text": "Cada palabra alienígena es un número o un dibujo:",
+     "lines": [
+      "👽 miru = 2",
+      "👽 sodug = 🐟"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "voro lo",
+      "🍎🍎🍎"
+     ],
+     [
+      "bego lub",
+      "🐟"
+     ],
+     [
+      "voro lub",
+      "🐟🐟🐟"
+     ],
+     [
+      "bego lo",
+      null
+     ]
+    ],
+    "opts": [
+     "🐟🐟🐟",
+     "🍎🍎🍎",
+     "🐟",
+     "🍎"
+    ],
+    "ok": 3,
+    "answer": "🍎",
+    "rule": {
+     "text": "Cada palabra alienígena es un número o un dibujo:",
+     "lines": [
+      "👽 bego = 1",
+      "👽 lo = 🍎"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "tiko nod",
+      "🍄🍄🍄"
+     ],
+     [
+      "tiko fus",
+      "🦋🦋🦋"
+     ],
+     [
+      "pupi nod",
+      "🍄"
+     ],
+     [
+      "pupi fus",
+      null
+     ]
+    ],
+    "opts": [
+     "🦋",
+     "🍄",
+     "🦋🦋🦋",
+     "🍄🍄🍄"
+    ],
+    "ok": 0,
+    "answer": "🦋",
+    "rule": {
+     "text": "Cada palabra alienígena es un número o un dibujo:",
+     "lines": [
+      "👽 pupi = 1",
+      "👽 fus = 🦋"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "ralev fib",
+      "🚗"
+     ],
+     [
+      "ralev veg",
+      "🎈"
+     ],
+     [
+      "pu fib",
+      "🚗🚗"
+     ],
+     [
+      "pu veg",
+      null
+     ]
+    ],
+    "opts": [
+     "🎈",
+     "🚗🚗",
+     "🎈🎈",
+     "🚗"
+    ],
+    "ok": 2,
+    "answer": "🎈🎈",
+    "rule": {
+     "text": "Cada palabra alienígena es un número o un dibujo:",
+     "lines": [
+      "👽 pu = 2",
+      "👽 veg = 🎈"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "feko los",
+      "⭐"
+     ],
+     [
+      "gig los",
+      "⭐⭐⭐"
+     ],
+     [
+      "gig gikur",
+      "🎈🎈🎈"
+     ],
+     [
+      "feko gikur",
+      null
+     ]
+    ],
+    "opts": [
+     "⭐⭐⭐",
+     "⭐",
+     "🎈🎈🎈",
+     "🎈"
+    ],
+    "ok": 3,
+    "answer": "🎈",
+    "rule": {
+     "text": "Cada palabra alienígena es un número o un dibujo:",
+     "lines": [
+      "👽 feko = 1",
+      "👽 gikur = 🎈"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "kumub nu",
+      "🍄"
+     ],
+     [
+      "tib ki",
+      "🐢🐢🐢"
+     ],
+     [
+      "tib mezo",
+      "🍎🍎🍎"
+     ],
+     [
+      "ke nu",
+      "🍄🍄"
+     ],
+     [
+      "tib nu",
+      null
+     ]
+    ],
+    "opts": [
+     "🐢🐢🐢",
+     "🍄",
+     "🍄🍄🍄",
+     "🍎🍎🍎"
+    ],
+    "ok": 2,
+    "answer": "🍄🍄🍄",
+    "rule": {
+     "text": "Cada palabra alienígena es un número o un dibujo:",
+     "lines": [
+      "👽 tib = 3",
+      "👽 nu = 🍄"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "kepav mi",
+      "🌸🌸"
+     ],
+     [
+      "kepav ke",
+      "🐸🐸"
+     ],
+     [
+      "de le",
+      "🎈"
+     ],
+     [
+      "kepav le",
+      "🎈🎈"
+     ],
+     [
+      "de ke",
+      null
+     ]
+    ],
+    "opts": [
+     "🎈",
+     "🌸",
+     "🐸🐸",
+     "🐸"
+    ],
+    "ok": 3,
+    "answer": "🐸",
+    "rule": {
+     "text": "Cada palabra alienígena es un número o un dibujo:",
+     "lines": [
+      "👽 de = 1",
+      "👽 ke = 🐸"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "nu ler",
+      "🐟🐟🐟"
+     ],
+     [
+      "toka ve",
+      "🐸"
+     ],
+     [
+      "nu sir",
+      "🦋🦋🦋"
+     ],
+     [
+      "nuve ler",
+      "🐟🐟"
+     ],
+     [
+      "nuve sir",
+      null
+     ]
+    ],
+    "opts": [
+     "🐟🐟",
+     "🦋🦋🦋",
+     "🐸🐸",
+     "🦋🦋"
+    ],
+    "ok": 3,
+    "answer": "🦋🦋",
+    "rule": {
+     "text": "Cada palabra alienígena es un número o un dibujo:",
+     "lines": [
+      "👽 nuve = 2",
+      "👽 sir = 🦋"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "reg du",
+      "🐟"
+     ],
+     [
+      "pa dose",
+      "🍎🍎🍎"
+     ],
+     [
+      "pe dose",
+      "🍄🍄🍄"
+     ],
+     [
+      "pe gupet",
+      "🍄🍄"
+     ],
+     [
+      "pe du",
+      null
+     ]
+    ],
+    "opts": [
+     "🍎",
+     "🍄🍄🍄",
+     "🍄",
+     "🍄🍄"
+    ],
+    "ok": 2,
+    "answer": "🍄",
+    "rule": {
+     "text": "Cada palabra alienígena es un número o un dibujo:",
+     "lines": [
+      "👽 pe = 🍄",
+      "👽 du = 1"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "beti peze",
+      "🦋"
+     ],
+     [
+      "bala sar",
+      "🚗🚗🚗"
+     ],
+     [
+      "nones sar",
+      "🐟🐟🐟"
+     ],
+     [
+      "beti ped",
+      "🦋🦋"
+     ],
+     [
+      "nones peze",
+      null
+     ]
+    ],
+    "opts": [
+     "🐟🐟",
+     "🐟",
+     "🐟🐟🐟",
+     "🦋"
+    ],
+    "ok": 1,
+    "answer": "🐟",
+    "rule": {
+     "text": "Cada palabra alienígena es un número o un dibujo:",
+     "lines": [
+      "👽 nones = 🐟",
+      "👽 peze = 1"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "mi zeriz",
+      "🦋"
+     ],
+     [
+      "du fido",
+      "⭐⭐"
+     ],
+     [
+      "mi mefa",
+      "🚗"
+     ],
+     [
+      "mi fido",
+      "⭐"
+     ],
+     [
+      "du zeriz",
+      null
+     ]
+    ],
+    "opts": [
+     "🦋🦋🦋",
+     "⭐⭐",
+     "🦋🦋",
+     "🦋"
+    ],
+    "ok": 2,
+    "answer": "🦋🦋",
+    "rule": {
+     "text": "Cada palabra alienígena es un número o un dibujo:",
+     "lines": [
+      "👽 du = 2",
+      "👽 zeriz = 🦋"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "role dere",
+      "🐢🐢"
+     ],
+     [
+      "nagam zor",
+      "🍎🍎🍎"
+     ],
+     [
+      "le zor",
+      "🍩🍩🍩"
+     ],
+     [
+      "nagam vis",
+      "🍎"
+     ],
+     [
+      "le dere",
+      null
+     ]
+    ],
+    "opts": [
+     "🍩🍩🍩",
+     "🍩🍩",
+     "🍎🍎",
+     "🐢🐢"
+    ],
+    "ok": 1,
+    "answer": "🍩🍩",
+    "rule": {
+     "text": "Cada palabra alienígena es un número o un dibujo:",
+     "lines": [
+      "👽 le = 🍩",
+      "👽 dere = 2"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "tami lidi",
+      "🦋"
+     ],
+     [
+      "tami za",
+      "🌸"
+     ],
+     [
+      "kup za",
+      "🌸🌸"
+     ],
+     [
+      "kup lidi",
+      null
+     ]
+    ],
+    "opts": [
+     "🦋🦋",
+     "🌸🌸",
+     "🦋",
+     "🌸"
+    ],
+    "ok": 0,
+    "answer": "🦋🦋",
+    "rule": {
+     "text": "Cada palabra alienígena es un número o un dibujo:",
+     "lines": [
+      "👽 kup = 2",
+      "👽 lidi = 🦋"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "lafo tuner",
+      "🍩🍩"
+     ],
+     [
+      "tituv tuner",
+      "🍩"
+     ],
+     [
+      "tituv voke",
+      "🐱"
+     ],
+     [
+      "lafo voke",
+      null
+     ]
+    ],
+    "opts": [
+     "🐱",
+     "🍩🍩",
+     "🍩",
+     "🐱🐱"
+    ],
+    "ok": 3,
+    "answer": "🐱🐱",
+    "rule": {
+     "text": "Cada palabra alienígena es un número o un dibujo:",
+     "lines": [
+      "👽 lafo = 2",
+      "👽 voke = 🐱"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "mitug nu",
+      "🐱"
+     ],
+     [
+      "mona bagi",
+      "⭐⭐"
+     ],
+     [
+      "mona nu",
+      "🐱🐱"
+     ],
+     [
+      "mitug bagi",
+      null
+     ]
+    ],
+    "opts": [
+     "🐱",
+     "🐱🐱",
+     "⭐",
+     "⭐⭐"
+    ],
+    "ok": 2,
+    "answer": "⭐",
+    "rule": {
+     "text": "Cada palabra alienígena es un número o un dibujo:",
+     "lines": [
+      "👽 mitug = 1",
+      "👽 bagi = ⭐"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "vake siki",
+      "🍄🍄🍄"
+     ],
+     [
+      "letav za",
+      "🚗"
+     ],
+     [
+      "vake za",
+      "🚗🚗🚗"
+     ],
+     [
+      "letav siki",
+      null
+     ]
+    ],
+    "opts": [
+     "🚗🚗🚗",
+     "🍄",
+     "🚗",
+     "🍄🍄🍄"
+    ],
+    "ok": 1,
+    "answer": "🍄",
+    "rule": {
+     "text": "Cada palabra alienígena es un número o un dibujo:",
+     "lines": [
+      "👽 letav = 1",
+      "👽 siki = 🍄"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "ka luk",
+      "🐱🐱🐱"
+     ],
+     [
+      "ka se",
+      "🐸🐸🐸"
+     ],
+     [
+      "befu luk",
+      "🐱🐱"
+     ],
+     [
+      "befu se",
+      null
+     ]
+    ],
+    "opts": [
+     "🐱🐱🐱",
+     "🐸🐸🐸",
+     "🐸🐸",
+     "🐱🐱"
+    ],
+    "ok": 2,
+    "answer": "🐸🐸",
+    "rule": {
+     "text": "Cada palabra alienígena es un número o un dibujo:",
+     "lines": [
+      "👽 befu = 2",
+      "👽 se = 🐸"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "vi fo",
+      "🦋"
+     ],
+     [
+      "tat fo",
+      "🦋🦋"
+     ],
+     [
+      "tat rede",
+      "🎈🎈"
+     ],
+     [
+      "vi rede",
+      null
+     ]
+    ],
+    "opts": [
+     "🎈🎈",
+     "🦋",
+     "🦋🦋",
+     "🎈"
+    ],
+    "ok": 3,
+    "answer": "🎈",
+    "rule": {
+     "text": "Cada palabra alienígena es un número o un dibujo:",
+     "lines": [
+      "👽 vi = 1",
+      "👽 rede = 🎈"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "rin torim",
+      "🐱🐱"
+     ],
+     [
+      "to bazub",
+      "🐢🐢🐢"
+     ],
+     [
+      "to torim",
+      "🐱🐱🐱"
+     ],
+     [
+      "ki bazub",
+      "🐢"
+     ],
+     [
+      "ki torim",
+      null
+     ]
+    ],
+    "opts": [
+     "🐢",
+     "🐱🐱🐱",
+     "🍎",
+     "🐱"
+    ],
+    "ok": 3,
+    "answer": "🐱",
+    "rule": {
+     "text": "Cada palabra alienígena es un número o un dibujo:",
+     "lines": [
+      "👽 ki = 1",
+      "👽 torim = 🐱"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "li na",
+      "🐢🐢🐢"
+     ],
+     [
+      "si sene",
+      "🍄"
+     ],
+     [
+      "li pifig",
+      "🌸🌸🌸"
+     ],
+     [
+      "pesek pifig",
+      "🌸🌸"
+     ],
+     [
+      "pesek na",
+      null
+     ]
+    ],
+    "opts": [
+     "🐢🐢🐢",
+     "🐢",
+     "🌸🌸",
+     "🐢🐢"
+    ],
+    "ok": 3,
+    "answer": "🐢🐢",
+    "rule": {
+     "text": "Cada palabra alienígena es un número o un dibujo:",
+     "lines": [
+      "👽 pesek = 2",
+      "👽 na = 🐢"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "pigod bu",
+      "🦋"
+     ],
+     [
+      "negen kolar",
+      "🍩🍩"
+     ],
+     [
+      "fi vuzel",
+      "🐱🐱🐱"
+     ],
+     [
+      "negen bu",
+      "🍩"
+     ],
+     [
+      "pigod kolar",
+      null
+     ]
+    ],
+    "opts": [
+     "🦋🦋",
+     "🦋",
+     "🦋🦋🦋",
+     "🐱🐱"
+    ],
+    "ok": 0,
+    "answer": "🦋🦋",
+    "rule": {
+     "text": "Cada palabra alienígena es un número o un dibujo:",
+     "lines": [
+      "👽 pigod = 🦋",
+      "👽 kolar = 2"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "zi pu",
+      "🚗🚗"
+     ],
+     [
+      "bu pu",
+      "🚗🚗🚗"
+     ],
+     [
+      "zi gurig",
+      "🐢🐢"
+     ],
+     [
+      "mere bef",
+      "🐸"
+     ],
+     [
+      "bu gurig",
+      null
+     ]
+    ],
+    "opts": [
+     "🐸🐸🐸",
+     "🚗🚗🚗",
+     "🐢🐢",
+     "🐢🐢🐢"
+    ],
+    "ok": 3,
+    "answer": "🐢🐢🐢",
+    "rule": {
+     "text": "Cada palabra alienígena es un número o un dibujo:",
+     "lines": [
+      "👽 bu = 3",
+      "👽 gurig = 🐢"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "lib guni",
+      "🍩🍩🍩"
+     ],
+     [
+      "peza fi",
+      "🌸🌸"
+     ],
+     [
+      "lib fi",
+      "🌸🌸🌸"
+     ],
+     [
+      "dekom las",
+      "🐱"
+     ],
+     [
+      "peza guni",
+      null
+     ]
+    ],
+    "opts": [
+     "🍩🍩",
+     "🐱🐱",
+     "🍩",
+     "🍩🍩🍩"
+    ],
+    "ok": 0,
+    "answer": "🍩🍩",
+    "rule": {
+     "text": "Cada palabra alienígena es un número o un dibujo:",
+     "lines": [
+      "👽 peza = 2",
+      "👽 guni = 🍩"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "binir le",
+      "🦋🦋"
+     ],
+     [
+      "fa le",
+      "🦋🦋🦋"
+     ],
+     [
+      "binir semi",
+      "🐸🐸"
+     ],
+     [
+      "zul vogo",
+      "🍎"
+     ],
+     [
+      "fa vogo",
+      null
+     ]
+    ],
+    "opts": [
+     "🍎",
+     "🍎🍎",
+     "🦋🦋🦋",
+     "🍎🍎🍎"
+    ],
+    "ok": 3,
+    "answer": "🍎🍎🍎",
+    "rule": {
+     "text": "Cada palabra alienígena es un número o un dibujo:",
+     "lines": [
+      "👽 fa = 3",
+      "👽 vogo = 🍎"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "dopu kosi",
+      "🍎🍎🍎"
+     ],
+     [
+      "fuvuf kosi",
+      "🍎"
+     ],
+     [
+      "dopu ra",
+      "🚗🚗🚗"
+     ],
+     [
+      "fuvuf ra",
+      null
+     ]
+    ],
+    "opts": [
+     "🍎🍎🍎",
+     "🚗",
+     "🍎",
+     "🚗🚗🚗"
+    ],
+    "ok": 1,
+    "answer": "🚗",
+    "rule": {
+     "text": "Cada palabra alienígena es un número o un dibujo:",
+     "lines": [
+      "👽 fuvuf = 1",
+      "👽 ra = 🚗"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "mebo kela",
+      "🍩"
+     ],
+     [
+      "tu kela",
+      "🍩🍩🍩"
+     ],
+     [
+      "tu lod",
+      "🐟🐟🐟"
+     ],
+     [
+      "mebo lod",
+      null
+     ]
+    ],
+    "opts": [
+     "🐟",
+     "🐟🐟🐟",
+     "🍩",
+     "🍩🍩🍩"
+    ],
+    "ok": 0,
+    "answer": "🐟",
+    "rule": {
+     "text": "Cada palabra alienígena es un número o un dibujo:",
+     "lines": [
+      "👽 mebo = 1",
+      "👽 lod = 🐟"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "far vabag",
+      "🍄"
+     ],
+     [
+      "tok vabag",
+      "🍄🍄🍄"
+     ],
+     [
+      "far mi",
+      "🐟"
+     ],
+     [
+      "tok mi",
+      null
+     ]
+    ],
+    "opts": [
+     "🐟",
+     "🐟🐟🐟",
+     "🍄",
+     "🍄🍄🍄"
+    ],
+    "ok": 1,
+    "answer": "🐟🐟🐟",
+    "rule": {
+     "text": "Cada palabra alienígena es un número o un dibujo:",
+     "lines": [
+      "👽 tok = 3",
+      "👽 mi = 🐟"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "mu zi",
+      "🌸🌸"
+     ],
+     [
+      "lis pi",
+      "🐸"
+     ],
+     [
+      "mu pi",
+      "🐸🐸"
+     ],
+     [
+      "lis zi",
+      null
+     ]
+    ],
+    "opts": [
+     "🌸🌸",
+     "🐸🐸",
+     "🌸",
+     "🐸"
+    ],
+    "ok": 2,
+    "answer": "🌸",
+    "rule": {
+     "text": "Cada palabra alienígena es un número o un dibujo:",
+     "lines": [
+      "👽 lis = 1",
+      "👽 zi = 🌸"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "kuleb feta",
+      "🚗🚗🚗"
+     ],
+     [
+      "fedu feta",
+      "🚗"
+     ],
+     [
+      "fedu dolak",
+      "🍄"
+     ],
+     [
+      "kuleb dolak",
+      null
+     ]
+    ],
+    "opts": [
+     "🚗🚗🚗",
+     "🍄",
+     "🚗",
+     "🍄🍄🍄"
+    ],
+    "ok": 3,
+    "answer": "🍄🍄🍄",
+    "rule": {
+     "text": "Cada palabra alienígena es un número o un dibujo:",
+     "lines": [
+      "👽 kuleb = 3",
+      "👽 dolak = 🍄"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "sa daz",
+      "🍩"
+     ],
+     [
+      "sa liro",
+      "🎈"
+     ],
+     [
+      "toz daz",
+      "🍩🍩🍩"
+     ],
+     [
+      "toz liro",
+      null
+     ]
+    ],
+    "opts": [
+     "🎈",
+     "🎈🎈🎈",
+     "🍩",
+     "🍩🍩🍩"
+    ],
+    "ok": 1,
+    "answer": "🎈🎈🎈",
+    "rule": {
+     "text": "Cada palabra alienígena es un número o un dibujo:",
+     "lines": [
+      "👽 toz = 3",
+      "👽 liro = 🎈"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "pul da",
+      "🐱🐱🐱"
+     ],
+     [
+      "va medu",
+      "🐢"
+     ],
+     [
+      "sofa tif",
+      "🌸🌸"
+     ],
+     [
+      "sofa medu",
+      "🐢🐢"
+     ],
+     [
+      "sofa da",
+      null
+     ]
+    ],
+    "opts": [
+     "🐱🐱",
+     "🌸🌸",
+     "🐱",
+     "🐱🐱🐱"
+    ],
+    "ok": 0,
+    "answer": "🐱🐱",
+    "rule": {
+     "text": "Cada palabra alienígena es un número o un dibujo:",
+     "lines": [
+      "👽 sofa = 2",
+      "👽 da = 🐱"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "pobe zolip",
+      "🎈"
+     ],
+     [
+      "ra zu",
+      "🌸🌸🌸"
+     ],
+     [
+      "bi pur",
+      "⭐⭐"
+     ],
+     [
+      "bi zu",
+      "🌸🌸"
+     ],
+     [
+      "ra pur",
+      null
+     ]
+    ],
+    "opts": [
+     "🌸🌸🌸",
+     "⭐⭐⭐",
+     "⭐⭐",
+     "🎈🎈🎈"
+    ],
+    "ok": 1,
+    "answer": "⭐⭐⭐",
+    "rule": {
+     "text": "Cada palabra alienígena es un número o un dibujo:",
+     "lines": [
+      "👽 ra = 3",
+      "👽 pur = ⭐"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "tozi dur",
+      "🍎🍎🍎"
+     ],
+     [
+      "nabe su",
+      "🐱"
+     ],
+     [
+      "lilu na",
+      "🚗🚗"
+     ],
+     [
+      "nabe na",
+      "🐱🐱"
+     ],
+     [
+      "lilu dur",
+      null
+     ]
+    ],
+    "opts": [
+     "🚗🚗",
+     "🚗",
+     "🐱🐱🐱",
+     "🚗🚗🚗"
+    ],
+    "ok": 3,
+    "answer": "🚗🚗🚗",
+    "rule": {
+     "text": "Cada palabra alienígena es un número o un dibujo:",
+     "lines": [
+      "👽 lilu = 🚗",
+      "👽 dur = 3"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "ku gu",
+      "🎈🎈🎈"
+     ],
+     [
+      "ku rub",
+      "🎈🎈"
+     ],
+     [
+      "ranap timop",
+      "🍎"
+     ],
+     [
+      "zu timop",
+      "🐢"
+     ],
+     [
+      "ranap gu",
+      null
+     ]
+    ],
+    "opts": [
+     "🍎🍎🍎",
+     "🐢🐢🐢",
+     "🎈🎈🎈",
+     "🍎🍎"
+    ],
+    "ok": 0,
+    "answer": "🍎🍎🍎",
+    "rule": {
+     "text": "Cada palabra alienígena es un número o un dibujo:",
+     "lines": [
+      "👽 ranap = 🍎",
+      "👽 gu = 3"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "savon kisiz",
+      "🐢🐢🐢"
+     ],
+     [
+      "savon dup",
+      "🍎🍎🍎"
+     ],
+     [
+      "nara dup",
+      "🍎🍎"
+     ],
+     [
+      "keraf no",
+      "🍩"
+     ],
+     [
+      "keraf kisiz",
+      null
+     ]
+    ],
+    "opts": [
+     "🐢🐢",
+     "🍎",
+     "🐢",
+     "🍩"
+    ],
+    "ok": 2,
+    "answer": "🐢",
+    "rule": {
+     "text": "Cada palabra alienígena es un número o un dibujo:",
+     "lines": [
+      "👽 keraf = 1",
+      "👽 kisiz = 🐢"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "di zifi",
+      "🐱🐱🐱"
+     ],
+     [
+      "ma go",
+      "🍎🍎"
+     ],
+     [
+      "da zifi",
+      "🦋🦋🦋"
+     ],
+     [
+      "ma boto",
+      "🍎"
+     ],
+     [
+      "da boto",
+      null
+     ]
+    ],
+    "opts": [
+     "🐱",
+     "🦋",
+     "🍎",
+     "🦋🦋"
+    ],
+    "ok": 1,
+    "answer": "🦋",
+    "rule": {
+     "text": "Cada palabra alienígena es un número o un dibujo:",
+     "lines": [
+      "👽 da = 🦋",
+      "👽 boto = 1"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "dal vezi",
+      "🦋🦋"
+     ],
+     [
+      "notag mab",
+      "🍩🍩🍩"
+     ],
+     [
+      "dal mab",
+      "🍩🍩"
+     ],
+     [
+      "notag vezi",
+      null
+     ]
+    ],
+    "opts": [
+     "🍩🍩🍩",
+     "🦋🦋🦋",
+     "🍩🍩",
+     "🦋🦋"
+    ],
+    "ok": 1,
+    "answer": "🦋🦋🦋",
+    "rule": {
+     "text": "Cada palabra alienígena es un número o un dibujo:",
+     "lines": [
+      "👽 notag = 3",
+      "👽 vezi = 🦋"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "sora se",
+      "🎈🎈🎈"
+     ],
+     [
+      "si sagoz",
+      "🍎🍎"
+     ],
+     [
+      "si se",
+      "🎈🎈"
+     ],
+     [
+      "sora sagoz",
+      null
+     ]
+    ],
+    "opts": [
+     "🍎🍎",
+     "🎈🎈🎈",
+     "🎈🎈",
+     "🍎🍎🍎"
+    ],
+    "ok": 3,
+    "answer": "🍎🍎🍎",
+    "rule": {
+     "text": "Cada palabra alienígena es un número o un dibujo:",
+     "lines": [
+      "👽 sora = 3",
+      "👽 sagoz = 🍎"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "none liga",
+      "🐢🐢🐢"
+     ],
+     [
+      "dinud liga",
+      "🐢"
+     ],
+     [
+      "none vosi",
+      "🎈🎈🎈"
+     ],
+     [
+      "dinud vosi",
+      null
+     ]
+    ],
+    "opts": [
+     "🐢🐢🐢",
+     "🎈",
+     "🐢",
+     "🎈🎈🎈"
+    ],
+    "ok": 1,
+    "answer": "🎈",
+    "rule": {
+     "text": "Cada palabra alienígena es un número o un dibujo:",
+     "lines": [
+      "👽 dinud = 1",
+      "👽 vosi = 🎈"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "gevo bipi",
+      "🐢🐢🐢"
+     ],
+     [
+      "gevo ma",
+      "⭐⭐⭐"
+     ],
+     [
+      "tosan bipi",
+      "🐢"
+     ],
+     [
+      "tosan ma",
+      null
+     ]
+    ],
+    "opts": [
+     "⭐",
+     "🐢🐢🐢",
+     "⭐⭐⭐",
+     "🐢"
+    ],
+    "ok": 0,
+    "answer": "⭐",
+    "rule": {
+     "text": "Cada palabra alienígena es un número o un dibujo:",
+     "lines": [
+      "👽 tosan = 1",
+      "👽 ma = ⭐"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "tomop lino",
+      "🚗"
+     ],
+     [
+      "tomop diru",
+      "🦋"
+     ],
+     [
+      "rufel diru",
+      "🦋🦋"
+     ],
+     [
+      "rufel lino",
+      null
+     ]
+    ],
+    "opts": [
+     "🚗🚗",
+     "🦋🦋",
+     "🦋",
+     "🚗"
+    ],
+    "ok": 0,
+    "answer": "🚗🚗",
+    "rule": {
+     "text": "Cada palabra alienígena es un número o un dibujo:",
+     "lines": [
+      "👽 rufel = 2",
+      "👽 lino = 🚗"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "fu nuku",
+      "🌸🌸"
+     ],
+     [
+      "zu nuku",
+      "🌸"
+     ],
+     [
+      "zu ka",
+      "🐸"
+     ],
+     [
+      "fu ka",
+      null
+     ]
+    ],
+    "opts": [
+     "🌸",
+     "🐸🐸",
+     "🌸🌸",
+     "🐸"
+    ],
+    "ok": 1,
+    "answer": "🐸🐸",
+    "rule": {
+     "text": "Cada palabra alienígena es un número o un dibujo:",
+     "lines": [
+      "👽 fu = 2",
+      "👽 ka = 🐸"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "ti toka",
+      "🌸"
+     ],
+     [
+      "folal mebu",
+      "🍩🍩🍩"
+     ],
+     [
+      "peso mebu",
+      "🍩🍩"
+     ],
+     [
+      "peso be",
+      "🦋🦋"
+     ],
+     [
+      "ti be",
+      null
+     ]
+    ],
+    "opts": [
+     "🦋",
+     "🦋🦋",
+     "🌸",
+     "🍩"
+    ],
+    "ok": 0,
+    "answer": "🦋",
+    "rule": {
+     "text": "Cada palabra alienígena es un número o un dibujo:",
+     "lines": [
+      "👽 ti = 1",
+      "👽 be = 🦋"
+     ]
+    }
+   }
+  ],
+  "en": [
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "ru tavu",
+      "🦋🦋🦋"
+     ],
+     [
+      "sa bidaz",
+      "🐟🐟"
+     ],
+     [
+      "ru bidaz",
+      "🐟🐟🐟"
+     ],
+     [
+      "sa tavu",
+      null
+     ]
+    ],
+    "opts": [
+     "🦋🦋",
+     "🐟🐟🐟",
+     "🦋🦋🦋",
+     "🐟🐟"
+    ],
+    "ok": 0,
+    "answer": "🦋🦋",
+    "rule": {
+     "text": "Each alien word is a number or a picture:",
+     "lines": [
+      "👽 sa = 2",
+      "👽 tavu = 🦋"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "fiser me",
+      "🐱🐱"
+     ],
+     [
+      "da kez",
+      "🚗"
+     ],
+     [
+      "fiser kez",
+      "🚗🚗"
+     ],
+     [
+      "da me",
+      null
+     ]
+    ],
+    "opts": [
+     "🚗🚗",
+     "🚗",
+     "🐱",
+     "🐱🐱"
+    ],
+    "ok": 2,
+    "answer": "🐱",
+    "rule": {
+     "text": "Each alien word is a number or a picture:",
+     "lines": [
+      "👽 da = 1",
+      "👽 me = 🐱"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "zus fime",
+      "🐸"
+     ],
+     [
+      "vanib pezub",
+      "🚗🚗"
+     ],
+     [
+      "zus pezub",
+      "🚗"
+     ],
+     [
+      "vanib fime",
+      null
+     ]
+    ],
+    "opts": [
+     "🐸🐸",
+     "🚗",
+     "🐸",
+     "🚗🚗"
+    ],
+    "ok": 0,
+    "answer": "🐸🐸",
+    "rule": {
+     "text": "Each alien word is a number or a picture:",
+     "lines": [
+      "👽 vanib = 2",
+      "👽 fime = 🐸"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "kepul vofel",
+      "🌸"
+     ],
+     [
+      "kepul bafud",
+      "🍎"
+     ],
+     [
+      "turog vofel",
+      "🌸🌸"
+     ],
+     [
+      "turog bafud",
+      null
+     ]
+    ],
+    "opts": [
+     "🍎🍎",
+     "🍎",
+     "🌸🌸",
+     "🌸"
+    ],
+    "ok": 0,
+    "answer": "🍎🍎",
+    "rule": {
+     "text": "Each alien word is a number or a picture:",
+     "lines": [
+      "👽 turog = 2",
+      "👽 bafud = 🍎"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "mit boreg",
+      "🍎🍎"
+     ],
+     [
+      "fip mus",
+      "🍩"
+     ],
+     [
+      "mit mus",
+      "🍩🍩"
+     ],
+     [
+      "fip boreg",
+      null
+     ]
+    ],
+    "opts": [
+     "🍩🍩",
+     "🍩",
+     "🍎🍎",
+     "🍎"
+    ],
+    "ok": 3,
+    "answer": "🍎",
+    "rule": {
+     "text": "Each alien word is a number or a picture:",
+     "lines": [
+      "👽 fip = 1",
+      "👽 boreg = 🍎"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "di kizo",
+      "🍄"
+     ],
+     [
+      "pugad tebi",
+      "🍎🍎🍎"
+     ],
+     [
+      "pugad kizo",
+      "🍄🍄🍄"
+     ],
+     [
+      "di tebi",
+      null
+     ]
+    ],
+    "opts": [
+     "🍎",
+     "🍄",
+     "🍎🍎🍎",
+     "🍄🍄🍄"
+    ],
+    "ok": 0,
+    "answer": "🍎",
+    "rule": {
+     "text": "Each alien word is a number or a picture:",
+     "lines": [
+      "👽 di = 1",
+      "👽 tebi = 🍎"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "bo kutu",
+      "🐟🐟"
+     ],
+     [
+      "fo kutu",
+      "🐟🐟🐟"
+     ],
+     [
+      "fo va",
+      "🐸🐸🐸"
+     ],
+     [
+      "gi va",
+      "🐸"
+     ],
+     [
+      "bo va",
+      null
+     ]
+    ],
+    "opts": [
+     "🐸🐸",
+     "🍄🍄",
+     "🐸",
+     "🐟🐟"
+    ],
+    "ok": 0,
+    "answer": "🐸🐸",
+    "rule": {
+     "text": "Each alien word is a number or a picture:",
+     "lines": [
+      "👽 bo = 2",
+      "👽 va = 🐸"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "bab fev",
+      "🌸"
+     ],
+     [
+      "za kas",
+      "🐸🐸🐸"
+     ],
+     [
+      "za sof",
+      "🐢🐢🐢"
+     ],
+     [
+      "mo sof",
+      "🐢🐢"
+     ],
+     [
+      "bab sof",
+      null
+     ]
+    ],
+    "opts": [
+     "🐢",
+     "🌸",
+     "🐢🐢",
+     "🐢🐢🐢"
+    ],
+    "ok": 0,
+    "answer": "🐢",
+    "rule": {
+     "text": "Each alien word is a number or a picture:",
+     "lines": [
+      "👽 bab = 1",
+      "👽 sof = 🐢"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "vosan bu",
+      "🐱"
+     ],
+     [
+      "ro da",
+      "🐸🐸"
+     ],
+     [
+      "tezip biz",
+      "🍎🍎🍎"
+     ],
+     [
+      "tezip bu",
+      "🐱🐱🐱"
+     ],
+     [
+      "vosan biz",
+      null
+     ]
+    ],
+    "opts": [
+     "🐱",
+     "🍎🍎",
+     "🐸",
+     "🍎"
+    ],
+    "ok": 3,
+    "answer": "🍎",
+    "rule": {
+     "text": "Each alien word is a number or a picture:",
+     "lines": [
+      "👽 vosan = 1",
+      "👽 biz = 🍎"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "ru tozu",
+      "🍄"
+     ],
+     [
+      "pitez tozu",
+      "🍄🍄"
+     ],
+     [
+      "ru teto",
+      "🐸"
+     ],
+     [
+      "ru ke",
+      "🦋"
+     ],
+     [
+      "pitez ke",
+      null
+     ]
+    ],
+    "opts": [
+     "🐸🐸",
+     "🦋🦋🦋",
+     "🦋",
+     "🦋🦋"
+    ],
+    "ok": 3,
+    "answer": "🦋🦋",
+    "rule": {
+     "text": "Each alien word is a number or a picture:",
+     "lines": [
+      "👽 pitez = 2",
+      "👽 ke = 🦋"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "go magom",
+      "🌸🌸"
+     ],
+     [
+      "ma gog",
+      "🎈"
+     ],
+     [
+      "go gog",
+      "🌸"
+     ],
+     [
+      "mana novo",
+      "🐱🐱🐱"
+     ],
+     [
+      "ma novo",
+      null
+     ]
+    ],
+    "opts": [
+     "🎈🎈",
+     "🎈🎈🎈",
+     "🌸🌸🌸",
+     "🐱🐱🐱"
+    ],
+    "ok": 1,
+    "answer": "🎈🎈🎈",
+    "rule": {
+     "text": "Each alien word is a number or a picture:",
+     "lines": [
+      "👽 ma = 🎈",
+      "👽 novo = 3"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "ne pos",
+      "🐢🐢🐢"
+     ],
+     [
+      "gatin pat",
+      "🦋🦋"
+     ],
+     [
+      "ziput vas",
+      "🐸"
+     ],
+     [
+      "gatin vas",
+      "🦋"
+     ],
+     [
+      "ne pat",
+      null
+     ]
+    ],
+    "opts": [
+     "🐸🐸",
+     "🐢🐢",
+     "🐢",
+     "🦋🦋"
+    ],
+    "ok": 1,
+    "answer": "🐢🐢",
+    "rule": {
+     "text": "Each alien word is a number or a picture:",
+     "lines": [
+      "👽 ne = 🐢",
+      "👽 pat = 2"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "do fav",
+      "🐱🐱"
+     ],
+     [
+      "fer fav",
+      "🐱🐱🐱"
+     ],
+     [
+      "zobag teki",
+      "🚗"
+     ],
+     [
+      "fer no",
+      "🌸🌸🌸"
+     ],
+     [
+      "fer teki",
+      null
+     ]
+    ],
+    "opts": [
+     "🌸🌸🌸",
+     "🚗🚗🚗",
+     "🚗",
+     "🚗🚗"
+    ],
+    "ok": 1,
+    "answer": "🚗🚗🚗",
+    "rule": {
+     "text": "Each alien word is a number or a picture:",
+     "lines": [
+      "👽 fer = 3",
+      "👽 teki = 🚗"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "bi lu",
+      "🐟🐟🐟"
+     ],
+     [
+      "zedu lu",
+      "🐟🐟"
+     ],
+     [
+      "zedu za",
+      "⭐⭐"
+     ],
+     [
+      "bi za",
+      null
+     ]
+    ],
+    "opts": [
+     "⭐⭐⭐",
+     "🐟🐟",
+     "🐟🐟🐟",
+     "⭐⭐"
+    ],
+    "ok": 0,
+    "answer": "⭐⭐⭐",
+    "rule": {
+     "text": "Each alien word is a number or a picture:",
+     "lines": [
+      "👽 bi = 3",
+      "👽 za = ⭐"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "dogu la",
+      "🌸"
+     ],
+     [
+      "dogu selo",
+      "🐱"
+     ],
+     [
+      "suga selo",
+      "🐱🐱🐱"
+     ],
+     [
+      "suga la",
+      null
+     ]
+    ],
+    "opts": [
+     "🐱🐱🐱",
+     "🌸",
+     "🐱",
+     "🌸🌸🌸"
+    ],
+    "ok": 3,
+    "answer": "🌸🌸🌸",
+    "rule": {
+     "text": "Each alien word is a number or a picture:",
+     "lines": [
+      "👽 suga = 3",
+      "👽 la = 🌸"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "de ruto",
+      "🐢🐢"
+     ],
+     [
+      "bi la",
+      "⭐⭐⭐"
+     ],
+     [
+      "de la",
+      "⭐⭐"
+     ],
+     [
+      "bi ruto",
+      null
+     ]
+    ],
+    "opts": [
+     "🐢🐢🐢",
+     "⭐⭐",
+     "⭐⭐⭐",
+     "🐢🐢"
+    ],
+    "ok": 0,
+    "answer": "🐢🐢🐢",
+    "rule": {
+     "text": "Each alien word is a number or a picture:",
+     "lines": [
+      "👽 bi = 3",
+      "👽 ruto = 🐢"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "di ret",
+      "🌸🌸🌸"
+     ],
+     [
+      "di vudit",
+      "🐸🐸🐸"
+     ],
+     [
+      "dufa ret",
+      "🌸🌸"
+     ],
+     [
+      "dufa vudit",
+      null
+     ]
+    ],
+    "opts": [
+     "🐸🐸🐸",
+     "🐸🐸",
+     "🌸🌸🌸",
+     "🌸🌸"
+    ],
+    "ok": 1,
+    "answer": "🐸🐸",
+    "rule": {
+     "text": "Each alien word is a number or a picture:",
+     "lines": [
+      "👽 dufa = 2",
+      "👽 vudit = 🐸"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "kike gakeb",
+      "⭐⭐"
+     ],
+     [
+      "kike nomo",
+      "🍎🍎"
+     ],
+     [
+      "gokim gakeb",
+      "⭐"
+     ],
+     [
+      "gokim nomo",
+      null
+     ]
+    ],
+    "opts": [
+     "⭐",
+     "🍎🍎",
+     "⭐⭐",
+     "🍎"
+    ],
+    "ok": 3,
+    "answer": "🍎",
+    "rule": {
+     "text": "Each alien word is a number or a picture:",
+     "lines": [
+      "👽 gokim = 1",
+      "👽 nomo = 🍎"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "bom gif",
+      "🦋"
+     ],
+     [
+      "tose zote",
+      "🍄🍄"
+     ],
+     [
+      "tose gif",
+      "🦋🦋"
+     ],
+     [
+      "tose nof",
+      "🎈🎈"
+     ],
+     [
+      "bom zote",
+      null
+     ]
+    ],
+    "opts": [
+     "🎈",
+     "🍄",
+     "🦋",
+     "🍄🍄"
+    ],
+    "ok": 1,
+    "answer": "🍄",
+    "rule": {
+     "text": "Each alien word is a number or a picture:",
+     "lines": [
+      "👽 bom = 1",
+      "👽 zote = 🍄"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "go rafa",
+      "🍎🍎"
+     ],
+     [
+      "subo rafa",
+      "🍎🍎🍎"
+     ],
+     [
+      "subo nivob",
+      "🎈🎈🎈"
+     ],
+     [
+      "modib rafa",
+      "🍎"
+     ],
+     [
+      "go nivob",
+      null
+     ]
+    ],
+    "opts": [
+     "🎈🎈🎈",
+     "🎈",
+     "🎈🎈",
+     "🚗🚗"
+    ],
+    "ok": 2,
+    "answer": "🎈🎈",
+    "rule": {
+     "text": "Each alien word is a number or a picture:",
+     "lines": [
+      "👽 go = 2",
+      "👽 nivob = 🎈"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "kalu gu",
+      "🚗🚗"
+     ],
+     [
+      "kalu vezit",
+      "🍎🍎"
+     ],
+     [
+      "la gu",
+      "🚗🚗🚗"
+     ],
+     [
+      "pa vezit",
+      "🍎"
+     ],
+     [
+      "pa gu",
+      null
+     ]
+    ],
+    "opts": [
+     "🚗🚗🚗",
+     "🚗",
+     "🐢",
+     "🚗🚗"
+    ],
+    "ok": 1,
+    "answer": "🚗",
+    "rule": {
+     "text": "Each alien word is a number or a picture:",
+     "lines": [
+      "👽 pa = 1",
+      "👽 gu = 🚗"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "kod bepo",
+      "🌸"
+     ],
+     [
+      "tono bepo",
+      "🍎"
+     ],
+     [
+      "kod gusif",
+      "🌸🌸🌸"
+     ],
+     [
+      "ruz zulo",
+      "🍩🍩"
+     ],
+     [
+      "kod zulo",
+      null
+     ]
+    ],
+    "opts": [
+     "🌸🌸🌸",
+     "🌸🌸",
+     "🍎🍎",
+     "🌸"
+    ],
+    "ok": 1,
+    "answer": "🌸🌸",
+    "rule": {
+     "text": "Each alien word is a number or a picture:",
+     "lines": [
+      "👽 kod = 🌸",
+      "👽 zulo = 2"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "lofe gu",
+      "🐢"
+     ],
+     [
+      "lofe bo",
+      "🐢🐢"
+     ],
+     [
+      "bavar mo",
+      "🌸🌸🌸"
+     ],
+     [
+      "zefi bo",
+      "🐟🐟"
+     ],
+     [
+      "zefi mo",
+      null
+     ]
+    ],
+    "opts": [
+     "🐟",
+     "🐟🐟🐟",
+     "🌸🌸🌸",
+     "🐢🐢🐢"
+    ],
+    "ok": 1,
+    "answer": "🐟🐟🐟",
+    "rule": {
+     "text": "Each alien word is a number or a picture:",
+     "lines": [
+      "👽 zefi = 🐟",
+      "👽 mo = 3"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "zuva mo",
+      "🐢🐢"
+     ],
+     [
+      "ma visa",
+      "⭐"
+     ],
+     [
+      "ma buka",
+      "⭐⭐⭐"
+     ],
+     [
+      "pa mo",
+      "🐱🐱"
+     ],
+     [
+      "ma mo",
+      null
+     ]
+    ],
+    "opts": [
+     "⭐⭐",
+     "⭐",
+     "🐱🐱",
+     "🐢🐢"
+    ],
+    "ok": 0,
+    "answer": "⭐⭐",
+    "rule": {
+     "text": "Each alien word is a number or a picture:",
+     "lines": [
+      "👽 ma = ⭐",
+      "👽 mo = 2"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "lemuv mi",
+      "🍩"
+     ],
+     [
+      "zugi mi",
+      "🐱"
+     ],
+     [
+      "kizon pu",
+      "🐢🐢🐢"
+     ],
+     [
+      "zugi fa",
+      "🐱🐱"
+     ],
+     [
+      "lemuv fa",
+      null
+     ]
+    ],
+    "opts": [
+     "🐱🐱",
+     "🐢🐢",
+     "🍩🍩",
+     "🍩🍩🍩"
+    ],
+    "ok": 2,
+    "answer": "🍩🍩",
+    "rule": {
+     "text": "Each alien word is a number or a picture:",
+     "lines": [
+      "👽 lemuv = 🍩",
+      "👽 fa = 2"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "tami sedar",
+      "🐱"
+     ],
+     [
+      "leg sedar",
+      "🐱🐱"
+     ],
+     [
+      "leg mo",
+      "🍄🍄"
+     ],
+     [
+      "tami mo",
+      null
+     ]
+    ],
+    "opts": [
+     "🍄🍄",
+     "🍄",
+     "🐱🐱",
+     "🐱"
+    ],
+    "ok": 1,
+    "answer": "🍄",
+    "rule": {
+     "text": "Each alien word is a number or a picture:",
+     "lines": [
+      "👽 tami = 1",
+      "👽 mo = 🍄"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "vab sip",
+      "🍄"
+     ],
+     [
+      "vab tisob",
+      "🐱"
+     ],
+     [
+      "seri sip",
+      "🍄🍄"
+     ],
+     [
+      "seri tisob",
+      null
+     ]
+    ],
+    "opts": [
+     "🍄🍄",
+     "🍄",
+     "🐱🐱",
+     "🐱"
+    ],
+    "ok": 2,
+    "answer": "🐱🐱",
+    "rule": {
+     "text": "Each alien word is a number or a picture:",
+     "lines": [
+      "👽 seri = 2",
+      "👽 tisob = 🐱"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "mi sigis",
+      "🍎"
+     ],
+     [
+      "peva pen",
+      "🐸🐸🐸"
+     ],
+     [
+      "mi pen",
+      "🐸"
+     ],
+     [
+      "peva sigis",
+      null
+     ]
+    ],
+    "opts": [
+     "🐸",
+     "🍎🍎🍎",
+     "🍎",
+     "🐸🐸🐸"
+    ],
+    "ok": 1,
+    "answer": "🍎🍎🍎",
+    "rule": {
+     "text": "Each alien word is a number or a picture:",
+     "lines": [
+      "👽 peva = 3",
+      "👽 sigis = 🍎"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "fera vesip",
+      "🍎🍎🍎"
+     ],
+     [
+      "lo puluk",
+      "🌸🌸"
+     ],
+     [
+      "fera puluk",
+      "🌸🌸🌸"
+     ],
+     [
+      "lo vesip",
+      null
+     ]
+    ],
+    "opts": [
+     "🌸🌸",
+     "🍎🍎",
+     "🌸🌸🌸",
+     "🍎🍎🍎"
+    ],
+    "ok": 1,
+    "answer": "🍎🍎",
+    "rule": {
+     "text": "Each alien word is a number or a picture:",
+     "lines": [
+      "👽 lo = 2",
+      "👽 vesip = 🍎"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "zel dage",
+      "🐸🐸🐸"
+     ],
+     [
+      "lo mata",
+      "🍩🍩"
+     ],
+     [
+      "lo dage",
+      "🐸🐸"
+     ],
+     [
+      "zel mata",
+      null
+     ]
+    ],
+    "opts": [
+     "🐸🐸",
+     "🍩🍩",
+     "🍩🍩🍩",
+     "🐸🐸🐸"
+    ],
+    "ok": 2,
+    "answer": "🍩🍩🍩",
+    "rule": {
+     "text": "Each alien word is a number or a picture:",
+     "lines": [
+      "👽 zel = 3",
+      "👽 mata = 🍩"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "lipel dute",
+      "🐟🐟"
+     ],
+     [
+      "lipel ze",
+      "🍎🍎"
+     ],
+     [
+      "de ze",
+      "🍎"
+     ],
+     [
+      "fepur dute",
+      "🐟🐟🐟"
+     ],
+     [
+      "fepur ze",
+      null
+     ]
+    ],
+    "opts": [
+     "🍎",
+     "🍎🍎🍎",
+     "🐟🐟🐟",
+     "🍎🍎"
+    ],
+    "ok": 1,
+    "answer": "🍎🍎🍎",
+    "rule": {
+     "text": "Each alien word is a number or a picture:",
+     "lines": [
+      "👽 fepur = 3",
+      "👽 ze = 🍎"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "mama tog",
+      "🚗🚗🚗"
+     ],
+     [
+      "dat tog",
+      "🚗🚗"
+     ],
+     [
+      "se to",
+      "🍎"
+     ],
+     [
+      "se tog",
+      "🚗"
+     ],
+     [
+      "dat to",
+      null
+     ]
+    ],
+    "opts": [
+     "🍎🍎",
+     "⭐⭐",
+     "🍎🍎🍎",
+     "🍎"
+    ],
+    "ok": 0,
+    "answer": "🍎🍎",
+    "rule": {
+     "text": "Each alien word is a number or a picture:",
+     "lines": [
+      "👽 dat = 2",
+      "👽 to = 🍎"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "molik rub",
+      "⭐⭐⭐"
+     ],
+     [
+      "giz ne",
+      "🍩🍩"
+     ],
+     [
+      "giz mukit",
+      "🚗🚗"
+     ],
+     [
+      "vunuz rub",
+      "⭐"
+     ],
+     [
+      "vunuz mukit",
+      null
+     ]
+    ],
+    "opts": [
+     "🚗",
+     "🚗🚗",
+     "🍩",
+     "⭐"
+    ],
+    "ok": 0,
+    "answer": "🚗",
+    "rule": {
+     "text": "Each alien word is a number or a picture:",
+     "lines": [
+      "👽 vunuz = 1",
+      "👽 mukit = 🚗"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "sis sopo",
+      "🚗🚗🚗"
+     ],
+     [
+      "rig na",
+      "🐢🐢"
+     ],
+     [
+      "ra vu",
+      "🐸"
+     ],
+     [
+      "rig sopo",
+      "🐢🐢🐢"
+     ],
+     [
+      "ra na",
+      null
+     ]
+    ],
+    "opts": [
+     "🐸🐸🐸",
+     "🚗🚗",
+     "🐢🐢",
+     "🐸🐸"
+    ],
+    "ok": 3,
+    "answer": "🐸🐸",
+    "rule": {
+     "text": "Each alien word is a number or a picture:",
+     "lines": [
+      "👽 ra = 🐸",
+      "👽 na = 2"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "fidiv di",
+      "🌸🌸"
+     ],
+     [
+      "do di",
+      "🎈🎈"
+     ],
+     [
+      "fidiv ta",
+      "🌸🌸🌸"
+     ],
+     [
+      "kep zafat",
+      "🐸"
+     ],
+     [
+      "kep ta",
+      null
+     ]
+    ],
+    "opts": [
+     "🎈🎈🎈",
+     "🐸🐸🐸",
+     "🐸",
+     "🐸🐸"
+    ],
+    "ok": 1,
+    "answer": "🐸🐸🐸",
+    "rule": {
+     "text": "Each alien word is a number or a picture:",
+     "lines": [
+      "👽 kep = 🐸",
+      "👽 ta = 3"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "moduv papu",
+      "🐢"
+     ],
+     [
+      "zi suzo",
+      "🚗🚗"
+     ],
+     [
+      "ladi keda",
+      "🐱🐱🐱"
+     ],
+     [
+      "zi keda",
+      "🚗🚗🚗"
+     ],
+     [
+      "moduv suzo",
+      null
+     ]
+    ],
+    "opts": [
+     "🚗🚗",
+     "🐢",
+     "🐢🐢",
+     "🐢🐢🐢"
+    ],
+    "ok": 2,
+    "answer": "🐢🐢",
+    "rule": {
+     "text": "Each alien word is a number or a picture:",
+     "lines": [
+      "👽 moduv = 🐢",
+      "👽 suzo = 2"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "bide nemat",
+      "🦋"
+     ],
+     [
+      "bide suza",
+      "🦋🦋"
+     ],
+     [
+      "pove nemat",
+      "🌸"
+     ],
+     [
+      "nos suza",
+      "🍩🍩"
+     ],
+     [
+      "nos nemat",
+      null
+     ]
+    ],
+    "opts": [
+     "🍩🍩",
+     "🦋",
+     "🌸",
+     "🍩"
+    ],
+    "ok": 3,
+    "answer": "🍩",
+    "rule": {
+     "text": "Each alien word is a number or a picture:",
+     "lines": [
+      "👽 nos = 🍩",
+      "👽 nemat = 1"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "zen sodug",
+      "🐟🐟🐟"
+     ],
+     [
+      "zen liz",
+      "🐸🐸🐸"
+     ],
+     [
+      "miru liz",
+      "🐸🐸"
+     ],
+     [
+      "miru sodug",
+      null
+     ]
+    ],
+    "opts": [
+     "🐸🐸",
+     "🐟🐟🐟",
+     "🐟🐟",
+     "🐸🐸🐸"
+    ],
+    "ok": 2,
+    "answer": "🐟🐟",
+    "rule": {
+     "text": "Each alien word is a number or a picture:",
+     "lines": [
+      "👽 miru = 2",
+      "👽 sodug = 🐟"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "voro lo",
+      "🍎🍎🍎"
+     ],
+     [
+      "bego lub",
+      "🐟"
+     ],
+     [
+      "voro lub",
+      "🐟🐟🐟"
+     ],
+     [
+      "bego lo",
+      null
+     ]
+    ],
+    "opts": [
+     "🐟🐟🐟",
+     "🍎🍎🍎",
+     "🐟",
+     "🍎"
+    ],
+    "ok": 3,
+    "answer": "🍎",
+    "rule": {
+     "text": "Each alien word is a number or a picture:",
+     "lines": [
+      "👽 bego = 1",
+      "👽 lo = 🍎"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "tiko nod",
+      "🍄🍄🍄"
+     ],
+     [
+      "tiko fus",
+      "🦋🦋🦋"
+     ],
+     [
+      "pupi nod",
+      "🍄"
+     ],
+     [
+      "pupi fus",
+      null
+     ]
+    ],
+    "opts": [
+     "🦋",
+     "🍄",
+     "🦋🦋🦋",
+     "🍄🍄🍄"
+    ],
+    "ok": 0,
+    "answer": "🦋",
+    "rule": {
+     "text": "Each alien word is a number or a picture:",
+     "lines": [
+      "👽 pupi = 1",
+      "👽 fus = 🦋"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "ralev fib",
+      "🚗"
+     ],
+     [
+      "ralev veg",
+      "🎈"
+     ],
+     [
+      "pu fib",
+      "🚗🚗"
+     ],
+     [
+      "pu veg",
+      null
+     ]
+    ],
+    "opts": [
+     "🎈",
+     "🚗🚗",
+     "🎈🎈",
+     "🚗"
+    ],
+    "ok": 2,
+    "answer": "🎈🎈",
+    "rule": {
+     "text": "Each alien word is a number or a picture:",
+     "lines": [
+      "👽 pu = 2",
+      "👽 veg = 🎈"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "feko los",
+      "⭐"
+     ],
+     [
+      "gig los",
+      "⭐⭐⭐"
+     ],
+     [
+      "gig gikur",
+      "🎈🎈🎈"
+     ],
+     [
+      "feko gikur",
+      null
+     ]
+    ],
+    "opts": [
+     "⭐⭐⭐",
+     "⭐",
+     "🎈🎈🎈",
+     "🎈"
+    ],
+    "ok": 3,
+    "answer": "🎈",
+    "rule": {
+     "text": "Each alien word is a number or a picture:",
+     "lines": [
+      "👽 feko = 1",
+      "👽 gikur = 🎈"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "kumub nu",
+      "🍄"
+     ],
+     [
+      "tib ki",
+      "🐢🐢🐢"
+     ],
+     [
+      "tib mezo",
+      "🍎🍎🍎"
+     ],
+     [
+      "ke nu",
+      "🍄🍄"
+     ],
+     [
+      "tib nu",
+      null
+     ]
+    ],
+    "opts": [
+     "🐢🐢🐢",
+     "🍄",
+     "🍄🍄🍄",
+     "🍎🍎🍎"
+    ],
+    "ok": 2,
+    "answer": "🍄🍄🍄",
+    "rule": {
+     "text": "Each alien word is a number or a picture:",
+     "lines": [
+      "👽 tib = 3",
+      "👽 nu = 🍄"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "kepav mi",
+      "🌸🌸"
+     ],
+     [
+      "kepav ke",
+      "🐸🐸"
+     ],
+     [
+      "de le",
+      "🎈"
+     ],
+     [
+      "kepav le",
+      "🎈🎈"
+     ],
+     [
+      "de ke",
+      null
+     ]
+    ],
+    "opts": [
+     "🎈",
+     "🌸",
+     "🐸🐸",
+     "🐸"
+    ],
+    "ok": 3,
+    "answer": "🐸",
+    "rule": {
+     "text": "Each alien word is a number or a picture:",
+     "lines": [
+      "👽 de = 1",
+      "👽 ke = 🐸"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "nu ler",
+      "🐟🐟🐟"
+     ],
+     [
+      "toka ve",
+      "🐸"
+     ],
+     [
+      "nu sir",
+      "🦋🦋🦋"
+     ],
+     [
+      "nuve ler",
+      "🐟🐟"
+     ],
+     [
+      "nuve sir",
+      null
+     ]
+    ],
+    "opts": [
+     "🐟🐟",
+     "🦋🦋🦋",
+     "🐸🐸",
+     "🦋🦋"
+    ],
+    "ok": 3,
+    "answer": "🦋🦋",
+    "rule": {
+     "text": "Each alien word is a number or a picture:",
+     "lines": [
+      "👽 nuve = 2",
+      "👽 sir = 🦋"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "reg du",
+      "🐟"
+     ],
+     [
+      "pa dose",
+      "🍎🍎🍎"
+     ],
+     [
+      "pe dose",
+      "🍄🍄🍄"
+     ],
+     [
+      "pe gupet",
+      "🍄🍄"
+     ],
+     [
+      "pe du",
+      null
+     ]
+    ],
+    "opts": [
+     "🍎",
+     "🍄🍄🍄",
+     "🍄",
+     "🍄🍄"
+    ],
+    "ok": 2,
+    "answer": "🍄",
+    "rule": {
+     "text": "Each alien word is a number or a picture:",
+     "lines": [
+      "👽 pe = 🍄",
+      "👽 du = 1"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "beti peze",
+      "🦋"
+     ],
+     [
+      "bala sar",
+      "🚗🚗🚗"
+     ],
+     [
+      "nones sar",
+      "🐟🐟🐟"
+     ],
+     [
+      "beti ped",
+      "🦋🦋"
+     ],
+     [
+      "nones peze",
+      null
+     ]
+    ],
+    "opts": [
+     "🐟🐟",
+     "🐟",
+     "🐟🐟🐟",
+     "🦋"
+    ],
+    "ok": 1,
+    "answer": "🐟",
+    "rule": {
+     "text": "Each alien word is a number or a picture:",
+     "lines": [
+      "👽 nones = 🐟",
+      "👽 peze = 1"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "mi zeriz",
+      "🦋"
+     ],
+     [
+      "du fido",
+      "⭐⭐"
+     ],
+     [
+      "mi mefa",
+      "🚗"
+     ],
+     [
+      "mi fido",
+      "⭐"
+     ],
+     [
+      "du zeriz",
+      null
+     ]
+    ],
+    "opts": [
+     "🦋🦋🦋",
+     "⭐⭐",
+     "🦋🦋",
+     "🦋"
+    ],
+    "ok": 2,
+    "answer": "🦋🦋",
+    "rule": {
+     "text": "Each alien word is a number or a picture:",
+     "lines": [
+      "👽 du = 2",
+      "👽 zeriz = 🦋"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "role dere",
+      "🐢🐢"
+     ],
+     [
+      "nagam zor",
+      "🍎🍎🍎"
+     ],
+     [
+      "le zor",
+      "🍩🍩🍩"
+     ],
+     [
+      "nagam vis",
+      "🍎"
+     ],
+     [
+      "le dere",
+      null
+     ]
+    ],
+    "opts": [
+     "🍩🍩🍩",
+     "🍩🍩",
+     "🍎🍎",
+     "🐢🐢"
+    ],
+    "ok": 1,
+    "answer": "🍩🍩",
+    "rule": {
+     "text": "Each alien word is a number or a picture:",
+     "lines": [
+      "👽 le = 🍩",
+      "👽 dere = 2"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "tami lidi",
+      "🦋"
+     ],
+     [
+      "tami za",
+      "🌸"
+     ],
+     [
+      "kup za",
+      "🌸🌸"
+     ],
+     [
+      "kup lidi",
+      null
+     ]
+    ],
+    "opts": [
+     "🦋🦋",
+     "🌸🌸",
+     "🦋",
+     "🌸"
+    ],
+    "ok": 0,
+    "answer": "🦋🦋",
+    "rule": {
+     "text": "Each alien word is a number or a picture:",
+     "lines": [
+      "👽 kup = 2",
+      "👽 lidi = 🦋"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "lafo tuner",
+      "🍩🍩"
+     ],
+     [
+      "tituv tuner",
+      "🍩"
+     ],
+     [
+      "tituv voke",
+      "🐱"
+     ],
+     [
+      "lafo voke",
+      null
+     ]
+    ],
+    "opts": [
+     "🐱",
+     "🍩🍩",
+     "🍩",
+     "🐱🐱"
+    ],
+    "ok": 3,
+    "answer": "🐱🐱",
+    "rule": {
+     "text": "Each alien word is a number or a picture:",
+     "lines": [
+      "👽 lafo = 2",
+      "👽 voke = 🐱"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "mitug nu",
+      "🐱"
+     ],
+     [
+      "mona bagi",
+      "⭐⭐"
+     ],
+     [
+      "mona nu",
+      "🐱🐱"
+     ],
+     [
+      "mitug bagi",
+      null
+     ]
+    ],
+    "opts": [
+     "🐱",
+     "🐱🐱",
+     "⭐",
+     "⭐⭐"
+    ],
+    "ok": 2,
+    "answer": "⭐",
+    "rule": {
+     "text": "Each alien word is a number or a picture:",
+     "lines": [
+      "👽 mitug = 1",
+      "👽 bagi = ⭐"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "vake siki",
+      "🍄🍄🍄"
+     ],
+     [
+      "letav za",
+      "🚗"
+     ],
+     [
+      "vake za",
+      "🚗🚗🚗"
+     ],
+     [
+      "letav siki",
+      null
+     ]
+    ],
+    "opts": [
+     "🚗🚗🚗",
+     "🍄",
+     "🚗",
+     "🍄🍄🍄"
+    ],
+    "ok": 1,
+    "answer": "🍄",
+    "rule": {
+     "text": "Each alien word is a number or a picture:",
+     "lines": [
+      "👽 letav = 1",
+      "👽 siki = 🍄"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "ka luk",
+      "🐱🐱🐱"
+     ],
+     [
+      "ka se",
+      "🐸🐸🐸"
+     ],
+     [
+      "befu luk",
+      "🐱🐱"
+     ],
+     [
+      "befu se",
+      null
+     ]
+    ],
+    "opts": [
+     "🐱🐱🐱",
+     "🐸🐸🐸",
+     "🐸🐸",
+     "🐱🐱"
+    ],
+    "ok": 2,
+    "answer": "🐸🐸",
+    "rule": {
+     "text": "Each alien word is a number or a picture:",
+     "lines": [
+      "👽 befu = 2",
+      "👽 se = 🐸"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "vi fo",
+      "🦋"
+     ],
+     [
+      "tat fo",
+      "🦋🦋"
+     ],
+     [
+      "tat rede",
+      "🎈🎈"
+     ],
+     [
+      "vi rede",
+      null
+     ]
+    ],
+    "opts": [
+     "🎈🎈",
+     "🦋",
+     "🦋🦋",
+     "🎈"
+    ],
+    "ok": 3,
+    "answer": "🎈",
+    "rule": {
+     "text": "Each alien word is a number or a picture:",
+     "lines": [
+      "👽 vi = 1",
+      "👽 rede = 🎈"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "rin torim",
+      "🐱🐱"
+     ],
+     [
+      "to bazub",
+      "🐢🐢🐢"
+     ],
+     [
+      "to torim",
+      "🐱🐱🐱"
+     ],
+     [
+      "ki bazub",
+      "🐢"
+     ],
+     [
+      "ki torim",
+      null
+     ]
+    ],
+    "opts": [
+     "🐢",
+     "🐱🐱🐱",
+     "🍎",
+     "🐱"
+    ],
+    "ok": 3,
+    "answer": "🐱",
+    "rule": {
+     "text": "Each alien word is a number or a picture:",
+     "lines": [
+      "👽 ki = 1",
+      "👽 torim = 🐱"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "li na",
+      "🐢🐢🐢"
+     ],
+     [
+      "si sene",
+      "🍄"
+     ],
+     [
+      "li pifig",
+      "🌸🌸🌸"
+     ],
+     [
+      "pesek pifig",
+      "🌸🌸"
+     ],
+     [
+      "pesek na",
+      null
+     ]
+    ],
+    "opts": [
+     "🐢🐢🐢",
+     "🐢",
+     "🌸🌸",
+     "🐢🐢"
+    ],
+    "ok": 3,
+    "answer": "🐢🐢",
+    "rule": {
+     "text": "Each alien word is a number or a picture:",
+     "lines": [
+      "👽 pesek = 2",
+      "👽 na = 🐢"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "pigod bu",
+      "🦋"
+     ],
+     [
+      "negen kolar",
+      "🍩🍩"
+     ],
+     [
+      "fi vuzel",
+      "🐱🐱🐱"
+     ],
+     [
+      "negen bu",
+      "🍩"
+     ],
+     [
+      "pigod kolar",
+      null
+     ]
+    ],
+    "opts": [
+     "🦋🦋",
+     "🦋",
+     "🦋🦋🦋",
+     "🐱🐱"
+    ],
+    "ok": 0,
+    "answer": "🦋🦋",
+    "rule": {
+     "text": "Each alien word is a number or a picture:",
+     "lines": [
+      "👽 pigod = 🦋",
+      "👽 kolar = 2"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "zi pu",
+      "🚗🚗"
+     ],
+     [
+      "bu pu",
+      "🚗🚗🚗"
+     ],
+     [
+      "zi gurig",
+      "🐢🐢"
+     ],
+     [
+      "mere bef",
+      "🐸"
+     ],
+     [
+      "bu gurig",
+      null
+     ]
+    ],
+    "opts": [
+     "🐸🐸🐸",
+     "🚗🚗🚗",
+     "🐢🐢",
+     "🐢🐢🐢"
+    ],
+    "ok": 3,
+    "answer": "🐢🐢🐢",
+    "rule": {
+     "text": "Each alien word is a number or a picture:",
+     "lines": [
+      "👽 bu = 3",
+      "👽 gurig = 🐢"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "lib guni",
+      "🍩🍩🍩"
+     ],
+     [
+      "peza fi",
+      "🌸🌸"
+     ],
+     [
+      "lib fi",
+      "🌸🌸🌸"
+     ],
+     [
+      "dekom las",
+      "🐱"
+     ],
+     [
+      "peza guni",
+      null
+     ]
+    ],
+    "opts": [
+     "🍩🍩",
+     "🐱🐱",
+     "🍩",
+     "🍩🍩🍩"
+    ],
+    "ok": 0,
+    "answer": "🍩🍩",
+    "rule": {
+     "text": "Each alien word is a number or a picture:",
+     "lines": [
+      "👽 peza = 2",
+      "👽 guni = 🍩"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "binir le",
+      "🦋🦋"
+     ],
+     [
+      "fa le",
+      "🦋🦋🦋"
+     ],
+     [
+      "binir semi",
+      "🐸🐸"
+     ],
+     [
+      "zul vogo",
+      "🍎"
+     ],
+     [
+      "fa vogo",
+      null
+     ]
+    ],
+    "opts": [
+     "🍎",
+     "🍎🍎",
+     "🦋🦋🦋",
+     "🍎🍎🍎"
+    ],
+    "ok": 3,
+    "answer": "🍎🍎🍎",
+    "rule": {
+     "text": "Each alien word is a number or a picture:",
+     "lines": [
+      "👽 fa = 3",
+      "👽 vogo = 🍎"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "dopu kosi",
+      "🍎🍎🍎"
+     ],
+     [
+      "fuvuf kosi",
+      "🍎"
+     ],
+     [
+      "dopu ra",
+      "🚗🚗🚗"
+     ],
+     [
+      "fuvuf ra",
+      null
+     ]
+    ],
+    "opts": [
+     "🍎🍎🍎",
+     "🚗",
+     "🍎",
+     "🚗🚗🚗"
+    ],
+    "ok": 1,
+    "answer": "🚗",
+    "rule": {
+     "text": "Each alien word is a number or a picture:",
+     "lines": [
+      "👽 fuvuf = 1",
+      "👽 ra = 🚗"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "mebo kela",
+      "🍩"
+     ],
+     [
+      "tu kela",
+      "🍩🍩🍩"
+     ],
+     [
+      "tu lod",
+      "🐟🐟🐟"
+     ],
+     [
+      "mebo lod",
+      null
+     ]
+    ],
+    "opts": [
+     "🐟",
+     "🐟🐟🐟",
+     "🍩",
+     "🍩🍩🍩"
+    ],
+    "ok": 0,
+    "answer": "🐟",
+    "rule": {
+     "text": "Each alien word is a number or a picture:",
+     "lines": [
+      "👽 mebo = 1",
+      "👽 lod = 🐟"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "far vabag",
+      "🍄"
+     ],
+     [
+      "tok vabag",
+      "🍄🍄🍄"
+     ],
+     [
+      "far mi",
+      "🐟"
+     ],
+     [
+      "tok mi",
+      null
+     ]
+    ],
+    "opts": [
+     "🐟",
+     "🐟🐟🐟",
+     "🍄",
+     "🍄🍄🍄"
+    ],
+    "ok": 1,
+    "answer": "🐟🐟🐟",
+    "rule": {
+     "text": "Each alien word is a number or a picture:",
+     "lines": [
+      "👽 tok = 3",
+      "👽 mi = 🐟"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "mu zi",
+      "🌸🌸"
+     ],
+     [
+      "lis pi",
+      "🐸"
+     ],
+     [
+      "mu pi",
+      "🐸🐸"
+     ],
+     [
+      "lis zi",
+      null
+     ]
+    ],
+    "opts": [
+     "🌸🌸",
+     "🐸🐸",
+     "🌸",
+     "🐸"
+    ],
+    "ok": 2,
+    "answer": "🌸",
+    "rule": {
+     "text": "Each alien word is a number or a picture:",
+     "lines": [
+      "👽 lis = 1",
+      "👽 zi = 🌸"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "kuleb feta",
+      "🚗🚗🚗"
+     ],
+     [
+      "fedu feta",
+      "🚗"
+     ],
+     [
+      "fedu dolak",
+      "🍄"
+     ],
+     [
+      "kuleb dolak",
+      null
+     ]
+    ],
+    "opts": [
+     "🚗🚗🚗",
+     "🍄",
+     "🚗",
+     "🍄🍄🍄"
+    ],
+    "ok": 3,
+    "answer": "🍄🍄🍄",
+    "rule": {
+     "text": "Each alien word is a number or a picture:",
+     "lines": [
+      "👽 kuleb = 3",
+      "👽 dolak = 🍄"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "sa daz",
+      "🍩"
+     ],
+     [
+      "sa liro",
+      "🎈"
+     ],
+     [
+      "toz daz",
+      "🍩🍩🍩"
+     ],
+     [
+      "toz liro",
+      null
+     ]
+    ],
+    "opts": [
+     "🎈",
+     "🎈🎈🎈",
+     "🍩",
+     "🍩🍩🍩"
+    ],
+    "ok": 1,
+    "answer": "🎈🎈🎈",
+    "rule": {
+     "text": "Each alien word is a number or a picture:",
+     "lines": [
+      "👽 toz = 3",
+      "👽 liro = 🎈"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "pul da",
+      "🐱🐱🐱"
+     ],
+     [
+      "va medu",
+      "🐢"
+     ],
+     [
+      "sofa tif",
+      "🌸🌸"
+     ],
+     [
+      "sofa medu",
+      "🐢🐢"
+     ],
+     [
+      "sofa da",
+      null
+     ]
+    ],
+    "opts": [
+     "🐱🐱",
+     "🌸🌸",
+     "🐱",
+     "🐱🐱🐱"
+    ],
+    "ok": 0,
+    "answer": "🐱🐱",
+    "rule": {
+     "text": "Each alien word is a number or a picture:",
+     "lines": [
+      "👽 sofa = 2",
+      "👽 da = 🐱"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "pobe zolip",
+      "🎈"
+     ],
+     [
+      "ra zu",
+      "🌸🌸🌸"
+     ],
+     [
+      "bi pur",
+      "⭐⭐"
+     ],
+     [
+      "bi zu",
+      "🌸🌸"
+     ],
+     [
+      "ra pur",
+      null
+     ]
+    ],
+    "opts": [
+     "🌸🌸🌸",
+     "⭐⭐⭐",
+     "⭐⭐",
+     "🎈🎈🎈"
+    ],
+    "ok": 1,
+    "answer": "⭐⭐⭐",
+    "rule": {
+     "text": "Each alien word is a number or a picture:",
+     "lines": [
+      "👽 ra = 3",
+      "👽 pur = ⭐"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "tozi dur",
+      "🍎🍎🍎"
+     ],
+     [
+      "nabe su",
+      "🐱"
+     ],
+     [
+      "lilu na",
+      "🚗🚗"
+     ],
+     [
+      "nabe na",
+      "🐱🐱"
+     ],
+     [
+      "lilu dur",
+      null
+     ]
+    ],
+    "opts": [
+     "🚗🚗",
+     "🚗",
+     "🐱🐱🐱",
+     "🚗🚗🚗"
+    ],
+    "ok": 3,
+    "answer": "🚗🚗🚗",
+    "rule": {
+     "text": "Each alien word is a number or a picture:",
+     "lines": [
+      "👽 lilu = 🚗",
+      "👽 dur = 3"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "ku gu",
+      "🎈🎈🎈"
+     ],
+     [
+      "ku rub",
+      "🎈🎈"
+     ],
+     [
+      "ranap timop",
+      "🍎"
+     ],
+     [
+      "zu timop",
+      "🐢"
+     ],
+     [
+      "ranap gu",
+      null
+     ]
+    ],
+    "opts": [
+     "🍎🍎🍎",
+     "🐢🐢🐢",
+     "🎈🎈🎈",
+     "🍎🍎"
+    ],
+    "ok": 0,
+    "answer": "🍎🍎🍎",
+    "rule": {
+     "text": "Each alien word is a number or a picture:",
+     "lines": [
+      "👽 ranap = 🍎",
+      "👽 gu = 3"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "savon kisiz",
+      "🐢🐢🐢"
+     ],
+     [
+      "savon dup",
+      "🍎🍎🍎"
+     ],
+     [
+      "nara dup",
+      "🍎🍎"
+     ],
+     [
+      "keraf no",
+      "🍩"
+     ],
+     [
+      "keraf kisiz",
+      null
+     ]
+    ],
+    "opts": [
+     "🐢🐢",
+     "🍎",
+     "🐢",
+     "🍩"
+    ],
+    "ok": 2,
+    "answer": "🐢",
+    "rule": {
+     "text": "Each alien word is a number or a picture:",
+     "lines": [
+      "👽 keraf = 1",
+      "👽 kisiz = 🐢"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "di zifi",
+      "🐱🐱🐱"
+     ],
+     [
+      "ma go",
+      "🍎🍎"
+     ],
+     [
+      "da zifi",
+      "🦋🦋🦋"
+     ],
+     [
+      "ma boto",
+      "🍎"
+     ],
+     [
+      "da boto",
+      null
+     ]
+    ],
+    "opts": [
+     "🐱",
+     "🦋",
+     "🍎",
+     "🦋🦋"
+    ],
+    "ok": 1,
+    "answer": "🦋",
+    "rule": {
+     "text": "Each alien word is a number or a picture:",
+     "lines": [
+      "👽 da = 🦋",
+      "👽 boto = 1"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "dal vezi",
+      "🦋🦋"
+     ],
+     [
+      "notag mab",
+      "🍩🍩🍩"
+     ],
+     [
+      "dal mab",
+      "🍩🍩"
+     ],
+     [
+      "notag vezi",
+      null
+     ]
+    ],
+    "opts": [
+     "🍩🍩🍩",
+     "🦋🦋🦋",
+     "🍩🍩",
+     "🦋🦋"
+    ],
+    "ok": 1,
+    "answer": "🦋🦋🦋",
+    "rule": {
+     "text": "Each alien word is a number or a picture:",
+     "lines": [
+      "👽 notag = 3",
+      "👽 vezi = 🦋"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "sora se",
+      "🎈🎈🎈"
+     ],
+     [
+      "si sagoz",
+      "🍎🍎"
+     ],
+     [
+      "si se",
+      "🎈🎈"
+     ],
+     [
+      "sora sagoz",
+      null
+     ]
+    ],
+    "opts": [
+     "🍎🍎",
+     "🎈🎈🎈",
+     "🎈🎈",
+     "🍎🍎🍎"
+    ],
+    "ok": 3,
+    "answer": "🍎🍎🍎",
+    "rule": {
+     "text": "Each alien word is a number or a picture:",
+     "lines": [
+      "👽 sora = 3",
+      "👽 sagoz = 🍎"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "none liga",
+      "🐢🐢🐢"
+     ],
+     [
+      "dinud liga",
+      "🐢"
+     ],
+     [
+      "none vosi",
+      "🎈🎈🎈"
+     ],
+     [
+      "dinud vosi",
+      null
+     ]
+    ],
+    "opts": [
+     "🐢🐢🐢",
+     "🎈",
+     "🐢",
+     "🎈🎈🎈"
+    ],
+    "ok": 1,
+    "answer": "🎈",
+    "rule": {
+     "text": "Each alien word is a number or a picture:",
+     "lines": [
+      "👽 dinud = 1",
+      "👽 vosi = 🎈"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "gevo bipi",
+      "🐢🐢🐢"
+     ],
+     [
+      "gevo ma",
+      "⭐⭐⭐"
+     ],
+     [
+      "tosan bipi",
+      "🐢"
+     ],
+     [
+      "tosan ma",
+      null
+     ]
+    ],
+    "opts": [
+     "⭐",
+     "🐢🐢🐢",
+     "⭐⭐⭐",
+     "🐢"
+    ],
+    "ok": 0,
+    "answer": "⭐",
+    "rule": {
+     "text": "Each alien word is a number or a picture:",
+     "lines": [
+      "👽 tosan = 1",
+      "👽 ma = ⭐"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "tomop lino",
+      "🚗"
+     ],
+     [
+      "tomop diru",
+      "🦋"
+     ],
+     [
+      "rufel diru",
+      "🦋🦋"
+     ],
+     [
+      "rufel lino",
+      null
+     ]
+    ],
+    "opts": [
+     "🚗🚗",
+     "🦋🦋",
+     "🦋",
+     "🚗"
+    ],
+    "ok": 0,
+    "answer": "🚗🚗",
+    "rule": {
+     "text": "Each alien word is a number or a picture:",
+     "lines": [
+      "👽 rufel = 2",
+      "👽 lino = 🚗"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "fu nuku",
+      "🌸🌸"
+     ],
+     [
+      "zu nuku",
+      "🌸"
+     ],
+     [
+      "zu ka",
+      "🐸"
+     ],
+     [
+      "fu ka",
+      null
+     ]
+    ],
+    "opts": [
+     "🌸",
+     "🐸🐸",
+     "🌸🌸",
+     "🐸"
+    ],
+    "ok": 1,
+    "answer": "🐸🐸",
+    "rule": {
+     "text": "Each alien word is a number or a picture:",
+     "lines": [
+      "👽 fu = 2",
+      "👽 ka = 🐸"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "alien": [
+     [
+      "ti toka",
+      "🌸"
+     ],
+     [
+      "folal mebu",
+      "🍩🍩🍩"
+     ],
+     [
+      "peso mebu",
+      "🍩🍩"
+     ],
+     [
+      "peso be",
+      "🦋🦋"
+     ],
+     [
+      "ti be",
+      null
+     ]
+    ],
+    "opts": [
+     "🦋",
+     "🦋🦋",
+     "🌸",
+     "🍩"
+    ],
+    "ok": 0,
+    "answer": "🦋",
+    "rule": {
+     "text": "Each alien word is a number or a picture:",
+     "lines": [
+      "👽 ti = 1",
+      "👽 be = 🦋"
+     ]
+    }
+   }
+  ]
+ }
+}

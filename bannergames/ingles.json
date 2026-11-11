@@ -1,0 +1,1716 @@
+{
+ "type": "quiz",
+ "url": "https://educativos.juegosboom.com/fabrica-de-frases",
+ "delay": 3,
+ "every_hours": 12,
+ "closed_hours": 24,
+ "wait": 9,
+ "reveal": 4,
+ "colors": {
+  "bg1": "#3b2a7a",
+  "bg2": "#140c33",
+  "accent": "#7048e8",
+  "cta": "#ffd43b",
+  "ctaText": "#2b1a0e"
+ },
+ "texts": {
+  "es": {
+   "think": "¡Piensa!",
+   "solved": "¿Lo has acertado?",
+   "answer": "Respuesta",
+   "cta": "Juega gratis ▶",
+   "later": "Seguir leyendo",
+   "barCta": "Jugar",
+   "close": "Cerrar",
+   "expand": "Ampliar",
+   "brand": "🇬🇧 Inglés: ¿qué palabra falta?",
+   "mini": "Inglés: ¿qué palabra falta?",
+   "question": "¿QUÉ PALABRA FALTA? 🇬🇧",
+   "bar": "🇬🇧 ¿Qué palabra falta?"
+  }
+ },
+ "items": {
+  "es": [
+   {
+    "kind": "card",
+    "emoji": "7️⃣",
+    "text": "_ am seven.",
+    "sub": "Tengo siete años.",
+    "blank": true,
+    "opts": [
+     "you",
+     "I",
+     "she",
+     "he"
+    ],
+    "ok": 1,
+    "answer": "I",
+    "rule": {
+     "text": "«I» = yo. En inglés la edad se dice con am: I am seven = tengo siete años.",
+     "lines": [
+      "I am seven."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🏠",
+    "text": "_ are at home.",
+    "sub": "Estamos en casa.",
+    "blank": true,
+    "opts": [
+     "you",
+     "they",
+     "we",
+     "I"
+    ],
+    "ok": 2,
+    "answer": "we",
+    "rule": {
+     "text": "«we» = nosotros, nosotras. Para hablar de ti y de otras personas juntos.",
+     "lines": [
+      "we are at home."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🐘",
+    "text": "I see _ elephant.",
+    "sub": "Veo un elefante.",
+    "blank": true,
+    "opts": [
+     "this",
+     "the",
+     "a",
+     "an"
+    ],
+    "ok": 3,
+    "answer": "an",
+    "rule": {
+     "text": "«an» = un / una. Igual que a, pero delante de palabras que empiezan por sonido de vocal (a, e, i, o, u). Así se pronuncia más fácil.",
+     "lines": [
+      "I see an elephant."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🧒🧒👇",
+    "text": "Who are _ children?",
+    "sub": "¿Quiénes son estos niños?",
+    "blank": true,
+    "opts": [
+     "these",
+     "those",
+     "that",
+     "this"
+    ],
+    "ok": 0,
+    "answer": "these",
+    "rule": {
+     "text": "«these» = estos, estas. Como this, pero para VARIAS cosas que están cerca de ti.",
+     "lines": [
+      "Who are these children?"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🏫",
+    "text": "This is _ classroom.",
+    "sub": "Esta es nuestra clase.",
+    "blank": true,
+    "opts": [
+     "their",
+     "your",
+     "our",
+     "his"
+    ],
+    "ok": 2,
+    "answer": "our",
+    "rule": {
+     "text": "«our» = nuestro, nuestra, nuestros. Para decir que algo es DE NOSOTROS (de we).",
+     "lines": [
+      "This is our classroom."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🤷",
+    "text": "I have _ idea.",
+    "sub": "Ni idea.",
+    "blank": true,
+    "opts": [
+     "didn't",
+     "no",
+     "is",
+     "not"
+    ],
+    "ok": 1,
+    "answer": "no",
+    "rule": {
+     "text": "«no» = no, ningún, ninguna. Para responder «no» y para decir que NO HAY ninguno: no + cosa.",
+     "lines": [
+      "I have no idea."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "☕",
+    "text": "My dad _ drink coffee.",
+    "sub": "Mi padre no bebe café.",
+    "blank": true,
+    "opts": [
+     "does",
+     "doesn't",
+     "didn't",
+     "did"
+    ],
+    "ok": 1,
+    "answer": "doesn't",
+    "rule": {
+     "text": "«doesn't» = no (con he, she, it). Para decir que NO, con he, she, it. El verbo de después va SIN -s.",
+     "lines": [
+      "My dad doesn't drink coffee."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🐱🛏️",
+    "text": "The cat is _ the bed.",
+    "sub": "El gato está encima de la cama.",
+    "blank": true,
+    "opts": [
+     "at",
+     "on",
+     "without",
+     "between"
+    ],
+    "ok": 1,
+    "answer": "on",
+    "rule": {
+     "text": "«on» = en, encima de, sobre. Para decir que algo está ENCIMA de una superficie, tocándola. También con los días de la semana.",
+     "lines": [
+      "The cat is on the bed."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🍫",
+    "text": "A box _ chocolates.",
+    "sub": "Una caja de bombones.",
+    "blank": true,
+    "opts": [
+     "on",
+     "behind",
+     "under",
+     "of"
+    ],
+    "ok": 3,
+    "answer": "of",
+    "rule": {
+     "text": "«of» = de. Para decir de qué está lleno o hecho algo, o que es una parte de algo: a glass of water, a piece of cake.",
+     "lines": [
+      "A box of chocolates."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🎨",
+    "text": "_ colour is it?",
+    "sub": "¿De qué color es?",
+    "blank": true,
+    "opts": [
+     "why",
+     "what",
+     "how",
+     "who"
+    ],
+    "ok": 1,
+    "answer": "what",
+    "rule": {
+     "text": "«what» = qué, cuál. Para preguntar por COSAS: qué es, qué quieres, qué haces.",
+     "lines": [
+      "what colour is it?"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🙂",
+    "text": "_ are you?",
+    "sub": "¿Cómo estás?",
+    "blank": true,
+    "opts": [
+     "when",
+     "where",
+     "which",
+     "how"
+    ],
+    "ok": 3,
+    "answer": "how",
+    "rule": {
+     "text": "«how» = cómo. Para preguntar de qué MANERA se hace algo o cómo está algo o alguien.",
+     "lines": [
+      "how are you?"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🎂",
+    "text": "Would you like _ cake?",
+    "sub": "¿Quieres un poco de tarta?",
+    "blank": true,
+    "opts": [
+     "many",
+     "some",
+     "much",
+     "any"
+    ],
+    "ok": 1,
+    "answer": "some",
+    "rule": {
+     "text": "«some» = algo de, unos, unas. Para OFRECER algo se usa some, aunque sea una pregunta.",
+     "lines": [
+      "Would you like some cake?"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🎬",
+    "text": "_ you see the film?",
+    "sub": "¿Viste la peli?",
+    "blank": true,
+    "opts": [
+     "didn't",
+     "does",
+     "do",
+     "did"
+    ],
+    "ok": 3,
+    "answer": "did",
+    "rule": {
+     "text": "«did» = auxiliar para preguntar en pasado. Va al principio de las preguntas sobre el PASADO, con todas las personas. El verbo de después va normal, sin -ed.",
+     "lines": [
+      "did you see the film?"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "❓",
+    "text": "Where were you _?",
+    "sub": "¿Dónde estabas ayer?",
+    "blank": true,
+    "opts": [
+     "yesterday",
+     "tomorrow",
+     "after",
+     "before"
+    ],
+    "ok": 0,
+    "answer": "yesterday",
+    "rule": {
+     "text": "«yesterday» = ayer. Para hablar del día ANTERIOR a hoy. Va con verbos en pasado.",
+     "lines": [
+      "Where were you yesterday?"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🐘",
+    "text": "The elephant is _ big.",
+    "sub": "El elefante es muy grande.",
+    "blank": true,
+    "opts": [
+     "too",
+     "also",
+     "only",
+     "very"
+    ],
+    "ok": 3,
+    "answer": "very",
+    "rule": {
+     "text": "«very» = muy. Para dar MÁS fuerza a una palabra: very big = muy grande.",
+     "lines": [
+      "The elephant is very big."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🍦",
+    "text": "_ children love ice cream.",
+    "sub": "A la mayoría de los niños les encanta el helado.",
+    "blank": true,
+    "opts": [
+     "most",
+     "than",
+     "more",
+     "usually"
+    ],
+    "ok": 0,
+    "answer": "most",
+    "rule": {
+     "text": "«most» = el más, la más, la mayoría. Para decir que algo es lo MÁS de todos: the most beautiful = el más bonito. También «la mayoría»: most children = la mayoría de los niños.",
+     "lines": [
+      "most children love ice cream."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🎮",
+    "text": "Can _ play?",
+    "sub": "¿Puedo jugar?",
+    "blank": true,
+    "opts": [
+     "I",
+     "we",
+     "he",
+     "it"
+    ],
+    "ok": 0,
+    "answer": "I",
+    "rule": {
+     "text": "«I» = yo. Para hablar de ti mismo cuando haces algo. Se escribe SIEMPRE en mayúscula, aunque vaya en mitad de la frase.",
+     "lines": [
+      "Can I play?"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "👟",
+    "text": "Are _ your shoes?",
+    "sub": "¿Son tus zapatos?",
+    "blank": true,
+    "opts": [
+     "they",
+     "she",
+     "you",
+     "he"
+    ],
+    "ok": 0,
+    "answer": "they",
+    "rule": {
+     "text": "«they» = ellos, ellas. Para hablar de varias personas, animales o cosas.",
+     "lines": [
+      "Are they your shoes?"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "💡",
+    "text": "I have _ idea!",
+    "sub": "¡Tengo una idea!",
+    "blank": true,
+    "opts": [
+     "these",
+     "a",
+     "the",
+     "an"
+    ],
+    "ok": 3,
+    "answer": "an",
+    "rule": {
+     "text": "«an» = un / una. Igual que a, pero delante de palabras que empiezan por sonido de vocal (a, e, i, o, u). Así se pronuncia más fácil.",
+     "lines": [
+      "I have an idea!"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "👧👉",
+    "text": "Who are _ girls?",
+    "sub": "¿Quiénes son esas niñas?",
+    "blank": true,
+    "opts": [
+     "those",
+     "these",
+     "that",
+     "this"
+    ],
+    "ok": 0,
+    "answer": "those",
+    "rule": {
+     "text": "«those» = esos, esas, aquellos. Como that, pero para VARIAS cosas que están lejos de ti.",
+     "lines": [
+      "Who are those girls?"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🏡",
+    "text": "Welcome to _ home!",
+    "sub": "¡Bienvenido a nuestra casa!",
+    "blank": true,
+    "opts": [
+     "your",
+     "his",
+     "her",
+     "our"
+    ],
+    "ok": 3,
+    "answer": "our",
+    "rule": {
+     "text": "«our» = nuestro, nuestra, nuestros. Para decir que algo es DE NOSOTROS (de we).",
+     "lines": [
+      "Welcome to our home!"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🚲",
+    "text": "I _ a red bike.",
+    "sub": "Tengo una bici roja.",
+    "blank": true,
+    "opts": [
+     "will",
+     "doesn't",
+     "has",
+     "have"
+    ],
+    "ok": 3,
+    "answer": "have",
+    "rule": {
+     "text": "«have» = tengo, tienes, tenemos, tienen. Para decir lo que alguien TIENE, con I, you, we, they.",
+     "lines": [
+      "I have a red bike."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🍪",
+    "text": "_ I have a cookie?",
+    "sub": "¿Me das una galleta?",
+    "blank": true,
+    "opts": [
+     "can't",
+     "must",
+     "can",
+     "will"
+    ],
+    "ok": 2,
+    "answer": "can",
+    "rule": {
+     "text": "«can» = puedo, sé (hacer algo). Para pedir algo: Can I have…? = ¿me das…?",
+     "lines": [
+      "can I have a cookie?"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "📺",
+    "text": "The TV is _.",
+    "sub": "La tele está encendida.",
+    "blank": true,
+    "opts": [
+     "to",
+     "for",
+     "on",
+     "without"
+    ],
+    "ok": 2,
+    "answer": "on",
+    "rule": {
+     "text": "«on» = en, encima de, sobre. on también es «encendido»; off = apagado.",
+     "lines": [
+      "The TV is on."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🖼️",
+    "text": "A picture _ my family.",
+    "sub": "Una foto de mi familia.",
+    "blank": true,
+    "opts": [
+     "between",
+     "on",
+     "of",
+     "under"
+    ],
+    "ok": 2,
+    "answer": "of",
+    "rule": {
+     "text": "«of» = de. Para decir de qué está lleno o hecho algo, o que es una parte de algo: a glass of water, a piece of cake.",
+     "lines": [
+      "A picture of my family."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "👧",
+    "text": "_ is that girl?",
+    "sub": "¿Quién es esa niña?",
+    "blank": true,
+    "opts": [
+     "which",
+     "where",
+     "who",
+     "why"
+    ],
+    "ok": 2,
+    "answer": "who",
+    "rule": {
+     "text": "«who» = quién, quiénes. Para preguntar por PERSONAS.",
+     "lines": [
+      "who is that girl?"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "👵",
+    "text": "_ is your grandma?",
+    "sub": "¿Cómo está tu abuela?",
+    "blank": true,
+    "opts": [
+     "why",
+     "who",
+     "how",
+     "which"
+    ],
+    "ok": 2,
+    "answer": "how",
+    "rule": {
+     "text": "«how» = cómo. Para preguntar de qué MANERA se hace algo o cómo está algo o alguien.",
+     "lines": [
+      "how is your grandma?"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "💸",
+    "text": "I don't have _ money.",
+    "sub": "No tengo nada de dinero.",
+    "blank": true,
+    "opts": [
+     "any",
+     "much",
+     "many",
+     "some"
+    ],
+    "ok": 0,
+    "answer": "any",
+    "rule": {
+     "text": "«any» = algo de, ningún (con «no» y en preguntas). Lo mismo que some, pero en frases NEGATIVAS (no hay ninguno) y en PREGUNTAS.",
+     "lines": [
+      "I don't have any money."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🚶",
+    "text": "Where _ you go?",
+    "sub": "¿Adónde fuiste?",
+    "blank": true,
+    "opts": [
+     "did",
+     "didn't",
+     "do",
+     "doesn't"
+    ],
+    "ok": 0,
+    "answer": "did",
+    "rule": {
+     "text": "«did» = auxiliar para preguntar en pasado. Va al principio de las preguntas sobre el PASADO, con todas las personas. El verbo de después va normal, sin -ed.",
+     "lines": [
+      "Where did you go?"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🎉",
+    "text": "_ is Saturday!",
+    "sub": "¡Mañana es sábado!",
+    "blank": true,
+    "opts": [
+     "before",
+     "today",
+     "after",
+     "tomorrow"
+    ],
+    "ok": 3,
+    "answer": "tomorrow",
+    "rule": {
+     "text": "«tomorrow» = mañana (el día siguiente). Para hablar del día SIGUIENTE a hoy. Va muchas veces con will.",
+     "lines": [
+      "tomorrow is Saturday!"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🏃‍♀️",
+    "text": "She runs _ fast.",
+    "sub": "Ella corre muy rápido.",
+    "blank": true,
+    "opts": [
+     "also",
+     "very",
+     "too",
+     "only"
+    ],
+    "ok": 1,
+    "answer": "very",
+    "rule": {
+     "text": "«very» = muy. Para dar MÁS fuerza a una palabra: very big = muy grande.",
+     "lines": [
+      "She runs very fast."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "👨👩",
+    "text": "My dad is older _ my mum.",
+    "sub": "Mi padre es mayor que mi madre.",
+    "blank": true,
+    "opts": [
+     "than",
+     "most",
+     "more",
+     "very"
+    ],
+    "ok": 0,
+    "answer": "than",
+    "rule": {
+     "text": "«than» = que (al comparar). Para COMPARAR dos cosas: más grande QUE…",
+     "lines": [
+      "My dad is older than my mum."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🙂",
+    "text": "Are _ OK?",
+    "sub": "¿Estás bien?",
+    "blank": true,
+    "opts": [
+     "I",
+     "you",
+     "they",
+     "we"
+    ],
+    "ok": 1,
+    "answer": "you",
+    "rule": {
+     "text": "«you» = tú, vosotros (y usted). Para hablarle a otra persona, o a varias. La misma palabra vale para «tú», «vosotros» y «usted».",
+     "lines": [
+      "Are you OK?"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "😴",
+    "text": "I _ tired.",
+    "sub": "Estoy cansado.",
+    "blank": true,
+    "opts": [
+     "am",
+     "was",
+     "were",
+     "are"
+    ],
+    "ok": 0,
+    "answer": "am",
+    "rule": {
+     "text": "«am» = soy, estoy (con I). Es el verbo «ser / estar» cuando hablas de ti: I am. Se usa también para la edad y para cómo te sientes.",
+     "lines": [
+      "I am tired."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🚪",
+    "text": "Open _ door, please.",
+    "sub": "Abre la puerta, por favor.",
+    "blank": true,
+    "opts": [
+     "this",
+     "an",
+     "a",
+     "the"
+    ],
+    "ok": 3,
+    "answer": "the",
+    "rule": {
+     "text": "«the» = el, la, los, las. Para hablar de una cosa CONCRETA, que ya sabemos cuál es, o de algo que solo hay uno (el sol, la luna). Vale para singular y plural y no cambia nunca.",
+     "lines": [
+      "Open the door, please."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🛏️",
+    "text": "This is _ room.",
+    "sub": "Esta es mi habitación.",
+    "blank": true,
+    "opts": [
+     "your",
+     "our",
+     "my",
+     "his"
+    ],
+    "ok": 2,
+    "answer": "my",
+    "rule": {
+     "text": "«my» = mi, mis. Para decir que algo es MÍO (de I). No cambia aunque sean varias cosas.",
+     "lines": [
+      "This is my room."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🧼",
+    "text": "They wash _ hands.",
+    "sub": "Se lavan las manos.",
+    "blank": true,
+    "opts": [
+     "your",
+     "our",
+     "their",
+     "my"
+    ],
+    "ok": 2,
+    "answer": "their",
+    "rule": {
+     "text": "«their» = su, sus (de ellos). Para decir que algo es DE ELLOS o DE ELLAS (de they).",
+     "lines": [
+      "They wash their hands."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "👦👦",
+    "text": "I _ two brothers.",
+    "sub": "Tengo dos hermanos.",
+    "blank": true,
+    "opts": [
+     "has",
+     "not",
+     "have",
+     "can't"
+    ],
+    "ok": 2,
+    "answer": "have",
+    "rule": {
+     "text": "«have» = tengo, tienes, tenemos, tienen. Para decir lo que alguien TIENE, con I, you, we, they.",
+     "lines": [
+      "I have two brothers."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🎮",
+    "text": "We _ play later.",
+    "sub": "Podemos jugar luego.",
+    "blank": true,
+    "opts": [
+     "can",
+     "can't",
+     "must",
+     "will"
+    ],
+    "ok": 0,
+    "answer": "can",
+    "rule": {
+     "text": "«can» = puedo, sé (hacer algo). Para decir que eres CAPAZ de hacer algo o que tienes PERMISO. El verbo de después va sin to y sin -s.",
+     "lines": [
+      "We can play later."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🚪",
+    "text": "Someone is _ the door.",
+    "sub": "Hay alguien en la puerta.",
+    "blank": true,
+    "opts": [
+     "under",
+     "without",
+     "at",
+     "with"
+    ],
+    "ok": 2,
+    "answer": "at",
+    "rule": {
+     "text": "«at» = en (un sitio concreto), a (una hora). Para un PUNTO o sitio concreto: at home, at school, at the door. Y para las horas: at 5 o'clock.",
+     "lines": [
+      "Someone is at the door."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🎉",
+    "text": "A day _ school!",
+    "sub": "¡Un día sin cole!",
+    "blank": true,
+    "opts": [
+     "at",
+     "with",
+     "in",
+     "without"
+    ],
+    "ok": 3,
+    "answer": "without",
+    "rule": {
+     "text": "«without» = sin. Lo contrario de with: para decir que algo NO está o no va.",
+     "lines": [
+      "A day without school!"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🚪",
+    "text": "_ is at the door?",
+    "sub": "¿Quién está en la puerta?",
+    "blank": true,
+    "opts": [
+     "who",
+     "why",
+     "what",
+     "how"
+    ],
+    "ok": 0,
+    "answer": "who",
+    "rule": {
+     "text": "«who» = quién, quiénes. Para preguntar por PERSONAS.",
+     "lines": [
+      "who is at the door?"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🔴🔵",
+    "text": "_ one do you want, red or blue?",
+    "sub": "¿Cuál quieres, el rojo o el azul?",
+    "blank": true,
+    "opts": [
+     "why",
+     "how",
+     "where",
+     "which"
+    ],
+    "ok": 3,
+    "answer": "which",
+    "rule": {
+     "text": "«which» = cuál, qué (de varias opciones). Para preguntar cuál ELIGES entre unas pocas opciones.",
+     "lines": [
+      "which one do you want, red or blue?"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "👦",
+    "text": "He doesn't have _ brothers.",
+    "sub": "Él no tiene hermanos.",
+    "blank": true,
+    "opts": [
+     "some",
+     "any",
+     "many",
+     "much"
+    ],
+    "ok": 1,
+    "answer": "any",
+    "rule": {
+     "text": "«any» = algo de, ningún (con «no» y en preguntas). Lo mismo que some, pero en frases NEGATIVAS (no hay ninguno) y en PREGUNTAS.",
+     "lines": [
+      "He doesn't have any brothers."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🌳",
+    "text": "We _ go to the park.",
+    "sub": "No fuimos al parque.",
+    "blank": true,
+    "opts": [
+     "don't",
+     "do",
+     "didn't",
+     "does"
+    ],
+    "ok": 2,
+    "answer": "didn't",
+    "rule": {
+     "text": "«didn't» = no (en pasado). Para decir que algo NO pasó en el pasado, con todas las personas. El verbo de después va normal.",
+     "lines": [
+      "We didn't go to the park."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "📒",
+    "text": "I do my homework _ dinner.",
+    "sub": "Hago los deberes antes de cenar.",
+    "blank": true,
+    "opts": [
+     "before",
+     "tomorrow",
+     "now",
+     "today"
+    ],
+    "ok": 0,
+    "answer": "before",
+    "rule": {
+     "text": "«before» = antes (de). Para decir que algo pasa ANTES que otra cosa.",
+     "lines": [
+      "I do my homework before dinner."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🏃",
+    "text": "You are _ fast for me.",
+    "sub": "Eres demasiado rápido para mí.",
+    "blank": true,
+    "opts": [
+     "only",
+     "too",
+     "very",
+     "also"
+    ],
+    "ok": 1,
+    "answer": "too",
+    "rule": {
+     "text": "«too» = demasiado (y también). Tiene dos usos: 1) delante de una palabra = DEMASIADO (too hot). 2) al final de la frase = TAMBIÉN (me too).",
+     "lines": [
+      "You are too fast for me."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🎁",
+    "text": "I have _ for you.",
+    "sub": "Tengo algo para ti.",
+    "blank": true,
+    "opts": [
+     "nothing",
+     "something",
+     "everyone",
+     "anything"
+    ],
+    "ok": 1,
+    "answer": "something",
+    "rule": {
+     "text": "«something» = algo. Para hablar de UNA cosa sin decir cuál. Como some: en frases normales y al ofrecer.",
+     "lines": [
+      "I have something for you."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🙋",
+    "text": "Can _ help me?",
+    "sub": "¿Me ayudas?",
+    "blank": true,
+    "opts": [
+     "you",
+     "he",
+     "we",
+     "I"
+    ],
+    "ok": 0,
+    "answer": "you",
+    "rule": {
+     "text": "«you» = tú, vosotros (y usted). Para hablarle a otra persona, o a varias. La misma palabra vale para «tú», «vosotros» y «usted».",
+     "lines": [
+      "Can you help me?"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🏁",
+    "text": "I _ ready!",
+    "sub": "¡Estoy listo!",
+    "blank": true,
+    "opts": [
+     "are",
+     "is",
+     "was",
+     "am"
+    ],
+    "ok": 3,
+    "answer": "am",
+    "rule": {
+     "text": "«am» = soy, estoy (con I). Es el verbo «ser / estar» cuando hablas de ti: I am. Se usa también para la edad y para cómo te sientes.",
+     "lines": [
+      "I am ready!"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🌙",
+    "text": "Look at _ moon!",
+    "sub": "¡Mira la luna!",
+    "blank": true,
+    "opts": [
+     "an",
+     "these",
+     "a",
+     "the"
+    ],
+    "ok": 3,
+    "answer": "the",
+    "rule": {
+     "text": "«the» = el, la, los, las. Para hablar de una cosa CONCRETA, que ya sabemos cuál es, o de algo que solo hay uno (el sol, la luna). Vale para singular y plural y no cambia nunca.",
+     "lines": [
+      "Look at the moon!"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🐶",
+    "text": "_ dog is called Max.",
+    "sub": "Mi perro se llama Max.",
+    "blank": true,
+    "opts": [
+     "his",
+     "its",
+     "our",
+     "my"
+    ],
+    "ok": 3,
+    "answer": "my",
+    "rule": {
+     "text": "«my» = mi, mis. Para decir que algo es MÍO (de I). No cambia aunque sean varias cosas.",
+     "lines": [
+      "my dog is called Max."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "💪",
+    "text": "She is tall _ strong.",
+    "sub": "Ella es alta y fuerte.",
+    "blank": true,
+    "opts": [
+     "or",
+     "because",
+     "so",
+     "and"
+    ],
+    "ok": 3,
+    "answer": "and",
+    "rule": {
+     "text": "«and» = y. Para unir dos cosas o dos ideas que van juntas.",
+     "lines": [
+      "She is tall and strong."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🏡",
+    "text": "My house _ a garden.",
+    "sub": "Mi casa tiene jardín.",
+    "blank": true,
+    "opts": [
+     "has",
+     "have",
+     "am",
+     "was"
+    ],
+    "ok": 0,
+    "answer": "has",
+    "rule": {
+     "text": "«has» = tiene. Es have con he, she, it y con una sola persona o cosa.",
+     "lines": [
+      "My house has a garden."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "👧",
+    "text": "She _ come today.",
+    "sub": "Hoy no puede venir.",
+    "blank": true,
+    "opts": [
+     "can",
+     "can't",
+     "must",
+     "will"
+    ],
+    "ok": 1,
+    "answer": "can't",
+    "rule": {
+     "text": "«can't» = no puedo, no sé. Lo contrario de can: no eres capaz o no tienes permiso.",
+     "lines": [
+      "She can't come today."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "👨‍💼",
+    "text": "My dad is _ work.",
+    "sub": "Mi padre está en el trabajo.",
+    "blank": true,
+    "opts": [
+     "at",
+     "with",
+     "of",
+     "from"
+    ],
+    "ok": 0,
+    "answer": "at",
+    "rule": {
+     "text": "«at» = en (un sitio concreto), a (una hora). Para un PUNTO o sitio concreto: at home, at school, at the door. Y para las horas: at 5 o'clock.",
+     "lines": [
+      "My dad is at work."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🔢",
+    "text": "3 is _ 2 and 4.",
+    "sub": "El 3 está entre el 2 y el 4.",
+    "blank": true,
+    "opts": [
+     "to",
+     "of",
+     "between",
+     "with"
+    ],
+    "ok": 2,
+    "answer": "between",
+    "rule": {
+     "text": "«between» = entre. Para decir que algo está EN MEDIO de dos cosas.",
+     "lines": [
+      "3 is between 2 and 4."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🏠",
+    "text": "_ do you live?",
+    "sub": "¿Dónde vives?",
+    "blank": true,
+    "opts": [
+     "what",
+     "where",
+     "why",
+     "which"
+    ],
+    "ok": 1,
+    "answer": "where",
+    "rule": {
+     "text": "«where» = dónde, adónde. Para preguntar por el LUGAR.",
+     "lines": [
+      "where do you live?"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "✋🤚",
+    "text": "_ hand?",
+    "sub": "¿Qué mano?",
+    "blank": true,
+    "opts": [
+     "when",
+     "why",
+     "which",
+     "how"
+    ],
+    "ok": 2,
+    "answer": "which",
+    "rule": {
+     "text": "«which» = cuál, qué (de varias opciones). Para preguntar cuál ELIGES entre unas pocas opciones.",
+     "lines": [
+      "which hand?"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "💧",
+    "text": "How _ water do you drink?",
+    "sub": "¿Cuánta agua bebes?",
+    "blank": true,
+    "opts": [
+     "any",
+     "much",
+     "many",
+     "some"
+    ],
+    "ok": 1,
+    "answer": "much",
+    "rule": {
+     "text": "«much» = mucho, mucha. Para cosas que NO se pueden contar una a una (agua, dinero, tiempo), sobre todo con not y en preguntas.",
+     "lines": [
+      "How much water do you drink?"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "📞",
+    "text": "I _ call you tomorrow.",
+    "sub": "Te llamaré mañana.",
+    "blank": true,
+    "opts": [
+     "can't",
+     "will",
+     "can",
+     "must"
+    ],
+    "ok": 1,
+    "answer": "will",
+    "rule": {
+     "text": "«will» = futuro: haré, irás, será…. Para hablar del FUTURO: lo que pasará. El verbo de después va normal.",
+     "lines": [
+      "I will call you tomorrow."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "⚽",
+    "text": "I play football _ school.",
+    "sub": "Juego al fútbol después del cole.",
+    "blank": true,
+    "opts": [
+     "tomorrow",
+     "now",
+     "yesterday",
+     "after"
+    ],
+    "ok": 3,
+    "answer": "after",
+    "rule": {
+     "text": "«after» = después (de). Para decir que algo pasa DESPUÉS de otra cosa.",
+     "lines": [
+      "I play football after school."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🥛",
+    "text": "We _ need some milk.",
+    "sub": "También necesitamos leche.",
+    "blank": true,
+    "opts": [
+     "also",
+     "only",
+     "very",
+     "too"
+    ],
+    "ok": 0,
+    "answer": "also",
+    "rule": {
+     "text": "«also» = también. Para AÑADIR algo: también. Va normalmente delante del verbo o detrás de am, is, are.",
+     "lines": [
+      "We also need some milk."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🛏️👀",
+    "text": "There is _ under the bed.",
+    "sub": "Hay algo debajo de la cama.",
+    "blank": true,
+    "opts": [
+     "nothing",
+     "everyone",
+     "anything",
+     "something"
+    ],
+    "ok": 3,
+    "answer": "something",
+    "rule": {
+     "text": "«something» = algo. Para hablar de UNA cosa sin decir cuál. Como some: en frases normales y al ofrecer.",
+     "lines": [
+      "There is something under the bed."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "👦🚗",
+    "text": "_ likes cars.",
+    "sub": "A él le gustan los coches.",
+    "blank": true,
+    "opts": [
+     "it",
+     "they",
+     "he",
+     "she"
+    ],
+    "ok": 2,
+    "answer": "he",
+    "rule": {
+     "text": "«he» = él. Para hablar de un chico o un hombre (sin decir su nombre).",
+     "lines": [
+      "he likes cars."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "📕",
+    "text": "Where _ my book?",
+    "sub": "¿Dónde está mi libro?",
+    "blank": true,
+    "opts": [
+     "is",
+     "are",
+     "was",
+     "were"
+    ],
+    "ok": 0,
+    "answer": "is",
+    "rule": {
+     "text": "«is» = es, está (con he, she, it). Es «ser / estar» para UNA persona, animal o cosa: he, she, it, Tom, the cat…",
+     "lines": [
+      "Where is my book?"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🎹",
+    "text": "I play _ piano.",
+    "sub": "Toco el piano.",
+    "blank": true,
+    "opts": [
+     "a",
+     "an",
+     "many",
+     "the"
+    ],
+    "ok": 3,
+    "answer": "the",
+    "rule": {
+     "text": "«the» = el, la, los, las. Los instrumentos llevan the: play the guitar, play the piano.",
+     "lines": [
+      "I play the piano."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🧼",
+    "text": "Wash _ hands.",
+    "sub": "Lávate las manos.",
+    "blank": true,
+    "opts": [
+     "my",
+     "its",
+     "their",
+     "your"
+    ],
+    "ok": 3,
+    "answer": "your",
+    "rule": {
+     "text": "«your» = tu, tus (y vuestro). Para decir que algo es TUYO (de you). También sirve para «vuestro».",
+     "lines": [
+      "Wash your hands."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🍽️",
+    "text": "I wash _ dry the dishes.",
+    "sub": "Lavo y seco los platos.",
+    "blank": true,
+    "opts": [
+     "if",
+     "or",
+     "and",
+     "so"
+    ],
+    "ok": 2,
+    "answer": "and",
+    "rule": {
+     "text": "«and» = y. Para unir dos cosas o dos ideas que van juntas.",
+     "lines": [
+      "I wash and dry the dishes."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🍕",
+    "text": "_ you like pizza?",
+    "sub": "¿Te gusta la pizza?",
+    "blank": true,
+    "opts": [
+     "doesn't",
+     "did",
+     "don't",
+     "do"
+    ],
+    "ok": 3,
+    "answer": "do",
+    "rule": {
+     "text": "«do» = auxiliar para preguntar (con I, you, we, they). Va al principio de las preguntas: Do you…? No se traduce, solo avisa de que es una pregunta.",
+     "lines": [
+      "do you like pizza?"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🏠👇",
+    "text": "My house is _.",
+    "sub": "Mi casa está aquí.",
+    "blank": true,
+    "opts": [
+     "in",
+     "here",
+     "there",
+     "behind"
+    ],
+    "ok": 1,
+    "answer": "here",
+    "rule": {
+     "text": "«here» = aquí. Para decir que algo está en el sitio donde estás tú.",
+     "lines": [
+      "My house is here."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🌳",
+    "text": "We sit _ a tree.",
+    "sub": "Nos sentamos debajo de un árbol.",
+    "blank": true,
+    "opts": [
+     "without",
+     "under",
+     "near",
+     "in"
+    ],
+    "ok": 1,
+    "answer": "under",
+    "rule": {
+     "text": "«under» = debajo de. Para decir que algo está DEBAJO de otra cosa.",
+     "lines": [
+      "We sit under a tree."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🎁",
+    "text": "This gift is _ my grandma.",
+    "sub": "Este regalo es de mi abuela.",
+    "blank": true,
+    "opts": [
+     "behind",
+     "to",
+     "from",
+     "in"
+    ],
+    "ok": 2,
+    "answer": "from",
+    "rule": {
+     "text": "«from» = de, desde. Para decir de DÓNDE viene algo o alguien, o desde cuándo.",
+     "lines": [
+      "This gift is from my grandma."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🌍",
+    "text": "_ are you from?",
+    "sub": "¿De dónde eres?",
+    "blank": true,
+    "opts": [
+     "what",
+     "how",
+     "why",
+     "where"
+    ],
+    "ok": 3,
+    "answer": "where",
+    "rule": {
+     "text": "«where» = dónde, adónde. Para preguntar por el LUGAR.",
+     "lines": [
+      "where are you from?"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🎮",
+    "text": "Play with _!",
+    "sub": "¡Juega conmigo!",
+    "blank": true,
+    "opts": [
+     "me",
+     "us",
+     "him",
+     "them"
+    ],
+    "ok": 0,
+    "answer": "me",
+    "rule": {
+     "text": "«me» = me, mí. Es «yo» cuando la acción va HACIA ti: help me (ayúdame), with me (conmigo).",
+     "lines": [
+      "Play with me!"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🍬",
+    "text": "Is there _ sugar?",
+    "sub": "¿Hay mucho azúcar?",
+    "blank": true,
+    "opts": [
+     "much",
+     "any",
+     "some",
+     "many"
+    ],
+    "ok": 0,
+    "answer": "much",
+    "rule": {
+     "text": "«much» = mucho, mucha. Para cosas que NO se pueden contar una a una (agua, dinero, tiempo), sobre todo con not y en preguntas.",
+     "lines": [
+      "Is there much sugar?"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "😊",
+    "text": "He _ be happy.",
+    "sub": "Él estará contento.",
+    "blank": true,
+    "opts": [
+     "can",
+     "must",
+     "will",
+     "can't"
+    ],
+    "ok": 2,
+    "answer": "will",
+    "rule": {
+     "text": "«will» = futuro: haré, irás, será…. Para hablar del FUTURO: lo que pasará. El verbo de después va normal.",
+     "lines": [
+      "He will be happy."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🗣️",
+    "text": "Repeat _ me.",
+    "sub": "Repite después de mí.",
+    "blank": true,
+    "opts": [
+     "today",
+     "after",
+     "now",
+     "tomorrow"
+    ],
+    "ok": 1,
+    "answer": "after",
+    "rule": {
+     "text": "«after» = después (de). Para decir que algo pasa DESPUÉS de otra cosa.",
+     "lines": [
+      "Repeat after me."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🎲",
+    "text": "It is _ a game.",
+    "sub": "Solo es un juego.",
+    "blank": true,
+    "opts": [
+     "also",
+     "too",
+     "very",
+     "only"
+    ],
+    "ok": 3,
+    "answer": "only",
+    "rule": {
+     "text": "«only» = solo, solamente. Para decir que no hay más: SOLO esto.",
+     "lines": [
+      "It is only a game."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "📦",
+    "text": "Is there _ in the box?",
+    "sub": "¿Hay algo en la caja?",
+    "blank": true,
+    "opts": [
+     "everyone",
+     "anything",
+     "everything",
+     "nothing"
+    ],
+    "ok": 1,
+    "answer": "anything",
+    "rule": {
+     "text": "«anything» = algo, nada (con not y en preguntas). Como any: en preguntas significa «algo» y con not significa «nada».",
+     "lines": [
+      "Is there anything in the box?"
+     ]
+    }
+   }
+  ]
+ }
+}

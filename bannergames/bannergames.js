@@ -42,7 +42,9 @@
   function start(D) {
     const now = Date.now(), H = 3600e3;
     if (now - get('closed') < (D.closed_hours || 24) * H) return;              // lo cerraron del todo hace poco
-    const T = D.texts[LANG] || D.texts.es || D.texts[Object.keys(D.texts)[0]];
+    // idioma: el pedido si el perfil lo tiene (textos y, en los retos de preguntas, preguntas); si no, el primero que haya
+    const L_ = D.texts[LANG] && (!D.items || D.items[LANG]) ? LANG : D.items ? Object.keys(D.items)[0] : D.texts.es ? 'es' : Object.keys(D.texts)[0];
+    const T = D.texts[L_]; D.lang = L_;
     const C = Object.assign({ bg1: '#4a2c17', bg2: '#1f130a', accent: '#ff922b', cta: '#ffd43b', ctaText: '#2b1a0e' }, D.colors || {});
     const URL_ = (() => { try { const u = new URL(D.url, location.href); if (!u.searchParams.has('utm_source')) { u.searchParams.set('utm_source', location.hostname || 'web'); u.searchParams.set('utm_medium', 'bannergames'); u.searchParams.set('utm_campaign', profile); } return u.href; } catch (e) { return D.url; } })();
     const scene = SCENES[D.type] ? SCENES[D.type](D, T, C) : null;
@@ -263,6 +265,163 @@
         const k = back((t - TD) / 0.4), w = Math.min(W * 0.84, m * 0.8), h = m * 0.11;
         ctx.save(); ctx.globalAlpha = A; ctx.translate(W / 2, by); ctx.scale(k, k); ctx.fillStyle = '#2b8a3e'; rr(ctx, -w / 2, -h / 2, w, h, h / 2); ctx.fill();
         text(ctx, '✔ ' + pretty(sol), 0, 1, h * 0.52, '#fff', { mw: w - 20 }); ctx.restore();
+      }
+      ctx.restore();
+    }
+    return loop(draw);
+  };
+
+  // ----------------------------------------------------------------------
+  // QUIZ: los retos de los vídeos educativos (secuencias, policubos, quién fue, número escondido, idioma alienígena,
+  // palabra intrusa, lectura relámpago, problemas, emojimates, cálculo, balanza, ortografía, spelling, inglés).
+  // Cada pregunta: tarjeta con el enunciado, 4 opciones, cuenta atrás, respuesta en verde y explicación. En bucle.
+  // ----------------------------------------------------------------------
+  SCENES.quiz = function (D, T, C) {
+    const ITEMS = (D.items && (D.items[D.lang] || D.items[Object.keys(D.items)[0]])) || [];
+    const WAIT = D.wait || 10, REVEAL = D.reveal || 4, EF = '"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji"';
+    const F = (px, w = 800) => w + ' ' + Math.round(px) + 'px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif,' + EF;
+    const isEmo = (x) => typeof x === 'string' && /\p{Extended_Pictographic}/u.test(x) && !/[a-z0-9]{2}/i.test(x.replace(/\p{Extended_Pictographic}/gu, ''));
+    let P, t = 0, last = -1, TOPT, TQ, TUP, TR, DUR;
+    function next() {
+      let i; do { i = Math.floor(Math.random() * ITEMS.length); } while (ITEMS.length > 1 && i === last); last = i; P = ITEMS[i]; t = 0;
+      TOPT = 0.8 + (P.extraT || 0) + ((P.says || P.alien || P.rows || []).length) * 0.2 + (P.scales ? (P.scales.clues.length + 1) * 0.2 : 0) + (P.seq ? P.seq.length * 0.15 : 0);
+      TQ = TOPT + 0.4; TUP = TQ + WAIT; TR = TUP + 0.25; DUR = TR + REVEAL + (P.rule && P.rule.lines ? Math.min(3, P.rule.lines.length) * 0.5 : 0);
+    }
+    if (!ITEMS.length) return loop(() => {});
+    next();
+    const tx = (ctx, s, x, y, px, col, o = {}) => {   // texto de una línea (encoge para caber en o.mw)
+      ctx.save(); ctx.font = F(px, o.w || 800); ctx.textAlign = o.a || 'center'; ctx.textBaseline = 'middle';
+      if (o.mw) { const w = ctx.measureText(s).width; if (w > o.mw) { const k = o.mw / w; ctx.translate(x, y); ctx.scale(k, k); x = 0; y = 0; } }
+      if (o.stroke) { ctx.lineJoin = 'round'; ctx.lineWidth = px * 0.16; ctx.strokeStyle = o.stroke; ctx.strokeText(s, x, y); }
+      ctx.fillStyle = col; ctx.fillText(s, x, y); ctx.restore();
+    };
+    const wrap = (ctx, s, maxW, px, w = 700) => { ctx.font = F(px, w); const out = []; let cur = ''; for (const wd of String(s).split(' ')) { const tt = cur ? cur + ' ' + wd : wd; if (cur && ctx.measureText(tt).width > maxW) { out.push(cur); cur = wd; } else cur = tt; } if (cur) out.push(cur); return out; };
+    // ficha de secuencia: emoji, número, letra, tamaño o grupo
+    function tok(ctx, tk, cx, cy, s) {
+      if (!tk) return;
+      if (tk.t === 'e') tx(ctx, tk.v, cx, cy, s * 0.6, '#000');
+      else if (tk.t === 'n' || tk.t === 'l') { const d = String(tk.v).length; tx(ctx, String(tk.v), cx, cy, s * (d <= 2 ? 0.5 : d === 3 ? 0.4 : 0.3), tk.t === 'n' ? '#5b3fd1' : '#e2457e', { w: 900 }); }
+      else if (tk.t === 's') tx(ctx, tk.e, cx, cy, s * [0.28, 0.48, 0.74][tk.s], '#000');
+      else if (tk.t === 'g') { const n = tk.n, gc = n <= 3 ? n : n === 4 ? 2 : n <= 9 ? 3 : 4, rows = Math.ceil(n / gc), f = Math.min(0.52, 0.84 / Math.max(gc, rows)) * s, st = f * 1.05;
+        for (let k = 0; k < n; k++) { const r = Math.floor(k / gc), c = k % gc, inRow = Math.min(gc, n - r * gc); tx(ctx, tk.e, cx + (c - (inRow - 1) / 2) * st, cy + (r - (rows - 1) / 2) * st, f, '#000'); } }
+      else if (tk.t === 'sep') { ctx.fillStyle = 'rgba(80,60,160,.35)'; ctx.fillRect(cx - 2, cy - s * 0.35, 4, s * 0.7); }
+    }
+    const tileBg = (ctx, x, y, w, h, c1, c2, ring) => { ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.22)'; ctx.shadowBlur = h * 0.12; ctx.shadowOffsetY = h * 0.04; const g = ctx.createLinearGradient(x, y, x, y + h); g.addColorStop(0, c1); g.addColorStop(1, c2); ctx.fillStyle = g; rr(ctx, x, y, w, h, Math.min(w, h) * 0.22); ctx.fill(); ctx.restore(); if (ring) { ctx.lineWidth = Math.max(2, h * 0.06); ctx.strokeStyle = ring; rr(ctx, x, y, w, h, Math.min(w, h) * 0.22); ctx.stroke(); } };
+    // medida del enunciado (en un ancho bw); devuelve las piezas con su alto
+    function measure(ctx, bw) {
+      const parts = []; let h = 14;
+      const add = (o) => { parts.push(o); h += o.h; };
+      if (P.seq) { const n = P.seq.length, per = n <= 6 ? n : Math.ceil(n / 2), s = Math.min(bw * 0.2, (bw - 20) / per - 6); add({ t: 'seq', h: (s + 8) * Math.ceil(n / per) + 6, s, per }); }
+      if (P.rows) { const rh = bw * 0.12; add({ t: 'rows', h: rh * P.rows.length, rh }); }
+      if (P.scales) { const rh = bw * 0.13; add({ t: 'scales', h: rh * (P.scales.clues.length + 1), rh }); }
+      if (P.cubes) { const Cb = P.cubes, mh = Math.max(...Cb.h.flat()), u = Math.min((bw - 40) / (Cb.cols + Cb.rows * 0.5), bw * 0.55 / (mh + Cb.rows * 0.5)); add({ t: 'cubes', h: u * (mh + Cb.rows * 0.5) + 16, u }); }
+      if (P.flash) add({ t: 'flash', h: bw * 0.34 });
+      if (P.alien) { const rh = bw * 0.12; add({ t: 'alien', h: rh * P.alien.length, rh }); }
+      if (P.big) add({ t: 'big', h: bw * 0.24 });
+      if (P.emoji && !P.rows) add({ t: 'emoji', h: bw * 0.17 });
+      if (P.text) { let fz = bw * 0.066, Ls = wrap(ctx, P.text, bw - 36, fz); if (Ls.length > 4) { fz = bw * 0.054; Ls = wrap(ctx, P.text, bw - 36, fz); } add({ t: 'text', h: Ls.length * fz * 1.3 + 6, fz, Ls }); }
+      if (P.note) add({ t: 'note', h: bw * 0.085 });
+      if (P.says) { const rh = bw * 0.1; add({ t: 'says', h: rh * P.says.length, rh }); }
+      if (P.sub) { const fz = bw * 0.05, Ls = wrap(ctx, '«' + P.sub + '»', bw - 36, fz, 600); add({ t: 'sub', h: Ls.length * fz * 1.3 + 4, fz, Ls }); }
+      if (P.expr) { ctx.font = F(100, 800); const w = Math.max(ctx.measureText(P.expr).width, ctx.measureText(P.expr.replace('?', P.answer)).width) / 100, fz = Math.min(bw * 0.16, (bw - 40) / w); add({ t: 'expr', h: fz * 1.5, fz }); }
+      return { parts, h: h + 12 };
+    }
+    function body(ctx, M, x0, y0, bw, solved) {
+      let y = y0 + 14; const cx = x0 + bw / 2, appear = (k) => clamp((t - 0.35 - k * 0.2) / 0.25, 0, 1);
+      for (const p of M.parts) {
+        if (p.t === 'seq') { const n = P.seq.length, rowsN = Math.ceil(n / p.per);
+          P.seq.forEach((tk, k) => { const a = clamp((t - 0.3 - k * 0.15) / 0.2, 0, 1); if (a <= 0) return; const r = Math.floor(k / p.per), inRow = Math.min(p.per, n - r * p.per), c = k % p.per;
+            const x = cx + (c - (inRow - 1) / 2) * (p.s + 6) - p.s / 2, yy = y + 4 + r * (p.s + 8), blank = k === P.b;
+            ctx.save(); ctx.globalAlpha = a; tileBg(ctx, x, yy, p.s, p.s, blank ? (solved ? '#d3f9d8' : '#fff3bf') : '#f6f2ff', blank ? (solved ? '#8ce99a' : '#ffd43b') : '#d9ccff', blank ? (solved ? '#2f9e44' : '#e8590c') : null);
+            if (blank && !solved) tx(ctx, '?', x + p.s / 2, yy + p.s / 2 + 1, p.s * 0.55, '#e8590c', { w: 900 }); else tok(ctx, blank ? P.ans : tk, x + p.s / 2, yy + p.s / 2, p.s); ctx.restore(); });
+          void rowsN; }
+        if (p.t === 'rows') P.rows.forEach((row, ri) => { const a = appear(ri); if (a <= 0) return; const ry = y + ri * p.rh + p.rh / 2, isQ = ri === P.rows.length - 1;
+          if (isQ) { ctx.fillStyle = 'rgba(255,212,59,.22)'; rr(ctx, x0 + 8, ry - p.rh * 0.46, bw - 16, p.rh * 0.92, 12); ctx.fill(); }
+          const items = row.map((it, j) => (isQ && j === row.length - 1 && solved ? P.answer : String(it)));
+          ctx.save(); ctx.globalAlpha = a; tx(ctx, items.join(' '), cx, ry + 1, p.rh * 0.52, isQ ? (solved ? '#2f9e44' : '#3b2a7a') : '#3b2a7a', { mw: bw - 30 }); ctx.restore(); });
+        if (p.t === 'scales') { const { E, clues, q } = P.scales, all = clues.concat([[q, null]]), side = (arr) => arr.map(([i, c]) => (c <= 5 ? E[i].repeat(c) : c + '×' + E[i])).join(' ');
+          all.forEach(([Lf, Rt], si) => { const a = appear(si); if (a <= 0) return; const ry = y + si * p.rh + p.rh / 2, isQ = Rt === null;
+            ctx.save(); ctx.globalAlpha = a; if (isQ) { ctx.fillStyle = 'rgba(112,72,232,.15)'; rr(ctx, x0 + 8, ry - p.rh * 0.46, bw - 16, p.rh * 0.92, 12); ctx.fill(); }
+            tx(ctx, side(Lf), x0 + bw * 0.27, ry, p.rh * 0.42, '#000', { mw: bw * 0.4 }); tx(ctx, '⚖️', cx, ry, p.rh * 0.5, '#000');
+            tx(ctx, isQ ? (solved ? P.answer : '❓') : side(Rt), x0 + bw * 0.73, ry, p.rh * 0.42, isQ && solved ? '#2f9e44' : '#000', { mw: bw * 0.4, w: 900 }); ctx.restore(); }); }
+        if (p.t === 'cubes') drawCubes(ctx, P.cubes, cx, y + p.h - 8, p.u, solved);
+        if (p.t === 'flash') { const fx = x0 + 16, fw = bw - 32, fh = p.h - 10, c = t - 0.5, Fl = P.flash, mid = y + 4 + fh / 2;
+          ctx.fillStyle = '#2d2a4a'; rr(ctx, fx, y + 4, fw, fh, 16); ctx.fill();
+          if (solved) tx(ctx, Fl.word, cx, mid, fh * 0.36, '#69db7c', { mw: fw - 20, w: 900 });
+          else if (c >= 0 && c < 0.9) tx(ctx, String(3 - Math.floor(c / 0.3)), cx, mid, fh * 0.42, '#ffd43b', { w: 900 });
+          else if (c >= 0.9 && c < 0.9 + Fl.dur) tx(ctx, Fl.word, cx, mid, fh * 0.36, '#fff', { mw: fw - 20, w: 900 });
+          else if (c >= 0.9) tx(ctx, '#####', cx, mid, fh * 0.3, '#6f6a99', { w: 900 }); }
+        if (p.t === 'alien') P.alien.forEach(([ph, pic], i) => { const a = appear(i); if (a <= 0) return; const ry = y + i * p.rh + p.rh / 2, isQ = pic == null, half = (bw - 24) * 0.58;
+          ctx.save(); ctx.globalAlpha = a; if (isQ) { ctx.fillStyle = 'rgba(177,151,252,.25)'; rr(ctx, x0 + 6, ry - p.rh * 0.46, bw - 12, p.rh * 0.92, 10); ctx.fill(); }
+          ctx.fillStyle = '#e9fff2'; rr(ctx, x0 + 12, ry - p.rh * 0.33, half, p.rh * 0.66, p.rh * 0.3); ctx.fill(); tx(ctx, '👽 ' + ph, x0 + 12 + half / 2, ry + 1, p.rh * 0.34, '#2aa36b', { mw: half - 12 });
+          tx(ctx, isQ ? (solved ? P.answer : '❓') : pic, x0 + 12 + half + (bw - 24 - half) / 2, ry, p.rh * 0.45, '#000', { mw: bw - half - 36 }); ctx.restore(); });
+        if (p.t === 'big' || p.t === 'emoji') tx(ctx, p.t === 'big' ? P.big : P.emoji, cx, y + p.h / 2, p.h * 0.72, '#000');
+        if (p.t === 'text') p.Ls.forEach((ln, i) => { const ly = y + p.fz * 0.66 + i * p.fz * 1.3; tx(ctx, P.blank ? ln.replace('_', solved ? P.answer : '____') : ln, cx, ly, p.fz, P.blank && solved && ln.includes('_') ? '#2f9e44' : '#212529', { w: 700, mw: bw - 24 }); });
+        if (p.t === 'note') { ctx.font = F(p.h * 0.5, 800); const nw = Math.min(bw - 30, ctx.measureText(P.note).width + p.h * 0.8); ctx.fillStyle = '#fff3bf'; rr(ctx, cx - nw / 2, y + p.h * 0.1, nw, p.h * 0.8, p.h * 0.3); ctx.fill(); tx(ctx, P.note, cx, y + p.h / 2, p.h * 0.48, '#8a6200', { mw: nw - 12 }); }
+        if (p.t === 'says') P.says.forEach(([e, sx], i) => { const a = appear(i); if (a <= 0) return; const ry = y + i * p.rh + p.rh / 2, bx = x0 + p.rh * 1.2, bwid = bw - p.rh * 1.2 - 14;
+          ctx.save(); ctx.globalAlpha = a; tx(ctx, e, x0 + p.rh * 0.62, ry, p.rh * 0.62, '#000'); ctx.fillStyle = '#f3efff'; rr(ctx, bx, ry - p.rh * 0.36, bwid, p.rh * 0.72, p.rh * 0.24); ctx.fill();
+          tx(ctx, '«' + sx + '»', bx + 10, ry + 1, p.rh * 0.4, '#3b2a7a', { a: 'left', w: 700, mw: bwid - 20 }); ctx.restore(); });
+        if (p.t === 'sub') p.Ls.forEach((ln, i) => tx(ctx, ln, cx, y + p.fz * 0.66 + i * p.fz * 1.3, p.fz, '#6741d9', { w: 600, mw: bw - 24 }));
+        if (p.t === 'expr') { const qi = P.expr.lastIndexOf('?'), pre = P.expr.slice(0, qi), post = P.expr.slice(qi + 1), mid = solved ? P.answer : '?'; ctx.font = F(p.fz, 800);
+          const wp = ctx.measureText(pre).width, wm = ctx.measureText(mid).width, xs = cx - (wp + wm + ctx.measureText(post).width) / 2, ey = y + p.h / 2;
+          tx(ctx, pre, xs, ey, p.fz, '#3b2a7a', { a: 'left' }); tx(ctx, mid, xs + wp, ey, p.fz, solved ? '#2f9e44' : '#e8590c', { a: 'left' }); tx(ctx, post, xs + wp + wm, ey, p.fz, '#3b2a7a', { a: 'left' }); }
+        y += p.h;
+      }
+    }
+    function drawCubes(ctx, Cb, cx, by, u, solved) {
+      const dx = u * 0.5, dy = u * 0.5, x0 = cx - (Cb.cols * u + Cb.rows * dx) / 2, n = parseInt(Cb.color.slice(1), 16), c0 = [n >> 16, (n >> 8) & 255, n & 255];
+      const light = 'rgb(' + c0.map((v) => Math.round(v + (255 - v) * 0.45)) + ')', dark = 'rgb(' + c0.map((v) => Math.round(v * 0.72)) + ')'; let k = 0;
+      ctx.save(); ctx.lineJoin = 'round'; ctx.lineWidth = Math.max(1, u * 0.045); ctx.strokeStyle = '#2d2a4a';
+      const poly = (pts, fill) => { ctx.beginPath(); pts.forEach(([px, py], i) => (i ? ctx.lineTo(px, py) : ctx.moveTo(px, py))); ctx.closePath(); ctx.fillStyle = fill; ctx.fill(); ctx.stroke(); };
+      for (let y = Cb.rows - 1; y >= 0; y--) for (let x = 0; x < Cb.cols; x++) for (let z = 0; z < Cb.h[y][x]; z++) {
+        const a = clamp((t - 0.35 - k++ * 0.03) / 0.15, 0, 1); if (a <= 0) continue; ctx.globalAlpha = a;
+        const X = x0 + x * u + y * dx, Y = by - (z + 1) * u - y * dy - (1 - back(a)) * u * 0.6;
+        poly([[X, Y], [X + u, Y], [X + u, Y + u], [X, Y + u]], Cb.color); poly([[X, Y], [X + dx, Y - dy], [X + u + dx, Y - dy], [X + u, Y]], light); poly([[X + u, Y], [X + u + dx, Y - dy], [X + u + dx, Y + u - dy], [X + u, Y + u]], dark);
+      }
+      ctx.globalAlpha = 1;
+      if (solved) for (let y = Cb.rows - 1; y >= 0; y--) for (let x = 0; x < Cb.cols; x++) { const hh = Cb.h[y][x], X = x0 + x * u + y * dx + u / 2 + dx / 2, Y = by - hh * u - y * dy - dy / 2;
+        ctx.fillStyle = '#1b1033'; ctx.beginPath(); ctx.arc(X, Y, u * 0.24, 0, 6.3); ctx.fill(); tx(ctx, String(hh), X, Y + 1, u * 0.3, '#ffd43b', { w: 900 }); }
+      ctx.restore();
+    }
+    function draw(ctx, W, H, dt) {
+      t += dt; if (t >= DUR) next();
+      const m = Math.min(W, H), solved = t >= TR, fade = Math.min(clamp(t / 0.3, 0, 1), 1 - clamp((t - (DUR - 0.3)) / 0.3, 0, 1));
+      const bg = ctx.createRadialGradient(W / 2, H * 0.35, 10, W / 2, H * 0.5, Math.max(W, H) * 0.8); bg.addColorStop(0, C.bg1); bg.addColorStop(1, C.bg2); ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      ctx.save(); ctx.globalAlpha = 0.06; ctx.fillStyle = '#fff'; for (let k = 0; k < 12; k++) { ctx.beginPath(); ctx.moveTo(W / 2, H * 0.4); const a1 = k * 0.5236 + t * 0.05, a2 = a1 + 0.22; ctx.lineTo(W / 2 + Math.cos(a1) * W * 1.5, H * 0.4 + Math.sin(a1) * W * 1.5); ctx.lineTo(W / 2 + Math.cos(a2) * W * 1.5, H * 0.4 + Math.sin(a2) * W * 1.5); ctx.fill(); } ctx.restore();
+      ctx.save(); ctx.globalAlpha = fade;
+      // pregunta arriba
+      const qy = H * 0.075, head = solved ? '✅ ' + T.answer : T.question;
+      tx(ctx, head, W / 2, qy, m * 0.068, solved ? '#69db7c' : '#fff', { stroke: 'rgba(0,0,0,.35)', mw: W * 0.92, w: 900 });
+      // opciones abajo (2×2) y la tarjeta en medio, encogida si no cabe
+      const opts = P.opts || [], oc = 2, orows = Math.ceil(opts.length / oc), gap = Math.max(6, W * 0.02), ow = (W * 0.92 - gap) / oc, oh = Math.min(H * 0.085, ow * 0.42);
+      const oy0 = H - 12 - orows * (oh + gap) + gap, bw = W * 0.9, x0 = (W - bw) / 2, cy0 = qy + m * 0.06, avail = oy0 - cy0 - 12;
+      const M = measure(ctx, bw), k = Math.min(1, avail / M.h), ch = M.h * k, cy = cy0 + Math.max(0, (avail - ch) / 2);   // centrada en el hueco libre
+      ctx.save(); ctx.translate(W / 2, cy); ctx.scale(k, k); ctx.translate(-W / 2, 0);
+      ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.35)'; ctx.shadowBlur = 20; ctx.fillStyle = '#fff'; rr(ctx, x0, 0, bw, M.h, 18); ctx.fill(); ctx.restore();
+      if (solved) { ctx.lineWidth = 5; ctx.strokeStyle = '#40c057'; rr(ctx, x0, 0, bw, M.h, 18); ctx.stroke(); }
+      body(ctx, M, x0, 0, bw, solved); ctx.restore();
+      // cuenta atrás en la esquina de la tarjeta
+      if (t >= TQ && t < TUP) { const left = TUP - t, R = m * 0.055, rx = W / 2 + bw * k / 2 - R * 0.5, ry = cy + R * 0.3, col = left <= 3 ? '#ff6b6b' : '#ffd43b';
+        ctx.fillStyle = '#1b1033'; ctx.beginPath(); ctx.arc(rx, ry, R * 1.15, 0, 6.3); ctx.fill(); ctx.lineCap = 'round'; ctx.lineWidth = R * 0.24; ctx.strokeStyle = 'rgba(255,255,255,.15)'; ctx.beginPath(); ctx.arc(rx, ry, R, 0, 6.3); ctx.stroke();
+        ctx.strokeStyle = col; ctx.beginPath(); ctx.arc(rx, ry, R, -Math.PI / 2, -Math.PI / 2 + 6.283 * left / WAIT); ctx.stroke(); tx(ctx, String(Math.ceil(left)), rx, ry + 1, R, col, { w: 900 }); }
+      // opciones (o, al resolver, la explicación en su sitio)
+      const rule = P.rule || {};
+      if (!solved || t < TR + 1.4 || !rule.text) opts.forEach((o, i) => {
+        const a = clamp((t - TOPT - i * 0.08) / 0.25, 0, 1); if (a <= 0) return; const r = Math.floor(i / oc), c = i % oc, x = (W - (ow * oc + gap)) / 2 + c * (ow + gap), y = oy0 + r * (oh + gap), ok = i === P.ok;
+        ctx.save(); ctx.globalAlpha = a * (solved && !ok ? 0.35 : 1) * (solved ? 1 - clamp((t - TR - 1.1) / 0.3, 0, 1) : 1);
+        tileBg(ctx, x, y, ow, oh, solved && ok ? '#d3f9d8' : '#f6f2ff', solved && ok ? '#8ce99a' : '#d9ccff', solved && ok ? '#2f9e44' : null);
+        ctx.fillStyle = solved && ok ? '#2f9e44' : '#7048e8'; ctx.beginPath(); ctx.arc(x + oh * 0.42, y + oh / 2, oh * 0.24, 0, 6.3); ctx.fill(); tx(ctx, 'ABCD'[i], x + oh * 0.42, y + oh / 2 + 1, oh * 0.28, '#fff', { w: 900 });
+        if (o && typeof o === 'object') tok(ctx, o, x + ow / 2 + oh * 0.2, y + oh / 2, oh * 0.95);
+        else tx(ctx, String(o), x + ow / 2 + oh * 0.2, y + oh / 2 + 1, isEmo(o) ? oh * 0.5 : oh * 0.4, '#3b2a7a', { w: 800, mw: ow - oh * 1.0 });
+        ctx.restore();
+      });
+      if (solved && t >= TR + 1.1 && rule.text) {   // explicación
+        const a = clamp((t - TR - 1.1) / 0.3, 0, 1), bx = W * 0.05, bwid = W * 0.9, top = oy0 - 4, bh = H - 10 - top;
+        ctx.save(); ctx.globalAlpha = a; ctx.fillStyle = '#fffdf5'; rr(ctx, bx, top, bwid, bh, 14); ctx.fill(); ctx.fillStyle = '#40c057'; rr(ctx, bx, top, 7, bh, 3); ctx.fill();
+        const lines = [('💡 ' + rule.text)].concat((rule.lines || []).slice(0, 3)), fz = Math.min(bh / (lines.length * 1.35 + 0.6), m * 0.045);
+        lines.forEach((ln, i) => tx(ctx, ln, bx + bwid / 2 + 3, top + fz * 0.95 + i * fz * 1.35, i ? fz * 0.95 : fz, i ? '#2b8a3e' : '#212529', { w: i ? 800 : 700, mw: bwid - 24 }));
+        if (rule.toks && !rule.lines) { const s = Math.min(fz * 1.6, (bwid - 20) / rule.toks.length); rule.toks.forEach((tk, j) => tok(ctx, tk, bx + bwid / 2 + (j - (rule.toks.length - 1) / 2) * s, top + fz * 2.6, s)); }
+        ctx.restore();
       }
       ctx.restore();
     }

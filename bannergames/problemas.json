@@ -1,0 +1,1594 @@
+{
+ "type": "quiz",
+ "url": "https://educativos.juegosboom.com/problemas-primaria",
+ "delay": 3,
+ "every_hours": 12,
+ "closed_hours": 24,
+ "wait": 18,
+ "reveal": 4,
+ "colors": {
+  "bg1": "#3b2a7a",
+  "bg2": "#140c33",
+  "accent": "#7048e8",
+  "cta": "#ffd43b",
+  "ctaText": "#2b1a0e"
+ },
+ "texts": {
+  "es": {
+   "think": "¡Piensa!",
+   "solved": "¿Lo has acertado?",
+   "answer": "Respuesta",
+   "cta": "Juega gratis ▶",
+   "later": "Seguir leyendo",
+   "barCta": "Jugar",
+   "close": "Cerrar",
+   "expand": "Ampliar",
+   "brand": "🎒 Problemas de Primaria",
+   "mini": "Problemas de Primaria",
+   "question": "¿CUÁL ES LA SOLUCIÓN?",
+   "bar": "🎒 ¿Sabrías resolverlo?"
+  }
+ },
+ "items": {
+  "es": [
+   {
+    "kind": "card",
+    "emoji": "🃏",
+    "text": "Álvaro tiene 26 cromos y Alba tiene 4. ¿Cuántos cromos tienen entre los dos?",
+    "opts": [
+     "30",
+     "28",
+     "15",
+     "60"
+    ],
+    "ok": 0,
+    "answer": "30",
+    "rule": {
+     "text": "Entre los dos tienen 30 cromos.",
+     "lines": [
+      "26 + 4 = 30"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🚆",
+    "text": "Un tren recorre 80 km a 80 km/h. ¿Cuántos minutos tarda?",
+    "opts": [
+     "60",
+     "1",
+     "55",
+     "70"
+    ],
+    "ok": 0,
+    "answer": "60",
+    "rule": {
+     "text": "Tarda 60 minutos.",
+     "lines": [
+      "80 : 80 = 1 h",
+      "1 × 60 = 60 min"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🚴",
+    "text": "Un ciclista ha dado 13 vueltas a un circuito de 2600 metros. ¿Cuántos kilómetros ha recorrido?",
+    "opts": [
+     "33,8 km",
+     "33.800 km",
+     "34,8 km",
+     "32,8 km"
+    ],
+    "ok": 0,
+    "answer": "33,8 km",
+    "rule": {
+     "text": "Ha recorrido 33,8 km.",
+     "lines": [
+      "13 × 2600 = 33.800 m",
+      "33.800 : 1.000 = 33,8 km"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🚐",
+    "text": "Una lavadora pesa 92 kg y un frigorífico 66 kg. ¿Cuánto peso lleva una furgoneta que transporta dos frigoríficos y una lavadora?",
+    "opts": [
+     "219 kg",
+     "224 kg",
+     "225 kg",
+     "132 kg"
+    ],
+    "ok": 1,
+    "answer": "224 kg",
+    "rule": {
+     "text": "Lleva 224 kg.",
+     "lines": [
+      "66 × 2 = 132",
+      "132 + 92 = 224"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🎁",
+    "text": "Pablo tiene 9 años. Su hermano nació cuando Pablo tenía 4 años. ¿Cuántos años tiene su hermano?",
+    "opts": [
+     "5",
+     "3",
+     "4",
+     "7"
+    ],
+    "ok": 0,
+    "answer": "5",
+    "rule": {
+     "text": "Su hermano tiene 5 años.",
+     "lines": [
+      "9 − 4 = 5"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🃏",
+    "text": "Noa reparte 15 cromos entre 5 amigos, a partes iguales. ¿Cuántos cromos recibe cada amigo?",
+    "opts": [
+     "8",
+     "3",
+     "2",
+     "13"
+    ],
+    "ok": 1,
+    "answer": "3",
+    "rule": {
+     "text": "Cada amigo recibe 3 cromos.",
+     "lines": [
+      "15 : 5 = 3"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🎈",
+    "text": "Para la fiesta necesito 24 globos y ya tengo 3. ¿Cuántos globos me faltan?",
+    "opts": [
+     "31",
+     "21",
+     "11",
+     "42"
+    ],
+    "ok": 1,
+    "answer": "21",
+    "rule": {
+     "text": "Me faltan 21 globos.",
+     "lines": [
+      "24 − 3 = 21"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🏦",
+    "text": "Se guardan 5000 € en el banco al 5 % anual. ¿Cuántos euros de interés se ganan en 2 años?",
+    "opts": [
+     "500",
+     "505",
+     "250",
+     "510"
+    ],
+    "ok": 0,
+    "answer": "500",
+    "rule": {
+     "text": "Se ganan 500 euros.",
+     "lines": [
+      "5 % de 5000 = 250",
+      "250 × 2 = 500"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🚴",
+    "text": "Un ciclista ha dado 19 vueltas a un circuito de 1850 metros. ¿Cuántos kilómetros ha recorrido?",
+    "opts": [
+     "36,15 km",
+     "34,15 km",
+     "35,15 km",
+     "35.150 km"
+    ],
+    "ok": 2,
+    "answer": "35,15 km",
+    "rule": {
+     "text": "Ha recorrido 35,15 km.",
+     "lines": [
+      "19 × 1850 = 35.150 m",
+      "35.150 : 1.000 = 35,15 km"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "⏱️",
+    "text": "Una hora tiene 60 minutos. ¿Cuántos minutos hay en 6 días?",
+    "opts": [
+     "8640",
+     "8639",
+     "8630",
+     "144"
+    ],
+    "ok": 0,
+    "answer": "8640",
+    "rule": {
+     "text": "Hay 8640 minutos.",
+     "lines": [
+      "6 × 24 = 144 horas",
+      "144 × 60 = 8640"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🎫",
+    "text": "Una entrada del parque cuesta 161 €. ¿Cuánto pagan 7 amigos por sus entradas?",
+    "opts": [
+     "1132",
+     "2254",
+     "1137",
+     "1127"
+    ],
+    "ok": 3,
+    "answer": "1127",
+    "rule": {
+     "text": "Pagan 1127 euros.",
+     "lines": [
+      "161 × 7 = 1127"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🍎",
+    "text": "En la frutería había 369 manzanas. Por la mañana venden 62 y por la tarde 84. ¿Cuántas manzanas quedan?",
+    "opts": [
+     "213",
+     "233",
+     "146",
+     "223"
+    ],
+    "ok": 3,
+    "answer": "223",
+    "rule": {
+     "text": "Quedan 223 manzanas.",
+     "lines": [
+      "62 + 84 = 146",
+      "369 − 146 = 223"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🚲",
+    "text": "En el patio hay 4 bicicletas. Cada bicicleta tiene 2 ruedas. ¿Cuántas ruedas hay?",
+    "opts": [
+     "18",
+     "13",
+     "8",
+     "7"
+    ],
+    "ok": 2,
+    "answer": "8",
+    "rule": {
+     "text": "Hay 8 ruedas.",
+     "lines": [
+      "2 + 2 + 2 + 2 = 8"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🚗",
+    "text": "Un coche va a 120 km/h. ¿Cuántos kilómetros recorre en 2,5 horas?",
+    "opts": [
+     "150 km",
+     "290 km",
+     "300 km",
+     "600 km"
+    ],
+    "ok": 2,
+    "answer": "300 km",
+    "rule": {
+     "text": "Recorre 300 km.",
+     "lines": [
+      "120 × 2,5 = 300"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🤸",
+    "text": "Carlos salta 1,96 m y Pedro salta 2,49 m. ¿Cuántos metros salta Pedro más que Carlos?",
+    "opts": [
+     "0,05 m",
+     "5,3 m",
+     "1,53 m",
+     "0,53 m"
+    ],
+    "ok": 3,
+    "answer": "0,53 m",
+    "rule": {
+     "text": "Salta 0,53 m más.",
+     "lines": [
+      "2,49 − 1,96 = 0,53"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🪢",
+    "text": "De un rollo de cuerda de 10 metros se cortan 4 trozos de 80 centímetros cada uno. ¿Cuántos centímetros de cuerda quedan?",
+    "opts": [
+     "678",
+     "680",
+     "690",
+     "320"
+    ],
+    "ok": 1,
+    "answer": "680",
+    "rule": {
+     "text": "Quedan 680 centímetros.",
+     "lines": [
+      "4 × 80 = 320",
+      "1000 − 320 = 680"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "⚖️",
+    "text": "Un saco de harina pesa 5 kg y 500 gramos. ¿Cuántos gramos pesa? (1 kg = 1.000 g)",
+    "opts": [
+     "2750",
+     "5510",
+     "5500",
+     "11.000"
+    ],
+    "ok": 2,
+    "answer": "5500",
+    "rule": {
+     "text": "Pesa 5500 gramos.",
+     "lines": [
+      "5000 + 500 = 5500"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🥚",
+    "text": "En cada caja hay 10 huevos. ¿Cuántos huevos hay en 3 cajas?",
+    "opts": [
+     "30",
+     "40",
+     "20",
+     "60"
+    ],
+    "ok": 0,
+    "answer": "30",
+    "rule": {
+     "text": "Hay 30 huevos.",
+     "lines": [
+      "3 × 10 = 30"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "📦",
+    "text": "Tengo 8 cajas con 10 lápices cada una y 9 lápices sueltos. ¿Cuántos lápices tengo?",
+    "opts": [
+     "79",
+     "94",
+     "87",
+     "89"
+    ],
+    "ok": 3,
+    "answer": "89",
+    "rule": {
+     "text": "Tengo 89 lápices.",
+     "lines": [
+      "80 + 9 = 89"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🔺",
+    "text": "Una vela triangular tiene 10 m de base y 8 m de altura. ¿Cuál es su área?",
+    "opts": [
+     "35 m²",
+     "40 m²",
+     "30 m²",
+     "80 m²"
+    ],
+    "ok": 1,
+    "answer": "40 m²",
+    "rule": {
+     "text": "Su área es 40 m².",
+     "lines": [
+      "10 × 8 = 80",
+      "80 : 2 = 40"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🍈",
+    "text": "Un melón se vende a 3,10 € el kilo. ¿Cuánto se paga por un melón de 3,5 kg?",
+    "opts": [
+     "10,85",
+     "108,5",
+     "11,85",
+     "9,85"
+    ],
+    "ok": 0,
+    "answer": "10,85",
+    "rule": {
+     "text": "Se pagan 10,85 euros.",
+     "lines": [
+      "3,1 × 3,5 = 10,85"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "👫",
+    "text": "Mario tiene 1 € y 50 céntimos y su hermana tiene el triple. ¿Cuánto dinero tienen entre los dos?",
+    "opts": [
+     "4,5",
+     "7",
+     "6",
+     "16"
+    ],
+    "ok": 2,
+    "answer": "6",
+    "rule": {
+     "text": "Entre los dos tienen 6 euros.",
+     "lines": [
+      "1,5 × 3 = 4,5",
+      "1,5 + 4,5 = 6"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🎁",
+    "text": "Unai tiene 12 años. Su hermano nació cuando Unai tenía 3 años. ¿Cuántos años tiene su hermano?",
+    "opts": [
+     "5",
+     "9",
+     "14",
+     "7"
+    ],
+    "ok": 1,
+    "answer": "9",
+    "rule": {
+     "text": "Su hermano tiene 9 años.",
+     "lines": [
+      "12 − 3 = 9"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🥚",
+    "text": "Mamá compra 3 docenas de huevos. Una docena son 12. ¿Cuántos huevos compra?",
+    "opts": [
+     "34",
+     "26",
+     "41",
+     "36"
+    ],
+    "ok": 3,
+    "answer": "36",
+    "rule": {
+     "text": "Compra 36 huevos.",
+     "lines": [
+      "3 × 12 = 36"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🃏",
+    "text": "Lucía tiene 47 cromos y Ana tiene 41. ¿Cuántos cromos más tiene Lucía que Ana?",
+    "opts": [
+     "6",
+     "4",
+     "7",
+     "11"
+    ],
+    "ok": 0,
+    "answer": "6",
+    "rule": {
+     "text": "Lucía tiene 6 cromos más.",
+     "lines": [
+      "47 − 41 = 6"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🔺",
+    "text": "Una vela triangular tiene 6 m de base y 32 m de altura. ¿Cuál es su área?",
+    "opts": [
+     "94 m²",
+     "192 m²",
+     "95 m²",
+     "96 m²"
+    ],
+    "ok": 3,
+    "answer": "96 m²",
+    "rule": {
+     "text": "Su área es 96 m².",
+     "lines": [
+      "6 × 32 = 192",
+      "192 : 2 = 96"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🤸",
+    "text": "Carlos salta 2,34 m y Pedro salta 2,59 m. ¿Cuántos metros salta Pedro más que Carlos?",
+    "opts": [
+     "1,25 m",
+     "2,5 m",
+     "0,25 m",
+     "0,03 m"
+    ],
+    "ok": 2,
+    "answer": "0,25 m",
+    "rule": {
+     "text": "Salta 0,25 m más.",
+     "lines": [
+      "2,59 − 2,34 = 0,25"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🪢",
+    "text": "De un rollo de cuerda de 8 metros se cortan 3 trozos de 75 centímetros cada uno. ¿Cuántos centímetros de cuerda quedan?",
+    "opts": [
+     "575",
+     "1150",
+     "225",
+     "570"
+    ],
+    "ok": 0,
+    "answer": "575",
+    "rule": {
+     "text": "Quedan 575 centímetros.",
+     "lines": [
+      "3 × 75 = 225",
+      "800 − 225 = 575"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🖍️",
+    "text": "Una caja trae 3 paquetes de 9 ceras. Se han roto 8 ceras. ¿Cuántas ceras quedan bien?",
+    "opts": [
+     "27",
+     "18",
+     "24",
+     "19"
+    ],
+    "ok": 3,
+    "answer": "19",
+    "rule": {
+     "text": "Quedan bien 19 ceras.",
+     "lines": [
+      "3 × 9 = 27",
+      "27 − 8 = 19"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🪑",
+    "text": "En la clase hay 5 filas con 5 sillas en cada fila. ¿Cuántas sillas hay?",
+    "opts": [
+     "27",
+     "26",
+     "25",
+     "20"
+    ],
+    "ok": 2,
+    "answer": "25",
+    "rule": {
+     "text": "Hay 25 sillas.",
+     "lines": [
+      "5 × 5 = 25"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🍦",
+    "text": "Un helado cuesta 2 € y un zumo cuesta 3 €. ¿Cuánto cuestan los dos juntos?",
+    "opts": [
+     "10",
+     "5",
+     "7",
+     "0"
+    ],
+    "ok": 1,
+    "answer": "5",
+    "rule": {
+     "text": "Cuestan 5 euros.",
+     "lines": [
+      "2 + 3 = 5"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🎒",
+    "text": "En un colegio hay 105 alumnos y el 20 % va al comedor. ¿Cuántos alumnos NO van al comedor?",
+    "opts": [
+     "84",
+     "94",
+     "21",
+     "86"
+    ],
+    "ok": 0,
+    "answer": "84",
+    "rule": {
+     "text": "No van 84 alumnos.",
+     "lines": [
+      "20 % de 105 = 21",
+      "105 − 21 = 84"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🍈",
+    "text": "Un melón se vende a 4,57 € el kilo. ¿Cuánto se paga por un melón de 3,5 kg?",
+    "opts": [
+     "16",
+     "8",
+     "17",
+     "32"
+    ],
+    "ok": 0,
+    "answer": "16",
+    "rule": {
+     "text": "Se pagan 16 euros.",
+     "lines": [
+      "4,57 × 3,5 = 16"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🚌",
+    "text": "Los 91 chicos y 103 chicas del colegio van de excursión con 6 profesores. ¿Cuántos autocares de 52 plazas necesitan?",
+    "opts": [
+     "4",
+     "3",
+     "200",
+     "5"
+    ],
+    "ok": 0,
+    "answer": "4",
+    "rule": {
+     "text": "Necesitan 4 autocares.",
+     "lines": [
+      "91 + 103 + 6 = 200",
+      "200 : 52 = 3, resto 44 → 4 autocares"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🍕",
+    "text": "Cada pizza se corta en 10 trozos. ¿Cuántos trozos hay en 5 pizzas?",
+    "opts": [
+     "50",
+     "45",
+     "55",
+     "100"
+    ],
+    "ok": 0,
+    "answer": "50",
+    "rule": {
+     "text": "Hay 50 trozos.",
+     "lines": [
+      "5 × 10 = 50"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🎂",
+    "text": "Noa tiene 6 años y su padre tiene 24 años más que Noa. ¿Cuántos años tiene su padre?",
+    "opts": [
+     "25",
+     "30",
+     "29",
+     "28"
+    ],
+    "ok": 1,
+    "answer": "30",
+    "rule": {
+     "text": "El padre tiene 30 años.",
+     "lines": [
+      "6 + 24 = 30"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "📚",
+    "text": "En la estantería hay 38 cuentos. La profe trae 30 cuentos nuevos. ¿Cuántos cuentos hay ahora?",
+    "opts": [
+     "58",
+     "70",
+     "68",
+     "69"
+    ],
+    "ok": 2,
+    "answer": "68",
+    "rule": {
+     "text": "Ahora hay 68 cuentos.",
+     "lines": [
+      "38 + 30 = 68"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🔢",
+    "text": "La suma de dos números consecutivos es 27 y su producto 182. ¿Cuál es el número menor?",
+    "opts": [
+     "11 ",
+     "182 ",
+     "26 ",
+     "13 "
+    ],
+    "ok": 3,
+    "answer": "13 ",
+    "rule": {
+     "text": "El número menor es el 13.",
+     "lines": [
+      "27 − 1 = 26",
+      "26 : 2 = 13",
+      "13 × 14 = 182 ✔"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "📝",
+    "text": "Las notas de Pablo en cuatro exámenes han sido 5, 5, 10, 8. ¿Cuál es su nota media?",
+    "opts": [
+     "28 ",
+     "7 ",
+     "17 ",
+     "12 "
+    ],
+    "ok": 1,
+    "answer": "7 ",
+    "rule": {
+     "text": "La nota media es 7.",
+     "lines": [
+      "5 + 5 + 10 + 8 = 28",
+      "28 : 4 = 7"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🥖",
+    "text": "Álvaro compra 4 barras de pan a 36 céntimos cada una y paga con una moneda de 2 euros. ¿Cuántos céntimos le devuelven?",
+    "opts": [
+     "112",
+     "61",
+     "56",
+     "144"
+    ],
+    "ok": 2,
+    "answer": "56",
+    "rule": {
+     "text": "Le devuelven 56 céntimos.",
+     "lines": [
+      "4 × 36 = 144",
+      "200 − 144 = 56"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🧑‍🌾",
+    "text": "Un agricultor tenía 5246 kg de patatas. Vende 755 kg en el mercado y 435 kg a una tienda. ¿Cuántos kilos le quedan?",
+    "opts": [
+     "4061 kg",
+     "1190 kg",
+     "4056 kg",
+     "4051 kg"
+    ],
+    "ok": 2,
+    "answer": "4056 kg",
+    "rule": {
+     "text": "Le quedan 4056 kg.",
+     "lines": [
+      "755 + 435 = 1190",
+      "5246 − 1190 = 4056"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🍎",
+    "text": "En la frutería había 251 manzanas. Por la mañana venden 36 y por la tarde 36. ¿Cuántas manzanas quedan?",
+    "opts": [
+     "178",
+     "72",
+     "358",
+     "179"
+    ],
+    "ok": 3,
+    "answer": "179",
+    "rule": {
+     "text": "Quedan 179 manzanas.",
+     "lines": [
+      "36 + 36 = 72",
+      "251 − 72 = 179"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🐦",
+    "text": "En un árbol hay 29 pájaros. Se van volando 15. ¿Cuántos pájaros quedan en el árbol?",
+    "opts": [
+     "14",
+     "16",
+     "24",
+     "13"
+    ],
+    "ok": 0,
+    "answer": "14",
+    "rule": {
+     "text": "Quedan 14 pájaros.",
+     "lines": [
+      "29 − 15 = 14"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🔢",
+    "text": "La suma de dos números consecutivos es 27 y su producto 182. ¿Cuál es el número menor?",
+    "opts": [
+     "26 ",
+     "15 ",
+     "182 ",
+     "13 "
+    ],
+    "ok": 3,
+    "answer": "13 ",
+    "rule": {
+     "text": "El número menor es el 13.",
+     "lines": [
+      "27 − 1 = 26",
+      "26 : 2 = 13",
+      "13 × 14 = 182 ✔"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🍞",
+    "text": "Una familia come 385 g de pan cada día. ¿Cuántos kilos de pan come en un mes de 30 días?",
+    "opts": [
+     "11,55 kg",
+     "11.550 kg",
+     "10,55 kg",
+     "12,55 kg"
+    ],
+    "ok": 0,
+    "answer": "11,55 kg",
+    "rule": {
+     "text": "Come 11,55 kg.",
+     "lines": [
+      "385 × 30 = 11.550 g",
+      "11.550 : 1.000 = 11,55 kg"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🍫",
+    "text": "Juan se ha comido 3/4 de los bombones de una caja de 32. ¿Cuántos bombones ha dejado sin comer?",
+    "opts": [
+     "24",
+     "8",
+     "16",
+     "10"
+    ],
+    "ok": 1,
+    "answer": "8",
+    "rule": {
+     "text": "Ha dejado 8 bombones.",
+     "lines": [
+      "32 : 4 = 8",
+      "8 × 3 = 24",
+      "32 − 24 = 8"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🧑‍🌾",
+    "text": "Un agricultor tenía 2090 kg de patatas. Vende 763 kg en el mercado y 397 kg a una tienda. ¿Cuántos kilos le quedan?",
+    "opts": [
+     "1160 kg",
+     "931 kg",
+     "925 kg",
+     "930 kg"
+    ],
+    "ok": 3,
+    "answer": "930 kg",
+    "rule": {
+     "text": "Le quedan 930 kg.",
+     "lines": [
+      "763 + 397 = 1160",
+      "2090 − 1160 = 930"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "📅",
+    "text": "Una semana tiene 7 días. ¿Cuántos días hay en 2 semanas?",
+    "opts": [
+     "7",
+     "19",
+     "14",
+     "15"
+    ],
+    "ok": 2,
+    "answer": "14",
+    "rule": {
+     "text": "Hay 14 días.",
+     "lines": [
+      "2 × 7 = 14"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🚲",
+    "text": "En el patio hay 7 bicicletas. Cada bicicleta tiene 2 ruedas. ¿Cuántas ruedas hay?",
+    "opts": [
+     "14",
+     "9",
+     "12",
+     "4"
+    ],
+    "ok": 0,
+    "answer": "14",
+    "rule": {
+     "text": "Hay 14 ruedas.",
+     "lines": [
+      "2 + 2 + 2 + 2 + 2 + 2 + 2 = 14"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🍎",
+    "text": "4 kg de manzanas cuestan 12 €. ¿Cuánto costarán 8 kg?",
+    "opts": [
+     "24",
+     "3",
+     "14",
+     "25"
+    ],
+    "ok": 0,
+    "answer": "24",
+    "rule": {
+     "text": "Costarán 24 euros.",
+     "lines": [
+      "12 : 4 = 3 € el kilo",
+      "3 × 8 = 24"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🍈",
+    "text": "Un melón se vende a 2,90 € el kilo. ¿Cuánto se paga por un melón de 2,5 kg?",
+    "opts": [
+     "7,25",
+     "8,25",
+     "72,5",
+     "6,25"
+    ],
+    "ok": 0,
+    "answer": "7,25",
+    "rule": {
+     "text": "Se pagan 7,25 euros.",
+     "lines": [
+      "2,9 × 2,5 = 7,25"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🔌",
+    "text": "Para una instalación eléctrica se han usado 59 metros de cable. Cada metro cuesta 12 céntimos. ¿Cuál es el precio total en céntimos?",
+    "opts": [
+     "354",
+     "718",
+     "708",
+     "713"
+    ],
+    "ok": 2,
+    "answer": "708",
+    "rule": {
+     "text": "El precio es 708 céntimos.",
+     "lines": [
+      "59 × 12 = 708"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "⚖️",
+    "text": "Un saco de harina pesa 5 kg y 250 gramos. ¿Cuántos gramos pesa? (1 kg = 1.000 g)",
+    "opts": [
+     "5248",
+     "2625",
+     "5240",
+     "5250"
+    ],
+    "ok": 3,
+    "answer": "5250",
+    "rule": {
+     "text": "Pesa 5250 gramos.",
+     "lines": [
+      "5000 + 250 = 5250"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "💶",
+    "text": "Mario ha ahorrado 76 € y Ana ha ahorrado 157 €. ¿Cuánto dinero tienen entre los dos?",
+    "opts": [
+     "234",
+     "235",
+     "117",
+     "233"
+    ],
+    "ok": 3,
+    "answer": "233",
+    "rule": {
+     "text": "Entre los dos tienen 233 euros.",
+     "lines": [
+      "76 + 157 = 233"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "📚",
+    "text": "En la estantería hay 20 cuentos. La profe trae 20 cuentos nuevos. ¿Cuántos cuentos hay ahora?",
+    "opts": [
+     "39",
+     "20",
+     "40",
+     "41"
+    ],
+    "ok": 2,
+    "answer": "40",
+    "rule": {
+     "text": "Ahora hay 40 cuentos.",
+     "lines": [
+      "20 + 20 = 40"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🗺️",
+    "text": "En un mapa a escala 1:10.000, dos pueblos están a 3 cm. ¿Cuántos kilómetros hay en la realidad?",
+    "opts": [
+     "1,3 km",
+     "0,3 km",
+     "3 km",
+     "30.000 km"
+    ],
+    "ok": 1,
+    "answer": "0,3 km",
+    "rule": {
+     "text": "Hay 0,3 km.",
+     "lines": [
+      "3 × 10.000 = 30.000 cm",
+      "30.000 : 100.000 = 0,3 km"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🍈",
+    "text": "Un melón se vende a 1,44 € el kilo. ¿Cuánto se paga por un melón de 2,5 kg?",
+    "opts": [
+     "3,6",
+     "36",
+     "4,6",
+     "2,6"
+    ],
+    "ok": 0,
+    "answer": "3,6",
+    "rule": {
+     "text": "Se pagan 3,6 euros.",
+     "lines": [
+      "1,44 × 2,5 = 3,6"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "📚",
+    "text": "Un librero ha comprado 163 libros a 6 € cada uno y los vende a 8 € la unidad. ¿Cuánto dinero gana?",
+    "opts": [
+     "327",
+     "2",
+     "326",
+     "163"
+    ],
+    "ok": 2,
+    "answer": "326",
+    "rule": {
+     "text": "Gana 326 euros.",
+     "lines": [
+      "8 − 6 = 2 € por libro",
+      "163 × 2 = 326"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "📏",
+    "text": "Una cuerda mide 7 metros y 75 centímetros. ¿Cuántos centímetros mide en total? (1 m = 100 cm)",
+    "opts": [
+     "776",
+     "765",
+     "775",
+     "773"
+    ],
+    "ok": 2,
+    "answer": "775",
+    "rule": {
+     "text": "Mide 775 centímetros.",
+     "lines": [
+      "700 + 75 = 775"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🍎",
+    "text": "En la frutería había 405 manzanas. Por la mañana venden 65 y por la tarde 58. ¿Cuántas manzanas quedan?",
+    "opts": [
+     "292",
+     "123",
+     "282",
+     "564"
+    ],
+    "ok": 2,
+    "answer": "282",
+    "rule": {
+     "text": "Quedan 282 manzanas.",
+     "lines": [
+      "65 + 58 = 123",
+      "405 − 123 = 282"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🐦",
+    "text": "En un árbol hay 48 pájaros. Se van volando 10. ¿Cuántos pájaros quedan en el árbol?",
+    "opts": [
+     "33",
+     "43",
+     "19",
+     "38"
+    ],
+    "ok": 3,
+    "answer": "38",
+    "rule": {
+     "text": "Quedan 38 pájaros.",
+     "lines": [
+      "48 − 10 = 38"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🚆",
+    "text": "Un tren recorre 270 km a 120 km/h. ¿Cuántos minutos tarda?",
+    "opts": [
+     "135",
+     "134",
+     "145",
+     "2,25"
+    ],
+    "ok": 0,
+    "answer": "135",
+    "rule": {
+     "text": "Tarda 135 minutos.",
+     "lines": [
+      "270 : 120 = 2,25 h",
+      "2,25 × 60 = 135 min"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🍈",
+    "text": "Un melón se vende a 3,18 € el kilo. ¿Cuánto se paga por un melón de 1,5 kg?",
+    "opts": [
+     "4,77",
+     "47,7",
+     "3,77",
+     "5,77"
+    ],
+    "ok": 0,
+    "answer": "4,77",
+    "rule": {
+     "text": "Se pagan 4,77 euros.",
+     "lines": [
+      "3,18 × 1,5 = 4,77"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "💶",
+    "text": "Mario tiene 569 € y Lucía tiene 657 €. ¿Cuántos euros tienen entre los dos?",
+    "opts": [
+     "1227",
+     "1226",
+     "1225",
+     "613"
+    ],
+    "ok": 1,
+    "answer": "1226",
+    "rule": {
+     "text": "Tienen entre los dos 1226 euros.",
+     "lines": [
+      "569 + 657 = 1226"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🎫",
+    "text": "Una entrada del parque cuesta 87 €. ¿Cuánto pagan 5 amigos por sus entradas?",
+    "opts": [
+     "435",
+     "434",
+     "437",
+     "440"
+    ],
+    "ok": 0,
+    "answer": "435",
+    "rule": {
+     "text": "Pagan 435 euros.",
+     "lines": [
+      "87 × 5 = 435"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🍪",
+    "text": "Dos hermanos se reparten 14 galletas a partes iguales. ¿Cuántas galletas le tocan a cada uno?",
+    "opts": [
+     "7",
+     "17",
+     "9",
+     "6"
+    ],
+    "ok": 0,
+    "answer": "7",
+    "rule": {
+     "text": "A cada uno le tocan 7 galletas.",
+     "lines": [
+      "La mitad de 14 = 7"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🚲",
+    "text": "En el patio hay 5 bicicletas. Cada bicicleta tiene 2 ruedas. ¿Cuántas ruedas hay?",
+    "opts": [
+     "10",
+     "20",
+     "12",
+     "5"
+    ],
+    "ok": 0,
+    "answer": "10",
+    "rule": {
+     "text": "Hay 10 ruedas.",
+     "lines": [
+      "2 + 2 + 2 + 2 + 2 = 10"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🏦",
+    "text": "Se guardan 2000 € en el banco al 4 % anual. ¿Cuántos euros de interés se ganan en 3 años?",
+    "opts": [
+     "80",
+     "240",
+     "242",
+     "238"
+    ],
+    "ok": 1,
+    "answer": "240",
+    "rule": {
+     "text": "Se ganan 240 euros.",
+     "lines": [
+      "4 % de 2000 = 80",
+      "80 × 3 = 240"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🏷️",
+    "text": "Una mochila cuesta 40 € y tiene un descuento del 25 %. ¿Cuánto hay que pagar?",
+    "opts": [
+     "10",
+     "30",
+     "31",
+     "20"
+    ],
+    "ok": 1,
+    "answer": "30",
+    "rule": {
+     "text": "Hay que pagar 30 euros.",
+     "lines": [
+      "25 % de 40 = 10",
+      "40 − 10 = 30"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🥚",
+    "text": "¿Cuántos huevos son 12 docenas y 9 medias docenas?",
+    "opts": [
+     "198",
+     "54",
+     "144",
+     "197"
+    ],
+    "ok": 0,
+    "answer": "198",
+    "rule": {
+     "text": "Son 198 huevos.",
+     "lines": [
+      "12 × 12 = 144",
+      "9 × 6 = 54",
+      "144 + 54 = 198"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🍓",
+    "text": "Se reparten 385 fresas en 7 cestas con el mismo número de fresas. ¿Cuántas fresas hay en cada cesta?",
+    "opts": [
+     "28",
+     "53",
+     "55",
+     "54"
+    ],
+    "ok": 2,
+    "answer": "55",
+    "rule": {
+     "text": "En cada cesta hay 55 fresas.",
+     "lines": [
+      "385 : 7 = 55"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🥚",
+    "text": "Mamá compra 4 docenas de huevos. Una docena son 12. ¿Cuántos huevos compra?",
+    "opts": [
+     "48",
+     "46",
+     "53",
+     "96"
+    ],
+    "ok": 0,
+    "answer": "48",
+    "rule": {
+     "text": "Compra 48 huevos.",
+     "lines": [
+      "4 × 12 = 48"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🐔",
+    "text": "En la granja hay 4 gallinas, 1 patos y 1 conejos. ¿Cuántos animales hay en total?",
+    "opts": [
+     "4",
+     "3",
+     "6",
+     "12"
+    ],
+    "ok": 2,
+    "answer": "6",
+    "rule": {
+     "text": "Hay 6 animales.",
+     "lines": [
+      "4 + 1 + 1 = 6"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🗺️",
+    "text": "En un mapa a escala 1:50.000, dos pueblos están a 15 cm. ¿Cuántos kilómetros hay en la realidad?",
+    "opts": [
+     "8,5 km",
+     "6,5 km",
+     "750.000 km",
+     "7,5 km"
+    ],
+    "ok": 3,
+    "answer": "7,5 km",
+    "rule": {
+     "text": "Hay 7,5 km.",
+     "lines": [
+      "15 × 50.000 = 750.000 cm",
+      "750.000 : 100.000 = 7,5 km"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🚿",
+    "text": "Un grifo echa 79 litros de agua por minuto. ¿Cuántos minutos tarda en llenar un depósito de 5056 litros?",
+    "opts": [
+     "62",
+     "64",
+     "54",
+     "66"
+    ],
+    "ok": 1,
+    "answer": "64",
+    "rule": {
+     "text": "Tarda 64 minutos.",
+     "lines": [
+      "5056 : 79 = 64"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🎬",
+    "text": "Una sala de cine tiene 988 butacas. Si hay 26 asientos en cada fila, ¿cuántas filas tiene el cine?",
+    "opts": [
+     "37",
+     "43",
+     "38",
+     "76"
+    ],
+    "ok": 2,
+    "answer": "38",
+    "rule": {
+     "text": "Tiene 38 filas.",
+     "lines": [
+      "988 : 26 = 38"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "⚖️",
+    "text": "Un saco de harina pesa 2 kg y 750 gramos. ¿Cuántos gramos pesa? (1 kg = 1.000 g)",
+    "opts": [
+     "2750",
+     "2740",
+     "2749",
+     "1375"
+    ],
+    "ok": 0,
+    "answer": "2750",
+    "rule": {
+     "text": "Pesa 2750 gramos.",
+     "lines": [
+      "2000 + 750 = 2750"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🍪",
+    "text": "Dos hermanos se reparten 14 galletas a partes iguales. ¿Cuántas galletas le tocan a cada uno?",
+    "opts": [
+     "7",
+     "9",
+     "5",
+     "6"
+    ],
+    "ok": 0,
+    "answer": "7",
+    "rule": {
+     "text": "A cada uno le tocan 7 galletas.",
+     "lines": [
+      "La mitad de 14 = 7"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🍦",
+    "text": "Un helado cuesta 3 € y un zumo cuesta 2 €. ¿Cuánto cuestan los dos juntos?",
+    "opts": [
+     "4",
+     "10",
+     "5",
+     "7"
+    ],
+    "ok": 2,
+    "answer": "5",
+    "rule": {
+     "text": "Cuestan 5 euros.",
+     "lines": [
+      "3 + 2 = 5"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "emoji": "🍎",
+    "text": "3 kg de manzanas cuestan 9 €. ¿Cuánto costarán 7 kg?",
+    "opts": [
+     "11",
+     "3",
+     "21",
+     "16"
+    ],
+    "ok": 2,
+    "answer": "21",
+    "rule": {
+     "text": "Costarán 21 euros.",
+     "lines": [
+      "9 : 3 = 3 € el kilo",
+      "3 × 7 = 21"
+     ]
+    }
+   }
+  ]
+ }
+}

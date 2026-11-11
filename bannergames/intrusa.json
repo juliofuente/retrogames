@@ -1,0 +1,2932 @@
+{
+ "type": "quiz",
+ "url": "https://educativos.juegosboom.com/la-palabra-intrusa",
+ "delay": 3,
+ "every_hours": 12,
+ "closed_hours": 24,
+ "wait": 8,
+ "reveal": 4,
+ "colors": {
+  "bg1": "#3b2a7a",
+  "bg2": "#140c33",
+  "accent": "#7048e8",
+  "cta": "#ffd43b",
+  "ctaText": "#2b1a0e"
+ },
+ "texts": {
+  "es": {
+   "think": "¡Piensa!",
+   "solved": "¿Lo has acertado?",
+   "answer": "Respuesta",
+   "cta": "Juega gratis ▶",
+   "later": "Seguir leyendo",
+   "barCta": "Jugar",
+   "close": "Cerrar",
+   "expand": "Ampliar",
+   "brand": "🙊 La palabra intrusa",
+   "mini": "La palabra intrusa",
+   "question": "¿Qué palabra sobra?",
+   "bar": "🙊 A esta frase le sobra una palabra. ¿Cuál?"
+  },
+  "en": {
+   "think": "Think!",
+   "solved": "Did you get it?",
+   "answer": "Answer",
+   "cta": "Play free ▶",
+   "later": "Keep reading",
+   "barCta": "Play",
+   "close": "Close",
+   "expand": "Expand",
+   "brand": "🙊 Odd word out",
+   "mini": "Odd word out",
+   "question": "Which word doesn't belong?",
+   "bar": "🙊 This sentence has one word too many. Which one?"
+  }
+ },
+ "items": {
+  "es": [
+   {
+    "kind": "card",
+    "text": "El conejo tenedor salta muy alto.",
+    "opts": [
+     "muy",
+     "tenedor",
+     "salta",
+     "alto"
+    ],
+    "ok": 1,
+    "answer": "tenedor",
+    "rule": {
+     "text": "Sobra «tenedor». La frase es:",
+     "lines": [
+      "El conejo salta muy alto."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "La tortuga vive muchos años lámpara.",
+    "opts": [
+     "muchos",
+     "tortuga",
+     "lámpara",
+     "años"
+    ],
+    "ok": 2,
+    "answer": "lámpara",
+    "rule": {
+     "text": "Sobra «lámpara». La frase es:",
+     "lines": [
+      "La tortuga vive muchos años."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Pinto un dibujo almohada con colores.",
+    "opts": [
+     "con",
+     "colores",
+     "dibujo",
+     "almohada"
+    ],
+    "ok": 3,
+    "answer": "almohada",
+    "rule": {
+     "text": "Sobra «almohada». La frase es:",
+     "lines": [
+      "Pinto un dibujo con colores."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Pinto un dibujo con colores lámpara.",
+    "opts": [
+     "con",
+     "lámpara",
+     "dibujo",
+     "colores"
+    ],
+    "ok": 1,
+    "answer": "lámpara",
+    "rule": {
+     "text": "Sobra «lámpara». La frase es:",
+     "lines": [
+      "Pinto un dibujo con colores."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Mi perro come escalera mucho.",
+    "opts": [
+     "escalera",
+     "perro",
+     "mucho",
+     "come"
+    ],
+    "ok": 0,
+    "answer": "escalera",
+    "rule": {
+     "text": "Sobra «escalera». La frase es:",
+     "lines": [
+      "Mi perro come mucho."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "El conejo salta martillo muy alto.",
+    "opts": [
+     "muy",
+     "salta",
+     "martillo",
+     "alto"
+    ],
+    "ok": 2,
+    "answer": "martillo",
+    "rule": {
+     "text": "Sobra «martillo». La frase es:",
+     "lines": [
+      "El conejo salta muy alto."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Abro la cactus puerta con la llave.",
+    "opts": [
+     "puerta",
+     "cactus",
+     "con",
+     "llave"
+    ],
+    "ok": 1,
+    "answer": "cactus",
+    "rule": {
+     "text": "Sobra «cactus». La frase es:",
+     "lines": [
+      "Abro la puerta con la llave."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Mi escalera perro come mucho.",
+    "opts": [
+     "escalera",
+     "come",
+     "perro",
+     "mucho"
+    ],
+    "ok": 0,
+    "answer": "escalera",
+    "rule": {
+     "text": "Sobra «escalera». La frase es:",
+     "lines": [
+      "Mi perro come mucho."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Hoy bañera hace mucho frío.",
+    "opts": [
+     "frío",
+     "hace",
+     "mucho",
+     "bañera"
+    ],
+    "ok": 3,
+    "answer": "bañera",
+    "rule": {
+     "text": "Sobra «bañera». La frase es:",
+     "lines": [
+      "Hoy hace mucho frío."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Abro la puerta con la llave bombilla.",
+    "opts": [
+     "bombilla",
+     "con",
+     "puerta",
+     "llave"
+    ],
+    "ok": 0,
+    "answer": "bombilla",
+    "rule": {
+     "text": "Sobra «bombilla». La frase es:",
+     "lines": [
+      "Abro la puerta con la llave."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "El escalera caracol camina muy despacio.",
+    "opts": [
+     "escalera",
+     "despacio",
+     "muy",
+     "camina"
+    ],
+    "ok": 0,
+    "answer": "escalera",
+    "rule": {
+     "text": "Sobra «escalera». La frase es:",
+     "lines": [
+      "El caracol camina muy despacio."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Pinto un dibujo con colores zapato.",
+    "opts": [
+     "colores",
+     "zapato",
+     "con",
+     "dibujo"
+    ],
+    "ok": 1,
+    "answer": "zapato",
+    "rule": {
+     "text": "Sobra «zapato». La frase es:",
+     "lines": [
+      "Pinto un dibujo con colores."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Mi perro come zapato mucho.",
+    "opts": [
+     "zapato",
+     "perro",
+     "come",
+     "mucho"
+    ],
+    "ok": 0,
+    "answer": "zapato",
+    "rule": {
+     "text": "Sobra «zapato». La frase es:",
+     "lines": [
+      "Mi perro come mucho."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Me lavo los dientes antes de tornillo dormir.",
+    "opts": [
+     "lavo",
+     "dientes",
+     "tornillo",
+     "los"
+    ],
+    "ok": 2,
+    "answer": "tornillo",
+    "rule": {
+     "text": "Sobra «tornillo». La frase es:",
+     "lines": [
+      "Me lavo los dientes antes de dormir."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Mi perro come cebolla mucho.",
+    "opts": [
+     "cebolla",
+     "mucho",
+     "perro",
+     "come"
+    ],
+    "ok": 0,
+    "answer": "cebolla",
+    "rule": {
+     "text": "Sobra «cebolla». La frase es:",
+     "lines": [
+      "Mi perro come mucho."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Pinto un dibujo con bañera colores.",
+    "opts": [
+     "dibujo",
+     "bañera",
+     "colores",
+     "con"
+    ],
+    "ok": 1,
+    "answer": "bañera",
+    "rule": {
+     "text": "Sobra «bañera». La frase es:",
+     "lines": [
+      "Pinto un dibujo con colores."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Me gusta comer escalera helado.",
+    "opts": [
+     "escalera",
+     "gusta",
+     "helado",
+     "comer"
+    ],
+    "ok": 0,
+    "answer": "escalera",
+    "rule": {
+     "text": "Sobra «escalera». La frase es:",
+     "lines": [
+      "Me gusta comer helado."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "El elefante tiene una martillo trompa larga.",
+    "opts": [
+     "tiene",
+     "martillo",
+     "trompa",
+     "una"
+    ],
+    "ok": 1,
+    "answer": "martillo",
+    "rule": {
+     "text": "Sobra «martillo». La frase es:",
+     "lines": [
+      "El elefante tiene una trompa larga."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "La maestra explica trompeta la lección.",
+    "opts": [
+     "lección",
+     "explica",
+     "maestra",
+     "trompeta"
+    ],
+    "ok": 3,
+    "answer": "trompeta",
+    "rule": {
+     "text": "Sobra «trompeta». La frase es:",
+     "lines": [
+      "La maestra explica la lección."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "La niña lee cebolla un libro.",
+    "opts": [
+     "libro",
+     "lee",
+     "niña",
+     "cebolla"
+    ],
+    "ok": 3,
+    "answer": "cebolla",
+    "rule": {
+     "text": "Sobra «cebolla». La frase es:",
+     "lines": [
+      "La niña lee un libro."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "La luna brilla lámpara de noche.",
+    "opts": [
+     "lámpara",
+     "luna",
+     "noche",
+     "brilla"
+    ],
+    "ok": 0,
+    "answer": "lámpara",
+    "rule": {
+     "text": "Sobra «lámpara». La frase es:",
+     "lines": [
+      "La luna brilla de noche."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "El bombilla conejo salta muy alto.",
+    "opts": [
+     "salta",
+     "conejo",
+     "muy",
+     "bombilla"
+    ],
+    "ok": 3,
+    "answer": "bombilla",
+    "rule": {
+     "text": "Sobra «bombilla». La frase es:",
+     "lines": [
+      "El conejo salta muy alto."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "El viento mueve las tenedor hojas.",
+    "opts": [
+     "mueve",
+     "las",
+     "tenedor",
+     "hojas"
+    ],
+    "ok": 2,
+    "answer": "tenedor",
+    "rule": {
+     "text": "Sobra «tenedor». La frase es:",
+     "lines": [
+      "El viento mueve las hojas."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Pinto trompeta un dibujo con colores.",
+    "opts": [
+     "trompeta",
+     "con",
+     "colores",
+     "dibujo"
+    ],
+    "ok": 0,
+    "answer": "trompeta",
+    "rule": {
+     "text": "Sobra «trompeta». La frase es:",
+     "lines": [
+      "Pinto un dibujo con colores."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "La tortuga vive muchos años bañera.",
+    "opts": [
+     "bañera",
+     "muchos",
+     "tortuga",
+     "años"
+    ],
+    "ok": 0,
+    "answer": "bañera",
+    "rule": {
+     "text": "Sobra «bañera». La frase es:",
+     "lines": [
+      "La tortuga vive muchos años."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Mi hermano juega al fútbol bañera.",
+    "opts": [
+     "fútbol",
+     "juega",
+     "bañera",
+     "hermano"
+    ],
+    "ok": 2,
+    "answer": "bañera",
+    "rule": {
+     "text": "Sobra «bañera». La frase es:",
+     "lines": [
+      "Mi hermano juega al fútbol."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Mi semáforo mamá lee un cuento.",
+    "opts": [
+     "lee",
+     "cuento",
+     "mamá",
+     "semáforo"
+    ],
+    "ok": 3,
+    "answer": "semáforo",
+    "rule": {
+     "text": "Sobra «semáforo». La frase es:",
+     "lines": [
+      "Mi mamá lee un cuento."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Hoy calcetín hace mucho frío.",
+    "opts": [
+     "calcetín",
+     "mucho",
+     "hace",
+     "frío"
+    ],
+    "ok": 0,
+    "answer": "calcetín",
+    "rule": {
+     "text": "Sobra «calcetín». La frase es:",
+     "lines": [
+      "Hoy hace mucho frío."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "La niña lee un libro martillo.",
+    "opts": [
+     "libro",
+     "niña",
+     "martillo",
+     "lee"
+    ],
+    "ok": 2,
+    "answer": "martillo",
+    "rule": {
+     "text": "Sobra «martillo». La frase es:",
+     "lines": [
+      "La niña lee un libro."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Mi mamá lámpara lee un cuento.",
+    "opts": [
+     "lámpara",
+     "cuento",
+     "lee",
+     "mamá"
+    ],
+    "ok": 0,
+    "answer": "lámpara",
+    "rule": {
+     "text": "Sobra «lámpara». La frase es:",
+     "lines": [
+      "Mi mamá lee un cuento."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "El caracol camina muy escoba despacio.",
+    "opts": [
+     "escoba",
+     "camina",
+     "caracol",
+     "despacio"
+    ],
+    "ok": 0,
+    "answer": "escoba",
+    "rule": {
+     "text": "Sobra «escoba». La frase es:",
+     "lines": [
+      "El caracol camina muy despacio."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Me lavo los volcán dientes antes de dormir.",
+    "opts": [
+     "antes",
+     "dientes",
+     "volcán",
+     "lavo"
+    ],
+    "ok": 2,
+    "answer": "volcán",
+    "rule": {
+     "text": "Sobra «volcán». La frase es:",
+     "lines": [
+      "Me lavo los dientes antes de dormir."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "En verano vamos a la escoba playa.",
+    "opts": [
+     "playa",
+     "vamos",
+     "verano",
+     "escoba"
+    ],
+    "ok": 3,
+    "answer": "escoba",
+    "rule": {
+     "text": "Sobra «escoba». La frase es:",
+     "lines": [
+      "En verano vamos a la playa."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "El elefante tiene una trompa larga cactus.",
+    "opts": [
+     "trompa",
+     "tiene",
+     "una",
+     "cactus"
+    ],
+    "ok": 3,
+    "answer": "cactus",
+    "rule": {
+     "text": "Sobra «cactus». La frase es:",
+     "lines": [
+      "El elefante tiene una trompa larga."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "El viento mueve trompeta las hojas.",
+    "opts": [
+     "las",
+     "trompeta",
+     "viento",
+     "mueve"
+    ],
+    "ok": 1,
+    "answer": "trompeta",
+    "rule": {
+     "text": "Sobra «trompeta». La frase es:",
+     "lines": [
+      "El viento mueve las hojas."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "El gato volcán duerme en el sofá.",
+    "opts": [
+     "gato",
+     "sofá",
+     "duerme",
+     "volcán"
+    ],
+    "ok": 3,
+    "answer": "volcán",
+    "rule": {
+     "text": "Sobra «volcán». La frase es:",
+     "lines": [
+      "El gato duerme en el sofá."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Cantamos cuchara una canción alegre.",
+    "opts": [
+     "alegre",
+     "cuchara",
+     "una",
+     "canción"
+    ],
+    "ok": 1,
+    "answer": "cuchara",
+    "rule": {
+     "text": "Sobra «cuchara». La frase es:",
+     "lines": [
+      "Cantamos una canción alegre."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Los peces nadan calcetín en el río.",
+    "opts": [
+     "peces",
+     "calcetín",
+     "río",
+     "nadan"
+    ],
+    "ok": 1,
+    "answer": "calcetín",
+    "rule": {
+     "text": "Sobra «calcetín». La frase es:",
+     "lines": [
+      "Los peces nadan en el río."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "La niña cuchara lee un libro.",
+    "opts": [
+     "niña",
+     "libro",
+     "cuchara",
+     "lee"
+    ],
+    "ok": 2,
+    "answer": "cuchara",
+    "rule": {
+     "text": "Sobra «cuchara». La frase es:",
+     "lines": [
+      "La niña lee un libro."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Cantamos una canción grifo alegre.",
+    "opts": [
+     "canción",
+     "una",
+     "alegre",
+     "grifo"
+    ],
+    "ok": 3,
+    "answer": "grifo",
+    "rule": {
+     "text": "Sobra «grifo». La frase es:",
+     "lines": [
+      "Cantamos una canción alegre."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Mi mamá lee un cuento grifo.",
+    "opts": [
+     "cuento",
+     "mamá",
+     "lee",
+     "grifo"
+    ],
+    "ok": 3,
+    "answer": "grifo",
+    "rule": {
+     "text": "Sobra «grifo». La frase es:",
+     "lines": [
+      "Mi mamá lee un cuento."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "El viento martillo mueve las hojas.",
+    "opts": [
+     "martillo",
+     "hojas",
+     "mueve",
+     "viento"
+    ],
+    "ok": 0,
+    "answer": "martillo",
+    "rule": {
+     "text": "Sobra «martillo». La frase es:",
+     "lines": [
+      "El viento mueve las hojas."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "El conejo martillo salta muy alto.",
+    "opts": [
+     "alto",
+     "muy",
+     "salta",
+     "martillo"
+    ],
+    "ok": 3,
+    "answer": "martillo",
+    "rule": {
+     "text": "Sobra «martillo». La frase es:",
+     "lines": [
+      "El conejo salta muy alto."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Pinto un dibujo con escalera colores.",
+    "opts": [
+     "dibujo",
+     "con",
+     "colores",
+     "escalera"
+    ],
+    "ok": 3,
+    "answer": "escalera",
+    "rule": {
+     "text": "Sobra «escalera». La frase es:",
+     "lines": [
+      "Pinto un dibujo con colores."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Me lavo los dientes antes de dormir cactus.",
+    "opts": [
+     "dientes",
+     "antes",
+     "lavo",
+     "cactus"
+    ],
+    "ok": 3,
+    "answer": "cactus",
+    "rule": {
+     "text": "Sobra «cactus». La frase es:",
+     "lines": [
+      "Me lavo los dientes antes de dormir."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Mi hermano cactus juega al fútbol.",
+    "opts": [
+     "fútbol",
+     "juega",
+     "hermano",
+     "cactus"
+    ],
+    "ok": 3,
+    "answer": "cactus",
+    "rule": {
+     "text": "Sobra «cactus». La frase es:",
+     "lines": [
+      "Mi hermano juega al fútbol."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "El escoba gato duerme en el sofá.",
+    "opts": [
+     "escoba",
+     "gato",
+     "duerme",
+     "sofá"
+    ],
+    "ok": 0,
+    "answer": "escoba",
+    "rule": {
+     "text": "Sobra «escoba». La frase es:",
+     "lines": [
+      "El gato duerme en el sofá."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "El semáforo elefante tiene una trompa larga.",
+    "opts": [
+     "elefante",
+     "trompa",
+     "tiene",
+     "semáforo"
+    ],
+    "ok": 3,
+    "answer": "semáforo",
+    "rule": {
+     "text": "Sobra «semáforo». La frase es:",
+     "lines": [
+      "El elefante tiene una trompa larga."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "El gato bombilla duerme en el sofá.",
+    "opts": [
+     "sofá",
+     "duerme",
+     "gato",
+     "bombilla"
+    ],
+    "ok": 3,
+    "answer": "bombilla",
+    "rule": {
+     "text": "Sobra «bombilla». La frase es:",
+     "lines": [
+      "El gato duerme en el sofá."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Me gusta comer tenedor helado.",
+    "opts": [
+     "comer",
+     "gusta",
+     "tenedor",
+     "helado"
+    ],
+    "ok": 2,
+    "answer": "tenedor",
+    "rule": {
+     "text": "Sobra «tenedor». La frase es:",
+     "lines": [
+      "Me gusta comer helado."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "El sol bañera sale por la mañana.",
+    "opts": [
+     "bañera",
+     "por",
+     "sale",
+     "mañana"
+    ],
+    "ok": 0,
+    "answer": "bañera",
+    "rule": {
+     "text": "Sobra «bañera». La frase es:",
+     "lines": [
+      "El sol sale por la mañana."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Me cactus gusta comer helado.",
+    "opts": [
+     "comer",
+     "gusta",
+     "cactus",
+     "helado"
+    ],
+    "ok": 2,
+    "answer": "cactus",
+    "rule": {
+     "text": "Sobra «cactus». La frase es:",
+     "lines": [
+      "Me gusta comer helado."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "El pájaro canta en el árbol pingüino.",
+    "opts": [
+     "canta",
+     "árbol",
+     "pájaro",
+     "pingüino"
+    ],
+    "ok": 3,
+    "answer": "pingüino",
+    "rule": {
+     "text": "Sobra «pingüino». La frase es:",
+     "lines": [
+      "El pájaro canta en el árbol."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Mi mamá lee un cuento cactus.",
+    "opts": [
+     "cactus",
+     "mamá",
+     "lee",
+     "cuento"
+    ],
+    "ok": 0,
+    "answer": "cactus",
+    "rule": {
+     "text": "Sobra «cactus». La frase es:",
+     "lines": [
+      "Mi mamá lee un cuento."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "El grifo sol sale por la mañana.",
+    "opts": [
+     "por",
+     "sol",
+     "mañana",
+     "grifo"
+    ],
+    "ok": 3,
+    "answer": "grifo",
+    "rule": {
+     "text": "Sobra «grifo». La frase es:",
+     "lines": [
+      "El sol sale por la mañana."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "La abuela riega las flores tijeras.",
+    "opts": [
+     "tijeras",
+     "flores",
+     "riega",
+     "las"
+    ],
+    "ok": 0,
+    "answer": "tijeras",
+    "rule": {
+     "text": "Sobra «tijeras». La frase es:",
+     "lines": [
+      "La abuela riega las flores."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "La tortuga vive escoba muchos años.",
+    "opts": [
+     "escoba",
+     "años",
+     "muchos",
+     "tortuga"
+    ],
+    "ok": 0,
+    "answer": "escoba",
+    "rule": {
+     "text": "Sobra «escoba». La frase es:",
+     "lines": [
+      "La tortuga vive muchos años."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "La maestra explica almohada la lección.",
+    "opts": [
+     "explica",
+     "almohada",
+     "lección",
+     "maestra"
+    ],
+    "ok": 1,
+    "answer": "almohada",
+    "rule": {
+     "text": "Sobra «almohada». La frase es:",
+     "lines": [
+      "La maestra explica la lección."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "La abuela riega zapato las flores.",
+    "opts": [
+     "abuela",
+     "riega",
+     "zapato",
+     "las"
+    ],
+    "ok": 2,
+    "answer": "zapato",
+    "rule": {
+     "text": "Sobra «zapato». La frase es:",
+     "lines": [
+      "La abuela riega las flores."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Me gusta trompeta comer helado.",
+    "opts": [
+     "comer",
+     "trompeta",
+     "helado",
+     "gusta"
+    ],
+    "ok": 1,
+    "answer": "trompeta",
+    "rule": {
+     "text": "Sobra «trompeta». La frase es:",
+     "lines": [
+      "Me gusta comer helado."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Hoy hace tornillo mucho frío.",
+    "opts": [
+     "mucho",
+     "hace",
+     "frío",
+     "tornillo"
+    ],
+    "ok": 3,
+    "answer": "tornillo",
+    "rule": {
+     "text": "Sobra «tornillo». La frase es:",
+     "lines": [
+      "Hoy hace mucho frío."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "La maestra cuchara explica la lección.",
+    "opts": [
+     "cuchara",
+     "maestra",
+     "explica",
+     "lección"
+    ],
+    "ok": 0,
+    "answer": "cuchara",
+    "rule": {
+     "text": "Sobra «cuchara». La frase es:",
+     "lines": [
+      "La maestra explica la lección."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "La luna escoba brilla de noche.",
+    "opts": [
+     "noche",
+     "escoba",
+     "brilla",
+     "luna"
+    ],
+    "ok": 1,
+    "answer": "escoba",
+    "rule": {
+     "text": "Sobra «escoba». La frase es:",
+     "lines": [
+      "La luna brilla de noche."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "La escalera maestra explica la lección.",
+    "opts": [
+     "lección",
+     "escalera",
+     "explica",
+     "maestra"
+    ],
+    "ok": 1,
+    "answer": "escalera",
+    "rule": {
+     "text": "Sobra «escalera». La frase es:",
+     "lines": [
+      "La maestra explica la lección."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Hoy hace mucho frío trompeta.",
+    "opts": [
+     "hace",
+     "trompeta",
+     "frío",
+     "mucho"
+    ],
+    "ok": 1,
+    "answer": "trompeta",
+    "rule": {
+     "text": "Sobra «trompeta». La frase es:",
+     "lines": [
+      "Hoy hace mucho frío."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "El caracol camina pingüino muy despacio.",
+    "opts": [
+     "muy",
+     "pingüino",
+     "despacio",
+     "camina"
+    ],
+    "ok": 1,
+    "answer": "pingüino",
+    "rule": {
+     "text": "Sobra «pingüino». La frase es:",
+     "lines": [
+      "El caracol camina muy despacio."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "El pájaro canta en el zapato árbol.",
+    "opts": [
+     "zapato",
+     "árbol",
+     "canta",
+     "pájaro"
+    ],
+    "ok": 0,
+    "answer": "zapato",
+    "rule": {
+     "text": "Sobra «zapato». La frase es:",
+     "lines": [
+      "El pájaro canta en el árbol."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "El conejo cebolla salta muy alto.",
+    "opts": [
+     "alto",
+     "muy",
+     "salta",
+     "cebolla"
+    ],
+    "ok": 3,
+    "answer": "cebolla",
+    "rule": {
+     "text": "Sobra «cebolla». La frase es:",
+     "lines": [
+      "El conejo salta muy alto."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "El semáforo conejo salta muy alto.",
+    "opts": [
+     "conejo",
+     "semáforo",
+     "alto",
+     "muy"
+    ],
+    "ok": 1,
+    "answer": "semáforo",
+    "rule": {
+     "text": "Sobra «semáforo». La frase es:",
+     "lines": [
+      "El conejo salta muy alto."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "La tortuga vive tenedor muchos años.",
+    "opts": [
+     "muchos",
+     "tenedor",
+     "años",
+     "tortuga"
+    ],
+    "ok": 1,
+    "answer": "tenedor",
+    "rule": {
+     "text": "Sobra «tenedor». La frase es:",
+     "lines": [
+      "La tortuga vive muchos años."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "La abuela tijeras riega las flores.",
+    "opts": [
+     "abuela",
+     "las",
+     "flores",
+     "tijeras"
+    ],
+    "ok": 3,
+    "answer": "tijeras",
+    "rule": {
+     "text": "Sobra «tijeras». La frase es:",
+     "lines": [
+      "La abuela riega las flores."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Me lavo los martillo dientes antes de dormir.",
+    "opts": [
+     "martillo",
+     "dormir",
+     "dientes",
+     "los"
+    ],
+    "ok": 0,
+    "answer": "martillo",
+    "rule": {
+     "text": "Sobra «martillo». La frase es:",
+     "lines": [
+      "Me lavo los dientes antes de dormir."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Mi mamá lee cactus un cuento.",
+    "opts": [
+     "mamá",
+     "cactus",
+     "lee",
+     "cuento"
+    ],
+    "ok": 1,
+    "answer": "cactus",
+    "rule": {
+     "text": "Sobra «cactus». La frase es:",
+     "lines": [
+      "Mi mamá lee un cuento."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Mi perro semáforo come mucho.",
+    "opts": [
+     "semáforo",
+     "come",
+     "perro",
+     "mucho"
+    ],
+    "ok": 0,
+    "answer": "semáforo",
+    "rule": {
+     "text": "Sobra «semáforo». La frase es:",
+     "lines": [
+      "Mi perro come mucho."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "El caracol camina escoba muy despacio.",
+    "opts": [
+     "caracol",
+     "camina",
+     "muy",
+     "escoba"
+    ],
+    "ok": 3,
+    "answer": "escoba",
+    "rule": {
+     "text": "Sobra «escoba». La frase es:",
+     "lines": [
+      "El caracol camina muy despacio."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Mi hermano juega al fútbol trompeta.",
+    "opts": [
+     "fútbol",
+     "hermano",
+     "juega",
+     "trompeta"
+    ],
+    "ok": 3,
+    "answer": "trompeta",
+    "rule": {
+     "text": "Sobra «trompeta». La frase es:",
+     "lines": [
+      "Mi hermano juega al fútbol."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "El caracol camina muy tenedor despacio.",
+    "opts": [
+     "muy",
+     "tenedor",
+     "caracol",
+     "camina"
+    ],
+    "ok": 1,
+    "answer": "tenedor",
+    "rule": {
+     "text": "Sobra «tenedor». La frase es:",
+     "lines": [
+      "El caracol camina muy despacio."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "El viento mueve las tijeras hojas.",
+    "opts": [
+     "hojas",
+     "las",
+     "tijeras",
+     "viento"
+    ],
+    "ok": 2,
+    "answer": "tijeras",
+    "rule": {
+     "text": "Sobra «tijeras». La frase es:",
+     "lines": [
+      "El viento mueve las hojas."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Mi mamá lee trompeta un cuento.",
+    "opts": [
+     "cuento",
+     "mamá",
+     "trompeta",
+     "lee"
+    ],
+    "ok": 2,
+    "answer": "trompeta",
+    "rule": {
+     "text": "Sobra «trompeta». La frase es:",
+     "lines": [
+      "Mi mamá lee un cuento."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Pinto un bombilla dibujo con colores.",
+    "opts": [
+     "bombilla",
+     "colores",
+     "dibujo",
+     "con"
+    ],
+    "ok": 0,
+    "answer": "bombilla",
+    "rule": {
+     "text": "Sobra «bombilla». La frase es:",
+     "lines": [
+      "Pinto un dibujo con colores."
+     ]
+    }
+   }
+  ],
+  "en": [
+   {
+    "kind": "card",
+    "text": "The rabbit swam jumps very high.",
+    "opts": [
+     "very",
+     "swam",
+     "jumps",
+     "high"
+    ],
+    "ok": 1,
+    "answer": "swam",
+    "rule": {
+     "text": "«swam» doesn't belong. The sentence is:",
+     "lines": [
+      "The rabbit jumps very high."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "The turtle lives many years flew.",
+    "opts": [
+     "many",
+     "turtle",
+     "flew",
+     "years"
+    ],
+    "ok": 2,
+    "answer": "flew",
+    "rule": {
+     "text": "«flew» doesn't belong. The sentence is:",
+     "lines": [
+      "The turtle lives many years."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "The monkey eats wrote a banana.",
+    "opts": [
+     "eats",
+     "banana",
+     "monkey",
+     "wrote"
+    ],
+    "ok": 3,
+    "answer": "wrote",
+    "rule": {
+     "text": "«wrote» doesn't belong. The sentence is:",
+     "lines": [
+      "The monkey eats a banana."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "The monkey eats a banana flew.",
+    "opts": [
+     "eats",
+     "flew",
+     "monkey",
+     "banana"
+    ],
+    "ok": 1,
+    "answer": "flew",
+    "rule": {
+     "text": "«flew» doesn't belong. The sentence is:",
+     "lines": [
+      "The monkey eats a banana."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "My dog eats a wove lot.",
+    "opts": [
+     "wove",
+     "dog",
+     "lot",
+     "eats"
+    ],
+    "ok": 0,
+    "answer": "wove",
+    "rule": {
+     "text": "«wove» doesn't belong. The sentence is:",
+     "lines": [
+      "My dog eats a lot."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "The teacher explains shook the lesson.",
+    "opts": [
+     "the",
+     "explains",
+     "shook",
+     "lesson"
+    ],
+    "ok": 2,
+    "answer": "shook",
+    "rule": {
+     "text": "«shook» doesn't belong. The sentence is:",
+     "lines": [
+      "The teacher explains the lesson."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "I open the sank door with a key.",
+    "opts": [
+     "the",
+     "with",
+     "key",
+     "sank"
+    ],
+    "ok": 3,
+    "answer": "sank",
+    "rule": {
+     "text": "«sank» doesn't belong. The sentence is:",
+     "lines": [
+      "I open the door with a key."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "My wove dog eats a lot.",
+    "opts": [
+     "wove",
+     "eats",
+     "dog",
+     "lot"
+    ],
+    "ok": 0,
+    "answer": "wove",
+    "rule": {
+     "text": "«wove» doesn't belong. The sentence is:",
+     "lines": [
+      "My dog eats a lot."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "It threw is very cold today.",
+    "opts": [
+     "today",
+     "very",
+     "cold",
+     "threw"
+    ],
+    "ok": 3,
+    "answer": "threw",
+    "rule": {
+     "text": "«threw» doesn't belong. The sentence is:",
+     "lines": [
+      "It is very cold today."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "I open the door with a key woke.",
+    "opts": [
+     "open",
+     "woke",
+     "with",
+     "door"
+    ],
+    "ok": 1,
+    "answer": "woke",
+    "rule": {
+     "text": "«woke» doesn't belong. The sentence is:",
+     "lines": [
+      "I open the door with a key."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "The wove snail walks very slowly.",
+    "opts": [
+     "wove",
+     "slowly",
+     "very",
+     "walks"
+    ],
+    "ok": 0,
+    "answer": "wove",
+    "rule": {
+     "text": "«wove» doesn't belong. The sentence is:",
+     "lines": [
+      "The snail walks very slowly."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "I paint a picture with colors swam.",
+    "opts": [
+     "colors",
+     "picture",
+     "swam",
+     "with"
+    ],
+    "ok": 2,
+    "answer": "swam",
+    "rule": {
+     "text": "«swam» doesn't belong. The sentence is:",
+     "lines": [
+      "I paint a picture with colors."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "My dog eats flew a lot.",
+    "opts": [
+     "flew",
+     "dog",
+     "eats",
+     "lot"
+    ],
+    "ok": 0,
+    "answer": "flew",
+    "rule": {
+     "text": "«flew» doesn't belong. The sentence is:",
+     "lines": [
+      "My dog eats a lot."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "I brush my teeth before bed drove.",
+    "opts": [
+     "before",
+     "drove",
+     "brush",
+     "teeth"
+    ],
+    "ok": 1,
+    "answer": "drove",
+    "rule": {
+     "text": "«drove» doesn't belong. The sentence is:",
+     "lines": [
+      "I brush my teeth before bed."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "My dog eats a bit lot.",
+    "opts": [
+     "bit",
+     "lot",
+     "dog",
+     "eats"
+    ],
+    "ok": 0,
+    "answer": "bit",
+    "rule": {
+     "text": "«bit» doesn't belong. The sentence is:",
+     "lines": [
+      "My dog eats a lot."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "I paint a picture threw with colors.",
+    "opts": [
+     "with",
+     "picture",
+     "threw",
+     "colors"
+    ],
+    "ok": 2,
+    "answer": "threw",
+    "rule": {
+     "text": "«threw» doesn't belong. The sentence is:",
+     "lines": [
+      "I paint a picture with colors."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "I like to eat ice wove cream.",
+    "opts": [
+     "wove",
+     "eat",
+     "like",
+     "ice"
+    ],
+    "ok": 0,
+    "answer": "wove",
+    "rule": {
+     "text": "«wove» doesn't belong. The sentence is:",
+     "lines": [
+      "I like to eat ice cream."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "The elephant has a shook long trunk.",
+    "opts": [
+     "trunk",
+     "long",
+     "has",
+     "shook"
+    ],
+    "ok": 3,
+    "answer": "shook",
+    "rule": {
+     "text": "«shook» doesn't belong. The sentence is:",
+     "lines": [
+      "The elephant has a long trunk."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "The teacher explains forgot the lesson.",
+    "opts": [
+     "lesson",
+     "explains",
+     "forgot",
+     "teacher"
+    ],
+    "ok": 2,
+    "answer": "forgot",
+    "rule": {
+     "text": "«forgot» doesn't belong. The sentence is:",
+     "lines": [
+      "The teacher explains the lesson."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "The girl reads bit a book.",
+    "opts": [
+     "book",
+     "reads",
+     "girl",
+     "bit"
+    ],
+    "ok": 3,
+    "answer": "bit",
+    "rule": {
+     "text": "«bit» doesn't belong. The sentence is:",
+     "lines": [
+      "The girl reads a book."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "The moon shines flew at night.",
+    "opts": [
+     "flew",
+     "moon",
+     "night",
+     "shines"
+    ],
+    "ok": 0,
+    "answer": "flew",
+    "rule": {
+     "text": "«flew» doesn't belong. The sentence is:",
+     "lines": [
+      "The moon shines at night."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "The stole rabbit jumps very high.",
+    "opts": [
+     "jumps",
+     "rabbit",
+     "very",
+     "stole"
+    ],
+    "ok": 3,
+    "answer": "stole",
+    "rule": {
+     "text": "«stole» doesn't belong. The sentence is:",
+     "lines": [
+      "The rabbit jumps very high."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "The wind moves the swam leaves.",
+    "opts": [
+     "moves",
+     "the",
+     "swam",
+     "leaves"
+    ],
+    "ok": 2,
+    "answer": "swam",
+    "rule": {
+     "text": "«swam» doesn't belong. The sentence is:",
+     "lines": [
+      "The wind moves the leaves."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Grandma forgot waters the flowers.",
+    "opts": [
+     "forgot",
+     "the",
+     "flowers",
+     "waters"
+    ],
+    "ok": 0,
+    "answer": "forgot",
+    "rule": {
+     "text": "«forgot» doesn't belong. The sentence is:",
+     "lines": [
+      "Grandma waters the flowers."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "The turtle lives many years threw.",
+    "opts": [
+     "threw",
+     "many",
+     "turtle",
+     "years"
+    ],
+    "ok": 0,
+    "answer": "threw",
+    "rule": {
+     "text": "«threw» doesn't belong. The sentence is:",
+     "lines": [
+      "The turtle lives many years."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "My brother plays football grew.",
+    "opts": [
+     "football",
+     "plays",
+     "grew",
+     "brother"
+    ],
+    "ok": 2,
+    "answer": "grew",
+    "rule": {
+     "text": "«grew» doesn't belong. The sentence is:",
+     "lines": [
+      "My brother plays football."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "My sang mom reads a story.",
+    "opts": [
+     "reads",
+     "story",
+     "mom",
+     "sang"
+    ],
+    "ok": 3,
+    "answer": "sang",
+    "rule": {
+     "text": "«sang» doesn't belong. The sentence is:",
+     "lines": [
+      "My mom reads a story."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "It grew is very cold today.",
+    "opts": [
+     "grew",
+     "cold",
+     "very",
+     "today"
+    ],
+    "ok": 0,
+    "answer": "grew",
+    "rule": {
+     "text": "«grew» doesn't belong. The sentence is:",
+     "lines": [
+      "It is very cold today."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "The girl reads a book shook.",
+    "opts": [
+     "book",
+     "girl",
+     "shook",
+     "reads"
+    ],
+    "ok": 2,
+    "answer": "shook",
+    "rule": {
+     "text": "«shook» doesn't belong. The sentence is:",
+     "lines": [
+      "The girl reads a book."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "My mom flew reads a story.",
+    "opts": [
+     "flew",
+     "story",
+     "reads",
+     "mom"
+    ],
+    "ok": 0,
+    "answer": "flew",
+    "rule": {
+     "text": "«flew» doesn't belong. The sentence is:",
+     "lines": [
+      "My mom reads a story."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "The snail walks very froze slowly.",
+    "opts": [
+     "froze",
+     "walks",
+     "snail",
+     "slowly"
+    ],
+    "ok": 0,
+    "answer": "froze",
+    "rule": {
+     "text": "«froze» doesn't belong. The sentence is:",
+     "lines": [
+      "The snail walks very slowly."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "I brush my wrote teeth before bed.",
+    "opts": [
+     "teeth",
+     "wrote",
+     "before",
+     "brush"
+    ],
+    "ok": 1,
+    "answer": "wrote",
+    "rule": {
+     "text": "«wrote» doesn't belong. The sentence is:",
+     "lines": [
+      "I brush my teeth before bed."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "In summer we go to the froze beach.",
+    "opts": [
+     "beach",
+     "the",
+     "summer",
+     "froze"
+    ],
+    "ok": 3,
+    "answer": "froze",
+    "rule": {
+     "text": "«froze» doesn't belong. The sentence is:",
+     "lines": [
+      "In summer we go to the beach."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "The elephant has a long trunk wove.",
+    "opts": [
+     "elephant",
+     "has",
+     "wove",
+     "long"
+    ],
+    "ok": 2,
+    "answer": "wove",
+    "rule": {
+     "text": "«wove» doesn't belong. The sentence is:",
+     "lines": [
+      "The elephant has a long trunk."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "The wind moves forgot the leaves.",
+    "opts": [
+     "the",
+     "forgot",
+     "wind",
+     "moves"
+    ],
+    "ok": 1,
+    "answer": "forgot",
+    "rule": {
+     "text": "«forgot» doesn't belong. The sentence is:",
+     "lines": [
+      "The wind moves the leaves."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "The cat wrote sleeps on the sofa.",
+    "opts": [
+     "sleeps",
+     "wrote",
+     "sofa",
+     "the"
+    ],
+    "ok": 1,
+    "answer": "wrote",
+    "rule": {
+     "text": "«wrote» doesn't belong. The sentence is:",
+     "lines": [
+      "The cat sleeps on the sofa."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "We stole sing a happy song.",
+    "opts": [
+     "song",
+     "stole",
+     "sing",
+     "happy"
+    ],
+    "ok": 1,
+    "answer": "stole",
+    "rule": {
+     "text": "«stole» doesn't belong. The sentence is:",
+     "lines": [
+      "We sing a happy song."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Fish swim in grew the river.",
+    "opts": [
+     "swim",
+     "grew",
+     "river",
+     "the"
+    ],
+    "ok": 1,
+    "answer": "grew",
+    "rule": {
+     "text": "«grew» doesn't belong. The sentence is:",
+     "lines": [
+      "Fish swim in the river."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "The girl stole reads a book.",
+    "opts": [
+     "girl",
+     "book",
+     "stole",
+     "reads"
+    ],
+    "ok": 2,
+    "answer": "stole",
+    "rule": {
+     "text": "«stole» doesn't belong. The sentence is:",
+     "lines": [
+      "The girl reads a book."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "We sing a sank happy song.",
+    "opts": [
+     "happy",
+     "sing",
+     "song",
+     "sank"
+    ],
+    "ok": 3,
+    "answer": "sank",
+    "rule": {
+     "text": "«sank» doesn't belong. The sentence is:",
+     "lines": [
+      "We sing a happy song."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "My mom reads a story sank.",
+    "opts": [
+     "story",
+     "mom",
+     "reads",
+     "sank"
+    ],
+    "ok": 3,
+    "answer": "sank",
+    "rule": {
+     "text": "«sank» doesn't belong. The sentence is:",
+     "lines": [
+      "My mom reads a story."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "My mom shook reads a story.",
+    "opts": [
+     "shook",
+     "reads",
+     "mom",
+     "story"
+    ],
+    "ok": 0,
+    "answer": "shook",
+    "rule": {
+     "text": "«shook» doesn't belong. The sentence is:",
+     "lines": [
+      "My mom reads a story."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "The teacher shook explains the lesson.",
+    "opts": [
+     "lesson",
+     "the",
+     "explains",
+     "shook"
+    ],
+    "ok": 3,
+    "answer": "shook",
+    "rule": {
+     "text": "«shook» doesn't belong. The sentence is:",
+     "lines": [
+      "The teacher explains the lesson."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Grandma waters the wove flowers.",
+    "opts": [
+     "waters",
+     "the",
+     "flowers",
+     "wove"
+    ],
+    "ok": 3,
+    "answer": "wove",
+    "rule": {
+     "text": "«wove» doesn't belong. The sentence is:",
+     "lines": [
+      "Grandma waters the flowers."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "I brush my teeth before bed sank.",
+    "opts": [
+     "before",
+     "brush",
+     "bed",
+     "sank"
+    ],
+    "ok": 3,
+    "answer": "sank",
+    "rule": {
+     "text": "«sank» doesn't belong. The sentence is:",
+     "lines": [
+      "I brush my teeth before bed."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "My brother sank plays football.",
+    "opts": [
+     "football",
+     "plays",
+     "brother",
+     "sank"
+    ],
+    "ok": 3,
+    "answer": "sank",
+    "rule": {
+     "text": "«sank» doesn't belong. The sentence is:",
+     "lines": [
+      "My brother plays football."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "The froze cat sleeps on the sofa.",
+    "opts": [
+     "froze",
+     "sleeps",
+     "sofa",
+     "the"
+    ],
+    "ok": 0,
+    "answer": "froze",
+    "rule": {
+     "text": "«froze» doesn't belong. The sentence is:",
+     "lines": [
+      "The cat sleeps on the sofa."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "The sang elephant has a long trunk.",
+    "opts": [
+     "long",
+     "has",
+     "sang",
+     "elephant"
+    ],
+    "ok": 2,
+    "answer": "sang",
+    "rule": {
+     "text": "«sang» doesn't belong. The sentence is:",
+     "lines": [
+      "The elephant has a long trunk."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "The cat woke sleeps on the sofa.",
+    "opts": [
+     "cat",
+     "sofa",
+     "the",
+     "woke"
+    ],
+    "ok": 3,
+    "answer": "woke",
+    "rule": {
+     "text": "«woke» doesn't belong. The sentence is:",
+     "lines": [
+      "The cat sleeps on the sofa."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "I like to eat swam ice cream.",
+    "opts": [
+     "eat",
+     "ice",
+     "like",
+     "swam"
+    ],
+    "ok": 3,
+    "answer": "swam",
+    "rule": {
+     "text": "«swam» doesn't belong. The sentence is:",
+     "lines": [
+      "I like to eat ice cream."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "The sun threw rises in the morning.",
+    "opts": [
+     "threw",
+     "the",
+     "rises",
+     "morning"
+    ],
+    "ok": 0,
+    "answer": "threw",
+    "rule": {
+     "text": "«threw» doesn't belong. The sentence is:",
+     "lines": [
+      "The sun rises in the morning."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "I like wove to eat ice cream.",
+    "opts": [
+     "cream",
+     "like",
+     "eat",
+     "wove"
+    ],
+    "ok": 3,
+    "answer": "wove",
+    "rule": {
+     "text": "«wove» doesn't belong. The sentence is:",
+     "lines": [
+      "I like to eat ice cream."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "The bird sings in the tree drove.",
+    "opts": [
+     "tree",
+     "drove",
+     "sings",
+     "bird"
+    ],
+    "ok": 1,
+    "answer": "drove",
+    "rule": {
+     "text": "«drove» doesn't belong. The sentence is:",
+     "lines": [
+      "The bird sings in the tree."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "My mom reads a story sank.",
+    "opts": [
+     "sank",
+     "mom",
+     "reads",
+     "story"
+    ],
+    "ok": 0,
+    "answer": "sank",
+    "rule": {
+     "text": "«sank» doesn't belong. The sentence is:",
+     "lines": [
+      "My mom reads a story."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "The woke sun rises in the morning.",
+    "opts": [
+     "the",
+     "sun",
+     "morning",
+     "woke"
+    ],
+    "ok": 3,
+    "answer": "woke",
+    "rule": {
+     "text": "«woke» doesn't belong. The sentence is:",
+     "lines": [
+      "The sun rises in the morning."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Grandma waters the flowers drank.",
+    "opts": [
+     "drank",
+     "flowers",
+     "the",
+     "waters"
+    ],
+    "ok": 0,
+    "answer": "drank",
+    "rule": {
+     "text": "«drank» doesn't belong. The sentence is:",
+     "lines": [
+      "Grandma waters the flowers."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "The turtle lives froze many years.",
+    "opts": [
+     "froze",
+     "years",
+     "many",
+     "turtle"
+    ],
+    "ok": 0,
+    "answer": "froze",
+    "rule": {
+     "text": "«froze» doesn't belong. The sentence is:",
+     "lines": [
+      "The turtle lives many years."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "The teacher explains forgot the lesson.",
+    "opts": [
+     "teacher",
+     "the",
+     "forgot",
+     "explains"
+    ],
+    "ok": 2,
+    "answer": "forgot",
+    "rule": {
+     "text": "«forgot» doesn't belong. The sentence is:",
+     "lines": [
+      "The teacher explains the lesson."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Grandma waters the flew flowers.",
+    "opts": [
+     "waters",
+     "flew",
+     "the",
+     "flowers"
+    ],
+    "ok": 1,
+    "answer": "flew",
+    "rule": {
+     "text": "«flew» doesn't belong. The sentence is:",
+     "lines": [
+      "Grandma waters the flowers."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "The cow forgot gives milk.",
+    "opts": [
+     "gives",
+     "forgot",
+     "milk",
+     "cow"
+    ],
+    "ok": 1,
+    "answer": "forgot",
+    "rule": {
+     "text": "«forgot» doesn't belong. The sentence is:",
+     "lines": [
+      "The cow gives milk."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "It is very drove cold today.",
+    "opts": [
+     "cold",
+     "very",
+     "today",
+     "drove"
+    ],
+    "ok": 3,
+    "answer": "drove",
+    "rule": {
+     "text": "«drove» doesn't belong. The sentence is:",
+     "lines": [
+      "It is very cold today."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "The teacher stole explains the lesson.",
+    "opts": [
+     "stole",
+     "lesson",
+     "teacher",
+     "explains"
+    ],
+    "ok": 0,
+    "answer": "stole",
+    "rule": {
+     "text": "«stole» doesn't belong. The sentence is:",
+     "lines": [
+      "The teacher explains the lesson."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "The moon froze shines at night.",
+    "opts": [
+     "night",
+     "froze",
+     "shines",
+     "moon"
+    ],
+    "ok": 1,
+    "answer": "froze",
+    "rule": {
+     "text": "«froze» doesn't belong. The sentence is:",
+     "lines": [
+      "The moon shines at night."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "The wove teacher explains the lesson.",
+    "opts": [
+     "teacher",
+     "the",
+     "wove",
+     "lesson"
+    ],
+    "ok": 2,
+    "answer": "wove",
+    "rule": {
+     "text": "«wove» doesn't belong. The sentence is:",
+     "lines": [
+      "The teacher explains the lesson."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "It is very cold today forgot.",
+    "opts": [
+     "very",
+     "forgot",
+     "today",
+     "cold"
+    ],
+    "ok": 1,
+    "answer": "forgot",
+    "rule": {
+     "text": "«forgot» doesn't belong. The sentence is:",
+     "lines": [
+      "It is very cold today."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "The cow gives froze milk.",
+    "opts": [
+     "gives",
+     "milk",
+     "froze",
+     "cow"
+    ],
+    "ok": 2,
+    "answer": "froze",
+    "rule": {
+     "text": "«froze» doesn't belong. The sentence is:",
+     "lines": [
+      "The cow gives milk."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "The bird sings in the flew tree.",
+    "opts": [
+     "the",
+     "flew",
+     "tree",
+     "sings"
+    ],
+    "ok": 1,
+    "answer": "flew",
+    "rule": {
+     "text": "«flew» doesn't belong. The sentence is:",
+     "lines": [
+      "The bird sings in the tree."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "The rabbit bit jumps very high.",
+    "opts": [
+     "high",
+     "very",
+     "jumps",
+     "bit"
+    ],
+    "ok": 3,
+    "answer": "bit",
+    "rule": {
+     "text": "«bit» doesn't belong. The sentence is:",
+     "lines": [
+      "The rabbit jumps very high."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "The sang rabbit jumps very high.",
+    "opts": [
+     "rabbit",
+     "sang",
+     "high",
+     "very"
+    ],
+    "ok": 1,
+    "answer": "sang",
+    "rule": {
+     "text": "«sang» doesn't belong. The sentence is:",
+     "lines": [
+      "The rabbit jumps very high."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "The turtle lives swam many years.",
+    "opts": [
+     "many",
+     "swam",
+     "years",
+     "turtle"
+    ],
+    "ok": 1,
+    "answer": "swam",
+    "rule": {
+     "text": "«swam» doesn't belong. The sentence is:",
+     "lines": [
+      "The turtle lives many years."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Grandma drank waters the flowers.",
+    "opts": [
+     "waters",
+     "the",
+     "drank",
+     "flowers"
+    ],
+    "ok": 2,
+    "answer": "drank",
+    "rule": {
+     "text": "«drank» doesn't belong. The sentence is:",
+     "lines": [
+      "Grandma waters the flowers."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "I brush my shook teeth before bed.",
+    "opts": [
+     "teeth",
+     "bed",
+     "before",
+     "shook"
+    ],
+    "ok": 3,
+    "answer": "shook",
+    "rule": {
+     "text": "«shook» doesn't belong. The sentence is:",
+     "lines": [
+      "I brush my teeth before bed."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "My mom reads sank a story.",
+    "opts": [
+     "mom",
+     "sank",
+     "reads",
+     "story"
+    ],
+    "ok": 1,
+    "answer": "sank",
+    "rule": {
+     "text": "«sank» doesn't belong. The sentence is:",
+     "lines": [
+      "My mom reads a story."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "My dog sang eats a lot.",
+    "opts": [
+     "sang",
+     "eats",
+     "dog",
+     "lot"
+    ],
+    "ok": 0,
+    "answer": "sang",
+    "rule": {
+     "text": "«sang» doesn't belong. The sentence is:",
+     "lines": [
+      "My dog eats a lot."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "The snail walks froze very slowly.",
+    "opts": [
+     "snail",
+     "walks",
+     "very",
+     "froze"
+    ],
+    "ok": 3,
+    "answer": "froze",
+    "rule": {
+     "text": "«froze» doesn't belong. The sentence is:",
+     "lines": [
+      "The snail walks very slowly."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "My brother plays football shook.",
+    "opts": [
+     "football",
+     "brother",
+     "plays",
+     "shook"
+    ],
+    "ok": 3,
+    "answer": "shook",
+    "rule": {
+     "text": "«shook» doesn't belong. The sentence is:",
+     "lines": [
+      "My brother plays football."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "The turtle lives many swam years.",
+    "opts": [
+     "many",
+     "swam",
+     "turtle",
+     "lives"
+    ],
+    "ok": 1,
+    "answer": "swam",
+    "rule": {
+     "text": "«swam» doesn't belong. The sentence is:",
+     "lines": [
+      "The turtle lives many years."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "The wind moves the drank leaves.",
+    "opts": [
+     "leaves",
+     "the",
+     "drank",
+     "wind"
+    ],
+    "ok": 2,
+    "answer": "drank",
+    "rule": {
+     "text": "«drank» doesn't belong. The sentence is:",
+     "lines": [
+      "The wind moves the leaves."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "My mom reads forgot a story.",
+    "opts": [
+     "story",
+     "mom",
+     "forgot",
+     "reads"
+    ],
+    "ok": 2,
+    "answer": "forgot",
+    "rule": {
+     "text": "«forgot» doesn't belong. The sentence is:",
+     "lines": [
+      "My mom reads a story."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "The monkey woke eats a banana.",
+    "opts": [
+     "woke",
+     "banana",
+     "monkey",
+     "eats"
+    ],
+    "ok": 0,
+    "answer": "woke",
+    "rule": {
+     "text": "«woke» doesn't belong. The sentence is:",
+     "lines": [
+      "The monkey eats a banana."
+     ]
+    }
+   }
+  ]
+ }
+}

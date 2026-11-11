@@ -1,0 +1,3092 @@
+{
+ "type": "quiz",
+ "url": "https://educativos.juegosboom.com/lectura-relampago",
+ "delay": 3,
+ "every_hours": 12,
+ "closed_hours": 24,
+ "wait": 6,
+ "reveal": 4,
+ "colors": {
+  "bg1": "#3b2a7a",
+  "bg2": "#140c33",
+  "accent": "#7048e8",
+  "cta": "#ffd43b",
+  "ctaText": "#2b1a0e"
+ },
+ "texts": {
+  "es": {
+   "think": "¡Piensa!",
+   "solved": "¿Lo has acertado?",
+   "answer": "Respuesta",
+   "cta": "Juega gratis ▶",
+   "later": "Seguir leyendo",
+   "barCta": "Jugar",
+   "close": "Cerrar",
+   "expand": "Ampliar",
+   "brand": "⚡ Lectura relámpago",
+   "mini": "Lectura relámpago",
+   "question": "¿Qué palabra apareció?",
+   "bar": "⚡ Una palabra aparece un instante. ¿Qué dibujo era?"
+  },
+  "en": {
+   "think": "Think!",
+   "solved": "Did you get it?",
+   "answer": "Answer",
+   "cta": "Play free ▶",
+   "later": "Keep reading",
+   "barCta": "Play",
+   "close": "Close",
+   "expand": "Expand",
+   "brand": "⚡ Flash reading",
+   "mini": "Flash reading",
+   "question": "Which word flashed?",
+   "bar": "⚡ A word flashes for an instant. Which picture was it?"
+  }
+ },
+ "items": {
+  "es": [
+   {
+    "kind": "card",
+    "flash": {
+     "word": "abeja",
+     "dur": 0.72
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🐝",
+     "⛵",
+     "🪑",
+     "🥛"
+    ],
+    "ok": 0,
+    "answer": "🐝 (abeja)",
+    "rule": {
+     "text": "La palabra era «abeja» 🐝"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "cerdo",
+     "dur": 0.6978
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🐷",
+     "✈️",
+     "🍒",
+     "🐊"
+    ],
+    "ok": 0,
+    "answer": "🐷 (cerdo)",
+    "rule": {
+     "text": "La palabra era «cerdo» 🐷"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "perro",
+     "dur": 0.6756
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🧀",
+     "🐶",
+     "🥔",
+     "🍓"
+    ],
+    "ok": 1,
+    "answer": "🐶 (perro)",
+    "rule": {
+     "text": "La palabra era «perro» 🐶"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "queso",
+     "dur": 0.6534000000000001
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🐯",
+     "🐶",
+     "🧀",
+     "🪑"
+    ],
+    "ok": 2,
+    "answer": "🧀 (queso)",
+    "rule": {
+     "text": "La palabra era «queso» 🧀"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "gato",
+     "dur": 0.6312
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🐱",
+     "🦭",
+     "🍪",
+     "🦍"
+    ],
+    "ok": 0,
+    "answer": "🐱 (gato)",
+    "rule": {
+     "text": "La palabra era «gato» 🐱"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "estrella",
+     "dur": 0.609
+    },
+    "extraT": 1.8,
+    "opts": [
+     "⭐",
+     "☂️",
+     "🐘",
+     "🐧"
+    ],
+    "ok": 0,
+    "answer": "⭐ (estrella)",
+    "rule": {
+     "text": "La palabra era «estrella» ⭐"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "coche",
+     "dur": 0.5868
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🐊",
+     "🚗",
+     "✏️",
+     "🔑"
+    ],
+    "ok": 1,
+    "answer": "🚗 (coche)",
+    "rule": {
+     "text": "La palabra era «coche» 🚗"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "caballo",
+     "dur": 0.5646
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🐔",
+     "🏠",
+     "🍪",
+     "🐴"
+    ],
+    "ok": 3,
+    "answer": "🐴 (caballo)",
+    "rule": {
+     "text": "La palabra era «caballo» 🐴"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "gallina",
+     "dur": 0.5424
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🐴",
+     "🎸",
+     "🍪",
+     "🐔"
+    ],
+    "ok": 3,
+    "answer": "🐔 (gallina)",
+    "rule": {
+     "text": "La palabra era «gallina» 🐔"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "camello",
+     "dur": 0.5202
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🐰",
+     "🐊",
+     "🐫",
+     "🍒"
+    ],
+    "ok": 2,
+    "answer": "🐫 (camello)",
+    "rule": {
+     "text": "La palabra era «camello» 🐫"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "cohete",
+     "dur": 0.49800000000000005
+    },
+    "extraT": 1.8,
+    "opts": [
+     "❤️",
+     "🚀",
+     "🍦",
+     "🐷"
+    ],
+    "ok": 1,
+    "answer": "🚀 (cohete)",
+    "rule": {
+     "text": "La palabra era «cohete» 🚀"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "limón",
+     "dur": 0.4758
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🧀",
+     "🍋",
+     "🍓",
+     "🐙"
+    ],
+    "ok": 1,
+    "answer": "🍋 (limón)",
+    "rule": {
+     "text": "La palabra era «limón» 🍋"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "corazón",
+     "dur": 0.45360000000000006
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🛏️",
+     "🚀",
+     "❤️",
+     "🍪"
+    ],
+    "ok": 2,
+    "answer": "❤️ (corazón)",
+    "rule": {
+     "text": "La palabra era «corazón» ❤️"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "libro",
+     "dur": 0.43140000000000006
+    },
+    "extraT": 1.8,
+    "opts": [
+     "📕",
+     "⌚",
+     "🪑",
+     "🥛"
+    ],
+    "ok": 0,
+    "answer": "📕 (libro)",
+    "rule": {
+     "text": "La palabra era «libro» 📕"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "leche",
+     "dur": 0.40920000000000006
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🥛",
+     "🐺",
+     "🚗",
+     "⌚"
+    ],
+    "ok": 0,
+    "answer": "🥛 (leche)",
+    "rule": {
+     "text": "La palabra era «leche» 🥛"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "sombrero",
+     "dur": 0.387
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🐧",
+     "🎩",
+     "🎸",
+     "🍲"
+    ],
+    "ok": 1,
+    "answer": "🎩 (sombrero)",
+    "rule": {
+     "text": "La palabra era «sombrero» 🎩"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "estrella",
+     "dur": 0.3648
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🐧",
+     "⭐",
+     "☂️",
+     "🎸"
+    ],
+    "ok": 1,
+    "answer": "⭐ (estrella)",
+    "rule": {
+     "text": "La palabra era «estrella» ⭐"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "libro",
+     "dur": 0.7026
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🪑",
+     "📕",
+     "⌚",
+     "🦁"
+    ],
+    "ok": 1,
+    "answer": "📕 (libro)",
+    "rule": {
+     "text": "La palabra era «libro» 📕"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "pelota",
+     "dur": 0.6804
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🍍",
+     "🍌",
+     "⚽",
+     "🐧"
+    ],
+    "ok": 2,
+    "answer": "⚽ (pelota)",
+    "rule": {
+     "text": "La palabra era «pelota» ⚽"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "bicicleta",
+     "dur": 0.6582
+    },
+    "extraT": 1.8,
+    "opts": [
+     "⛵",
+     "🚲",
+     "🐊",
+     "🐋"
+    ],
+    "ok": 1,
+    "answer": "🚲 (bicicleta)",
+    "rule": {
+     "text": "La palabra era «bicicleta» 🚲"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "corazón",
+     "dur": 0.636
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🐰",
+     "❤️",
+     "🐴",
+     "🐔"
+    ],
+    "ok": 1,
+    "answer": "❤️ (corazón)",
+    "rule": {
+     "text": "La palabra era «corazón» ❤️"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "dinosaurio",
+     "dur": 0.6138000000000001
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🦕",
+     "☕",
+     "🍎",
+     "☁️"
+    ],
+    "ok": 0,
+    "answer": "🦕 (dinosaurio)",
+    "rule": {
+     "text": "La palabra era «dinosaurio» 🦕"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "gorila",
+     "dur": 0.5916
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🐰",
+     "🍦",
+     "⚽",
+     "🦍"
+    ],
+    "ok": 3,
+    "answer": "🦍 (gorila)",
+    "rule": {
+     "text": "La palabra era «gorila» 🦍"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "camión",
+     "dur": 0.5694000000000001
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🍒",
+     "🏠",
+     "🚚",
+     "🍅"
+    ],
+    "ok": 2,
+    "answer": "🚚 (camión)",
+    "rule": {
+     "text": "La palabra era «camión» 🚚"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "libro",
+     "dur": 0.5472000000000001
+    },
+    "extraT": 1.8,
+    "opts": [
+     "📕",
+     "🐯",
+     "🐝",
+     "🍓"
+    ],
+    "ok": 0,
+    "answer": "📕 (libro)",
+    "rule": {
+     "text": "La palabra era «libro» 📕"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "ratón",
+     "dur": 0.525
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🍋",
+     "🐭",
+     "🥛",
+     "🐶"
+    ],
+    "ok": 1,
+    "answer": "🐭 (ratón)",
+    "rule": {
+     "text": "La palabra era «ratón» 🐭"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "fresa",
+     "dur": 0.5028000000000001
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🍓",
+     "🚗",
+     "🔑",
+     "🥛"
+    ],
+    "ok": 0,
+    "answer": "🍓 (fresa)",
+    "rule": {
+     "text": "La palabra era «fresa» 🍓"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "perro",
+     "dur": 0.4806
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🐶",
+     "🍌",
+     "🍓",
+     "✏️"
+    ],
+    "ok": 0,
+    "answer": "🐶 (perro)",
+    "rule": {
+     "text": "La palabra era «perro» 🐶"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "queso",
+     "dur": 0.4584000000000001
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🎈",
+     "📕",
+     "🧀",
+     "✏️"
+    ],
+    "ok": 2,
+    "answer": "🧀 (queso)",
+    "rule": {
+     "text": "La palabra era «queso» 🧀"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "camión",
+     "dur": 0.43620000000000003
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🍒",
+     "🐫",
+     "🚚",
+     "🐴"
+    ],
+    "ok": 2,
+    "answer": "🚚 (camión)",
+    "rule": {
+     "text": "La palabra era «camión» 🚚"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "ballena",
+     "dur": 0.41400000000000003
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🍎",
+     "🐋",
+     "⛵",
+     "❤️"
+    ],
+    "ok": 1,
+    "answer": "🐋 (ballena)",
+    "rule": {
+     "text": "La palabra era «ballena» 🐋"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "llave",
+     "dur": 0.39180000000000004
+    },
+    "extraT": 1.8,
+    "opts": [
+     "⛵",
+     "🔑",
+     "🍓",
+     "🌳"
+    ],
+    "ok": 1,
+    "answer": "🔑 (llave)",
+    "rule": {
+     "text": "La palabra era «llave» 🔑"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "gallina",
+     "dur": 0.36960000000000004
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🍪",
+     "🍎",
+     "🐔",
+     "🐋"
+    ],
+    "ok": 2,
+    "answer": "🐔 (gallina)",
+    "rule": {
+     "text": "La palabra era «gallina» 🐔"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "avión",
+     "dur": 0.7074
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🐯",
+     "✈️",
+     "🌳",
+     "🐙"
+    ],
+    "ok": 1,
+    "answer": "✈️ (avión)",
+    "rule": {
+     "text": "La palabra era «avión» ✈️"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "plátano",
+     "dur": 0.6852
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🍌",
+     "🐋",
+     "🍐",
+     "🐔"
+    ],
+    "ok": 0,
+    "answer": "🍌 (plátano)",
+    "rule": {
+     "text": "La palabra era «plátano» 🍌"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "piña",
+     "dur": 0.663
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🌹",
+     "🍍",
+     "🐶",
+     "🚂"
+    ],
+    "ok": 1,
+    "answer": "🍍 (piña)",
+    "rule": {
+     "text": "La palabra era «piña» 🍍"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "mono",
+     "dur": 0.6408
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🐵",
+     "🚂",
+     "🏠",
+     "👢"
+    ],
+    "ok": 0,
+    "answer": "🐵 (mono)",
+    "rule": {
+     "text": "La palabra era «mono» 🐵"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "paraguas",
+     "dur": 0.6186
+    },
+    "extraT": 1.8,
+    "opts": [
+     "☂️",
+     "🐟",
+     "🥔",
+     "🍍"
+    ],
+    "ok": 0,
+    "answer": "☂️ (paraguas)",
+    "rule": {
+     "text": "La palabra era «paraguas» ☂️"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "manzana",
+     "dur": 0.5964
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🍎",
+     "🐋",
+     "🐢",
+     "🍌"
+    ],
+    "ok": 0,
+    "answer": "🍎 (manzana)",
+    "rule": {
+     "text": "La palabra era «manzana» 🍎"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "regalo",
+     "dur": 0.5742
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🎁",
+     "🚚",
+     "🐸",
+     "⌚"
+    ],
+    "ok": 0,
+    "answer": "🎁 (regalo)",
+    "rule": {
+     "text": "La palabra era «regalo» 🎁"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "tomate",
+     "dur": 0.552
+    },
+    "extraT": 1.8,
+    "opts": [
+     "☕",
+     "🚚",
+     "🍅",
+     "⚽"
+    ],
+    "ok": 2,
+    "answer": "🍅 (tomate)",
+    "rule": {
+     "text": "La palabra era «tomate» 🍅"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "tambor",
+     "dur": 0.5298
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🍅",
+     "🥔",
+     "🥁",
+     "🎁"
+    ],
+    "ok": 2,
+    "answer": "🥁 (tambor)",
+    "rule": {
+     "text": "La palabra era «tambor» 🥁"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "galleta",
+     "dur": 0.5076
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🍎",
+     "🍌",
+     "🐴",
+     "🍪"
+    ],
+    "ok": 3,
+    "answer": "🍪 (galleta)",
+    "rule": {
+     "text": "La palabra era «galleta» 🍪"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "tigre",
+     "dur": 0.48540000000000005
+    },
+    "extraT": 1.8,
+    "opts": [
+     "⛵",
+     "⌚",
+     "🐯",
+     "🚂"
+    ],
+    "ok": 2,
+    "answer": "🐯 (tigre)",
+    "rule": {
+     "text": "La palabra era «tigre» 🐯"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "helado",
+     "dur": 0.46319999999999995
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🍒",
+     "⚽",
+     "🐰",
+     "🍦"
+    ],
+    "ok": 3,
+    "answer": "🍦 (helado)",
+    "rule": {
+     "text": "La palabra era «helado» 🍦"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "bicicleta",
+     "dur": 0.4410000000000001
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🚲",
+     "⛵",
+     "👢",
+     "🐊"
+    ],
+    "ok": 0,
+    "answer": "🚲 (bicicleta)",
+    "rule": {
+     "text": "La palabra era «bicicleta» 🚲"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "conejo",
+     "dur": 0.41880000000000006
+    },
+    "extraT": 1.8,
+    "opts": [
+     "❤️",
+     "🐰",
+     "🐌",
+     "🐫"
+    ],
+    "ok": 1,
+    "answer": "🐰 (conejo)",
+    "rule": {
+     "text": "La palabra era «conejo» 🐰"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "gallina",
+     "dur": 0.39659999999999995
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🐔",
+     "🦍",
+     "🎈",
+     "🐫"
+    ],
+    "ok": 0,
+    "answer": "🐔 (gallina)",
+    "rule": {
+     "text": "La palabra era «gallina» 🐔"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "leche",
+     "dur": 0.3744000000000002
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🌳",
+     "🐯",
+     "🥛",
+     "🚗"
+    ],
+    "ok": 2,
+    "answer": "🥛 (leche)",
+    "rule": {
+     "text": "La palabra era «leche» 🥛"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "sopa",
+     "dur": 0.7122
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🍲",
+     "🪑",
+     "🚂",
+     "🦭"
+    ],
+    "ok": 0,
+    "answer": "🍲 (sopa)",
+    "rule": {
+     "text": "La palabra era «sopa» 🍲"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "cama",
+     "dur": 0.6900000000000001
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🦁",
+     "🚚",
+     "👢",
+     "🛏️"
+    ],
+    "ok": 3,
+    "answer": "🛏️ (cama)",
+    "rule": {
+     "text": "La palabra era «cama» 🛏️"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "camión",
+     "dur": 0.6678
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🐷",
+     "🐴",
+     "❤️",
+     "🚚"
+    ],
+    "ok": 3,
+    "answer": "🚚 (camión)",
+    "rule": {
+     "text": "La palabra era «camión» 🚚"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "camión",
+     "dur": 0.6456000000000002
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🐴",
+     "🥁",
+     "🚚",
+     "🚗"
+    ],
+    "ok": 2,
+    "answer": "🚚 (camión)",
+    "rule": {
+     "text": "La palabra era «camión» 🚚"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "gorila",
+     "dur": 0.6234000000000001
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🍪",
+     "⚽",
+     "🎁",
+     "🦍"
+    ],
+    "ok": 3,
+    "answer": "🦍 (gorila)",
+    "rule": {
+     "text": "La palabra era «gorila» 🦍"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "silla",
+     "dur": 0.6012
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🐶",
+     "🐝",
+     "🐙",
+     "🪑"
+    ],
+    "ok": 3,
+    "answer": "🪑 (silla)",
+    "rule": {
+     "text": "La palabra era «silla» 🪑"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "galleta",
+     "dur": 0.579
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🎈",
+     "🐔",
+     "🍎",
+     "🍪"
+    ],
+    "ok": 3,
+    "answer": "🍪 (galleta)",
+    "rule": {
+     "text": "La palabra era «galleta» 🍪"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "helado",
+     "dur": 0.5568000000000002
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🍦",
+     "🦒",
+     "🦍",
+     "🍉"
+    ],
+    "ok": 0,
+    "answer": "🍦 (helado)",
+    "rule": {
+     "text": "La palabra era «helado» 🍦"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "gallina",
+     "dur": 0.5346
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🦍",
+     "🐴",
+     "🐔",
+     "🍌"
+    ],
+    "ok": 2,
+    "answer": "🐔 (gallina)",
+    "rule": {
+     "text": "La palabra era «gallina» 🐔"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "ballena",
+     "dur": 0.5124
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🍎",
+     "🐋",
+     "🐌",
+     "🐢"
+    ],
+    "ok": 1,
+    "answer": "🐋 (ballena)",
+    "rule": {
+     "text": "La palabra era «ballena» 🐋"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "elefante",
+     "dur": 0.49020000000000014
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🐧",
+     "🐘",
+     "⭐",
+     "☂️"
+    ],
+    "ok": 1,
+    "answer": "🐘 (elefante)",
+    "rule": {
+     "text": "La palabra era «elefante» 🐘"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "perro",
+     "dur": 0.4680000000000001
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🐶",
+     "🍓",
+     "🐝",
+     "🍐"
+    ],
+    "ok": 0,
+    "answer": "🐶 (perro)",
+    "rule": {
+     "text": "La palabra era «perro» 🐶"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "conejo",
+     "dur": 0.44580000000000003
+    },
+    "extraT": 1.8,
+    "opts": [
+     "❤️",
+     "🐰",
+     "🎁",
+     "🦍"
+    ],
+    "ok": 1,
+    "answer": "🐰 (conejo)",
+    "rule": {
+     "text": "La palabra era «conejo» 🐰"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "tortuga",
+     "dur": 0.4236
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🚂",
+     "🐢",
+     "🍅",
+     "☕"
+    ],
+    "ok": 1,
+    "answer": "🐢 (tortuga)",
+    "rule": {
+     "text": "La palabra era «tortuga» 🐢"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "elefante",
+     "dur": 0.4014000000000001
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🎩",
+     "⭐",
+     "🐘",
+     "🎸"
+    ],
+    "ok": 2,
+    "answer": "🐘 (elefante)",
+    "rule": {
+     "text": "La palabra era «elefante» 🐘"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "mariposa",
+     "dur": 0.3792000000000001
+    },
+    "extraT": 1.8,
+    "opts": [
+     "☂️",
+     "🐘",
+     "🦋",
+     "🎩"
+    ],
+    "ok": 2,
+    "answer": "🦋 (mariposa)",
+    "rule": {
+     "text": "La palabra era «mariposa» 🦋"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "estrella",
+     "dur": 0.717
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🐘",
+     "⭐",
+     "🦋",
+     "☂️"
+    ],
+    "ok": 1,
+    "answer": "⭐ (estrella)",
+    "rule": {
+     "text": "La palabra era «estrella» ⭐"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "llave",
+     "dur": 0.6948000000000001
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🔑",
+     "🚗",
+     "🦁",
+     "🐙"
+    ],
+    "ok": 0,
+    "answer": "🔑 (llave)",
+    "rule": {
+     "text": "La palabra era «llave» 🔑"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "sandía",
+     "dur": 0.6726000000000001
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🍅",
+     "🚚",
+     "🍉",
+     "🥔"
+    ],
+    "ok": 2,
+    "answer": "🍉 (sandía)",
+    "rule": {
+     "text": "La palabra era «sandía» 🍉"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "cocodrilo",
+     "dur": 0.6504000000000001
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🚗",
+     "🐌",
+     "🐊",
+     "❤️"
+    ],
+    "ok": 2,
+    "answer": "🐊 (cocodrilo)",
+    "rule": {
+     "text": "La palabra era «cocodrilo» 🐊"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "gorila",
+     "dur": 0.6282
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🦍",
+     "🐰",
+     "🍉",
+     "🍒"
+    ],
+    "ok": 0,
+    "answer": "🦍 (gorila)",
+    "rule": {
+     "text": "La palabra era «gorila» 🦍"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "piña",
+     "dur": 0.6060000000000001
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🌹",
+     "🍍",
+     "🥔",
+     "🍐"
+    ],
+    "ok": 1,
+    "answer": "🍍 (piña)",
+    "rule": {
+     "text": "La palabra era «piña» 🍍"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "coche",
+     "dur": 0.5838000000000001
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🚚",
+     "🏠",
+     "🐶",
+     "🚗"
+    ],
+    "ok": 3,
+    "answer": "🚗 (coche)",
+    "rule": {
+     "text": "La palabra era «coche» 🚗"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "barco",
+     "dur": 0.5616
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🪑",
+     "⛵",
+     "✏️",
+     "⌚"
+    ],
+    "ok": 1,
+    "answer": "⛵ (barco)",
+    "rule": {
+     "text": "La palabra era «barco» ⛵"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "estrella",
+     "dur": 0.5394000000000001
+    },
+    "extraT": 1.8,
+    "opts": [
+     "⭐",
+     "☂️",
+     "🐘",
+     "🎸"
+    ],
+    "ok": 0,
+    "answer": "⭐ (estrella)",
+    "rule": {
+     "text": "La palabra era «estrella» ⭐"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "caracol",
+     "dur": 0.5172000000000001
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🐰",
+     "🚚",
+     "🐌",
+     "🍪"
+    ],
+    "ok": 2,
+    "answer": "🐌 (caracol)",
+    "rule": {
+     "text": "La palabra era «caracol» 🐌"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "avión",
+     "dur": 0.49500000000000005
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🐙",
+     "🥛",
+     "🍓",
+     "✈️"
+    ],
+    "ok": 3,
+    "answer": "✈️ (avión)",
+    "rule": {
+     "text": "La palabra era «avión» ✈️"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "globo",
+     "dur": 0.4728
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🔑",
+     "🎈",
+     "🦍",
+     "🐙"
+    ],
+    "ok": 1,
+    "answer": "🎈 (globo)",
+    "rule": {
+     "text": "La palabra era «globo» 🎈"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "paraguas",
+     "dur": 0.4506000000000001
+    },
+    "extraT": 1.8,
+    "opts": [
+     "☂️",
+     "🦋",
+     "🐟",
+     "🎸"
+    ],
+    "ok": 0,
+    "answer": "☂️ (paraguas)",
+    "rule": {
+     "text": "La palabra era «paraguas» ☂️"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "mariposa",
+     "dur": 0.42840000000000006
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🦋",
+     "🐵",
+     "🎸",
+     "🍎"
+    ],
+    "ok": 0,
+    "answer": "🦋 (mariposa)",
+    "rule": {
+     "text": "La palabra era «mariposa» 🦋"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "ballena",
+     "dur": 0.4062
+    },
+    "extraT": 1.8,
+    "opts": [
+     "❤️",
+     "🚲",
+     "⛵",
+     "🐋"
+    ],
+    "ok": 3,
+    "answer": "🐋 (ballena)",
+    "rule": {
+     "text": "La palabra era «ballena» 🐋"
+    }
+   }
+  ],
+  "en": [
+   {
+    "kind": "card",
+    "flash": {
+     "word": "panda",
+     "dur": 0.72
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🐼",
+     "🚚",
+     "🏠",
+     "✏️"
+    ],
+    "ok": 0,
+    "answer": "🐼 (panda)",
+    "rule": {
+     "text": "The word was «panda» 🐼"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "crocodile",
+     "dur": 0.6978
+    },
+    "extraT": 1.8,
+    "opts": [
+     "☁️",
+     "🎂",
+     "🧀",
+     "🐊"
+    ],
+    "ok": 3,
+    "answer": "🐊 (crocodile)",
+    "rule": {
+     "text": "The word was «crocodile» 🐊"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "fish",
+     "dur": 0.6756
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🦁",
+     "🦊",
+     "🐟",
+     "🦆"
+    ],
+    "ok": 2,
+    "answer": "🐟 (fish)",
+    "rule": {
+     "text": "The word was «fish» 🐟"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "cheese",
+     "dur": 0.6534000000000001
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🍅",
+     "🚀",
+     "🐱",
+     "🧀"
+    ],
+    "ok": 3,
+    "answer": "🧀 (cheese)",
+    "rule": {
+     "text": "The word was «cheese» 🧀"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "cat",
+     "dur": 0.6312
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🚗",
+     "🍪",
+     "🐱",
+     "🐔"
+    ],
+    "ok": 2,
+    "answer": "🐱 (cat)",
+    "rule": {
+     "text": "The word was «cat» 🐱"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "candy",
+     "dur": 0.609
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🍋",
+     "🚂",
+     "🍬",
+     "🍕"
+    ],
+    "ok": 2,
+    "answer": "🍬 (candy)",
+    "rule": {
+     "text": "The word was «candy» 🍬"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "chair",
+     "dur": 0.5868
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🪑",
+     "🐨",
+     "🐯",
+     "🧀"
+    ],
+    "ok": 0,
+    "answer": "🪑 (chair)",
+    "rule": {
+     "text": "The word was «chair» 🪑"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "turtle",
+     "dur": 0.5646
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🐢",
+     "🎸",
+     "🌵",
+     "🐵"
+    ],
+    "ok": 0,
+    "answer": "🐢 (turtle)",
+    "rule": {
+     "text": "The word was «turtle» 🐢"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "truck",
+     "dur": 0.5424
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🚚",
+     "🐯",
+     "🌮",
+     "🐫"
+    ],
+    "ok": 0,
+    "answer": "🚚 (truck)",
+    "rule": {
+     "text": "The word was «truck» 🚚"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "truck",
+     "dur": 0.5202
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🐴",
+     "🚚",
+     "🍅",
+     "🪑"
+    ],
+    "ok": 1,
+    "answer": "🚚 (truck)",
+    "rule": {
+     "text": "The word was «truck» 🚚"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "lemon",
+     "dur": 0.49800000000000005
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🦓",
+     "🦁",
+     "🍋",
+     "🐯"
+    ],
+    "ok": 2,
+    "answer": "🍋 (lemon)",
+    "rule": {
+     "text": "The word was «lemon» 🍋"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "cactus",
+     "dur": 0.4758
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🌵",
+     "🐉",
+     "🍅",
+     "🥔"
+    ],
+    "ok": 0,
+    "answer": "🌵 (cactus)",
+    "rule": {
+     "text": "The word was «cactus» 🌵"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "hamburger",
+     "dur": 0.45360000000000006
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🍔",
+     "🐴",
+     "🚁",
+     "🏠"
+    ],
+    "ok": 0,
+    "answer": "🍔 (hamburger)",
+    "rule": {
+     "text": "The word was «hamburger» 🍔"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "crocodile",
+     "dur": 0.43140000000000006
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🍒",
+     "🪑",
+     "🐊",
+     "🦋"
+    ],
+    "ok": 2,
+    "answer": "🐊 (crocodile)",
+    "rule": {
+     "text": "The word was «crocodile» 🐊"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "snail",
+     "dur": 0.40920000000000006
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🪑",
+     "🐌",
+     "🐴",
+     "🍕"
+    ],
+    "ok": 1,
+    "answer": "🐌 (snail)",
+    "rule": {
+     "text": "The word was «snail» 🐌"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "panda",
+     "dur": 0.387
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🐴",
+     "🐼",
+     "🪑",
+     "🚂"
+    ],
+    "ok": 1,
+    "answer": "🐼 (panda)",
+    "rule": {
+     "text": "The word was «panda» 🐼"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "elephant",
+     "dur": 0.3648
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🐘",
+     "🥪",
+     "🦕",
+     "🍄"
+    ],
+    "ok": 0,
+    "answer": "🐘 (elephant)",
+    "rule": {
+     "text": "The word was «elephant» 🐘"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "elephant",
+     "dur": 0.7026
+    },
+    "extraT": 1.8,
+    "opts": [
+     "☂️",
+     "🥪",
+     "🍄",
+     "🐘"
+    ],
+    "ok": 3,
+    "answer": "🐘 (elephant)",
+    "rule": {
+     "text": "The word was «elephant» 🐘"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "bear",
+     "dur": 0.6804
+    },
+    "extraT": 1.8,
+    "opts": [
+     "👟",
+     "⛵",
+     "🐻",
+     "🦆"
+    ],
+    "ok": 2,
+    "answer": "🐻 (bear)",
+    "rule": {
+     "text": "The word was «bear» 🐻"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "camel",
+     "dur": 0.6582
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🧀",
+     "🐼",
+     "🐫",
+     "🚚"
+    ],
+    "ok": 2,
+    "answer": "🐫 (camel)",
+    "rule": {
+     "text": "The word was «camel» 🐫"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "kangaroo",
+     "dur": 0.636
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🥪",
+     "🍄",
+     "☂️",
+     "🦘"
+    ],
+    "ok": 3,
+    "answer": "🦘 (kangaroo)",
+    "rule": {
+     "text": "The word was «kangaroo» 🦘"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "carrot",
+     "dur": 0.6138000000000001
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🚗",
+     "🥕",
+     "🐱",
+     "🐔"
+    ],
+    "ok": 1,
+    "answer": "🥕 (carrot)",
+    "rule": {
+     "text": "The word was «carrot» 🥕"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "cherry",
+     "dur": 0.5916
+    },
+    "extraT": 1.8,
+    "opts": [
+     "☁️",
+     "🐮",
+     "🐢",
+     "🍒"
+    ],
+    "ok": 3,
+    "answer": "🍒 (cherry)",
+    "rule": {
+     "text": "The word was «cherry» 🍒"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "giraffe",
+     "dur": 0.5694000000000001
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🎃",
+     "🦒",
+     "🎈",
+     "🚲"
+    ],
+    "ok": 1,
+    "answer": "🦒 (giraffe)",
+    "rule": {
+     "text": "The word was «giraffe» 🦒"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "potato",
+     "dur": 0.5472000000000001
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🐼",
+     "🍅",
+     "🥔",
+     "🐰"
+    ],
+    "ok": 2,
+    "answer": "🥔 (potato)",
+    "rule": {
+     "text": "The word was «potato» 🥔"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "snowman",
+     "dur": 0.525
+    },
+    "extraT": 1.8,
+    "opts": [
+     "⛄",
+     "🦒",
+     "🚲",
+     "🐞"
+    ],
+    "ok": 0,
+    "answer": "⛄ (snowman)",
+    "rule": {
+     "text": "The word was «snowman» ⛄"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "mushroom",
+     "dur": 0.5028000000000001
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🦕",
+     "🐭",
+     "🥛",
+     "🍄"
+    ],
+    "ok": 3,
+    "answer": "🍄 (mushroom)",
+    "rule": {
+     "text": "The word was «mushroom» 🍄"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "train",
+     "dur": 0.4806
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🐫",
+     "🏠",
+     "🚂",
+     "🍕"
+    ],
+    "ok": 2,
+    "answer": "🚂 (train)",
+    "rule": {
+     "text": "The word was «train» 🚂"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "grapes",
+     "dur": 0.4584000000000001
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🍅",
+     "🌸",
+     "🍇",
+     "🎸"
+    ],
+    "ok": 2,
+    "answer": "🍇 (grapes)",
+    "rule": {
+     "text": "The word was «grapes» 🍇"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "balloon",
+     "dur": 0.43620000000000003
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🐻",
+     "🎈",
+     "🍌",
+     "🦋"
+    ],
+    "ok": 1,
+    "answer": "🎈 (balloon)",
+    "rule": {
+     "text": "The word was «balloon» 🎈"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "robot",
+     "dur": 0.41400000000000003
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🐼",
+     "🚚",
+     "🍕",
+     "🤖"
+    ],
+    "ok": 3,
+    "answer": "🤖 (robot)",
+    "rule": {
+     "text": "The word was «robot» 🤖"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "umbrella",
+     "dur": 0.39180000000000004
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🐘",
+     "☂️",
+     "🥪",
+     "🦕"
+    ],
+    "ok": 1,
+    "answer": "☂️ (umbrella)",
+    "rule": {
+     "text": "The word was «umbrella» ☂️"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "heart",
+     "dur": 0.36960000000000004
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🪑",
+     "🐭",
+     "❤️",
+     "🎩"
+    ],
+    "ok": 2,
+    "answer": "❤️ (heart)",
+    "rule": {
+     "text": "The word was «heart» ❤️"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "guitar",
+     "dur": 0.7074
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🎸",
+     "🦒",
+     "🥔",
+     "🚀"
+    ],
+    "ok": 0,
+    "answer": "🎸 (guitar)",
+    "rule": {
+     "text": "The word was «guitar» 🎸"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "horse",
+     "dur": 0.6852
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🍔",
+     "🐴",
+     "🐌",
+     "🐨"
+    ],
+    "ok": 1,
+    "answer": "🐴 (horse)",
+    "rule": {
+     "text": "The word was «horse» 🐴"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "train",
+     "dur": 0.663
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🪑",
+     "🚂",
+     "🐼",
+     "🦓"
+    ],
+    "ok": 1,
+    "answer": "🚂 (train)",
+    "rule": {
+     "text": "The word was «train» 🚂"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "hat",
+     "dur": 0.6408
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🎩",
+     "🔑",
+     "🐴",
+     "❤️"
+    ],
+    "ok": 0,
+    "answer": "🎩 (hat)",
+    "rule": {
+     "text": "The word was «hat» 🎩"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "lion",
+     "dur": 0.6186
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🍋",
+     "🐺",
+     "📕",
+     "🦁"
+    ],
+    "ok": 3,
+    "answer": "🦁 (lion)",
+    "rule": {
+     "text": "The word was «lion» 🦁"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "heart",
+     "dur": 0.5964
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🍋",
+     "🍕",
+     "🐨",
+     "❤️"
+    ],
+    "ok": 3,
+    "answer": "❤️ (heart)",
+    "rule": {
+     "text": "The word was «heart» ❤️"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "gorilla",
+     "dur": 0.5742
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🎃",
+     "🦍",
+     "🌈",
+     "⛄"
+    ],
+    "ok": 1,
+    "answer": "🦍 (gorilla)",
+    "rule": {
+     "text": "The word was «gorilla» 🦍"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "snail",
+     "dur": 0.552
+    },
+    "extraT": 1.8,
+    "opts": [
+     "❤️",
+     "🐌",
+     "🕷️",
+     "🍕"
+    ],
+    "ok": 1,
+    "answer": "🐌 (snail)",
+    "rule": {
+     "text": "The word was «snail» 🐌"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "popcorn",
+     "dur": 0.5298
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🥔",
+     "✈️",
+     "🍿",
+     "🦍"
+    ],
+    "ok": 2,
+    "answer": "🍿 (popcorn)",
+    "rule": {
+     "text": "The word was «popcorn» 🍿"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "pizza",
+     "dur": 0.5076
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🍿",
+     "🍕",
+     "🐫",
+     "🤖"
+    ],
+    "ok": 1,
+    "answer": "🍕 (pizza)",
+    "rule": {
+     "text": "The word was «pizza» 🍕"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "rainbow",
+     "dur": 0.48540000000000005
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🥑",
+     "🦒",
+     "🌈",
+     "🐞"
+    ],
+    "ok": 2,
+    "answer": "🌈 (rainbow)",
+    "rule": {
+     "text": "The word was «rainbow» 🌈"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "cookie",
+     "dur": 0.46319999999999995
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🍪",
+     "🌵",
+     "🍒",
+     "🍅"
+    ],
+    "ok": 0,
+    "answer": "🍪 (cookie)",
+    "rule": {
+     "text": "The word was «cookie» 🍪"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "flower",
+     "dur": 0.4410000000000001
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🌸",
+     "🦊",
+     "🕷️",
+     "🍪"
+    ],
+    "ok": 0,
+    "answer": "🌸 (flower)",
+    "rule": {
+     "text": "The word was «flower» 🌸"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "mouse",
+     "dur": 0.41880000000000006
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🏠",
+     "🐭",
+     "🐫",
+     "🦓"
+    ],
+    "ok": 1,
+    "answer": "🐭 (mouse)",
+    "rule": {
+     "text": "The word was «mouse» 🐭"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "truck",
+     "dur": 0.39659999999999995
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🪑",
+     "✈️",
+     "🐌",
+     "🚚"
+    ],
+    "ok": 3,
+    "answer": "🚚 (truck)",
+    "rule": {
+     "text": "The word was «truck» 🚚"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "grapes",
+     "dur": 0.3744000000000002
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🥕",
+     "🍇",
+     "🍪",
+     "🍒"
+    ],
+    "ok": 1,
+    "answer": "🍇 (grapes)",
+    "rule": {
+     "text": "The word was «grapes» 🍇"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "chair",
+     "dur": 0.7122
+    },
+    "extraT": 1.8,
+    "opts": [
+     "☁️",
+     "🌵",
+     "🪑",
+     "🍋"
+    ],
+    "ok": 2,
+    "answer": "🪑 (chair)",
+    "rule": {
+     "text": "The word was «chair» 🪑"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "chair",
+     "dur": 0.6900000000000001
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🐼",
+     "🪑",
+     "🐔",
+     "🍒"
+    ],
+    "ok": 1,
+    "answer": "🪑 (chair)",
+    "rule": {
+     "text": "The word was «chair» 🪑"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "rainbow",
+     "dur": 0.6678
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🎁",
+     "🌈",
+     "🦍",
+     "🎈"
+    ],
+    "ok": 1,
+    "answer": "🌈 (rainbow)",
+    "rule": {
+     "text": "The word was «rainbow» 🌈"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "rainbow",
+     "dur": 0.6456000000000002
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🎁",
+     "🌈",
+     "🎈",
+     "🐞"
+    ],
+    "ok": 1,
+    "answer": "🌈 (rainbow)",
+    "rule": {
+     "text": "The word was «rainbow» 🌈"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "ladybug",
+     "dur": 0.6234000000000001
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🐞",
+     "🦍",
+     "🥑",
+     "🍋"
+    ],
+    "ok": 0,
+    "answer": "🐞 (ladybug)",
+    "rule": {
+     "text": "The word was «ladybug» 🐞"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "cow",
+     "dur": 0.6012
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🚗",
+     "🐔",
+     "🎩",
+     "🐮"
+    ],
+    "ok": 3,
+    "answer": "🐮 (cow)",
+    "rule": {
+     "text": "The word was «cow» 🐮"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "cookie",
+     "dur": 0.579
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🍌",
+     "🚀",
+     "🐵",
+     "🍪"
+    ],
+    "ok": 3,
+    "answer": "🍪 (cookie)",
+    "rule": {
+     "text": "The word was «cookie» 🍪"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "carrot",
+     "dur": 0.5568000000000002
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🥕",
+     "🚗",
+     "🐉",
+     "🧀"
+    ],
+    "ok": 0,
+    "answer": "🥕 (carrot)",
+    "rule": {
+     "text": "The word was «carrot» 🥕"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "truck",
+     "dur": 0.5346
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🚚",
+     "🐼",
+     "🦓",
+     "🐨"
+    ],
+    "ok": 0,
+    "answer": "🚚 (truck)",
+    "rule": {
+     "text": "The word was «truck» 🚚"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "pencil",
+     "dur": 0.5124
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🐧",
+     "✏️",
+     "🍕",
+     "🎁"
+    ],
+    "ok": 1,
+    "answer": "✏️ (pencil)",
+    "rule": {
+     "text": "The word was «pencil» ✏️"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "penguin",
+     "dur": 0.49020000000000014
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🎃",
+     "🐞",
+     "🐧",
+     "🎈"
+    ],
+    "ok": 2,
+    "answer": "🐧 (penguin)",
+    "rule": {
+     "text": "The word was «penguin» 🐧"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "train",
+     "dur": 0.4680000000000001
+    },
+    "extraT": 1.8,
+    "opts": [
+     "❤️",
+     "🐯",
+     "🚂",
+     "🐭"
+    ],
+    "ok": 2,
+    "answer": "🚂 (train)",
+    "rule": {
+     "text": "The word was «train» 🚂"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "mouse",
+     "dur": 0.44580000000000003
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🐨",
+     "🤖",
+     "🐫",
+     "🐭"
+    ],
+    "ok": 3,
+    "answer": "🐭 (mouse)",
+    "rule": {
+     "text": "The word was «mouse» 🐭"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "rocket",
+     "dur": 0.4236
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🚀",
+     "🍒",
+     "🍅",
+     "🌵"
+    ],
+    "ok": 0,
+    "answer": "🚀 (rocket)",
+    "rule": {
+     "text": "The word was «rocket» 🚀"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "penguin",
+     "dur": 0.4014000000000001
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🎁",
+     "🥑",
+     "🎃",
+     "🐧"
+    ],
+    "ok": 3,
+    "answer": "🐧 (penguin)",
+    "rule": {
+     "text": "The word was «penguin» 🐧"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "camel",
+     "dur": 0.3792000000000001
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🐮",
+     "🐫",
+     "✈️",
+     "🍋"
+    ],
+    "ok": 1,
+    "answer": "🐫 (camel)",
+    "rule": {
+     "text": "The word was «camel» 🐫"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "candy",
+     "dur": 0.717
+    },
+    "extraT": 1.8,
+    "opts": [
+     "❤️",
+     "🍕",
+     "🍋",
+     "🍬"
+    ],
+    "ok": 3,
+    "answer": "🍬 (candy)",
+    "rule": {
+     "text": "The word was «candy» 🍬"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "chicken",
+     "dur": 0.6948000000000001
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🐔",
+     "🐞",
+     "🍿",
+     "🐙"
+    ],
+    "ok": 0,
+    "answer": "🐔 (chicken)",
+    "rule": {
+     "text": "The word was «chicken» 🐔"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "cookie",
+     "dur": 0.6726000000000001
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🚀",
+     "🍌",
+     "🍪",
+     "🥔"
+    ],
+    "ok": 2,
+    "answer": "🍪 (cookie)",
+    "rule": {
+     "text": "The word was «cookie» 🍪"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "pizza",
+     "dur": 0.6504000000000001
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🦓",
+     "🐋",
+     "🪑",
+     "🍕"
+    ],
+    "ok": 3,
+    "answer": "🍕 (pizza)",
+    "rule": {
+     "text": "The word was «pizza» 🍕"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "ladybug",
+     "dur": 0.6282
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🦁",
+     "🍋",
+     "🚲",
+     "🐞"
+    ],
+    "ok": 3,
+    "answer": "🐞 (ladybug)",
+    "rule": {
+     "text": "The word was «ladybug» 🐞"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "train",
+     "dur": 0.6060000000000001
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🐯",
+     "🍕",
+     "🚂",
+     "🐢"
+    ],
+    "ok": 2,
+    "answer": "🚂 (train)",
+    "rule": {
+     "text": "The word was «train» 🚂"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "chair",
+     "dur": 0.5838000000000001
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🍕",
+     "🐱",
+     "🪑",
+     "🍒"
+    ],
+    "ok": 2,
+    "answer": "🪑 (chair)",
+    "rule": {
+     "text": "The word was «chair» 🪑"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "dinosaur",
+     "dur": 0.5616
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🦕",
+     "🍄",
+     "🐶",
+     "🦆"
+    ],
+    "ok": 0,
+    "answer": "🦕 (dinosaur)",
+    "rule": {
+     "text": "The word was «dinosaur» 🦕"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "elephant",
+     "dur": 0.5394000000000001
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🐘",
+     "🥪",
+     "🦘",
+     "🍄"
+    ],
+    "ok": 0,
+    "answer": "🐘 (elephant)",
+    "rule": {
+     "text": "The word was «elephant» 🐘"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "butterfly",
+     "dur": 0.5172000000000001
+    },
+    "extraT": 1.8,
+    "opts": [
+     "⛵",
+     "⚽",
+     "🦋",
+     "🚲"
+    ],
+    "ok": 2,
+    "answer": "🦋 (butterfly)",
+    "rule": {
+     "text": "The word was «butterfly» 🦋"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "dinosaur",
+     "dur": 0.49500000000000005
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🐉",
+     "☂️",
+     "🦘",
+     "🦕"
+    ],
+    "ok": 3,
+    "answer": "🦕 (dinosaur)",
+    "rule": {
+     "text": "The word was «dinosaur» 🦕"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "lemon",
+     "dur": 0.4728
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🍋",
+     "☁️",
+     "🐯",
+     "✈️"
+    ],
+    "ok": 0,
+    "answer": "🍋 (lemon)",
+    "rule": {
+     "text": "The word was «lemon» 🍋"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "candy",
+     "dur": 0.4506000000000001
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🍬",
+     "🍋",
+     "🎂",
+     "✈️"
+    ],
+    "ok": 0,
+    "answer": "🍬 (candy)",
+    "rule": {
+     "text": "The word was «candy» 🍬"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "camel",
+     "dur": 0.42840000000000006
+    },
+    "extraT": 1.8,
+    "opts": [
+     "🎂",
+     "🐫",
+     "🧀",
+     "🍒"
+    ],
+    "ok": 1,
+    "answer": "🐫 (camel)",
+    "rule": {
+     "text": "The word was «camel» 🐫"
+    }
+   },
+   {
+    "kind": "card",
+    "flash": {
+     "word": "pencil",
+     "dur": 0.4062
+    },
+    "extraT": 1.8,
+    "opts": [
+     "✈️",
+     "✏️",
+     "🍿",
+     "🍪"
+    ],
+    "ok": 1,
+    "answer": "✏️ (pencil)",
+    "rule": {
+     "text": "The word was «pencil» ✏️"
+    }
+   }
+  ]
+ }
+}

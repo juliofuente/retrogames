@@ -1,0 +1,1556 @@
+{
+ "type": "quiz",
+ "url": "https://educativos.juegosboom.com",
+ "delay": 3,
+ "every_hours": 12,
+ "closed_hours": 24,
+ "wait": 8,
+ "reveal": 4,
+ "colors": {
+  "bg1": "#3b2a7a",
+  "bg2": "#140c33",
+  "accent": "#7048e8",
+  "cta": "#ffd43b",
+  "ctaText": "#2b1a0e"
+ },
+ "texts": {
+  "es": {
+   "think": "¡Piensa!",
+   "solved": "¿Lo has acertado?",
+   "answer": "Respuesta",
+   "cta": "Juega gratis ▶",
+   "later": "Seguir leyendo",
+   "barCta": "Jugar",
+   "close": "Cerrar",
+   "expand": "Ampliar",
+   "brand": "✍️ Ortografía",
+   "mini": "Ortografía",
+   "question": "¿CUÁL ESTÁ BIEN ESCRITA?",
+   "bar": "✍️ ¿Cuál está bien escrita?"
+  }
+ },
+ "items": {
+  "es": [
+   {
+    "kind": "card",
+    "text": "Solo UNA de estas 4 palabras está bien escrita 👇",
+    "emoji": "✍️",
+    "opts": [
+     "haser",
+     "aser",
+     "hacer",
+     "acer"
+    ],
+    "ok": 2,
+    "answer": "hacer",
+    "rule": {
+     "text": "Hacer se escribe con h y con c.",
+     "lines": [
+      "✅ hacer"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Solo UNA de estas 4 palabras está bien escrita 👇",
+    "emoji": "✍️",
+    "opts": [
+     "hoja",
+     "hoga",
+     "oja",
+     "hoxa"
+    ],
+    "ok": 0,
+    "answer": "hoja",
+    "rule": {
+     "text": "Hoja lleva h al principio y j.",
+     "lines": [
+      "✅ hoja"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Solo UNA de estas 4 palabras está bien escrita 👇",
+    "emoji": "✍️",
+    "opts": [
+     "helado",
+     "heladdo",
+     "elado",
+     "jelado"
+    ],
+    "ok": 0,
+    "answer": "helado",
+    "rule": {
+     "text": "Helado lleva h al principio (como hielo).",
+     "lines": [
+      "✅ helado"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Solo UNA de estas 4 palabras está bien escrita 👇",
+    "emoji": "✍️",
+    "opts": [
+     "hielo",
+     "hyelo",
+     "yelo",
+     "ielo"
+    ],
+    "ok": 0,
+    "answer": "hielo",
+    "rule": {
+     "text": "Las palabras que empiezan por hie- llevan h: hielo, hierro, hiena.",
+     "lines": [
+      "✅ hielo"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Solo UNA de estas 4 palabras está bien escrita 👇",
+    "emoji": "✍️",
+    "opts": [
+     "uevo",
+     "guevo",
+     "huebo",
+     "huevo"
+    ],
+    "ok": 3,
+    "answer": "huevo",
+    "rule": {
+     "text": "Las palabras que empiezan por hue- llevan h: huevo, hueso, huella.",
+     "lines": [
+      "✅ huevo"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Solo UNA de estas 4 palabras está bien escrita 👇",
+    "emoji": "✍️",
+    "opts": [
+     "hormigha",
+     "hormija",
+     "ormiga",
+     "hormiga"
+    ],
+    "ok": 3,
+    "answer": "hormiga",
+    "rule": {
+     "text": "Las palabras que empiezan por hor- suelen llevar h: hormiga, horno, hora.",
+     "lines": [
+      "✅ hormiga"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Solo UNA de estas 4 palabras está bien escrita 👇",
+    "emoji": "✍️",
+    "opts": [
+     "humano",
+     "jumano",
+     "umano",
+     "hummano"
+    ],
+    "ok": 0,
+    "answer": "humano",
+    "rule": {
+     "text": "Las palabras que empiezan por hum- llevan h: humano, humo, húmedo.",
+     "lines": [
+      "✅ humano"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Solo UNA de estas 4 palabras está bien escrita 👇",
+    "emoji": "✍️",
+    "opts": [
+     "ombre",
+     "hombre",
+     "hombrre",
+     "honbre"
+    ],
+    "ok": 1,
+    "answer": "hombre",
+    "rule": {
+     "text": "Hombre lleva h, y antes de b se escribe m.",
+     "lines": [
+      "✅ hombre"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Solo UNA de estas 4 palabras está bien escrita 👇",
+    "emoji": "✍️",
+    "opts": [
+     "llabe",
+     "yabe",
+     "yave",
+     "llave"
+    ],
+    "ok": 3,
+    "answer": "llave",
+    "rule": {
+     "text": "Llave se escribe con ll y con v.",
+     "lines": [
+      "✅ llave"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Solo UNA de estas 4 palabras está bien escrita 👇",
+    "emoji": "✍️",
+    "opts": [
+     "llubia",
+     "yubia",
+     "lluvia",
+     "yuvia"
+    ],
+    "ok": 2,
+    "answer": "lluvia",
+    "rule": {
+     "text": "Lluvia se escribe con ll y con v (como llover).",
+     "lines": [
+      "✅ lluvia"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Solo UNA de estas 4 palabras está bien escrita 👇",
+    "emoji": "✍️",
+    "opts": [
+     "yober",
+     "llover",
+     "llober",
+     "yover"
+    ],
+    "ok": 1,
+    "answer": "llover",
+    "rule": {
+     "text": "Llover: ll al principio y v (como lluvia).",
+     "lines": [
+      "✅ llover"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Solo UNA de estas 4 palabras está bien escrita 👇",
+    "emoji": "✍️",
+    "opts": [
+     "payaso",
+     "payazo",
+     "payasso",
+     "pallaso"
+    ],
+    "ok": 0,
+    "answer": "payaso",
+    "rule": {
+     "text": "Payaso lleva y, y s al final.",
+     "lines": [
+      "✅ payaso"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Solo UNA de estas 4 palabras está bien escrita 👇",
+    "emoji": "✍️",
+    "opts": [
+     "ayerr",
+     "hayer",
+     "aller",
+     "ayer"
+    ],
+    "ok": 3,
+    "answer": "ayer",
+    "rule": {
+     "text": "Ayer se escribe con y, sin h.",
+     "lines": [
+      "✅ ayer"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Solo UNA de estas 4 palabras está bien escrita 👇",
+    "emoji": "✍️",
+    "opts": [
+     "yogur",
+     "llogur",
+     "iogur",
+     "yogurh"
+    ],
+    "ok": 0,
+    "answer": "yogur",
+    "rule": {
+     "text": "Yogur se escribe con y al principio.",
+     "lines": [
+      "✅ yogur"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Solo UNA de estas 4 palabras está bien escrita 👇",
+    "emoji": "✍️",
+    "opts": [
+     "capato",
+     "zapatto",
+     "zapato",
+     "sapato"
+    ],
+    "ok": 2,
+    "answer": "zapato",
+    "rule": {
+     "text": "Za, zo, zu se escriben con z: zapato, zorro, zumo.",
+     "lines": [
+      "✅ zapato"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Solo UNA de estas 4 palabras está bien escrita 👇",
+    "emoji": "✍️",
+    "opts": [
+     "sereza",
+     "zereza",
+     "cerreza",
+     "cereza"
+    ],
+    "ok": 3,
+    "answer": "cereza",
+    "rule": {
+     "text": "Ce y ci se escriben con c: cereza, cielo. Al final, za con z.",
+     "lines": [
+      "✅ cereza"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Solo UNA de estas 4 palabras está bien escrita 👇",
+    "emoji": "✍️",
+    "opts": [
+     "cyelo",
+     "cielo",
+     "zielo",
+     "sielo"
+    ],
+    "ok": 1,
+    "answer": "cielo",
+    "rule": {
+     "text": "Ce y ci se escriben con c (casi nunca con z).",
+     "lines": [
+      "✅ cielo"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Solo UNA de estas 4 palabras está bien escrita 👇",
+    "emoji": "✍️",
+    "opts": [
+     "narís",
+     "nariz",
+     "narriz",
+     "naris"
+    ],
+    "ok": 1,
+    "answer": "nariz",
+    "rule": {
+     "text": "Nariz acaba en z: su plural es narices.",
+     "lines": [
+      "✅ nariz"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Solo UNA de estas 4 palabras está bien escrita 👇",
+    "emoji": "✍️",
+    "opts": [
+     "pezes",
+     "pecez",
+     "pesces",
+     "peces"
+    ],
+    "ok": 3,
+    "answer": "peces",
+    "rule": {
+     "text": "El plural de las palabras en z se hace con -ces: pez → peces.",
+     "lines": [
+      "✅ peces"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Solo UNA de estas 4 palabras está bien escrita 👇",
+    "emoji": "✍️",
+    "opts": [
+     "lápizes",
+     "lápices",
+     "lápises",
+     "lapízes"
+    ],
+    "ok": 1,
+    "answer": "lápices",
+    "rule": {
+     "text": "Lápiz → lápices: la z cambia a c delante de e. Y es esdrújula: lleva tilde.",
+     "lines": [
+      "✅ lápices"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Solo UNA de estas 4 palabras está bien escrita 👇",
+    "emoji": "✍️",
+    "opts": [
+     "bombiya",
+     "vombilla",
+     "bonbilla",
+     "bombilla"
+    ],
+    "ok": 3,
+    "answer": "bombilla",
+    "rule": {
+     "text": "Antes de b siempre se escribe m: bombilla, hombro, tambor.",
+     "lines": [
+      "✅ bombilla"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Solo UNA de estas 4 palabras está bien escrita 👇",
+    "emoji": "✍️",
+    "opts": [
+     "kambio",
+     "canbio",
+     "cambio",
+     "camvio"
+    ],
+    "ok": 2,
+    "answer": "cambio",
+    "rule": {
+     "text": "Antes de b se escribe m: cambio, tambor, hombre.",
+     "lines": [
+      "✅ cambio"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Solo UNA de estas 4 palabras está bien escrita 👇",
+    "emoji": "✍️",
+    "opts": [
+     "thiempo",
+     "tiemppo",
+     "tiempo",
+     "tienpo"
+    ],
+    "ok": 2,
+    "answer": "tiempo",
+    "rule": {
+     "text": "Antes de p siempre se escribe m: tiempo, campo, siempre.",
+     "lines": [
+      "✅ tiempo"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Solo UNA de estas 4 palabras está bien escrita 👇",
+    "emoji": "✍️",
+    "opts": [
+     "tamvién",
+     "también",
+     "tambien",
+     "tanbién"
+    ],
+    "ok": 1,
+    "answer": "también",
+    "rule": {
+     "text": "Antes de b, m. Y es aguda acabada en n: lleva tilde.",
+     "lines": [
+      "✅ también"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Solo UNA de estas 4 palabras está bien escrita 👇",
+    "emoji": "✍️",
+    "opts": [
+     "imvierno",
+     "invierno",
+     "imbierno",
+     "inbierno"
+    ],
+    "ok": 1,
+    "answer": "invierno",
+    "rule": {
+     "text": "Antes de v siempre se escribe n: invierno, enviar, invitar.",
+     "lines": [
+      "✅ invierno"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Solo UNA de estas 4 palabras está bien escrita 👇",
+    "emoji": "✍️",
+    "opts": [
+     "enviar",
+     "embiar",
+     "emviar",
+     "enbiar"
+    ],
+    "ok": 0,
+    "answer": "enviar",
+    "rule": {
+     "text": "Antes de v siempre se escribe n (nunca m).",
+     "lines": [
+      "✅ enviar"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Solo UNA de estas 4 palabras está bien escrita 👇",
+    "emoji": "✍️",
+    "opts": [
+     "imvitación",
+     "invitasión",
+     "imbitación",
+     "invitación"
+    ],
+    "ok": 3,
+    "answer": "invitación",
+    "rule": {
+     "text": "Antes de v, n. Y -ción con c (invitar → invitación).",
+     "lines": [
+      "✅ invitación"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Solo UNA de estas 4 palabras está bien escrita 👇",
+    "emoji": "✍️",
+    "opts": [
+     "inmenso",
+     "inmmenso",
+     "imenso",
+     "immenso"
+    ],
+    "ok": 0,
+    "answer": "inmenso",
+    "rule": {
+     "text": "In- + menso: se escribe nm (inmenso, inmóvil).",
+     "lines": [
+      "✅ inmenso"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Solo UNA de estas 4 palabras está bien escrita 👇",
+    "emoji": "✍️",
+    "opts": [
+     "abuelo",
+     "abuello",
+     "avuelo",
+     "habuelo"
+    ],
+    "ok": 0,
+    "answer": "abuelo",
+    "rule": {
+     "text": "Abuelo se escribe con b y sin h.",
+     "lines": [
+      "✅ abuelo"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Solo UNA de estas 4 palabras está bien escrita 👇",
+    "emoji": "✍️",
+    "opts": [
+     "bisicleta",
+     "bicikleta",
+     "vicicleta",
+     "bicicleta"
+    ],
+    "ok": 3,
+    "answer": "bicicleta",
+    "rule": {
+     "text": "Bi- (dos) se escribe con b: bicicleta, bisabuelo, bilingüe.",
+     "lines": [
+      "✅ bicicleta"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Solo UNA de estas 4 palabras está bien escrita 👇",
+    "emoji": "✍️",
+    "opts": [
+     "visavuelo",
+     "visabuelo",
+     "bisabuelo",
+     "bisavuelo"
+    ],
+    "ok": 2,
+    "answer": "bisabuelo",
+    "rule": {
+     "text": "Bis- (dos veces) se escribe con b, igual que abuelo.",
+     "lines": [
+      "✅ bisabuelo"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Solo UNA de estas 4 palabras está bien escrita 👇",
+    "emoji": "✍️",
+    "opts": [
+     "escribir",
+     "escrebir",
+     "eskribir",
+     "escrivir"
+    ],
+    "ok": 0,
+    "answer": "escribir",
+    "rule": {
+     "text": "Los verbos que acaban en -bir se escriben con b (salvo hervir, servir y vivir).",
+     "lines": [
+      "✅ escribir"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Solo UNA de estas 4 palabras está bien escrita 👇",
+    "emoji": "✍️",
+    "opts": [
+     "recivir",
+     "rezibir",
+     "recibir",
+     "resibir"
+    ],
+    "ok": 2,
+    "answer": "recibir",
+    "rule": {
+     "text": "Los verbos en -bir llevan b: recibir, escribir, subir.",
+     "lines": [
+      "✅ recibir"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Solo UNA de estas 4 palabras está bien escrita 👇",
+    "emoji": "✍️",
+    "opts": [
+     "bibir",
+     "vibir",
+     "bivir",
+     "vivir"
+    ],
+    "ok": 3,
+    "answer": "vivir",
+    "rule": {
+     "text": "Vivir es una excepción: los verbos en -bir llevan b, pero vivir va con v.",
+     "lines": [
+      "✅ vivir"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Solo UNA de estas 4 palabras está bien escrita 👇",
+    "emoji": "✍️",
+    "opts": [
+     "objecto",
+     "ovjeto",
+     "obgeto",
+     "objeto"
+    ],
+    "ok": 3,
+    "answer": "objeto",
+    "rule": {
+     "text": "Ob- se escribe con b: objeto, obtener, obstáculo.",
+     "lines": [
+      "✅ objeto"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Solo UNA de estas 4 palabras está bien escrita 👇",
+    "emoji": "✍️",
+    "opts": [
+     "obvio",
+     "obbio",
+     "ovio",
+     "ovbio"
+    ],
+    "ok": 0,
+    "answer": "obvio",
+    "rule": {
+     "text": "Ob- se escribe con b: obvio, objeto, obstáculo.",
+     "lines": [
+      "✅ obvio"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Solo UNA de estas 4 palabras está bien escrita 👇",
+    "emoji": "✍️",
+    "opts": [
+     "absurdo",
+     "apsurdo",
+     "avsurdo",
+     "absurdoh"
+    ],
+    "ok": 0,
+    "answer": "absurdo",
+    "rule": {
+     "text": "Ab- se escribe con b: absurdo, abstracto, absoluto.",
+     "lines": [
+      "✅ absurdo"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Solo UNA de estas 4 palabras está bien escrita 👇",
+    "emoji": "✍️",
+    "opts": [
+     "subrayar",
+     "subrallar",
+     "surrayar",
+     "suvrayar"
+    ],
+    "ok": 0,
+    "answer": "subrayar",
+    "rule": {
+     "text": "Sub- se escribe con b: subrayar, submarino, subir.",
+     "lines": [
+      "✅ subrayar"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Solo UNA de estas 4 palabras está bien escrita 👇",
+    "emoji": "✍️",
+    "opts": [
+     "viajje",
+     "viage",
+     "viaje",
+     "biaje"
+    ],
+    "ok": 2,
+    "answer": "viaje",
+    "rule": {
+     "text": "Las palabras que acaban en -aje se escriben con j: viaje, garaje, equipaje.",
+     "lines": [
+      "✅ viaje"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Solo UNA de estas 4 palabras está bien escrita 👇",
+    "emoji": "✍️",
+    "opts": [
+     "garaje",
+     "garage",
+     "garague",
+     "garraje"
+    ],
+    "ok": 0,
+    "answer": "garaje",
+    "rule": {
+     "text": "Las palabras en -aje llevan j: garaje, viaje, paisaje.",
+     "lines": [
+      "✅ garaje"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Solo UNA de estas 4 palabras está bien escrita 👇",
+    "emoji": "✍️",
+    "opts": [
+     "equipaje",
+     "ekipaje",
+     "equipaxe",
+     "equipage"
+    ],
+    "ok": 0,
+    "answer": "equipaje",
+    "rule": {
+     "text": "Las palabras en -aje llevan j: equipaje, viaje, garaje.",
+     "lines": [
+      "✅ equipaje"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Solo UNA de estas 4 palabras está bien escrita 👇",
+    "emoji": "✍️",
+    "opts": [
+     "trabajo",
+     "travajo",
+     "trabago",
+     "trabaho"
+    ],
+    "ok": 0,
+    "answer": "trabajo",
+    "rule": {
+     "text": "Trabajo se escribe con b y con j.",
+     "lines": [
+      "✅ trabajo"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Solo UNA de estas 4 palabras está bien escrita 👇",
+    "emoji": "✍️",
+    "opts": [
+     "girafa",
+     "jirrafa",
+     "jiraffa",
+     "jirafa"
+    ],
+    "ok": 3,
+    "answer": "jirafa",
+    "rule": {
+     "text": "Jirafa va con j: es una de las pocas palabras con ji- que no van con g.",
+     "lines": [
+      "✅ jirafa"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Solo UNA de estas 4 palabras está bien escrita 👇",
+    "emoji": "✍️",
+    "opts": [
+     "relox",
+     "relog",
+     "reloh",
+     "reloj"
+    ],
+    "ok": 3,
+    "answer": "reloj",
+    "rule": {
+     "text": "Reloj acaba en j (su plural es relojes).",
+     "lines": [
+      "✅ reloj"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Solo UNA de estas 4 palabras está bien escrita 👇",
+    "emoji": "✍️",
+    "opts": [
+     "guente",
+     "jente",
+     "gente",
+     "gentte"
+    ],
+    "ok": 2,
+    "answer": "gente",
+    "rule": {
+     "text": "Las palabras con gen- se escriben con g: gente, general, generoso.",
+     "lines": [
+      "✅ gente"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Solo UNA de estas 4 palabras está bien escrita 👇",
+    "emoji": "✍️",
+    "opts": [
+     "jirasol",
+     "girasol",
+     "guirasol",
+     "girasoll"
+    ],
+    "ok": 1,
+    "answer": "girasol",
+    "rule": {
+     "text": "Girasol: gira + sol, con g.",
+     "lines": [
+      "✅ girasol"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Solo UNA de estas 4 palabras está bien escrita 👇",
+    "emoji": "✍️",
+    "opts": [
+     "magico",
+     "mágiko",
+     "májico",
+     "mágico"
+    ],
+    "ok": 3,
+    "answer": "mágico",
+    "rule": {
+     "text": "Mágico va con g, y es esdrújula: siempre lleva tilde.",
+     "lines": [
+      "✅ mágico"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Solo UNA de estas 4 palabras está bien escrita 👇",
+    "emoji": "✍️",
+    "opts": [
+     "colejío",
+     "colegio",
+     "colegío",
+     "colejio"
+    ],
+    "ok": 1,
+    "answer": "colegio",
+    "rule": {
+     "text": "Las palabras que acaban en -gio se escriben con g: colegio, regio.",
+     "lines": [
+      "✅ colegio"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Solo UNA de estas 4 palabras está bien escrita 👇",
+    "emoji": "✍️",
+    "opts": [
+     "javón",
+     "gabón",
+     "jabón",
+     "xabón"
+    ],
+    "ok": 2,
+    "answer": "jabón",
+    "rule": {
+     "text": "Jabón se escribe con j y b, y lleva tilde (aguda acabada en n).",
+     "lines": [
+      "✅ jabón"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Solo UNA de estas 4 palabras está bien escrita 👇",
+    "emoji": "✍️",
+    "opts": [
+     "arbol",
+     "árból",
+     "arból",
+     "árbol"
+    ],
+    "ok": 3,
+    "answer": "árbol",
+    "rule": {
+     "text": "Árbol es llana y acaba en l (no en n, s o vocal): lleva tilde.",
+     "lines": [
+      "✅ árbol"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Solo UNA de estas 4 palabras está bien escrita 👇",
+    "emoji": "✍️",
+    "opts": [
+     "camion",
+     "camíon",
+     "cámion",
+     "camión"
+    ],
+    "ok": 3,
+    "answer": "camión",
+    "rule": {
+     "text": "Camión es aguda acabada en n: lleva tilde.",
+     "lines": [
+      "✅ camión"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Solo UNA de estas 4 palabras está bien escrita 👇",
+    "emoji": "✍️",
+    "opts": [
+     "lapiz",
+     "lápiz",
+     "lápis",
+     "lapíz"
+    ],
+    "ok": 1,
+    "answer": "lápiz",
+    "rule": {
+     "text": "Lápiz es llana acabada en z: lleva tilde.",
+     "lines": [
+      "✅ lápiz"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Solo UNA de estas 4 palabras está bien escrita 👇",
+    "emoji": "✍️",
+    "opts": [
+     "abión",
+     "avion",
+     "avión",
+     "ávion"
+    ],
+    "ok": 2,
+    "answer": "avión",
+    "rule": {
+     "text": "Avión: con v, y aguda acabada en n con tilde.",
+     "lines": [
+      "✅ avión"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Solo UNA de estas 4 palabras está bien escrita 👇",
+    "emoji": "✍️",
+    "opts": [
+     "facil",
+     "fácil",
+     "facíl",
+     "fásil"
+    ],
+    "ok": 1,
+    "answer": "fácil",
+    "rule": {
+     "text": "Fácil es llana acabada en l: lleva tilde.",
+     "lines": [
+      "✅ fácil"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Solo UNA de estas 4 palabras está bien escrita 👇",
+    "emoji": "✍️",
+    "opts": [
+     "difisil",
+     "díficil",
+     "difícil",
+     "dificil"
+    ],
+    "ok": 2,
+    "answer": "difícil",
+    "rule": {
+     "text": "Difícil es llana acabada en l: lleva tilde en la í.",
+     "lines": [
+      "✅ difícil"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Solo UNA de estas 4 palabras está bien escrita 👇",
+    "emoji": "✍️",
+    "opts": [
+     "despues",
+     "después",
+     "despuès",
+     "despúes"
+    ],
+    "ok": 1,
+    "answer": "después",
+    "rule": {
+     "text": "Después es aguda acabada en s: lleva tilde.",
+     "lines": [
+      "✅ después"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Solo UNA de estas 4 palabras está bien escrita 👇",
+    "emoji": "✍️",
+    "opts": [
+     "murciélago",
+     "murcielago",
+     "murcíelago",
+     "murciélagho"
+    ],
+    "ok": 0,
+    "answer": "murciélago",
+    "rule": {
+     "text": "Murciélago es esdrújula: las esdrújulas siempre llevan tilde.",
+     "lines": [
+      "✅ murciélago"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Solo UNA de estas 4 palabras está bien escrita 👇",
+    "emoji": "✍️",
+    "opts": [
+     "teléfeno",
+     "telèfono",
+     "telefono",
+     "teléfono"
+    ],
+    "ok": 3,
+    "answer": "teléfono",
+    "rule": {
+     "text": "Teléfono es esdrújula: siempre lleva tilde.",
+     "lines": [
+      "✅ teléfono"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Solo UNA de estas 4 palabras está bien escrita 👇",
+    "emoji": "✍️",
+    "opts": [
+     "exámen",
+     "exsamen",
+     "examen",
+     "egzamen"
+    ],
+    "ok": 2,
+    "answer": "examen",
+    "rule": {
+     "text": "Examen es llana acabada en n: NO lleva tilde.",
+     "lines": [
+      "✅ examen"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Solo UNA de estas 4 palabras está bien escrita 👇",
+    "emoji": "✍️",
+    "opts": [
+     "examenes",
+     "exsámenes",
+     "exámenes",
+     "exámenez"
+    ],
+    "ok": 2,
+    "answer": "exámenes",
+    "rule": {
+     "text": "Exámenes es esdrújula: siempre lleva tilde (aunque examen no).",
+     "lines": [
+      "✅ exámenes"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Solo UNA de estas 4 palabras está bien escrita 👇",
+    "emoji": "✍️",
+    "opts": [
+     "joven",
+     "hoven",
+     "joben",
+     "jóven"
+    ],
+    "ok": 0,
+    "answer": "joven",
+    "rule": {
+     "text": "Joven es llana acabada en n: no lleva tilde. Y va con v.",
+     "lines": [
+      "✅ joven"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Solo UNA de estas 4 palabras está bien escrita 👇",
+    "emoji": "✍️",
+    "opts": [
+     "jovenes",
+     "jóvenes",
+     "jóbenes",
+     "jovénes"
+    ],
+    "ok": 1,
+    "answer": "jóvenes",
+    "rule": {
+     "text": "Jóvenes es esdrújula: lleva tilde (aunque joven no).",
+     "lines": [
+      "✅ jóvenes"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Solo UNA de estas 4 palabras está bien escrita 👇",
+    "emoji": "✍️",
+    "opts": [
+     "pingüino",
+     "pinguino",
+     "pinwino",
+     "pingüíno"
+    ],
+    "ok": 0,
+    "answer": "pingüino",
+    "rule": {
+     "text": "Pingüino lleva diéresis (ü) para que suene la u.",
+     "lines": [
+      "✅ pingüino"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Solo UNA de estas 4 palabras está bien escrita 👇",
+    "emoji": "✍️",
+    "opts": [
+     "ciguena",
+     "sigüeña",
+     "cigueña",
+     "cigüeña"
+    ],
+    "ok": 3,
+    "answer": "cigüeña",
+    "rule": {
+     "text": "Cigüeña lleva diéresis (ü) para que suene la u, y ce/ci con c.",
+     "lines": [
+      "✅ cigüeña"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Solo UNA de estas 4 palabras está bien escrita 👇",
+    "emoji": "✍️",
+    "opts": [
+     "vergüenza",
+     "vergüensa",
+     "verguenza",
+     "bergüenza"
+    ],
+    "ok": 0,
+    "answer": "vergüenza",
+    "rule": {
+     "text": "Vergüenza lleva diéresis (ü) para que suene la u.",
+     "lines": [
+      "✅ vergüenza"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Solo UNA de estas 4 palabras está bien escrita 👇",
+    "emoji": "✍️",
+    "opts": [
+     "sanahoria",
+     "zanahoria",
+     "zanahória",
+     "zanaoria"
+    ],
+    "ok": 1,
+    "answer": "zanahoria",
+    "rule": {
+     "text": "Zanahoria lleva una h en medio, aunque no suene.",
+     "lines": [
+      "✅ zanahoria"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Solo UNA de estas 4 palabras está bien escrita 👇",
+    "emoji": "✍️",
+    "opts": [
+     "almohadda",
+     "almohada",
+     "almoada",
+     "almojada"
+    ],
+    "ok": 1,
+    "answer": "almohada",
+    "rule": {
+     "text": "Almohada lleva una h en medio, aunque no suene.",
+     "lines": [
+      "✅ almohada"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Solo UNA de estas 4 palabras está bien escrita 👇",
+    "emoji": "✍️",
+    "opts": [
+     "búho",
+     "buho",
+     "bújo",
+     "búo"
+    ],
+    "ok": 0,
+    "answer": "búho",
+    "rule": {
+     "text": "Búho lleva h en medio y tilde en la ú (hiato).",
+     "lines": [
+      "✅ búho"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Solo UNA de estas 4 palabras está bien escrita 👇",
+    "emoji": "✍️",
+    "opts": [
+     "proibido",
+     "prohibido",
+     "prohivido",
+     "prohíbido"
+    ],
+    "ok": 1,
+    "answer": "prohibido",
+    "rule": {
+     "text": "Prohibido lleva h en medio y b.",
+     "lines": [
+      "✅ prohibido"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Solo UNA de estas 4 palabras está bien escrita 👇",
+    "emoji": "✍️",
+    "opts": [
+     "vehículo",
+     "veículo",
+     "vehiculo",
+     "bheículo"
+    ],
+    "ok": 0,
+    "answer": "vehículo",
+    "rule": {
+     "text": "Vehículo lleva h en medio y tilde (es esdrújula).",
+     "lines": [
+      "✅ vehículo"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Solo UNA de estas 4 palabras está bien escrita 👇",
+    "emoji": "✍️",
+    "opts": [
+     "exausto",
+     "ehxausto",
+     "exsausto",
+     "exhausto"
+    ],
+    "ok": 3,
+    "answer": "exhausto",
+    "rule": {
+     "text": "Exhausto lleva h después de la x, aunque no suene.",
+     "lines": [
+      "✅ exhausto"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Solo UNA de estas 4 palabras está bien escrita 👇",
+    "emoji": "✍️",
+    "opts": [
+     "escepción",
+     "excepsión",
+     "exepción",
+     "excepción"
+    ],
+    "ok": 3,
+    "answer": "excepción",
+    "rule": {
+     "text": "Excepción se escribe con xc y con -ción.",
+     "lines": [
+      "✅ excepción"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Solo UNA de estas 4 palabras está bien escrita 👇",
+    "emoji": "✍️",
+    "opts": [
+     "exstraño",
+     "extraño",
+     "ectraño",
+     "estraño"
+    ],
+    "ok": 1,
+    "answer": "extraño",
+    "rule": {
+     "text": "Extra- se escribe con x: extraño, extranjero, extraordinario.",
+     "lines": [
+      "✅ extraño"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Solo UNA de estas 4 palabras está bien escrita 👇",
+    "emoji": "✍️",
+    "opts": [
+     "expresión",
+     "exprezión",
+     "expreción",
+     "espresión"
+    ],
+    "ok": 0,
+    "answer": "expresión",
+    "rule": {
+     "text": "Expresión se escribe con x (de expresar) y con -sión.",
+     "lines": [
+      "✅ expresión"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Solo UNA de estas 4 palabras está bien escrita 👇",
+    "emoji": "✍️",
+    "opts": [
+     "acsión",
+     "ación",
+     "acción",
+     "axión"
+    ],
+    "ok": 2,
+    "answer": "acción",
+    "rule": {
+     "text": "Si en la familia hay -ct- (acto, actor), se escribe -cción: acción.",
+     "lines": [
+      "✅ acción"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Solo UNA de estas 4 palabras está bien escrita 👇",
+    "emoji": "✍️",
+    "opts": [
+     "dirección",
+     "direcsión",
+     "direxión",
+     "direción"
+    ],
+    "ok": 0,
+    "answer": "dirección",
+    "rule": {
+     "text": "Director, directo… llevan -ct-, así que dirección va con -cc-.",
+     "lines": [
+      "✅ dirección"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Solo UNA de estas 4 palabras está bien escrita 👇",
+    "emoji": "✍️",
+    "opts": [
+     "conexión",
+     "conección",
+     "conesión",
+     "coneción"
+    ],
+    "ok": 0,
+    "answer": "conexión",
+    "rule": {
+     "text": "Conexión va con x, aunque venga de conectar: es una excepción.",
+     "lines": [
+      "✅ conexión"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Solo UNA de estas 4 palabras está bien escrita 👇",
+    "emoji": "✍️",
+    "opts": [
+     "ocasión",
+     "ocación",
+     "ocasion",
+     "occasión"
+    ],
+    "ok": 0,
+    "answer": "ocasión",
+    "rule": {
+     "text": "Ocasión: una sola c, -sión con s y tilde.",
+     "lines": [
+      "✅ ocasión"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Solo UNA de estas 4 palabras está bien escrita 👇",
+    "emoji": "✍️",
+    "opts": [
+     "haveces",
+     "a beces",
+     "aveces",
+     "a veces"
+    ],
+    "ok": 3,
+    "answer": "a veces",
+    "rule": {
+     "text": "A veces se escribe separado (como a menudo).",
+     "lines": [
+      "✅ a veces"
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "Solo UNA de estas 4 palabras está bien escrita 👇",
+    "emoji": "✍️",
+    "opts": [
+     "de repente",
+     "derepente",
+     "de rrepente",
+     "derrepente"
+    ],
+    "ok": 0,
+    "answer": "de repente",
+    "rule": {
+     "text": "De repente se escribe separado, y con una sola r.",
+     "lines": [
+      "✅ de repente"
+     ]
+    }
+   }
+  ]
+ }
+}

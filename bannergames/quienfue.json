@@ -1,0 +1,5452 @@
+{
+ "type": "quiz",
+ "url": "https://educativos.juegosboom.com/quien-fue",
+ "delay": 3,
+ "every_hours": 12,
+ "closed_hours": 24,
+ "wait": 15,
+ "reveal": 4,
+ "colors": {
+  "bg1": "#3b2a7a",
+  "bg2": "#140c33",
+  "accent": "#7048e8",
+  "cta": "#ffd43b",
+  "ctaText": "#2b1a0e"
+ },
+ "texts": {
+  "es": {
+   "think": "¡Piensa!",
+   "solved": "¿Lo has acertado?",
+   "answer": "Respuesta",
+   "cta": "Juega gratis ▶",
+   "later": "Seguir leyendo",
+   "barCta": "Jugar",
+   "close": "Cerrar",
+   "expand": "Ampliar",
+   "brand": "🕵️ ¿Quién fue?",
+   "mini": "¿Quién fue?",
+   "question": "¿Quién fue?",
+   "bar": "🕵️ Solo uno miente. ¿Quién fue?"
+  },
+  "en": {
+   "think": "Think!",
+   "solved": "Did you get it?",
+   "answer": "Answer",
+   "cta": "Play free ▶",
+   "later": "Keep reading",
+   "barCta": "Play",
+   "close": "Close",
+   "expand": "Expand",
+   "brand": "🕵️ Who did it?",
+   "mini": "Who did it?",
+   "question": "Who did it?",
+   "bar": "🕵️ Only one is lying. Who did it?"
+  }
+ },
+ "items": {
+  "es": [
+   {
+    "kind": "card",
+    "text": "🏺 ¡Alguien rompió el jarrón!",
+    "note": "🤥 Solo UNO miente",
+    "says": [
+     [
+      "🐻",
+      "Fui yo."
+     ],
+     [
+      "🐱",
+      "Yo no fui."
+     ],
+     [
+      "🐵",
+      "No fue el gato."
+     ]
+    ],
+    "opts": [
+     "🐻 El oso",
+     "🐱 El gato",
+     "🐵 El mono"
+    ],
+    "ok": 2,
+    "answer": "🐵 El mono",
+    "rule": {
+     "text": "Fue el mono 🐵",
+     "lines": [
+      "❌ 🐻 Fui yo.",
+      "✅ 🐱 Yo no fui.",
+      "✅ 🐵 No fue el gato."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🎂 ¡Alguien se comió la tarta!",
+    "note": "🤥 Solo UNO miente",
+    "says": [
+     [
+      "🦊",
+      "No fue el conejo."
+     ],
+     [
+      "🐰",
+      "Yo no fui."
+     ],
+     [
+      "🐷",
+      "No fue el zorro."
+     ]
+    ],
+    "opts": [
+     "🦊 El zorro",
+     "🐰 El conejo",
+     "🐷 El cerdo"
+    ],
+    "ok": 0,
+    "answer": "🦊 El zorro",
+    "rule": {
+     "text": "Fue el zorro 🦊",
+     "lines": [
+      "✅ 🦊 No fue el conejo.",
+      "✅ 🐰 Yo no fui.",
+      "❌ 🐷 No fue el zorro."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🍪 ¡Alguien cogió las galletas!",
+    "note": "🤥 Solo UNO miente",
+    "says": [
+     [
+      "🐰",
+      "No fue el zorro."
+     ],
+     [
+      "🦊",
+      "Yo no fui."
+     ],
+     [
+      "🐵",
+      "No fue el conejo."
+     ]
+    ],
+    "opts": [
+     "🐰 El conejo",
+     "🦊 El zorro",
+     "🐵 El mono"
+    ],
+    "ok": 0,
+    "answer": "🐰 El conejo",
+    "rule": {
+     "text": "Fue el conejo 🐰",
+     "lines": [
+      "✅ 🐰 No fue el zorro.",
+      "✅ 🦊 Yo no fui.",
+      "❌ 🐵 No fue el conejo."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🎨 ¡Alguien pintó la pared!",
+    "note": "🤥 Solo UNO miente",
+    "says": [
+     [
+      "🐰",
+      "Yo no fui."
+     ],
+     [
+      "🐵",
+      "No fue el oso."
+     ],
+     [
+      "🐻",
+      "No fue el conejo."
+     ]
+    ],
+    "opts": [
+     "🐰 El conejo",
+     "🐵 El mono",
+     "🐻 El oso"
+    ],
+    "ok": 2,
+    "answer": "🐻 El oso",
+    "rule": {
+     "text": "Fue el oso 🐻",
+     "lines": [
+      "✅ 🐰 Yo no fui.",
+      "❌ 🐵 No fue el oso.",
+      "✅ 🐻 No fue el conejo."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🏺 ¡Alguien rompió el jarrón!",
+    "note": "🤥 Solo UNO miente",
+    "says": [
+     [
+      "🐱",
+      "Fui yo."
+     ],
+     [
+      "🐷",
+      "Fui yo."
+     ],
+     [
+      "🐵",
+      "No fue el gato."
+     ]
+    ],
+    "opts": [
+     "🐱 El gato",
+     "🐷 El cerdo",
+     "🐵 El mono"
+    ],
+    "ok": 1,
+    "answer": "🐷 El cerdo",
+    "rule": {
+     "text": "Fue el cerdo 🐷",
+     "lines": [
+      "❌ 🐱 Fui yo.",
+      "✅ 🐷 Fui yo.",
+      "✅ 🐵 No fue el gato."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🎈 ¡Alguien explotó el globo!",
+    "note": "🤥 Solo UNO miente",
+    "says": [
+     [
+      "🐱",
+      "Fui yo."
+     ],
+     [
+      "🐵",
+      "No fue el zorro."
+     ],
+     [
+      "🦊",
+      "Yo no fui."
+     ]
+    ],
+    "opts": [
+     "🐱 El gato",
+     "🐵 El mono",
+     "🦊 El zorro"
+    ],
+    "ok": 1,
+    "answer": "🐵 El mono",
+    "rule": {
+     "text": "Fue el mono 🐵",
+     "lines": [
+      "❌ 🐱 Fui yo.",
+      "✅ 🐵 No fue el zorro.",
+      "✅ 🦊 Yo no fui."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🎨 ¡Alguien pintó la pared!",
+    "note": "😇 Solo UNO dice la verdad",
+    "says": [
+     [
+      "🐵",
+      "Fue el cerdo."
+     ],
+     [
+      "🦊",
+      "No fue el mono."
+     ],
+     [
+      "🐷",
+      "Fui yo."
+     ]
+    ],
+    "opts": [
+     "🐵 El mono",
+     "🦊 El zorro",
+     "🐷 El cerdo"
+    ],
+    "ok": 1,
+    "answer": "🦊 El zorro",
+    "rule": {
+     "text": "Fue el zorro 🦊",
+     "lines": [
+      "❌ 🐵 Fue el cerdo.",
+      "✅ 🦊 No fue el mono.",
+      "❌ 🐷 Fui yo."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🏺 ¡Alguien rompió el jarrón!",
+    "note": "😇 Solo UNO dice la verdad",
+    "says": [
+     [
+      "🦊",
+      "No fue el conejo."
+     ],
+     [
+      "🐱",
+      "Fue el conejo."
+     ],
+     [
+      "🐰",
+      "No fue el zorro."
+     ]
+    ],
+    "opts": [
+     "🦊 El zorro",
+     "🐱 El gato",
+     "🐰 El conejo"
+    ],
+    "ok": 0,
+    "answer": "🦊 El zorro",
+    "rule": {
+     "text": "Fue el zorro 🦊",
+     "lines": [
+      "✅ 🦊 No fue el conejo.",
+      "❌ 🐱 Fue el conejo.",
+      "❌ 🐰 No fue el zorro."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🏺 ¡Alguien rompió el jarrón!",
+    "note": "😇 Solo UNO dice la verdad",
+    "says": [
+     [
+      "🐱",
+      "Fue el oso."
+     ],
+     [
+      "🐷",
+      "No fue el oso."
+     ],
+     [
+      "🐻",
+      "Yo no fui."
+     ]
+    ],
+    "opts": [
+     "🐱 El gato",
+     "🐷 El cerdo",
+     "🐻 El oso"
+    ],
+    "ok": 2,
+    "answer": "🐻 El oso",
+    "rule": {
+     "text": "Fue el oso 🐻",
+     "lines": [
+      "✅ 🐱 Fue el oso.",
+      "❌ 🐷 No fue el oso.",
+      "❌ 🐻 Yo no fui."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🎈 ¡Alguien explotó el globo!",
+    "note": "🤥 Solo UNO miente",
+    "says": [
+     [
+      "🐷",
+      "No fue el zorro."
+     ],
+     [
+      "🐰",
+      "Fue el zorro."
+     ],
+     [
+      "🦊",
+      "Fue el cerdo."
+     ]
+    ],
+    "opts": [
+     "🐷 El cerdo",
+     "🐰 El conejo",
+     "🦊 El zorro"
+    ],
+    "ok": 0,
+    "answer": "🐷 El cerdo",
+    "rule": {
+     "text": "Fue el cerdo 🐷",
+     "lines": [
+      "✅ 🐷 No fue el zorro.",
+      "❌ 🐰 Fue el zorro.",
+      "✅ 🦊 Fue el cerdo."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🍪 ¡Alguien cogió las galletas!",
+    "note": "🤥 Solo UNO miente",
+    "says": [
+     [
+      "🐰",
+      "Fui yo."
+     ],
+     [
+      "🐵",
+      "Yo no fui."
+     ],
+     [
+      "🐱",
+      "Fue el mono."
+     ]
+    ],
+    "opts": [
+     "🐰 El conejo",
+     "🐵 El mono",
+     "🐱 El gato"
+    ],
+    "ok": 0,
+    "answer": "🐰 El conejo",
+    "rule": {
+     "text": "Fue el conejo 🐰",
+     "lines": [
+      "✅ 🐰 Fui yo.",
+      "✅ 🐵 Yo no fui.",
+      "❌ 🐱 Fue el mono."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🍪 ¡Alguien cogió las galletas!",
+    "note": "🤥 Solo UNO miente",
+    "says": [
+     [
+      "🐱",
+      "Yo no fui."
+     ],
+     [
+      "🐵",
+      "Fui yo."
+     ],
+     [
+      "🐰",
+      "Fue el mono."
+     ],
+     [
+      "🐷",
+      "Fue el gato."
+     ]
+    ],
+    "opts": [
+     "🐱 El gato",
+     "🐵 El mono",
+     "🐰 El conejo",
+     "🐷 El cerdo"
+    ],
+    "ok": 1,
+    "answer": "🐵 El mono",
+    "rule": {
+     "text": "Fue el mono 🐵",
+     "lines": [
+      "✅ 🐱 Yo no fui.",
+      "✅ 🐵 Fui yo.",
+      "✅ 🐰 Fue el mono.",
+      "❌ 🐷 Fue el gato."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🎨 ¡Alguien pintó la pared!",
+    "note": "😇 Solo UNO dice la verdad",
+    "says": [
+     [
+      "🐷",
+      "Fue el zorro."
+     ],
+     [
+      "🐻",
+      "Fue el zorro."
+     ],
+     [
+      "🦊",
+      "Fue el cerdo."
+     ],
+     [
+      "🐰",
+      "Fue el zorro."
+     ]
+    ],
+    "opts": [
+     "🐷 El cerdo",
+     "🐻 El oso",
+     "🦊 El zorro",
+     "🐰 El conejo"
+    ],
+    "ok": 0,
+    "answer": "🐷 El cerdo",
+    "rule": {
+     "text": "Fue el cerdo 🐷",
+     "lines": [
+      "❌ 🐷 Fue el zorro.",
+      "❌ 🐻 Fue el zorro.",
+      "✅ 🦊 Fue el cerdo.",
+      "❌ 🐰 Fue el zorro."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🎨 ¡Alguien pintó la pared!",
+    "note": "😇 Solo UNO dice la verdad",
+    "says": [
+     [
+      "🐵",
+      "Fui yo."
+     ],
+     [
+      "🐷",
+      "Fue el mono."
+     ],
+     [
+      "🦊",
+      "Yo no fui."
+     ],
+     [
+      "🐻",
+      "Fui yo."
+     ]
+    ],
+    "opts": [
+     "🐵 El mono",
+     "🐷 El cerdo",
+     "🦊 El zorro",
+     "🐻 El oso"
+    ],
+    "ok": 1,
+    "answer": "🐷 El cerdo",
+    "rule": {
+     "text": "Fue el cerdo 🐷",
+     "lines": [
+      "❌ 🐵 Fui yo.",
+      "❌ 🐷 Fue el mono.",
+      "✅ 🦊 Yo no fui.",
+      "❌ 🐻 Fui yo."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🎈 ¡Alguien explotó el globo!",
+    "note": "🤥 Solo UNO miente",
+    "says": [
+     [
+      "🐱",
+      "Fue el zorro."
+     ],
+     [
+      "🐵",
+      "Fue el zorro."
+     ],
+     [
+      "🐷",
+      "No fue el zorro."
+     ],
+     [
+      "🦊",
+      "Fui yo."
+     ]
+    ],
+    "opts": [
+     "🐱 El gato",
+     "🐵 El mono",
+     "🐷 El cerdo",
+     "🦊 El zorro"
+    ],
+    "ok": 3,
+    "answer": "🦊 El zorro",
+    "rule": {
+     "text": "Fue el zorro 🦊",
+     "lines": [
+      "✅ 🐱 Fue el zorro.",
+      "✅ 🐵 Fue el zorro.",
+      "❌ 🐷 No fue el zorro.",
+      "✅ 🦊 Fui yo."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🏺 ¡Alguien rompió el jarrón!",
+    "note": "😇 Solo UNO dice la verdad",
+    "says": [
+     [
+      "🦊",
+      "No fue el mono."
+     ],
+     [
+      "🐱",
+      "Fue el conejo."
+     ],
+     [
+      "🐵",
+      "Yo no fui."
+     ],
+     [
+      "🐰",
+      "No fue el zorro."
+     ]
+    ],
+    "opts": [
+     "🦊 El zorro",
+     "🐱 El gato",
+     "🐵 El mono",
+     "🐰 El conejo"
+    ],
+    "ok": 2,
+    "answer": "🐵 El mono",
+    "rule": {
+     "text": "Fue el mono 🐵",
+     "lines": [
+      "❌ 🦊 No fue el mono.",
+      "❌ 🐱 Fue el conejo.",
+      "❌ 🐵 Yo no fui.",
+      "✅ 🐰 No fue el zorro."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🎈 ¡Alguien explotó el globo!",
+    "note": "😇 Solo UNO dice la verdad",
+    "says": [
+     [
+      "🐵",
+      "No fue el gato."
+     ],
+     [
+      "🐻",
+      "Fui yo."
+     ],
+     [
+      "🐱",
+      "Yo no fui."
+     ],
+     [
+      "🦊",
+      "Fue el gato."
+     ]
+    ],
+    "opts": [
+     "🐵 El mono",
+     "🐻 El oso",
+     "🐱 El gato",
+     "🦊 El zorro"
+    ],
+    "ok": 2,
+    "answer": "🐱 El gato",
+    "rule": {
+     "text": "Fue el gato 🐱",
+     "lines": [
+      "❌ 🐵 No fue el gato.",
+      "❌ 🐻 Fui yo.",
+      "❌ 🐱 Yo no fui.",
+      "✅ 🦊 Fue el gato."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🎈 ¡Alguien explotó el globo!",
+    "note": "🤥 Solo UNO miente",
+    "says": [
+     [
+      "🦊",
+      "Fui yo."
+     ],
+     [
+      "🐵",
+      "No fue el zorro."
+     ],
+     [
+      "🐻",
+      "Fue el zorro."
+     ]
+    ],
+    "opts": [
+     "🦊 El zorro",
+     "🐵 El mono",
+     "🐻 El oso"
+    ],
+    "ok": 0,
+    "answer": "🦊 El zorro",
+    "rule": {
+     "text": "Fue el zorro 🦊",
+     "lines": [
+      "✅ 🦊 Fui yo.",
+      "❌ 🐵 No fue el zorro.",
+      "✅ 🐻 Fue el zorro."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🏺 ¡Alguien rompió el jarrón!",
+    "note": "🤥 Solo UNO miente",
+    "says": [
+     [
+      "🐱",
+      "No fue el cerdo."
+     ],
+     [
+      "🐷",
+      "Yo no fui."
+     ],
+     [
+      "🦊",
+      "Fue el gato."
+     ]
+    ],
+    "opts": [
+     "🐱 El gato",
+     "🐷 El cerdo",
+     "🦊 El zorro"
+    ],
+    "ok": 2,
+    "answer": "🦊 El zorro",
+    "rule": {
+     "text": "Fue el zorro 🦊",
+     "lines": [
+      "✅ 🐱 No fue el cerdo.",
+      "✅ 🐷 Yo no fui.",
+      "❌ 🦊 Fue el gato."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🍪 ¡Alguien cogió las galletas!",
+    "note": "🤥 Solo UNO miente",
+    "says": [
+     [
+      "🐰",
+      "Fui yo."
+     ],
+     [
+      "🐷",
+      "Yo no fui."
+     ],
+     [
+      "🐻",
+      "Fue el cerdo."
+     ]
+    ],
+    "opts": [
+     "🐰 El conejo",
+     "🐷 El cerdo",
+     "🐻 El oso"
+    ],
+    "ok": 0,
+    "answer": "🐰 El conejo",
+    "rule": {
+     "text": "Fue el conejo 🐰",
+     "lines": [
+      "✅ 🐰 Fui yo.",
+      "✅ 🐷 Yo no fui.",
+      "❌ 🐻 Fue el cerdo."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🎨 ¡Alguien pintó la pared!",
+    "note": "🤥 Solo UNO miente",
+    "says": [
+     [
+      "🦊",
+      "Yo no fui."
+     ],
+     [
+      "🐰",
+      "Fue el zorro."
+     ],
+     [
+      "🐷",
+      "Fue el conejo."
+     ]
+    ],
+    "opts": [
+     "🦊 El zorro",
+     "🐰 El conejo",
+     "🐷 El cerdo"
+    ],
+    "ok": 1,
+    "answer": "🐰 El conejo",
+    "rule": {
+     "text": "Fue el conejo 🐰",
+     "lines": [
+      "✅ 🦊 Yo no fui.",
+      "❌ 🐰 Fue el zorro.",
+      "✅ 🐷 Fue el conejo."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🎂 ¡Alguien se comió la tarta!",
+    "note": "🤥 Solo UNO miente",
+    "says": [
+     [
+      "🐵",
+      "Fue el oso."
+     ],
+     [
+      "🐻",
+      "Fue el mono."
+     ],
+     [
+      "🐷",
+      "No fue el oso."
+     ]
+    ],
+    "opts": [
+     "🐵 El mono",
+     "🐻 El oso",
+     "🐷 El cerdo"
+    ],
+    "ok": 0,
+    "answer": "🐵 El mono",
+    "rule": {
+     "text": "Fue el mono 🐵",
+     "lines": [
+      "❌ 🐵 Fue el oso.",
+      "✅ 🐻 Fue el mono.",
+      "✅ 🐷 No fue el oso."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🎂 ¡Alguien se comió la tarta!",
+    "note": "😇 Solo UNO dice la verdad",
+    "says": [
+     [
+      "🐰",
+      "Fue el mono."
+     ],
+     [
+      "🐱",
+      "No fue el mono."
+     ],
+     [
+      "🐵",
+      "No fue el gato."
+     ]
+    ],
+    "opts": [
+     "🐰 El conejo",
+     "🐱 El gato",
+     "🐵 El mono"
+    ],
+    "ok": 1,
+    "answer": "🐱 El gato",
+    "rule": {
+     "text": "Fue el gato 🐱",
+     "lines": [
+      "❌ 🐰 Fue el mono.",
+      "✅ 🐱 No fue el mono.",
+      "❌ 🐵 No fue el gato."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🎈 ¡Alguien explotó el globo!",
+    "note": "😇 Solo UNO dice la verdad",
+    "says": [
+     [
+      "🐷",
+      "Yo no fui."
+     ],
+     [
+      "🐵",
+      "No fue el conejo."
+     ],
+     [
+      "🐰",
+      "Fui yo."
+     ]
+    ],
+    "opts": [
+     "🐷 El cerdo",
+     "🐵 El mono",
+     "🐰 El conejo"
+    ],
+    "ok": 0,
+    "answer": "🐷 El cerdo",
+    "rule": {
+     "text": "Fue el cerdo 🐷",
+     "lines": [
+      "❌ 🐷 Yo no fui.",
+      "✅ 🐵 No fue el conejo.",
+      "❌ 🐰 Fui yo."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🎂 ¡Alguien se comió la tarta!",
+    "note": "🤥 Solo UNO miente",
+    "says": [
+     [
+      "🐰",
+      "Fui yo."
+     ],
+     [
+      "🐻",
+      "Fue el zorro."
+     ],
+     [
+      "🦊",
+      "Fue el conejo."
+     ]
+    ],
+    "opts": [
+     "🐰 El conejo",
+     "🐻 El oso",
+     "🦊 El zorro"
+    ],
+    "ok": 0,
+    "answer": "🐰 El conejo",
+    "rule": {
+     "text": "Fue el conejo 🐰",
+     "lines": [
+      "✅ 🐰 Fui yo.",
+      "❌ 🐻 Fue el zorro.",
+      "✅ 🦊 Fue el conejo."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🎨 ¡Alguien pintó la pared!",
+    "note": "🤥 Solo UNO miente",
+    "says": [
+     [
+      "🐷",
+      "No fue el gato."
+     ],
+     [
+      "🐻",
+      "No fue el cerdo."
+     ],
+     [
+      "🐱",
+      "No fue el cerdo."
+     ]
+    ],
+    "opts": [
+     "🐷 El cerdo",
+     "🐻 El oso",
+     "🐱 El gato"
+    ],
+    "ok": 2,
+    "answer": "🐱 El gato",
+    "rule": {
+     "text": "Fue el gato 🐱",
+     "lines": [
+      "❌ 🐷 No fue el gato.",
+      "✅ 🐻 No fue el cerdo.",
+      "✅ 🐱 No fue el cerdo."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🎂 ¡Alguien se comió la tarta!",
+    "note": "😇 Solo UNO dice la verdad",
+    "says": [
+     [
+      "🦊",
+      "Fue el conejo."
+     ],
+     [
+      "🐻",
+      "No fue el conejo."
+     ],
+     [
+      "🐰",
+      "Yo no fui."
+     ]
+    ],
+    "opts": [
+     "🦊 El zorro",
+     "🐻 El oso",
+     "🐰 El conejo"
+    ],
+    "ok": 2,
+    "answer": "🐰 El conejo",
+    "rule": {
+     "text": "Fue el conejo 🐰",
+     "lines": [
+      "✅ 🦊 Fue el conejo.",
+      "❌ 🐻 No fue el conejo.",
+      "❌ 🐰 Yo no fui."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🏺 ¡Alguien rompió el jarrón!",
+    "note": "😇 Solo UNO dice la verdad",
+    "says": [
+     [
+      "🐱",
+      "No fue el zorro."
+     ],
+     [
+      "🦊",
+      "No fue el gato."
+     ],
+     [
+      "🐰",
+      "Fue el gato."
+     ]
+    ],
+    "opts": [
+     "🐱 El gato",
+     "🦊 El zorro",
+     "🐰 El conejo"
+    ],
+    "ok": 1,
+    "answer": "🦊 El zorro",
+    "rule": {
+     "text": "Fue el zorro 🦊",
+     "lines": [
+      "❌ 🐱 No fue el zorro.",
+      "✅ 🦊 No fue el gato.",
+      "❌ 🐰 Fue el gato."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🎂 ¡Alguien se comió la tarta!",
+    "note": "😇 Solo UNO dice la verdad",
+    "says": [
+     [
+      "🐰",
+      "Fue el zorro."
+     ],
+     [
+      "🐱",
+      "No fue el mono."
+     ],
+     [
+      "🦊",
+      "No fue el conejo."
+     ],
+     [
+      "🐵",
+      "Fui yo."
+     ]
+    ],
+    "opts": [
+     "🐰 El conejo",
+     "🐱 El gato",
+     "🦊 El zorro",
+     "🐵 El mono"
+    ],
+    "ok": 0,
+    "answer": "🐰 El conejo",
+    "rule": {
+     "text": "Fue el conejo 🐰",
+     "lines": [
+      "❌ 🐰 Fue el zorro.",
+      "✅ 🐱 No fue el mono.",
+      "❌ 🦊 No fue el conejo.",
+      "❌ 🐵 Fui yo."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🎈 ¡Alguien explotó el globo!",
+    "note": "🤥 Solo UNO miente",
+    "says": [
+     [
+      "🐻",
+      "Fui yo."
+     ],
+     [
+      "🐱",
+      "No fue el mono."
+     ],
+     [
+      "🐵",
+      "Fui yo."
+     ],
+     [
+      "🐷",
+      "No fue el mono."
+     ]
+    ],
+    "opts": [
+     "🐻 El oso",
+     "🐱 El gato",
+     "🐵 El mono",
+     "🐷 El cerdo"
+    ],
+    "ok": 0,
+    "answer": "🐻 El oso",
+    "rule": {
+     "text": "Fue el oso 🐻",
+     "lines": [
+      "✅ 🐻 Fui yo.",
+      "✅ 🐱 No fue el mono.",
+      "❌ 🐵 Fui yo.",
+      "✅ 🐷 No fue el mono."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🎨 ¡Alguien pintó la pared!",
+    "note": "🤥 Solo UNO miente",
+    "says": [
+     [
+      "🐵",
+      "Fue el zorro."
+     ],
+     [
+      "🦊",
+      "Fue el mono."
+     ],
+     [
+      "🐰",
+      "Fue el mono."
+     ],
+     [
+      "🐱",
+      "No fue el conejo."
+     ]
+    ],
+    "opts": [
+     "🐵 El mono",
+     "🦊 El zorro",
+     "🐰 El conejo",
+     "🐱 El gato"
+    ],
+    "ok": 0,
+    "answer": "🐵 El mono",
+    "rule": {
+     "text": "Fue el mono 🐵",
+     "lines": [
+      "❌ 🐵 Fue el zorro.",
+      "✅ 🦊 Fue el mono.",
+      "✅ 🐰 Fue el mono.",
+      "✅ 🐱 No fue el conejo."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🎨 ¡Alguien pintó la pared!",
+    "note": "🤥 Solo UNO miente",
+    "says": [
+     [
+      "🐷",
+      "Fue el gato."
+     ],
+     [
+      "🦊",
+      "Yo no fui."
+     ],
+     [
+      "🐱",
+      "Fui yo."
+     ],
+     [
+      "🐰",
+      "Fui yo."
+     ]
+    ],
+    "opts": [
+     "🐷 El cerdo",
+     "🦊 El zorro",
+     "🐱 El gato",
+     "🐰 El conejo"
+    ],
+    "ok": 2,
+    "answer": "🐱 El gato",
+    "rule": {
+     "text": "Fue el gato 🐱",
+     "lines": [
+      "✅ 🐷 Fue el gato.",
+      "✅ 🦊 Yo no fui.",
+      "✅ 🐱 Fui yo.",
+      "❌ 🐰 Fui yo."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🎨 ¡Alguien pintó la pared!",
+    "note": "😇 Solo UNO dice la verdad",
+    "says": [
+     [
+      "🐱",
+      "Yo no fui."
+     ],
+     [
+      "🐷",
+      "No fue el oso."
+     ],
+     [
+      "🐰",
+      "Fui yo."
+     ],
+     [
+      "🐻",
+      "Fue el gato."
+     ]
+    ],
+    "opts": [
+     "🐱 El gato",
+     "🐷 El cerdo",
+     "🐰 El conejo",
+     "🐻 El oso"
+    ],
+    "ok": 3,
+    "answer": "🐻 El oso",
+    "rule": {
+     "text": "Fue el oso 🐻",
+     "lines": [
+      "✅ 🐱 Yo no fui.",
+      "❌ 🐷 No fue el oso.",
+      "❌ 🐰 Fui yo.",
+      "❌ 🐻 Fue el gato."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🏺 ¡Alguien rompió el jarrón!",
+    "note": "🤥 Solo UNO miente",
+    "says": [
+     [
+      "🐷",
+      "Yo no fui."
+     ],
+     [
+      "🐱",
+      "Fue el cerdo."
+     ],
+     [
+      "🦊",
+      "Fue el gato."
+     ]
+    ],
+    "opts": [
+     "🐷 El cerdo",
+     "🐱 El gato",
+     "🦊 El zorro"
+    ],
+    "ok": 1,
+    "answer": "🐱 El gato",
+    "rule": {
+     "text": "Fue el gato 🐱",
+     "lines": [
+      "✅ 🐷 Yo no fui.",
+      "❌ 🐱 Fue el cerdo.",
+      "✅ 🦊 Fue el gato."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🏺 ¡Alguien rompió el jarrón!",
+    "note": "🤥 Solo UNO miente",
+    "says": [
+     [
+      "🦊",
+      "Fue el oso."
+     ],
+     [
+      "🐷",
+      "No fue el oso."
+     ],
+     [
+      "🐻",
+      "Fue el zorro."
+     ]
+    ],
+    "opts": [
+     "🦊 El zorro",
+     "🐷 El cerdo",
+     "🐻 El oso"
+    ],
+    "ok": 0,
+    "answer": "🦊 El zorro",
+    "rule": {
+     "text": "Fue el zorro 🦊",
+     "lines": [
+      "❌ 🦊 Fue el oso.",
+      "✅ 🐷 No fue el oso.",
+      "✅ 🐻 Fue el zorro."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🏺 ¡Alguien rompió el jarrón!",
+    "note": "🤥 Solo UNO miente",
+    "says": [
+     [
+      "🐻",
+      "Yo no fui."
+     ],
+     [
+      "🐱",
+      "Fue el conejo."
+     ],
+     [
+      "🐰",
+      "Fue el oso."
+     ]
+    ],
+    "opts": [
+     "🐻 El oso",
+     "🐱 El gato",
+     "🐰 El conejo"
+    ],
+    "ok": 2,
+    "answer": "🐰 El conejo",
+    "rule": {
+     "text": "Fue el conejo 🐰",
+     "lines": [
+      "✅ 🐻 Yo no fui.",
+      "✅ 🐱 Fue el conejo.",
+      "❌ 🐰 Fue el oso."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🎨 ¡Alguien pintó la pared!",
+    "note": "🤥 Solo UNO miente",
+    "says": [
+     [
+      "🐵",
+      "No fue el conejo."
+     ],
+     [
+      "🐰",
+      "Fue el mono."
+     ],
+     [
+      "🐷",
+      "No fue el conejo."
+     ]
+    ],
+    "opts": [
+     "🐵 El mono",
+     "🐰 El conejo",
+     "🐷 El cerdo"
+    ],
+    "ok": 2,
+    "answer": "🐷 El cerdo",
+    "rule": {
+     "text": "Fue el cerdo 🐷",
+     "lines": [
+      "✅ 🐵 No fue el conejo.",
+      "❌ 🐰 Fue el mono.",
+      "✅ 🐷 No fue el conejo."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🍪 ¡Alguien cogió las galletas!",
+    "note": "🤥 Solo UNO miente",
+    "says": [
+     [
+      "🐷",
+      "Fue el mono."
+     ],
+     [
+      "🐵",
+      "Fue el gato."
+     ],
+     [
+      "🐱",
+      "Fui yo."
+     ]
+    ],
+    "opts": [
+     "🐷 El cerdo",
+     "🐵 El mono",
+     "🐱 El gato"
+    ],
+    "ok": 2,
+    "answer": "🐱 El gato",
+    "rule": {
+     "text": "Fue el gato 🐱",
+     "lines": [
+      "❌ 🐷 Fue el mono.",
+      "✅ 🐵 Fue el gato.",
+      "✅ 🐱 Fui yo."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🎨 ¡Alguien pintó la pared!",
+    "note": "😇 Solo UNO dice la verdad",
+    "says": [
+     [
+      "🦊",
+      "Yo no fui."
+     ],
+     [
+      "🐰",
+      "Fui yo."
+     ],
+     [
+      "🐵",
+      "Fue el conejo."
+     ]
+    ],
+    "opts": [
+     "🦊 El zorro",
+     "🐰 El conejo",
+     "🐵 El mono"
+    ],
+    "ok": 2,
+    "answer": "🐵 El mono",
+    "rule": {
+     "text": "Fue el mono 🐵",
+     "lines": [
+      "✅ 🦊 Yo no fui.",
+      "❌ 🐰 Fui yo.",
+      "❌ 🐵 Fue el conejo."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🏺 ¡Alguien rompió el jarrón!",
+    "note": "🤥 Solo UNO miente",
+    "says": [
+     [
+      "🦊",
+      "No fue el gato."
+     ],
+     [
+      "🐰",
+      "Fui yo."
+     ],
+     [
+      "🐱",
+      "Fui yo."
+     ]
+    ],
+    "opts": [
+     "🦊 El zorro",
+     "🐰 El conejo",
+     "🐱 El gato"
+    ],
+    "ok": 1,
+    "answer": "🐰 El conejo",
+    "rule": {
+     "text": "Fue el conejo 🐰",
+     "lines": [
+      "✅ 🦊 No fue el gato.",
+      "✅ 🐰 Fui yo.",
+      "❌ 🐱 Fui yo."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🏺 ¡Alguien rompió el jarrón!",
+    "note": "🤥 Solo UNO miente",
+    "says": [
+     [
+      "🐰",
+      "Fue el gato."
+     ],
+     [
+      "🐱",
+      "No fue el conejo."
+     ],
+     [
+      "🐻",
+      "No fue el conejo."
+     ]
+    ],
+    "opts": [
+     "🐰 El conejo",
+     "🐱 El gato",
+     "🐻 El oso"
+    ],
+    "ok": 2,
+    "answer": "🐻 El oso",
+    "rule": {
+     "text": "Fue el oso 🐻",
+     "lines": [
+      "❌ 🐰 Fue el gato.",
+      "✅ 🐱 No fue el conejo.",
+      "✅ 🐻 No fue el conejo."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🏺 ¡Alguien rompió el jarrón!",
+    "note": "😇 Solo UNO dice la verdad",
+    "says": [
+     [
+      "🐷",
+      "Fue el oso."
+     ],
+     [
+      "🐻",
+      "Fue el mono."
+     ],
+     [
+      "🐵",
+      "Fui yo."
+     ]
+    ],
+    "opts": [
+     "🐷 El cerdo",
+     "🐻 El oso",
+     "🐵 El mono"
+    ],
+    "ok": 1,
+    "answer": "🐻 El oso",
+    "rule": {
+     "text": "Fue el oso 🐻",
+     "lines": [
+      "✅ 🐷 Fue el oso.",
+      "❌ 🐻 Fue el mono.",
+      "❌ 🐵 Fui yo."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🎂 ¡Alguien se comió la tarta!",
+    "note": "🤥 Solo UNO miente",
+    "says": [
+     [
+      "🐱",
+      "No fue el mono."
+     ],
+     [
+      "🐵",
+      "Fui yo."
+     ],
+     [
+      "🐷",
+      "Fue el gato."
+     ]
+    ],
+    "opts": [
+     "🐱 El gato",
+     "🐵 El mono",
+     "🐷 El cerdo"
+    ],
+    "ok": 0,
+    "answer": "🐱 El gato",
+    "rule": {
+     "text": "Fue el gato 🐱",
+     "lines": [
+      "✅ 🐱 No fue el mono.",
+      "❌ 🐵 Fui yo.",
+      "✅ 🐷 Fue el gato."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🎈 ¡Alguien explotó el globo!",
+    "note": "🤥 Solo UNO miente",
+    "says": [
+     [
+      "🐰",
+      "Fue el zorro."
+     ],
+     [
+      "🦊",
+      "Yo no fui."
+     ],
+     [
+      "🐱",
+      "Fue el conejo."
+     ]
+    ],
+    "opts": [
+     "🐰 El conejo",
+     "🦊 El zorro",
+     "🐱 El gato"
+    ],
+    "ok": 0,
+    "answer": "🐰 El conejo",
+    "rule": {
+     "text": "Fue el conejo 🐰",
+     "lines": [
+      "❌ 🐰 Fue el zorro.",
+      "✅ 🦊 Yo no fui.",
+      "✅ 🐱 Fue el conejo."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🎨 ¡Alguien pintó la pared!",
+    "note": "😇 Solo UNO dice la verdad",
+    "says": [
+     [
+      "🐰",
+      "No fue el cerdo."
+     ],
+     [
+      "🐷",
+      "No fue el mono."
+     ],
+     [
+      "🐵",
+      "Fue el zorro."
+     ],
+     [
+      "🦊",
+      "Fue el mono."
+     ]
+    ],
+    "opts": [
+     "🐰 El conejo",
+     "🐷 El cerdo",
+     "🐵 El mono",
+     "🦊 El zorro"
+    ],
+    "ok": 1,
+    "answer": "🐷 El cerdo",
+    "rule": {
+     "text": "Fue el cerdo 🐷",
+     "lines": [
+      "❌ 🐰 No fue el cerdo.",
+      "✅ 🐷 No fue el mono.",
+      "❌ 🐵 Fue el zorro.",
+      "❌ 🦊 Fue el mono."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🎈 ¡Alguien explotó el globo!",
+    "note": "🤥 Solo UNO miente",
+    "says": [
+     [
+      "🐰",
+      "Fue el zorro."
+     ],
+     [
+      "🐷",
+      "No fue el zorro."
+     ],
+     [
+      "🐻",
+      "Yo no fui."
+     ],
+     [
+      "🦊",
+      "Fui yo."
+     ]
+    ],
+    "opts": [
+     "🐰 El conejo",
+     "🐷 El cerdo",
+     "🐻 El oso",
+     "🦊 El zorro"
+    ],
+    "ok": 3,
+    "answer": "🦊 El zorro",
+    "rule": {
+     "text": "Fue el zorro 🦊",
+     "lines": [
+      "✅ 🐰 Fue el zorro.",
+      "❌ 🐷 No fue el zorro.",
+      "✅ 🐻 Yo no fui.",
+      "✅ 🦊 Fui yo."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🎈 ¡Alguien explotó el globo!",
+    "note": "🤥 Solo UNO miente",
+    "says": [
+     [
+      "🐻",
+      "Yo no fui."
+     ],
+     [
+      "🦊",
+      "Fui yo."
+     ],
+     [
+      "🐰",
+      "No fue el mono."
+     ],
+     [
+      "🐵",
+      "Fue el oso."
+     ]
+    ],
+    "opts": [
+     "🐻 El oso",
+     "🦊 El zorro",
+     "🐰 El conejo",
+     "🐵 El mono"
+    ],
+    "ok": 1,
+    "answer": "🦊 El zorro",
+    "rule": {
+     "text": "Fue el zorro 🦊",
+     "lines": [
+      "✅ 🐻 Yo no fui.",
+      "✅ 🦊 Fui yo.",
+      "✅ 🐰 No fue el mono.",
+      "❌ 🐵 Fue el oso."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🎂 ¡Alguien se comió la tarta!",
+    "note": "😇 Solo UNO dice la verdad",
+    "says": [
+     [
+      "🦊",
+      "Yo no fui."
+     ],
+     [
+      "🐱",
+      "No fue el zorro."
+     ],
+     [
+      "🐵",
+      "Fue el cerdo."
+     ],
+     [
+      "🐷",
+      "Yo no fui."
+     ]
+    ],
+    "opts": [
+     "🦊 El zorro",
+     "🐱 El gato",
+     "🐵 El mono",
+     "🐷 El cerdo"
+    ],
+    "ok": 0,
+    "answer": "🦊 El zorro",
+    "rule": {
+     "text": "Fue el zorro 🦊",
+     "lines": [
+      "❌ 🦊 Yo no fui.",
+      "❌ 🐱 No fue el zorro.",
+      "❌ 🐵 Fue el cerdo.",
+      "✅ 🐷 Yo no fui."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🎂 ¡Alguien se comió la tarta!",
+    "note": "😇 Solo UNO dice la verdad",
+    "says": [
+     [
+      "🐷",
+      "Fui yo."
+     ],
+     [
+      "🐱",
+      "Fue el mono."
+     ],
+     [
+      "🦊",
+      "Yo no fui."
+     ],
+     [
+      "🐵",
+      "Yo no fui."
+     ]
+    ],
+    "opts": [
+     "🐷 El cerdo",
+     "🐱 El gato",
+     "🦊 El zorro",
+     "🐵 El mono"
+    ],
+    "ok": 2,
+    "answer": "🦊 El zorro",
+    "rule": {
+     "text": "Fue el zorro 🦊",
+     "lines": [
+      "❌ 🐷 Fui yo.",
+      "❌ 🐱 Fue el mono.",
+      "❌ 🦊 Yo no fui.",
+      "✅ 🐵 Yo no fui."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🍪 ¡Alguien cogió las galletas!",
+    "note": "🤥 Solo UNO miente",
+    "says": [
+     [
+      "🐷",
+      "Fue el mono."
+     ],
+     [
+      "🦊",
+      "Yo no fui."
+     ],
+     [
+      "🐵",
+      "No fue el zorro."
+     ]
+    ],
+    "opts": [
+     "🐷 El cerdo",
+     "🦊 El zorro",
+     "🐵 El mono"
+    ],
+    "ok": 0,
+    "answer": "🐷 El cerdo",
+    "rule": {
+     "text": "Fue el cerdo 🐷",
+     "lines": [
+      "❌ 🐷 Fue el mono.",
+      "✅ 🦊 Yo no fui.",
+      "✅ 🐵 No fue el zorro."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🍪 ¡Alguien cogió las galletas!",
+    "note": "🤥 Solo UNO miente",
+    "says": [
+     [
+      "🐵",
+      "No fue el cerdo."
+     ],
+     [
+      "🐷",
+      "Fue el mono."
+     ],
+     [
+      "🐻",
+      "Fue el cerdo."
+     ]
+    ],
+    "opts": [
+     "🐵 El mono",
+     "🐷 El cerdo",
+     "🐻 El oso"
+    ],
+    "ok": 0,
+    "answer": "🐵 El mono",
+    "rule": {
+     "text": "Fue el mono 🐵",
+     "lines": [
+      "✅ 🐵 No fue el cerdo.",
+      "✅ 🐷 Fue el mono.",
+      "❌ 🐻 Fue el cerdo."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🍪 ¡Alguien cogió las galletas!",
+    "note": "🤥 Solo UNO miente",
+    "says": [
+     [
+      "🦊",
+      "Yo no fui."
+     ],
+     [
+      "🐰",
+      "Fui yo."
+     ],
+     [
+      "🐵",
+      "No fue el zorro."
+     ]
+    ],
+    "opts": [
+     "🦊 El zorro",
+     "🐰 El conejo",
+     "🐵 El mono"
+    ],
+    "ok": 2,
+    "answer": "🐵 El mono",
+    "rule": {
+     "text": "Fue el mono 🐵",
+     "lines": [
+      "✅ 🦊 Yo no fui.",
+      "❌ 🐰 Fui yo.",
+      "✅ 🐵 No fue el zorro."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🎨 ¡Alguien pintó la pared!",
+    "note": "🤥 Solo UNO miente",
+    "says": [
+     [
+      "🐵",
+      "Fui yo."
+     ],
+     [
+      "🐷",
+      "Fue el mono."
+     ],
+     [
+      "🦊",
+      "Fue el cerdo."
+     ]
+    ],
+    "opts": [
+     "🐵 El mono",
+     "🐷 El cerdo",
+     "🦊 El zorro"
+    ],
+    "ok": 0,
+    "answer": "🐵 El mono",
+    "rule": {
+     "text": "Fue el mono 🐵",
+     "lines": [
+      "✅ 🐵 Fui yo.",
+      "✅ 🐷 Fue el mono.",
+      "❌ 🦊 Fue el cerdo."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🎂 ¡Alguien se comió la tarta!",
+    "note": "😇 Solo UNO dice la verdad",
+    "says": [
+     [
+      "🐵",
+      "Fue el oso."
+     ],
+     [
+      "🦊",
+      "No fue el mono."
+     ],
+     [
+      "🐻",
+      "Yo no fui."
+     ]
+    ],
+    "opts": [
+     "🐵 El mono",
+     "🦊 El zorro",
+     "🐻 El oso"
+    ],
+    "ok": 0,
+    "answer": "🐵 El mono",
+    "rule": {
+     "text": "Fue el mono 🐵",
+     "lines": [
+      "❌ 🐵 Fue el oso.",
+      "❌ 🦊 No fue el mono.",
+      "✅ 🐻 Yo no fui."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🍪 ¡Alguien cogió las galletas!",
+    "note": "😇 Solo UNO dice la verdad",
+    "says": [
+     [
+      "🐻",
+      "Fue el conejo."
+     ],
+     [
+      "🐰",
+      "Fue el oso."
+     ],
+     [
+      "🦊",
+      "Fue el conejo."
+     ]
+    ],
+    "opts": [
+     "🐻 El oso",
+     "🐰 El conejo",
+     "🦊 El zorro"
+    ],
+    "ok": 0,
+    "answer": "🐻 El oso",
+    "rule": {
+     "text": "Fue el oso 🐻",
+     "lines": [
+      "❌ 🐻 Fue el conejo.",
+      "✅ 🐰 Fue el oso.",
+      "❌ 🦊 Fue el conejo."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🎂 ¡Alguien se comió la tarta!",
+    "note": "😇 Solo UNO dice la verdad",
+    "says": [
+     [
+      "🐵",
+      "Yo no fui."
+     ],
+     [
+      "🐱",
+      "Yo no fui."
+     ],
+     [
+      "🐰",
+      "No fue el mono."
+     ]
+    ],
+    "opts": [
+     "🐵 El mono",
+     "🐱 El gato",
+     "🐰 El conejo"
+    ],
+    "ok": 0,
+    "answer": "🐵 El mono",
+    "rule": {
+     "text": "Fue el mono 🐵",
+     "lines": [
+      "❌ 🐵 Yo no fui.",
+      "✅ 🐱 Yo no fui.",
+      "❌ 🐰 No fue el mono."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🎨 ¡Alguien pintó la pared!",
+    "note": "🤥 Solo UNO miente",
+    "says": [
+     [
+      "🦊",
+      "Fui yo."
+     ],
+     [
+      "🐰",
+      "No fue el gato."
+     ],
+     [
+      "🐱",
+      "Fui yo."
+     ]
+    ],
+    "opts": [
+     "🦊 El zorro",
+     "🐰 El conejo",
+     "🐱 El gato"
+    ],
+    "ok": 0,
+    "answer": "🦊 El zorro",
+    "rule": {
+     "text": "Fue el zorro 🦊",
+     "lines": [
+      "✅ 🦊 Fui yo.",
+      "✅ 🐰 No fue el gato.",
+      "❌ 🐱 Fui yo."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🎂 ¡Alguien se comió la tarta!",
+    "note": "🤥 Solo UNO miente",
+    "says": [
+     [
+      "🦊",
+      "Fue el conejo."
+     ],
+     [
+      "🐵",
+      "No fue el cerdo."
+     ],
+     [
+      "🐷",
+      "Fue el zorro."
+     ],
+     [
+      "🐰",
+      "Fue el zorro."
+     ]
+    ],
+    "opts": [
+     "🦊 El zorro",
+     "🐵 El mono",
+     "🐷 El cerdo",
+     "🐰 El conejo"
+    ],
+    "ok": 0,
+    "answer": "🦊 El zorro",
+    "rule": {
+     "text": "Fue el zorro 🦊",
+     "lines": [
+      "❌ 🦊 Fue el conejo.",
+      "✅ 🐵 No fue el cerdo.",
+      "✅ 🐷 Fue el zorro.",
+      "✅ 🐰 Fue el zorro."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🎈 ¡Alguien explotó el globo!",
+    "note": "😇 Solo UNO dice la verdad",
+    "says": [
+     [
+      "🐷",
+      "Fue el zorro."
+     ],
+     [
+      "🐰",
+      "No fue el mono."
+     ],
+     [
+      "🐵",
+      "Yo no fui."
+     ],
+     [
+      "🦊",
+      "No fue el conejo."
+     ]
+    ],
+    "opts": [
+     "🐷 El cerdo",
+     "🐰 El conejo",
+     "🐵 El mono",
+     "🦊 El zorro"
+    ],
+    "ok": 2,
+    "answer": "🐵 El mono",
+    "rule": {
+     "text": "Fue el mono 🐵",
+     "lines": [
+      "❌ 🐷 Fue el zorro.",
+      "❌ 🐰 No fue el mono.",
+      "❌ 🐵 Yo no fui.",
+      "✅ 🦊 No fue el conejo."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🎈 ¡Alguien explotó el globo!",
+    "note": "🤥 Solo UNO miente",
+    "says": [
+     [
+      "🐰",
+      "Fue el cerdo."
+     ],
+     [
+      "🐵",
+      "Fue el cerdo."
+     ],
+     [
+      "🐷",
+      "Yo no fui."
+     ],
+     [
+      "🐱",
+      "Fue el cerdo."
+     ]
+    ],
+    "opts": [
+     "🐰 El conejo",
+     "🐵 El mono",
+     "🐷 El cerdo",
+     "🐱 El gato"
+    ],
+    "ok": 2,
+    "answer": "🐷 El cerdo",
+    "rule": {
+     "text": "Fue el cerdo 🐷",
+     "lines": [
+      "✅ 🐰 Fue el cerdo.",
+      "✅ 🐵 Fue el cerdo.",
+      "❌ 🐷 Yo no fui.",
+      "✅ 🐱 Fue el cerdo."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🍪 ¡Alguien cogió las galletas!",
+    "note": "🤥 Solo UNO miente",
+    "says": [
+     [
+      "🐰",
+      "No fue el zorro."
+     ],
+     [
+      "🐻",
+      "No fue el conejo."
+     ],
+     [
+      "🐱",
+      "Fui yo."
+     ],
+     [
+      "🦊",
+      "Yo no fui."
+     ]
+    ],
+    "opts": [
+     "🐰 El conejo",
+     "🐻 El oso",
+     "🐱 El gato",
+     "🦊 El zorro"
+    ],
+    "ok": 1,
+    "answer": "🐻 El oso",
+    "rule": {
+     "text": "Fue el oso 🐻",
+     "lines": [
+      "✅ 🐰 No fue el zorro.",
+      "✅ 🐻 No fue el conejo.",
+      "❌ 🐱 Fui yo.",
+      "✅ 🦊 Yo no fui."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🏺 ¡Alguien rompió el jarrón!",
+    "note": "🤥 Solo UNO miente",
+    "says": [
+     [
+      "🐱",
+      "Fue el conejo."
+     ],
+     [
+      "🦊",
+      "Fui yo."
+     ],
+     [
+      "🐵",
+      "Fue el conejo."
+     ],
+     [
+      "🐰",
+      "No fue el zorro."
+     ]
+    ],
+    "opts": [
+     "🐱 El gato",
+     "🦊 El zorro",
+     "🐵 El mono",
+     "🐰 El conejo"
+    ],
+    "ok": 3,
+    "answer": "🐰 El conejo",
+    "rule": {
+     "text": "Fue el conejo 🐰",
+     "lines": [
+      "✅ 🐱 Fue el conejo.",
+      "❌ 🦊 Fui yo.",
+      "✅ 🐵 Fue el conejo.",
+      "✅ 🐰 No fue el zorro."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🍪 ¡Alguien cogió las galletas!",
+    "note": "🤥 Solo UNO miente",
+    "says": [
+     [
+      "🐰",
+      "Yo no fui."
+     ],
+     [
+      "🐱",
+      "No fue el conejo."
+     ],
+     [
+      "🦊",
+      "Fui yo."
+     ]
+    ],
+    "opts": [
+     "🐰 El conejo",
+     "🐱 El gato",
+     "🦊 El zorro"
+    ],
+    "ok": 1,
+    "answer": "🐱 El gato",
+    "rule": {
+     "text": "Fue el gato 🐱",
+     "lines": [
+      "✅ 🐰 Yo no fui.",
+      "✅ 🐱 No fue el conejo.",
+      "❌ 🦊 Fui yo."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🍪 ¡Alguien cogió las galletas!",
+    "note": "🤥 Solo UNO miente",
+    "says": [
+     [
+      "🐱",
+      "Yo no fui."
+     ],
+     [
+      "🦊",
+      "No fue el gato."
+     ],
+     [
+      "🐰",
+      "Fui yo."
+     ]
+    ],
+    "opts": [
+     "🐱 El gato",
+     "🦊 El zorro",
+     "🐰 El conejo"
+    ],
+    "ok": 1,
+    "answer": "🦊 El zorro",
+    "rule": {
+     "text": "Fue el zorro 🦊",
+     "lines": [
+      "✅ 🐱 Yo no fui.",
+      "✅ 🦊 No fue el gato.",
+      "❌ 🐰 Fui yo."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🎈 ¡Alguien explotó el globo!",
+    "note": "🤥 Solo UNO miente",
+    "says": [
+     [
+      "🐻",
+      "Yo no fui."
+     ],
+     [
+      "🐱",
+      "No fue el oso."
+     ],
+     [
+      "🦊",
+      "Fue el gato."
+     ]
+    ],
+    "opts": [
+     "🐻 El oso",
+     "🐱 El gato",
+     "🦊 El zorro"
+    ],
+    "ok": 2,
+    "answer": "🦊 El zorro",
+    "rule": {
+     "text": "Fue el zorro 🦊",
+     "lines": [
+      "✅ 🐻 Yo no fui.",
+      "✅ 🐱 No fue el oso.",
+      "❌ 🦊 Fue el gato."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🏺 ¡Alguien rompió el jarrón!",
+    "note": "🤥 Solo UNO miente",
+    "says": [
+     [
+      "🐷",
+      "No fue el zorro."
+     ],
+     [
+      "🐰",
+      "No fue el cerdo."
+     ],
+     [
+      "🦊",
+      "Yo no fui."
+     ]
+    ],
+    "opts": [
+     "🐷 El cerdo",
+     "🐰 El conejo",
+     "🦊 El zorro"
+    ],
+    "ok": 0,
+    "answer": "🐷 El cerdo",
+    "rule": {
+     "text": "Fue el cerdo 🐷",
+     "lines": [
+      "✅ 🐷 No fue el zorro.",
+      "❌ 🐰 No fue el cerdo.",
+      "✅ 🦊 Yo no fui."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🎂 ¡Alguien se comió la tarta!",
+    "note": "🤥 Solo UNO miente",
+    "says": [
+     [
+      "🐱",
+      "No fue el cerdo."
+     ],
+     [
+      "🦊",
+      "No fue el gato."
+     ],
+     [
+      "🐷",
+      "No fue el gato."
+     ]
+    ],
+    "opts": [
+     "🐱 El gato",
+     "🦊 El zorro",
+     "🐷 El cerdo"
+    ],
+    "ok": 2,
+    "answer": "🐷 El cerdo",
+    "rule": {
+     "text": "Fue el cerdo 🐷",
+     "lines": [
+      "❌ 🐱 No fue el cerdo.",
+      "✅ 🦊 No fue el gato.",
+      "✅ 🐷 No fue el gato."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🎂 ¡Alguien se comió la tarta!",
+    "note": "😇 Solo UNO dice la verdad",
+    "says": [
+     [
+      "🐷",
+      "Fue el gato."
+     ],
+     [
+      "🦊",
+      "Fue el gato."
+     ],
+     [
+      "🐱",
+      "No fue el zorro."
+     ]
+    ],
+    "opts": [
+     "🐷 El cerdo",
+     "🦊 El zorro",
+     "🐱 El gato"
+    ],
+    "ok": 0,
+    "answer": "🐷 El cerdo",
+    "rule": {
+     "text": "Fue el cerdo 🐷",
+     "lines": [
+      "❌ 🐷 Fue el gato.",
+      "❌ 🦊 Fue el gato.",
+      "✅ 🐱 No fue el zorro."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🎨 ¡Alguien pintó la pared!",
+    "note": "😇 Solo UNO dice la verdad",
+    "says": [
+     [
+      "🦊",
+      "No fue el cerdo."
+     ],
+     [
+      "🐷",
+      "Yo no fui."
+     ],
+     [
+      "🐱",
+      "Fue el cerdo."
+     ]
+    ],
+    "opts": [
+     "🦊 El zorro",
+     "🐷 El cerdo",
+     "🐱 El gato"
+    ],
+    "ok": 1,
+    "answer": "🐷 El cerdo",
+    "rule": {
+     "text": "Fue el cerdo 🐷",
+     "lines": [
+      "❌ 🦊 No fue el cerdo.",
+      "❌ 🐷 Yo no fui.",
+      "✅ 🐱 Fue el cerdo."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🎂 ¡Alguien se comió la tarta!",
+    "note": "😇 Solo UNO dice la verdad",
+    "says": [
+     [
+      "🐻",
+      "Fui yo."
+     ],
+     [
+      "🐵",
+      "No fue el oso."
+     ],
+     [
+      "🐷",
+      "No fue el oso."
+     ]
+    ],
+    "opts": [
+     "🐻 El oso",
+     "🐵 El mono",
+     "🐷 El cerdo"
+    ],
+    "ok": 0,
+    "answer": "🐻 El oso",
+    "rule": {
+     "text": "Fue el oso 🐻",
+     "lines": [
+      "✅ 🐻 Fui yo.",
+      "❌ 🐵 No fue el oso.",
+      "❌ 🐷 No fue el oso."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🎂 ¡Alguien se comió la tarta!",
+    "note": "😇 Solo UNO dice la verdad",
+    "says": [
+     [
+      "🐰",
+      "No fue el cerdo."
+     ],
+     [
+      "🐷",
+      "Fue el mono."
+     ],
+     [
+      "🐵",
+      "Fui yo."
+     ]
+    ],
+    "opts": [
+     "🐰 El conejo",
+     "🐷 El cerdo",
+     "🐵 El mono"
+    ],
+    "ok": 0,
+    "answer": "🐰 El conejo",
+    "rule": {
+     "text": "Fue el conejo 🐰",
+     "lines": [
+      "✅ 🐰 No fue el cerdo.",
+      "❌ 🐷 Fue el mono.",
+      "❌ 🐵 Fui yo."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🏺 ¡Alguien rompió el jarrón!",
+    "note": "🤥 Solo UNO miente",
+    "says": [
+     [
+      "🐱",
+      "No fue el conejo."
+     ],
+     [
+      "🐷",
+      "Fue el conejo."
+     ],
+     [
+      "🐰",
+      "Fui yo."
+     ],
+     [
+      "🐵",
+      "Fue el conejo."
+     ]
+    ],
+    "opts": [
+     "🐱 El gato",
+     "🐷 El cerdo",
+     "🐰 El conejo",
+     "🐵 El mono"
+    ],
+    "ok": 2,
+    "answer": "🐰 El conejo",
+    "rule": {
+     "text": "Fue el conejo 🐰",
+     "lines": [
+      "❌ 🐱 No fue el conejo.",
+      "✅ 🐷 Fue el conejo.",
+      "✅ 🐰 Fui yo.",
+      "✅ 🐵 Fue el conejo."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🎂 ¡Alguien se comió la tarta!",
+    "note": "🤥 Solo UNO miente",
+    "says": [
+     [
+      "🐱",
+      "Fue el mono."
+     ],
+     [
+      "🐰",
+      "No fue el mono."
+     ],
+     [
+      "🐷",
+      "Fue el mono."
+     ],
+     [
+      "🐵",
+      "No fue el cerdo."
+     ]
+    ],
+    "opts": [
+     "🐱 El gato",
+     "🐰 El conejo",
+     "🐷 El cerdo",
+     "🐵 El mono"
+    ],
+    "ok": 3,
+    "answer": "🐵 El mono",
+    "rule": {
+     "text": "Fue el mono 🐵",
+     "lines": [
+      "✅ 🐱 Fue el mono.",
+      "❌ 🐰 No fue el mono.",
+      "✅ 🐷 Fue el mono.",
+      "✅ 🐵 No fue el cerdo."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🏺 ¡Alguien rompió el jarrón!",
+    "note": "😇 Solo UNO dice la verdad",
+    "says": [
+     [
+      "🐷",
+      "No fue el gato."
+     ],
+     [
+      "🐻",
+      "No fue el gato."
+     ],
+     [
+      "🦊",
+      "No fue el gato."
+     ],
+     [
+      "🐱",
+      "No fue el cerdo."
+     ]
+    ],
+    "opts": [
+     "🐷 El cerdo",
+     "🐻 El oso",
+     "🦊 El zorro",
+     "🐱 El gato"
+    ],
+    "ok": 3,
+    "answer": "🐱 El gato",
+    "rule": {
+     "text": "Fue el gato 🐱",
+     "lines": [
+      "❌ 🐷 No fue el gato.",
+      "❌ 🐻 No fue el gato.",
+      "❌ 🦊 No fue el gato.",
+      "✅ 🐱 No fue el cerdo."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🎈 ¡Alguien explotó el globo!",
+    "note": "🤥 Solo UNO miente",
+    "says": [
+     [
+      "🐷",
+      "No fue el conejo."
+     ],
+     [
+      "🐱",
+      "No fue el conejo."
+     ],
+     [
+      "🐰",
+      "Yo no fui."
+     ],
+     [
+      "🐻",
+      "No fue el gato."
+     ]
+    ],
+    "opts": [
+     "🐷 El cerdo",
+     "🐱 El gato",
+     "🐰 El conejo",
+     "🐻 El oso"
+    ],
+    "ok": 1,
+    "answer": "🐱 El gato",
+    "rule": {
+     "text": "Fue el gato 🐱",
+     "lines": [
+      "✅ 🐷 No fue el conejo.",
+      "✅ 🐱 No fue el conejo.",
+      "✅ 🐰 Yo no fui.",
+      "❌ 🐻 No fue el gato."
+     ]
+    }
+   }
+  ],
+  "en": [
+   {
+    "kind": "card",
+    "text": "🏺 Someone broke the vase!",
+    "note": "🤥 Only ONE is lying",
+    "says": [
+     [
+      "🐻",
+      "It was me."
+     ],
+     [
+      "🐱",
+      "It wasn't me."
+     ],
+     [
+      "🐵",
+      "It wasn't the cat."
+     ]
+    ],
+    "opts": [
+     "🐻 The bear",
+     "🐱 The cat",
+     "🐵 The monkey"
+    ],
+    "ok": 2,
+    "answer": "🐵 The monkey",
+    "rule": {
+     "text": "It was the monkey 🐵",
+     "lines": [
+      "❌ 🐻 It was me.",
+      "✅ 🐱 It wasn't me.",
+      "✅ 🐵 It wasn't the cat."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🎂 Someone ate the cake!",
+    "note": "🤥 Only ONE is lying",
+    "says": [
+     [
+      "🦊",
+      "It wasn't the rabbit."
+     ],
+     [
+      "🐰",
+      "It wasn't me."
+     ],
+     [
+      "🐷",
+      "It wasn't the fox."
+     ]
+    ],
+    "opts": [
+     "🦊 The fox",
+     "🐰 The rabbit",
+     "🐷 The pig"
+    ],
+    "ok": 0,
+    "answer": "🦊 The fox",
+    "rule": {
+     "text": "It was the fox 🦊",
+     "lines": [
+      "✅ 🦊 It wasn't the rabbit.",
+      "✅ 🐰 It wasn't me.",
+      "❌ 🐷 It wasn't the fox."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🍪 Someone took the cookies!",
+    "note": "🤥 Only ONE is lying",
+    "says": [
+     [
+      "🐰",
+      "It wasn't the fox."
+     ],
+     [
+      "🦊",
+      "It wasn't me."
+     ],
+     [
+      "🐵",
+      "It wasn't the rabbit."
+     ]
+    ],
+    "opts": [
+     "🐰 The rabbit",
+     "🦊 The fox",
+     "🐵 The monkey"
+    ],
+    "ok": 0,
+    "answer": "🐰 The rabbit",
+    "rule": {
+     "text": "It was the rabbit 🐰",
+     "lines": [
+      "✅ 🐰 It wasn't the fox.",
+      "✅ 🦊 It wasn't me.",
+      "❌ 🐵 It wasn't the rabbit."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🎨 Someone painted the wall!",
+    "note": "🤥 Only ONE is lying",
+    "says": [
+     [
+      "🐰",
+      "It wasn't me."
+     ],
+     [
+      "🐵",
+      "It wasn't the bear."
+     ],
+     [
+      "🐻",
+      "It wasn't the rabbit."
+     ]
+    ],
+    "opts": [
+     "🐰 The rabbit",
+     "🐵 The monkey",
+     "🐻 The bear"
+    ],
+    "ok": 2,
+    "answer": "🐻 The bear",
+    "rule": {
+     "text": "It was the bear 🐻",
+     "lines": [
+      "✅ 🐰 It wasn't me.",
+      "❌ 🐵 It wasn't the bear.",
+      "✅ 🐻 It wasn't the rabbit."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🏺 Someone broke the vase!",
+    "note": "🤥 Only ONE is lying",
+    "says": [
+     [
+      "🐱",
+      "It was me."
+     ],
+     [
+      "🐷",
+      "It was me."
+     ],
+     [
+      "🐵",
+      "It wasn't the cat."
+     ]
+    ],
+    "opts": [
+     "🐱 The cat",
+     "🐷 The pig",
+     "🐵 The monkey"
+    ],
+    "ok": 1,
+    "answer": "🐷 The pig",
+    "rule": {
+     "text": "It was the pig 🐷",
+     "lines": [
+      "❌ 🐱 It was me.",
+      "✅ 🐷 It was me.",
+      "✅ 🐵 It wasn't the cat."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🎈 Someone popped the balloon!",
+    "note": "🤥 Only ONE is lying",
+    "says": [
+     [
+      "🐱",
+      "It was me."
+     ],
+     [
+      "🐵",
+      "It wasn't the fox."
+     ],
+     [
+      "🦊",
+      "It wasn't me."
+     ]
+    ],
+    "opts": [
+     "🐱 The cat",
+     "🐵 The monkey",
+     "🦊 The fox"
+    ],
+    "ok": 1,
+    "answer": "🐵 The monkey",
+    "rule": {
+     "text": "It was the monkey 🐵",
+     "lines": [
+      "❌ 🐱 It was me.",
+      "✅ 🐵 It wasn't the fox.",
+      "✅ 🦊 It wasn't me."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🎨 Someone painted the wall!",
+    "note": "😇 Only ONE tells the truth",
+    "says": [
+     [
+      "🐵",
+      "It was the pig."
+     ],
+     [
+      "🦊",
+      "It wasn't the monkey."
+     ],
+     [
+      "🐷",
+      "It was me."
+     ]
+    ],
+    "opts": [
+     "🐵 The monkey",
+     "🦊 The fox",
+     "🐷 The pig"
+    ],
+    "ok": 1,
+    "answer": "🦊 The fox",
+    "rule": {
+     "text": "It was the fox 🦊",
+     "lines": [
+      "❌ 🐵 It was the pig.",
+      "✅ 🦊 It wasn't the monkey.",
+      "❌ 🐷 It was me."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🏺 Someone broke the vase!",
+    "note": "😇 Only ONE tells the truth",
+    "says": [
+     [
+      "🦊",
+      "It wasn't the rabbit."
+     ],
+     [
+      "🐱",
+      "It was the rabbit."
+     ],
+     [
+      "🐰",
+      "It wasn't the fox."
+     ]
+    ],
+    "opts": [
+     "🦊 The fox",
+     "🐱 The cat",
+     "🐰 The rabbit"
+    ],
+    "ok": 0,
+    "answer": "🦊 The fox",
+    "rule": {
+     "text": "It was the fox 🦊",
+     "lines": [
+      "✅ 🦊 It wasn't the rabbit.",
+      "❌ 🐱 It was the rabbit.",
+      "❌ 🐰 It wasn't the fox."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🏺 Someone broke the vase!",
+    "note": "😇 Only ONE tells the truth",
+    "says": [
+     [
+      "🐱",
+      "It was the bear."
+     ],
+     [
+      "🐷",
+      "It wasn't the bear."
+     ],
+     [
+      "🐻",
+      "It wasn't me."
+     ]
+    ],
+    "opts": [
+     "🐱 The cat",
+     "🐷 The pig",
+     "🐻 The bear"
+    ],
+    "ok": 2,
+    "answer": "🐻 The bear",
+    "rule": {
+     "text": "It was the bear 🐻",
+     "lines": [
+      "✅ 🐱 It was the bear.",
+      "❌ 🐷 It wasn't the bear.",
+      "❌ 🐻 It wasn't me."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🎈 Someone popped the balloon!",
+    "note": "🤥 Only ONE is lying",
+    "says": [
+     [
+      "🐷",
+      "It wasn't the fox."
+     ],
+     [
+      "🐰",
+      "It was the fox."
+     ],
+     [
+      "🦊",
+      "It was the pig."
+     ]
+    ],
+    "opts": [
+     "🐷 The pig",
+     "🐰 The rabbit",
+     "🦊 The fox"
+    ],
+    "ok": 0,
+    "answer": "🐷 The pig",
+    "rule": {
+     "text": "It was the pig 🐷",
+     "lines": [
+      "✅ 🐷 It wasn't the fox.",
+      "❌ 🐰 It was the fox.",
+      "✅ 🦊 It was the pig."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🍪 Someone took the cookies!",
+    "note": "🤥 Only ONE is lying",
+    "says": [
+     [
+      "🐰",
+      "It was me."
+     ],
+     [
+      "🐵",
+      "It wasn't me."
+     ],
+     [
+      "🐱",
+      "It was the monkey."
+     ]
+    ],
+    "opts": [
+     "🐰 The rabbit",
+     "🐵 The monkey",
+     "🐱 The cat"
+    ],
+    "ok": 0,
+    "answer": "🐰 The rabbit",
+    "rule": {
+     "text": "It was the rabbit 🐰",
+     "lines": [
+      "✅ 🐰 It was me.",
+      "✅ 🐵 It wasn't me.",
+      "❌ 🐱 It was the monkey."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🍪 Someone took the cookies!",
+    "note": "🤥 Only ONE is lying",
+    "says": [
+     [
+      "🐱",
+      "It wasn't me."
+     ],
+     [
+      "🐵",
+      "It was me."
+     ],
+     [
+      "🐰",
+      "It was the monkey."
+     ],
+     [
+      "🐷",
+      "It was the cat."
+     ]
+    ],
+    "opts": [
+     "🐱 The cat",
+     "🐵 The monkey",
+     "🐰 The rabbit",
+     "🐷 The pig"
+    ],
+    "ok": 1,
+    "answer": "🐵 The monkey",
+    "rule": {
+     "text": "It was the monkey 🐵",
+     "lines": [
+      "✅ 🐱 It wasn't me.",
+      "✅ 🐵 It was me.",
+      "✅ 🐰 It was the monkey.",
+      "❌ 🐷 It was the cat."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🎨 Someone painted the wall!",
+    "note": "😇 Only ONE tells the truth",
+    "says": [
+     [
+      "🐷",
+      "It was the fox."
+     ],
+     [
+      "🐻",
+      "It was the fox."
+     ],
+     [
+      "🦊",
+      "It was the pig."
+     ],
+     [
+      "🐰",
+      "It was the fox."
+     ]
+    ],
+    "opts": [
+     "🐷 The pig",
+     "🐻 The bear",
+     "🦊 The fox",
+     "🐰 The rabbit"
+    ],
+    "ok": 0,
+    "answer": "🐷 The pig",
+    "rule": {
+     "text": "It was the pig 🐷",
+     "lines": [
+      "❌ 🐷 It was the fox.",
+      "❌ 🐻 It was the fox.",
+      "✅ 🦊 It was the pig.",
+      "❌ 🐰 It was the fox."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🎨 Someone painted the wall!",
+    "note": "😇 Only ONE tells the truth",
+    "says": [
+     [
+      "🐵",
+      "It was me."
+     ],
+     [
+      "🐷",
+      "It was the monkey."
+     ],
+     [
+      "🦊",
+      "It wasn't me."
+     ],
+     [
+      "🐻",
+      "It was me."
+     ]
+    ],
+    "opts": [
+     "🐵 The monkey",
+     "🐷 The pig",
+     "🦊 The fox",
+     "🐻 The bear"
+    ],
+    "ok": 1,
+    "answer": "🐷 The pig",
+    "rule": {
+     "text": "It was the pig 🐷",
+     "lines": [
+      "❌ 🐵 It was me.",
+      "❌ 🐷 It was the monkey.",
+      "✅ 🦊 It wasn't me.",
+      "❌ 🐻 It was me."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🎈 Someone popped the balloon!",
+    "note": "🤥 Only ONE is lying",
+    "says": [
+     [
+      "🐱",
+      "It was the fox."
+     ],
+     [
+      "🐵",
+      "It was the fox."
+     ],
+     [
+      "🐷",
+      "It wasn't the fox."
+     ],
+     [
+      "🦊",
+      "It was me."
+     ]
+    ],
+    "opts": [
+     "🐱 The cat",
+     "🐵 The monkey",
+     "🐷 The pig",
+     "🦊 The fox"
+    ],
+    "ok": 3,
+    "answer": "🦊 The fox",
+    "rule": {
+     "text": "It was the fox 🦊",
+     "lines": [
+      "✅ 🐱 It was the fox.",
+      "✅ 🐵 It was the fox.",
+      "❌ 🐷 It wasn't the fox.",
+      "✅ 🦊 It was me."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🏺 Someone broke the vase!",
+    "note": "😇 Only ONE tells the truth",
+    "says": [
+     [
+      "🦊",
+      "It wasn't the monkey."
+     ],
+     [
+      "🐱",
+      "It was the rabbit."
+     ],
+     [
+      "🐵",
+      "It wasn't me."
+     ],
+     [
+      "🐰",
+      "It wasn't the fox."
+     ]
+    ],
+    "opts": [
+     "🦊 The fox",
+     "🐱 The cat",
+     "🐵 The monkey",
+     "🐰 The rabbit"
+    ],
+    "ok": 2,
+    "answer": "🐵 The monkey",
+    "rule": {
+     "text": "It was the monkey 🐵",
+     "lines": [
+      "❌ 🦊 It wasn't the monkey.",
+      "❌ 🐱 It was the rabbit.",
+      "❌ 🐵 It wasn't me.",
+      "✅ 🐰 It wasn't the fox."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🎈 Someone popped the balloon!",
+    "note": "😇 Only ONE tells the truth",
+    "says": [
+     [
+      "🐵",
+      "It wasn't the cat."
+     ],
+     [
+      "🐻",
+      "It was me."
+     ],
+     [
+      "🐱",
+      "It wasn't me."
+     ],
+     [
+      "🦊",
+      "It was the cat."
+     ]
+    ],
+    "opts": [
+     "🐵 The monkey",
+     "🐻 The bear",
+     "🐱 The cat",
+     "🦊 The fox"
+    ],
+    "ok": 2,
+    "answer": "🐱 The cat",
+    "rule": {
+     "text": "It was the cat 🐱",
+     "lines": [
+      "❌ 🐵 It wasn't the cat.",
+      "❌ 🐻 It was me.",
+      "❌ 🐱 It wasn't me.",
+      "✅ 🦊 It was the cat."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🎈 Someone popped the balloon!",
+    "note": "🤥 Only ONE is lying",
+    "says": [
+     [
+      "🦊",
+      "It was me."
+     ],
+     [
+      "🐵",
+      "It wasn't the fox."
+     ],
+     [
+      "🐻",
+      "It was the fox."
+     ]
+    ],
+    "opts": [
+     "🦊 The fox",
+     "🐵 The monkey",
+     "🐻 The bear"
+    ],
+    "ok": 0,
+    "answer": "🦊 The fox",
+    "rule": {
+     "text": "It was the fox 🦊",
+     "lines": [
+      "✅ 🦊 It was me.",
+      "❌ 🐵 It wasn't the fox.",
+      "✅ 🐻 It was the fox."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🏺 Someone broke the vase!",
+    "note": "🤥 Only ONE is lying",
+    "says": [
+     [
+      "🐱",
+      "It wasn't the pig."
+     ],
+     [
+      "🐷",
+      "It wasn't me."
+     ],
+     [
+      "🦊",
+      "It was the cat."
+     ]
+    ],
+    "opts": [
+     "🐱 The cat",
+     "🐷 The pig",
+     "🦊 The fox"
+    ],
+    "ok": 2,
+    "answer": "🦊 The fox",
+    "rule": {
+     "text": "It was the fox 🦊",
+     "lines": [
+      "✅ 🐱 It wasn't the pig.",
+      "✅ 🐷 It wasn't me.",
+      "❌ 🦊 It was the cat."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🍪 Someone took the cookies!",
+    "note": "🤥 Only ONE is lying",
+    "says": [
+     [
+      "🐰",
+      "It was me."
+     ],
+     [
+      "🐷",
+      "It wasn't me."
+     ],
+     [
+      "🐻",
+      "It was the pig."
+     ]
+    ],
+    "opts": [
+     "🐰 The rabbit",
+     "🐷 The pig",
+     "🐻 The bear"
+    ],
+    "ok": 0,
+    "answer": "🐰 The rabbit",
+    "rule": {
+     "text": "It was the rabbit 🐰",
+     "lines": [
+      "✅ 🐰 It was me.",
+      "✅ 🐷 It wasn't me.",
+      "❌ 🐻 It was the pig."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🎨 Someone painted the wall!",
+    "note": "🤥 Only ONE is lying",
+    "says": [
+     [
+      "🦊",
+      "It wasn't me."
+     ],
+     [
+      "🐰",
+      "It was the fox."
+     ],
+     [
+      "🐷",
+      "It was the rabbit."
+     ]
+    ],
+    "opts": [
+     "🦊 The fox",
+     "🐰 The rabbit",
+     "🐷 The pig"
+    ],
+    "ok": 1,
+    "answer": "🐰 The rabbit",
+    "rule": {
+     "text": "It was the rabbit 🐰",
+     "lines": [
+      "✅ 🦊 It wasn't me.",
+      "❌ 🐰 It was the fox.",
+      "✅ 🐷 It was the rabbit."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🎂 Someone ate the cake!",
+    "note": "🤥 Only ONE is lying",
+    "says": [
+     [
+      "🐵",
+      "It was the bear."
+     ],
+     [
+      "🐻",
+      "It was the monkey."
+     ],
+     [
+      "🐷",
+      "It wasn't the bear."
+     ]
+    ],
+    "opts": [
+     "🐵 The monkey",
+     "🐻 The bear",
+     "🐷 The pig"
+    ],
+    "ok": 0,
+    "answer": "🐵 The monkey",
+    "rule": {
+     "text": "It was the monkey 🐵",
+     "lines": [
+      "❌ 🐵 It was the bear.",
+      "✅ 🐻 It was the monkey.",
+      "✅ 🐷 It wasn't the bear."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🎂 Someone ate the cake!",
+    "note": "😇 Only ONE tells the truth",
+    "says": [
+     [
+      "🐰",
+      "It was the monkey."
+     ],
+     [
+      "🐱",
+      "It wasn't the monkey."
+     ],
+     [
+      "🐵",
+      "It wasn't the cat."
+     ]
+    ],
+    "opts": [
+     "🐰 The rabbit",
+     "🐱 The cat",
+     "🐵 The monkey"
+    ],
+    "ok": 1,
+    "answer": "🐱 The cat",
+    "rule": {
+     "text": "It was the cat 🐱",
+     "lines": [
+      "❌ 🐰 It was the monkey.",
+      "✅ 🐱 It wasn't the monkey.",
+      "❌ 🐵 It wasn't the cat."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🎈 Someone popped the balloon!",
+    "note": "😇 Only ONE tells the truth",
+    "says": [
+     [
+      "🐷",
+      "It wasn't me."
+     ],
+     [
+      "🐵",
+      "It wasn't the rabbit."
+     ],
+     [
+      "🐰",
+      "It was me."
+     ]
+    ],
+    "opts": [
+     "🐷 The pig",
+     "🐵 The monkey",
+     "🐰 The rabbit"
+    ],
+    "ok": 0,
+    "answer": "🐷 The pig",
+    "rule": {
+     "text": "It was the pig 🐷",
+     "lines": [
+      "❌ 🐷 It wasn't me.",
+      "✅ 🐵 It wasn't the rabbit.",
+      "❌ 🐰 It was me."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🎂 Someone ate the cake!",
+    "note": "🤥 Only ONE is lying",
+    "says": [
+     [
+      "🐰",
+      "It was me."
+     ],
+     [
+      "🐻",
+      "It was the fox."
+     ],
+     [
+      "🦊",
+      "It was the rabbit."
+     ]
+    ],
+    "opts": [
+     "🐰 The rabbit",
+     "🐻 The bear",
+     "🦊 The fox"
+    ],
+    "ok": 0,
+    "answer": "🐰 The rabbit",
+    "rule": {
+     "text": "It was the rabbit 🐰",
+     "lines": [
+      "✅ 🐰 It was me.",
+      "❌ 🐻 It was the fox.",
+      "✅ 🦊 It was the rabbit."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🎨 Someone painted the wall!",
+    "note": "🤥 Only ONE is lying",
+    "says": [
+     [
+      "🐷",
+      "It wasn't the cat."
+     ],
+     [
+      "🐻",
+      "It wasn't the pig."
+     ],
+     [
+      "🐱",
+      "It wasn't the pig."
+     ]
+    ],
+    "opts": [
+     "🐷 The pig",
+     "🐻 The bear",
+     "🐱 The cat"
+    ],
+    "ok": 2,
+    "answer": "🐱 The cat",
+    "rule": {
+     "text": "It was the cat 🐱",
+     "lines": [
+      "❌ 🐷 It wasn't the cat.",
+      "✅ 🐻 It wasn't the pig.",
+      "✅ 🐱 It wasn't the pig."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🎂 Someone ate the cake!",
+    "note": "😇 Only ONE tells the truth",
+    "says": [
+     [
+      "🦊",
+      "It was the rabbit."
+     ],
+     [
+      "🐻",
+      "It wasn't the rabbit."
+     ],
+     [
+      "🐰",
+      "It wasn't me."
+     ]
+    ],
+    "opts": [
+     "🦊 The fox",
+     "🐻 The bear",
+     "🐰 The rabbit"
+    ],
+    "ok": 2,
+    "answer": "🐰 The rabbit",
+    "rule": {
+     "text": "It was the rabbit 🐰",
+     "lines": [
+      "✅ 🦊 It was the rabbit.",
+      "❌ 🐻 It wasn't the rabbit.",
+      "❌ 🐰 It wasn't me."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🏺 Someone broke the vase!",
+    "note": "😇 Only ONE tells the truth",
+    "says": [
+     [
+      "🐱",
+      "It wasn't the fox."
+     ],
+     [
+      "🦊",
+      "It wasn't the cat."
+     ],
+     [
+      "🐰",
+      "It was the cat."
+     ]
+    ],
+    "opts": [
+     "🐱 The cat",
+     "🦊 The fox",
+     "🐰 The rabbit"
+    ],
+    "ok": 1,
+    "answer": "🦊 The fox",
+    "rule": {
+     "text": "It was the fox 🦊",
+     "lines": [
+      "❌ 🐱 It wasn't the fox.",
+      "✅ 🦊 It wasn't the cat.",
+      "❌ 🐰 It was the cat."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🎂 Someone ate the cake!",
+    "note": "😇 Only ONE tells the truth",
+    "says": [
+     [
+      "🐰",
+      "It was the fox."
+     ],
+     [
+      "🐱",
+      "It wasn't the monkey."
+     ],
+     [
+      "🦊",
+      "It wasn't the rabbit."
+     ],
+     [
+      "🐵",
+      "It was me."
+     ]
+    ],
+    "opts": [
+     "🐰 The rabbit",
+     "🐱 The cat",
+     "🦊 The fox",
+     "🐵 The monkey"
+    ],
+    "ok": 0,
+    "answer": "🐰 The rabbit",
+    "rule": {
+     "text": "It was the rabbit 🐰",
+     "lines": [
+      "❌ 🐰 It was the fox.",
+      "✅ 🐱 It wasn't the monkey.",
+      "❌ 🦊 It wasn't the rabbit.",
+      "❌ 🐵 It was me."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🎈 Someone popped the balloon!",
+    "note": "🤥 Only ONE is lying",
+    "says": [
+     [
+      "🐻",
+      "It was me."
+     ],
+     [
+      "🐱",
+      "It wasn't the monkey."
+     ],
+     [
+      "🐵",
+      "It was me."
+     ],
+     [
+      "🐷",
+      "It wasn't the monkey."
+     ]
+    ],
+    "opts": [
+     "🐻 The bear",
+     "🐱 The cat",
+     "🐵 The monkey",
+     "🐷 The pig"
+    ],
+    "ok": 0,
+    "answer": "🐻 The bear",
+    "rule": {
+     "text": "It was the bear 🐻",
+     "lines": [
+      "✅ 🐻 It was me.",
+      "✅ 🐱 It wasn't the monkey.",
+      "❌ 🐵 It was me.",
+      "✅ 🐷 It wasn't the monkey."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🎨 Someone painted the wall!",
+    "note": "🤥 Only ONE is lying",
+    "says": [
+     [
+      "🐵",
+      "It was the fox."
+     ],
+     [
+      "🦊",
+      "It was the monkey."
+     ],
+     [
+      "🐰",
+      "It was the monkey."
+     ],
+     [
+      "🐱",
+      "It wasn't the rabbit."
+     ]
+    ],
+    "opts": [
+     "🐵 The monkey",
+     "🦊 The fox",
+     "🐰 The rabbit",
+     "🐱 The cat"
+    ],
+    "ok": 0,
+    "answer": "🐵 The monkey",
+    "rule": {
+     "text": "It was the monkey 🐵",
+     "lines": [
+      "❌ 🐵 It was the fox.",
+      "✅ 🦊 It was the monkey.",
+      "✅ 🐰 It was the monkey.",
+      "✅ 🐱 It wasn't the rabbit."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🎨 Someone painted the wall!",
+    "note": "🤥 Only ONE is lying",
+    "says": [
+     [
+      "🐷",
+      "It was the cat."
+     ],
+     [
+      "🦊",
+      "It wasn't me."
+     ],
+     [
+      "🐱",
+      "It was me."
+     ],
+     [
+      "🐰",
+      "It was me."
+     ]
+    ],
+    "opts": [
+     "🐷 The pig",
+     "🦊 The fox",
+     "🐱 The cat",
+     "🐰 The rabbit"
+    ],
+    "ok": 2,
+    "answer": "🐱 The cat",
+    "rule": {
+     "text": "It was the cat 🐱",
+     "lines": [
+      "✅ 🐷 It was the cat.",
+      "✅ 🦊 It wasn't me.",
+      "✅ 🐱 It was me.",
+      "❌ 🐰 It was me."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🎨 Someone painted the wall!",
+    "note": "😇 Only ONE tells the truth",
+    "says": [
+     [
+      "🐱",
+      "It wasn't me."
+     ],
+     [
+      "🐷",
+      "It wasn't the bear."
+     ],
+     [
+      "🐰",
+      "It was me."
+     ],
+     [
+      "🐻",
+      "It was the cat."
+     ]
+    ],
+    "opts": [
+     "🐱 The cat",
+     "🐷 The pig",
+     "🐰 The rabbit",
+     "🐻 The bear"
+    ],
+    "ok": 3,
+    "answer": "🐻 The bear",
+    "rule": {
+     "text": "It was the bear 🐻",
+     "lines": [
+      "✅ 🐱 It wasn't me.",
+      "❌ 🐷 It wasn't the bear.",
+      "❌ 🐰 It was me.",
+      "❌ 🐻 It was the cat."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🏺 Someone broke the vase!",
+    "note": "🤥 Only ONE is lying",
+    "says": [
+     [
+      "🐷",
+      "It wasn't me."
+     ],
+     [
+      "🐱",
+      "It was the pig."
+     ],
+     [
+      "🦊",
+      "It was the cat."
+     ]
+    ],
+    "opts": [
+     "🐷 The pig",
+     "🐱 The cat",
+     "🦊 The fox"
+    ],
+    "ok": 1,
+    "answer": "🐱 The cat",
+    "rule": {
+     "text": "It was the cat 🐱",
+     "lines": [
+      "✅ 🐷 It wasn't me.",
+      "❌ 🐱 It was the pig.",
+      "✅ 🦊 It was the cat."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🏺 Someone broke the vase!",
+    "note": "🤥 Only ONE is lying",
+    "says": [
+     [
+      "🦊",
+      "It was the bear."
+     ],
+     [
+      "🐷",
+      "It wasn't the bear."
+     ],
+     [
+      "🐻",
+      "It was the fox."
+     ]
+    ],
+    "opts": [
+     "🦊 The fox",
+     "🐷 The pig",
+     "🐻 The bear"
+    ],
+    "ok": 0,
+    "answer": "🦊 The fox",
+    "rule": {
+     "text": "It was the fox 🦊",
+     "lines": [
+      "❌ 🦊 It was the bear.",
+      "✅ 🐷 It wasn't the bear.",
+      "✅ 🐻 It was the fox."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🏺 Someone broke the vase!",
+    "note": "🤥 Only ONE is lying",
+    "says": [
+     [
+      "🐻",
+      "It wasn't me."
+     ],
+     [
+      "🐱",
+      "It was the rabbit."
+     ],
+     [
+      "🐰",
+      "It was the bear."
+     ]
+    ],
+    "opts": [
+     "🐻 The bear",
+     "🐱 The cat",
+     "🐰 The rabbit"
+    ],
+    "ok": 2,
+    "answer": "🐰 The rabbit",
+    "rule": {
+     "text": "It was the rabbit 🐰",
+     "lines": [
+      "✅ 🐻 It wasn't me.",
+      "✅ 🐱 It was the rabbit.",
+      "❌ 🐰 It was the bear."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🎨 Someone painted the wall!",
+    "note": "🤥 Only ONE is lying",
+    "says": [
+     [
+      "🐵",
+      "It wasn't the rabbit."
+     ],
+     [
+      "🐰",
+      "It was the monkey."
+     ],
+     [
+      "🐷",
+      "It wasn't the rabbit."
+     ]
+    ],
+    "opts": [
+     "🐵 The monkey",
+     "🐰 The rabbit",
+     "🐷 The pig"
+    ],
+    "ok": 2,
+    "answer": "🐷 The pig",
+    "rule": {
+     "text": "It was the pig 🐷",
+     "lines": [
+      "✅ 🐵 It wasn't the rabbit.",
+      "❌ 🐰 It was the monkey.",
+      "✅ 🐷 It wasn't the rabbit."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🍪 Someone took the cookies!",
+    "note": "🤥 Only ONE is lying",
+    "says": [
+     [
+      "🐷",
+      "It was the monkey."
+     ],
+     [
+      "🐵",
+      "It was the cat."
+     ],
+     [
+      "🐱",
+      "It was me."
+     ]
+    ],
+    "opts": [
+     "🐷 The pig",
+     "🐵 The monkey",
+     "🐱 The cat"
+    ],
+    "ok": 2,
+    "answer": "🐱 The cat",
+    "rule": {
+     "text": "It was the cat 🐱",
+     "lines": [
+      "❌ 🐷 It was the monkey.",
+      "✅ 🐵 It was the cat.",
+      "✅ 🐱 It was me."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🎨 Someone painted the wall!",
+    "note": "😇 Only ONE tells the truth",
+    "says": [
+     [
+      "🦊",
+      "It wasn't me."
+     ],
+     [
+      "🐰",
+      "It was me."
+     ],
+     [
+      "🐵",
+      "It was the rabbit."
+     ]
+    ],
+    "opts": [
+     "🦊 The fox",
+     "🐰 The rabbit",
+     "🐵 The monkey"
+    ],
+    "ok": 2,
+    "answer": "🐵 The monkey",
+    "rule": {
+     "text": "It was the monkey 🐵",
+     "lines": [
+      "✅ 🦊 It wasn't me.",
+      "❌ 🐰 It was me.",
+      "❌ 🐵 It was the rabbit."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🏺 Someone broke the vase!",
+    "note": "🤥 Only ONE is lying",
+    "says": [
+     [
+      "🦊",
+      "It wasn't the cat."
+     ],
+     [
+      "🐰",
+      "It was me."
+     ],
+     [
+      "🐱",
+      "It was me."
+     ]
+    ],
+    "opts": [
+     "🦊 The fox",
+     "🐰 The rabbit",
+     "🐱 The cat"
+    ],
+    "ok": 1,
+    "answer": "🐰 The rabbit",
+    "rule": {
+     "text": "It was the rabbit 🐰",
+     "lines": [
+      "✅ 🦊 It wasn't the cat.",
+      "✅ 🐰 It was me.",
+      "❌ 🐱 It was me."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🏺 Someone broke the vase!",
+    "note": "🤥 Only ONE is lying",
+    "says": [
+     [
+      "🐰",
+      "It was the cat."
+     ],
+     [
+      "🐱",
+      "It wasn't the rabbit."
+     ],
+     [
+      "🐻",
+      "It wasn't the rabbit."
+     ]
+    ],
+    "opts": [
+     "🐰 The rabbit",
+     "🐱 The cat",
+     "🐻 The bear"
+    ],
+    "ok": 2,
+    "answer": "🐻 The bear",
+    "rule": {
+     "text": "It was the bear 🐻",
+     "lines": [
+      "❌ 🐰 It was the cat.",
+      "✅ 🐱 It wasn't the rabbit.",
+      "✅ 🐻 It wasn't the rabbit."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🏺 Someone broke the vase!",
+    "note": "😇 Only ONE tells the truth",
+    "says": [
+     [
+      "🐷",
+      "It was the bear."
+     ],
+     [
+      "🐻",
+      "It was the monkey."
+     ],
+     [
+      "🐵",
+      "It was me."
+     ]
+    ],
+    "opts": [
+     "🐷 The pig",
+     "🐻 The bear",
+     "🐵 The monkey"
+    ],
+    "ok": 1,
+    "answer": "🐻 The bear",
+    "rule": {
+     "text": "It was the bear 🐻",
+     "lines": [
+      "✅ 🐷 It was the bear.",
+      "❌ 🐻 It was the monkey.",
+      "❌ 🐵 It was me."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🎂 Someone ate the cake!",
+    "note": "🤥 Only ONE is lying",
+    "says": [
+     [
+      "🐱",
+      "It wasn't the monkey."
+     ],
+     [
+      "🐵",
+      "It was me."
+     ],
+     [
+      "🐷",
+      "It was the cat."
+     ]
+    ],
+    "opts": [
+     "🐱 The cat",
+     "🐵 The monkey",
+     "🐷 The pig"
+    ],
+    "ok": 0,
+    "answer": "🐱 The cat",
+    "rule": {
+     "text": "It was the cat 🐱",
+     "lines": [
+      "✅ 🐱 It wasn't the monkey.",
+      "❌ 🐵 It was me.",
+      "✅ 🐷 It was the cat."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🎈 Someone popped the balloon!",
+    "note": "🤥 Only ONE is lying",
+    "says": [
+     [
+      "🐰",
+      "It was the fox."
+     ],
+     [
+      "🦊",
+      "It wasn't me."
+     ],
+     [
+      "🐱",
+      "It was the rabbit."
+     ]
+    ],
+    "opts": [
+     "🐰 The rabbit",
+     "🦊 The fox",
+     "🐱 The cat"
+    ],
+    "ok": 0,
+    "answer": "🐰 The rabbit",
+    "rule": {
+     "text": "It was the rabbit 🐰",
+     "lines": [
+      "❌ 🐰 It was the fox.",
+      "✅ 🦊 It wasn't me.",
+      "✅ 🐱 It was the rabbit."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🎨 Someone painted the wall!",
+    "note": "😇 Only ONE tells the truth",
+    "says": [
+     [
+      "🐰",
+      "It wasn't the pig."
+     ],
+     [
+      "🐷",
+      "It wasn't the monkey."
+     ],
+     [
+      "🐵",
+      "It was the fox."
+     ],
+     [
+      "🦊",
+      "It was the monkey."
+     ]
+    ],
+    "opts": [
+     "🐰 The rabbit",
+     "🐷 The pig",
+     "🐵 The monkey",
+     "🦊 The fox"
+    ],
+    "ok": 1,
+    "answer": "🐷 The pig",
+    "rule": {
+     "text": "It was the pig 🐷",
+     "lines": [
+      "❌ 🐰 It wasn't the pig.",
+      "✅ 🐷 It wasn't the monkey.",
+      "❌ 🐵 It was the fox.",
+      "❌ 🦊 It was the monkey."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🎈 Someone popped the balloon!",
+    "note": "🤥 Only ONE is lying",
+    "says": [
+     [
+      "🐰",
+      "It was the fox."
+     ],
+     [
+      "🐷",
+      "It wasn't the fox."
+     ],
+     [
+      "🐻",
+      "It wasn't me."
+     ],
+     [
+      "🦊",
+      "It was me."
+     ]
+    ],
+    "opts": [
+     "🐰 The rabbit",
+     "🐷 The pig",
+     "🐻 The bear",
+     "🦊 The fox"
+    ],
+    "ok": 3,
+    "answer": "🦊 The fox",
+    "rule": {
+     "text": "It was the fox 🦊",
+     "lines": [
+      "✅ 🐰 It was the fox.",
+      "❌ 🐷 It wasn't the fox.",
+      "✅ 🐻 It wasn't me.",
+      "✅ 🦊 It was me."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🎈 Someone popped the balloon!",
+    "note": "🤥 Only ONE is lying",
+    "says": [
+     [
+      "🐻",
+      "It wasn't me."
+     ],
+     [
+      "🦊",
+      "It was me."
+     ],
+     [
+      "🐰",
+      "It wasn't the monkey."
+     ],
+     [
+      "🐵",
+      "It was the bear."
+     ]
+    ],
+    "opts": [
+     "🐻 The bear",
+     "🦊 The fox",
+     "🐰 The rabbit",
+     "🐵 The monkey"
+    ],
+    "ok": 1,
+    "answer": "🦊 The fox",
+    "rule": {
+     "text": "It was the fox 🦊",
+     "lines": [
+      "✅ 🐻 It wasn't me.",
+      "✅ 🦊 It was me.",
+      "✅ 🐰 It wasn't the monkey.",
+      "❌ 🐵 It was the bear."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🎂 Someone ate the cake!",
+    "note": "😇 Only ONE tells the truth",
+    "says": [
+     [
+      "🦊",
+      "It wasn't me."
+     ],
+     [
+      "🐱",
+      "It wasn't the fox."
+     ],
+     [
+      "🐵",
+      "It was the pig."
+     ],
+     [
+      "🐷",
+      "It wasn't me."
+     ]
+    ],
+    "opts": [
+     "🦊 The fox",
+     "🐱 The cat",
+     "🐵 The monkey",
+     "🐷 The pig"
+    ],
+    "ok": 0,
+    "answer": "🦊 The fox",
+    "rule": {
+     "text": "It was the fox 🦊",
+     "lines": [
+      "❌ 🦊 It wasn't me.",
+      "❌ 🐱 It wasn't the fox.",
+      "❌ 🐵 It was the pig.",
+      "✅ 🐷 It wasn't me."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🎂 Someone ate the cake!",
+    "note": "😇 Only ONE tells the truth",
+    "says": [
+     [
+      "🐷",
+      "It was me."
+     ],
+     [
+      "🐱",
+      "It was the monkey."
+     ],
+     [
+      "🦊",
+      "It wasn't me."
+     ],
+     [
+      "🐵",
+      "It wasn't me."
+     ]
+    ],
+    "opts": [
+     "🐷 The pig",
+     "🐱 The cat",
+     "🦊 The fox",
+     "🐵 The monkey"
+    ],
+    "ok": 2,
+    "answer": "🦊 The fox",
+    "rule": {
+     "text": "It was the fox 🦊",
+     "lines": [
+      "❌ 🐷 It was me.",
+      "❌ 🐱 It was the monkey.",
+      "❌ 🦊 It wasn't me.",
+      "✅ 🐵 It wasn't me."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🍪 Someone took the cookies!",
+    "note": "🤥 Only ONE is lying",
+    "says": [
+     [
+      "🐷",
+      "It was the monkey."
+     ],
+     [
+      "🦊",
+      "It wasn't me."
+     ],
+     [
+      "🐵",
+      "It wasn't the fox."
+     ]
+    ],
+    "opts": [
+     "🐷 The pig",
+     "🦊 The fox",
+     "🐵 The monkey"
+    ],
+    "ok": 0,
+    "answer": "🐷 The pig",
+    "rule": {
+     "text": "It was the pig 🐷",
+     "lines": [
+      "❌ 🐷 It was the monkey.",
+      "✅ 🦊 It wasn't me.",
+      "✅ 🐵 It wasn't the fox."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🍪 Someone took the cookies!",
+    "note": "🤥 Only ONE is lying",
+    "says": [
+     [
+      "🐵",
+      "It wasn't the pig."
+     ],
+     [
+      "🐷",
+      "It was the monkey."
+     ],
+     [
+      "🐻",
+      "It was the pig."
+     ]
+    ],
+    "opts": [
+     "🐵 The monkey",
+     "🐷 The pig",
+     "🐻 The bear"
+    ],
+    "ok": 0,
+    "answer": "🐵 The monkey",
+    "rule": {
+     "text": "It was the monkey 🐵",
+     "lines": [
+      "✅ 🐵 It wasn't the pig.",
+      "✅ 🐷 It was the monkey.",
+      "❌ 🐻 It was the pig."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🍪 Someone took the cookies!",
+    "note": "🤥 Only ONE is lying",
+    "says": [
+     [
+      "🦊",
+      "It wasn't me."
+     ],
+     [
+      "🐰",
+      "It was me."
+     ],
+     [
+      "🐵",
+      "It wasn't the fox."
+     ]
+    ],
+    "opts": [
+     "🦊 The fox",
+     "🐰 The rabbit",
+     "🐵 The monkey"
+    ],
+    "ok": 2,
+    "answer": "🐵 The monkey",
+    "rule": {
+     "text": "It was the monkey 🐵",
+     "lines": [
+      "✅ 🦊 It wasn't me.",
+      "❌ 🐰 It was me.",
+      "✅ 🐵 It wasn't the fox."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🎨 Someone painted the wall!",
+    "note": "🤥 Only ONE is lying",
+    "says": [
+     [
+      "🐵",
+      "It was me."
+     ],
+     [
+      "🐷",
+      "It was the monkey."
+     ],
+     [
+      "🦊",
+      "It was the pig."
+     ]
+    ],
+    "opts": [
+     "🐵 The monkey",
+     "🐷 The pig",
+     "🦊 The fox"
+    ],
+    "ok": 0,
+    "answer": "🐵 The monkey",
+    "rule": {
+     "text": "It was the monkey 🐵",
+     "lines": [
+      "✅ 🐵 It was me.",
+      "✅ 🐷 It was the monkey.",
+      "❌ 🦊 It was the pig."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🎂 Someone ate the cake!",
+    "note": "😇 Only ONE tells the truth",
+    "says": [
+     [
+      "🐵",
+      "It was the bear."
+     ],
+     [
+      "🦊",
+      "It wasn't the monkey."
+     ],
+     [
+      "🐻",
+      "It wasn't me."
+     ]
+    ],
+    "opts": [
+     "🐵 The monkey",
+     "🦊 The fox",
+     "🐻 The bear"
+    ],
+    "ok": 0,
+    "answer": "🐵 The monkey",
+    "rule": {
+     "text": "It was the monkey 🐵",
+     "lines": [
+      "❌ 🐵 It was the bear.",
+      "❌ 🦊 It wasn't the monkey.",
+      "✅ 🐻 It wasn't me."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🍪 Someone took the cookies!",
+    "note": "😇 Only ONE tells the truth",
+    "says": [
+     [
+      "🐻",
+      "It was the rabbit."
+     ],
+     [
+      "🐰",
+      "It was the bear."
+     ],
+     [
+      "🦊",
+      "It was the rabbit."
+     ]
+    ],
+    "opts": [
+     "🐻 The bear",
+     "🐰 The rabbit",
+     "🦊 The fox"
+    ],
+    "ok": 0,
+    "answer": "🐻 The bear",
+    "rule": {
+     "text": "It was the bear 🐻",
+     "lines": [
+      "❌ 🐻 It was the rabbit.",
+      "✅ 🐰 It was the bear.",
+      "❌ 🦊 It was the rabbit."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🎂 Someone ate the cake!",
+    "note": "😇 Only ONE tells the truth",
+    "says": [
+     [
+      "🐵",
+      "It wasn't me."
+     ],
+     [
+      "🐱",
+      "It wasn't me."
+     ],
+     [
+      "🐰",
+      "It wasn't the monkey."
+     ]
+    ],
+    "opts": [
+     "🐵 The monkey",
+     "🐱 The cat",
+     "🐰 The rabbit"
+    ],
+    "ok": 0,
+    "answer": "🐵 The monkey",
+    "rule": {
+     "text": "It was the monkey 🐵",
+     "lines": [
+      "❌ 🐵 It wasn't me.",
+      "✅ 🐱 It wasn't me.",
+      "❌ 🐰 It wasn't the monkey."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🎨 Someone painted the wall!",
+    "note": "🤥 Only ONE is lying",
+    "says": [
+     [
+      "🦊",
+      "It was me."
+     ],
+     [
+      "🐰",
+      "It wasn't the cat."
+     ],
+     [
+      "🐱",
+      "It was me."
+     ]
+    ],
+    "opts": [
+     "🦊 The fox",
+     "🐰 The rabbit",
+     "🐱 The cat"
+    ],
+    "ok": 0,
+    "answer": "🦊 The fox",
+    "rule": {
+     "text": "It was the fox 🦊",
+     "lines": [
+      "✅ 🦊 It was me.",
+      "✅ 🐰 It wasn't the cat.",
+      "❌ 🐱 It was me."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🎂 Someone ate the cake!",
+    "note": "🤥 Only ONE is lying",
+    "says": [
+     [
+      "🦊",
+      "It was the rabbit."
+     ],
+     [
+      "🐵",
+      "It wasn't the pig."
+     ],
+     [
+      "🐷",
+      "It was the fox."
+     ],
+     [
+      "🐰",
+      "It was the fox."
+     ]
+    ],
+    "opts": [
+     "🦊 The fox",
+     "🐵 The monkey",
+     "🐷 The pig",
+     "🐰 The rabbit"
+    ],
+    "ok": 0,
+    "answer": "🦊 The fox",
+    "rule": {
+     "text": "It was the fox 🦊",
+     "lines": [
+      "❌ 🦊 It was the rabbit.",
+      "✅ 🐵 It wasn't the pig.",
+      "✅ 🐷 It was the fox.",
+      "✅ 🐰 It was the fox."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🎈 Someone popped the balloon!",
+    "note": "😇 Only ONE tells the truth",
+    "says": [
+     [
+      "🐷",
+      "It was the fox."
+     ],
+     [
+      "🐰",
+      "It wasn't the monkey."
+     ],
+     [
+      "🐵",
+      "It wasn't me."
+     ],
+     [
+      "🦊",
+      "It wasn't the rabbit."
+     ]
+    ],
+    "opts": [
+     "🐷 The pig",
+     "🐰 The rabbit",
+     "🐵 The monkey",
+     "🦊 The fox"
+    ],
+    "ok": 2,
+    "answer": "🐵 The monkey",
+    "rule": {
+     "text": "It was the monkey 🐵",
+     "lines": [
+      "❌ 🐷 It was the fox.",
+      "❌ 🐰 It wasn't the monkey.",
+      "❌ 🐵 It wasn't me.",
+      "✅ 🦊 It wasn't the rabbit."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🎈 Someone popped the balloon!",
+    "note": "🤥 Only ONE is lying",
+    "says": [
+     [
+      "🐰",
+      "It was the pig."
+     ],
+     [
+      "🐵",
+      "It was the pig."
+     ],
+     [
+      "🐷",
+      "It wasn't me."
+     ],
+     [
+      "🐱",
+      "It was the pig."
+     ]
+    ],
+    "opts": [
+     "🐰 The rabbit",
+     "🐵 The monkey",
+     "🐷 The pig",
+     "🐱 The cat"
+    ],
+    "ok": 2,
+    "answer": "🐷 The pig",
+    "rule": {
+     "text": "It was the pig 🐷",
+     "lines": [
+      "✅ 🐰 It was the pig.",
+      "✅ 🐵 It was the pig.",
+      "❌ 🐷 It wasn't me.",
+      "✅ 🐱 It was the pig."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🍪 Someone took the cookies!",
+    "note": "🤥 Only ONE is lying",
+    "says": [
+     [
+      "🐰",
+      "It wasn't the fox."
+     ],
+     [
+      "🐻",
+      "It wasn't the rabbit."
+     ],
+     [
+      "🐱",
+      "It was me."
+     ],
+     [
+      "🦊",
+      "It wasn't me."
+     ]
+    ],
+    "opts": [
+     "🐰 The rabbit",
+     "🐻 The bear",
+     "🐱 The cat",
+     "🦊 The fox"
+    ],
+    "ok": 1,
+    "answer": "🐻 The bear",
+    "rule": {
+     "text": "It was the bear 🐻",
+     "lines": [
+      "✅ 🐰 It wasn't the fox.",
+      "✅ 🐻 It wasn't the rabbit.",
+      "❌ 🐱 It was me.",
+      "✅ 🦊 It wasn't me."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🏺 Someone broke the vase!",
+    "note": "🤥 Only ONE is lying",
+    "says": [
+     [
+      "🐱",
+      "It was the rabbit."
+     ],
+     [
+      "🦊",
+      "It was me."
+     ],
+     [
+      "🐵",
+      "It was the rabbit."
+     ],
+     [
+      "🐰",
+      "It wasn't the fox."
+     ]
+    ],
+    "opts": [
+     "🐱 The cat",
+     "🦊 The fox",
+     "🐵 The monkey",
+     "🐰 The rabbit"
+    ],
+    "ok": 3,
+    "answer": "🐰 The rabbit",
+    "rule": {
+     "text": "It was the rabbit 🐰",
+     "lines": [
+      "✅ 🐱 It was the rabbit.",
+      "❌ 🦊 It was me.",
+      "✅ 🐵 It was the rabbit.",
+      "✅ 🐰 It wasn't the fox."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🍪 Someone took the cookies!",
+    "note": "🤥 Only ONE is lying",
+    "says": [
+     [
+      "🐰",
+      "It wasn't me."
+     ],
+     [
+      "🐱",
+      "It wasn't the rabbit."
+     ],
+     [
+      "🦊",
+      "It was me."
+     ]
+    ],
+    "opts": [
+     "🐰 The rabbit",
+     "🐱 The cat",
+     "🦊 The fox"
+    ],
+    "ok": 1,
+    "answer": "🐱 The cat",
+    "rule": {
+     "text": "It was the cat 🐱",
+     "lines": [
+      "✅ 🐰 It wasn't me.",
+      "✅ 🐱 It wasn't the rabbit.",
+      "❌ 🦊 It was me."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🍪 Someone took the cookies!",
+    "note": "🤥 Only ONE is lying",
+    "says": [
+     [
+      "🐱",
+      "It wasn't me."
+     ],
+     [
+      "🦊",
+      "It wasn't the cat."
+     ],
+     [
+      "🐰",
+      "It was me."
+     ]
+    ],
+    "opts": [
+     "🐱 The cat",
+     "🦊 The fox",
+     "🐰 The rabbit"
+    ],
+    "ok": 1,
+    "answer": "🦊 The fox",
+    "rule": {
+     "text": "It was the fox 🦊",
+     "lines": [
+      "✅ 🐱 It wasn't me.",
+      "✅ 🦊 It wasn't the cat.",
+      "❌ 🐰 It was me."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🎈 Someone popped the balloon!",
+    "note": "🤥 Only ONE is lying",
+    "says": [
+     [
+      "🐻",
+      "It wasn't me."
+     ],
+     [
+      "🐱",
+      "It wasn't the bear."
+     ],
+     [
+      "🦊",
+      "It was the cat."
+     ]
+    ],
+    "opts": [
+     "🐻 The bear",
+     "🐱 The cat",
+     "🦊 The fox"
+    ],
+    "ok": 2,
+    "answer": "🦊 The fox",
+    "rule": {
+     "text": "It was the fox 🦊",
+     "lines": [
+      "✅ 🐻 It wasn't me.",
+      "✅ 🐱 It wasn't the bear.",
+      "❌ 🦊 It was the cat."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🏺 Someone broke the vase!",
+    "note": "🤥 Only ONE is lying",
+    "says": [
+     [
+      "🐷",
+      "It wasn't the fox."
+     ],
+     [
+      "🐰",
+      "It wasn't the pig."
+     ],
+     [
+      "🦊",
+      "It wasn't me."
+     ]
+    ],
+    "opts": [
+     "🐷 The pig",
+     "🐰 The rabbit",
+     "🦊 The fox"
+    ],
+    "ok": 0,
+    "answer": "🐷 The pig",
+    "rule": {
+     "text": "It was the pig 🐷",
+     "lines": [
+      "✅ 🐷 It wasn't the fox.",
+      "❌ 🐰 It wasn't the pig.",
+      "✅ 🦊 It wasn't me."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🎂 Someone ate the cake!",
+    "note": "🤥 Only ONE is lying",
+    "says": [
+     [
+      "🐱",
+      "It wasn't the pig."
+     ],
+     [
+      "🦊",
+      "It wasn't the cat."
+     ],
+     [
+      "🐷",
+      "It wasn't the cat."
+     ]
+    ],
+    "opts": [
+     "🐱 The cat",
+     "🦊 The fox",
+     "🐷 The pig"
+    ],
+    "ok": 2,
+    "answer": "🐷 The pig",
+    "rule": {
+     "text": "It was the pig 🐷",
+     "lines": [
+      "❌ 🐱 It wasn't the pig.",
+      "✅ 🦊 It wasn't the cat.",
+      "✅ 🐷 It wasn't the cat."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🎂 Someone ate the cake!",
+    "note": "😇 Only ONE tells the truth",
+    "says": [
+     [
+      "🐷",
+      "It was the cat."
+     ],
+     [
+      "🦊",
+      "It was the cat."
+     ],
+     [
+      "🐱",
+      "It wasn't the fox."
+     ]
+    ],
+    "opts": [
+     "🐷 The pig",
+     "🦊 The fox",
+     "🐱 The cat"
+    ],
+    "ok": 0,
+    "answer": "🐷 The pig",
+    "rule": {
+     "text": "It was the pig 🐷",
+     "lines": [
+      "❌ 🐷 It was the cat.",
+      "❌ 🦊 It was the cat.",
+      "✅ 🐱 It wasn't the fox."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🎨 Someone painted the wall!",
+    "note": "😇 Only ONE tells the truth",
+    "says": [
+     [
+      "🦊",
+      "It wasn't the pig."
+     ],
+     [
+      "🐷",
+      "It wasn't me."
+     ],
+     [
+      "🐱",
+      "It was the pig."
+     ]
+    ],
+    "opts": [
+     "🦊 The fox",
+     "🐷 The pig",
+     "🐱 The cat"
+    ],
+    "ok": 1,
+    "answer": "🐷 The pig",
+    "rule": {
+     "text": "It was the pig 🐷",
+     "lines": [
+      "❌ 🦊 It wasn't the pig.",
+      "❌ 🐷 It wasn't me.",
+      "✅ 🐱 It was the pig."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🎂 Someone ate the cake!",
+    "note": "😇 Only ONE tells the truth",
+    "says": [
+     [
+      "🐻",
+      "It was me."
+     ],
+     [
+      "🐵",
+      "It wasn't the bear."
+     ],
+     [
+      "🐷",
+      "It wasn't the bear."
+     ]
+    ],
+    "opts": [
+     "🐻 The bear",
+     "🐵 The monkey",
+     "🐷 The pig"
+    ],
+    "ok": 0,
+    "answer": "🐻 The bear",
+    "rule": {
+     "text": "It was the bear 🐻",
+     "lines": [
+      "✅ 🐻 It was me.",
+      "❌ 🐵 It wasn't the bear.",
+      "❌ 🐷 It wasn't the bear."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🎂 Someone ate the cake!",
+    "note": "😇 Only ONE tells the truth",
+    "says": [
+     [
+      "🐰",
+      "It wasn't the pig."
+     ],
+     [
+      "🐷",
+      "It was the monkey."
+     ],
+     [
+      "🐵",
+      "It was me."
+     ]
+    ],
+    "opts": [
+     "🐰 The rabbit",
+     "🐷 The pig",
+     "🐵 The monkey"
+    ],
+    "ok": 0,
+    "answer": "🐰 The rabbit",
+    "rule": {
+     "text": "It was the rabbit 🐰",
+     "lines": [
+      "✅ 🐰 It wasn't the pig.",
+      "❌ 🐷 It was the monkey.",
+      "❌ 🐵 It was me."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🏺 Someone broke the vase!",
+    "note": "🤥 Only ONE is lying",
+    "says": [
+     [
+      "🐱",
+      "It wasn't the rabbit."
+     ],
+     [
+      "🐷",
+      "It was the rabbit."
+     ],
+     [
+      "🐰",
+      "It was me."
+     ],
+     [
+      "🐵",
+      "It was the rabbit."
+     ]
+    ],
+    "opts": [
+     "🐱 The cat",
+     "🐷 The pig",
+     "🐰 The rabbit",
+     "🐵 The monkey"
+    ],
+    "ok": 2,
+    "answer": "🐰 The rabbit",
+    "rule": {
+     "text": "It was the rabbit 🐰",
+     "lines": [
+      "❌ 🐱 It wasn't the rabbit.",
+      "✅ 🐷 It was the rabbit.",
+      "✅ 🐰 It was me.",
+      "✅ 🐵 It was the rabbit."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🎂 Someone ate the cake!",
+    "note": "🤥 Only ONE is lying",
+    "says": [
+     [
+      "🐱",
+      "It was the monkey."
+     ],
+     [
+      "🐰",
+      "It wasn't the monkey."
+     ],
+     [
+      "🐷",
+      "It was the monkey."
+     ],
+     [
+      "🐵",
+      "It wasn't the pig."
+     ]
+    ],
+    "opts": [
+     "🐱 The cat",
+     "🐰 The rabbit",
+     "🐷 The pig",
+     "🐵 The monkey"
+    ],
+    "ok": 3,
+    "answer": "🐵 The monkey",
+    "rule": {
+     "text": "It was the monkey 🐵",
+     "lines": [
+      "✅ 🐱 It was the monkey.",
+      "❌ 🐰 It wasn't the monkey.",
+      "✅ 🐷 It was the monkey.",
+      "✅ 🐵 It wasn't the pig."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🏺 Someone broke the vase!",
+    "note": "😇 Only ONE tells the truth",
+    "says": [
+     [
+      "🐷",
+      "It wasn't the cat."
+     ],
+     [
+      "🐻",
+      "It wasn't the cat."
+     ],
+     [
+      "🦊",
+      "It wasn't the cat."
+     ],
+     [
+      "🐱",
+      "It wasn't the pig."
+     ]
+    ],
+    "opts": [
+     "🐷 The pig",
+     "🐻 The bear",
+     "🦊 The fox",
+     "🐱 The cat"
+    ],
+    "ok": 3,
+    "answer": "🐱 The cat",
+    "rule": {
+     "text": "It was the cat 🐱",
+     "lines": [
+      "❌ 🐷 It wasn't the cat.",
+      "❌ 🐻 It wasn't the cat.",
+      "❌ 🦊 It wasn't the cat.",
+      "✅ 🐱 It wasn't the pig."
+     ]
+    }
+   },
+   {
+    "kind": "card",
+    "text": "🎈 Someone popped the balloon!",
+    "note": "🤥 Only ONE is lying",
+    "says": [
+     [
+      "🐷",
+      "It wasn't the rabbit."
+     ],
+     [
+      "🐱",
+      "It wasn't the rabbit."
+     ],
+     [
+      "🐰",
+      "It wasn't me."
+     ],
+     [
+      "🐻",
+      "It wasn't the cat."
+     ]
+    ],
+    "opts": [
+     "🐷 The pig",
+     "🐱 The cat",
+     "🐰 The rabbit",
+     "🐻 The bear"
+    ],
+    "ok": 1,
+    "answer": "🐱 The cat",
+    "rule": {
+     "text": "It was the cat 🐱",
+     "lines": [
+      "✅ 🐷 It wasn't the rabbit.",
+      "✅ 🐱 It wasn't the rabbit.",
+      "✅ 🐰 It wasn't me.",
+      "❌ 🐻 It wasn't the cat."
+     ]
+    }
+   }
+  ]
+ }
+}
