@@ -1,0 +1,28 @@
+# Prueba de conexión FTP con juegosboom.com: sube desdeclaude.txt a la carpeta de la web y lista lo que hay.
+# Los datos del FTP salen de los secretos del repositorio (Settings → Secrets and variables → Actions).
+name: ftp-prueba
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/ftp-prueba.yml']
+jobs:
+  prueba:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Subir desdeclaude.txt y listar la carpeta
+        env:
+          H: ${{ secrets.FTP_SERVER || secrets.FTP_HOST || secrets.FTP_HOSTNAME || secrets.FTP_SERVIDOR }}
+          U: ${{ secrets.FTP_USERNAME || secrets.FTP_USER || secrets.FTP_USUARIO }}
+          P: ${{ secrets.FTP_PASSWORD || secrets.FTP_PASS || secrets.FTP_CLAVE }}
+          D: ${{ secrets.FTP_DIR || '2026.juegosboom.com/' }}
+        run: |
+          set -u
+          echo "servidor: ${H:+sí}  usuario: ${U:+sí}  clave: ${P:+sí}"
+          [ -n "$H" ] && [ -n "$U" ] && [ -n "$P" ] || { echo "Faltan secretos del FTP (nombres esperados: FTP_SERVER, FTP_USERNAME, FTP_PASSWORD)"; exit 1; }
+          H="${H#ftp://}"; H="${H%/}"
+          echo "Subido desde GitHub Actions el $(date -u '+%Y-%m-%d %H:%M UTC') (commit ${GITHUB_SHA::7})" > desdeclaude.txt
+          echo "--- carpeta de entrada del FTP:"; curl -sS --ftp-ssl -k --user "$U:$P" "ftp://$H/" --list-only | head -40 || curl -sS --user "$U:$P" "ftp://$H/" --list-only | head -40
+          echo "--- subiendo a $D"
+          curl -sS --ftp-ssl -k --user "$U:$P" -T desdeclaude.txt "ftp://$H/${D%/}/desdeclaude.txt" || curl -sS --user "$U:$P" -T desdeclaude.txt "ftp://$H/${D%/}/desdeclaude.txt"
+          echo "--- $D ahora:"; curl -sS --ftp-ssl -k --user "$U:$P" "ftp://$H/${D%/}/" --list-only | head -60 || true
