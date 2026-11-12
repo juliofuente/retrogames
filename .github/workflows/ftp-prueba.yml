@@ -10,6 +10,7 @@ jobs:
   prueba:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
       - name: Subir desdeclaude.txt y listar la carpeta
         env:
           H: ${{ secrets.FTPADDRESS }}
@@ -37,3 +38,10 @@ jobs:
           echo "--- subiendo a $OK"
           curl -sS --ftp-ssl -k --user "$U:$P" -T desdeclaude.txt "ftp://$H${OK}desdeclaude.txt" && echo "subido"
           L "$OK" | grep -x desdeclaude.txt && echo "desdeclaude.txt está en $OK"
+          echo "--- ¿lo que hay en $OK es esta web? (solo compara, no cambia nada)"
+          for f in index.php .htaccess ads.txt pwa/common.js bannergames/bannergames.js sites.php; do
+            if curl -sS --ftp-ssl -k --user "$U:$P" "ftp://$H${OK}$f" -o /tmp/srv 2>/dev/null; then
+              [ -f "$f" ] && { cmp -s /tmp/srv "$f" && echo "$f: igual que en GitHub" || echo "$f: distinto ($(wc -c < /tmp/srv) bytes en el servidor, $(wc -c < "$f") en GitHub; $(grep -c 'ARCADE\|juegosboom' /tmp/srv) líneas que mencionan juegosboom)"; }
+            else echo "$f: no está en el servidor"; fi
+          done
+
