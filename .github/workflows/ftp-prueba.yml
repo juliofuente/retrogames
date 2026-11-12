@@ -18,7 +18,7 @@ jobs:
           D: ${{ secrets.FTP_DIR || '2026.juegosboom.com/' }}
         run: |
           set -u
-          echo "servidor: ${H:+sí}  usuario: ${U:+sí}  clave: ${P:+sí}  (secretos del repositorio: ${{ toJSON(secrets) != '{}' && 'hay' || 'ninguno visible' }})"
+          echo "servidor: ${H:+sí}  usuario: ${U:+sí}  clave: ${P:+sí}"
           [ -n "$H" ] && [ -n "$U" ] && [ -n "$P" ] || { echo "Faltan secretos del FTP (nombres esperados: FTP_SERVER, FTP_USERNAME, FTP_PASSWORD)"; exit 1; }
           H="${H#ftp://}"; H="${H%/}"
           echo "Subido desde GitHub Actions el $(date -u '+%Y-%m-%d %H:%M UTC') (commit ${GITHUB_SHA::7})" > desdeclaude.txt
