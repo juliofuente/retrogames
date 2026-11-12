@@ -1,0 +1,34 @@
+# Sube a juegosboom.com (dominio principal, /home/correote/microblog) por FTP cada cambio que llega a main.
+# Los subdominios ya se actualizan por su lado. Datos del FTP: secretos FTPUSER y FTPPASS del repositorio.
+# Solo sube lo que ha cambiado desde la última vez (guarda .ftp-deploy-sync-state.json en el servidor) y nunca
+# borra archivos que no haya subido él. No toca:
+#   data/       las bases de datos y el panel (se editan en el servidor)
+#   .htaccess   el de la raíz del servidor es distinto del de GitHub y se conserva
+name: ftp-juegosboom
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+concurrency: ftp-juegosboom
+jobs:
+  subir:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ftp.juegosboom.com
+          username: ${{ secrets.FTPUSER }}
+          password: ${{ secrets.FTPPASS }}
+          protocol: ftps
+          security: loose
+          server-dir: ./
+          exclude: |
+            **/.git*
+            **/.git*/**
+            .github/**
+            data/**
+            herramientas/**
+            autonomos/**
+            **/node_modules/**
+            .htaccess
