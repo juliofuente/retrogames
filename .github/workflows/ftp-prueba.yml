@@ -12,13 +12,13 @@ jobs:
     steps:
       - name: Subir desdeclaude.txt y listar la carpeta
         env:
-          H: ${{ secrets.FTP_SERVER || secrets.FTP_HOST || secrets.FTP_HOSTNAME || secrets.FTP_SERVIDOR }}
-          U: ${{ secrets.FTP_USERNAME || secrets.FTP_USER || secrets.FTP_USUARIO }}
-          P: ${{ secrets.FTP_PASSWORD || secrets.FTP_PASS || secrets.FTP_CLAVE }}
+          H: ${{ secrets.FTP_SERVER || secrets.FTP_HOST || secrets.FTP_HOSTNAME || secrets.FTP_SERVIDOR || secrets.SERVER || secrets.HOST || vars.FTP_SERVER || vars.FTP_HOST || vars.FTP_HOSTNAME || vars.FTP_SERVIDOR }}
+          U: ${{ secrets.FTP_USERNAME || secrets.FTP_USER || secrets.FTP_USUARIO || secrets.FTP_LOGIN || secrets.USERNAME || vars.FTP_USERNAME || vars.FTP_USER || vars.FTP_USUARIO }}
+          P: ${{ secrets.FTP_PASSWORD || secrets.FTP_PASS || secrets.FTP_CLAVE || secrets.FTP_PWD || secrets.PASSWORD || vars.FTP_PASSWORD || vars.FTP_PASS }}
           D: ${{ secrets.FTP_DIR || '2026.juegosboom.com/' }}
         run: |
           set -u
-          echo "servidor: ${H:+sí}  usuario: ${U:+sí}  clave: ${P:+sí}"
+          echo "servidor: ${H:+sí}  usuario: ${U:+sí}  clave: ${P:+sí}  (secretos del repositorio: ${{ toJSON(secrets) != '{}' && 'hay' || 'ninguno visible' }})"
           [ -n "$H" ] && [ -n "$U" ] && [ -n "$P" ] || { echo "Faltan secretos del FTP (nombres esperados: FTP_SERVER, FTP_USERNAME, FTP_PASSWORD)"; exit 1; }
           H="${H#ftp://}"; H="${H%/}"
           echo "Subido desde GitHub Actions el $(date -u '+%Y-%m-%d %H:%M UTC') (commit ${GITHUB_SHA::7})" > desdeclaude.txt
