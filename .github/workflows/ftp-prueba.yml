@@ -25,7 +25,15 @@ jobs:
             for c in ftp.juegosboom.com juegosboom.com; do getent hosts "$c" > /dev/null && { echo "FTPADDRESS no existe en internet; uso $c"; H="$c"; break; }; done
           fi
           echo "Subido desde GitHub Actions el $(date -u '+%Y-%m-%d %H:%M UTC') (commit ${GITHUB_SHA::7})" > desdeclaude.txt
-          echo "--- carpeta de entrada del FTP:"; curl -sS --ftp-ssl -k --user "$U:$P" "ftp://$H/" --list-only | head -40 || curl -sS --user "$U:$P" "ftp://$H/" --list-only | head -40
-          echo "--- subiendo a $D"
-          curl -sS --ftp-ssl -k --user "$U:$P" -T desdeclaude.txt "ftp://$H/${D%/}/desdeclaude.txt" || curl -sS --user "$U:$P" -T desdeclaude.txt "ftp://$H/${D%/}/desdeclaude.txt"
-          echo "--- $D ahora:"; curl -sS --ftp-ssl -k --user "$U:$P" "ftp://$H/${D%/}/" --list-only | head -60 || true
+          L() { curl -sS --ftp-ssl -k --user "$U:$P" "ftp://$H$1" --list-only 2>/dev/null; }   # sin imprimir listados (el registro es público)
+          echo "--- carpeta de entrada: $(curl -sS --ftp-ssl -k --user "$U:$P" "ftp://$H/" -Q PWD -v --list-only 2>&1 | grep -o '257 "[^"]*"' | head -1)"
+          OK=""
+          for c in "/${D%/}/" "/home/correote/2026.juegosboom.com/" "/2026.juegosboom.com/" "/../2026.juegosboom.com/"; do
+            n=$(L "$c" | wc -l); has=$(L "$c" | grep -cx 'index.php\|ads.txt\|pwa')
+            echo "probando $c: $n entradas, de la web: $has/3"
+            [ -z "$OK" ] && [ "$has" -ge 2 ] && OK="$c"
+          done
+          [ -n "$OK" ] || { echo "No encuentro la carpeta de juegosboom.com"; exit 1; }
+          echo "--- subiendo a $OK"
+          curl -sS --ftp-ssl -k --user "$U:$P" -T desdeclaude.txt "ftp://$H${OK}desdeclaude.txt" && echo "subido"
+          L "$OK" | grep -x desdeclaude.txt && echo "desdeclaude.txt está en $OK"
