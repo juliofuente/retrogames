@@ -28,8 +28,8 @@ jobs:
           L() { curl -sS --ftp-ssl -k --user "$U:$P" "ftp://$H$1" --list-only 2>/dev/null; }   # sin imprimir listados (el registro es público)
           echo "--- carpeta de entrada: $(curl -sS --ftp-ssl -k --user "$U:$P" "ftp://$H/" -Q PWD -v --list-only 2>&1 | grep -o '257 "[^"]*"' | head -1)"
           OK=""
-          for c in "/${D%/}/" "/home/correote/2026.juegosboom.com/" "/2026.juegosboom.com/" "/../2026.juegosboom.com/"; do
-            n=$(L "$c" | wc -l); has=$(L "$c" | grep -cx 'index.php\|ads.txt\|pwa')
+          for c in "/${D%/}/" "/home/correote/2026.juegosboom.com/" "/2026.juegosboom.com/" "/../2026.juegosboom.com/" "/public_html/2026.juegosboom.com/" "/"; do
+            n=$(L "$c" | wc -l); has=$(L "$c" | grep -cx 'index.php\|ads.txt\|pwa' || true)
             echo "probando $c: $n entradas, de la web: $has/3"
             [ -z "$OK" ] && [ "$has" -ge 2 ] && OK="$c"
           done
