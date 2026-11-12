@@ -3,7 +3,7 @@
 name: ftp-prueba
 on:
   workflow_dispatch:
-  push:
+  push:   # solo secretos (Repository secrets): las variables salen tal cual en el registro, que es público
     branches: [main]
     paths: ['.github/workflows/ftp-prueba.yml']
 jobs:
@@ -12,13 +12,13 @@ jobs:
     steps:
       - name: Subir desdeclaude.txt y listar la carpeta
         env:
-          H: ${{ secrets.FTPADDRESS || vars.FTPADDRESS }}
-          U: ${{ secrets.FTPUSER || vars.FTPUSER }}
-          P: ${{ secrets.FTPPASS || vars.FTPPASS }}
+          H: ${{ secrets.FTPADDRESS }}
+          U: ${{ secrets.FTPUSER }}
+          P: ${{ secrets.FTPPASS }}
           D: ${{ secrets.FTP_DIR || '2026.juegosboom.com/' }}
         run: |
           set -u
-          echo "servidor: ${H:+sí}  usuario: ${U:+sí}  clave: ${P:+sí}  · como secreto: ${{ secrets.FTPADDRESS != '' }} ${{ secrets.FTPUSER != '' }} ${{ secrets.FTPPASS != '' }} · como variable: ${{ vars.FTPADDRESS != '' }} ${{ vars.FTPUSER != '' }} ${{ vars.FTPPASS != '' }}"
+          echo "servidor: ${H:+sí}  usuario: ${U:+sí}  clave: ${P:+sí}"
           [ -n "$H" ] && [ -n "$U" ] && [ -n "$P" ] || { echo "Faltan secretos del FTP (FTPADDRESS, FTPUSER, FTPPASS)"; exit 1; }
           H="${H#ftp://}"; H="${H%/}"
           echo "Subido desde GitHub Actions el $(date -u '+%Y-%m-%d %H:%M UTC') (commit ${GITHUB_SHA::7})" > desdeclaude.txt
