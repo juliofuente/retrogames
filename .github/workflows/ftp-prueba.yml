@@ -12,13 +12,13 @@ jobs:
     steps:
       - name: Subir desdeclaude.txt y listar la carpeta
         env:
-          H: ${{ secrets.FTPADDRESS }}
-          U: ${{ secrets.FTPUSER }}
-          P: ${{ secrets.FTPPASS }}
+          H: ${{ secrets.FTPADDRESS || vars.FTPADDRESS }}
+          U: ${{ secrets.FTPUSER || vars.FTPUSER }}
+          P: ${{ secrets.FTPPASS || vars.FTPPASS }}
           D: ${{ secrets.FTP_DIR || '2026.juegosboom.com/' }}
         run: |
           set -u
-          echo "servidor: ${H:+sí}  usuario: ${U:+sí}  clave: ${P:+sí}"
+          echo "servidor: ${H:+sí}  usuario: ${U:+sí}  clave: ${P:+sí}  · como secreto: ${{ secrets.FTPADDRESS != '' }} ${{ secrets.FTPUSER != '' }} ${{ secrets.FTPPASS != '' }} · como variable: ${{ vars.FTPADDRESS != '' }} ${{ vars.FTPUSER != '' }} ${{ vars.FTPPASS != '' }}"
           [ -n "$H" ] && [ -n "$U" ] && [ -n "$P" ] || { echo "Faltan secretos del FTP (FTPADDRESS, FTPUSER, FTPPASS)"; exit 1; }
           H="${H#ftp://}"; H="${H%/}"
           echo "Subido desde GitHub Actions el $(date -u '+%Y-%m-%d %H:%M UTC') (commit ${GITHUB_SHA::7})" > desdeclaude.txt
